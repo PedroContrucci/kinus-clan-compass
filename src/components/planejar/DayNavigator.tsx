@@ -1,10 +1,11 @@
 import { format, addDays, isWeekend } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Brain } from 'lucide-react';
+import { Brain, Plane } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DayInfo {
   dayNumber: number;
+  displayNumber: number; // The number shown to user (0 for transit, 1+ for experience days)
   date: Date;
   dateFormatted: string;
   shortDay: string;
@@ -24,6 +25,7 @@ interface DayNavigatorProps {
   jetLagModeEnabled: boolean;
   icons: string[];
   titles: string[];
+  hasTransitDay?: boolean; // If true, first day is transit (departure day)
 }
 
 export const generateDayCards = (
@@ -31,26 +33,32 @@ export const generateDayCards = (
   totalDays: number,
   jetLagModeEnabled: boolean,
   icons: string[],
-  titles: string[]
+  titles: string[],
+  hasTransitDay: boolean = true
 ): DayInfo[] => {
   const days: DayInfo[] = [];
+  const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const fullDayNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
   
   for (let i = 0; i < totalDays; i++) {
     const date = addDays(startDate, i);
-    const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    const fullDayNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const isTransit = hasTransitDay && i === 0;
+    
+    // Display number: transit day shows as "Partida", day 1 is the first experience day
+    const displayNumber = hasTransitDay ? i : i + 1;
     
     days.push({
-      dayNumber: i + 1,
+      dayNumber: i + 1, // Internal index (1-based)
+      displayNumber,
       date,
       dateFormatted: `${dayNames[date.getDay()]} ${format(date, 'dd/MM')}`,
       shortDay: dayNames[date.getDay()],
       dayOfWeek: fullDayNames[date.getDay()],
       isWeekend: isWeekend(date),
-      isJetLagDay: jetLagModeEnabled && i === 0,
-      isTransitDay: i === 0,
-      icon: icons[i] || '📍',
-      title: titles[i] || `Dia ${i + 1}`,
+      isJetLagDay: jetLagModeEnabled && !isTransit && displayNumber === 1, // Day 1 (first experience day) gets jet lag mode
+      isTransitDay: isTransit,
+      icon: isTransit ? '✈️' : (icons[hasTransitDay ? i - 1 : i] || '📍'),
+      title: isTransit ? 'Partida' : (titles[hasTransitDay ? i - 1 : i] || `Dia ${displayNumber}`),
     });
   }
   
@@ -65,8 +73,9 @@ export const DayNavigator = ({
   jetLagModeEnabled,
   icons,
   titles,
+  hasTransitDay = true,
 }: DayNavigatorProps) => {
-  const days = generateDayCards(startDate, totalDays, jetLagModeEnabled, icons, titles);
+  const days = generateDayCards(startDate, totalDays, jetLagModeEnabled, icons, titles, hasTransitDay);
 
   return (
     <div className="mb-6">
@@ -75,6 +84,7 @@ export const DayNavigator = ({
         {days.map((day) => {
           const isSelected = selectedDay === day.dayNumber;
           const isJetLag = day.isJetLagDay;
+          const isTransit = day.isTransitDay;
           
           return (
             <button
@@ -82,14 +92,22 @@ export const DayNavigator = ({
               onClick={() => onDayChange(day.dayNumber)}
               className={cn(
                 "flex-shrink-0 p-4 rounded-2xl transition-all duration-200 border min-w-[100px]",
-                isSelected && !isJetLag && "bg-card border-primary ring-2 ring-primary/30",
+                isSelected && !isJetLag && !isTransit && "bg-card border-primary ring-2 ring-primary/30",
                 isSelected && isJetLag && "bg-card border-[#eab308] ring-2 ring-[#eab308]/30",
+                isSelected && isTransit && "bg-card border-[#0ea5e9] ring-2 ring-[#0ea5e9]/30",
                 !isSelected && "bg-card border-border hover:border-primary/50",
                 day.isWeekend && !isSelected && "bg-card/80"
               )}
             >
+              {/* Transit Indicator */}
+              {isTransit && (
+                <div className="flex items-center justify-center mb-1">
+                  <Plane size={14} className="text-[#0ea5e9]" />
+                </div>
+              )}
+              
               {/* Jet Lag Indicator */}
-              {isJetLag && (
+              {isJetLag && !isTransit && (
                 <div className="flex items-center justify-center mb-1">
                   <Brain size={14} className="text-[#eab308]" />
                 </div>
@@ -105,9 +123,14 @@ export const DayNavigator = ({
                 {format(day.date, 'dd/MM')}
               </div>
               
-              {/* Title */}
+              {/* Title - Transit shows "Partida", Day 1 shows "Chegada" */}
               <div className="text-xs text-muted-foreground max-w-[80px] truncate font-['Plus_Jakarta_Sans'] mt-1">
-                {day.isTransitDay && day.dayNumber === 1 ? '✈️ Chegada' : day.title}
+                {isTransit 
+                  ? 'Partida' 
+                  : day.displayNumber === 1 
+                    ? '✈️ Chegada' 
+                    : day.title
+                }
               </div>
               
               {/* Active Indicator */}
@@ -115,7 +138,7 @@ export const DayNavigator = ({
                 <div 
                   className={cn(
                     "h-1 rounded-full mt-2 w-full",
-                    isJetLag ? "bg-[#eab308]" : "bg-primary"
+                    isTransit ? "bg-[#0ea5e9]" : isJetLag ? "bg-[#eab308]" : "bg-primary"
                   )} 
                 />
               )}

@@ -159,35 +159,84 @@ export interface TripData {
 // Activity intensity levels
 export type ActivityIntensity = 'light' | 'moderate' | 'intense' | 'very_intense';
 
-export interface ActivityImage {
-  url: string;
-  alt: string;
-}
-
 // Activity images database
-export const ACTIVITY_IMAGES: Record<string, ActivityImage> = {
+export const ACTIVITY_IMAGES: Record<string, string> = {
   // Paris
-  'torre-eiffel': { url: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce65f4?w=800&q=80', alt: 'Torre Eiffel' },
-  'louvre': { url: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=800&q=80', alt: 'Museu do Louvre' },
-  'montmartre': { url: 'https://images.unsplash.com/photo-1550340499-a6c60fc8287c?w=800&q=80', alt: 'Montmartre' },
-  'sena-cruzeiro': { url: 'https://images.unsplash.com/photo-1478391679764-b2d8b3cd1e94?w=800&q=80', alt: 'Cruzeiro no Sena' },
-  'notre-dame': { url: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=800&q=80', alt: 'Notre Dame' },
-  'versailles': { url: 'https://images.unsplash.com/photo-1551410224-699683e15636?w=800&q=80', alt: 'Palácio de Versailles' },
-  'cafe-paris': { url: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80', alt: 'Café Parisiense' },
-  'marais': { url: 'https://images.unsplash.com/photo-1550340499-a6c60fc8287c?w=800&q=80', alt: 'Le Marais' },
-  'aeroporto-cdg': { url: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80', alt: 'Aeroporto CDG' },
-  'hotel': { url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80', alt: 'Hotel' },
-  'taxi': { url: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&q=80', alt: 'Táxi' },
-  'restaurante': { url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80', alt: 'Restaurante' },
+  'torre-eiffel': 'https://images.unsplash.com/photo-1511739001486-6bfe10ce65f4?w=800&q=80',
+  'louvre': 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=800&q=80',
+  'montmartre': 'https://images.unsplash.com/photo-1550340499-a6c60fc8287c?w=800&q=80',
+  'sena-cruzeiro': 'https://images.unsplash.com/photo-1478391679764-b2d8b3cd1e94?w=800&q=80',
+  'notre-dame': 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=800&q=80',
+  'versailles': 'https://images.unsplash.com/photo-1551410224-699683e15636?w=800&q=80',
+  'cafe-paris': 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80',
+  'marais': 'https://images.unsplash.com/photo-1550340499-a6c60fc8287c?w=800&q=80',
+  
+  // Roma - Chegada
+  'chegada-roma': 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80',
+  'aeroporto-fiumicino': 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80',
+  
+  // Roma - Vaticano
+  'vaticano': 'https://images.unsplash.com/photo-1531572753322-ad063cecc140?w=800&q=80',
+  'basilica-sao-pedro': 'https://images.unsplash.com/photo-1568797629192-fa0e4a2f9c49?w=800&q=80',
+  'capela-sistina': 'https://images.unsplash.com/photo-1576487236230-eaa4afe68192?w=800&q=80',
+  'museus-vaticano': 'https://images.unsplash.com/photo-1570339985845-a93b51056447?w=800&q=80',
+  
+  // Roma - Coliseu e Fórum
+  'coliseu': 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80',
+  'coliseu-interno': 'https://images.unsplash.com/photo-1555992828-ca4dbe41d294?w=800&q=80',
+  'forum-romano': 'https://images.unsplash.com/photo-1604580864964-0462f5d5b1a8?w=800&q=80',
+  'palatino': 'https://images.unsplash.com/photo-1567604528362-7e288a82a7ed?w=800&q=80',
+  
+  // Roma - Trastevere
+  'trastevere': 'https://images.unsplash.com/photo-1529260830199-42c24126f198?w=800&q=80',
+  'trastevere-rua': 'https://images.unsplash.com/photo-1555992457-b8fefdd09193?w=800&q=80',
+  'trastevere-noite': 'https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=800&q=80',
+  
+  // Roma - Tivoli
+  'villa-este': 'https://images.unsplash.com/photo-1560813962-ff3d8fcf59ba?w=800&q=80',
+  'villa-adriana': 'https://images.unsplash.com/photo-1582562475156-04d46bcd05c3?w=800&q=80',
+  'jardins-tivoli': 'https://images.unsplash.com/photo-1560813962-ff3d8fcf59ba?w=800&q=80',
+  
+  // Roma - Fontana di Trevi
+  'fontana-trevi': 'https://images.unsplash.com/photo-1525874684015-58379d421a52?w=800&q=80',
+  'fontana-trevi-noite': 'https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=800&q=80',
+  
+  // Roma - Outros pontos
+  'piazza-navona': 'https://images.unsplash.com/photo-1569155618678-269bce772a0e?w=800&q=80',
+  'panteao': 'https://images.unsplash.com/photo-1564064746701-6a4dc1ffec68?w=800&q=80',
+  'panteao-interior': 'https://images.unsplash.com/photo-1584132869994-873f9363a562?w=800&q=80',
+  'escadaria-espanhola': 'https://images.unsplash.com/photo-1574166006296-e32f7f203470?w=800&q=80',
+  'castel-santangelo': 'https://images.unsplash.com/photo-1569596082827-c5c8cf633e04?w=800&q=80',
+  'via-del-corso': 'https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=800&q=80',
+  'compras-roma': 'https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=800&q=80',
+  
+  // Roma - Comida
+  'pasta-roma': 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=800&q=80',
+  'pizza-roma': 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&q=80',
+  'gelato-roma': 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=800&q=80',
+  'carbonara': 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=800&q=80',
+  'cacio-pepe': 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&q=80',
+  
+  // Genéricos
+  'aeroporto-cdg': 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80',
+  'aeroporto': 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80',
+  'hotel': 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80',
+  'taxi': 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&q=80',
+  'transfer': 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&q=80',
+  'restaurante': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80',
+  'metro': 'https://images.unsplash.com/photo-1565017228138-59b03b3c69d8?w=800&q=80',
+  
   // Tóquio
-  'shibuya': { url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800&q=80', alt: 'Shibuya Crossing' },
-  'senso-ji': { url: 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800&q=80', alt: 'Templo Senso-ji' },
-  'meiji': { url: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&q=80', alt: 'Santuário Meiji' },
+  'shibuya': 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800&q=80',
+  'senso-ji': 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800&q=80',
+  'meiji': 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&q=80',
+  
   // Lisboa
-  'belem': { url: 'https://images.unsplash.com/photo-1585208798174-6cedd86e019a?w=800&q=80', alt: 'Torre de Belém' },
-  'alfama': { url: 'https://images.unsplash.com/photo-1569959220744-ff553533f492?w=800&q=80', alt: 'Alfama' },
+  'belem': 'https://images.unsplash.com/photo-1585208798174-6cedd86e019a?w=800&q=80',
+  'alfama': 'https://images.unsplash.com/photo-1569959220744-ff553533f492?w=800&q=80',
+  
   // Default
-  'default': { url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80', alt: 'Destino' },
+  'default': 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80',
 };
 
 // Flight duration estimates in hours (origin-destination)

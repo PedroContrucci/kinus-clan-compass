@@ -43,7 +43,7 @@ interface EnhancedActivityCardProps {
   onRemove?: () => void;
 }
 
-export const getActivityImage = (name: string, type: string) => {
+export const getActivityImage = (name: string, type: string): string => {
   const nameKey = name.toLowerCase()
     .replace(/torre eiffel/i, 'torre-eiffel')
     .replace(/louvre/i, 'louvre')
@@ -54,14 +54,36 @@ export const getActivityImage = (name: string, type: string) => {
     .replace(/marais/i, 'marais')
     .replace(/café|cafe|coffee/i, 'cafe-paris')
     .replace(/hotel|check.?in/i, 'hotel')
-    .replace(/transfer|taxi|uber/i, 'taxi')
-    .replace(/restaurante|jantar|almoço|breizh/i, 'restaurante')
-    .replace(/aeroporto|cdg|gru/i, 'aeroporto-cdg')
+    .replace(/transfer|taxi|uber/i, 'transfer')
+    .replace(/restaurante|jantar|almoço|breizh|ristorante|trattoria/i, 'restaurante')
+    .replace(/aeroporto|cdg|gru|fiumicino/i, 'aeroporto')
     .replace(/shibuya/i, 'shibuya')
     .replace(/senso.?ji/i, 'senso-ji')
     .replace(/meiji/i, 'meiji')
     .replace(/belém|belem/i, 'belem')
-    .replace(/alfama/i, 'alfama');
+    .replace(/alfama/i, 'alfama')
+    // Roma specific
+    .replace(/vaticano|vatican/i, 'vaticano')
+    .replace(/capela sistina|sistine/i, 'capela-sistina')
+    .replace(/basílica.*pedro|st.*peter/i, 'basilica-sao-pedro')
+    .replace(/museus.*vaticano|vatican.*museum/i, 'museus-vaticano')
+    .replace(/coliseu|colosseum|colosseo/i, 'coliseu')
+    .replace(/forum.*romano|roman.*forum/i, 'forum-romano')
+    .replace(/palatino|palatine/i, 'palatino')
+    .replace(/trastevere/i, 'trastevere')
+    .replace(/villa.*este|villa d'este/i, 'villa-este')
+    .replace(/villa.*adriana|hadrian/i, 'villa-adriana')
+    .replace(/fontana.*trevi|trevi.*fountain/i, 'fontana-trevi')
+    .replace(/piazza.*navona/i, 'piazza-navona')
+    .replace(/panteão|pantheon|panteao/i, 'panteao')
+    .replace(/escadaria.*espanhola|spanish.*steps/i, 'escadaria-espanhola')
+    .replace(/castel.*sant.*angelo/i, 'castel-santangelo')
+    .replace(/via.*del.*corso/i, 'via-del-corso')
+    .replace(/carbonara/i, 'carbonara')
+    .replace(/cacio.*pepe/i, 'cacio-pepe')
+    .replace(/gelato|sorvete/i, 'gelato-roma')
+    .replace(/pizza/i, 'pizza-roma')
+    .replace(/pasta|massa/i, 'pasta-roma');
   
   for (const key of Object.keys(ACTIVITY_IMAGES)) {
     if (nameKey.includes(key)) {
@@ -72,7 +94,7 @@ export const getActivityImage = (name: string, type: string) => {
   // Fallback by type
   if (type === 'food') return ACTIVITY_IMAGES['restaurante'];
   if (type === 'relax') return ACTIVITY_IMAGES['hotel'];
-  if (type === 'transport') return ACTIVITY_IMAGES['taxi'];
+  if (type === 'transport') return ACTIVITY_IMAGES['transfer'];
   
   return ACTIVITY_IMAGES['default'];
 };
@@ -122,8 +144,8 @@ export const EnhancedActivityCard = ({
       <div className="relative">
         <AspectRatio ratio={16 / 9}>
           <img 
-            src={activityImage.url} 
-            alt={activityImage.alt}
+            src={activityImage} 
+            alt={activity.name}
             className="w-full h-full object-cover"
             loading="lazy"
           />
