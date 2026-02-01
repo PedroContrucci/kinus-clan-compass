@@ -54,10 +54,7 @@ const Login = () => {
         {/* Slogan */}
         <div className="text-center mb-8 px-4">
           <p className="text-muted-foreground font-['Plus_Jakarta_Sans'] text-base leading-relaxed">
-            Onde a precisão do algoritmo encontra o acolhimento do clã.
-          </p>
-          <p className="text-muted-foreground font-['Plus_Jakarta_Sans'] text-base mt-1">
-            Tecnologia que respira natureza. 🌿
+            Sua jornada, nossa inteligência coletiva. 🌿
           </p>
         </div>
 
