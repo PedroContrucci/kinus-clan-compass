@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car } from 'lucide-react';
+import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,7 +8,11 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import ReverseAuctionModal from '@/components/ReverseAuctionModal';
-import { SavedTrip, TripActivity, ChecklistItem } from '@/types/trip';
+import FlightCard from '@/components/FlightCard';
+import HotelCard from '@/components/HotelCard';
+import JetLagAlert from '@/components/JetLagAlert';
+import FinOpsDashboard from '@/components/FinOpsDashboard';
+import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
 import kinuLogo from '@/assets/KINU_logo.png';
 
 const Viagens = () => {
@@ -20,12 +24,12 @@ const Viagens = () => {
   const [activeTab, setActiveTab] = useState<'roteiro' | 'finops' | 'checklist'>('roteiro');
   const [selectedDay, setSelectedDay] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; activityName: string; activityType: string } | null>(null);
+  const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; activityName: string; activityType: string; estimatedPrice?: number } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; activity: TripActivity; dayIndex: number; actIndex: number } | null>(null);
   const [confirmAmount, setConfirmAmount] = useState('');
   const [confirmLink, setConfirmLink] = useState('');
   const [manualExpenseModal, setManualExpenseModal] = useState(false);
-  const [manualExpense, setManualExpense] = useState({ name: '', amount: 0, category: 'outros' });
+  const [manualExpense, setManualExpense] = useState({ name: '', amount: 0, category: 'shopping' as keyof SavedTrip['finances']['categories'] });
 
   useEffect(() => {
     const savedUser = localStorage.getItem('kinu_user');
@@ -61,14 +65,16 @@ const Viagens = () => {
     return total > 0 ? Math.round((confirmed / total) * 100) : 0;
   };
 
-  const getStatusIcon = (status: TripActivity['status']) => {
+  const getStatusIcon = (status: ActivityStatus) => {
     switch (status) {
       case 'confirmed':
         return <span className="text-[#10b981]">🟢</span>;
       case 'cancelled':
         return <span className="text-red-500">🔴</span>;
+      case 'bidding':
+        return <span className="text-[#eab308] animate-pulse">🟡</span>;
       default:
-        return <span className="text-[#eab308]">🟡</span>;
+        return <span className="text-[#64748b]">⚪</span>;
     }
   };
 
@@ -83,21 +89,31 @@ const Viagens = () => {
     activity.paidAmount = amount;
     activity.confirmationLink = confirmLink;
 
-    // Update finances
+    // Update finances with new structure
     updatedTrip.finances.confirmed += amount;
-    updatedTrip.finances.pending = Math.max(0, updatedTrip.finances.pending - amount);
-    updatedTrip.finances.available = updatedTrip.budget - updatedTrip.finances.confirmed;
+    updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - amount);
+    updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
 
     // Update category
-    const category = activity.category || 'outros';
-    if (category === 'voo') updatedTrip.finances.byCategory.voos += amount;
-    else if (category === 'hotel') updatedTrip.finances.byCategory.hoteis += amount;
-    else if (category === 'passeio') updatedTrip.finances.byCategory.passeios += amount;
-    else if (category === 'comida') updatedTrip.finances.byCategory.comida += amount;
-    else updatedTrip.finances.byCategory.outros += amount;
+    const category = activity.category || 'passeio';
+    const categoryMap: Record<string, keyof typeof updatedTrip.finances.categories> = {
+      'voo': 'flights',
+      'hotel': 'accommodation',
+      'passeio': 'tours',
+      'comida': 'food',
+      'transporte': 'transport',
+      'compras': 'shopping',
+    };
+    const financeCategory = categoryMap[category] || 'tours';
+    updatedTrip.finances.categories[financeCategory].confirmed += amount;
 
     // Update progress
     updatedTrip.progress = calculateProgress(updatedTrip);
+    
+    // Update status if needed
+    if (updatedTrip.status === 'draft') {
+      updatedTrip.status = 'active';
+    }
 
     // Save
     setSelectedTrip(updatedTrip);
@@ -105,14 +121,47 @@ const Viagens = () => {
     setTrips(updatedTrips);
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
 
+    // Show contextual tip
+    const tip = contextualTips.confirmation[Math.floor(Math.random() * contextualTips.confirmation.length)];
     toast({
       title: "Atividade confirmada! ✅",
-      description: `R$ ${amount.toLocaleString()} registrado.`,
+      description: tip,
     });
 
     setConfirmModal(null);
     setConfirmAmount('');
     setConfirmLink('');
+  };
+
+  const handleStartBidding = (activity: TripActivity, dayIndex: number, actIndex: number) => {
+    if (!selectedTrip) return;
+
+    const updatedTrip = { ...selectedTrip };
+    const act = updatedTrip.days[dayIndex].activities[actIndex];
+    act.status = 'bidding';
+
+    // Update finances
+    updatedTrip.finances.bidding += act.cost;
+    updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - act.cost);
+
+    setSelectedTrip(updatedTrip);
+    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
+    setTrips(updatedTrips);
+    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+
+    setAuctionModal({
+      isOpen: true,
+      activityName: activity.name,
+      activityType: activity.type,
+      estimatedPrice: activity.cost,
+    });
+  };
+
+  const handleAcceptOffer = (offer: Offer) => {
+    toast({
+      title: "Oferta selecionada! 🎉",
+      description: `Fechou a reserva? Confirme para atualizar o FinOps.`,
+    });
   };
 
   const handleAddManualExpense = () => {
@@ -122,14 +171,10 @@ const Viagens = () => {
     const amount = manualExpense.amount;
     
     updatedTrip.finances.confirmed += amount;
-    updatedTrip.finances.available = updatedTrip.budget - updatedTrip.finances.confirmed;
+    updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
     
-    const expenseCategory = manualExpense.category as string;
-    if (expenseCategory === 'voos') updatedTrip.finances.byCategory.voos += amount;
-    else if (expenseCategory === 'hoteis') updatedTrip.finances.byCategory.hoteis += amount;
-    else if (expenseCategory === 'passeios') updatedTrip.finances.byCategory.passeios += amount;
-    else if (expenseCategory === 'comida') updatedTrip.finances.byCategory.comida += amount;
-    else updatedTrip.finances.byCategory.outros += amount;
+    // Update category
+    updatedTrip.finances.categories[manualExpense.category].confirmed += amount;
 
     setSelectedTrip(updatedTrip);
     const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
@@ -142,7 +187,7 @@ const Viagens = () => {
     });
 
     setManualExpenseModal(false);
-    setManualExpense({ name: '', amount: 0, category: 'outros' });
+    setManualExpense({ name: '', amount: 0, category: 'shopping' });
   };
 
   const handleToggleChecklist = (itemId: string) => {
@@ -158,16 +203,6 @@ const Viagens = () => {
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'voos': return <Plane size={16} />;
-      case 'hoteis': return <Building size={16} />;
-      case 'passeios': return <MapPin size={16} />;
-      case 'comida': return <Utensils size={16} />;
-      default: return <Car size={16} />;
-    }
-  };
-
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'food': return '🍽️';
@@ -179,15 +214,22 @@ const Viagens = () => {
     }
   };
 
+  const getStatusLabel = (status: SavedTrip['status']) => {
+    switch (status) {
+      case 'draft': return { label: 'Rascunho', color: 'text-[#64748b]' };
+      case 'active': return { label: 'Planejando', color: 'text-[#0ea5e9]' };
+      case 'ongoing': return { label: 'Em Viagem', color: 'text-[#10b981]' };
+      case 'completed': return { label: 'Concluída', color: 'text-[#8b5cf6]' };
+      default: return { label: 'Rascunho', color: 'text-[#64748b]' };
+    }
+  };
+
   if (!user) return null;
 
   // Trip Dashboard View
   if (selectedTrip) {
     const currentDay = selectedTrip.days.find((d) => d.day === selectedDay);
-    const totalBudget = selectedTrip.budget;
-    const confirmedAmount = selectedTrip.finances.confirmed;
-    const pendingAmount = selectedTrip.finances.pending;
-    const availableAmount = selectedTrip.finances.available;
+    const showJetLagAlert = selectedTrip.jetLagMode && selectedDay === 1;
 
     return (
       <div className="min-h-screen bg-[#0f172a] pb-20">
@@ -236,6 +278,33 @@ const Viagens = () => {
           {/* Roteiro Tab */}
           {activeTab === 'roteiro' && (
             <div className="animate-fade-in">
+              {/* Fixed Flight Card - Outbound */}
+              {selectedTrip.flights?.outbound && (
+                <FlightCard
+                  flight={selectedTrip.flights.outbound}
+                  type="outbound"
+                  onOpenAuction={() => setAuctionModal({
+                    isOpen: true,
+                    activityName: 'Voo de Ida',
+                    activityType: 'flight',
+                    estimatedPrice: selectedTrip.flights?.outbound?.price,
+                  })}
+                />
+              )}
+
+              {/* Fixed Hotel Card */}
+              {selectedTrip.accommodation && (
+                <HotelCard
+                  hotel={selectedTrip.accommodation}
+                  onOpenAuction={() => setAuctionModal({
+                    isOpen: true,
+                    activityName: selectedTrip.accommodation?.name || 'Hotel',
+                    activityType: 'hotel',
+                    estimatedPrice: selectedTrip.accommodation?.totalPrice,
+                  })}
+                />
+              )}
+
               {/* Day Timeline */}
               <div className="mb-6">
                 <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
@@ -257,6 +326,14 @@ const Viagens = () => {
                 </div>
               </div>
 
+              {/* Jet Lag Alert for Day 1 */}
+              {showJetLagAlert && selectedTrip.timezone && (
+                <JetLagAlert
+                  destination={selectedTrip.destination}
+                  timezoneDiff={selectedTrip.timezone.diff}
+                />
+              )}
+
               {/* Day Activities */}
               {currentDay && (
                 <div
@@ -274,6 +351,7 @@ const Viagens = () => {
                       return (
                         <div key={activity.id} className={`flex gap-3 ${
                           activity.status === 'confirmed' ? 'bg-[#10b981]/10 -mx-2 px-2 py-2 rounded-xl border border-[#10b981]/30' :
+                          activity.status === 'bidding' ? 'bg-[#eab308]/10 -mx-2 px-2 py-2 rounded-xl border border-[#eab308]/30' :
                           activity.status === 'cancelled' ? 'opacity-50' : ''
                         }`}>
                           <div className="flex flex-col items-center">
@@ -294,19 +372,24 @@ const Viagens = () => {
                                   R$ {activity.paidAmount.toLocaleString()}
                                 </span>
                               )}
+                              {activity.jetLagFriendly && (
+                                <span className="text-xs bg-[#eab308]/20 text-[#eab308] px-2 py-0.5 rounded-full">
+                                  🧘 Jet Lag Friendly
+                                </span>
+                              )}
                             </div>
                             <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
                             <p className="text-sm text-[#94a3b8]">{activity.description}</p>
 
                             {/* Actions */}
-                            {activity.status !== 'confirmed' && (
+                            {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (
                               <div className="flex gap-2 mt-3 flex-wrap">
                                 <button
-                                  onClick={() => setAuctionModal({ isOpen: true, activityName: activity.name, activityType: activity.type })}
+                                  onClick={() => handleStartBidding(activity, dayIndex, actIndex)}
                                   className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-[#10b981] transition-colors"
                                 >
                                   <Tag size={12} />
-                                  Ver Ofertas
+                                  {activity.status === 'bidding' ? 'Ver Leilão' : 'Ver Ofertas'}
                                 </button>
                                 <button
                                   onClick={() => setConfirmModal({ isOpen: true, activity, dayIndex, actIndex })}
@@ -324,83 +407,42 @@ const Viagens = () => {
                   </div>
                 </div>
               )}
+
+              {/* Fixed Flight Card - Return (on last day) */}
+              {selectedTrip.flights?.return && selectedDay === selectedTrip.days.length && (
+                <div className="mt-4">
+                  <FlightCard
+                    flight={selectedTrip.flights.return}
+                    type="return"
+                    onOpenAuction={() => setAuctionModal({
+                      isOpen: true,
+                      activityName: 'Voo de Volta',
+                      activityType: 'flight',
+                      estimatedPrice: selectedTrip.flights?.return?.price,
+                    })}
+                  />
+                </div>
+              )}
             </div>
           )}
 
           {/* FinOps Tab */}
           {activeTab === 'finops' && (
-            <div className="animate-fade-in space-y-6">
-              {/* Summary Cards */}
-              <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <p className="text-sm text-[#94a3b8]">💰 Orçamento Total</p>
-                    <p className="text-2xl font-bold text-[#f8fafc] font-['Outfit']">R$ {totalBudget.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-[#94a3b8]">✅ Confirmado</p>
-                    <p className="text-2xl font-bold text-[#10b981] font-['Outfit']">R$ {confirmedAmount.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-[#94a3b8]">🟡 Pendente</p>
-                    <p className="text-2xl font-bold text-[#eab308] font-['Outfit']">R$ {pendingAmount.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-[#94a3b8]">💚 Disponível</p>
-                    <p className="text-2xl font-bold text-[#0ea5e9] font-['Outfit']">R$ {availableAmount.toLocaleString()}</p>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="mb-2">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-[#94a3b8]">Utilizado</span>
-                    <span className="text-[#f8fafc]">{Math.round((confirmedAmount / totalBudget) * 100)}%</span>
-                  </div>
-                  <Progress value={(confirmedAmount / totalBudget) * 100} className="h-2 bg-[#334155]" />
-                </div>
-              </div>
-
-              {/* By Category */}
-              <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
-                <h3 className="font-semibold text-[#f8fafc] mb-4 font-['Outfit']">Por Categoria</h3>
-                <div className="space-y-4">
-                  {[
-                    { key: 'voos', label: 'Voos', icon: Plane, amount: selectedTrip.finances.byCategory.voos },
-                    { key: 'hoteis', label: 'Hotéis', icon: Building, amount: selectedTrip.finances.byCategory.hoteis },
-                    { key: 'passeios', label: 'Passeios', icon: MapPin, amount: selectedTrip.finances.byCategory.passeios },
-                    { key: 'comida', label: 'Comida', icon: Utensils, amount: selectedTrip.finances.byCategory.comida },
-                    { key: 'outros', label: 'Outros', icon: Car, amount: selectedTrip.finances.byCategory.outros },
-                  ].map((cat) => {
-                    const percentage = totalBudget > 0 ? (cat.amount / totalBudget) * 100 : 0;
-                    return (
-                      <div key={cat.key}>
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2 text-[#f8fafc]">
-                            <cat.icon size={16} className="text-[#94a3b8]" />
-                            <span className="font-['Outfit']">{cat.label}</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-[#f8fafc] font-medium">R$ {cat.amount.toLocaleString()}</span>
-                            <span className="text-[#94a3b8] text-sm ml-2">{percentage.toFixed(0)}%</span>
-                          </div>
-                        </div>
-                        <Progress value={percentage} className="h-2 bg-[#334155]" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+            <>
+              <FinOpsDashboard
+                finances={selectedTrip.finances}
+                destination={selectedTrip.destination}
+              />
 
               {/* Add Manual Expense */}
               <button
                 onClick={() => setManualExpenseModal(true)}
-                className="w-full py-4 bg-[#1e293b] border border-dashed border-[#334155] rounded-2xl text-[#94a3b8] font-['Outfit'] flex items-center justify-center gap-2 hover:border-[#10b981] hover:text-[#f8fafc] transition-colors"
+                className="w-full mt-6 py-4 bg-[#1e293b] border border-dashed border-[#334155] rounded-2xl text-[#94a3b8] font-['Outfit'] flex items-center justify-center gap-2 hover:border-[#10b981] hover:text-[#f8fafc] transition-colors"
               >
                 <Plus size={20} />
                 Adicionar Gasto Manual
               </button>
-            </div>
+            </>
           )}
 
           {/* Checklist Tab */}
@@ -458,6 +500,8 @@ const Viagens = () => {
             activityName={auctionModal.activityName}
             activityType={auctionModal.activityType}
             destination={selectedTrip.destination}
+            estimatedPrice={auctionModal.estimatedPrice}
+            onAcceptOffer={handleAcceptOffer}
           />
         )}
 
@@ -530,15 +574,16 @@ const Viagens = () => {
                 <label className="block text-sm text-[#94a3b8] mb-2">Categoria</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'voos', label: '✈️ Voo' },
-                    { id: 'hoteis', label: '🏨 Hotel' },
-                    { id: 'passeios', label: '🎯 Passeio' },
-                    { id: 'comida', label: '🍽️ Comida' },
-                    { id: 'outros', label: '📦 Outro' },
+                    { id: 'flights' as const, label: '✈️ Voo' },
+                    { id: 'accommodation' as const, label: '🏨 Hotel' },
+                    { id: 'tours' as const, label: '🎯 Passeio' },
+                    { id: 'food' as const, label: '🍽️ Comida' },
+                    { id: 'transport' as const, label: '🚕 Transporte' },
+                    { id: 'shopping' as const, label: '🛍️ Compras' },
                   ].map((cat) => (
                     <button
                       key={cat.id}
-                      onClick={() => setManualExpense((prev) => ({ ...prev, category: cat.id as any }))}
+                      onClick={() => setManualExpense((prev) => ({ ...prev, category: cat.id }))}
                       className={`py-2 px-3 rounded-lg text-xs transition-colors ${
                         manualExpense.category === cat.id
                           ? 'bg-[#10b981] text-white'
@@ -588,6 +633,7 @@ const Viagens = () => {
               const progress = calculateProgress(trip);
               const totalActivities = trip.days.reduce((acc, day) => acc + day.activities.length, 0);
               const confirmedActivities = trip.days.reduce((acc, day) => acc + day.activities.filter((a) => a.status === 'confirmed').length, 0);
+              const statusInfo = getStatusLabel(trip.status);
 
               return (
                 <button
@@ -601,9 +647,12 @@ const Viagens = () => {
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="font-semibold text-lg text-[#f8fafc] font-['Outfit']">
-                        {trip.emoji} {trip.destination}, {trip.country}
-                      </h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-lg text-[#f8fafc] font-['Outfit']">
+                          {trip.emoji} {trip.destination}, {trip.country}
+                        </h3>
+                        <span className={`text-xs ${statusInfo.color}`}>• {statusInfo.label}</span>
+                      </div>
                       <p className="text-sm text-[#94a3b8]">
                         {trip.startDate && format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} - {trip.endDate && format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })} • {trip.days.length} dias
                       </p>
