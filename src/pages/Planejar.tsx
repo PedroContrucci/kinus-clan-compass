@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import ReverseAuctionModal from '@/components/ReverseAuctionModal';
-import { TripData, SavedTrip, TripActivity, TripDay, defaultChecklist } from '@/types/trip';
+import { TripData, SavedTrip, TripActivity, TripDay, defaultChecklist, defaultFinances, calculateTimezone, shouldActivateJetLagMode, ActivityStatus } from '@/types/trip';
 import kinuLogo from '@/assets/KINU_logo.png';
 
 interface Activity {
@@ -284,7 +284,11 @@ const Planejar = () => {
     if (!generatedItinerary) return;
 
     const tripId = `trip-${Date.now()}`;
-    const days = calculateDays();
+    const totalBudget = tripData.budgetAmount || generatedItinerary.estimatedBudget;
+    
+    // Calculate timezone info
+    const timezoneInfo = calculateTimezone('Brasil', generatedItinerary.destination);
+    const jetLagMode = shouldActivateJetLagMode(timezoneInfo.diff);
     
     // Convert generated itinerary to trip format
     const tripDays: TripDay[] = generatedItinerary.itinerary.map((day) => ({
@@ -299,39 +303,39 @@ const Planejar = () => {
         duration: act.duration,
         cost: act.cost,
         type: act.type,
-        status: pinnedActivities.has(`day${day.day}-act${idx}`) ? 'confirmed' as const : 'pending' as const,
+        status: pinnedActivities.has(`day${day.day}-act${idx}`) ? 'confirmed' as ActivityStatus : 'planned' as ActivityStatus,
         category: act.type === 'food' ? 'comida' as const : 
                   act.type === 'transport' ? 'transporte' as const : 
                   act.type === 'relax' ? 'hotel' as const : 'passeio' as const,
+        jetLagFriendly: jetLagMode && day.day === 1,
       })),
     }));
 
+    // Create initial finances
+    const finances = {
+      ...defaultFinances,
+      total: totalBudget,
+      planned: generatedItinerary.estimatedBudget,
+      available: totalBudget,
+    };
+
     const savedTrip: SavedTrip = {
       id: tripId,
+      status: 'draft',
       destination: generatedItinerary.destination,
       country: destinationCountries[generatedItinerary.destination] || 'País',
       emoji: destinationEmojis[generatedItinerary.destination] || '✈️',
       startDate: tripData.startDate?.toISOString() || '',
       endDate: tripData.endDate?.toISOString() || '',
-      budget: tripData.budgetAmount || generatedItinerary.estimatedBudget,
+      budget: totalBudget,
       budgetType: tripData.budgetType,
       travelers: tripData.travelers,
       priorities: tripData.priorities,
-      status: 'planning',
       progress: 0,
+      timezone: timezoneInfo,
+      jetLagMode,
       days: tripDays,
-      finances: {
-        confirmed: 0,
-        pending: generatedItinerary.estimatedBudget,
-        available: tripData.budgetAmount || generatedItinerary.estimatedBudget,
-        byCategory: {
-          voos: 0,
-          hoteis: 0,
-          passeios: 0,
-          comida: 0,
-          outros: 0,
-        },
-      },
+      finances,
       checklist: defaultChecklist,
       createdAt: new Date().toISOString(),
     };
