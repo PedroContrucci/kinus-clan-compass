@@ -1,15 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Search, Users, Wallet, Clock, Euro, RotateCcw, Trash2, Pin, Tag, CalendarIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Search, Users, Wallet, Clock, Euro, RotateCcw, Trash2, Pin, Tag, CalendarIcon, Plane, Brain, Info } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import ReverseAuctionModal from '@/components/ReverseAuctionModal';
-import { TripData, SavedTrip, TripActivity, TripDay, defaultChecklist, defaultFinances, calculateTimezone, shouldActivateJetLagMode, ActivityStatus } from '@/types/trip';
+import { 
+  TripData, SavedTrip, TripActivity, TripDay, defaultChecklist, defaultFinances, 
+  calculateTimezone, shouldActivateJetLagMode, ActivityStatus,
+  FLIGHT_DURATION, calculateJetLagImpact, calculateArrivalTime, timezoneOffsets,
+  ACTIVITY_IMAGES, getIntensityBadge, ActivityIntensity
+} from '@/types/trip';
 import kinuLogo from '@/assets/KINU_logo.png';
 
 interface Activity {
@@ -143,11 +149,14 @@ const Planejar = () => {
     destination: '',
     startDate: undefined,
     endDate: undefined,
+    departureTime: '22:30',
+    returnTime: '23:00',
     travelers: 2,
     travelType: 'casal',
     budgetAmount: 0,
     budgetType: '',
     priorities: [],
+    jetLagModeEnabled: true,
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -383,6 +392,83 @@ const Planejar = () => {
     }
   };
 
+  // Helper functions for activity display
+  const getActivityIntensity = (type: string, duration: string): ActivityIntensity => {
+    const durationHours = parseFloat(duration) || 1;
+    if (type === 'relax' || type === 'food' || durationHours <= 1) return 'light';
+    if (type === 'transport' || durationHours <= 2) return 'moderate';
+    if (durationHours <= 4) return 'intense';
+    return 'very_intense';
+  };
+
+  const getActivityImage = (name: string, type: string) => {
+    const nameKey = name.toLowerCase()
+      .replace(/torre eiffel/i, 'torre-eiffel')
+      .replace(/louvre/i, 'louvre')
+      .replace(/montmartre/i, 'montmartre')
+      .replace(/cruzeiro.*sena/i, 'sena-cruzeiro')
+      .replace(/notre.?dame/i, 'notre-dame')
+      .replace(/versailles|versalhes/i, 'versailles')
+      .replace(/marais/i, 'marais')
+      .replace(/café|cafe|coffee/i, 'cafe-paris')
+      .replace(/hotel|check.?in/i, 'hotel')
+      .replace(/transfer|taxi|uber/i, 'taxi')
+      .replace(/restaurante|jantar|almoço/i, 'restaurante')
+      .replace(/aeroporto|cdg|gru/i, 'aeroporto-cdg')
+      .replace(/shibuya/i, 'shibuya')
+      .replace(/senso.?ji/i, 'senso-ji')
+      .replace(/meiji/i, 'meiji')
+      .replace(/belém|belem/i, 'belem')
+      .replace(/alfama/i, 'alfama');
+    
+    for (const key of Object.keys(ACTIVITY_IMAGES)) {
+      if (nameKey.includes(key)) {
+        return ACTIVITY_IMAGES[key];
+      }
+    }
+    
+    // Fallback by type
+    if (type === 'food') return ACTIVITY_IMAGES['restaurante'];
+    if (type === 'relax') return ACTIVITY_IMAGES['hotel'];
+    if (type === 'transport') return ACTIVITY_IMAGES['taxi'];
+    
+    return ACTIVITY_IMAGES['default'];
+  };
+
+  const getClanTip = (type: string): string => {
+    const tips: Record<string, string[]> = {
+      food: [
+        "Pede o prato do dia, sempre mais fresco e barato! — @MariaV",
+        "Reserva pelo Google Maps, eles respondem rápido. — @PedroL",
+      ],
+      culture: [
+        "Vai cedo de manhã pra evitar filas! — @AnaC",
+        "Compra ingresso online com antecedência. — @JoãoM",
+      ],
+      transport: [
+        "Uber costuma ser mais barato que táxi oficial. — @CarlosR",
+        "Pega o metrô se tiver tempo, muito mais barato! — @LucasS",
+      ],
+      photo: [
+        "Melhor luz pra foto é 30min antes do pôr do sol. — @FernandaP",
+        "Chega cedo pra pegar o lugar vazio! — @RafaelT",
+      ],
+      relax: [
+        "Pede um upgrade no check-in, às vezes funciona! — @JuliaM",
+        "Aproveita o frigobar vazio pra guardar suas coisas. — @ThiagoB",
+      ],
+    };
+    const categoryTips = tips[type] || tips.culture;
+    return categoryTips[Math.floor(Math.random() * categoryTips.length)];
+  };
+
+  // Calculate jet lag info for the result screen
+  const jetLagInfo = useMemo(() => {
+    if (!generatedItinerary) return null;
+    const tz = calculateTimezone('São Paulo', generatedItinerary.destination);
+    return { ...tz, ...calculateJetLagImpact(tz.diff) };
+  }, [generatedItinerary]);
+
   // Loading Screen
   if (isLoading) {
     return (
@@ -469,10 +555,34 @@ const Planejar = () => {
             </div>
           </div>
 
+          {/* Jet Lag Mode Banner */}
+          {tripData.jetLagModeEnabled && selectedDay === 1 && jetLagInfo && jetLagInfo.level !== 'BAIXO' && (
+            <div 
+              className="border rounded-2xl p-4 mb-6"
+              style={{ 
+                backgroundColor: 'rgba(234, 179, 8, 0.08)',
+                borderColor: '#eab308' 
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Brain size={20} className="text-[#eab308]" />
+                <span className="font-semibold text-[#f8fafc] font-['Outfit']">
+                  Biology-Aware AI Ativa
+                </span>
+              </div>
+              <p className="text-[#94a3b8] text-sm mb-3">
+                Detectamos +{Math.abs(jetLagInfo.diff)}h de fuso horário. O Dia 1 foi otimizado para neutralização de Jet Lag.
+              </p>
+              <p className="text-[#f8fafc] text-sm italic">
+                "Seu corpo vai agradecer. Amanhã você ataca com tudo — hoje é só curtir a chegada!" 🌿
+              </p>
+            </div>
+          )}
+
           {/* Day Activities */}
           {currentDay && (
             <div
-              className={`bg-[#1e293b] border border-[#334155] rounded-2xl p-4 mb-6 transition-opacity duration-300 ${
+              className={`transition-opacity duration-300 ${
                 isTransitioning ? 'opacity-0' : 'opacity-100'
               }`}
             >
@@ -483,40 +593,90 @@ const Planejar = () => {
                 {currentDay.activities.map((activity, index) => {
                   const activityKey = `day${currentDay.day}-act${index}`;
                   const isPinned = pinnedActivities.has(activityKey);
+                  const isJetLagFriendly = tripData.jetLagModeEnabled && currentDay.day === 1;
+                  const intensity = getActivityIntensity(activity.type, activity.duration);
+                  const intensityBadge = getIntensityBadge(intensity);
+                  const activityImage = getActivityImage(activity.name, activity.type);
                   
                   return (
-                    <div key={index} className={`flex gap-3 ${isPinned ? 'bg-[#10b981]/10 -mx-2 px-2 py-2 rounded-xl border border-[#10b981]/30' : ''}`}>
-                      <div className="flex flex-col items-center">
-                        <div className="text-xl">{getActivityIcon(activity.type)}</div>
-                        {index < currentDay.activities.length - 1 && (
-                          <div className="w-0.5 flex-1 bg-[#334155] mt-2" />
-                        )}
-                      </div>
-                      <div className="flex-1 pb-4">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2 text-sm text-[#94a3b8]">
-                            <Clock size={14} />
-                            {activity.time}
-                            {activity.cost > 0 && (
-                              <>
-                                <span>•</span>
-                                <Euro size={14} />
-                                {activity.cost}
-                              </>
-                            )}
-                            {isPinned && (
-                              <span className="text-xs bg-[#10b981] text-white px-2 py-0.5 rounded-full">
-                                📌 Fixado
-                              </span>
-                            )}
-                          </div>
+                    <div 
+                      key={index} 
+                      className={`bg-[#1e293b] border border-[#334155] rounded-2xl overflow-hidden transition-all hover:border-[#10b981]/50 ${
+                        isPinned ? 'ring-2 ring-[#10b981]/50' : ''
+                      }`}
+                    >
+                      {/* Activity Image */}
+                      <div className="relative aspect-video overflow-hidden">
+                        <img 
+                          src={activityImage.url} 
+                          alt={activityImage.alt}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/80 to-transparent" />
+                        
+                        {/* Badges overlay */}
+                        <div className="absolute top-3 left-3 flex gap-2">
+                          {/* Intensity Badge */}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${intensityBadge.bgColor} ${intensityBadge.textColor}`}>
+                            {intensityBadge.icon} {intensityBadge.label}
+                          </span>
+                          
+                          {/* Jet Lag Friendly Badge */}
+                          {isJetLagFriendly && intensity === 'light' && (
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-emerald-500/30 text-emerald-300">
+                              🧘 Jet Lag Friendly
+                            </span>
+                          )}
                         </div>
-                        <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
-                        <p className="text-sm text-[#94a3b8]">{activity.description}</p>
-                        <p className="text-xs text-[#94a3b8] mt-1">⏱️ {activity.duration}</p>
+                        
+                        {/* Pinned indicator */}
+                        {isPinned && (
+                          <div className="absolute top-3 right-3">
+                            <span className="text-xs bg-[#10b981] text-white px-2 py-1 rounded-full">
+                              📌 Fixado
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Time overlay */}
+                        <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                          <span className="text-white text-lg font-semibold font-['Outfit']">
+                            {getActivityIcon(activity.type)} {activity.time}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Activity Content */}
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-[#f8fafc] font-['Outfit'] text-lg">{activity.name}</h4>
+                          {activity.cost > 0 && (
+                            <span className="text-[#10b981] font-medium">
+                              R$ {activity.cost}
+                            </span>
+                          )}
+                        </div>
+                        
+                        <p className="text-sm text-[#94a3b8] mb-2">{activity.description}</p>
+                        
+                        <div className="flex items-center gap-3 text-xs text-[#94a3b8] mb-3">
+                          <span>⏱️ {activity.duration}</span>
+                          {activity.cost === 0 && <span>💰 Gratuito</span>}
+                        </div>
+                        
+                        {/* Clan Tip (random for demo) */}
+                        {index % 3 === 0 && (
+                          <div className="bg-[#eab308]/10 border-l-2 border-[#eab308] rounded-r-lg p-3 mb-3">
+                            <p className="text-[#f8fafc] text-xs">
+                              💡 <span className="text-[#eab308] font-medium">Dica de Ouro:</span>{' '}
+                              {getClanTip(activity.type)}
+                            </p>
+                          </div>
+                        )}
                         
                         {/* Activity Actions */}
-                        <div className="flex gap-2 mt-3 flex-wrap">
+                        <div className="flex gap-2 flex-wrap">
                           <button
                             onClick={() => setAuctionModal({ isOpen: true, activityName: activity.name, activityType: activity.type })}
                             className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-[#10b981] transition-colors"
@@ -530,7 +690,6 @@ const Planejar = () => {
                           </button>
                           <button className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-red-500/50 transition-colors">
                             <Trash2 size={12} />
-                            Remover
                           </button>
                           <button
                             onClick={() => togglePinActivity(activityKey)}
@@ -689,87 +848,13 @@ const Planejar = () => {
           </div>
         )}
 
-        {/* Step 2: Dates - Interactive Calendar */}
+        {/* Step 2: Dates + Flight Times + Biology-Aware AI */}
         {currentStep === 2 && (
-          <div className="animate-fade-in">
-            <h2 className="text-2xl font-bold mb-6 font-['Outfit'] text-[#f8fafc]">
-              Quando vai rolar essa aventura?
-            </h2>
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm text-[#94a3b8] mb-2">Data de ida</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      className={cn(
-                        "w-full flex items-center gap-3 pl-4 pr-4 py-3 bg-[#1e293b] border border-[#334155] rounded-xl text-left focus:outline-none focus:ring-2 focus:ring-[#10b981]",
-                        !tripData.startDate && "text-[#94a3b8]"
-                      )}
-                    >
-                      <CalendarIcon size={20} className="text-[#94a3b8]" />
-                      {tripData.startDate ? (
-                        <span className="text-[#f8fafc]">{format(tripData.startDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
-                      ) : (
-                        <span>Seleciona a data de ida</span>
-                      )}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-[#1e293b] border-[#334155]" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={tripData.startDate}
-                      onSelect={(date) => setTripData((prev) => ({ ...prev, startDate: date }))}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto bg-[#1e293b] text-[#f8fafc]")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <label className="block text-sm text-[#94a3b8] mb-2">Data de volta</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      className={cn(
-                        "w-full flex items-center gap-3 pl-4 pr-4 py-3 bg-[#1e293b] border border-[#334155] rounded-xl text-left focus:outline-none focus:ring-2 focus:ring-[#10b981]",
-                        !tripData.endDate && "text-[#94a3b8]"
-                      )}
-                    >
-                      <CalendarIcon size={20} className="text-[#94a3b8]" />
-                      {tripData.endDate ? (
-                        <span className="text-[#f8fafc]">{format(tripData.endDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
-                      ) : (
-                        <span>Seleciona a data de volta</span>
-                      )}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-[#1e293b] border-[#334155]" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={tripData.endDate}
-                      onSelect={(date) => setTripData((prev) => ({ ...prev, endDate: date }))}
-                      disabled={(date) => date < (tripData.startDate || new Date())}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto bg-[#1e293b] text-[#f8fafc]")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-            {calculateDays() > 0 && (
-              <div className="bg-[#10b981]/20 border border-[#10b981] rounded-xl p-4 mb-4">
-                <p className="text-[#f8fafc] font-['Outfit'] text-center text-lg">
-                  ✨ {calculateDays()} dias de aventura!
-                </p>
-              </div>
-            )}
-            <div className="bg-[#eab308]/10 border-l-2 border-[#eab308] rounded-r-xl p-4">
-              <p className="text-[#f8fafc] text-sm">
-                💡 <span className="text-[#eab308] font-medium">Dica de Ouro:</span> Evita alta temporada pra economizar até 40%
-              </p>
-            </div>
-          </div>
+          <Step2FlightDates 
+            tripData={tripData} 
+            setTripData={setTripData} 
+            calculateDays={calculateDays}
+          />
         )}
 
         {/* Step 3: Travelers */}
@@ -958,6 +1043,281 @@ const Planejar = () => {
       {/* Bottom Nav */}
       <BottomNav currentPath={location.pathname} />
       <Toaster />
+    </div>
+  );
+};
+
+// Step 2 Component: Flight Dates + Biology-Aware AI
+interface Step2Props {
+  tripData: TripData;
+  setTripData: React.Dispatch<React.SetStateAction<TripData>>;
+  calculateDays: () => number;
+}
+
+const Step2FlightDates = ({ tripData, setTripData, calculateDays }: Step2Props) => {
+  // Calculate timezone and jet lag info
+  const timezoneInfo = useMemo(() => {
+    if (!tripData.destination) return null;
+    return calculateTimezone('São Paulo', tripData.destination);
+  }, [tripData.destination]);
+
+  const jetLagImpact = useMemo(() => {
+    if (!timezoneInfo) return null;
+    return calculateJetLagImpact(timezoneInfo.diff);
+  }, [timezoneInfo]);
+
+  const flightDuration = useMemo(() => {
+    if (!tripData.destination) return 11.5; // Default
+    const key = `São Paulo-${tripData.destination}`;
+    return FLIGHT_DURATION[key] || FLIGHT_DURATION[`Brasil-${tripData.destination}`] || 11.5;
+  }, [tripData.destination]);
+
+  const arrivalInfo = useMemo(() => {
+    if (!tripData.startDate || !tripData.departureTime || !timezoneInfo) return null;
+    return calculateArrivalTime(
+      tripData.departureTime,
+      tripData.startDate,
+      flightDuration,
+      timezoneInfo.diff
+    );
+  }, [tripData.startDate, tripData.departureTime, flightDuration, timezoneInfo]);
+
+  const getTimezoneCode = (city: string) => {
+    const codes: Record<string, string> = {
+      'São Paulo': 'BRT', 'Brasil': 'BRT', 'Paris': 'CET', 'Tóquio': 'JST',
+      'Nova York': 'EST', 'Londres': 'GMT', 'Dubai': 'GST', 'Sydney': 'AEDT',
+      'Lisboa': 'WET', 'Roma': 'CET', 'Barcelona': 'CET', 'Bali': 'WITA',
+      'Amsterdã': 'CET', 'Marrakech': 'WET', 'Santorini': 'EET',
+    };
+    return codes[city] || 'UTC';
+  };
+
+  return (
+    <div className="animate-fade-in">
+      <h2 className="text-2xl font-bold mb-2 font-['Outfit'] text-[#f8fafc]">
+        ✈️ Quando vai rolar essa aventura?
+      </h2>
+      <p className="text-[#94a3b8] mb-6 text-sm">Detalhes do voo para otimizar seu roteiro</p>
+      
+      {/* Outbound Flight */}
+      <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4 mb-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Plane size={18} className="text-[#10b981]" />
+          <span className="font-semibold text-[#f8fafc] font-['Outfit']">VOO DE IDA</span>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          {/* Date Picker */}
+          <div>
+            <label className="block text-xs text-[#94a3b8] mb-1">📅 Data partida</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className={cn(
+                    "w-full flex items-center gap-2 px-3 py-2.5 bg-[#0f172a] border border-[#334155] rounded-xl text-left text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]",
+                    !tripData.startDate && "text-[#94a3b8]"
+                  )}
+                >
+                  <CalendarIcon size={14} className="text-[#94a3b8]" />
+                  {tripData.startDate ? (
+                    <span className="text-[#f8fafc]">{format(tripData.startDate, "dd/MM/yyyy")}</span>
+                  ) : (
+                    <span>Selecionar</span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-[#1e293b] border-[#334155]" align="start">
+                <Calendar
+                  mode="single"
+                  selected={tripData.startDate}
+                  onSelect={(date) => setTripData((prev) => ({ ...prev, startDate: date }))}
+                  disabled={(date) => date < new Date()}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto bg-[#1e293b] text-[#f8fafc]")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          {/* Time Picker */}
+          <div>
+            <label className="block text-xs text-[#94a3b8] mb-1">🕐 Horário partida</label>
+            <input
+              type="time"
+              value={tripData.departureTime}
+              onChange={(e) => setTripData((prev) => ({ ...prev, departureTime: e.target.value }))}
+              className="w-full px-3 py-2.5 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]"
+            />
+          </div>
+        </div>
+        
+        <p className="text-xs text-[#94a3b8]">
+          Origem: São Paulo (GRU) — Fuso: {getTimezoneCode('São Paulo')} (UTC-3)
+        </p>
+      </div>
+
+      {/* Return Flight */}
+      <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4 mb-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Plane size={18} className="text-[#0ea5e9] rotate-180" />
+          <span className="font-semibold text-[#f8fafc] font-['Outfit']">VOO DE VOLTA</span>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label className="block text-xs text-[#94a3b8] mb-1">📅 Data retorno</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className={cn(
+                    "w-full flex items-center gap-2 px-3 py-2.5 bg-[#0f172a] border border-[#334155] rounded-xl text-left text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]",
+                    !tripData.endDate && "text-[#94a3b8]"
+                  )}
+                >
+                  <CalendarIcon size={14} className="text-[#94a3b8]" />
+                  {tripData.endDate ? (
+                    <span className="text-[#f8fafc]">{format(tripData.endDate, "dd/MM/yyyy")}</span>
+                  ) : (
+                    <span>Selecionar</span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-[#1e293b] border-[#334155]" align="start">
+                <Calendar
+                  mode="single"
+                  selected={tripData.endDate}
+                  onSelect={(date) => setTripData((prev) => ({ ...prev, endDate: date }))}
+                  disabled={(date) => date < (tripData.startDate || new Date())}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto bg-[#1e293b] text-[#f8fafc]")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          <div>
+            <label className="block text-xs text-[#94a3b8] mb-1">🕐 Horário retorno</label>
+            <input
+              type="time"
+              value={tripData.returnTime}
+              onChange={(e) => setTripData((prev) => ({ ...prev, returnTime: e.target.value }))}
+              className="w-full px-3 py-2.5 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Flight Calculation Card */}
+      {tripData.destination && tripData.startDate && arrivalInfo && timezoneInfo && (
+        <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] border border-[#334155] rounded-2xl p-4 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="text-lg">📊</div>
+            <span className="font-semibold text-[#f8fafc] font-['Outfit']">CÁLCULO AUTOMÁTICO</span>
+          </div>
+          
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-[#94a3b8]">✈️</span>
+              <span className="text-[#f8fafc]">São Paulo → {tripData.destination}</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-[#94a3b8]">🛫</span>
+              <span className="text-[#94a3b8]">
+                Partida: {format(tripData.startDate, "dd/MM")} às {tripData.departureTime} (horário de Brasília)
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-[#94a3b8]">⏱️</span>
+              <span className="text-[#94a3b8]">Duração estimada: ~{flightDuration}h</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-[#94a3b8]">🛬</span>
+              <span className="text-[#f8fafc]">
+                Chegada: {arrivalInfo.nextDay ? format(arrivalInfo.arrivalDate, "dd/MM") : format(tripData.startDate, "dd/MM")} às {arrivalInfo.arrivalTime} (horário de {tripData.destination})
+              </span>
+            </div>
+            
+            <div className="h-px bg-[#334155] my-3" />
+            
+            <div className="flex items-center gap-2">
+              <span className="text-lg">⏰</span>
+              <span className="text-[#f8fafc]">
+                Diferença de fuso: {timezoneInfo.diff >= 0 ? '+' : ''}{timezoneInfo.diff} horas
+              </span>
+            </div>
+            
+            {jetLagImpact && (
+              <div 
+                className="flex items-center gap-2 px-3 py-2 rounded-lg mt-2"
+                style={{ backgroundColor: jetLagImpact.bgColor }}
+              >
+                <Brain size={16} style={{ color: jetLagImpact.color }} />
+                <span style={{ color: jetLagImpact.color }} className="font-medium">
+                  Impacto no corpo: {jetLagImpact.level}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Biology-Aware AI Toggle */}
+      {jetLagImpact && jetLagImpact.level !== 'BAIXO' && (
+        <div 
+          className="border rounded-2xl p-4 mb-4 transition-all"
+          style={{ 
+            backgroundColor: 'rgba(234, 179, 8, 0.08)',
+            borderColor: '#eab308' 
+          }}
+        >
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <Brain size={20} className="text-[#eab308]" />
+              <span className="font-semibold text-[#f8fafc] font-['Outfit']">
+                Biology-Aware AI
+              </span>
+            </div>
+            <Switch
+              checked={tripData.jetLagModeEnabled}
+              onCheckedChange={(checked) => setTripData((prev) => ({ ...prev, jetLagModeEnabled: checked }))}
+              className="data-[state=checked]:bg-[#10b981]"
+            />
+          </div>
+          
+          <p className="text-[#f8fafc] text-sm mb-2">
+            Detectamos +{Math.abs(timezoneInfo?.diff || 0)}h de fuso horário.
+          </p>
+          <p className="text-[#94a3b8] text-sm">
+            {tripData.jetLagModeEnabled 
+              ? "O Dia 1 será otimizado para neutralização de Jet Lag. Atividades leves e tempo para adaptação."
+              : "⚠️ Roteiro normal ativado. Seu corpo pode reclamar, mas você manda!"
+            }
+          </p>
+        </div>
+      )}
+
+      {/* Days Summary */}
+      {calculateDays() > 0 && (
+        <div className="bg-[#10b981]/20 border border-[#10b981] rounded-xl p-4 mb-4">
+          <p className="text-[#f8fafc] font-['Outfit'] text-center text-lg">
+            ✨ {calculateDays()} dias de aventura!
+          </p>
+        </div>
+      )}
+
+      {/* Golden Tip */}
+      <div className="bg-[#eab308]/10 border-l-2 border-[#eab308] rounded-r-xl p-4">
+        <p className="text-[#f8fafc] text-sm">
+          💡 <span className="text-[#eab308] font-medium">Dica de Ouro:</span>{' '}
+          {tripData.departureTime >= '21:00' || tripData.departureTime <= '06:00'
+            ? "Voo noturno é ótimo! Tenta dormir no avião que você chega mais disposto. 🌿"
+            : "Evita alta temporada pra economizar até 40%"
+          }
+        </p>
+      </div>
     </div>
   );
 };

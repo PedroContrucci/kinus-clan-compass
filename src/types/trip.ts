@@ -137,16 +137,171 @@ export interface SavedTrip {
   createdAt: string;
 }
 
+export interface FlightTimeData {
+  departureTime: string; // HH:MM format
+  returnTime: string;    // HH:MM format
+}
+
 export interface TripData {
   destination: string;
   startDate: Date | undefined;
   endDate: Date | undefined;
+  departureTime: string;
+  returnTime: string;
   travelers: number;
   travelType: string;
   budgetAmount: number;
   budgetType: string;
   priorities: string[];
+  jetLagModeEnabled: boolean;
 }
+
+// Activity intensity levels
+export type ActivityIntensity = 'light' | 'moderate' | 'intense' | 'very_intense';
+
+export interface ActivityImage {
+  url: string;
+  alt: string;
+}
+
+// Activity images database
+export const ACTIVITY_IMAGES: Record<string, ActivityImage> = {
+  // Paris
+  'torre-eiffel': { url: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce65f4?w=800&q=80', alt: 'Torre Eiffel' },
+  'louvre': { url: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=800&q=80', alt: 'Museu do Louvre' },
+  'montmartre': { url: 'https://images.unsplash.com/photo-1550340499-a6c60fc8287c?w=800&q=80', alt: 'Montmartre' },
+  'sena-cruzeiro': { url: 'https://images.unsplash.com/photo-1478391679764-b2d8b3cd1e94?w=800&q=80', alt: 'Cruzeiro no Sena' },
+  'notre-dame': { url: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=800&q=80', alt: 'Notre Dame' },
+  'versailles': { url: 'https://images.unsplash.com/photo-1551410224-699683e15636?w=800&q=80', alt: 'Palácio de Versailles' },
+  'cafe-paris': { url: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80', alt: 'Café Parisiense' },
+  'marais': { url: 'https://images.unsplash.com/photo-1550340499-a6c60fc8287c?w=800&q=80', alt: 'Le Marais' },
+  'aeroporto-cdg': { url: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80', alt: 'Aeroporto CDG' },
+  'hotel': { url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80', alt: 'Hotel' },
+  'taxi': { url: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&q=80', alt: 'Táxi' },
+  'restaurante': { url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80', alt: 'Restaurante' },
+  // Tóquio
+  'shibuya': { url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800&q=80', alt: 'Shibuya Crossing' },
+  'senso-ji': { url: 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800&q=80', alt: 'Templo Senso-ji' },
+  'meiji': { url: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&q=80', alt: 'Santuário Meiji' },
+  // Lisboa
+  'belem': { url: 'https://images.unsplash.com/photo-1585208798174-6cedd86e019a?w=800&q=80', alt: 'Torre de Belém' },
+  'alfama': { url: 'https://images.unsplash.com/photo-1569959220744-ff553533f492?w=800&q=80', alt: 'Alfama' },
+  // Default
+  'default': { url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80', alt: 'Destino' },
+};
+
+// Flight duration estimates in hours (origin-destination)
+export const FLIGHT_DURATION: Record<string, number> = {
+  'São Paulo-Paris': 11.5,
+  'São Paulo-Tóquio': 24,
+  'São Paulo-Nova York': 10,
+  'São Paulo-Lisboa': 9,
+  'São Paulo-Dubai': 14,
+  'São Paulo-Londres': 11,
+  'São Paulo-Roma': 12,
+  'São Paulo-Barcelona': 11,
+  'São Paulo-Amsterdã': 12,
+  'São Paulo-Sydney': 20,
+  'São Paulo-Bali': 22,
+  'São Paulo-Marrakech': 12,
+  'São Paulo-Santorini': 14,
+  'Brasil-Paris': 11.5,
+  'Brasil-Tóquio': 24,
+  'Brasil-Nova York': 10,
+  'Brasil-Lisboa': 9,
+  'Brasil-Roma': 12,
+  'Brasil-Bali': 22,
+};
+
+// Calculate jet lag impact level
+export const calculateJetLagImpact = (timezoneDiff: number): {
+  level: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO';
+  color: string;
+  bgColor: string;
+  description: string;
+} => {
+  const diff = Math.abs(timezoneDiff);
+  if (diff <= 2) {
+    return {
+      level: 'BAIXO',
+      color: '#10b981',
+      bgColor: 'rgba(16, 185, 129, 0.1)',
+      description: 'Impacto mínimo no corpo. Roteiro normal liberado!',
+    };
+  }
+  if (diff <= 5) {
+    return {
+      level: 'MODERADO',
+      color: '#eab308',
+      bgColor: 'rgba(234, 179, 8, 0.1)',
+      description: 'Seu corpo vai precisar de adaptação. Dia 1 será leve.',
+    };
+  }
+  if (diff <= 8) {
+    return {
+      level: 'ALTO',
+      color: '#f97316',
+      bgColor: 'rgba(249, 115, 22, 0.1)',
+      description: 'Impacto significativo. Recomendamos roteiro muito leve no Dia 1.',
+    };
+  }
+  return {
+    level: 'SEVERO',
+    color: '#ef4444',
+    bgColor: 'rgba(239, 68, 68, 0.1)',
+    description: 'Impacto severo. Dia 1 focado em descanso e adaptação.',
+  };
+};
+
+// Calculate arrival time considering timezone
+export const calculateArrivalTime = (
+  departureTime: string,
+  departureDate: Date,
+  flightDuration: number,
+  timezoneDiff: number
+): { arrivalTime: string; arrivalDate: Date; nextDay: boolean } => {
+  const [hours, minutes] = departureTime.split(':').map(Number);
+  const departure = new Date(departureDate);
+  departure.setHours(hours, minutes, 0, 0);
+  
+  // Add flight duration
+  const arrivalLocal = new Date(departure.getTime() + flightDuration * 60 * 60 * 1000);
+  
+  // Add timezone difference
+  arrivalLocal.setHours(arrivalLocal.getHours() + timezoneDiff);
+  
+  const arrivalHours = arrivalLocal.getHours().toString().padStart(2, '0');
+  const arrivalMinutes = arrivalLocal.getMinutes().toString().padStart(2, '0');
+  
+  const nextDay = arrivalLocal.getDate() !== departure.getDate();
+  
+  return {
+    arrivalTime: `${arrivalHours}:${arrivalMinutes}`,
+    arrivalDate: arrivalLocal,
+    nextDay,
+  };
+};
+
+// Get intensity badge styling
+export const getIntensityBadge = (intensity: ActivityIntensity): {
+  icon: string;
+  label: string;
+  bgColor: string;
+  textColor: string;
+} => {
+  switch (intensity) {
+    case 'light':
+      return { icon: '🧘', label: 'Leve', bgColor: 'bg-emerald-500/20', textColor: 'text-emerald-400' };
+    case 'moderate':
+      return { icon: '🚶', label: 'Moderada', bgColor: 'bg-blue-500/20', textColor: 'text-blue-400' };
+    case 'intense':
+      return { icon: '🏃', label: 'Intensa', bgColor: 'bg-orange-500/20', textColor: 'text-orange-400' };
+    case 'very_intense':
+      return { icon: '⚡', label: 'Muito Intensa', bgColor: 'bg-red-500/20', textColor: 'text-red-400' };
+    default:
+      return { icon: '🚶', label: 'Moderada', bgColor: 'bg-blue-500/20', textColor: 'text-blue-400' };
+  }
+};
 
 // Timezone database (simplified)
 export const timezoneOffsets: Record<string, number> = {
