@@ -1,8 +1,12 @@
 export { DayNavigator, generateDayCards } from './DayNavigator';
 export { FlightAnchorCard } from './FlightAnchorCard';
+export { MinimalFlightCard } from './MinimalFlightCard';
 export { EnhancedActivityCard, getActivityImage, getActivityIcon } from './EnhancedActivityCard';
+export { MinimalActivityCard } from './MinimalActivityCard';
 export { TransportCard } from './TransportCard';
 export { DailyFinancialSummary } from './DailyFinancialSummary';
 export { TripHeaderSummary } from './TripHeaderSummary';
 export { TripTimeline } from './TripTimeline';
 export { BudgetTracker, CostBadge, BudgetAllocationDisplay } from './BudgetTracker';
+export { BudgetInsufficientAlert } from './BudgetInsufficientAlert';
+export { CompactBudgetHeader } from './CompactBudgetHeader';

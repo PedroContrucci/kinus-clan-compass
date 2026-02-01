@@ -19,17 +19,18 @@ import {
 import kinuLogo from '@/assets/KINU_logo.png';
 import { 
   DayNavigator, 
-  FlightAnchorCard, 
-  EnhancedActivityCard,
+  MinimalFlightCard, 
+  MinimalActivityCard,
   DailyFinancialSummary,
   TripHeaderSummary,
   TripTimeline,
   BudgetTracker,
-  BudgetAllocationDisplay,
+  CompactBudgetHeader,
+  BudgetInsufficientAlert,
   getActivityImage as getActivityImageFromComponent,
   getActivityIcon as getActivityIconFromComponent
 } from '@/components/planejar';
-import { allocateBudget } from '@/lib/budget';
+import { allocateBudget, checkBudgetOverflow } from '@/lib/budget';
 
 interface Activity {
   time: string;
@@ -717,17 +718,13 @@ const Planejar = () => {
             totalSpent={totalSpent + outboundFlight.totalPrice + returnFlight.totalPrice}
           />
 
-          {/* Budget Tracker - Real-time saldo display */}
-          {!isTransitDay && currentItineraryDay && (
-            <BudgetTracker
-              totalBudget={userBudget}
-              tripDays={totalDays}
-              currentDaySpent={currentDaySpent}
-              totalSpent={totalSpent + outboundFlight.totalPrice + returnFlight.totalPrice}
-              currentDate={currentDayDate}
-              dayNumber={selectedDay}
-            />
-          )}
+          {/* Compact Budget Header - Always visible */}
+          <CompactBudgetHeader
+            totalSpent={totalSpent + outboundFlight.totalPrice + returnFlight.totalPrice}
+            totalBudget={userBudget}
+            isOverBudget={checkBudgetOverflow(totalSpent + outboundFlight.totalPrice + returnFlight.totalPrice, userBudget).isOverBudget}
+            overflowPercent={checkBudgetOverflow(totalSpent + outboundFlight.totalPrice + returnFlight.totalPrice, userBudget).percentage}
+          />
 
           {/* Day Navigator with Real Dates */}
           <DayNavigator
@@ -787,7 +784,7 @@ const Planejar = () => {
           {/* Flight Anchor Card - Transit Day */}
           {isTransitDay && (
             <div className="mb-6">
-              <FlightAnchorCard
+              <MinimalFlightCard
                 type="outbound"
                 flight={outboundFlight}
                 timezoneDiff={jetLagInfo?.diff}
@@ -799,7 +796,7 @@ const Planejar = () => {
           {/* Flight Anchor Card - Last Day */}
           {selectedDay === totalDaysWithTransit && (
             <div className="mb-6">
-              <FlightAnchorCard
+              <MinimalFlightCard
                 type="return"
                 flight={returnFlight}
                 onSearchOffers={() => setAuctionModal({ isOpen: true, activityName: 'Voo de Volta', activityType: 'flight' })}
@@ -821,39 +818,27 @@ const Planejar = () => {
                 {currentItineraryDay.activities.map((activity, index) => {
                   const activityKey = `day${currentItineraryDay.day}-act${index}`;
                   const isPinned = pinnedActivities.has(activityKey);
-                  // Jet lag friendly only for the first experience day (day 1 in itinerary)
-                  const isJetLagFriendly = tripData.jetLagModeEnabled && isFirstExperienceDay;
-                  const intensity = getActivityIntensity(activity.type, activity.duration);
                   
-                  // Build enhanced activity data
-                  const enhancedActivity = {
+                  // Build minimal activity data
+                  const minimalActivity = {
                     id: activityKey,
                     time: activity.time,
-                    endTime: undefined,
                     name: activity.name,
                     description: activity.description,
                     duration: activity.duration,
                     type: activity.type,
-                    intensity: intensity,
-                    cost: {
-                      items: activity.cost > 0 ? [
-                        { name: activity.name, unitPrice: activity.cost / tripData.travelers, quantity: tripData.travelers }
-                      ] : [],
-                      total: activity.cost,
-                      totalBRL: activity.cost,
-                      currency: 'R$',
-                    },
+                    cost: activity.cost,
+                    costBreakdown: activity.cost > 0 ? `~R$ ${Math.round(activity.cost / tripData.travelers)}/pessoa × ${tripData.travelers}` : undefined,
                     status: isPinned ? 'pinned' as const : 'planned' as const,
                     clanTip: index % 3 === 0 ? { text: getClanTip(activity.type).split('—')[0].trim(), author: getClanTip(activity.type).split('—')[1]?.trim() || '@Clã' } : undefined,
                   };
                   
                   return (
-                    <EnhancedActivityCard
+                    <MinimalActivityCard
                       key={activityKey}
-                      activity={enhancedActivity}
+                      activity={minimalActivity}
                       date={currentDayDate}
                       isPinned={isPinned}
-                      isJetLagFriendly={isJetLagFriendly}
                       dailyBudget={dailyBudget}
                       onTogglePin={() => togglePinActivity(activityKey)}
                       onOpenAuction={() => setAuctionModal({ isOpen: true, activityName: activity.name, activityType: activity.type })}
