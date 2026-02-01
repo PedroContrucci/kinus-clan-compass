@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Search, Users, Wallet, Clock, Euro, RotateCcw, Trash2, Pin, Tag, CalendarIcon, Plane, Brain, Info } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -17,6 +17,16 @@ import {
   ACTIVITY_IMAGES, getIntensityBadge, ActivityIntensity
 } from '@/types/trip';
 import kinuLogo from '@/assets/KINU_logo.png';
+import { 
+  DayNavigator, 
+  FlightAnchorCard, 
+  EnhancedActivityCard,
+  DailyFinancialSummary,
+  TripHeaderSummary,
+  TripTimeline,
+  getActivityImage as getActivityImageFromComponent,
+  getActivityIcon as getActivityIconFromComponent
+} from '@/components/planejar';
 
 interface Activity {
   time: string;
@@ -506,6 +516,83 @@ const Planejar = () => {
   // Result Screen
   if (generatedItinerary) {
     const currentDay = generatedItinerary.itinerary.find((d) => d.day === selectedDay);
+    const startDate = tripData.startDate || new Date();
+    const endDate = tripData.endDate || addDays(startDate, generatedItinerary.days - 1);
+    const currentDayDate = addDays(startDate, selectedDay - 1);
+    
+    // Generate day info for navigator
+    const dayIcons = generatedItinerary.itinerary.map(d => d.icon);
+    const dayTitles = generatedItinerary.itinerary.map(d => d.title);
+    
+    // Calculate experience days (excluding transit)
+    const totalDays = differenceInDays(endDate, startDate) + 1;
+    const experienceDays = totalDays - 1; // Day 1 is transit
+    
+    // Calculate daily expenses for current day
+    const currentDayExpenses = currentDay?.activities.map(act => ({
+      icon: getActivityIcon(act.type),
+      name: act.name,
+      amount: act.cost,
+      category: act.type as 'attraction' | 'food' | 'transport' | 'accommodation' | 'shopping'
+    })) || [];
+    
+    const averageDailySpend = generatedItinerary.estimatedBudget / generatedItinerary.days;
+    
+    // Timeline data
+    const timelineData = generatedItinerary.itinerary.map((day, idx) => ({
+      dayNumber: day.day,
+      date: addDays(startDate, idx),
+      icon: day.icon,
+      title: day.title,
+      totalCost: day.activities.reduce((sum, a) => sum + a.cost, 0),
+      isTransit: idx === 0,
+    }));
+    
+    const totalSpent = timelineData.reduce((sum, d) => sum + d.totalCost, 0);
+    
+    // Generate mock flight data
+    const outboundFlight = {
+      origin: 'São Paulo',
+      originCode: 'GRU',
+      destination: generatedItinerary.destination,
+      destinationCode: generatedItinerary.destination === 'Paris' ? 'CDG' : 
+                       generatedItinerary.destination === 'Tóquio' ? 'NRT' :
+                       generatedItinerary.destination === 'Lisboa' ? 'LIS' : 'XXX',
+      departureDate: startDate,
+      departureTime: tripData.departureTime || '22:30',
+      arrivalDate: addDays(startDate, 1),
+      arrivalTime: jetLagInfo ? 
+        calculateArrivalTime(tripData.departureTime || '22:30', startDate, 
+          FLIGHT_DURATION[`São Paulo-${generatedItinerary.destination}`] || 11.5,
+          jetLagInfo.diff).arrivalTime : '14:00',
+      duration: `${FLIGHT_DURATION[`São Paulo-${generatedItinerary.destination}`] || 11.5}h`,
+      airline: 'LATAM',
+      flightNumber: 'LA8044',
+      stops: 0,
+      pricePerPerson: 3100,
+      totalPrice: 3100 * tripData.travelers,
+      travelers: tripData.travelers,
+      status: 'bidding' as const,
+    };
+    
+    const returnFlight = {
+      origin: generatedItinerary.destination,
+      originCode: outboundFlight.destinationCode,
+      destination: 'São Paulo',
+      destinationCode: 'GRU',
+      departureDate: endDate,
+      departureTime: tripData.returnTime || '23:00',
+      arrivalDate: addDays(endDate, 1),
+      arrivalTime: '06:00',
+      duration: `${FLIGHT_DURATION[`São Paulo-${generatedItinerary.destination}`] || 11.5}h`,
+      airline: 'Air France',
+      flightNumber: 'AF456',
+      stops: 0,
+      pricePerPerson: 3200,
+      totalPrice: 3200 * tripData.travelers,
+      travelers: tripData.travelers,
+      status: 'bidding' as const,
+    };
 
     return (
       <div className="min-h-screen bg-[#0f172a] pb-20">
@@ -526,34 +613,48 @@ const Planejar = () => {
                 Teu roteiro pra {generatedItinerary.destination} está pronto! 🌿
               </h1>
               <p className="text-sm text-[#94a3b8]">
-                {generatedItinerary.days} dias • R$ {generatedItinerary.estimatedBudget.toLocaleString()} estimado • {generatedItinerary.focusAreas.join(' e ')}
+                {format(startDate, 'dd/MM')} - {format(endDate, 'dd/MM')} • R$ {generatedItinerary.estimatedBudget.toLocaleString()} estimado
               </p>
             </div>
           </div>
         </header>
 
         <main className="px-4 py-6">
-          {/* Day Timeline */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-4 font-['Outfit'] text-[#f8fafc]">📅 Roteiro Dia a Dia</h2>
-            <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
-              {generatedItinerary.itinerary.map((day) => (
-                <button
-                  key={day.day}
-                  onClick={() => handleDayChange(day.day)}
-                  className={`flex-shrink-0 p-4 rounded-2xl transition-all duration-200 border ${
-                    selectedDay === day.day
-                      ? 'bg-[#1e293b] border-[#10b981] ring-2 ring-[#10b981]/30'
-                      : 'bg-[#1e293b] border-[#334155] hover:border-[#10b981]/50'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">{day.icon}</div>
-                  <div className="font-semibold text-[#f8fafc] font-['Outfit']">Dia {day.day}</div>
-                  <div className="text-xs text-[#94a3b8] max-w-[80px] truncate font-['Plus_Jakarta_Sans']">{day.title}</div>
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Trip Header Summary */}
+          <TripHeaderSummary
+            destination={generatedItinerary.destination}
+            country={destinationCountries[generatedItinerary.destination] || 'País'}
+            emoji={destinationEmojis[generatedItinerary.destination] || '✈️'}
+            startDate={startDate}
+            endDate={endDate}
+            totalDays={totalDays}
+            experienceDays={experienceDays}
+            budget={tripData.budgetAmount || generatedItinerary.estimatedBudget}
+            travelers={tripData.travelers}
+            priorities={tripData.priorities}
+            jetLagEnabled={tripData.jetLagModeEnabled}
+            jetLagImpact={jetLagInfo?.level}
+            arrivalDate={addDays(startDate, 1)}
+          />
+          
+          {/* Timeline Overview */}
+          <TripTimeline
+            startDate={startDate}
+            days={timelineData}
+            totalBudget={tripData.budgetAmount || generatedItinerary.estimatedBudget}
+            totalSpent={totalSpent + outboundFlight.totalPrice + returnFlight.totalPrice}
+          />
+
+          {/* Day Navigator with Real Dates */}
+          <DayNavigator
+            startDate={startDate}
+            totalDays={generatedItinerary.days}
+            selectedDay={selectedDay}
+            onDayChange={handleDayChange}
+            jetLagModeEnabled={tripData.jetLagModeEnabled}
+            icons={dayIcons}
+            titles={dayTitles}
+          />
 
           {/* Jet Lag Mode Banner */}
           {tripData.jetLagModeEnabled && selectedDay === 1 && jetLagInfo && jetLagInfo.level !== 'BAIXO' && (
@@ -578,6 +679,29 @@ const Planejar = () => {
               </p>
             </div>
           )}
+          
+          {/* Flight Anchor Card - Day 1 */}
+          {selectedDay === 1 && (
+            <div className="mb-6">
+              <FlightAnchorCard
+                type="outbound"
+                flight={outboundFlight}
+                timezoneDiff={jetLagInfo?.diff}
+                onSearchOffers={() => setAuctionModal({ isOpen: true, activityName: 'Voo de Ida', activityType: 'flight' })}
+              />
+            </div>
+          )}
+          
+          {/* Flight Anchor Card - Last Day */}
+          {selectedDay === generatedItinerary.days && (
+            <div className="mb-6">
+              <FlightAnchorCard
+                type="return"
+                flight={returnFlight}
+                onSearchOffers={() => setAuctionModal({ isOpen: true, activityName: 'Voo de Volta', activityType: 'flight' })}
+              />
+            </div>
+          )}
 
           {/* Day Activities */}
           {currentDay && (
@@ -587,7 +711,7 @@ const Planejar = () => {
               }`}
             >
               <h3 className="font-semibold text-lg mb-4 text-[#f8fafc] font-['Outfit']">
-                Dia {currentDay.day}: {currentDay.title}
+                {format(currentDayDate, 'EEEE dd/MM', { locale: ptBR })} — {currentDay.title}
               </h3>
               <div className="space-y-4">
                 {currentDay.activities.map((activity, index) => {
@@ -595,119 +719,57 @@ const Planejar = () => {
                   const isPinned = pinnedActivities.has(activityKey);
                   const isJetLagFriendly = tripData.jetLagModeEnabled && currentDay.day === 1;
                   const intensity = getActivityIntensity(activity.type, activity.duration);
-                  const intensityBadge = getIntensityBadge(intensity);
-                  const activityImage = getActivityImage(activity.name, activity.type);
+                  
+                  // Build enhanced activity data
+                  const enhancedActivity = {
+                    id: activityKey,
+                    time: activity.time,
+                    endTime: undefined,
+                    name: activity.name,
+                    description: activity.description,
+                    duration: activity.duration,
+                    type: activity.type,
+                    intensity: intensity,
+                    cost: {
+                      items: activity.cost > 0 ? [
+                        { name: activity.name, unitPrice: activity.cost / tripData.travelers, quantity: tripData.travelers }
+                      ] : [],
+                      total: activity.cost,
+                      totalBRL: activity.cost,
+                      currency: 'R$',
+                    },
+                    status: isPinned ? 'pinned' as const : 'planned' as const,
+                    clanTip: index % 3 === 0 ? { text: getClanTip(activity.type).split('—')[0].trim(), author: getClanTip(activity.type).split('—')[1]?.trim() || '@Clã' } : undefined,
+                  };
                   
                   return (
-                    <div 
-                      key={index} 
-                      className={`bg-[#1e293b] border border-[#334155] rounded-2xl overflow-hidden transition-all hover:border-[#10b981]/50 ${
-                        isPinned ? 'ring-2 ring-[#10b981]/50' : ''
-                      }`}
-                    >
-                      {/* Activity Image */}
-                      <div className="relative aspect-video overflow-hidden">
-                        <img 
-                          src={activityImage.url} 
-                          alt={activityImage.alt}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/80 to-transparent" />
-                        
-                        {/* Badges overlay */}
-                        <div className="absolute top-3 left-3 flex gap-2">
-                          {/* Intensity Badge */}
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${intensityBadge.bgColor} ${intensityBadge.textColor}`}>
-                            {intensityBadge.icon} {intensityBadge.label}
-                          </span>
-                          
-                          {/* Jet Lag Friendly Badge */}
-                          {isJetLagFriendly && intensity === 'light' && (
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-emerald-500/30 text-emerald-300">
-                              🧘 Jet Lag Friendly
-                            </span>
-                          )}
-                        </div>
-                        
-                        {/* Pinned indicator */}
-                        {isPinned && (
-                          <div className="absolute top-3 right-3">
-                            <span className="text-xs bg-[#10b981] text-white px-2 py-1 rounded-full">
-                              📌 Fixado
-                            </span>
-                          </div>
-                        )}
-                        
-                        {/* Time overlay */}
-                        <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                          <span className="text-white text-lg font-semibold font-['Outfit']">
-                            {getActivityIcon(activity.type)} {activity.time}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* Activity Content */}
-                      <div className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-[#f8fafc] font-['Outfit'] text-lg">{activity.name}</h4>
-                          {activity.cost > 0 && (
-                            <span className="text-[#10b981] font-medium">
-                              R$ {activity.cost}
-                            </span>
-                          )}
-                        </div>
-                        
-                        <p className="text-sm text-[#94a3b8] mb-2">{activity.description}</p>
-                        
-                        <div className="flex items-center gap-3 text-xs text-[#94a3b8] mb-3">
-                          <span>⏱️ {activity.duration}</span>
-                          {activity.cost === 0 && <span>💰 Gratuito</span>}
-                        </div>
-                        
-                        {/* Clan Tip (random for demo) */}
-                        {index % 3 === 0 && (
-                          <div className="bg-[#eab308]/10 border-l-2 border-[#eab308] rounded-r-lg p-3 mb-3">
-                            <p className="text-[#f8fafc] text-xs">
-                              💡 <span className="text-[#eab308] font-medium">Dica de Ouro:</span>{' '}
-                              {getClanTip(activity.type)}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {/* Activity Actions */}
-                        <div className="flex gap-2 flex-wrap">
-                          <button
-                            onClick={() => setAuctionModal({ isOpen: true, activityName: activity.name, activityType: activity.type })}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-[#10b981] transition-colors"
-                          >
-                            <Tag size={12} />
-                            Ver Ofertas
-                          </button>
-                          <button className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-[#10b981] transition-colors">
-                            <RotateCcw size={12} />
-                            Trocar
-                          </button>
-                          <button className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-red-500/50 transition-colors">
-                            <Trash2 size={12} />
-                          </button>
-                          <button
-                            onClick={() => togglePinActivity(activityKey)}
-                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-colors ${
-                              isPinned
-                                ? 'bg-[#10b981] text-white'
-                                : 'bg-[#0f172a] border border-[#334155] text-[#f8fafc] hover:border-[#10b981]'
-                            }`}
-                          >
-                            <Pin size={12} />
-                            {isPinned ? 'Fixado' : 'Fixar'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    <EnhancedActivityCard
+                      key={activityKey}
+                      activity={enhancedActivity}
+                      date={currentDayDate}
+                      isPinned={isPinned}
+                      isJetLagFriendly={isJetLagFriendly}
+                      onTogglePin={() => togglePinActivity(activityKey)}
+                      onOpenAuction={() => setAuctionModal({ isOpen: true, activityName: activity.name, activityType: activity.type })}
+                      onSwap={() => {}}
+                      onRemove={() => {}}
+                    />
                   );
                 })}
               </div>
+              
+              {/* Daily Financial Summary */}
+              <DailyFinancialSummary
+                date={currentDayDate}
+                expenses={currentDayExpenses}
+                averageDailySpend={averageDailySpend}
+                tip={selectedDay === 1 
+                  ? "Dia de chegada — gastos mínimos, foco em adaptação!"
+                  : selectedDay === generatedItinerary.days 
+                    ? "Último dia — aproveite cada momento!"
+                    : undefined
+                }
+              />
             </div>
           )}
 
