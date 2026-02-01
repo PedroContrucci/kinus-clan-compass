@@ -1,18 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Search, Calendar, Users, Wallet, Star, Clock, Euro, RotateCcw, Trash2 } from 'lucide-react';
-import { destinations } from '@/data/destinations';
+import { ArrowLeft, ArrowRight, Search, Users, Wallet, Clock, Euro, RotateCcw, Trash2, Pin, Tag, CalendarIcon } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
+import { Toaster } from '@/components/ui/toaster';
+import ReverseAuctionModal from '@/components/ReverseAuctionModal';
+import { TripData, SavedTrip, TripActivity, TripDay, defaultChecklist } from '@/types/trip';
 import kinuLogo from '@/assets/KINU_logo.png';
-
-interface TripData {
-  destination: string;
-  startDate: string;
-  endDate: string;
-  travelers: number;
-  travelType: string;
-  budget: string;
-  priorities: string[];
-}
 
 interface Activity {
   time: string;
@@ -74,10 +72,10 @@ const travelTypes = [
   { id: 'amigos', label: 'Amigos', icon: '👥' },
 ];
 
-const budgetOptions = [
-  { id: 'economico', label: 'Econômico', icon: '💰', range: 'R$ 3-5k', description: 'Hostels, street food' },
-  { id: 'conforto', label: 'Conforto', icon: '✨', range: 'R$ 5-10k', description: 'Hotéis 3-4★, mix' },
-  { id: 'elite', label: 'Elite', icon: '👑', range: 'R$ 10k+', description: 'Luxo total, sem limites' },
+const budgetPresets = [
+  { id: 'economico', label: 'Econômico', icon: '💰', min: 3000, max: 5000, description: 'Hostels, street food' },
+  { id: 'conforto', label: 'Conforto', icon: '✨', min: 5000, max: 12000, description: 'Hotéis 3-4★, mix' },
+  { id: 'elite', label: 'Elite', icon: '👑', min: 12000, max: 50000, description: 'Luxo total, sem limites' },
 ];
 
 const priorityOptions = [
@@ -91,6 +89,43 @@ const priorityOptions = [
   { id: 'relax', label: 'Relax', icon: '🧘' },
 ];
 
+const destinationEmojis: Record<string, string> = {
+  'Paris': '🗼',
+  'Tóquio': '🏯',
+  'Lisboa': '🚃',
+  'Barcelona': '🏖️',
+  'Roma': '🏛️',
+  'Bali': '🌴',
+  'Nova York': '🗽',
+  'Santorini': '🇬🇷',
+  'Amsterdã': '🚲',
+  'Marrakech': '🕌',
+};
+
+const destinationCountries: Record<string, string> = {
+  'Paris': 'França',
+  'Tóquio': 'Japão',
+  'Lisboa': 'Portugal',
+  'Barcelona': 'Espanha',
+  'Roma': 'Itália',
+  'Bali': 'Indonésia',
+  'Nova York': 'EUA',
+  'Santorini': 'Grécia',
+  'Amsterdã': 'Holanda',
+  'Marrakech': 'Marrocos',
+};
+
+const getBudgetClassification = (amount: number) => {
+  if (amount <= 0) return null;
+  if (amount <= 5000) {
+    return { type: 'economico', label: '💰 Modo Econômico', message: 'Vamos otimizar cada real!' };
+  }
+  if (amount <= 12000) {
+    return { type: 'conforto', label: '✨ Modo Conforto', message: 'Equilíbrio perfeito!' };
+  }
+  return { type: 'elite', label: '👑 Modo Elite', message: 'Sem limites, só experiências!' };
+};
+
 const Planejar = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -101,14 +136,17 @@ const Planejar = () => {
   const [selectedDay, setSelectedDay] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; activityName: string; activityType: string } | null>(null);
+  const [pinnedActivities, setPinnedActivities] = useState<Set<string>>(new Set());
 
   const [tripData, setTripData] = useState<TripData>({
     destination: '',
-    startDate: '',
-    endDate: '',
+    startDate: undefined,
+    endDate: undefined,
     travelers: 2,
     travelType: 'casal',
-    budget: 'conforto',
+    budgetAmount: 0,
+    budgetType: '',
     priorities: [],
   });
 
@@ -130,11 +168,17 @@ const Planejar = () => {
     }
   }, [isLoading]);
 
+  // Update budget type based on amount
+  useEffect(() => {
+    const classification = getBudgetClassification(tripData.budgetAmount);
+    if (classification) {
+      setTripData((prev) => ({ ...prev, budgetType: classification.type }));
+    }
+  }, [tripData.budgetAmount]);
+
   const calculateDays = () => {
     if (tripData.startDate && tripData.endDate) {
-      const start = new Date(tripData.startDate);
-      const end = new Date(tripData.endDate);
-      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const days = differenceInDays(tripData.endDate, tripData.startDate) + 1;
       return days > 0 ? days : 0;
     }
     return 0;
@@ -178,6 +222,23 @@ const Planejar = () => {
     }, 150);
   };
 
+  const handleBudgetPreset = (preset: typeof budgetPresets[0]) => {
+    const midValue = Math.round((preset.min + preset.max) / 2);
+    setTripData((prev) => ({ ...prev, budgetAmount: midValue, budgetType: preset.id }));
+  };
+
+  const togglePinActivity = (activityId: string) => {
+    setPinnedActivities((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(activityId)) {
+        newSet.delete(activityId);
+      } else {
+        newSet.add(activityId);
+      }
+      return newSet;
+    });
+  };
+
   const handleGenerateItinerary = async () => {
     setIsLoading(true);
     setError(null);
@@ -191,7 +252,16 @@ const Planejar = () => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify(tripData),
+          body: JSON.stringify({
+            destination: tripData.destination,
+            startDate: tripData.startDate?.toISOString(),
+            endDate: tripData.endDate?.toISOString(),
+            travelers: tripData.travelers,
+            travelType: tripData.travelType,
+            budget: tripData.budgetType,
+            budgetAmount: tripData.budgetAmount,
+            priorities: tripData.priorities,
+          }),
         }
       );
 
@@ -211,8 +281,74 @@ const Planejar = () => {
   };
 
   const handleSaveTrip = () => {
-    // TODO: Save to database
-    navigate('/viagens');
+    if (!generatedItinerary) return;
+
+    const tripId = `trip-${Date.now()}`;
+    const days = calculateDays();
+    
+    // Convert generated itinerary to trip format
+    const tripDays: TripDay[] = generatedItinerary.itinerary.map((day) => ({
+      day: day.day,
+      title: day.title,
+      icon: day.icon,
+      activities: day.activities.map((act, idx) => ({
+        id: `${tripId}-day${day.day}-act${idx}`,
+        time: act.time,
+        name: act.name,
+        description: act.description,
+        duration: act.duration,
+        cost: act.cost,
+        type: act.type,
+        status: pinnedActivities.has(`day${day.day}-act${idx}`) ? 'confirmed' as const : 'pending' as const,
+        category: act.type === 'food' ? 'comida' as const : 
+                  act.type === 'transport' ? 'transporte' as const : 
+                  act.type === 'relax' ? 'hotel' as const : 'passeio' as const,
+      })),
+    }));
+
+    const savedTrip: SavedTrip = {
+      id: tripId,
+      destination: generatedItinerary.destination,
+      country: destinationCountries[generatedItinerary.destination] || 'País',
+      emoji: destinationEmojis[generatedItinerary.destination] || '✈️',
+      startDate: tripData.startDate?.toISOString() || '',
+      endDate: tripData.endDate?.toISOString() || '',
+      budget: tripData.budgetAmount || generatedItinerary.estimatedBudget,
+      budgetType: tripData.budgetType,
+      travelers: tripData.travelers,
+      priorities: tripData.priorities,
+      status: 'planning',
+      progress: 0,
+      days: tripDays,
+      finances: {
+        confirmed: 0,
+        pending: generatedItinerary.estimatedBudget,
+        available: tripData.budgetAmount || generatedItinerary.estimatedBudget,
+        byCategory: {
+          voos: 0,
+          hoteis: 0,
+          passeios: 0,
+          comida: 0,
+          outros: 0,
+        },
+      },
+      checklist: defaultChecklist,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Save to localStorage
+    const existingTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+    existingTrips.push(savedTrip);
+    localStorage.setItem('kinu_trips', JSON.stringify(existingTrips));
+
+    toast({
+      title: "Roteiro salvo! 🌿",
+      description: "Agora é hora de fechar os detalhes.",
+    });
+
+    setTimeout(() => {
+      navigate('/viagens');
+    }, 1500);
   };
 
   const canProceed = () => {
@@ -224,7 +360,7 @@ const Planejar = () => {
       case 3:
         return tripData.travelers > 0 && tripData.travelType;
       case 4:
-        return tripData.budget;
+        return tripData.budgetAmount > 0;
       case 5:
         return tripData.priorities.length > 0;
       default:
@@ -251,6 +387,7 @@ const Planejar = () => {
         <p className="text-[#f8fafc] text-xl font-['Outfit'] text-center animate-pulse">
           {loadingMessages[loadingMessageIndex]}
         </p>
+        <Toaster />
       </div>
     );
   }
@@ -271,6 +408,7 @@ const Planejar = () => {
         >
           Tentar Novamente
         </button>
+        <Toaster />
       </div>
     );
   }
@@ -338,42 +476,74 @@ const Planejar = () => {
                 Dia {currentDay.day}: {currentDay.title}
               </h3>
               <div className="space-y-4">
-                {currentDay.activities.map((activity, index) => (
-                  <div key={index} className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className="text-xl">{getActivityIcon(activity.type)}</div>
-                      {index < currentDay.activities.length - 1 && (
-                        <div className="w-0.5 flex-1 bg-[#334155] mt-2" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2 text-sm text-[#94a3b8]">
-                          <Clock size={14} />
-                          {activity.time}
-                          {activity.cost > 0 && (
-                            <>
-                              <span>•</span>
-                              <Euro size={14} />
-                              {activity.cost}
-                            </>
-                          )}
+                {currentDay.activities.map((activity, index) => {
+                  const activityKey = `day${currentDay.day}-act${index}`;
+                  const isPinned = pinnedActivities.has(activityKey);
+                  
+                  return (
+                    <div key={index} className={`flex gap-3 ${isPinned ? 'bg-[#10b981]/10 -mx-2 px-2 py-2 rounded-xl border border-[#10b981]/30' : ''}`}>
+                      <div className="flex flex-col items-center">
+                        <div className="text-xl">{getActivityIcon(activity.type)}</div>
+                        {index < currentDay.activities.length - 1 && (
+                          <div className="w-0.5 flex-1 bg-[#334155] mt-2" />
+                        )}
+                      </div>
+                      <div className="flex-1 pb-4">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2 text-sm text-[#94a3b8]">
+                            <Clock size={14} />
+                            {activity.time}
+                            {activity.cost > 0 && (
+                              <>
+                                <span>•</span>
+                                <Euro size={14} />
+                                {activity.cost}
+                              </>
+                            )}
+                            {isPinned && (
+                              <span className="text-xs bg-[#10b981] text-white px-2 py-0.5 rounded-full">
+                                📌 Fixado
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <button className="p-1 hover:bg-[#0f172a] rounded transition-colors">
-                            <RotateCcw size={14} className="text-[#94a3b8]" />
+                        <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
+                        <p className="text-sm text-[#94a3b8]">{activity.description}</p>
+                        <p className="text-xs text-[#94a3b8] mt-1">⏱️ {activity.duration}</p>
+                        
+                        {/* Activity Actions */}
+                        <div className="flex gap-2 mt-3 flex-wrap">
+                          <button
+                            onClick={() => setAuctionModal({ isOpen: true, activityName: activity.name, activityType: activity.type })}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-[#10b981] transition-colors"
+                          >
+                            <Tag size={12} />
+                            Ver Ofertas
                           </button>
-                          <button className="p-1 hover:bg-[#0f172a] rounded transition-colors">
-                            <Trash2 size={14} className="text-[#94a3b8]" />
+                          <button className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-[#10b981] transition-colors">
+                            <RotateCcw size={12} />
+                            Trocar
+                          </button>
+                          <button className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-red-500/50 transition-colors">
+                            <Trash2 size={12} />
+                            Remover
+                          </button>
+                          <button
+                            onClick={() => togglePinActivity(activityKey)}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-colors ${
+                              isPinned
+                                ? 'bg-[#10b981] text-white'
+                                : 'bg-[#0f172a] border border-[#334155] text-[#f8fafc] hover:border-[#10b981]'
+                            }`}
+                          >
+                            <Pin size={12} />
+                            {isPinned ? 'Fixado' : 'Fixar'}
                           </button>
                         </div>
                       </div>
-                      <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
-                      <p className="text-sm text-[#94a3b8]">{activity.description}</p>
-                      <p className="text-xs text-[#94a3b8] mt-1">⏱️ {activity.duration}</p>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -430,6 +600,19 @@ const Planejar = () => {
 
         {/* Bottom Nav */}
         <BottomNav currentPath={location.pathname} />
+        
+        {/* Reverse Auction Modal */}
+        {auctionModal && (
+          <ReverseAuctionModal
+            isOpen={auctionModal.isOpen}
+            onClose={() => setAuctionModal(null)}
+            activityName={auctionModal.activityName}
+            activityType={auctionModal.activityType}
+            destination={generatedItinerary.destination}
+          />
+        )}
+        
+        <Toaster />
       </div>
     );
   }
@@ -502,7 +685,7 @@ const Planejar = () => {
           </div>
         )}
 
-        {/* Step 2: Dates */}
+        {/* Step 2: Dates - Interactive Calendar */}
         {currentStep === 2 && (
           <div className="animate-fade-in">
             <h2 className="text-2xl font-bold mb-6 font-['Outfit'] text-[#f8fafc]">
@@ -511,33 +694,69 @@ const Planejar = () => {
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm text-[#94a3b8] mb-2">Data de ida</label>
-                <div className="relative">
-                  <Calendar size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
-                  <input
-                    type="date"
-                    value={tripData.startDate}
-                    onChange={(e) => setTripData((prev) => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 bg-[#1e293b] border border-[#334155] rounded-xl text-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#10b981]"
-                  />
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className={cn(
+                        "w-full flex items-center gap-3 pl-4 pr-4 py-3 bg-[#1e293b] border border-[#334155] rounded-xl text-left focus:outline-none focus:ring-2 focus:ring-[#10b981]",
+                        !tripData.startDate && "text-[#94a3b8]"
+                      )}
+                    >
+                      <CalendarIcon size={20} className="text-[#94a3b8]" />
+                      {tripData.startDate ? (
+                        <span className="text-[#f8fafc]">{format(tripData.startDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                      ) : (
+                        <span>Seleciona a data de ida</span>
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-[#1e293b] border-[#334155]" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={tripData.startDate}
+                      onSelect={(date) => setTripData((prev) => ({ ...prev, startDate: date }))}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto bg-[#1e293b] text-[#f8fafc]")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div>
                 <label className="block text-sm text-[#94a3b8] mb-2">Data de volta</label>
-                <div className="relative">
-                  <Calendar size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
-                  <input
-                    type="date"
-                    value={tripData.endDate}
-                    onChange={(e) => setTripData((prev) => ({ ...prev, endDate: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 bg-[#1e293b] border border-[#334155] rounded-xl text-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#10b981]"
-                  />
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className={cn(
+                        "w-full flex items-center gap-3 pl-4 pr-4 py-3 bg-[#1e293b] border border-[#334155] rounded-xl text-left focus:outline-none focus:ring-2 focus:ring-[#10b981]",
+                        !tripData.endDate && "text-[#94a3b8]"
+                      )}
+                    >
+                      <CalendarIcon size={20} className="text-[#94a3b8]" />
+                      {tripData.endDate ? (
+                        <span className="text-[#f8fafc]">{format(tripData.endDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                      ) : (
+                        <span>Seleciona a data de volta</span>
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-[#1e293b] border-[#334155]" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={tripData.endDate}
+                      onSelect={(date) => setTripData((prev) => ({ ...prev, endDate: date }))}
+                      disabled={(date) => date < (tripData.startDate || new Date())}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto bg-[#1e293b] text-[#f8fafc]")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
             {calculateDays() > 0 && (
               <div className="bg-[#10b981]/20 border border-[#10b981] rounded-xl p-4 mb-4">
                 <p className="text-[#f8fafc] font-['Outfit'] text-center text-lg">
-                  ✨ {calculateDays()} dias de descobertas!
+                  ✨ {calculateDays()} dias de aventura!
                 </p>
               </div>
             )}
@@ -597,32 +816,70 @@ const Planejar = () => {
           </div>
         )}
 
-        {/* Step 4: Budget */}
+        {/* Step 4: Budget - Free Input with Classification */}
         {currentStep === 4 && (
           <div className="animate-fade-in">
             <h2 className="text-2xl font-bold mb-6 font-['Outfit'] text-[#f8fafc]">
               Qual o fôlego do teu bolso?
             </h2>
-            <div className="space-y-3">
-              {budgetOptions.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => setTripData((prev) => ({ ...prev, budget: option.id }))}
-                  className={`w-full p-4 rounded-xl border transition-all text-left ${
-                    tripData.budget === option.id
-                      ? 'bg-[#10b981]/20 border-[#10b981]'
-                      : 'bg-[#1e293b] border-[#334155] hover:border-[#10b981]/50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{option.icon}</span>
-                    <div>
-                      <p className="font-semibold text-[#f8fafc] font-['Outfit']">{option.label}</p>
-                      <p className="text-sm text-[#94a3b8]">{option.range} • {option.description}</p>
+            
+            {/* Free Input */}
+            <div className="mb-6">
+              <label className="block text-sm text-[#94a3b8] mb-2">Teu orçamento total</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94a3b8] font-medium">R$</span>
+                <input
+                  type="number"
+                  placeholder="Digite seu orçamento"
+                  value={tripData.budgetAmount || ''}
+                  onChange={(e) => setTripData((prev) => ({ ...prev, budgetAmount: parseInt(e.target.value) || 0 }))}
+                  className="w-full pl-12 pr-4 py-4 bg-[#1e293b] border border-[#334155] rounded-xl text-[#f8fafc] text-xl font-semibold placeholder-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#10b981]"
+                />
+              </div>
+              
+              {/* Budget Classification */}
+              {tripData.budgetAmount > 0 && (
+                <div className={`mt-4 p-4 rounded-xl border-l-4 ${
+                  getBudgetClassification(tripData.budgetAmount)?.type === 'economico' ? 'bg-[#10b981]/10 border-[#10b981]' :
+                  getBudgetClassification(tripData.budgetAmount)?.type === 'conforto' ? 'bg-[#0ea5e9]/10 border-[#0ea5e9]' :
+                  'bg-[#eab308]/10 border-[#eab308]'
+                }`}>
+                  <p className="text-[#f8fafc] font-semibold font-['Outfit']">
+                    {getBudgetClassification(tripData.budgetAmount)?.label}
+                  </p>
+                  <p className="text-[#94a3b8] text-sm">
+                    {getBudgetClassification(tripData.budgetAmount)?.message}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Presets */}
+            <div>
+              <p className="text-sm text-[#94a3b8] mb-3">Ou escolhe um modo rápido:</p>
+              <div className="space-y-3">
+                {budgetPresets.map((preset) => (
+                  <button
+                    key={preset.id}
+                    onClick={() => handleBudgetPreset(preset)}
+                    className={`w-full p-4 rounded-xl border transition-all text-left ${
+                      tripData.budgetType === preset.id
+                        ? 'bg-[#10b981]/20 border-[#10b981]'
+                        : 'bg-[#1e293b] border-[#334155] hover:border-[#10b981]/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{preset.icon}</span>
+                      <div>
+                        <p className="font-semibold text-[#f8fafc] font-['Outfit']">{preset.label}</p>
+                        <p className="text-sm text-[#94a3b8]">
+                          R$ {preset.min.toLocaleString()} - {preset.max.toLocaleString()} • {preset.description}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -696,6 +953,7 @@ const Planejar = () => {
 
       {/* Bottom Nav */}
       <BottomNav currentPath={location.pathname} />
+      <Toaster />
     </div>
   );
 };
