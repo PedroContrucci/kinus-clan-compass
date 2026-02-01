@@ -53,7 +53,7 @@ const Cla = () => {
       {/* Content */}
       <main className="px-4 py-6">
         <h1 className="text-2xl font-bold mb-2 font-['Outfit']">Sabedoria do Clã 🌿</h1>
-        <p className="text-muted-foreground mb-6">Roteiros testados por quem já foi</p>
+        <p className="text-muted-foreground mb-6">Milhares viajaram. Você herda a sabedoria.</p>
 
         {/* Filters */}
         <div className="flex gap-2 overflow-x-auto pb-4 mb-6 -mx-4 px-4 scrollbar-hide">
