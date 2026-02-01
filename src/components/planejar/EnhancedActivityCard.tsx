@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { Tag, Pin, RotateCcw, Trash2, Plus, MapPin, Star, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ActivityIntensity, getIntensityBadge, ACTIVITY_IMAGES } from '@/types/trip';
+import { getCostCategory, type CostCategory } from '@/lib/budget';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 interface CostItem {
@@ -37,6 +38,7 @@ interface EnhancedActivityCardProps {
   date: Date;
   isPinned: boolean;
   isJetLagFriendly: boolean;
+  dailyBudget?: number; // For cost category calculation
   onTogglePin: () => void;
   onOpenAuction: () => void;
   onSwap?: () => void;
@@ -44,54 +46,132 @@ interface EnhancedActivityCardProps {
 }
 
 export const getActivityImage = (name: string, type: string): string => {
-  const nameKey = name.toLowerCase()
+  const nameLower = name.toLowerCase();
+  
+  // Normalize activity name for matching
+  const normalizeKey = (str: string): string => {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove accents
+      .replace(/\s+/g, '-')
+      .toLowerCase();
+  };
+  
+  const nameKey = nameLower
+    // Paris
     .replace(/torre eiffel/i, 'torre-eiffel')
     .replace(/louvre/i, 'louvre')
-    .replace(/montmartre/i, 'montmartre')
-    .replace(/cruzeiro.*sena/i, 'sena-cruzeiro')
+    .replace(/montmartre|sacr[eé].?c[oœ]ur/i, 'montmartre')
+    .replace(/cruzeiro.*sena|sena.*cruzeiro/i, 'sena-cruzeiro')
     .replace(/notre.?dame/i, 'notre-dame')
     .replace(/versailles|versalhes/i, 'versailles')
     .replace(/marais/i, 'marais')
-    .replace(/café|cafe|coffee/i, 'cafe-paris')
-    .replace(/hotel|check.?in/i, 'hotel')
-    .replace(/transfer|taxi|uber/i, 'transfer')
-    .replace(/restaurante|jantar|almoço|breizh|ristorante|trattoria/i, 'restaurante')
-    .replace(/aeroporto|cdg|gru|fiumicino/i, 'aeroporto')
-    .replace(/shibuya/i, 'shibuya')
-    .replace(/senso.?ji/i, 'senso-ji')
-    .replace(/meiji/i, 'meiji')
-    .replace(/belém|belem/i, 'belem')
-    .replace(/alfama/i, 'alfama')
-    // Roma specific
+    .replace(/champs.?[eé]lys[eé]es/i, 'champs-elysees')
+    .replace(/arco.*triunfo/i, 'arco-triunfo')
+    
+    // Roma - Vaticano
     .replace(/vaticano|vatican/i, 'vaticano')
     .replace(/capela sistina|sistine/i, 'capela-sistina')
-    .replace(/basílica.*pedro|st.*peter/i, 'basilica-sao-pedro')
+    .replace(/bas[ií]lica.*pedro|st.*peter/i, 'basilica-sao-pedro')
     .replace(/museus.*vaticano|vatican.*museum/i, 'museus-vaticano')
+    .replace(/pra[çc]a.*s[ãa]o.*pedro/i, 'praca-sao-pedro')
+    
+    // Roma - Coliseu
     .replace(/coliseu|colosseum|colosseo/i, 'coliseu')
-    .replace(/forum.*romano|roman.*forum/i, 'forum-romano')
+    .replace(/forum.*romano|roman.*forum|f[oó]rum/i, 'forum-romano')
+    .replace(/arco.*constantino/i, 'arco-constantino')
     .replace(/palatino|palatine/i, 'palatino')
-    .replace(/trastevere/i, 'trastevere')
-    .replace(/villa.*este|villa d'este/i, 'villa-este')
-    .replace(/villa.*adriana|hadrian/i, 'villa-adriana')
+    
+    // Roma - Monumentos
     .replace(/fontana.*trevi|trevi.*fountain/i, 'fontana-trevi')
+    .replace(/pante[aã]o|pantheon/i, 'panteao')
     .replace(/piazza.*navona/i, 'piazza-navona')
-    .replace(/panteão|pantheon|panteao/i, 'panteao')
-    .replace(/escadaria.*espanhola|spanish.*steps/i, 'escadaria-espanhola')
+    .replace(/escadaria.*espanhola|spanish.*steps|trinit[aà]/i, 'escadaria-espanhola')
     .replace(/castel.*sant.*angelo/i, 'castel-santangelo')
-    .replace(/via.*del.*corso/i, 'via-del-corso')
+    
+    // Roma - Bairros
+    .replace(/trastevere/i, 'trastevere')
+    .replace(/campo.*de.*fiori/i, 'campo-de-fiori')
+    .replace(/via.*del.*corso|compras/i, 'via-del-corso')
+    
+    // Roma - Tivoli
+    .replace(/villa.*d.*este|villa.*este/i, 'villa-este')
+    .replace(/villa.*adriana|hadrian/i, 'villa-adriana')
+    .replace(/tivoli/i, 'villa-este')
+    
+    // Roma - Gastronomia
     .replace(/carbonara/i, 'carbonara')
-    .replace(/cacio.*pepe/i, 'cacio-pepe')
-    .replace(/gelato|sorvete/i, 'gelato-roma')
-    .replace(/pizza/i, 'pizza-roma')
-    .replace(/pasta|massa/i, 'pasta-roma');
+    .replace(/cacio.*e?.*pepe/i, 'cacio-e-pepe')
+    .replace(/gelato|sorvete|giolitti/i, 'gelato-roma')
+    .replace(/pizza|pizz[ae]ria/i, 'pizza-roma')
+    .replace(/pasta|massa/i, 'pasta-roma')
+    .replace(/tiramis[uù]/i, 'tiramisu')
+    .replace(/aperitivo/i, 'aperitivo-roma')
+    .replace(/suppl[ií]/i, 'suppli-roma')
+    
+    // Roma - Restaurantes
+    .replace(/roscioli/i, 'roscioli-salumeria')
+    .replace(/da.*enzo/i, 'da-enzo-trastevere')
+    .replace(/armando.*pantheon/i, 'armando-al-pantheon')
+    
+    // Tóquio
+    .replace(/shibuya/i, 'shibuya')
+    .replace(/senso.?ji|asakusa/i, 'senso-ji')
+    .replace(/meiji/i, 'meiji')
+    .replace(/shinjuku/i, 'shinjuku')
+    .replace(/harajuku/i, 'harajuku')
+    .replace(/akihabara/i, 'akihabara')
+    .replace(/tokyo.*tower/i, 'tokyo-tower')
+    .replace(/ramen/i, 'ramen-tokyo')
+    .replace(/sushi/i, 'sushi-tokyo')
+    
+    // Lisboa
+    .replace(/bel[eé]m/i, 'belem')
+    .replace(/torre.*bel[eé]m/i, 'torre-belem')
+    .replace(/alfama/i, 'alfama')
+    .replace(/sintra/i, 'sintra')
+    .replace(/pastel.*nata|past[eé]is/i, 'pastel-nata')
+    
+    // Barcelona
+    .replace(/sagrada.*fam[ií]lia/i, 'sagrada-familia')
+    .replace(/park.*g[uü]ell/i, 'park-guell')
+    .replace(/la.*rambla|ramblas|boqueria/i, 'la-rambla')
+    .replace(/barceloneta/i, 'barceloneta')
+    .replace(/g[oó]tico|barri.*g[oó]tic/i, 'gotico-barcelona')
+    .replace(/casa.*batll[oó]/i, 'casa-batllo')
+    .replace(/tapas/i, 'tapas-barcelona')
+    
+    // Genéricos
+    .replace(/café|cafe|coffee/i, 'cafe-paris')
+    .replace(/hotel|check.?in|hospedagem/i, 'hotel')
+    .replace(/transfer|taxi|uber/i, 'transfer')
+    .replace(/restaurante|jantar|almo[çc]o|ristorante|trattoria/i, 'restaurante')
+    .replace(/aeroporto|cdg|gru|fco|fiumicino|lis|bcn/i, 'aeroporto')
+    .replace(/metro|metr[ôo]/i, 'metro');
   
+  // Check exact match first
   for (const key of Object.keys(ACTIVITY_IMAGES)) {
     if (nameKey.includes(key)) {
       return ACTIVITY_IMAGES[key];
     }
   }
   
-  // Fallback by type
+  // Fallback by type with specific images
+  const typeFallbacks: Record<string, string> = {
+    'food': 'food',
+    'culture': 'culture',
+    'transport': 'transport',
+    'photo': 'photo',
+    'nature': 'nature',
+    'walk': 'walk',
+    'relax': 'relax',
+  };
+  
+  if (typeFallbacks[type] && ACTIVITY_IMAGES[typeFallbacks[type]]) {
+    return ACTIVITY_IMAGES[typeFallbacks[type]];
+  }
+  
+  // Legacy fallbacks
   if (type === 'food') return ACTIVITY_IMAGES['restaurante'];
   if (type === 'relax') return ACTIVITY_IMAGES['hotel'];
   if (type === 'transport') return ACTIVITY_IMAGES['transfer'];
@@ -116,6 +196,7 @@ export const EnhancedActivityCard = ({
   date,
   isPinned,
   isJetLagFriendly,
+  dailyBudget = 600, // Default daily budget
   onTogglePin,
   onOpenAuction,
   onSwap,
@@ -123,6 +204,8 @@ export const EnhancedActivityCard = ({
 }: EnhancedActivityCardProps) => {
   const intensityBadge = getIntensityBadge(activity.intensity);
   const activityImage = getActivityImage(activity.name, activity.type);
+  const costCategory = getCostCategory(activity.cost.totalBRL, dailyBudget);
+  const costPercentOfDaily = dailyBudget > 0 ? Math.round((activity.cost.totalBRL / dailyBudget) * 100) : 0;
   
   const statusColors = {
     planned: { border: 'border-border', label: '⚪ Planejado' },
@@ -132,6 +215,9 @@ export const EnhancedActivityCard = ({
   };
   
   const status = statusColors[isPinned ? 'pinned' : activity.status];
+  
+  // Premium/Luxury warning for high-cost items
+  const showCostWarning = costCategory.category === 'luxury' && costPercentOfDaily > 50;
 
   return (
     <div 
@@ -245,17 +331,44 @@ export const EnhancedActivityCard = ({
           </div>
         )}
         
-        {/* Simple cost display */}
+        {/* Simple cost display with category badge */}
         {activity.cost.items.length === 0 && activity.cost.totalBRL > 0 && (
           <div className="flex items-center justify-between mb-3 text-sm">
-            <span className="text-muted-foreground">💰 Custo estimado:</span>
-            <span className="font-medium text-primary">R$ {activity.cost.totalBRL.toLocaleString()}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">💰 Custo:</span>
+              <span 
+                className={cn(
+                  "px-2 py-0.5 rounded-full text-xs font-medium",
+                  costCategory.category === 'economic' || costCategory.category === 'normal' 
+                    ? "bg-primary/20 text-primary" 
+                    : "bg-[#eab308]/20 text-[#eab308]"
+                )}
+              >
+                {costCategory.icon} {costCategory.label}
+              </span>
+            </div>
+            <span 
+              className="font-semibold font-['Outfit']"
+              style={{ color: costCategory.color }}
+            >
+              R$ {activity.cost.totalBRL.toLocaleString()}
+            </span>
+          </div>
+        )}
+        
+        {/* Cost warning for luxury items */}
+        {showCostWarning && (
+          <div className="bg-[#eab308]/10 border border-[#eab308]/30 rounded-lg p-2 mb-3 text-xs">
+            <p className="text-[#eab308]">
+              ⚠️ Esta experiência consome {costPercentOfDaily}% do seu orçamento diário. 
+              Você precisará compensar em outros dias.
+            </p>
           </div>
         )}
         
         {activity.cost.totalBRL === 0 && (
           <div className="flex items-center gap-2 mb-3 text-sm text-primary">
-            💰 Gratuito
+            💚 Gratuito
           </div>
         )}
         
