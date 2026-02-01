@@ -5,3 +5,4 @@ export { TransportCard } from './TransportCard';
 export { DailyFinancialSummary } from './DailyFinancialSummary';
 export { TripHeaderSummary } from './TripHeaderSummary';
 export { TripTimeline } from './TripTimeline';
+export { BudgetTracker, CostBadge, BudgetAllocationDisplay } from './BudgetTracker';

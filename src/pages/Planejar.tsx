@@ -24,9 +24,12 @@ import {
   DailyFinancialSummary,
   TripHeaderSummary,
   TripTimeline,
+  BudgetTracker,
+  BudgetAllocationDisplay,
   getActivityImage as getActivityImageFromComponent,
   getActivityIcon as getActivityIconFromComponent
 } from '@/components/planejar';
+import { allocateBudget } from '@/lib/budget';
 
 interface Activity {
   time: string;
@@ -584,6 +587,14 @@ const Planejar = () => {
     
     const averageDailySpend = generatedItinerary.estimatedBudget / generatedItinerary.days;
     
+    // Budget allocation for Hard Budget system
+    const userBudget = tripData.budgetAmount || generatedItinerary.estimatedBudget;
+    const budgetAllocation = allocateBudget(userBudget, totalDays);
+    const dailyBudget = budgetAllocation.dailyBudget.total;
+    
+    // Calculate current day spending
+    const currentDaySpent = currentDayExpenses.reduce((sum, e) => sum + e.amount, 0);
+    
     // Timeline data - include transit day
     const timelineData = [
       // Transit day (departure)
@@ -705,6 +716,18 @@ const Planejar = () => {
             totalBudget={tripData.budgetAmount || generatedItinerary.estimatedBudget}
             totalSpent={totalSpent + outboundFlight.totalPrice + returnFlight.totalPrice}
           />
+
+          {/* Budget Tracker - Real-time saldo display */}
+          {!isTransitDay && currentItineraryDay && (
+            <BudgetTracker
+              totalBudget={userBudget}
+              tripDays={totalDays}
+              currentDaySpent={currentDaySpent}
+              totalSpent={totalSpent + outboundFlight.totalPrice + returnFlight.totalPrice}
+              currentDate={currentDayDate}
+              dayNumber={selectedDay}
+            />
+          )}
 
           {/* Day Navigator with Real Dates */}
           <DayNavigator
@@ -831,6 +854,7 @@ const Planejar = () => {
                       date={currentDayDate}
                       isPinned={isPinned}
                       isJetLagFriendly={isJetLagFriendly}
+                      dailyBudget={dailyBudget}
                       onTogglePin={() => togglePinActivity(activityKey)}
                       onOpenAuction={() => setAuctionModal({ isOpen: true, activityName: activity.name, activityType: activity.type })}
                       onSwap={() => {}}
