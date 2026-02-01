@@ -150,6 +150,10 @@ export const FREE_ACTIVITIES: Record<string, { name: string; cost: number; type:
     { name: 'Escadaria Espanhola', cost: 0, type: 'photo' },
     { name: 'Jardins de Villa Borghese', cost: 0, type: 'nature' },
     { name: 'Bairro Trastevere a pé', cost: 0, type: 'walk' },
+    { name: 'Campo de Fiori (mercado)', cost: 0, type: 'culture' },
+    { name: 'Basílica Santa Maria Maggiore', cost: 0, type: 'culture' },
+    { name: 'Ponte Sant\'Angelo', cost: 0, type: 'photo' },
+    { name: 'Bairro Judeu', cost: 0, type: 'walk' },
   ],
   'paris': [
     { name: 'Sacré-Cœur e Montmartre', cost: 0, type: 'culture' },
@@ -197,5 +201,215 @@ export const calculateBudgetState = (
     isOverBudget: overflow.isOverBudget,
     overflowAmount: overflow.excess,
     overflowPercentage: overflow.percentage,
+  };
+};
+
+// Spending breakdown analysis for reduction strategy
+export interface SpendingBreakdown {
+  flights: { cost: number; percent: number; isHighest: boolean };
+  accommodation: { cost: number; percent: number; nightlyCost: number; nights: number; isHighest: boolean };
+  activities: { cost: number; percent: number; mostExpensive: { name: string; cost: number }[]; isHighest: boolean };
+  food: { cost: number; percent: number; isHighest: boolean };
+  transport: { cost: number; percent: number; isHighest: boolean };
+}
+
+export const analyzeSpending = (
+  costs: {
+    flights: number;
+    accommodation: number;
+    accommodationNights: number;
+    activities: { name: string; cost: number }[];
+    food: number;
+    transport: number;
+  }
+): SpendingBreakdown => {
+  const activitiesCost = costs.activities.reduce((sum, a) => sum + a.cost, 0);
+  const total = costs.flights + costs.accommodation + activitiesCost + costs.food + costs.transport;
+  
+  const breakdown: SpendingBreakdown = {
+    flights: {
+      cost: costs.flights,
+      percent: Math.round((costs.flights / total) * 100),
+      isHighest: false
+    },
+    accommodation: {
+      cost: costs.accommodation,
+      percent: Math.round((costs.accommodation / total) * 100),
+      nightlyCost: Math.round(costs.accommodation / costs.accommodationNights),
+      nights: costs.accommodationNights,
+      isHighest: false
+    },
+    activities: {
+      cost: activitiesCost,
+      percent: Math.round((activitiesCost / total) * 100),
+      mostExpensive: [...costs.activities]
+        .sort((a, b) => b.cost - a.cost)
+        .slice(0, 3),
+      isHighest: false
+    },
+    food: {
+      cost: costs.food,
+      percent: Math.round((costs.food / total) * 100),
+      isHighest: false
+    },
+    transport: {
+      cost: costs.transport,
+      percent: Math.round((costs.transport / total) * 100),
+      isHighest: false
+    }
+  };
+  
+  // Find highest spending category
+  const entries = Object.entries(breakdown) as [keyof SpendingBreakdown, typeof breakdown[keyof SpendingBreakdown]][];
+  let maxKey: keyof SpendingBreakdown = 'flights';
+  let maxCost = 0;
+  
+  for (const [key, val] of entries) {
+    if (val.cost > maxCost) {
+      maxCost = val.cost;
+      maxKey = key;
+    }
+  }
+  
+  breakdown[maxKey].isHighest = true;
+  
+  return breakdown;
+};
+
+// Generate reduction suggestions
+export interface ReductionSuggestion {
+  id: string;
+  type: 'reduce_days' | 'change_hotel' | 'auction_activities' | 'economic_version';
+  title: string;
+  description: string;
+  savings: number;
+  newTotal: number;
+  stillOver: boolean;
+  details?: {
+    from?: string;
+    to?: string;
+    items?: { name: string; currentCost: number; targetCost: number }[];
+  };
+}
+
+export const generateReductionSuggestions = (
+  userBudget: number,
+  totalCost: number,
+  breakdown: SpendingBreakdown,
+  days: number
+): ReductionSuggestion[] => {
+  const suggestions: ReductionSuggestion[] = [];
+  const overflow = totalCost - userBudget;
+  
+  // Strategy 1: Reduce days
+  const daysToReduce = Math.min(2, Math.max(1, Math.ceil(overflow / (totalCost / days))));
+  const savingsFromDays = Math.round((breakdown.accommodation.cost / days) * daysToReduce + 
+    (breakdown.food.cost / days) * daysToReduce);
+  
+  suggestions.push({
+    id: 'reduce_days',
+    type: 'reduce_days',
+    title: `OPÇÃO 1: REDUZIR DIÁRIAS`,
+    description: `Reduzir de ${days} para ${days - daysToReduce} noites`,
+    savings: savingsFromDays,
+    newTotal: totalCost - savingsFromDays,
+    stillOver: totalCost - savingsFromDays > userBudget,
+  });
+  
+  // Strategy 2: Change hotel (if accommodation is significant)
+  if (breakdown.accommodation.percent >= 20) {
+    const cheaperNightlyCost = Math.round(breakdown.accommodation.nightlyCost * 0.65);
+    const hotelSavings = (breakdown.accommodation.nightlyCost - cheaperNightlyCost) * breakdown.accommodation.nights;
+    
+    suggestions.push({
+      id: 'change_hotel',
+      type: 'change_hotel',
+      title: 'OPÇÃO 2: TROCAR HOTEL',
+      description: `Trocar Hotel 4★ por Hotel 3★`,
+      savings: hotelSavings,
+      newTotal: totalCost - hotelSavings,
+      stillOver: totalCost - hotelSavings > userBudget,
+      details: {
+        from: `Hotel 4★ R$ ${breakdown.accommodation.nightlyCost}/noite`,
+        to: `Hotel 3★ R$ ${cheaperNightlyCost}/noite`,
+      }
+    });
+  }
+  
+  // Strategy 3: Auction top 3 expensive activities
+  if (breakdown.activities.mostExpensive.length > 0) {
+    const auctionItems = breakdown.activities.mostExpensive.map(act => ({
+      name: act.name,
+      currentCost: act.cost,
+      targetCost: Math.round(act.cost * 0.7), // Target 30% reduction
+    }));
+    
+    const potentialSavings = auctionItems.reduce((sum, item) => sum + (item.currentCost - item.targetCost), 0);
+    
+    suggestions.push({
+      id: 'auction_activities',
+      type: 'auction_activities',
+      title: 'OPÇÃO 3: ATAQUE DE LEILÃO',
+      description: 'Ativar leilão nas 3 atividades mais caras',
+      savings: potentialSavings,
+      newTotal: totalCost - potentialSavings,
+      stillOver: totalCost - potentialSavings > userBudget,
+      details: {
+        items: auctionItems
+      }
+    });
+  }
+  
+  return suggestions;
+};
+
+// Validate if itinerary can be generated within budget
+export interface BudgetValidation {
+  isValid: boolean;
+  totalCost: number;
+  userBudget: number;
+  overflow: number;
+  overflowPercent: number;
+  breakdown?: SpendingBreakdown;
+  suggestions?: ReductionSuggestion[];
+}
+
+export const validateBudget = (
+  userBudget: number,
+  costs: {
+    flights: number;
+    accommodation: number;
+    accommodationNights: number;
+    activities: { name: string; cost: number }[];
+    food: number;
+    transport: number;
+  }
+): BudgetValidation => {
+  const activitiesCost = costs.activities.reduce((sum, a) => sum + a.cost, 0);
+  const totalCost = costs.flights + costs.accommodation + activitiesCost + costs.food + costs.transport;
+  
+  if (totalCost <= userBudget) {
+    return {
+      isValid: true,
+      totalCost,
+      userBudget,
+      overflow: 0,
+      overflowPercent: 0,
+    };
+  }
+  
+  const overflow = totalCost - userBudget;
+  const overflowPercent = Math.round((overflow / userBudget) * 100);
+  const breakdown = analyzeSpending(costs);
+  const suggestions = generateReductionSuggestions(userBudget, totalCost, breakdown, costs.accommodationNights);
+  
+  return {
+    isValid: false,
+    totalCost,
+    userBudget,
+    overflow,
+    overflowPercent,
+    breakdown,
+    suggestions,
   };
 };
