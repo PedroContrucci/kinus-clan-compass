@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Star, LogOut } from 'lucide-react';
 import { destinations, type Destination } from '@/data/destinations';
 import kinuLogo from '@/assets/KINU_logo.png';
 
 const filters = ['Todos', 'Romântico', 'Cultura', 'Aventura', 'Gastronômico', 'Econômico', 'Praia', 'Família'];
-
 const Cla = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeFilter, setActiveFilter] = useState('Todos');
   const [user, setUser] = useState<{ name: string } | null>(null);
 
@@ -84,14 +84,7 @@ const Cla = () => {
       </main>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#1e293b]/90 backdrop-blur-lg border-t border-[#334155] px-4 py-3">
-        <div className="flex justify-around items-center">
-          <NavItem icon="🌿" label="Clã" active />
-          <NavItem icon="🧭" label="Planejar" />
-          <NavItem icon="💼" label="Viagens" />
-          <NavItem icon="👤" label="Conta" />
-        </div>
-      </nav>
+      <BottomNav currentPath={location.pathname} />
     </div>
   );
 };
@@ -141,12 +134,36 @@ const DestinationCard = ({
   </button>
 );
 
-const NavItem = ({ icon, label, active = false }: { icon: string; label: string; active?: boolean }) => (
-  <div className={`flex flex-col items-center gap-1 ${active ? 'text-[#10b981]' : 'text-[#94a3b8]'}`}>
-    {active && <div className="w-8 h-0.5 bg-[#10b981] rounded-full mb-1" />}
-    <span className="text-xl">{icon}</span>
-    <span className="text-xs font-['Plus_Jakarta_Sans']">{label}</span>
-  </div>
-);
+const BottomNav = ({ currentPath }: { currentPath: string }) => {
+  const navigate = useNavigate();
+  
+  const navItems = [
+    { path: '/cla', icon: '🌿', label: 'Clã' },
+    { path: '/planejar', icon: '🧭', label: 'Planejar' },
+    { path: '/viagens', icon: '💼', label: 'Viagens' },
+    { path: '/conta', icon: '👤', label: 'Conta' },
+  ];
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 bg-[#1e293b]/90 backdrop-blur-lg border-t border-[#334155] px-4 py-3">
+      <div className="flex justify-around items-center">
+        {navItems.map((item) => {
+          const isActive = currentPath === item.path;
+          return (
+            <button
+              key={item.path}
+              onClick={() => navigate(item.path)}
+              className={`flex flex-col items-center gap-1 ${isActive ? 'text-[#10b981]' : 'text-[#94a3b8]'}`}
+            >
+              {isActive && <div className="w-8 h-0.5 bg-[#10b981] rounded-full mb-1" />}
+              <span className="text-xl">{item.icon}</span>
+              <span className="text-xs font-['Plus_Jakarta_Sans']">{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+};
 
 export default Cla;
