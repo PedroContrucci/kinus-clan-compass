@@ -10,3 +10,4 @@ export { TripTimeline } from './TripTimeline';
 export { BudgetTracker, CostBadge, BudgetAllocationDisplay } from './BudgetTracker';
 export { BudgetInsufficientAlert } from './BudgetInsufficientAlert';
 export { CompactBudgetHeader } from './CompactBudgetHeader';
+export { ReductionStrategyPanel } from './ReductionStrategyPanel';

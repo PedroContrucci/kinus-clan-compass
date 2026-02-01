@@ -27,10 +27,20 @@ import {
   BudgetTracker,
   CompactBudgetHeader,
   BudgetInsufficientAlert,
+  ReductionStrategyPanel,
   getActivityImage as getActivityImageFromComponent,
   getActivityIcon as getActivityIconFromComponent
 } from '@/components/planejar';
-import { allocateBudget, checkBudgetOverflow } from '@/lib/budget';
+import { 
+  allocateBudget, 
+  checkBudgetOverflow, 
+  validateBudget, 
+  analyzeSpending, 
+  generateReductionSuggestions,
+  type SpendingBreakdown,
+  type ReductionSuggestion,
+  type BudgetValidation
+} from '@/lib/budget';
 
 interface Activity {
   time: string;
@@ -666,7 +676,113 @@ const Planejar = () => {
       travelers: tripData.travelers,
       status: 'bidding' as const,
     };
+    
+    // ═══════════════════════════════════════════════════════════════
+    // HARD BUDGET VALIDATION — Check if total exceeds user budget
+    // ═══════════════════════════════════════════════════════════════
+    const allActivities = generatedItinerary.itinerary.flatMap(day => 
+      day.activities.map(act => ({ name: act.name, cost: act.cost }))
+    );
+    
+    const foodCost = generatedItinerary.itinerary.flatMap(day => 
+      day.activities.filter(a => a.type === 'food')
+    ).reduce((sum, a) => sum + a.cost, 0);
+    
+    const transportCost = generatedItinerary.itinerary.flatMap(day => 
+      day.activities.filter(a => a.type === 'transport')
+    ).reduce((sum, a) => sum + a.cost, 0);
+    
+    const activityCost = generatedItinerary.itinerary.flatMap(day => 
+      day.activities.filter(a => a.type !== 'food' && a.type !== 'transport')
+    ).reduce((sum, a) => sum + a.cost, 0);
+    
+    const totalItineraryCost = outboundFlight.totalPrice + returnFlight.totalPrice + totalSpent;
+    
+    const budgetValidation = validateBudget(userBudget, {
+      flights: outboundFlight.totalPrice + returnFlight.totalPrice,
+      accommodation: experienceDays * 480, // Estimated hotel cost
+      accommodationNights: experienceDays,
+      activities: allActivities.filter(a => 
+        !['food', 'transport'].some(type => a.name.toLowerCase().includes(type))
+      ),
+      food: foodCost,
+      transport: transportCost,
+    });
+    
+    // If budget is exceeded, show Reduction Strategy Panel instead of itinerary
+    if (!budgetValidation.isValid && budgetValidation.breakdown && budgetValidation.suggestions) {
+      return (
+        <div className="min-h-screen bg-background pb-20">
+          {/* Header */}
+          <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setGeneratedItinerary(null);
+                  setCurrentStep(1);
+                }}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <ArrowLeft size={20} className="text-foreground" />
+              </button>
+              <div>
+                <h1 className="font-bold text-lg font-['Outfit'] text-foreground">
+                  ⚠️ Ajuste Necessário
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  O roteiro gerado excede seu orçamento em {budgetValidation.overflowPercent}%
+                </p>
+              </div>
+            </div>
+          </header>
 
+          <main className="px-4 py-6">
+            <ReductionStrategyPanel
+              userBudget={userBudget}
+              totalCost={budgetValidation.totalCost}
+              breakdown={budgetValidation.breakdown}
+              suggestions={budgetValidation.suggestions}
+              destination={generatedItinerary.destination}
+              days={experienceDays}
+              onApplySuggestion={(suggestionId) => {
+                toast({
+                  title: "Estratégia aplicada! 🌿",
+                  description: "Regenerando roteiro com as novas configurações...",
+                });
+                // For now, just regenerate
+                handleGenerateItinerary();
+              }}
+              onGenerateEconomic={() => {
+                toast({
+                  title: "Gerando versão econômica... 🌿",
+                  description: "Buscando atividades gratuitas e hotéis mais em conta.",
+                });
+                handleGenerateItinerary();
+              }}
+              onActivateAuction={(activityName) => {
+                setAuctionModal({ isOpen: true, activityName, activityType: 'activity' });
+              }}
+            />
+          </main>
+          
+          {/* Auction Modal */}
+          {auctionModal && (
+            <ReverseAuctionModal
+              isOpen={auctionModal.isOpen}
+              onClose={() => setAuctionModal(null)}
+              activityName={auctionModal.activityName}
+              activityType={auctionModal.activityType}
+              destination={generatedItinerary.destination}
+            />
+          )}
+          <Toaster />
+        </div>
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // NORMAL ITINERARY RENDER — Budget is valid
+    // ═══════════════════════════════════════════════════════════════
     return (
       <div className="min-h-screen bg-[#0f172a] pb-20">
         {/* Header */}
