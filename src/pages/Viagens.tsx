@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag } from 'lucide-react';
-import { format } from 'date-fns';
+import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
@@ -12,7 +12,9 @@ import FlightCard from '@/components/FlightCard';
 import HotelCard from '@/components/HotelCard';
 import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
+import SmartPacking from '@/components/SmartPacking';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
+import { PackingData } from '@/types/packing';
 import kinuLogo from '@/assets/KINU_logo.png';
 
 const Viagens = () => {
@@ -21,7 +23,7 @@ const Viagens = () => {
   const [user, setUser] = useState<{ name: string } | null>(null);
   const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(null);
-  const [activeTab, setActiveTab] = useState<'roteiro' | 'finops' | 'checklist'>('roteiro');
+  const [activeTab, setActiveTab] = useState<'roteiro' | 'finops' | 'packing' | 'checklist'>('roteiro');
   const [selectedDay, setSelectedDay] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; activityName: string; activityType: string; estimatedPrice?: number } | null>(null);
@@ -30,6 +32,7 @@ const Viagens = () => {
   const [confirmLink, setConfirmLink] = useState('');
   const [manualExpenseModal, setManualExpenseModal] = useState(false);
   const [manualExpense, setManualExpense] = useState({ name: '', amount: 0, category: 'shopping' as keyof SavedTrip['finances']['categories'] });
+  const [resetModal, setResetModal] = useState(false);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('kinu_user');
@@ -203,6 +206,33 @@ const Viagens = () => {
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
   };
 
+  const handleResetJourney = () => {
+    localStorage.removeItem('kinu_trips');
+    setTrips([]);
+    setSelectedTrip(null);
+    setResetModal(false);
+    toast({
+      title: "Jornada reiniciada! 🌿",
+      description: "Bora planejar de novo?",
+    });
+    navigate('/planejar');
+  };
+
+  const handlePackingUpdate = (packingData: PackingData) => {
+    if (!selectedTrip) return;
+
+    const updatedTrip = { ...selectedTrip, packing: packingData };
+    setSelectedTrip(updatedTrip);
+    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
+    setTrips(updatedTrips);
+    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+  };
+
+  const getTripDuration = (trip: SavedTrip): number => {
+    if (!trip.startDate || !trip.endDate) return 7;
+    return differenceInDays(new Date(trip.endDate), new Date(trip.startDate)) + 1;
+  };
+
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'food': return '🍽️';
@@ -253,16 +283,17 @@ const Viagens = () => {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {[
               { id: 'roteiro' as const, label: '📋 Roteiro' },
               { id: 'finops' as const, label: '💰 FinOps' },
-              { id: 'checklist' as const, label: '🧳 Checklist' },
+              { id: 'packing' as const, label: '🧳 Packing' },
+              { id: 'checklist' as const, label: '✅ Checklist' },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex-shrink-0 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === tab.id
                     ? 'bg-[#10b981] text-white'
                     : 'bg-[#1e293b] text-[#94a3b8] hover:text-[#f8fafc]'
@@ -443,6 +474,17 @@ const Viagens = () => {
                 Adicionar Gasto Manual
               </button>
             </>
+          )}
+
+          {/* Smart Packing Tab */}
+          {activeTab === 'packing' && (
+            <SmartPacking
+              tripId={selectedTrip.id}
+              destination={selectedTrip.destination}
+              duration={getTripDuration(selectedTrip)}
+              packingData={(selectedTrip as any).packing || null}
+              onUpdate={handlePackingUpdate}
+            />
           )}
 
           {/* Checklist Tab */}
@@ -686,7 +728,64 @@ const Viagens = () => {
             </button>
           </div>
         )}
+
+        {/* Test Mode - Reset Button */}
+        {trips.length > 0 && (
+          <div className="mt-8 pt-6 border-t border-[#334155]">
+            <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Settings size={16} className="text-[#64748b]" />
+                <span className="text-sm text-[#64748b]">Modo Teste</span>
+              </div>
+              <button
+                onClick={() => setResetModal(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#94a3b8] hover:text-[#f8fafc] hover:border-[#ef4444] transition-colors"
+              >
+                <RotateCcw size={16} />
+                Reiniciar Jornada
+              </button>
+              <p className="text-xs text-[#64748b] mt-2 text-center">
+                Limpa o roteiro atual para testar novamente
+              </p>
+            </div>
+          </div>
+        )}
       </main>
+
+      {/* Reset Confirmation Modal */}
+      <Dialog open={resetModal} onOpenChange={setResetModal}>
+        <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc] max-w-sm mx-auto">
+          <DialogHeader>
+            <DialogTitle className="font-['Outfit'] flex items-center gap-2">
+              <RotateCcw size={20} className="text-[#eab308]" />
+              Reiniciar Jornada?
+            </DialogTitle>
+            <DialogDescription className="text-[#94a3b8]">
+              Isso vai remover o roteiro atual e todos os dados salvos. Você poderá criar um novo roteiro do zero.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="flex items-center gap-2 p-3 bg-[#ef4444]/10 border border-[#ef4444]/30 rounded-xl">
+              <span className="text-[#ef4444]">⚠️</span>
+              <p className="text-sm text-[#ef4444]">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setResetModal(false)}
+                className="flex-1 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] font-medium hover:bg-[#1e293b] transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleResetJourney}
+                className="flex-1 py-3 bg-[#ef4444] rounded-xl text-white font-semibold hover:bg-[#dc2626] transition-colors"
+              >
+                Confirmar Reset
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Bottom Nav */}
       <BottomNav currentPath={location.pathname} />
