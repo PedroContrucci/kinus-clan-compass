@@ -411,7 +411,7 @@ const Planejar = () => {
     return 'very_intense';
   };
 
-  const getActivityImage = (name: string, type: string) => {
+  const getActivityImage = (name: string, type: string): string => {
     const nameKey = name.toLowerCase()
       .replace(/torre eiffel/i, 'torre-eiffel')
       .replace(/louvre/i, 'louvre')
@@ -422,14 +422,36 @@ const Planejar = () => {
       .replace(/marais/i, 'marais')
       .replace(/café|cafe|coffee/i, 'cafe-paris')
       .replace(/hotel|check.?in/i, 'hotel')
-      .replace(/transfer|taxi|uber/i, 'taxi')
-      .replace(/restaurante|jantar|almoço/i, 'restaurante')
-      .replace(/aeroporto|cdg|gru/i, 'aeroporto-cdg')
+      .replace(/transfer|taxi|uber/i, 'transfer')
+      .replace(/restaurante|jantar|almoço|breizh|ristorante|trattoria/i, 'restaurante')
+      .replace(/aeroporto|cdg|gru|fiumicino/i, 'aeroporto')
       .replace(/shibuya/i, 'shibuya')
       .replace(/senso.?ji/i, 'senso-ji')
       .replace(/meiji/i, 'meiji')
       .replace(/belém|belem/i, 'belem')
-      .replace(/alfama/i, 'alfama');
+      .replace(/alfama/i, 'alfama')
+      // Roma specific
+      .replace(/vaticano|vatican/i, 'vaticano')
+      .replace(/capela sistina|sistine/i, 'capela-sistina')
+      .replace(/basílica.*pedro|st.*peter/i, 'basilica-sao-pedro')
+      .replace(/museus.*vaticano|vatican.*museum/i, 'museus-vaticano')
+      .replace(/coliseu|colosseum|colosseo/i, 'coliseu')
+      .replace(/forum.*romano|roman.*forum/i, 'forum-romano')
+      .replace(/palatino|palatine/i, 'palatino')
+      .replace(/trastevere/i, 'trastevere')
+      .replace(/villa.*este|villa d'este/i, 'villa-este')
+      .replace(/villa.*adriana|hadrian/i, 'villa-adriana')
+      .replace(/fontana.*trevi|trevi.*fountain/i, 'fontana-trevi')
+      .replace(/piazza.*navona/i, 'piazza-navona')
+      .replace(/panteão|pantheon|panteao/i, 'panteao')
+      .replace(/escadaria.*espanhola|spanish.*steps/i, 'escadaria-espanhola')
+      .replace(/castel.*sant.*angelo/i, 'castel-santangelo')
+      .replace(/via.*del.*corso/i, 'via-del-corso')
+      .replace(/carbonara/i, 'carbonara')
+      .replace(/cacio.*pepe/i, 'cacio-pepe')
+      .replace(/gelato|sorvete/i, 'gelato-roma')
+      .replace(/pizza/i, 'pizza-roma')
+      .replace(/pasta|massa/i, 'pasta-roma');
     
     for (const key of Object.keys(ACTIVITY_IMAGES)) {
       if (nameKey.includes(key)) {
@@ -440,7 +462,7 @@ const Planejar = () => {
     // Fallback by type
     if (type === 'food') return ACTIVITY_IMAGES['restaurante'];
     if (type === 'relax') return ACTIVITY_IMAGES['hotel'];
-    if (type === 'transport') return ACTIVITY_IMAGES['taxi'];
+    if (type === 'transport') return ACTIVITY_IMAGES['transfer'];
     
     return ACTIVITY_IMAGES['default'];
   };
@@ -520,16 +542,40 @@ const Planejar = () => {
     const endDate = tripData.endDate || addDays(startDate, generatedItinerary.days - 1);
     const currentDayDate = addDays(startDate, selectedDay - 1);
     
+    // Calculate arrival info for transit day logic
+    const flightDuration = FLIGHT_DURATION[`São Paulo-${generatedItinerary.destination}`] || 11.5;
+    const arrivalInfo = jetLagInfo ? calculateArrivalTime(
+      tripData.departureTime || '22:30',
+      startDate,
+      flightDuration,
+      jetLagInfo.diff
+    ) : null;
+    
+    // If arrival is next day, we have a transit day (day 1 = departure, day 2 = arrival/experience day 1)
+    const hasTransitDay = arrivalInfo?.nextDay ?? true;
+    
     // Generate day info for navigator
-    const dayIcons = generatedItinerary.itinerary.map(d => d.icon);
-    const dayTitles = generatedItinerary.itinerary.map(d => d.title);
+    // Icons and titles from AI start from the first experience day (not transit)
+    const dayIcons = ['✈️', ...generatedItinerary.itinerary.map(d => d.icon)];
+    const dayTitles = ['Partida', ...generatedItinerary.itinerary.map(d => d.title)];
+    
+    // Total days including transit
+    const totalDaysWithTransit = hasTransitDay ? generatedItinerary.days + 1 : generatedItinerary.days;
     
     // Calculate experience days (excluding transit)
     const totalDays = differenceInDays(endDate, startDate) + 1;
-    const experienceDays = totalDays - 1; // Day 1 is transit
+    const experienceDays = hasTransitDay ? totalDays - 1 : totalDays;
+    
+    // Map selected day to actual itinerary day (account for transit)
+    // selectedDay 1 = transit (no activities from itinerary)
+    // selectedDay 2 = itinerary day 1
+    const itineraryDayIndex = hasTransitDay ? selectedDay - 2 : selectedDay - 1;
+    const currentItineraryDay = generatedItinerary.itinerary[itineraryDayIndex];
+    const isTransitDay = hasTransitDay && selectedDay === 1;
+    const isFirstExperienceDay = hasTransitDay ? selectedDay === 2 : selectedDay === 1;
     
     // Calculate daily expenses for current day
-    const currentDayExpenses = currentDay?.activities.map(act => ({
+    const currentDayExpenses = currentItineraryDay?.activities.map(act => ({
       icon: getActivityIcon(act.type),
       name: act.name,
       amount: act.cost,
@@ -538,15 +584,27 @@ const Planejar = () => {
     
     const averageDailySpend = generatedItinerary.estimatedBudget / generatedItinerary.days;
     
-    // Timeline data
-    const timelineData = generatedItinerary.itinerary.map((day, idx) => ({
-      dayNumber: day.day,
-      date: addDays(startDate, idx),
-      icon: day.icon,
-      title: day.title,
-      totalCost: day.activities.reduce((sum, a) => sum + a.cost, 0),
-      isTransit: idx === 0,
-    }));
+    // Timeline data - include transit day
+    const timelineData = [
+      // Transit day (departure)
+      ...(hasTransitDay ? [{
+        dayNumber: 0,
+        date: startDate,
+        icon: '✈️',
+        title: 'Partida',
+        totalCost: 0,
+        isTransit: true,
+      }] : []),
+      // Experience days
+      ...generatedItinerary.itinerary.map((day, idx) => ({
+        dayNumber: day.day,
+        date: addDays(startDate, hasTransitDay ? idx + 1 : idx),
+        icon: day.icon,
+        title: day.title,
+        totalCost: day.activities.reduce((sum, a) => sum + a.cost, 0),
+        isTransit: false,
+      })),
+    ];
     
     const totalSpent = timelineData.reduce((sum, d) => sum + d.totalCost, 0);
     
@@ -557,7 +615,10 @@ const Planejar = () => {
       destination: generatedItinerary.destination,
       destinationCode: generatedItinerary.destination === 'Paris' ? 'CDG' : 
                        generatedItinerary.destination === 'Tóquio' ? 'NRT' :
-                       generatedItinerary.destination === 'Lisboa' ? 'LIS' : 'XXX',
+                       generatedItinerary.destination === 'Lisboa' ? 'LIS' :
+                       generatedItinerary.destination === 'Roma' ? 'FCO' :
+                       generatedItinerary.destination === 'Barcelona' ? 'BCN' :
+                       generatedItinerary.destination === 'Amsterdã' ? 'AMS' : 'XXX',
       departureDate: startDate,
       departureTime: tripData.departureTime || '22:30',
       arrivalDate: addDays(startDate, 1),
@@ -648,16 +709,36 @@ const Planejar = () => {
           {/* Day Navigator with Real Dates */}
           <DayNavigator
             startDate={startDate}
-            totalDays={generatedItinerary.days}
+            totalDays={totalDaysWithTransit}
             selectedDay={selectedDay}
             onDayChange={handleDayChange}
             jetLagModeEnabled={tripData.jetLagModeEnabled}
             icons={dayIcons}
             titles={dayTitles}
+            hasTransitDay={hasTransitDay}
           />
 
-          {/* Jet Lag Mode Banner */}
-          {tripData.jetLagModeEnabled && selectedDay === 1 && jetLagInfo && jetLagInfo.level !== 'BAIXO' && (
+          {/* Transit Day Info */}
+          {isTransitDay && (
+            <div className="bg-[#0ea5e9]/10 border border-[#0ea5e9] rounded-2xl p-4 mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">✈️</span>
+                <span className="font-semibold text-[#f8fafc] font-['Outfit']">
+                  Dia de Trânsito
+                </span>
+              </div>
+              <p className="text-[#94a3b8] text-sm mb-3">
+                Hoje você estará viajando para {generatedItinerary.destination}. 
+                {arrivalInfo?.nextDay && ` Chegada prevista: ${format(addDays(startDate, 1), 'dd/MM')} às ${arrivalInfo.arrivalTime}`}
+              </p>
+              <p className="text-[#f8fafc] text-sm italic">
+                "Descansa no voo que amanhã a aventura começa!" 🌿
+              </p>
+            </div>
+          )}
+
+          {/* Jet Lag Mode Banner - Show on first experience day */}
+          {tripData.jetLagModeEnabled && isFirstExperienceDay && jetLagInfo && jetLagInfo.level !== 'BAIXO' && (
             <div 
               className="border rounded-2xl p-4 mb-6"
               style={{ 
@@ -680,8 +761,8 @@ const Planejar = () => {
             </div>
           )}
           
-          {/* Flight Anchor Card - Day 1 */}
-          {selectedDay === 1 && (
+          {/* Flight Anchor Card - Transit Day */}
+          {isTransitDay && (
             <div className="mb-6">
               <FlightAnchorCard
                 type="outbound"
@@ -693,7 +774,7 @@ const Planejar = () => {
           )}
           
           {/* Flight Anchor Card - Last Day */}
-          {selectedDay === generatedItinerary.days && (
+          {selectedDay === totalDaysWithTransit && (
             <div className="mb-6">
               <FlightAnchorCard
                 type="return"
@@ -703,21 +784,22 @@ const Planejar = () => {
             </div>
           )}
 
-          {/* Day Activities */}
-          {currentDay && (
+          {/* Day Activities - Only show if not transit day and we have activities */}
+          {!isTransitDay && currentItineraryDay && (
             <div
               className={`transition-opacity duration-300 ${
                 isTransitioning ? 'opacity-0' : 'opacity-100'
               }`}
             >
               <h3 className="font-semibold text-lg mb-4 text-[#f8fafc] font-['Outfit']">
-                {format(currentDayDate, 'EEEE dd/MM', { locale: ptBR })} — {currentDay.title}
+                {format(currentDayDate, 'EEEE dd/MM', { locale: ptBR })} — {currentItineraryDay.title}
               </h3>
               <div className="space-y-4">
-                {currentDay.activities.map((activity, index) => {
-                  const activityKey = `day${currentDay.day}-act${index}`;
+                {currentItineraryDay.activities.map((activity, index) => {
+                  const activityKey = `day${currentItineraryDay.day}-act${index}`;
                   const isPinned = pinnedActivities.has(activityKey);
-                  const isJetLagFriendly = tripData.jetLagModeEnabled && currentDay.day === 1;
+                  // Jet lag friendly only for the first experience day (day 1 in itinerary)
+                  const isJetLagFriendly = tripData.jetLagModeEnabled && isFirstExperienceDay;
                   const intensity = getActivityIntensity(activity.type, activity.duration);
                   
                   // Build enhanced activity data
@@ -763,9 +845,9 @@ const Planejar = () => {
                 date={currentDayDate}
                 expenses={currentDayExpenses}
                 averageDailySpend={averageDailySpend}
-                tip={selectedDay === 1 
+                tip={isFirstExperienceDay
                   ? "Dia de chegada — gastos mínimos, foco em adaptação!"
-                  : selectedDay === generatedItinerary.days 
+                  : selectedDay === totalDaysWithTransit 
                     ? "Último dia — aproveite cada momento!"
                     : undefined
                 }
