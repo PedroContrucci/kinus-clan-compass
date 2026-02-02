@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ExternalLink, Check, Star, ArrowLeft, Plane, Hotel, MapPin, Clock, Users, Calendar } from 'lucide-react';
+import { ExternalLink, Check, Star, ArrowLeft, Plane, Hotel, MapPin, Clock, Users, Calendar, TrendingUp } from 'lucide-react';
 import { Offer } from '@/types/trip';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { calculateSuccessChance } from '@/lib/tierSystem';
 
 // Item type for contextual auction
 export type AuctionItemType = 'flight' | 'hotel' | 'activity';
@@ -79,8 +80,8 @@ const PROVIDERS = {
   ],
 };
 
-// Generate mock offers based on item type
-const generateOffers = (item: AuctionItem, targetPrice: number): Offer[] => {
+// Generate mock offers based on item type with success chance
+const generateOffers = (item: AuctionItem, targetPrice: number): (Offer & { successChance?: ReturnType<typeof calculateSuccessChance> })[] => {
   const basePrice = item.cost;
   const providers = PROVIDERS[item.type];
   
@@ -107,6 +108,9 @@ const generateOffers = (item: AuctionItem, targetPrice: number): Offer[] => {
         break;
     }
     
+    // Calculate success chance based on discount
+    const successChance = calculateSuccessChance(price, targetPrice, basePrice);
+    
     return {
       id: `offer-${index}`,
       provider: provider.name,
@@ -117,6 +121,7 @@ const generateOffers = (item: AuctionItem, targetPrice: number): Offer[] => {
       reviewCount: Math.floor(1000 + Math.random() * 5000),
       features: features.slice(0, 2 + index),
       link: `https://${provider.name.toLowerCase().replace(/\s+/g, '')}.com`,
+      successChance,
     };
   }).sort((a, b) => a.price - b.price);
 };
@@ -517,6 +522,21 @@ const ReverseAuctionModal = ({
               <p className="text-sm text-muted-foreground mb-3">{bestOffer.details}</p>
 
               <div className="border-t border-border pt-3 mb-3">
+                {/* Success Chance for best offer */}
+                {(bestOffer as any).successChance && (
+                  <div 
+                    className="flex items-center gap-2 text-sm mb-2 px-3 py-2 rounded-lg"
+                    style={{ 
+                      backgroundColor: `${(bestOffer as any).successChance.color}15`,
+                      color: (bestOffer as any).successChance.color 
+                    }}
+                  >
+                    <TrendingUp size={14} />
+                    <span className="font-bold">{(bestOffer as any).successChance.percent}%</span>
+                    <span>Chance de sucesso — {(bestOffer as any).successChance.label}</span>
+                  </div>
+                )}
+                
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-muted-foreground">Você pediu:</span>
                   <span className="text-foreground">R$ {targetPrice.toLocaleString()}</span>
@@ -571,6 +591,22 @@ const ReverseAuctionModal = ({
                       <span className="text-primary font-bold font-['Outfit']">R$ {offer.price.toLocaleString()}</span>
                     </div>
                     <p className="text-xs text-muted-foreground mb-2">{offer.details}</p>
+                    
+                    {/* Success Chance Badge */}
+                    {(offer as any).successChance && (
+                      <div 
+                        className="flex items-center gap-2 text-xs mb-2 px-2 py-1 rounded-lg w-fit"
+                        style={{ 
+                          backgroundColor: `${(offer as any).successChance.color}15`,
+                          color: (offer as any).successChance.color 
+                        }}
+                      >
+                        <TrendingUp size={12} />
+                        <span className="font-semibold">{(offer as any).successChance.percent}%</span>
+                        <span>{(offer as any).successChance.label}</span>
+                      </div>
+                    )}
+                    
                     <button
                       onClick={() => handleAcceptOffer(offer)}
                       className="w-full py-2 bg-card border border-border rounded-lg text-foreground text-sm flex items-center justify-center gap-2 hover:bg-primary/10 hover:border-primary transition-colors"

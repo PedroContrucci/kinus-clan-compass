@@ -7,9 +7,10 @@ import {
   analyzeBudgetOccupation, 
   type BudgetOccupationResult,
   type QualityTier,
-  TIER_DISTRIBUTIONS
+  TIER_DISTRIBUTIONS,
+  getOccupationStatus
 } from '@/lib/tierSystem';
-import { Plane, Hotel, MapPin, Utensils, Wallet, Check, TrendingUp } from 'lucide-react';
+import { Plane, Hotel, MapPin, Utensils, Wallet, Check, TrendingUp, AlertTriangle } from 'lucide-react';
 
 interface BudgetOccupationProps {
   budget: number;
@@ -26,19 +27,11 @@ interface BudgetOccupationProps {
 const BudgetOccupation = ({ budget, costs, tier, className }: BudgetOccupationProps) => {
   const analysis = analyzeBudgetOccupation(budget, costs);
   const tierDist = TIER_DISTRIBUTIONS[tier];
-  
-  const getStatusColor = () => {
-    switch (analysis.status) {
-      case 'ideal': return 'text-primary';
-      case 'low': return 'text-amber-500';
-      case 'high': return 'text-orange-500';
-      case 'over': return 'text-destructive';
-    }
-  };
+  const occupationStatus = getOccupationStatus(analysis.occupation);
   
   const getBarColor = () => {
     switch (analysis.status) {
-      case 'ideal': return 'bg-primary';
+      case 'ideal': return 'bg-gradient-to-r from-primary to-sky-500';
       case 'low': return 'bg-amber-500';
       case 'high': return 'bg-orange-500';
       case 'over': return 'bg-destructive';
@@ -100,7 +93,13 @@ const BudgetOccupation = ({ budget, costs, tier, className }: BudgetOccupationPr
         <h3 className="font-semibold text-foreground font-['Outfit'] flex items-center gap-2">
           💰 Ocupação do Budget
         </h3>
-        <span className={cn('text-sm font-medium', getStatusColor())}>
+        <span 
+          className="text-sm font-medium px-2 py-1 rounded-lg"
+          style={{ 
+            color: occupationStatus.statusColor,
+            backgroundColor: `${occupationStatus.statusColor}15`
+          }}
+        >
           {analysis.statusLabel}
         </span>
       </div>
@@ -115,33 +114,54 @@ const BudgetOccupation = ({ budget, costs, tier, className }: BudgetOccupationPr
         </div>
         <div className="bg-muted rounded-xl p-3">
           <span className="text-xs text-muted-foreground block mb-1">Utilizado</span>
-          <span className={cn('text-lg font-bold font-["Outfit"]', getStatusColor())}>
+          <span 
+            className="text-lg font-bold font-['Outfit']"
+            style={{ color: occupationStatus.statusColor }}
+          >
             R$ {analysis.totalCost.toLocaleString()} ({analysis.occupationPercent}%)
           </span>
         </div>
       </div>
       
-      {/* Occupation Bar */}
-      <div className="mb-4">
-        <div className="h-3 bg-muted rounded-full overflow-hidden relative">
-          {/* Target zone indicator */}
+      {/* Occupation Bar with Zone Markers */}
+      <div className="mb-4 relative">
+        <div className="h-4 bg-muted rounded-full overflow-visible relative">
+          {/* Zone markers */}
           <div 
-            className="absolute h-full bg-primary/20"
+            className="absolute top-0 bottom-0 w-0.5 bg-primary/50 z-10"
+            style={{ left: `${BUDGET_TARGETS.minOccupation * 100}%` }}
+          />
+          <div 
+            className="absolute top-0 bottom-0 w-0.5 bg-destructive/50 z-10"
+            style={{ left: `${BUDGET_TARGETS.maxOccupation * 100}%` }}
+          />
+          
+          {/* Ideal zone background */}
+          <div 
+            className="absolute h-full bg-primary/10 rounded-r"
             style={{ 
               left: `${BUDGET_TARGETS.minOccupation * 100}%`,
               width: `${(BUDGET_TARGETS.maxOccupation - BUDGET_TARGETS.minOccupation) * 100}%`
             }}
           />
+          
           {/* Actual fill */}
           <div 
-            className={cn('h-full transition-all duration-500', getBarColor())}
+            className={cn('h-full transition-all duration-500 rounded-full', getBarColor())}
             style={{ width: `${Math.min(analysis.occupation * 100, 100)}%` }}
           />
         </div>
-        <div className="flex justify-between text-xs text-muted-foreground mt-1">
-          <span>0%</span>
-          <span className="text-primary">85-98% ideal</span>
-          <span>100%</span>
+        
+        {/* Zone labels */}
+        <div className="flex justify-between text-xs mt-1.5">
+          <span className="text-muted-foreground">0%</span>
+          <span 
+            className="text-primary font-medium absolute"
+            style={{ left: `${(BUDGET_TARGETS.minOccupation + BUDGET_TARGETS.maxOccupation) / 2 * 100}%`, transform: 'translateX(-50%)' }}
+          >
+            ↑ ZONA IDEAL
+          </span>
+          <span className="text-muted-foreground">100%</span>
         </div>
       </div>
       
@@ -150,7 +170,7 @@ const BudgetOccupation = ({ budget, costs, tier, className }: BudgetOccupationPr
         <div className="bg-primary/10 border border-primary/30 rounded-xl p-3 mb-4 flex items-center gap-2">
           <Check size={16} className="text-primary" />
           <span className="text-sm text-foreground">
-            Aproveitando bem seu budget!
+            Sweet Spot! Máximo valor pelo seu budget.
           </span>
         </div>
       )}
@@ -160,6 +180,15 @@ const BudgetOccupation = ({ budget, costs, tier, className }: BudgetOccupationPr
           <TrendingUp size={16} className="text-amber-500" />
           <span className="text-sm text-foreground">
             Você pode adicionar mais experiências! Saldo: R$ {analysis.remaining.toLocaleString()}
+          </span>
+        </div>
+      )}
+      
+      {analysis.status === 'high' && (
+        <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 mb-4 flex items-center gap-2">
+          <AlertTriangle size={16} className="text-orange-500" />
+          <span className="text-sm text-foreground">
+            Muito próximo do limite. Considere usar o Leilão Reverso.
           </span>
         </div>
       )}
