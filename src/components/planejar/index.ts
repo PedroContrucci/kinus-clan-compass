@@ -11,3 +11,4 @@ export { BudgetTracker, CostBadge, BudgetAllocationDisplay } from './BudgetTrack
 export { BudgetInsufficientAlert } from './BudgetInsufficientAlert';
 export { CompactBudgetHeader } from './CompactBudgetHeader';
 export { ReductionStrategyPanel } from './ReductionStrategyPanel';
+export { default as BudgetOccupation } from './BudgetOccupation';

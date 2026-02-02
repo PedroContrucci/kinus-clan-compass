@@ -1,7 +1,65 @@
 // Quality Tier System for Budget-Driven Generation
-// Implements automatic tier selection and degradation based on user budget
+// Implements automatic tier selection, degradation, and budget-driven filling
 
 export type QualityTier = 'luxury' | 'premium' | 'comfort' | 'economic';
+
+// ═══════════════════════════════════════════════════════════
+// BUDGET OCCUPATION TARGETS
+// ═══════════════════════════════════════════════════════════
+export const BUDGET_TARGETS = {
+  minOccupation: 0.85,  // Mínimo 85% do budget
+  maxOccupation: 0.98,  // Máximo 98% (deixa 2% de folga)
+  idealOccupation: 0.90, // Ideal: 90% do budget
+};
+
+// ═══════════════════════════════════════════════════════════
+// TIER DISTRIBUTIONS (percentages by category)
+// ═══════════════════════════════════════════════════════════
+export interface TierDistribution {
+  flights: { percent: number; class: string; description: string };
+  accommodation: { percent: number; stars: string; description: string };
+  activities: { percent: number; type: string; description: string };
+  food: { percent: number; type: string; description: string };
+  buffer: { percent: number; description: string };
+}
+
+export const TIER_DISTRIBUTIONS: Record<QualityTier, TierDistribution> = {
+  // ECONÔMICO: Até R$ 50.000
+  economic: {
+    flights: { percent: 30, class: 'Econômica', description: 'Voos econômicos diretos' },
+    accommodation: { percent: 25, stars: '3★', description: 'Hotéis 3 estrelas bem localizados' },
+    activities: { percent: 20, type: 'mixed', description: 'Mix de pagas e gratuitas' },
+    food: { percent: 10, type: 'casual', description: 'Trattorias e restaurantes locais' },
+    buffer: { percent: 15, description: 'Margem de segurança' },
+  },
+  
+  // CONFORTO: R$ 50.000 a R$ 100.000
+  comfort: {
+    flights: { percent: 27, class: 'Econômica Premium', description: 'Assentos com mais espaço' },
+    accommodation: { percent: 33, stars: '4-5★', description: 'Hotéis 4-5 estrelas no Centro Histórico' },
+    activities: { percent: 22, type: 'premium', description: 'Tours privados no Vaticano e Coliseu' },
+    food: { percent: 9, type: 'upscale', description: 'Jantares em Rooftops e Trattorias premiadas' },
+    buffer: { percent: 9, description: 'Margem para câmbio e extras' },
+  },
+  
+  // PREMIUM: R$ 80.000 a R$ 150.000
+  premium: {
+    flights: { percent: 26, class: 'Executiva', description: 'Classe executiva em voos longos' },
+    accommodation: { percent: 34, stars: '5★', description: 'Hotéis 5 estrelas de luxo' },
+    activities: { percent: 24, type: 'exclusive', description: 'Experiências VIP e privativas' },
+    food: { percent: 10, type: 'fine-dining', description: 'Restaurantes estrelados e experiências gastronômicas' },
+    buffer: { percent: 6, description: 'Margem mínima' },
+  },
+  
+  // ELITE/LUXURY: R$ 100.000+
+  luxury: {
+    flights: { percent: 25, class: 'Primeira Classe', description: 'Primeira classe ou jato privado' },
+    accommodation: { percent: 35, stars: '5★ Luxo', description: 'Suítes em palácios e resorts exclusivos' },
+    activities: { percent: 25, type: 'exclusive', description: 'Acesso privativo após horário, experiências sob medida' },
+    food: { percent: 10, type: 'michelin', description: 'Michelin e chefs privados' },
+    buffer: { percent: 5, description: 'Margem mínima' },
+  },
+};
 
 export interface TierConfig {
   label: string;
@@ -19,7 +77,7 @@ export const QUALITY_TIERS: Record<QualityTier, TierConfig> = {
     icon: '👑',
     flightClass: 'business',
     hotelStars: 5,
-    hotelBudgetPercent: 0.30,
+    hotelBudgetPercent: 0.35,
     activitiesType: 'premium',
     foodType: 'fine-dining',
   },
@@ -27,26 +85,26 @@ export const QUALITY_TIERS: Record<QualityTier, TierConfig> = {
     label: 'Premium',
     icon: '✨',
     flightClass: 'economy-plus',
-    hotelStars: 4,
-    hotelBudgetPercent: 0.25,
-    activitiesType: 'mixed',
+    hotelStars: 5,
+    hotelBudgetPercent: 0.34,
+    activitiesType: 'premium',
     foodType: 'restaurants',
   },
   comfort: {
     label: 'Conforto',
     icon: '🌟',
     flightClass: 'economy',
-    hotelStars: 3,
-    hotelBudgetPercent: 0.20,
-    activitiesType: 'standard',
+    hotelStars: 4,
+    hotelBudgetPercent: 0.33,
+    activitiesType: 'mixed',
     foodType: 'casual',
   },
   economic: {
     label: 'Econômico',
     icon: '💚',
     flightClass: 'economy-promo',
-    hotelStars: 2,
-    hotelBudgetPercent: 0.15,
+    hotelStars: 3,
+    hotelBudgetPercent: 0.25,
     activitiesType: 'free-mostly',
     foodType: 'street-food',
   },
@@ -428,4 +486,316 @@ export const getTierBadgeStyle = (tier: QualityTier): { bg: string; text: string
     case 'economic':
       return { bg: 'bg-slate-400/10', text: 'text-slate-400', border: 'border-slate-400/30' };
   }
+};
+
+// ═══════════════════════════════════════════════════════════
+// BUDGET DISTRIBUTION CALCULATION
+// ═══════════════════════════════════════════════════════════
+
+export interface BudgetDistribution {
+  flights: number;
+  flightsPercent: number;
+  flightsClass: string;
+  
+  accommodation: number;
+  accommodationPercent: number;
+  accommodationStars: string;
+  perNight: number;
+  
+  activities: number;
+  activitiesPercent: number;
+  activitiesType: string;
+  perDayActivities: number;
+  
+  food: number;
+  foodPercent: number;
+  foodType: string;
+  perDayFood: number;
+  
+  buffer: number;
+  bufferPercent: number;
+  
+  targetTotal: number;
+}
+
+export const calculateIdealDistribution = (
+  budget: number, 
+  tier: QualityTier, 
+  days: number
+): BudgetDistribution => {
+  const dist = TIER_DISTRIBUTIONS[tier];
+  const nights = Math.max(1, days - 1);
+  
+  return {
+    flights: Math.round(budget * (dist.flights.percent / 100)),
+    flightsPercent: dist.flights.percent,
+    flightsClass: dist.flights.class,
+    
+    accommodation: Math.round(budget * (dist.accommodation.percent / 100)),
+    accommodationPercent: dist.accommodation.percent,
+    accommodationStars: dist.accommodation.stars,
+    perNight: Math.round((budget * (dist.accommodation.percent / 100)) / nights),
+    
+    activities: Math.round(budget * (dist.activities.percent / 100)),
+    activitiesPercent: dist.activities.percent,
+    activitiesType: dist.activities.type,
+    perDayActivities: Math.round((budget * (dist.activities.percent / 100)) / days),
+    
+    food: Math.round(budget * (dist.food.percent / 100)),
+    foodPercent: dist.food.percent,
+    foodType: dist.food.type,
+    perDayFood: Math.round((budget * (dist.food.percent / 100)) / days),
+    
+    buffer: Math.round(budget * (dist.buffer.percent / 100)),
+    bufferPercent: dist.buffer.percent,
+    
+    targetTotal: Math.round(budget * BUDGET_TARGETS.idealOccupation),
+  };
+};
+
+// ═══════════════════════════════════════════════════════════
+// BUDGET OCCUPATION ANALYSIS
+// ═══════════════════════════════════════════════════════════
+
+export interface BudgetOccupationResult {
+  budget: number;
+  totalCost: number;
+  occupation: number;
+  occupationPercent: string;
+  remaining: number;
+  status: 'low' | 'ideal' | 'high' | 'over';
+  statusLabel: string;
+  distribution: {
+    flights: { cost: number; percent: number };
+    accommodation: { cost: number; percent: number };
+    activities: { cost: number; percent: number };
+    food: { cost: number; percent: number };
+    buffer: { cost: number; percent: number };
+  };
+  needsUpgrade: boolean;
+  upgradeAmount: number;
+}
+
+export const analyzeBudgetOccupation = (
+  budget: number,
+  costs: {
+    flights: number;
+    accommodation: number;
+    activities: number;
+    food: number;
+  }
+): BudgetOccupationResult => {
+  const totalCost = costs.flights + costs.accommodation + costs.activities + costs.food;
+  const occupation = totalCost / budget;
+  const remaining = budget - totalCost;
+  
+  let status: BudgetOccupationResult['status'];
+  let statusLabel: string;
+  
+  if (occupation > 1) {
+    status = 'over';
+    statusLabel = 'Acima do budget';
+  } else if (occupation >= BUDGET_TARGETS.minOccupation && occupation <= BUDGET_TARGETS.maxOccupation) {
+    status = 'ideal';
+    statusLabel = 'Sweet Spot!';
+  } else if (occupation > BUDGET_TARGETS.maxOccupation) {
+    status = 'high';
+    statusLabel = 'Muito próximo do limite';
+  } else {
+    status = 'low';
+    statusLabel = 'Pode aproveitar mais';
+  }
+  
+  const needsUpgrade = occupation < BUDGET_TARGETS.minOccupation;
+  const upgradeAmount = needsUpgrade 
+    ? Math.round(budget * BUDGET_TARGETS.idealOccupation - totalCost)
+    : 0;
+  
+  return {
+    budget,
+    totalCost,
+    occupation,
+    occupationPercent: (occupation * 100).toFixed(1),
+    remaining,
+    status,
+    statusLabel,
+    distribution: {
+      flights: { cost: costs.flights, percent: Math.round((costs.flights / budget) * 100) },
+      accommodation: { cost: costs.accommodation, percent: Math.round((costs.accommodation / budget) * 100) },
+      activities: { cost: costs.activities, percent: Math.round((costs.activities / budget) * 100) },
+      food: { cost: costs.food, percent: Math.round((costs.food / budget) * 100) },
+      buffer: { cost: remaining, percent: Math.round((remaining / budget) * 100) },
+    },
+    needsUpgrade,
+    upgradeAmount,
+  };
+};
+
+// ═══════════════════════════════════════════════════════════
+// PREMIUM EXPERIENCES FOR UPGRADES
+// ═══════════════════════════════════════════════════════════
+
+export interface PremiumExperience {
+  id: string;
+  name: string;
+  cost: number;
+  duration: string;
+  description: string;
+  tier: 'comfort' | 'premium' | 'luxury';
+}
+
+export const PREMIUM_EXPERIENCES: Record<string, Record<'comfort' | 'luxury', PremiumExperience[]>> = {
+  'roma': {
+    comfort: [
+      { id: 'roma-vat-private', name: 'Tour Privado Vaticano (sem filas)', cost: 1800, duration: '4h', description: 'Guia exclusivo pelo Vaticano', tier: 'comfort' },
+      { id: 'roma-col-private', name: 'Tour Privado Coliseu + Fórum', cost: 1500, duration: '3h', description: 'Acesso especial ao underground', tier: 'comfort' },
+      { id: 'roma-cooking', name: 'Aula de Culinária Romana', cost: 800, duration: '3h', description: 'Aprenda a fazer pasta e tiramisù', tier: 'comfort' },
+      { id: 'roma-wine', name: 'Tour Vinícolas Frascati', cost: 1200, duration: '5h', description: 'Degustação em vinícolas locais', tier: 'comfort' },
+      { id: 'roma-rooftop', name: 'Jantar no Rooftop com Vista', cost: 600, duration: '2h', description: 'Vista panorâmica de Roma', tier: 'comfort' },
+    ],
+    luxury: [
+      { id: 'roma-vat-afterhours', name: 'Vaticano Fora de Horário (exclusivo)', cost: 4500, duration: '3h', description: 'Acesso exclusivo após fechamento', tier: 'luxury' },
+      { id: 'roma-pergola', name: 'Jantar no La Pergola (3★ Michelin)', cost: 2500, duration: '3h', description: 'Experiência gastronômica única', tier: 'luxury' },
+      { id: 'roma-ferrari', name: 'Tour de Ferrari pela Toscana', cost: 5000, duration: '8h', description: 'Dirija uma Ferrari pelas colinas', tier: 'luxury' },
+      { id: 'roma-col-vip', name: 'Experiência VIP Coliseu Underground', cost: 2000, duration: '2h', description: 'Áreas normalmente fechadas', tier: 'luxury' },
+      { id: 'roma-chef', name: 'Chef Privado no seu Hotel', cost: 1500, duration: '3h', description: 'Menu personalizado no quarto', tier: 'luxury' },
+    ],
+  },
+  'paris': {
+    comfort: [
+      { id: 'paris-louvre-private', name: 'Tour Privado Louvre', cost: 2000, duration: '3h', description: 'Guia especializado em arte', tier: 'comfort' },
+      { id: 'paris-versailles', name: 'Versailles Sem Filas + Jardins', cost: 1600, duration: '6h', description: 'Transporte e guia inclusos', tier: 'comfort' },
+      { id: 'paris-macarons', name: 'Workshop de Macarons', cost: 700, duration: '2h', description: 'Com chef pâtissier', tier: 'comfort' },
+      { id: 'paris-sena', name: 'Cruzeiro Gourmet no Sena', cost: 900, duration: '2h', description: 'Jantar com vista da Torre Eiffel', tier: 'comfort' },
+    ],
+    luxury: [
+      { id: 'paris-eiffel-private', name: 'Torre Eiffel Acesso VIP + Jantar', cost: 3500, duration: '4h', description: 'Mesa reservada no Jules Verne', tier: 'luxury' },
+      { id: 'paris-opera', name: 'Camarote Privado na Ópera', cost: 2800, duration: '3h', description: 'Palais Garnier, champagne incluso', tier: 'luxury' },
+      { id: 'paris-champagne', name: 'Tour Champagne de Helicóptero', cost: 6000, duration: '6h', description: 'Voo + degustação em Reims', tier: 'luxury' },
+    ],
+  },
+};
+
+// Get available premium experiences for a destination and tier
+export const getPremiumExperiences = (
+  destination: string, 
+  tier: QualityTier
+): PremiumExperience[] => {
+  const destExperiences = PREMIUM_EXPERIENCES[destination.toLowerCase()];
+  if (!destExperiences) return [];
+  
+  if (tier === 'luxury' || tier === 'premium') {
+    return [...(destExperiences.luxury || []), ...(destExperiences.comfort || [])];
+  }
+  if (tier === 'comfort') {
+    return destExperiences.comfort || [];
+  }
+  return [];
+};
+
+// ═══════════════════════════════════════════════════════════
+// AUTOMATIC UPGRADE LOGIC
+// ═══════════════════════════════════════════════════════════
+
+export interface UpgradeResult {
+  upgraded: boolean;
+  originalTotal: number;
+  newTotal: number;
+  upgrades: {
+    type: 'hotel' | 'activity' | 'food' | 'flight';
+    from: string;
+    to: string;
+    costIncrease: number;
+  }[];
+  newOccupation: number;
+}
+
+export const calculateUpgrades = (
+  currentCosts: {
+    flights: number;
+    accommodation: number;
+    activities: number;
+    food: number;
+  },
+  budget: number,
+  tier: QualityTier,
+  destination: string,
+  days: number
+): UpgradeResult => {
+  const occupation = analyzeBudgetOccupation(budget, currentCosts);
+  
+  if (!occupation.needsUpgrade) {
+    return {
+      upgraded: false,
+      originalTotal: occupation.totalCost,
+      newTotal: occupation.totalCost,
+      upgrades: [],
+      newOccupation: occupation.occupation,
+    };
+  }
+  
+  const upgrades: UpgradeResult['upgrades'] = [];
+  let availableForUpgrades = occupation.upgradeAmount;
+  let totalAdded = 0;
+  
+  // Priority 1: Upgrade hotel (for non-economic tiers)
+  if (tier !== 'economic' && availableForUpgrades > 1000) {
+    const nights = Math.max(1, days - 1);
+    const currentPerNight = currentCosts.accommodation / nights;
+    const targetPerNight = Math.min(currentPerNight * 1.4, currentPerNight + (availableForUpgrades * 0.4 / nights));
+    const hotelUpgrade = (targetPerNight - currentPerNight) * nights;
+    
+    if (hotelUpgrade > 500) {
+      upgrades.push({
+        type: 'hotel',
+        from: `R$ ${Math.round(currentPerNight)}/noite`,
+        to: `R$ ${Math.round(targetPerNight)}/noite`,
+        costIncrease: Math.round(hotelUpgrade),
+      });
+      availableForUpgrades -= hotelUpgrade;
+      totalAdded += hotelUpgrade;
+    }
+  }
+  
+  // Priority 2: Add premium experiences
+  if (availableForUpgrades > 800) {
+    const experiences = getPremiumExperiences(destination, tier);
+    for (const exp of experiences) {
+      if (exp.cost <= availableForUpgrades && totalAdded < occupation.upgradeAmount * 0.8) {
+        upgrades.push({
+          type: 'activity',
+          from: 'Atividade padrão',
+          to: exp.name,
+          costIncrease: exp.cost,
+        });
+        availableForUpgrades -= exp.cost;
+        totalAdded += exp.cost;
+        
+        if (upgrades.filter(u => u.type === 'activity').length >= 2) break;
+      }
+    }
+  }
+  
+  // Priority 3: Upgrade meals
+  if (availableForUpgrades > 500 && tier !== 'economic') {
+    const mealUpgrade = Math.min(availableForUpgrades * 0.3, 800);
+    upgrades.push({
+      type: 'food',
+      from: 'Restaurantes casuais',
+      to: 'Restaurantes premium',
+      costIncrease: Math.round(mealUpgrade),
+    });
+    totalAdded += mealUpgrade;
+  }
+  
+  const newTotal = occupation.totalCost + totalAdded;
+  const newOccupation = newTotal / budget;
+  
+  return {
+    upgraded: upgrades.length > 0,
+    originalTotal: occupation.totalCost,
+    newTotal,
+    upgrades,
+    newOccupation,
+  };
 };
