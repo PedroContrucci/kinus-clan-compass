@@ -1,15 +1,68 @@
 // Quality Tier System for Budget-Driven Generation
-// Implements automatic tier selection, degradation, and budget-driven filling
+// Implements automatic tier selection, degradation, and MANDATORY 85-98% occupation
 
 export type QualityTier = 'luxury' | 'premium' | 'comfort' | 'economic';
 
 // ═══════════════════════════════════════════════════════════
-// BUDGET OCCUPATION TARGETS
+// BUDGET OCCUPATION TARGETS - CRITICAL THRESHOLDS
 // ═══════════════════════════════════════════════════════════
 export const BUDGET_TARGETS = {
-  minOccupation: 0.85,  // Mínimo 85% do budget
-  maxOccupation: 0.98,  // Máximo 98% (deixa 2% de folga)
-  idealOccupation: 0.90, // Ideal: 90% do budget
+  minOccupation: 0.85,   // OBRIGATÓRIO: Mínimo 85% do budget
+  idealOccupation: 0.92, // Ideal: 92%
+  maxOccupation: 0.98,   // Máximo: 98% (deixa 2% de folga)
+  maxUpgradeRounds: 5,   // Máximo de rodadas de upgrade
+};
+
+// ═══════════════════════════════════════════════════════════
+// OCCUPATION STATUS TYPES
+// ═══════════════════════════════════════════════════════════
+export type OccupationStatus = 'low' | 'ideal' | 'high' | 'over';
+
+export interface OccupationResult {
+  occupation: number;
+  occupationPercent: number;
+  status: OccupationStatus;
+  statusLabel: string;
+  statusColor: string;
+}
+
+export const getOccupationStatus = (occupation: number): OccupationResult => {
+  const percent = Math.round(occupation * 100);
+  
+  if (occupation < BUDGET_TARGETS.minOccupation) {
+    return { 
+      occupation, 
+      occupationPercent: percent, 
+      status: 'low', 
+      statusLabel: 'Subutilizado',
+      statusColor: '#eab308' 
+    };
+  }
+  if (occupation <= BUDGET_TARGETS.maxOccupation) {
+    return { 
+      occupation, 
+      occupationPercent: percent, 
+      status: 'ideal', 
+      statusLabel: 'Sweet Spot ✓',
+      statusColor: '#10b981' 
+    };
+  }
+  if (occupation <= 1) {
+    return { 
+      occupation, 
+      occupationPercent: percent, 
+      status: 'high', 
+      statusLabel: 'No limite',
+      statusColor: '#f97316' 
+    };
+  }
+  return { 
+    occupation, 
+    occupationPercent: percent, 
+    status: 'over', 
+    statusLabel: 'Excedido',
+    statusColor: '#ef4444' 
+  };
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -35,27 +88,27 @@ export const TIER_DISTRIBUTIONS: Record<QualityTier, TierDistribution> = {
   
   // CONFORTO: R$ 50.000 a R$ 100.000
   comfort: {
-    flights: { percent: 27, class: 'Econômica Premium', description: 'Assentos com mais espaço' },
-    accommodation: { percent: 33, stars: '4-5★', description: 'Hotéis 4-5 estrelas no Centro Histórico' },
+    flights: { percent: 25, class: 'Econômica Premium', description: 'Assentos com mais espaço' },
+    accommodation: { percent: 35, stars: '4-5★', description: 'Hotéis 4-5 estrelas no Centro Histórico' },
     activities: { percent: 22, type: 'premium', description: 'Tours privados no Vaticano e Coliseu' },
-    food: { percent: 9, type: 'upscale', description: 'Jantares em Rooftops e Trattorias premiadas' },
-    buffer: { percent: 9, description: 'Margem para câmbio e extras' },
+    food: { percent: 10, type: 'upscale', description: 'Jantares em Rooftops e Trattorias premiadas' },
+    buffer: { percent: 8, description: 'Margem para câmbio e extras' },
   },
   
   // PREMIUM: R$ 80.000 a R$ 150.000
   premium: {
-    flights: { percent: 26, class: 'Executiva', description: 'Classe executiva em voos longos' },
-    accommodation: { percent: 34, stars: '5★', description: 'Hotéis 5 estrelas de luxo' },
-    activities: { percent: 24, type: 'exclusive', description: 'Experiências VIP e privativas' },
+    flights: { percent: 22, class: 'Executiva', description: 'Classe executiva em voos longos' },
+    accommodation: { percent: 35, stars: '5★', description: 'Hotéis 5 estrelas de luxo' },
+    activities: { percent: 28, type: 'exclusive', description: 'Experiências VIP e privativas' },
     food: { percent: 10, type: 'fine-dining', description: 'Restaurantes estrelados e experiências gastronômicas' },
-    buffer: { percent: 6, description: 'Margem mínima' },
+    buffer: { percent: 5, description: 'Margem mínima' },
   },
   
   // ELITE/LUXURY: R$ 100.000+
   luxury: {
-    flights: { percent: 25, class: 'Primeira Classe', description: 'Primeira classe ou jato privado' },
+    flights: { percent: 20, class: 'Primeira Classe', description: 'Primeira classe ou jato privado' },
     accommodation: { percent: 35, stars: '5★ Luxo', description: 'Suítes em palácios e resorts exclusivos' },
-    activities: { percent: 25, type: 'exclusive', description: 'Acesso privativo após horário, experiências sob medida' },
+    activities: { percent: 30, type: 'exclusive', description: 'Acesso privativo após horário, experiências sob medida' },
     food: { percent: 10, type: 'michelin', description: 'Michelin e chefs privados' },
     buffer: { percent: 5, description: 'Margem mínima' },
   },
@@ -694,22 +747,158 @@ export const getPremiumExperiences = (
 };
 
 // ═══════════════════════════════════════════════════════════
-// AUTOMATIC UPGRADE LOGIC
+// AUTOMATIC UPGRADE LOGIC WITH RECURSIVE LOOP
 // ═══════════════════════════════════════════════════════════
+
+export interface UpgradeAction {
+  type: 'hotel' | 'activity' | 'food' | 'flight';
+  from: string;
+  to: string;
+  costIncrease: number;
+}
+
+export interface UpgradeRoundResult {
+  round: number;
+  upgradesApplied: UpgradeAction[];
+  totalAdded: number;
+  newOccupation: number;
+  reachedTarget: boolean;
+}
 
 export interface UpgradeResult {
   upgraded: boolean;
   originalTotal: number;
   newTotal: number;
-  upgrades: {
-    type: 'hotel' | 'activity' | 'food' | 'flight';
-    from: string;
-    to: string;
-    costIncrease: number;
-  }[];
+  upgrades: UpgradeAction[];
+  rounds: UpgradeRoundResult[];
   newOccupation: number;
+  reachedTarget: boolean;
 }
 
+// Hotel tiers for upgrades
+export const HOTEL_TIERS = [
+  { stars: 3, tier: 'standard', multiplier: 1.0 },
+  { stars: 4, tier: 'superior', multiplier: 1.6 },
+  { stars: 4, tier: 'premium', multiplier: 2.0 },
+  { stars: 5, tier: 'luxury', multiplier: 2.8 },
+  { stars: 5, tier: 'palace', multiplier: 4.0 },
+];
+
+// Perform a single upgrade round
+export const performUpgradeRound = (
+  currentCosts: {
+    flights: number;
+    accommodation: number;
+    activities: number;
+    food: number;
+  },
+  budget: number,
+  targetIncrease: number,
+  tier: QualityTier,
+  destination: string,
+  days: number,
+  roundNumber: number,
+  previousUpgrades: UpgradeAction[]
+): UpgradeRoundResult => {
+  const upgrades: UpgradeAction[] = [];
+  let spent = 0;
+  const nights = Math.max(1, days - 1);
+  
+  // Check what's already been upgraded
+  const hotelAlreadyUpgraded = previousUpgrades.some(u => u.type === 'hotel');
+  const activityCount = previousUpgrades.filter(u => u.type === 'activity').length;
+  const foodAlreadyUpgraded = previousUpgrades.some(u => u.type === 'food');
+  const flightAlreadyUpgraded = previousUpgrades.some(u => u.type === 'flight');
+  
+  // UPGRADE 1: HOTEL (highest impact)
+  if (!hotelAlreadyUpgraded && spent < targetIncrease && tier !== 'economic') {
+    const currentPerNight = currentCosts.accommodation / nights;
+    const upgradeMultiplier = tier === 'luxury' ? 1.6 : tier === 'premium' ? 1.4 : 1.3;
+    const newPerNight = currentPerNight * upgradeMultiplier;
+    const hotelIncrease = (newPerNight - currentPerNight) * nights;
+    
+    if (hotelIncrease > 0 && hotelIncrease <= targetIncrease - spent) {
+      upgrades.push({
+        type: 'hotel',
+        from: `${tier === 'comfort' ? '3-4★' : '4★'} Standard`,
+        to: `${tier === 'luxury' ? '5★ Palace' : tier === 'premium' ? '5★ Luxury' : '4-5★ Superior'}`,
+        costIncrease: Math.round(hotelIncrease),
+      });
+      spent += hotelIncrease;
+      console.log(`  🏨 Hotel upgrade: +R$ ${Math.round(hotelIncrease)}`);
+    }
+  }
+  
+  // UPGRADE 2: PREMIUM EXPERIENCES
+  if (spent < targetIncrease && activityCount < 3) {
+    const experiences = getPremiumExperiences(destination, tier);
+    const availableExperiences = experiences.filter(
+      exp => !previousUpgrades.some(u => u.to === exp.name)
+    );
+    
+    for (const exp of availableExperiences) {
+      if (spent >= targetIncrease) break;
+      if (activityCount + upgrades.filter(u => u.type === 'activity').length >= 3) break;
+      
+      if (exp.cost <= targetIncrease - spent) {
+        upgrades.push({
+          type: 'activity',
+          from: 'Tour padrão',
+          to: exp.name,
+          costIncrease: exp.cost,
+        });
+        spent += exp.cost;
+        console.log(`  🎯 +${exp.name}: +R$ ${exp.cost}`);
+      }
+    }
+  }
+  
+  // UPGRADE 3: MEALS
+  if (!foodAlreadyUpgraded && spent < targetIncrease && tier !== 'economic') {
+    const mealUpgrade = Math.min(targetIncrease - spent, days * 150);
+    if (mealUpgrade >= 300) {
+      upgrades.push({
+        type: 'food',
+        from: tier === 'comfort' ? 'Trattorias locais' : 'Restaurantes casuais',
+        to: tier === 'luxury' ? 'Michelin & Rooftops' : 'Restaurantes premiados',
+        costIncrease: Math.round(mealUpgrade),
+      });
+      spent += mealUpgrade;
+      console.log(`  🍽️ Meals upgrade: +R$ ${Math.round(mealUpgrade)}`);
+    }
+  }
+  
+  // UPGRADE 4: FLIGHT (for Elite tier)
+  if (!flightAlreadyUpgraded && spent < targetIncrease && (tier === 'luxury' || tier === 'premium')) {
+    const flightUpgrade = Math.min(targetIncrease - spent, currentCosts.flights * 0.5);
+    if (flightUpgrade >= 2000) {
+      upgrades.push({
+        type: 'flight',
+        from: tier === 'luxury' ? 'Executiva' : 'Econômica Premium',
+        to: tier === 'luxury' ? 'Primeira Classe' : 'Executiva',
+        costIncrease: Math.round(flightUpgrade),
+      });
+      spent += flightUpgrade;
+      console.log(`  ✈️ Flight upgrade: +R$ ${Math.round(flightUpgrade)}`);
+    }
+  }
+  
+  const currentTotal = currentCosts.flights + currentCosts.accommodation + 
+                       currentCosts.activities + currentCosts.food +
+                       previousUpgrades.reduce((sum, u) => sum + u.costIncrease, 0);
+  const newTotal = currentTotal + spent;
+  const newOccupation = newTotal / budget;
+  
+  return {
+    round: roundNumber,
+    upgradesApplied: upgrades,
+    totalAdded: spent,
+    newOccupation,
+    reachedTarget: newOccupation >= BUDGET_TARGETS.minOccupation,
+  };
+};
+
+// MAIN: Recursive upgrade loop until 85% occupation
 export const calculateUpgrades = (
   currentCosts: {
     flights: number;
@@ -722,80 +911,118 @@ export const calculateUpgrades = (
   destination: string,
   days: number
 ): UpgradeResult => {
-  const occupation = analyzeBudgetOccupation(budget, currentCosts);
+  const initialOccupation = analyzeBudgetOccupation(budget, currentCosts);
   
-  if (!occupation.needsUpgrade) {
+  console.log(`
+═══════════════════════════════════════════════════════
+🎯 OCUPAÇÃO BUDGET ENGINE
+Budget: R$ ${budget.toLocaleString()}
+Ocupação inicial: ${initialOccupation.occupationPercent}%
+Target: ${BUDGET_TARGETS.minOccupation * 100}% - ${BUDGET_TARGETS.maxOccupation * 100}%
+═══════════════════════════════════════════════════════
+  `);
+  
+  if (!initialOccupation.needsUpgrade) {
+    console.log('✅ Ocupação já está no Sweet Spot!');
     return {
       upgraded: false,
-      originalTotal: occupation.totalCost,
-      newTotal: occupation.totalCost,
+      originalTotal: initialOccupation.totalCost,
+      newTotal: initialOccupation.totalCost,
       upgrades: [],
-      newOccupation: occupation.occupation,
+      rounds: [],
+      newOccupation: initialOccupation.occupation,
+      reachedTarget: true,
     };
   }
   
-  const upgrades: UpgradeResult['upgrades'] = [];
-  let availableForUpgrades = occupation.upgradeAmount;
-  let totalAdded = 0;
+  // Start upgrade loop
+  let allUpgrades: UpgradeAction[] = [];
+  const rounds: UpgradeRoundResult[] = [];
+  let currentOccupation = initialOccupation.occupation;
   
-  // Priority 1: Upgrade hotel (for non-economic tiers)
-  if (tier !== 'economic' && availableForUpgrades > 1000) {
-    const nights = Math.max(1, days - 1);
-    const currentPerNight = currentCosts.accommodation / nights;
-    const targetPerNight = Math.min(currentPerNight * 1.4, currentPerNight + (availableForUpgrades * 0.4 / nights));
-    const hotelUpgrade = (targetPerNight - currentPerNight) * nights;
+  for (let round = 1; round <= BUDGET_TARGETS.maxUpgradeRounds; round++) {
+    const currentTotal = initialOccupation.totalCost + 
+                         allUpgrades.reduce((sum, u) => sum + u.costIncrease, 0);
+    const targetIncrease = (budget * BUDGET_TARGETS.idealOccupation) - currentTotal;
     
-    if (hotelUpgrade > 500) {
-      upgrades.push({
-        type: 'hotel',
-        from: `R$ ${Math.round(currentPerNight)}/noite`,
-        to: `R$ ${Math.round(targetPerNight)}/noite`,
-        costIncrease: Math.round(hotelUpgrade),
-      });
-      availableForUpgrades -= hotelUpgrade;
-      totalAdded += hotelUpgrade;
+    if (targetIncrease <= 0 || currentOccupation >= BUDGET_TARGETS.minOccupation) {
+      console.log(`✅ Target reached after ${round - 1} rounds`);
+      break;
+    }
+    
+    console.log(`\n⬆️ Upgrade Round ${round} — Ocupação: ${(currentOccupation * 100).toFixed(1)}%`);
+    console.log(`   Target increase: R$ ${targetIncrease.toLocaleString()}`);
+    
+    const roundResult = performUpgradeRound(
+      currentCosts,
+      budget,
+      targetIncrease,
+      tier,
+      destination,
+      days,
+      round,
+      allUpgrades
+    );
+    
+    rounds.push(roundResult);
+    allUpgrades = [...allUpgrades, ...roundResult.upgradesApplied];
+    currentOccupation = roundResult.newOccupation;
+    
+    if (roundResult.upgradesApplied.length === 0) {
+      console.log('⚠️ No more upgrades available');
+      break;
+    }
+    
+    if (roundResult.reachedTarget) {
+      console.log(`\n✅ SWEET SPOT ACHIEVED: ${(currentOccupation * 100).toFixed(1)}%`);
+      break;
     }
   }
   
-  // Priority 2: Add premium experiences
-  if (availableForUpgrades > 800) {
-    const experiences = getPremiumExperiences(destination, tier);
-    for (const exp of experiences) {
-      if (exp.cost <= availableForUpgrades && totalAdded < occupation.upgradeAmount * 0.8) {
-        upgrades.push({
-          type: 'activity',
-          from: 'Atividade padrão',
-          to: exp.name,
-          costIncrease: exp.cost,
-        });
-        availableForUpgrades -= exp.cost;
-        totalAdded += exp.cost;
-        
-        if (upgrades.filter(u => u.type === 'activity').length >= 2) break;
-      }
-    }
-  }
+  const totalAdded = allUpgrades.reduce((sum, u) => sum + u.costIncrease, 0);
+  const newTotal = initialOccupation.totalCost + totalAdded;
   
-  // Priority 3: Upgrade meals
-  if (availableForUpgrades > 500 && tier !== 'economic') {
-    const mealUpgrade = Math.min(availableForUpgrades * 0.3, 800);
-    upgrades.push({
-      type: 'food',
-      from: 'Restaurantes casuais',
-      to: 'Restaurantes premium',
-      costIncrease: Math.round(mealUpgrade),
-    });
-    totalAdded += mealUpgrade;
-  }
-  
-  const newTotal = occupation.totalCost + totalAdded;
-  const newOccupation = newTotal / budget;
+  console.log(`
+═══════════════════════════════════════════════════════
+📊 RESULTADO FINAL
+Original: R$ ${initialOccupation.totalCost.toLocaleString()} (${initialOccupation.occupationPercent}%)
+Upgrades: +R$ ${totalAdded.toLocaleString()}
+Final: R$ ${newTotal.toLocaleString()} (${(currentOccupation * 100).toFixed(1)}%)
+Rodadas: ${rounds.length}
+═══════════════════════════════════════════════════════
+  `);
   
   return {
-    upgraded: upgrades.length > 0,
-    originalTotal: occupation.totalCost,
+    upgraded: allUpgrades.length > 0,
+    originalTotal: initialOccupation.totalCost,
     newTotal,
-    upgrades,
-    newOccupation,
+    upgrades: allUpgrades,
+    rounds,
+    newOccupation: currentOccupation,
+    reachedTarget: currentOccupation >= BUDGET_TARGETS.minOccupation,
   };
+};
+
+// ═══════════════════════════════════════════════════════════
+// SUCCESS CHANCE CALCULATION (for auction)
+// ═══════════════════════════════════════════════════════════
+
+export interface SuccessChance {
+  percent: number;
+  label: string;
+  color: string;
+}
+
+export const calculateSuccessChance = (
+  offerPrice: number, 
+  targetPrice: number, 
+  originalPrice: number
+): SuccessChance => {
+  const discount = (originalPrice - offerPrice) / originalPrice;
+  
+  if (discount <= 0.10) return { percent: 95, label: 'Muito Alta', color: '#10b981' };
+  if (discount <= 0.20) return { percent: 75, label: 'Alta', color: '#22c55e' };
+  if (discount <= 0.30) return { percent: 50, label: 'Média', color: '#eab308' };
+  if (discount <= 0.40) return { percent: 25, label: 'Baixa', color: '#f97316' };
+  return { percent: 10, label: 'Muito Baixa', color: '#ef4444' };
 };
