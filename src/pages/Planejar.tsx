@@ -42,6 +42,16 @@ import {
   type BudgetValidation
 } from '@/lib/budget';
 import { generateEconomicItinerary, identifyTopVillains, type BudgetVillain } from '@/lib/economicGenerator';
+import { 
+  determineTier, 
+  findValidCombination, 
+  checkViability, 
+  getTierCosts,
+  getDestinationPricing,
+  QUALITY_TIERS,
+  type QualityTier 
+} from '@/lib/tierSystem';
+import { type AuctionItem, type AuctionItemType } from '@/components/ReverseAuctionModal';
 
 interface Activity {
   time: string;
@@ -167,10 +177,11 @@ const Planejar = () => {
   const [selectedDay, setSelectedDay] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; activityName: string; activityType: string } | null>(null);
+  const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; item?: AuctionItem; activityName?: string; activityType?: string } | null>(null);
   const [pinnedActivities, setPinnedActivities] = useState<Set<string>>(new Set());
   const [isGeneratingEconomic, setIsGeneratingEconomic] = useState(false);
   const [economicItinerary, setEconomicItinerary] = useState<ReturnType<typeof generateEconomicItinerary> | null>(null);
+  const [currentTier, setCurrentTier] = useState<QualityTier | null>(null);
 
   const [tripData, setTripData] = useState<TripData>({
     destination: '',
@@ -606,6 +617,10 @@ const Planejar = () => {
     const budgetAllocation = allocateBudget(userBudget, totalDays);
     const dailyBudget = budgetAllocation.dailyBudget.total;
     
+    // Determine quality tier based on budget
+    const calculatedTier = determineTier(userBudget, generatedItinerary.destination, totalDays);
+    const tierConfig = QUALITY_TIERS[calculatedTier];
+    
     // Calculate current day spending
     const currentDaySpent = currentDayExpenses.reduce((sum, e) => sum + e.amount, 0);
     
@@ -852,9 +867,11 @@ const Planejar = () => {
             <ReverseAuctionModal
               isOpen={auctionModal.isOpen}
               onClose={() => setAuctionModal(null)}
+              item={auctionModal.item}
               activityName={auctionModal.activityName}
               activityType={auctionModal.activityType}
               destination={generatedItinerary.destination}
+              estimatedPrice={auctionModal.item?.cost}
             />
           )}
           <Toaster />
@@ -879,10 +896,21 @@ const Planejar = () => {
             >
               <ArrowLeft size={20} className="text-[#f8fafc]" />
             </button>
-            <div>
-              <h1 className="font-bold text-lg font-['Outfit'] text-[#f8fafc]">
-                Teu roteiro pra {generatedItinerary.destination} está pronto! 🌿
-              </h1>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-0.5">
+                <h1 className="font-bold text-lg font-['Outfit'] text-[#f8fafc]">
+                  Teu roteiro pra {generatedItinerary.destination} está pronto! 🌿
+                </h1>
+                <span className={cn(
+                  "px-2 py-0.5 rounded-full text-xs font-medium",
+                  calculatedTier === 'luxury' ? "bg-amber-500/20 text-amber-500" :
+                  calculatedTier === 'premium' ? "bg-emerald-500/20 text-emerald-500" :
+                  calculatedTier === 'comfort' ? "bg-sky-500/20 text-sky-500" :
+                  "bg-slate-400/20 text-slate-400"
+                )}>
+                  {tierConfig.icon} {tierConfig.label}
+                </span>
+              </div>
               <p className="text-sm text-[#94a3b8]">
                 {format(startDate, 'dd/MM')} - {format(endDate, 'dd/MM')} • R$ {generatedItinerary.estimatedBudget.toLocaleString()} estimado
               </p>
@@ -986,7 +1014,28 @@ const Planejar = () => {
                 type="outbound"
                 flight={outboundFlight}
                 timezoneDiff={jetLagInfo?.diff}
-                onSearchOffers={() => setAuctionModal({ isOpen: true, activityName: 'Voo de Ida', activityType: 'flight' })}
+                onSearchOffers={() => setAuctionModal({ 
+                  isOpen: true, 
+                  item: {
+                    type: 'flight',
+                    id: 'outbound-flight',
+                    name: `Voo ${outboundFlight.originCode} → ${outboundFlight.destinationCode}`,
+                    cost: outboundFlight.totalPrice,
+                    origin: outboundFlight.origin,
+                    originCode: outboundFlight.originCode,
+                    destination: outboundFlight.destination,
+                    destinationCode: outboundFlight.destinationCode,
+                    departureDate: outboundFlight.departureDate,
+                    departureTime: outboundFlight.departureTime,
+                    arrivalTime: outboundFlight.arrivalTime,
+                    duration: outboundFlight.duration,
+                    airline: outboundFlight.airline,
+                    flightClass: 'Econômica',
+                    travelers: outboundFlight.travelers,
+                  },
+                  activityName: 'Voo de Ida',
+                  activityType: 'flight' 
+                })}
               />
             </div>
           )}
@@ -997,7 +1046,28 @@ const Planejar = () => {
               <MinimalFlightCard
                 type="return"
                 flight={returnFlight}
-                onSearchOffers={() => setAuctionModal({ isOpen: true, activityName: 'Voo de Volta', activityType: 'flight' })}
+                onSearchOffers={() => setAuctionModal({ 
+                  isOpen: true, 
+                  item: {
+                    type: 'flight',
+                    id: 'return-flight',
+                    name: `Voo ${returnFlight.originCode} → ${returnFlight.destinationCode}`,
+                    cost: returnFlight.totalPrice,
+                    origin: returnFlight.origin,
+                    originCode: returnFlight.originCode,
+                    destination: returnFlight.destination,
+                    destinationCode: returnFlight.destinationCode,
+                    departureDate: returnFlight.departureDate,
+                    departureTime: returnFlight.departureTime,
+                    arrivalTime: returnFlight.arrivalTime,
+                    duration: returnFlight.duration,
+                    airline: returnFlight.airline,
+                    flightClass: 'Econômica',
+                    travelers: returnFlight.travelers,
+                  },
+                  activityName: 'Voo de Volta',
+                  activityType: 'flight' 
+                })}
               />
             </div>
           )}
@@ -1039,7 +1109,21 @@ const Planejar = () => {
                       isPinned={isPinned}
                       dailyBudget={dailyBudget}
                       onTogglePin={() => togglePinActivity(activityKey)}
-                      onOpenAuction={() => setAuctionModal({ isOpen: true, activityName: activity.name, activityType: activity.type })}
+                      onOpenAuction={() => setAuctionModal({ 
+                        isOpen: true, 
+                        item: {
+                          type: 'activity',
+                          id: activityKey,
+                          name: activity.name,
+                          cost: activity.cost,
+                          activityDate: currentDayDate,
+                          activityTime: activity.time,
+                          activityDuration: activity.duration,
+                          includes: activity.description.split(',').map(s => s.trim()).filter(Boolean).slice(0, 3),
+                        },
+                        activityName: activity.name, 
+                        activityType: activity.type 
+                      })}
                       onSwap={() => {}}
                       onRemove={() => {}}
                     />
@@ -1120,9 +1204,11 @@ const Planejar = () => {
           <ReverseAuctionModal
             isOpen={auctionModal.isOpen}
             onClose={() => setAuctionModal(null)}
+            item={auctionModal.item}
             activityName={auctionModal.activityName}
             activityType={auctionModal.activityType}
             destination={generatedItinerary.destination}
+            estimatedPrice={auctionModal.item?.cost}
           />
         )}
         
