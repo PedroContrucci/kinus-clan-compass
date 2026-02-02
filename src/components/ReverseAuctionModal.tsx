@@ -4,6 +4,7 @@ import { ExternalLink, Check, Star, ArrowLeft, Plane, Hotel, MapPin, Clock, User
 import { Offer } from '@/types/trip';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 // Item type for contextual auction
 export type AuctionItemType = 'flight' | 'hotel' | 'activity';
@@ -138,13 +139,30 @@ const ReverseAuctionModal = ({
   const [offers, setOffers] = useState<Offer[]>([]);
   const [showOtherOffers, setShowOtherOffers] = useState(false);
 
-  // Create item from legacy props if not provided
+  // CRITICAL: Create item from legacy props if not provided
+  // Ensure strict typing - category is determined at mount time and NEVER changes
   const auctionItem: AuctionItem = item || {
     type: 'activity' as AuctionItemType,
     id: 'legacy',
     name: activityName || 'Atividade',
     cost: estimatedPrice,
   };
+
+  // Log current category for debugging
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🏷️ [ReverseAuctionModal] Opened for category:', auctionItem.type);
+      console.log('🏷️ [ReverseAuctionModal] Item details:', {
+        type: auctionItem.type,
+        name: auctionItem.name,
+        cost: auctionItem.cost,
+        // Log type-specific fields to verify isolation
+        ...(auctionItem.type === 'flight' && { airline: auctionItem.airline, originCode: auctionItem.originCode }),
+        ...(auctionItem.type === 'hotel' && { hotelName: auctionItem.hotelName, stars: auctionItem.stars }),
+        ...(auctionItem.type === 'activity' && { duration: auctionItem.activityDuration }),
+      });
+    }
+  }, [isOpen, auctionItem]);
 
   const currentCost = auctionItem.cost;
 
@@ -216,18 +234,32 @@ const ReverseAuctionModal = ({
   };
 
   const getTypeIcon = () => {
+    // STRICT: Return icon based ONLY on the item's declared type
     switch (auctionItem.type) {
-      case 'flight': return <Plane size={20} className="text-primary" />;
-      case 'hotel': return <Hotel size={20} className="text-primary" />;
+      case 'flight': return <Plane size={20} className="text-sky-400" />;
+      case 'hotel': return <Hotel size={20} className="text-purple-400" />;
       case 'activity': return <MapPin size={20} className="text-primary" />;
+      default: return <MapPin size={20} className="text-primary" />;
     }
   };
 
   const getTypeLabel = () => {
+    // STRICT: Return label based ONLY on the item's declared type
     switch (auctionItem.type) {
       case 'flight': return 'Voo';
       case 'hotel': return 'Hospedagem';
       case 'activity': return 'Passeio';
+      default: return 'Item';
+    }
+  };
+  
+  // Get category-specific badge styling
+  const getCategoryBadgeClass = () => {
+    switch (auctionItem.type) {
+      case 'flight': return 'bg-sky-500/10 text-sky-400 border-sky-500/30';
+      case 'hotel': return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
+      case 'activity': return 'bg-primary/10 text-primary border-primary/30';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -245,8 +277,14 @@ const ReverseAuctionModal = ({
               </button>
             )}
             <div className="flex items-center gap-2">
-              {getTypeIcon()}
-              <span>Leilão Reverso — {getTypeLabel()}</span>
+              {/* Category Badge with distinct styling */}
+              <span className={cn(
+                "px-3 py-1 rounded-lg text-sm font-medium border flex items-center gap-2",
+                getCategoryBadgeClass()
+              )}>
+                {getTypeIcon()}
+                <span>Leilão — {getTypeLabel()}</span>
+              </span>
             </div>
           </DialogTitle>
         </DialogHeader>

@@ -113,10 +113,11 @@ const travelTypes = [
   { id: 'amigos', label: 'Amigos', icon: '👥' },
 ];
 
+// Updated budget tiers - calibrated ranges
 const budgetPresets = [
-  { id: 'economico', label: 'Econômico', icon: '💰', min: 3000, max: 5000, description: 'Hostels, street food' },
-  { id: 'conforto', label: 'Conforto', icon: '✨', min: 5000, max: 12000, description: 'Hotéis 3-4★, mix' },
-  { id: 'elite', label: 'Elite', icon: '👑', min: 12000, max: 50000, description: 'Luxo total, sem limites' },
+  { id: 'economico', label: 'Econômico', icon: '💚', min: 5000, max: 50000, description: 'Hotéis 3★, voos econômicos, mix de atividades' },
+  { id: 'conforto', label: 'Conforto', icon: '✨', min: 50001, max: 100000, description: 'Hotéis 4★, voos confortáveis, experiências premium' },
+  { id: 'elite', label: 'Elite', icon: '👑', min: 100001, max: 500000, description: 'Hotéis 5★, classe executiva, sem limites' },
 ];
 
 const priorityOptions = [
@@ -156,15 +157,16 @@ const destinationCountries: Record<string, string> = {
   'Marrakech': 'Marrocos',
 };
 
+// Updated budget classification with new tier ranges
 const getBudgetClassification = (amount: number) => {
   if (amount <= 0) return null;
-  if (amount <= 5000) {
-    return { type: 'economico', label: '💰 Modo Econômico', message: 'Vamos otimizar cada real!' };
+  if (amount <= 50000) {
+    return { type: 'economico', label: '💚 Modo Econômico', message: 'Hotéis 3★, voos econômicos, mix de atividades gratuitas e pagas!' };
   }
-  if (amount <= 12000) {
-    return { type: 'conforto', label: '✨ Modo Conforto', message: 'Equilíbrio perfeito!' };
+  if (amount <= 100000) {
+    return { type: 'conforto', label: '✨ Modo Conforto', message: 'Hotéis 4★, voos com conforto extra, experiências premium!' };
   }
-  return { type: 'elite', label: '👑 Modo Elite', message: 'Sem limites, só experiências!' };
+  return { type: 'elite', label: '👑 Modo Elite', message: 'Hotéis 5★, classe executiva, experiências exclusivas sem limite!' };
 };
 
 const Planejar = () => {
@@ -810,8 +812,14 @@ const Planejar = () => {
       }
     };
     
-    // If budget is exceeded, show Reduction Strategy Panel instead of itinerary
-    if (!budgetValidation.isValid && budgetValidation.breakdown && budgetValidation.suggestions) {
+    // ZERO-OVERHEAD: Only show Reduction Strategy if FIXED COSTS exceed budget
+    // If only activities caused overflow, the generator should have adjusted them
+    const showReductionStrategy = !budgetValidation.isValid && 
+      budgetValidation.fixedCostsExceedBudget && 
+      budgetValidation.breakdown && 
+      budgetValidation.suggestions;
+    
+    if (showReductionStrategy) {
       return (
         <div className="min-h-screen bg-background pb-20">
           {/* Header */}
@@ -828,10 +836,10 @@ const Planejar = () => {
               </button>
               <div>
                 <h1 className="font-bold text-lg font-['Outfit'] text-foreground">
-                  ⚠️ Ajuste Necessário
+                  ⚠️ Orçamento Insuficiente
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  O roteiro gerado excede seu orçamento em {budgetValidation.overflowPercent}%
+                  Os custos fixos (voo + hotel) excedem seu orçamento de R$ {userBudget.toLocaleString()}
                 </p>
               </div>
             </div>
