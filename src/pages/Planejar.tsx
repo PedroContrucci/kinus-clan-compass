@@ -41,6 +41,7 @@ import {
   type ReductionSuggestion,
   type BudgetValidation
 } from '@/lib/budget';
+import { generateEconomicItinerary, identifyTopVillains, type BudgetVillain } from '@/lib/economicGenerator';
 
 interface Activity {
   time: string;
@@ -168,6 +169,8 @@ const Planejar = () => {
   const [error, setError] = useState<string | null>(null);
   const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; activityName: string; activityType: string } | null>(null);
   const [pinnedActivities, setPinnedActivities] = useState<Set<string>>(new Set());
+  const [isGeneratingEconomic, setIsGeneratingEconomic] = useState(false);
+  const [economicItinerary, setEconomicItinerary] = useState<ReturnType<typeof generateEconomicItinerary> | null>(null);
 
   const [tripData, setTripData] = useState<TripData>({
     destination: '',
@@ -709,6 +712,89 @@ const Planejar = () => {
       transport: transportCost,
     });
     
+    // Identify top 3 spending items (villains) - include type info
+    const activitiesWithType = generatedItinerary.itinerary.flatMap(day => 
+      day.activities.map(act => ({ name: act.name, cost: act.cost, type: act.type }))
+    );
+    
+    const budgetVillains = identifyTopVillains(
+      { outbound: outboundFlight.totalPrice, return: returnFlight.totalPrice },
+      { total: experienceDays * 480, perNight: 480, nights: experienceDays },
+      activitiesWithType,
+      budgetValidation.totalCost
+    );
+    
+    // Handler for generating economic version
+    const handleGenerateEconomicVersion = async () => {
+      setIsGeneratingEconomic(true);
+      
+      try {
+        // Simulate API delay for realistic UX
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        const economicResult = generateEconomicItinerary(
+          generatedItinerary.destination,
+          destinationCountries[generatedItinerary.destination] || 'País',
+          experienceDays,
+          userBudget,
+          tripData.travelers,
+          budgetValidation.totalCost
+        );
+        
+        if (economicResult && economicResult.isWithinBudget) {
+          // Convert economic itinerary to standard format
+          const convertedItinerary: GeneratedItinerary = {
+            destination: economicResult.destination,
+            country: economicResult.country,
+            days: economicResult.days,
+            estimatedBudget: economicResult.totalCost,
+            focusAreas: ['econômico', 'gratuito'],
+            itinerary: economicResult.itinerary.map(day => ({
+              day: day.day,
+              title: day.title,
+              icon: day.icon,
+              activities: day.activities.map(act => ({
+                time: act.time,
+                name: act.name,
+                description: act.description,
+                duration: act.duration,
+                cost: act.cost,
+                type: act.type,
+              })),
+            })),
+            clanTips: [
+              { tip: `Roma tem ${economicResult.itinerary.flatMap(d => d.activities.filter(a => a.isFree)).length} atividades gratuitas incríveis!`, icon: '💚' },
+              { tip: 'Economize comendo em mercados e traquerias locais.', icon: '🍕' },
+            ],
+            similarTrips: [],
+          };
+          
+          setGeneratedItinerary(convertedItinerary);
+          setEconomicItinerary(economicResult);
+          
+          toast({
+            title: "Roteiro Econômico Gerado! 💚",
+            description: `Total: R$ ${economicResult.totalCost.toLocaleString()} — Economia de R$ ${economicResult.savings.toLocaleString()}!`,
+          });
+        } else {
+          toast({
+            title: "Orçamento muito apertado ⚠️",
+            description: "Mesmo com opções econômicas, os custos de voo e hotel superam o budget. Considere alterar datas ou aumentar o orçamento.",
+            variant: "destructive",
+          });
+        }
+      } catch (err) {
+        console.error('Error generating economic itinerary:', err);
+        toast({
+          title: "Erro ao gerar roteiro econômico",
+          description: "Tente novamente em alguns instantes.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsGeneratingEconomic(false);
+      }
+    };
+    
     // If budget is exceeded, show Reduction Strategy Panel instead of itinerary
     if (!budgetValidation.isValid && budgetValidation.breakdown && budgetValidation.suggestions) {
       return (
@@ -744,6 +830,8 @@ const Planejar = () => {
               suggestions={budgetValidation.suggestions}
               destination={generatedItinerary.destination}
               days={experienceDays}
+              villains={budgetVillains}
+              isGeneratingEconomic={isGeneratingEconomic}
               onApplySuggestion={(suggestionId) => {
                 toast({
                   title: "Estratégia aplicada! 🌿",
@@ -752,14 +840,8 @@ const Planejar = () => {
                 // For now, just regenerate
                 handleGenerateItinerary();
               }}
-              onGenerateEconomic={() => {
-                toast({
-                  title: "Gerando versão econômica... 🌿",
-                  description: "Buscando atividades gratuitas e hotéis mais em conta.",
-                });
-                handleGenerateItinerary();
-              }}
-              onActivateAuction={(activityName) => {
+              onGenerateEconomic={handleGenerateEconomicVersion}
+              onActivateAuction={(activityName, targetPrice) => {
                 setAuctionModal({ isOpen: true, activityName, activityType: 'activity' });
               }}
             />
