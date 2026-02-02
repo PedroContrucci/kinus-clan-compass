@@ -372,6 +372,9 @@ export interface BudgetValidation {
   overflowPercent: number;
   breakdown?: SpendingBreakdown;
   suggestions?: ReductionSuggestion[];
+  // Zero-Overhead: Flag if only FIXED costs exceed budget (impossible scenario)
+  fixedCostsExceedBudget?: boolean;
+  fixedCostsTotal?: number;
 }
 
 export const validateBudget = (
@@ -388,28 +391,114 @@ export const validateBudget = (
   const activitiesCost = costs.activities.reduce((sum, a) => sum + a.cost, 0);
   const totalCost = costs.flights + costs.accommodation + activitiesCost + costs.food + costs.transport;
   
-  if (totalCost <= userBudget) {
+  // ZERO-OVERHEAD: First check if FIXED costs alone exceed budget
+  // This is the ONLY scenario where reduction strategy should appear
+  const fixedCostsTotal = costs.flights + costs.accommodation;
+  
+  if (fixedCostsTotal >= userBudget) {
+    // IMPOSSIBLE: Even without any activities, flights + hotel exceed budget
+    const breakdown = analyzeSpending(costs);
+    const suggestions = generateReductionSuggestions(userBudget, totalCost, breakdown, costs.accommodationNights);
+    
     return {
-      isValid: true,
+      isValid: false,
       totalCost,
       userBudget,
-      overflow: 0,
-      overflowPercent: 0,
+      overflow: totalCost - userBudget,
+      overflowPercent: Math.round(((totalCost - userBudget) / userBudget) * 100),
+      breakdown,
+      suggestions,
+      fixedCostsExceedBudget: true,
+      fixedCostsTotal,
     };
   }
   
-  const overflow = totalCost - userBudget;
-  const overflowPercent = Math.round((overflow / userBudget) * 100);
-  const breakdown = analyzeSpending(costs);
-  const suggestions = generateReductionSuggestions(userBudget, totalCost, breakdown, costs.accommodationNights);
+  // ZERO-OVERHEAD: If fixed costs fit, activities MUST fit within remaining budget
+  // The generator should NEVER produce activities that exceed remaining budget
+  // But if it does, mark as invalid for debugging
+  if (totalCost > userBudget) {
+    // This should NOT happen with proper generation
+    console.warn('[Budget] Zero-Overhead violation: Total exceeds budget but fixed costs fit');
+    const breakdown = analyzeSpending(costs);
+    const suggestions = generateReductionSuggestions(userBudget, totalCost, breakdown, costs.accommodationNights);
+    
+    return {
+      isValid: false,
+      totalCost,
+      userBudget,
+      overflow: totalCost - userBudget,
+      overflowPercent: Math.round(((totalCost - userBudget) / userBudget) * 100),
+      breakdown,
+      suggestions,
+      fixedCostsExceedBudget: false,
+      fixedCostsTotal,
+    };
+  }
   
   return {
-    isValid: false,
+    isValid: true,
     totalCost,
     userBudget,
-    overflow,
-    overflowPercent,
-    breakdown,
-    suggestions,
+    overflow: 0,
+    overflowPercent: 0,
+    fixedCostsExceedBudget: false,
+    fixedCostsTotal,
   };
+};
+
+// ZERO-OVERHEAD: Calculate remaining budget for activities after fixed costs
+export const calculateRemainingBudget = (
+  userBudget: number,
+  flightsCost: number,
+  accommodationCost: number
+): { remaining: number; dailyLimit: number; canProceed: boolean } => {
+  const fixedCosts = flightsCost + accommodationCost;
+  const remaining = userBudget - fixedCosts;
+  
+  if (remaining <= 0) {
+    return {
+      remaining: 0,
+      dailyLimit: 0,
+      canProceed: false,
+    };
+  }
+  
+  return {
+    remaining,
+    dailyLimit: remaining, // Will be divided by days in the generator
+    canProceed: true,
+  };
+};
+
+// ZERO-OVERHEAD: Select activities that fit within daily budget
+export const selectActivitiesWithinBudget = (
+  availableActivities: { name: string; cost: number; type: string; priority?: number }[],
+  dailyBudget: number,
+  maxActivities: number = 5
+): { selected: typeof availableActivities; totalCost: number } => {
+  const selected: typeof availableActivities = [];
+  let totalCost = 0;
+  
+  // Sort by priority (higher first), then cost (lower first for efficiency)
+  const sorted = [...availableActivities].sort((a, b) => {
+    const priorityDiff = (b.priority || 0) - (a.priority || 0);
+    if (priorityDiff !== 0) return priorityDiff;
+    return a.cost - b.cost;
+  });
+  
+  for (const activity of sorted) {
+    // Free activities always fit
+    if (activity.cost === 0) {
+      selected.push(activity);
+      continue;
+    }
+    
+    // Check if adding this activity stays within budget
+    if (totalCost + activity.cost <= dailyBudget && selected.length < maxActivities) {
+      selected.push(activity);
+      totalCost += activity.cost;
+    }
+  }
+  
+  return { selected, totalCost };
 };

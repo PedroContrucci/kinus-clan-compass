@@ -224,15 +224,20 @@ export const getDestinationPricing = (destination: string): DestinationPricing =
   return DESTINATION_PRICING[normalized] || DEFAULT_PRICING;
 };
 
-// Determine initial tier based on budget per day
+// Determine initial tier based on TOTAL budget (aligned with wizard tiers)
+// Economic: ≤R$ 50.000, Comfort: R$ 50.001-100.000, Elite: >R$ 100.000
 export const determineTier = (budget: number, destination: string, days: number): QualityTier => {
+  // Primary tier based on total budget (aligned with wizard)
+  if (budget > 100000) return 'luxury';
+  if (budget > 50000) return 'premium';
+  
+  // For budgets ≤ 50k, check per-day to decide between comfort and economic
   const dailyBudget = budget / days;
   const destMultiplier = DESTINATION_COST_INDEX[destination.toLowerCase()] || 1;
   const adjustedDaily = dailyBudget / destMultiplier;
   
-  if (adjustedDaily >= 2000) return 'luxury';
-  if (adjustedDaily >= 1200) return 'premium';
-  if (adjustedDaily >= 700) return 'comfort';
+  // Within economic tier (≤50k), use daily budget to pick comfort or economic level
+  if (adjustedDaily >= 1500) return 'comfort';
   return 'economic';
 };
 
