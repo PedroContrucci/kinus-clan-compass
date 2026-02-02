@@ -28,6 +28,7 @@ import {
   CompactBudgetHeader,
   BudgetInsufficientAlert,
   ReductionStrategyPanel,
+  BudgetOccupation,
   getActivityImage as getActivityImageFromComponent,
   getActivityIcon as getActivityIconFromComponent
 } from '@/components/planejar';
@@ -49,6 +50,8 @@ import {
   getTierCosts,
   getDestinationPricing,
   QUALITY_TIERS,
+  TIER_DISTRIBUTIONS,
+  analyzeBudgetOccupation,
   type QualityTier 
 } from '@/lib/tierSystem';
 import { type AuctionItem, type AuctionItemType } from '@/components/ReverseAuctionModal';
@@ -950,6 +953,19 @@ const Planejar = () => {
             days={timelineData}
             totalBudget={tripData.budgetAmount || generatedItinerary.estimatedBudget}
             totalSpent={totalSpent + outboundFlight.totalPrice + returnFlight.totalPrice}
+          />
+
+          {/* Budget Occupation - Shows how well budget is being utilized */}
+          <BudgetOccupation
+            budget={userBudget}
+            costs={{
+              flights: outboundFlight.totalPrice + returnFlight.totalPrice,
+              accommodation: experienceDays * 480,
+              activities: activityCost,
+              food: foodCost + transportCost,
+            }}
+            tier={calculatedTier}
+            className="mb-6"
           />
 
           {/* Compact Budget Header - Always visible */}
