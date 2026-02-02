@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { AlertTriangle, TrendingDown, Calendar, MapPin, Wallet, Hotel, Plane, Tag, Utensils, Car, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangle, TrendingDown, Calendar, Hotel, Plane, Tag, Utensils, Car, ChevronDown, Trophy, Medal, Award, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Input } from '@/components/ui/input';
 
 interface SpendingBreakdown {
   flights: { cost: number; percent: number; isHighest: boolean };
@@ -26,6 +27,18 @@ interface ReductionSuggestion {
   };
 }
 
+interface BudgetVillain {
+  id: string;
+  rank: number;
+  type: 'flight' | 'hotel' | 'activity' | 'food';
+  name: string;
+  cost: number;
+  percent: number;
+  potentialSaving: number;
+  canAuction: boolean;
+  details?: string;
+}
+
 interface ReductionStrategyPanelProps {
   userBudget: number;
   totalCost: number;
@@ -33,9 +46,11 @@ interface ReductionStrategyPanelProps {
   suggestions: ReductionSuggestion[];
   destination: string;
   days: number;
+  villains?: BudgetVillain[];
   onApplySuggestion: (suggestionId: string) => void;
   onGenerateEconomic: () => void;
-  onActivateAuction: (activityName: string) => void;
+  onActivateAuction: (activityName: string, targetPrice?: number) => void;
+  isGeneratingEconomic?: boolean;
 }
 
 export const ReductionStrategyPanel = ({
@@ -45,16 +60,19 @@ export const ReductionStrategyPanel = ({
   suggestions,
   destination,
   days,
+  villains = [],
   onApplySuggestion,
   onGenerateEconomic,
   onActivateAuction,
+  isGeneratingEconomic = false,
 }: ReductionStrategyPanelProps) => {
   const [expandedSuggestion, setExpandedSuggestion] = useState<string | null>(null);
+  const [auctionStates, setAuctionStates] = useState<Record<string, { isOpen: boolean; targetPrice: number; isSearching: boolean }>>({});
   
   const overflow = totalCost - userBudget;
   const overflowPercent = Math.round((overflow / userBudget) * 100);
   
-  // Find the villain (highest spending category)
+  // Find the villain (highest spending category from breakdown)
   const villain = Object.entries(breakdown).reduce((max, [key, val]) => 
     val.cost > max.cost ? { key, ...val } : max
   , { key: '', cost: 0, percent: 0, isHighest: false });
@@ -81,6 +99,56 @@ export const ReductionStrategyPanel = ({
     }
   };
 
+  const getVillainIcon = (type: string) => {
+    switch (type) {
+      case 'flight': return <Plane size={18} className="text-muted-foreground" />;
+      case 'hotel': return <Hotel size={18} className="text-muted-foreground" />;
+      case 'activity': return <Tag size={18} className="text-muted-foreground" />;
+      case 'food': return <Utensils size={18} className="text-muted-foreground" />;
+      default: return null;
+    }
+  };
+
+  const getMedalIcon = (rank: number) => {
+    switch (rank) {
+      case 1: return <Trophy size={20} className="text-[#eab308]" />;
+      case 2: return <Medal size={20} className="text-[#94a3b8]" />;
+      case 3: return <Award size={20} className="text-[#cd7f32]" />;
+      default: return null;
+    }
+  };
+
+  const toggleVillainAuction = (villainId: string, currentCost: number) => {
+    setAuctionStates(prev => ({
+      ...prev,
+      [villainId]: prev[villainId]?.isOpen 
+        ? { ...prev[villainId], isOpen: false }
+        : { isOpen: true, targetPrice: Math.round(currentCost * 0.75), isSearching: false }
+    }));
+  };
+
+  const handleVillainAuctionSearch = (villainId: string, villainName: string) => {
+    const state = auctionStates[villainId];
+    if (!state) return;
+    
+    setAuctionStates(prev => ({
+      ...prev,
+      [villainId]: { ...prev[villainId], isSearching: true }
+    }));
+    
+    // Simulate search and trigger auction
+    setTimeout(() => {
+      onActivateAuction(villainName, state.targetPrice);
+      setAuctionStates(prev => ({
+        ...prev,
+        [villainId]: { ...prev[villainId], isSearching: false, isOpen: false }
+      }));
+    }, 1000);
+  };
+
+  // Calculate total potential savings from villains
+  const totalPotentialSavings = villains.reduce((sum, v) => sum + v.potentialSaving, 0);
+
   return (
     <div className="bg-background border-2 border-[#eab308] rounded-2xl p-6 animate-in fade-in duration-300">
       {/* Header */}
@@ -103,27 +171,174 @@ export const ReductionStrategyPanel = ({
         <h3 className="font-semibold text-foreground font-['Outfit'] mb-3 flex items-center gap-2">
           📊 DIAGNÓSTICO FINANCEIRO
         </h3>
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Seu orçamento:</span>
-            <span className="text-foreground font-semibold font-['Outfit']">
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="bg-background rounded-lg p-3 text-center">
+            <span className="text-xs text-muted-foreground block mb-1">Seu Budget</span>
+            <span className="text-foreground font-bold font-['Outfit'] text-lg">
               R$ {userBudget.toLocaleString()}
             </span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Custo gerado:</span>
-            <span className="text-foreground font-semibold font-['Outfit']">
+          <div className="bg-background rounded-lg p-3 text-center border border-destructive/30">
+            <span className="text-xs text-muted-foreground block mb-1">Custo Gerado</span>
+            <span className="text-destructive font-bold font-['Outfit'] text-lg">
               R$ {totalCost.toLocaleString()}
             </span>
           </div>
-          <div className="border-t border-border pt-2 mt-2 flex justify-between text-sm">
-            <span className="text-muted-foreground">Excesso:</span>
-            <span className="text-destructive font-bold font-['Outfit']">
-              R$ {overflow.toLocaleString()} (+{overflowPercent}%)
+          <div className="bg-[#eab308]/10 rounded-lg p-3 text-center border border-[#eab308]/30">
+            <span className="text-xs text-muted-foreground block mb-1">Excesso</span>
+            <span className="text-[#eab308] font-bold font-['Outfit'] text-lg">
+              +{overflowPercent}%
             </span>
           </div>
         </div>
+        <div className="text-center text-sm text-muted-foreground">
+          Precisamos economizar <span className="text-[#eab308] font-semibold">R$ {overflow.toLocaleString()}</span> para caber no budget
+        </div>
       </div>
+
+      {/* Top 3 Villains Section */}
+      {villains.length > 0 && (
+        <div className="mb-6">
+          <h3 className="font-semibold text-foreground font-['Outfit'] mb-4 flex items-center gap-2">
+            🎯 MAIORES VILÕES DO ORÇAMENTO
+          </h3>
+          
+          <div className="space-y-3">
+            {villains.map((villain) => {
+              const auctionState = auctionStates[villain.id];
+              
+              return (
+                <div 
+                  key={villain.id}
+                  className={cn(
+                    "rounded-xl p-4 border transition-all",
+                    villain.rank === 1 
+                      ? "bg-[#eab308]/10 border-[#eab308]" 
+                      : "bg-muted/30 border-border"
+                  )}
+                >
+                  {/* Villain Header */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {getMedalIcon(villain.rank)}
+                      <span className={cn(
+                        "text-xs font-semibold px-2 py-0.5 rounded",
+                        villain.rank === 1 ? "bg-[#eab308]/20 text-[#eab308]" : "bg-muted text-muted-foreground"
+                      )}>
+                        #{villain.rank} VILÃO
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {villain.percent}% do total
+                    </span>
+                  </div>
+                  
+                  {/* Villain Info */}
+                  <div className="flex items-center gap-2 mb-2">
+                    {getVillainIcon(villain.type)}
+                    <span className="text-foreground font-medium">{villain.name}</span>
+                  </div>
+                  
+                  {/* Cost and Details */}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-foreground font-bold font-['Outfit'] text-lg">
+                      R$ {villain.cost.toLocaleString()}
+                    </span>
+                    {villain.details && (
+                      <span className="text-xs text-muted-foreground">{villain.details}</span>
+                    )}
+                  </div>
+                  
+                  {/* Potential Saving */}
+                  <p className="text-sm text-primary mb-3">
+                    💡 Economia potencial: ~R$ {villain.potentialSaving.toLocaleString()}
+                  </p>
+                  
+                  {/* Auction Panel (inline) */}
+                  {auctionState?.isOpen ? (
+                    <div className="bg-[#eab308]/5 border border-[#eab308]/50 rounded-lg p-4 mt-3">
+                      <h4 className="text-sm font-semibold text-[#eab308] mb-3 flex items-center gap-2">
+                        🏷️ Leilão Reverso
+                      </h4>
+                      
+                      <div className="space-y-3">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Valor atual:</span>
+                          <span className="text-foreground font-['Outfit']">R$ {villain.cost.toLocaleString()}</span>
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm text-muted-foreground mb-1 block">Seu preço alvo:</label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-foreground">R$</span>
+                            <Input
+                              type="number"
+                              value={auctionState.targetPrice}
+                              onChange={(e) => setAuctionStates(prev => ({
+                                ...prev,
+                                [villain.id]: { ...prev[villain.id], targetPrice: Number(e.target.value) }
+                              }))}
+                              className="w-32 bg-background"
+                            />
+                          </div>
+                        </div>
+                        
+                        <p className="text-sm text-primary">
+                          Se conseguir: Economia de R$ {(villain.cost - auctionState.targetPrice).toLocaleString()}
+                        </p>
+                        
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleVillainAuctionSearch(villain.id, villain.name)}
+                            disabled={auctionState.isSearching}
+                            className="flex-1 py-2 bg-[#eab308] text-background rounded-lg text-sm font-semibold hover:bg-[#eab308]/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                          >
+                            {auctionState.isSearching ? (
+                              <>
+                                <Loader2 size={14} className="animate-spin" />
+                                Buscando...
+                              </>
+                            ) : (
+                              '🔍 Buscar Ofertas'
+                            )}
+                          </button>
+                          <button
+                            onClick={() => toggleVillainAuction(villain.id, villain.cost)}
+                            className="px-4 py-2 bg-muted text-muted-foreground rounded-lg text-sm hover:bg-muted/80 transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    villain.canAuction && (
+                      <button
+                        onClick={() => toggleVillainAuction(villain.id, villain.cost)}
+                        className="w-full py-2 bg-[#eab308]/20 text-[#eab308] rounded-lg text-sm font-medium hover:bg-[#eab308]/30 transition-colors"
+                      >
+                        🏷️ Ativar Leilão
+                      </button>
+                    )
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Potential savings summary */}
+          <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+            <p className="text-sm text-foreground text-center italic">
+              💡 "Se conseguirmos ~25% de desconto nesses {villains.length} itens, 
+              economizamos <span className="text-primary font-semibold">R$ {totalPotentialSavings.toLocaleString()}</span> 
+              {totalPotentialSavings >= overflow 
+                ? ' e entramos no budget!'
+                : ` (faltam R$ ${Math.max(0, overflow - totalPotentialSavings).toLocaleString()})`
+              }" 🌿
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Spending Breakdown */}
       <div className="mb-6">
@@ -134,7 +349,7 @@ export const ReductionStrategyPanel = ({
         {/* Villain Highlight */}
         <div className="bg-[#eab308]/10 border-l-4 border-[#eab308] rounded-r-xl p-4 mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[#eab308] font-bold text-sm">🔴 VILÃO #1: {getCategoryLabel(villain.key)}</span>
+            <span className="text-[#eab308] font-bold text-sm">🔴 CATEGORIA #1: {getCategoryLabel(villain.key)}</span>
           </div>
           <p className="text-foreground font-semibold font-['Outfit']">
             R$ {villain.cost.toLocaleString()} ({villain.percent}% do total)
@@ -169,10 +384,68 @@ export const ReductionStrategyPanel = ({
       {/* Reduction Strategies */}
       <div className="mb-6">
         <h3 className="font-semibold text-foreground font-['Outfit'] mb-4 flex items-center gap-2">
-          🎯 ESTRATÉGIAS PARA CABER NO ORÇAMENTO
+          🛠️ OPÇÕES PARA RESOLVER
         </h3>
         
         <div className="space-y-4">
+          {/* Strategy 4: Economic Version - PRIORITY */}
+          <div className="border-2 border-primary bg-primary/5 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1 bg-primary/20 rounded-lg">
+                <TrendingDown size={18} className="text-primary" />
+              </div>
+              <span className="font-semibold text-primary font-['Outfit']">
+                💚 ROTEIRO 100% DENTRO DO BUDGET
+              </span>
+            </div>
+            
+            <p className="text-muted-foreground text-sm mb-3">
+              O KINU pode gerar um roteiro alternativo com:
+            </p>
+            
+            <ul className="space-y-1 mb-4 text-sm">
+              <li className="flex items-center gap-2 text-foreground">
+                <span className="text-primary">✓</span> Mesmo voo (custo fixo)
+              </li>
+              <li className="flex items-center gap-2 text-foreground">
+                <span className="text-primary">✓</span> Hotel 3★ bem avaliado
+              </li>
+              <li className="flex items-center gap-2 text-foreground">
+                <span className="text-primary">✓</span> Apenas atividades gratuitas
+              </li>
+              <li className="flex items-center gap-2 text-foreground">
+                <span className="text-primary">✓</span> Refeições em locais econômicos
+              </li>
+              <li className="flex items-center gap-2 text-foreground">
+                <span className="text-primary">✓</span> Transporte público
+              </li>
+            </ul>
+            
+            <div className="bg-muted/30 rounded-lg p-3 mb-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Custo estimado:</span>
+                <span className="text-primary font-bold font-['Outfit']">
+                  R$ {Math.round(userBudget * 0.85).toLocaleString()} (dentro do budget!)
+                </span>
+              </div>
+            </div>
+            
+            <button
+              onClick={onGenerateEconomic}
+              disabled={isGeneratingEconomic}
+              className="w-full py-3 bg-gradient-to-r from-primary to-[#0ea5e9] text-white rounded-xl font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isGeneratingEconomic ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Gerando roteiro econômico...
+                </>
+              ) : (
+                '🌿 Gerar Opção Econômica'
+              )}
+            </button>
+          </div>
+
           {/* Strategy 1: Reduce Days */}
           {suggestions.filter(s => s.type === 'reduce_days').map(suggestion => (
             <Collapsible 
@@ -270,98 +543,6 @@ export const ReductionStrategyPanel = ({
               </div>
             </Collapsible>
           ))}
-
-          {/* Strategy 3: Auction Attack */}
-          {suggestions.filter(s => s.type === 'auction_activities').map(suggestion => (
-            <div key={suggestion.id} className="border border-[#eab308]/50 bg-[#eab308]/5 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Tag size={18} className="text-[#eab308]" />
-                <span className="font-semibold text-[#eab308] font-['Outfit']">
-                  🏷️ OPORTUNIDADES DE LEILÃO
-                </span>
-              </div>
-              
-              <div className="space-y-2 mb-3">
-                {suggestion.details?.items?.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-sm py-2 border-b border-border last:border-0">
-                    <div>
-                      <p className="text-foreground font-medium">{idx + 1}. {item.name}</p>
-                      <p className="text-muted-foreground text-xs">
-                        Atual: R$ {item.currentCost} → Alvo: R$ {item.targetCost}
-                        <span className="text-primary ml-1">(-R$ {item.currentCost - item.targetCost})</span>
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => onActivateAuction(item.name)}
-                      className="px-3 py-1 bg-[#eab308]/20 text-[#eab308] rounded-lg text-xs font-medium hover:bg-[#eab308]/30 transition-colors"
-                    >
-                      Ativar Leilão
-                    </button>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="border-t border-border pt-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Economia potencial:</span>
-                  <span className="text-[#eab308] font-semibold">R$ {suggestion.savings.toLocaleString()}</span>
-                </div>
-                <p className="text-foreground text-xs mt-2 italic">
-                  💡 "Se conseguirmos essas reduções via leilão, ficamos a R$ {Math.abs(suggestion.newTotal - userBudget).toLocaleString()} de fechar no budget!"
-                </p>
-              </div>
-            </div>
-          ))}
-
-          {/* Strategy 4: Economic Version */}
-          <div className="border-2 border-primary bg-primary/5 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-1 bg-primary/20 rounded-lg">
-                <TrendingDown size={18} className="text-primary" />
-              </div>
-              <span className="font-semibold text-primary font-['Outfit']">
-                💚 ROTEIRO 100% DENTRO DO BUDGET
-              </span>
-            </div>
-            
-            <p className="text-muted-foreground text-sm mb-3">
-              O KINU pode gerar um roteiro alternativo com:
-            </p>
-            
-            <ul className="space-y-1 mb-4 text-sm">
-              <li className="flex items-center gap-2 text-foreground">
-                <span className="text-primary">✓</span> Mesmo voo (custo fixo)
-              </li>
-              <li className="flex items-center gap-2 text-foreground">
-                <span className="text-primary">✓</span> Hotel 3★ bem avaliado
-              </li>
-              <li className="flex items-center gap-2 text-foreground">
-                <span className="text-primary">✓</span> Apenas atividades gratuitas
-              </li>
-              <li className="flex items-center gap-2 text-foreground">
-                <span className="text-primary">✓</span> Refeições em locais econômicos
-              </li>
-              <li className="flex items-center gap-2 text-foreground">
-                <span className="text-primary">✓</span> Transporte público
-              </li>
-            </ul>
-            
-            <div className="bg-muted/30 rounded-lg p-3 mb-4 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Custo estimado:</span>
-                <span className="text-primary font-bold font-['Outfit']">
-                  R$ {Math.round(userBudget * 0.9).toLocaleString()} (dentro do budget!)
-                </span>
-              </div>
-            </div>
-            
-            <button
-              onClick={onGenerateEconomic}
-              className="w-full py-3 bg-gradient-to-r from-primary to-[#0ea5e9] text-white rounded-xl font-semibold text-sm"
-            >
-              🌿 Gerar Opção Econômica
-            </button>
-          </div>
         </div>
       </div>
 
