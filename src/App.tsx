@@ -2,14 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from "./pages/Login";
-import Cla from "./pages/Cla";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Planejar from "./pages/Planejar";
 import Viagens from "./pages/Viagens";
-import Conta from "./pages/Conta";
 import DestinationDetail from "./pages/DestinationDetail";
 import NotFound from "./pages/NotFound";
+import BottomNavigation from "./components/BottomNavigation";
 
 const queryClient = new QueryClient();
 
@@ -20,14 +18,15 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/cla" element={<Cla />} />
+          {/* Direct access - no login required */}
+          <Route path="/" element={<Navigate to="/planejar" replace />} />
           <Route path="/planejar" element={<Planejar />} />
           <Route path="/viagens" element={<Viagens />} />
-          <Route path="/conta" element={<Conta />} />
+          <Route path="/viagens/:tripId" element={<Viagens />} />
           <Route path="/destino/:id" element={<DestinationDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <BottomNavigation />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

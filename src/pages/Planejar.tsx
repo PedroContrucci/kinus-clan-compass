@@ -1,8 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Search, Users, Wallet, Clock, Euro, RotateCcw, Trash2, Pin, Tag, CalendarIcon, Plane, Brain, Info, Loader2 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { ArrowLeft, ArrowRight, Search, Users, Wallet, Clock, Euro, RotateCcw, Trash2, Pin, Tag, CalendarIcon, Plane, Brain, Info, Loader2, Edit2, RefreshCw } from 'lucide-react';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
@@ -205,8 +203,7 @@ const Planejar = () => {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-
-  const { user, session, loading: authLoading } = useAuth();
+  const [editingActivity, setEditingActivity] = useState<{ dayIndex: number; actIndex: number } | null>(null);
 
   useEffect(() => {
     if (isLoading) {
@@ -289,43 +286,66 @@ const Planejar = () => {
   };
 
   const handleGenerateItinerary = async () => {
-    if (!session) {
-      setError('Você precisa estar autenticado para gerar roteiros');
-      return;
-    }
-    
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-itinerary`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            destination: tripData.destination,
-            startDate: tripData.startDate?.toISOString(),
-            endDate: tripData.endDate?.toISOString(),
-            travelers: tripData.travelers,
-            travelType: tripData.travelType,
-            budget: tripData.budgetType,
-            budgetAmount: tripData.budgetAmount,
-            priorities: tripData.priorities,
-          }),
-        }
+      // Use local economic generator instead of edge function
+      const days = calculateDays();
+      const tier = determineTier(tripData.budgetAmount, tripData.destination, days);
+      const country = destinationCountries[tripData.destination] || 'País';
+      
+      // Estimate original cost for savings calculation (budget * 1.2)
+      const originalCostEstimate = tripData.budgetAmount * 1.2;
+      
+      // Generate locally using economicGenerator
+      const result = generateEconomicItinerary(
+        tripData.destination || 'Roma',
+        country,
+        days,
+        tripData.budgetAmount,
+        tripData.travelers,
+        originalCostEstimate
       );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao gerar roteiro');
+      
+      if (!result) {
+        throw new Error('Não foi possível gerar um roteiro dentro do orçamento. Tente aumentar o budget ou reduzir os dias.');
       }
-
-      const data = await response.json();
-      setGeneratedItinerary(data);
+      
+      // Convert to GeneratedItinerary format
+      const generatedData: GeneratedItinerary = {
+        destination: tripData.destination || 'Roma',
+        country: country,
+        days: days,
+        estimatedBudget: result.totalCost,
+        focusAreas: tripData.priorities,
+        itinerary: result.itinerary.map((day) => ({
+          day: day.day,
+          title: day.title,
+          icon: day.icon,
+          activities: day.activities.map(act => ({
+            time: act.time,
+            name: act.name,
+            description: act.description,
+            duration: act.duration,
+            cost: act.cost,
+            type: act.type || 'culture',
+          })),
+        })),
+        clanTips: [
+          { tip: "Reserva os ingressos com antecedência!", icon: "💡" },
+          { tip: "Leva um casaco leve, mesmo no verão.", icon: "🧥" },
+        ],
+        similarTrips: [],
+      };
+      
+      setGeneratedItinerary(generatedData);
+      setCurrentTier(tier);
+      
+      toast({
+        title: "Roteiro gerado! 🌿",
+        description: `Ocupação: ${((result.totalCost / tripData.budgetAmount) * 100).toFixed(0)}% do budget`,
+      });
     } catch (err) {
       console.error('Error generating itinerary:', err);
       setError(err instanceof Error ? err.message : 'Erro ao gerar roteiro');
