@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useState, useMemo } from 'react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Loader2 } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { format, differenceInDays, differenceInHours, differenceInMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
@@ -13,14 +13,14 @@ import HotelCard from '@/components/HotelCard';
 import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
+import { CountdownHeader, FinancialStatusCard, CockpitActivityCard } from '@/components/cockpit';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
-import { useAuth } from '@/hooks/useAuth';
 import kinuLogo from '@/assets/KINU_logo.png';
 
 const Viagens = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { tripId } = useParams();
   const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(null);
   const [activeTab, setActiveTab] = useState<'roteiro' | 'finops' | 'packing' | 'checklist'>('roteiro');
@@ -35,12 +35,16 @@ const Viagens = () => {
   const [resetModal, setResetModal] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && user) {
-      // Load trips from localStorage (could be moved to database later)
-      const savedTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
-      setTrips(savedTrips);
+    // Load trips from localStorage
+    const savedTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+    setTrips(savedTrips);
+    
+    // Auto-select trip if tripId is provided
+    if (tripId && savedTrips.length > 0) {
+      const trip = savedTrips.find((t: SavedTrip) => t.id === tripId);
+      if (trip) setSelectedTrip(trip);
     }
-  }, [authLoading, user]);
+  }, [tripId]);
 
   const handleDayChange = (day: number) => {
     if (day === selectedDay) return;
@@ -240,15 +244,28 @@ const Viagens = () => {
     }
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#10b981]" />
-      </div>
-    );
-  }
-
-  if (!user) return null;
+  // Calculate financial status for cockpit
+  const financialStatus = useMemo(() => {
+    if (!selectedTrip) return { confirmed: 0, inAuction: 0, pending: 0, total: 0 };
+    
+    let confirmed = 0;
+    let inAuction = 0;
+    let pending = 0;
+    
+    selectedTrip.days.forEach((day) => {
+      day.activities.forEach((act) => {
+        if (act.status === 'confirmed') {
+          confirmed += act.paidAmount || act.cost;
+        } else if (act.status === 'bidding') {
+          inAuction += act.cost;
+        } else {
+          pending += act.cost;
+        }
+      });
+    });
+    
+    return { confirmed, inAuction, pending, total: confirmed + inAuction + pending };
+  }, [selectedTrip]);
 
   // Trip Dashboard View
   if (selectedTrip) {
@@ -256,21 +273,21 @@ const Viagens = () => {
     const showJetLagAlert = selectedTrip.jetLagMode && selectedDay === 1;
 
     return (
-      <div className="min-h-screen bg-[#0f172a] pb-20">
+      <div className="min-h-screen bg-background pb-24">
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-[#0f172a]/80 backdrop-blur-lg border-b border-[#334155] px-4 py-3">
+        <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
           <div className="flex items-center gap-3 mb-3">
             <button
               onClick={() => setSelectedTrip(null)}
-              className="p-2 hover:bg-[#1e293b] rounded-lg transition-colors"
+              className="p-2 hover:bg-card rounded-lg transition-colors"
             >
-              <ArrowLeft size={20} className="text-[#f8fafc]" />
+              <ArrowLeft size={20} className="text-foreground" />
             </button>
             <div className="flex-1">
-              <h1 className="font-bold text-lg font-['Outfit'] text-[#f8fafc]">
+              <h1 className="font-bold text-lg font-['Outfit'] text-foreground">
                 {selectedTrip.emoji} {selectedTrip.destination}, {selectedTrip.country}
               </h1>
-              <p className="text-sm text-[#94a3b8]">
+              <p className="text-sm text-muted-foreground">
                 {selectedTrip.startDate && format(new Date(selectedTrip.startDate), "dd MMM", { locale: ptBR })} - {selectedTrip.endDate && format(new Date(selectedTrip.endDate), "dd MMM yyyy", { locale: ptBR })} • R$ {selectedTrip.budget.toLocaleString()}
               </p>
             </div>
@@ -279,7 +296,7 @@ const Viagens = () => {
           {/* Tabs */}
           <div className="flex gap-2 overflow-x-auto pb-1">
             {[
-              { id: 'roteiro' as const, label: '📋 Roteiro' },
+              { id: 'roteiro' as const, label: '📋 Cockpit' },
               { id: 'finops' as const, label: '💰 FinOps' },
               { id: 'packing' as const, label: '🧳 Packing' },
               { id: 'checklist' as const, label: '✅ Checklist' },
@@ -289,8 +306,8 @@ const Viagens = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-shrink-0 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-[#10b981] text-white'
-                    : 'bg-[#1e293b] text-[#94a3b8] hover:text-[#f8fafc]'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-card text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {tab.label}
@@ -300,38 +317,56 @@ const Viagens = () => {
         </header>
 
         <main className="px-4 py-6">
-          {/* Roteiro Tab */}
+          {/* Cockpit/Roteiro Tab */}
           {activeTab === 'roteiro' && (
             <div className="animate-fade-in">
+              {/* Countdown Header */}
+              <CountdownHeader
+                destination={selectedTrip.destination}
+                country={selectedTrip.country}
+                emoji={selectedTrip.emoji}
+                departureDate={selectedTrip.startDate}
+              />
+              
+              {/* Financial Status */}
+              <FinancialStatusCard
+                status={financialStatus}
+                budget={selectedTrip.budget}
+              />
+
               {/* Fixed Flight Card - Outbound */}
               {selectedTrip.flights?.outbound && (
-                <FlightCard
-                  flight={selectedTrip.flights.outbound}
-                  type="outbound"
-                  onOpenAuction={() => setAuctionModal({
-                    isOpen: true,
-                    activityName: 'Voo de Ida',
-                    activityType: 'flight',
-                    estimatedPrice: selectedTrip.flights?.outbound?.price,
-                  })}
-                />
+                <div className="mt-4">
+                  <FlightCard
+                    flight={selectedTrip.flights.outbound}
+                    type="outbound"
+                    onOpenAuction={() => setAuctionModal({
+                      isOpen: true,
+                      activityName: 'Voo de Ida',
+                      activityType: 'flight',
+                      estimatedPrice: selectedTrip.flights?.outbound?.price,
+                    })}
+                  />
+                </div>
               )}
 
               {/* Fixed Hotel Card */}
               {selectedTrip.accommodation && (
-                <HotelCard
-                  hotel={selectedTrip.accommodation}
-                  onOpenAuction={() => setAuctionModal({
-                    isOpen: true,
-                    activityName: selectedTrip.accommodation?.name || 'Hotel',
-                    activityType: 'hotel',
-                    estimatedPrice: selectedTrip.accommodation?.totalPrice,
-                  })}
-                />
+                <div className="mt-4">
+                  <HotelCard
+                    hotel={selectedTrip.accommodation}
+                    onOpenAuction={() => setAuctionModal({
+                      isOpen: true,
+                      activityName: selectedTrip.accommodation?.name || 'Hotel',
+                      activityType: 'hotel',
+                      estimatedPrice: selectedTrip.accommodation?.totalPrice,
+                    })}
+                  />
+                </div>
               )}
 
               {/* Day Timeline */}
-              <div className="mb-6">
+              <div className="mb-6 mt-4">
                 <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
                   {selectedTrip.days.map((day) => (
                     <button
@@ -339,13 +374,13 @@ const Viagens = () => {
                       onClick={() => handleDayChange(day.day)}
                       className={`flex-shrink-0 p-4 rounded-2xl transition-all duration-200 border ${
                         selectedDay === day.day
-                          ? 'bg-[#1e293b] border-[#10b981] ring-2 ring-[#10b981]/30'
-                          : 'bg-[#1e293b] border-[#334155] hover:border-[#10b981]/50'
+                          ? 'bg-card border-primary ring-2 ring-primary/30'
+                          : 'bg-card border-border hover:border-primary/50'
                       }`}
                     >
                       <div className="text-2xl mb-1">{day.icon}</div>
-                      <div className="font-semibold text-[#f8fafc] font-['Outfit']">Dia {day.day}</div>
-                      <div className="text-xs text-[#94a3b8] max-w-[80px] truncate">{day.title}</div>
+                      <div className="font-semibold text-foreground font-['Outfit']">Dia {day.day}</div>
+                      <div className="text-xs text-muted-foreground max-w-[80px] truncate">{day.title}</div>
                     </button>
                   ))}
                 </div>
@@ -359,74 +394,51 @@ const Viagens = () => {
                 />
               )}
 
-              {/* Day Activities */}
+              {/* Day Activities with Cockpit Cards */}
               {currentDay && (
-                <div
-                  className={`bg-[#1e293b] border border-[#334155] rounded-2xl p-4 transition-opacity duration-300 ${
+                <div className={`bg-card border border-border rounded-2xl p-4 transition-opacity duration-300 ${
                     isTransitioning ? 'opacity-0' : 'opacity-100'
                   }`}
                 >
-                  <h3 className="font-semibold text-lg mb-4 text-[#f8fafc] font-['Outfit']">
+                  <h3 className="font-semibold text-lg mb-4 text-foreground font-['Outfit']">
                     Dia {currentDay.day}: {currentDay.title}
                   </h3>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {currentDay.activities.map((activity, actIndex) => {
                       const dayIndex = selectedTrip.days.findIndex((d) => d.day === currentDay.day);
                       
                       return (
-                        <div key={activity.id} className={`flex gap-3 ${
-                          activity.status === 'confirmed' ? 'bg-[#10b981]/10 -mx-2 px-2 py-2 rounded-xl border border-[#10b981]/30' :
-                          activity.status === 'bidding' ? 'bg-[#eab308]/10 -mx-2 px-2 py-2 rounded-xl border border-[#eab308]/30' :
-                          activity.status === 'cancelled' ? 'opacity-50' : ''
-                        }`}>
-                          <div className="flex flex-col items-center">
-                            <div className="text-xl">{getActivityIcon(activity.type)}</div>
-                            {actIndex < currentDay.activities.length - 1 && (
-                              <div className="w-0.5 flex-1 bg-[#334155] mt-2" />
-                            )}
-                          </div>
-                          <div className="flex-1 pb-4">
-                            <div className="flex items-center gap-2 mb-1">
-                              {getStatusIcon(activity.status)}
-                              <span className="text-sm text-[#94a3b8]">
-                                <Clock size={14} className="inline mr-1" />
-                                {activity.time}
-                              </span>
-                              {activity.status === 'confirmed' && activity.paidAmount && (
-                                <span className="text-xs bg-[#10b981] text-white px-2 py-0.5 rounded-full">
-                                  R$ {activity.paidAmount.toLocaleString()}
-                                </span>
-                              )}
-                              {activity.jetLagFriendly && (
-                                <span className="text-xs bg-[#eab308]/20 text-[#eab308] px-2 py-0.5 rounded-full">
-                                  🧘 Jet Lag Friendly
-                                </span>
-                              )}
-                            </div>
-                            <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
-                            <p className="text-sm text-[#94a3b8]">{activity.description}</p>
-
-                            {/* Actions */}
-                            {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (
-                              <div className="flex gap-2 mt-3 flex-wrap">
-                                <button
-                                  onClick={() => handleStartBidding(activity, dayIndex, actIndex)}
-                                  className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[#eab308]/10 text-[#eab308] rounded-lg border border-[#eab308]/30 hover:bg-[#eab308]/20"
-                                >
-                                  <Tag size={12} />
-                                  Leilão
-                                </button>
-                                <button
-                                  onClick={() => setConfirmModal({ isOpen: true, activity, dayIndex, actIndex })}
-                                  className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[#10b981]/10 text-[#10b981] rounded-lg border border-[#10b981]/30 hover:bg-[#10b981]/20"
-                                >
-                                  <Check size={12} />
-                                  Confirmar
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                        <CockpitActivityCard
+                          key={activity.id}
+                          activity={activity}
+                          dayIndex={dayIndex}
+                          actIndex={actIndex}
+                          onActivateAuction={handleStartBidding}
+                          onConfirm={(activityId, data) => {
+                            // Update activity status
+                            const updatedTrip = { ...selectedTrip };
+                            const act = updatedTrip.days[dayIndex].activities[actIndex];
+                            act.status = 'confirmed';
+                            act.paidAmount = data.amount;
+                            act.confirmationLink = data.link;
+                            
+                            // Update finances
+                            updatedTrip.finances.confirmed += data.amount;
+                            updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - data.amount);
+                            updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
+                            updatedTrip.progress = calculateProgress(updatedTrip);
+                            
+                            setSelectedTrip(updatedTrip);
+                            const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
+                            setTrips(updatedTrips);
+                            localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+                            
+                            toast({
+                              title: "Atividade confirmada! ✅",
+                              description: `Economia de R$ ${(activity.cost - data.amount).toLocaleString()}`,
+                            });
+                          }}
+                        />
                       );
                     })}
                   </div>
