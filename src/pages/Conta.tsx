@@ -1,28 +1,25 @@
-import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, User, Settings, HelpCircle, Star } from 'lucide-react';
+import { LogOut, User, Settings, HelpCircle, Star, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import kinuLogo from '@/assets/KINU_logo.png';
 
 const Conta = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const { user, loading, signOut } = useAuth();
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem('kinu_user');
-    if (!savedUser) {
-      navigate('/');
-      return;
-    }
-    setUser(JSON.parse(savedUser));
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('kinu_user');
-    navigate('/');
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#10b981]" />
+      </div>
+    );
+  }
 
   if (!user) return null;
+
+  const userName = user.user_metadata?.name || user.email?.split('@')[0] || 'Viajante';
+  const userEmail = user.email || '';
 
   const menuItems = [
     { icon: User, label: 'Editar Perfil', action: () => {} },
@@ -49,11 +46,11 @@ const Conta = () => {
         <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-6 mb-6">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-gradient-to-br from-[#10b981] to-[#0ea5e9] rounded-full flex items-center justify-center text-2xl">
-              {user.name.charAt(0).toUpperCase()}
+              {userName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="font-semibold text-lg text-[#f8fafc] font-['Outfit']">{user.name}</p>
-              <p className="text-[#94a3b8] text-sm">{user.email}</p>
+              <p className="font-semibold text-lg text-[#f8fafc] font-['Outfit']">{userName}</p>
+              <p className="text-[#94a3b8] text-sm">{userEmail}</p>
               <div className="flex items-center gap-1 mt-1">
                 <span className="text-[#10b981] text-xs">🌿 Membro do Clã</span>
               </div>
@@ -92,7 +89,7 @@ const Conta = () => {
           
           {/* Logout */}
           <button
-            onClick={handleLogout}
+            onClick={signOut}
             className="w-full flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-left hover:bg-red-500/20 transition-colors mt-4"
           >
             <LogOut size={20} className="text-red-400" />

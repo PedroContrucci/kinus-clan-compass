@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings } from 'lucide-react';
+import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Loader2 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -14,13 +14,13 @@ import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
-import { PackingData } from '@/types/packing';
+import { useAuth } from '@/hooks/useAuth';
 import kinuLogo from '@/assets/KINU_logo.png';
 
 const Viagens = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  const { user, loading: authLoading, signOut } = useAuth();
   const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(null);
   const [activeTab, setActiveTab] = useState<'roteiro' | 'finops' | 'packing' | 'checklist'>('roteiro');
@@ -35,17 +35,12 @@ const Viagens = () => {
   const [resetModal, setResetModal] = useState(false);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('kinu_user');
-    if (!savedUser) {
-      navigate('/');
-      return;
+    if (!authLoading && user) {
+      // Load trips from localStorage (could be moved to database later)
+      const savedTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+      setTrips(savedTrips);
     }
-    setUser(JSON.parse(savedUser));
-
-    // Load trips
-    const savedTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
-    setTrips(savedTrips);
-  }, [navigate]);
+  }, [authLoading, user]);
 
   const handleDayChange = (day: number) => {
     if (day === selectedDay) return;
@@ -218,15 +213,6 @@ const Viagens = () => {
     navigate('/planejar');
   };
 
-  const handlePackingUpdate = (packingData: PackingData) => {
-    if (!selectedTrip) return;
-
-    const updatedTrip = { ...selectedTrip, packing: packingData };
-    setSelectedTrip(updatedTrip);
-    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
-  };
 
   const getTripDuration = (trip: SavedTrip): number => {
     if (!trip.startDate || !trip.endDate) return 7;
@@ -253,6 +239,14 @@ const Viagens = () => {
       default: return { label: 'Rascunho', color: 'text-[#64748b]' };
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#10b981]" />
+      </div>
+    );
+  }
 
   if (!user) return null;
 
@@ -417,14 +411,14 @@ const Viagens = () => {
                               <div className="flex gap-2 mt-3 flex-wrap">
                                 <button
                                   onClick={() => handleStartBidding(activity, dayIndex, actIndex)}
-                                  className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-[#10b981] transition-colors"
+                                  className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[#eab308]/10 text-[#eab308] rounded-lg border border-[#eab308]/30 hover:bg-[#eab308]/20"
                                 >
                                   <Tag size={12} />
-                                  {activity.status === 'bidding' ? 'Ver Leilão' : 'Ver Ofertas'}
+                                  Leilão
                                 </button>
                                 <button
                                   onClick={() => setConfirmModal({ isOpen: true, activity, dayIndex, actIndex })}
-                                  className="flex items-center gap-1 px-3 py-1.5 bg-[#10b981] rounded-lg text-xs text-white hover:bg-[#10b981]/80 transition-colors"
+                                  className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[#10b981]/10 text-[#10b981] rounded-lg border border-[#10b981]/30 hover:bg-[#10b981]/20"
                                 >
                                   <Check size={12} />
                                   Confirmar
@@ -438,95 +432,66 @@ const Viagens = () => {
                   </div>
                 </div>
               )}
-
-              {/* Fixed Flight Card - Return (on last day) */}
-              {selectedTrip.flights?.return && selectedDay === selectedTrip.days.length && (
-                <div className="mt-4">
-                  <FlightCard
-                    flight={selectedTrip.flights.return}
-                    type="return"
-                    onOpenAuction={() => setAuctionModal({
-                      isOpen: true,
-                      activityName: 'Voo de Volta',
-                      activityType: 'flight',
-                      estimatedPrice: selectedTrip.flights?.return?.price,
-                    })}
-                  />
-                </div>
-              )}
             </div>
           )}
 
           {/* FinOps Tab */}
-          {activeTab === 'finops' && (
-            <>
-              <FinOpsDashboard
-                finances={selectedTrip.finances}
-                destination={selectedTrip.destination}
-              />
-
-              {/* Add Manual Expense */}
-              <button
-                onClick={() => setManualExpenseModal(true)}
-                className="w-full mt-6 py-4 bg-[#1e293b] border border-dashed border-[#334155] rounded-2xl text-[#94a3b8] font-['Outfit'] flex items-center justify-center gap-2 hover:border-[#10b981] hover:text-[#f8fafc] transition-colors"
-              >
-                <Plus size={20} />
-                Adicionar Gasto Manual
-              </button>
-            </>
+          {activeTab === 'finops' && selectedTrip && (
+            <FinOpsDashboard
+              finances={selectedTrip.finances}
+              destination={selectedTrip.destination}
+            />
           )}
 
-          {/* Smart Packing Tab */}
-          {activeTab === 'packing' && (
+          {/* Packing Tab */}
+          {activeTab === 'packing' && selectedTrip && (
             <SmartPacking
               tripId={selectedTrip.id}
               destination={selectedTrip.destination}
               duration={getTripDuration(selectedTrip)}
-              packingData={(selectedTrip as any).packing || null}
-              onUpdate={handlePackingUpdate}
+              packingData={null}
+              onUpdate={() => {}}
             />
           )}
 
           {/* Checklist Tab */}
-          {activeTab === 'checklist' && (
-            <div className="animate-fade-in space-y-6">
-              {['documentos', 'reservas', 'packing', 'pre-viagem'].map((category) => {
-                const items = selectedTrip.checklist.filter((i) => i.category === category);
-                const categoryLabels: Record<string, string> = {
-                  documentos: '📄 Documentos',
-                  reservas: '🎫 Reservas',
-                  packing: '🧳 Packing',
-                  'pre-viagem': '✈️ Pré-Viagem',
-                };
-                
-                return (
-                  <div key={category} className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
-                    <h3 className="font-semibold text-[#f8fafc] mb-3 font-['Outfit']">{categoryLabels[category]}</h3>
-                    <div className="space-y-2">
-                      {items.map((item) => (
-                        <button
-                          key={item.id}
-                          onClick={() => handleToggleChecklist(item.id)}
-                          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
-                            item.checked ? 'bg-[#10b981]/10' : 'bg-[#0f172a]'
-                          }`}
-                        >
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                            item.checked ? 'bg-[#10b981] border-[#10b981]' : 'border-[#334155]'
-                          }`}>
-                            {item.checked && <Check size={14} className="text-white" />}
-                          </div>
-                          <span className={`text-sm font-['Plus_Jakarta_Sans'] ${
-                            item.checked ? 'text-[#94a3b8] line-through' : 'text-[#f8fafc]'
-                          }`}>
-                            {item.label}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+          {activeTab === 'checklist' && selectedTrip && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-[#f8fafc] font-['Outfit']">
+                  ✅ Checklist da Viagem
+                </h2>
+                <button
+                  onClick={() => setResetModal(true)}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-500/10 text-red-400 rounded-lg border border-red-500/30 hover:bg-red-500/20"
+                >
+                  <RotateCcw size={12} />
+                  Reset
+                </button>
+              </div>
+
+              {selectedTrip.checklist.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => handleToggleChecklist(item.id)}
+                  className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-all ${
+                    item.checked
+                      ? 'bg-[#10b981]/10 border-[#10b981]/30'
+                      : 'bg-[#1e293b] border-[#334155] hover:border-[#10b981]/50'
+                  }`}
+                >
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                    item.checked ? 'border-[#10b981] bg-[#10b981]' : 'border-[#64748b]'
+                  }`}>
+                    {item.checked && <Check size={14} className="text-white" />}
                   </div>
-                );
-              })}
+                  <span className={`flex-1 text-left font-['Plus_Jakarta_Sans'] ${
+                    item.checked ? 'text-[#94a3b8] line-through' : 'text-[#f8fafc]'
+                  }`}>
+                    {item.label}
+                  </span>
+                </button>
+              ))}
             </div>
           )}
         </main>
@@ -534,50 +499,39 @@ const Viagens = () => {
         {/* Bottom Nav */}
         <BottomNav currentPath={location.pathname} />
 
-        {/* Reverse Auction Modal */}
-        {auctionModal && (
-          <ReverseAuctionModal
-            isOpen={auctionModal.isOpen}
-            onClose={() => setAuctionModal(null)}
-            activityName={auctionModal.activityName}
-            activityType={auctionModal.activityType}
-            destination={selectedTrip.destination}
-            estimatedPrice={auctionModal.estimatedPrice}
-            onAcceptOffer={handleAcceptOffer}
-          />
-        )}
-
-        {/* Confirm Activity Modal */}
-        <Dialog open={confirmModal?.isOpen || false} onOpenChange={() => setConfirmModal(null)}>
-          <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc] max-w-sm mx-auto">
+        {/* Confirm Modal */}
+        <Dialog open={confirmModal?.isOpen} onOpenChange={() => setConfirmModal(null)}>
+          <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc]">
             <DialogHeader>
-              <DialogTitle className="font-['Outfit']">✅ Confirmar Atividade</DialogTitle>
+              <DialogTitle className="font-['Outfit']">Confirmar Reserva</DialogTitle>
+              <DialogDescription className="text-[#94a3b8]">
+                {confirmModal?.activity.name}
+              </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <p className="text-[#94a3b8] text-sm">{confirmModal?.activity.name}</p>
+            <div className="space-y-4 pt-4">
               <div>
-                <label className="block text-sm text-[#94a3b8] mb-2">Valor pago (R$)</label>
+                <label className="text-sm text-[#94a3b8]">Valor pago (R$)</label>
                 <input
                   type="number"
                   value={confirmAmount}
                   onChange={(e) => setConfirmAmount(e.target.value)}
-                  placeholder="0"
-                  className="w-full px-4 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#10b981]"
+                  placeholder={confirmModal?.activity.cost.toString()}
+                  className="w-full mt-1 px-4 py-2 bg-[#0f172a] border border-[#334155] rounded-lg text-[#f8fafc]"
                 />
               </div>
               <div>
-                <label className="block text-sm text-[#94a3b8] mb-2">Link/Confirmação (opcional)</label>
+                <label className="text-sm text-[#94a3b8]">Link da confirmação (opcional)</label>
                 <input
-                  type="text"
+                  type="url"
                   value={confirmLink}
                   onChange={(e) => setConfirmLink(e.target.value)}
                   placeholder="https://..."
-                  className="w-full px-4 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#10b981]"
+                  className="w-full mt-1 px-4 py-2 bg-[#0f172a] border border-[#334155] rounded-lg text-[#f8fafc]"
                 />
               </div>
               <button
                 onClick={handleConfirmActivity}
-                className="w-full py-3 bg-gradient-to-r from-[#10b981] to-[#0ea5e9] text-white rounded-xl font-semibold"
+                className="w-full py-3 bg-[#10b981] text-white rounded-lg font-semibold"
               >
                 Confirmar
               </button>
@@ -587,66 +541,90 @@ const Viagens = () => {
 
         {/* Manual Expense Modal */}
         <Dialog open={manualExpenseModal} onOpenChange={setManualExpenseModal}>
-          <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc] max-w-sm mx-auto">
+          <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc]">
             <DialogHeader>
-              <DialogTitle className="font-['Outfit']">💰 Adicionar Gasto</DialogTitle>
+              <DialogTitle className="font-['Outfit']">Adicionar Gasto</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-4 pt-4">
               <div>
-                <label className="block text-sm text-[#94a3b8] mb-2">Descrição</label>
+                <label className="text-sm text-[#94a3b8]">Descrição</label>
                 <input
                   type="text"
                   value={manualExpense.name}
-                  onChange={(e) => setManualExpense((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="Ex: Uber do aeroporto"
-                  className="w-full px-4 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#10b981]"
+                  onChange={(e) => setManualExpense({ ...manualExpense, name: e.target.value })}
+                  placeholder="Souvenir, taxi..."
+                  className="w-full mt-1 px-4 py-2 bg-[#0f172a] border border-[#334155] rounded-lg text-[#f8fafc]"
                 />
               </div>
               <div>
-                <label className="block text-sm text-[#94a3b8] mb-2">Valor (R$)</label>
+                <label className="text-sm text-[#94a3b8]">Valor (R$)</label>
                 <input
                   type="number"
                   value={manualExpense.amount || ''}
-                  onChange={(e) => setManualExpense((prev) => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-                  placeholder="0"
-                  className="w-full px-4 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#10b981]"
+                  onChange={(e) => setManualExpense({ ...manualExpense, amount: parseFloat(e.target.value) || 0 })}
+                  className="w-full mt-1 px-4 py-2 bg-[#0f172a] border border-[#334155] rounded-lg text-[#f8fafc]"
                 />
               </div>
               <div>
-                <label className="block text-sm text-[#94a3b8] mb-2">Categoria</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: 'flights' as const, label: '✈️ Voo' },
-                    { id: 'accommodation' as const, label: '🏨 Hotel' },
-                    { id: 'tours' as const, label: '🎯 Passeio' },
-                    { id: 'food' as const, label: '🍽️ Comida' },
-                    { id: 'transport' as const, label: '🚕 Transporte' },
-                    { id: 'shopping' as const, label: '🛍️ Compras' },
-                  ].map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setManualExpense((prev) => ({ ...prev, category: cat.id }))}
-                      className={`py-2 px-3 rounded-lg text-xs transition-colors ${
-                        manualExpense.category === cat.id
-                          ? 'bg-[#10b981] text-white'
-                          : 'bg-[#0f172a] text-[#94a3b8] border border-[#334155]'
-                      }`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
+                <label className="text-sm text-[#94a3b8]">Categoria</label>
+                <select
+                  value={manualExpense.category}
+                  onChange={(e) => setManualExpense({ ...manualExpense, category: e.target.value as any })}
+                  className="w-full mt-1 px-4 py-2 bg-[#0f172a] border border-[#334155] rounded-lg text-[#f8fafc]"
+                >
+                  <option value="shopping">🛍️ Compras</option>
+                  <option value="food">🍽️ Alimentação</option>
+                  <option value="transport">🚗 Transporte</option>
+                  <option value="tours">🎯 Passeios</option>
+                </select>
               </div>
               <button
                 onClick={handleAddManualExpense}
-                disabled={!manualExpense.name || manualExpense.amount <= 0}
-                className="w-full py-3 bg-gradient-to-r from-[#10b981] to-[#0ea5e9] text-white rounded-xl font-semibold disabled:opacity-50"
+                className="w-full py-3 bg-[#10b981] text-white rounded-lg font-semibold"
               >
                 Adicionar
               </button>
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Reset Modal */}
+        <Dialog open={resetModal} onOpenChange={setResetModal}>
+          <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc]">
+            <DialogHeader>
+              <DialogTitle className="font-['Outfit']">Reiniciar Jornada?</DialogTitle>
+              <DialogDescription className="text-[#94a3b8]">
+                Isso vai apagar todas as suas viagens salvas. Tem certeza?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={() => setResetModal(false)}
+                className="flex-1 py-3 bg-[#334155] text-[#f8fafc] rounded-lg font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleResetJourney}
+                className="flex-1 py-3 bg-red-500 text-white rounded-lg font-semibold"
+              >
+                Reiniciar
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Auction Modal */}
+        {auctionModal && (
+          <ReverseAuctionModal
+            isOpen={auctionModal.isOpen}
+            onClose={() => setAuctionModal(null)}
+            activityName={auctionModal.activityName}
+            activityType={auctionModal.activityType}
+            estimatedPrice={auctionModal.estimatedPrice}
+            onAcceptOffer={handleAcceptOffer}
+          />
+        )}
 
         <Toaster />
       </div>
@@ -664,128 +642,60 @@ const Viagens = () => {
         </div>
       </header>
 
-      {/* Content */}
       <main className="px-4 py-6">
         <h1 className="text-2xl font-bold mb-2 font-['Outfit'] text-[#f8fafc]">Minhas Viagens 💼</h1>
-        <p className="text-[#94a3b8] mb-6 font-['Plus_Jakarta_Sans']">Teus roteiros salvos aparecem aqui.</p>
+        <p className="text-[#94a3b8] mb-6 font-['Plus_Jakarta_Sans']">
+          {trips.length === 0 ? 'Nenhuma viagem salva ainda.' : `${trips.length} viagem(ns) planejada(s)`}
+        </p>
 
-        {trips.length > 0 ? (
+        {trips.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🧭</div>
+            <p className="text-[#94a3b8] mb-6 font-['Plus_Jakarta_Sans']">
+              Bora planejar sua próxima aventura?
+            </p>
+            <button
+              onClick={() => navigate('/planejar')}
+              className="px-6 py-3 bg-[#10b981] text-white rounded-xl font-semibold font-['Outfit']"
+            >
+              Criar Roteiro
+            </button>
+          </div>
+        ) : (
           <div className="space-y-4">
             {trips.map((trip) => {
-              const progress = calculateProgress(trip);
-              const totalActivities = trip.days.reduce((acc, day) => acc + day.activities.length, 0);
-              const confirmedActivities = trip.days.reduce((acc, day) => acc + day.activities.filter((a) => a.status === 'confirmed').length, 0);
               const statusInfo = getStatusLabel(trip.status);
-
               return (
                 <button
                   key={trip.id}
-                  onClick={() => {
-                    setSelectedTrip(trip);
-                    setSelectedDay(1);
-                    setActiveTab('roteiro');
-                  }}
+                  onClick={() => setSelectedTrip(trip)}
                   className="w-full bg-[#1e293b] border border-[#334155] rounded-2xl p-4 text-left hover:border-[#10b981]/50 transition-colors"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
+                  <div className="flex items-start gap-4">
+                    <div className="text-3xl">{trip.emoji}</div>
+                    <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-lg text-[#f8fafc] font-['Outfit']">
-                          {trip.emoji} {trip.destination}, {trip.country}
+                        <h3 className="font-semibold text-[#f8fafc] font-['Outfit']">
+                          {trip.destination}, {trip.country}
                         </h3>
                         <span className={`text-xs ${statusInfo.color}`}>• {statusInfo.label}</span>
                       </div>
-                      <p className="text-sm text-[#94a3b8]">
-                        {trip.startDate && format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} - {trip.endDate && format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })} • {trip.days.length} dias
+                      <p className="text-sm text-[#94a3b8] mb-2">
+                        {trip.startDate && format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} - {trip.endDate && format(new Date(trip.endDate), "dd MMM", { locale: ptBR })} • R$ {trip.budget.toLocaleString()}
                       </p>
+                      <div className="flex items-center gap-2">
+                        <Progress value={trip.progress} className="h-2 flex-1" />
+                        <span className="text-xs text-[#94a3b8]">{trip.progress}%</span>
+                      </div>
                     </div>
-                    <ChevronRight size={20} className="text-[#94a3b8]" />
+                    <ChevronRight size={20} className="text-[#64748b]" />
                   </div>
-                  <p className="text-sm text-[#94a3b8] mb-3">Orçamento: R$ {trip.budget.toLocaleString()}</p>
-                  <div className="mb-2">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-[#94a3b8]">Progresso</span>
-                      <span className="text-[#f8fafc]">{progress}%</span>
-                    </div>
-                    <Progress value={progress} className="h-2 bg-[#334155]" />
-                  </div>
-                  <p className="text-xs text-[#94a3b8]">{confirmedActivities} de {totalActivities} itens fechados</p>
                 </button>
               );
             })}
           </div>
-        ) : (
-          /* Empty State */
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="text-6xl mb-4">🗺️</div>
-            <p className="text-[#f8fafc] font-['Outfit'] text-lg mb-2">Nenhuma viagem salva ainda</p>
-            <p className="text-[#94a3b8] text-center mb-6">Cria teu primeiro roteiro no Nexo!</p>
-            <button
-              onClick={() => navigate('/planejar')}
-              className="px-6 py-3 bg-gradient-to-r from-[#10b981] to-[#0ea5e9] text-white rounded-xl font-semibold font-['Outfit']"
-            >
-              🧭 Ir para O Nexo
-            </button>
-          </div>
-        )}
-
-        {/* Test Mode - Reset Button */}
-        {trips.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-[#334155]">
-            <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Settings size={16} className="text-[#64748b]" />
-                <span className="text-sm text-[#64748b]">Modo Teste</span>
-              </div>
-              <button
-                onClick={() => setResetModal(true)}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#94a3b8] hover:text-[#f8fafc] hover:border-[#ef4444] transition-colors"
-              >
-                <RotateCcw size={16} />
-                Reiniciar Jornada
-              </button>
-              <p className="text-xs text-[#64748b] mt-2 text-center">
-                Limpa o roteiro atual para testar novamente
-              </p>
-            </div>
-          </div>
         )}
       </main>
-
-      {/* Reset Confirmation Modal */}
-      <Dialog open={resetModal} onOpenChange={setResetModal}>
-        <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc] max-w-sm mx-auto">
-          <DialogHeader>
-            <DialogTitle className="font-['Outfit'] flex items-center gap-2">
-              <RotateCcw size={20} className="text-[#eab308]" />
-              Reiniciar Jornada?
-            </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
-              Isso vai remover o roteiro atual e todos os dados salvos. Você poderá criar um novo roteiro do zero.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="flex items-center gap-2 p-3 bg-[#ef4444]/10 border border-[#ef4444]/30 rounded-xl">
-              <span className="text-[#ef4444]">⚠️</span>
-              <p className="text-sm text-[#ef4444]">Esta ação não pode ser desfeita.</p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setResetModal(false)}
-                className="flex-1 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] font-medium hover:bg-[#1e293b] transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleResetJourney}
-                className="flex-1 py-3 bg-[#ef4444] rounded-xl text-white font-semibold hover:bg-[#dc2626] transition-colors"
-              >
-                Confirmar Reset
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Bottom Nav */}
       <BottomNav currentPath={location.pathname} />

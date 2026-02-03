@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Heart, Star, Clock, Euro, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Heart, Star, Clock, Euro, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { destinations } from '@/data/destinations';
+import { useAuth } from '@/hooks/useAuth';
 
 const DestinationDetail = () => {
   const { id } = useParams();
@@ -10,15 +11,19 @@ const DestinationDetail = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
+  const { user, loading } = useAuth();
 
   const destination = destinations.find((d) => d.id === id);
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem('kinu_user');
-    if (!savedUser) {
-      navigate('/');
-    }
-  }, [navigate]);
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#10b981]" />
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   if (!destination) {
     return (
