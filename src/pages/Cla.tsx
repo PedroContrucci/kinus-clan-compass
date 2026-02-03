@@ -1,35 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Star, LogOut } from 'lucide-react';
+import { Star, LogOut, Loader2 } from 'lucide-react';
 import { destinations, type Destination } from '@/data/destinations';
+import { useAuth } from '@/hooks/useAuth';
 import kinuLogo from '@/assets/KINU_logo.png';
 
 const filters = ['Todos', 'Romântico', 'Cultura', 'Aventura', 'Gastronômico', 'Econômico', 'Praia', 'Família'];
+
 const Cla = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeFilter, setActiveFilter] = useState('Todos');
-  const [user, setUser] = useState<{ name: string } | null>(null);
-
-  useEffect(() => {
-    const savedUser = localStorage.getItem('kinu_user');
-    if (!savedUser) {
-      navigate('/');
-      return;
-    }
-    setUser(JSON.parse(savedUser));
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('kinu_user');
-    navigate('/');
-  };
+  const { user, loading, signOut } = useAuth();
 
   const filteredDestinations = activeFilter === 'Todos'
     ? destinations
     : destinations.filter(d => d.tags.includes(activeFilter));
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#10b981]" />
+      </div>
+    );
+  }
+
   if (!user) return null;
+
+  const userName = user.user_metadata?.name || user.email?.split('@')[0] || 'Viajante';
 
   return (
     <div className="min-h-screen bg-[#0f172a] pb-20">
@@ -41,7 +39,7 @@ const Cla = () => {
             <span className="font-bold text-xl font-['Outfit'] text-[#f8fafc]">KINU</span>
           </div>
           <button
-            onClick={handleLogout}
+            onClick={signOut}
             className="p-2 hover:bg-[#1e293b] rounded-lg transition-colors"
           >
             <LogOut size={20} className="text-[#94a3b8]" />
@@ -52,7 +50,9 @@ const Cla = () => {
       {/* Content */}
       <main className="px-4 py-6">
         <h1 className="text-2xl font-bold mb-2 font-['Outfit'] text-[#f8fafc]">Sabedoria do Clã 🌿</h1>
-        <p className="text-[#94a3b8] mb-6 font-['Plus_Jakarta_Sans']">Milhares viajaram. Você herda a sabedoria.</p>
+        <p className="text-[#94a3b8] mb-6 font-['Plus_Jakarta_Sans']">
+          Olá, {userName}! Milhares viajaram. Você herda a sabedoria.
+        </p>
 
         {/* Filters */}
         <div className="flex gap-2 overflow-x-auto pb-4 mb-6 -mx-4 px-4 scrollbar-hide">

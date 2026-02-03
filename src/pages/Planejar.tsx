@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Search, Users, Wallet, Clock, Euro, RotateCcw, Trash2, Pin, Tag, CalendarIcon, Plane, Brain, Info } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Search, Users, Wallet, Clock, Euro, RotateCcw, Trash2, Pin, Tag, CalendarIcon, Plane, Brain, Info, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
@@ -204,12 +206,7 @@ const Planejar = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem('kinu_user');
-    if (!savedUser) {
-      navigate('/');
-    }
-  }, [navigate]);
+  const { user, session, loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (isLoading) {
@@ -292,6 +289,11 @@ const Planejar = () => {
   };
 
   const handleGenerateItinerary = async () => {
+    if (!session) {
+      setError('Você precisa estar autenticado para gerar roteiros');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     
@@ -302,7 +304,7 @@ const Planejar = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
             destination: tripData.destination,
