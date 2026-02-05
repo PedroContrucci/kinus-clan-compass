@@ -13,6 +13,8 @@ import HotelCard from '@/components/HotelCard';
 import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
+import { TripCockpit } from '@/components/dashboard';
+import { useTripDashboard } from '@/hooks/useTripDashboard';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
 import { PackingData } from '@/types/packing';
 import kinuLogo from '@/assets/KINU_logo.png';
@@ -254,6 +256,9 @@ const Viagens = () => {
     }
   };
 
+  // Dashboard data from hook
+  const dashboardData = useTripDashboard(selectedTrip);
+
   if (!user) return null;
 
   // Trip Dashboard View
@@ -306,6 +311,11 @@ const Viagens = () => {
         </header>
 
         <main className="px-4 py-6">
+          {/* Trip Cockpit — KPIs Dashboard */}
+          {dashboardData && (
+            <TripCockpit data={dashboardData} />
+          )}
+
           {/* Roteiro Tab */}
           {activeTab === 'roteiro' && (
             <div className="animate-fade-in">
