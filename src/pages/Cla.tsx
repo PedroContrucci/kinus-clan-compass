@@ -1,7 +1,7 @@
-// Aba Clã — Comunidade KINU reestruturada
+// Aba Clã — Comunidade KINU reestruturada com filtros robustos
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Filter, MapPin, Search, X } from 'lucide-react';
+import { Loader2, MapPin, Search, X, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   useCommunityActivities, 
@@ -17,7 +17,8 @@ import {
   ItineraryCard, 
   ActivityCard, 
   ActivityDetailModal,
-  CategoryTabs 
+  FilterChips,
+  ItineraryDetailModal 
 } from '@/components/community';
 import kinuLogo from '@/assets/KINU_logo.png';
 import {
@@ -28,29 +29,42 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
-const CATEGORIES = [
+// Category chips configuration
+const CATEGORY_CHIPS = [
   { value: 'all', label: 'Todos', icon: '🌍' },
+  { value: 'itinerary', label: 'Roteiros', icon: '📍' },
   { value: 'restaurant', label: 'Restaurantes', icon: '🍜' },
-  { value: 'experience', label: 'Experiências', icon: '🎭' },
   { value: 'hotel', label: 'Hotéis', icon: '🏨' },
-  { value: 'transport', label: 'Transporte', icon: '🚃' },
+  { value: 'experience', label: 'Experiências', icon: '🎭' },
+  { value: 'transport', label: 'Praias', icon: '🏖️' },
+  { value: 'other', label: 'Dicas', icon: '💡' },
+];
+
+// Travel styles
+const TRAVEL_STYLES = [
+  { value: 'all', label: 'Todos os Estilos' },
+  { value: 'cultural', label: '🏛️ Cultura' },
+  { value: 'adventure', label: '🧗 Aventura' },
+  { value: 'gastronomy', label: '🍜 Gastronomia' },
+  { value: 'relaxed', label: '🌴 Relaxamento' },
+  { value: 'family', label: '👨‍👩‍👧‍👦 Família' },
 ];
 
 const Cla = () => {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
   
-  // Filters
+  // Filters state
   const [selectedCountry, setSelectedCountry] = useState<string>('all');
   const [selectedCity, setSelectedCity] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedStyle, setSelectedStyle] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   
-  // Detail modal
+  // Modal states
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
+  const [selectedItinerary, setSelectedItinerary] = useState<any>(null);
 
   // Fetch data
   const { data: countries, isLoading: countriesLoading } = useCountries();
@@ -59,7 +73,7 @@ const Cla = () => {
   const { data: allActivities, isLoading: activitiesLoading } = useCommunityActivities({
     countryId: selectedCountry !== 'all' ? selectedCountry : undefined,
     cityId: selectedCity !== 'all' ? selectedCity : undefined,
-    category: selectedCategory !== 'all' 
+    category: selectedCategory !== 'all' && selectedCategory !== 'itinerary'
       ? selectedCategory as 'flight' | 'hotel' | 'experience' | 'restaurant' | 'transport' | 'other' 
       : undefined,
   });
@@ -84,54 +98,87 @@ const Cla = () => {
     return map;
   }, [photos]);
 
-  // Filter activities
+  // Filter activities by search and style
   const filteredActivities = useMemo(() => {
     if (!allActivities) return [];
-    if (!searchQuery) return allActivities;
+    let result = allActivities;
     
-    const query = searchQuery.toLowerCase();
-    return allActivities.filter(a => 
-      a.title.toLowerCase().includes(query) ||
-      a.description?.toLowerCase().includes(query) ||
-      a.city?.name_pt?.toLowerCase().includes(query) ||
-      a.country?.name_pt?.toLowerCase().includes(query)
-    );
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(a => 
+        a.title.toLowerCase().includes(query) ||
+        a.description?.toLowerCase().includes(query) ||
+        a.city?.name_pt?.toLowerCase().includes(query) ||
+        a.country?.name_pt?.toLowerCase().includes(query)
+      );
+    }
+    
+    return result;
   }, [allActivities, searchQuery]);
+
+  // Filter itineraries
+  const filteredItineraries = useMemo(() => {
+    if (!itineraries) return [];
+    let result = itineraries;
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(i => 
+        i.title.toLowerCase().includes(query) ||
+        i.description?.toLowerCase().includes(query) ||
+        i.destination_city?.name_pt?.toLowerCase().includes(query) ||
+        i.destination_country?.name_pt?.toLowerCase().includes(query)
+      );
+    }
+    
+    if (selectedStyle !== 'all') {
+      result = result.filter(i => i.travel_style === selectedStyle);
+    }
+    
+    return result;
+  }, [itineraries, searchQuery, selectedStyle]);
 
   // Get Top Picks
   const topPicks = useMemo(() => {
     return allActivities?.filter(a => a.is_top_pick) || [];
   }, [allActivities]);
 
-  // Group top picks for carousel sections
-  const topPicksByCountry = useMemo(() => {
-    const groups: Record<string, any[]> = {};
-    topPicks.forEach(activity => {
-      const countryName = activity.country?.name_pt || 'Outros';
-      if (!groups[countryName]) groups[countryName] = [];
-      groups[countryName].push(activity);
-    });
-    return groups;
-  }, [topPicks]);
-
   // Category counts
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: filteredActivities.length };
+    const counts: Record<string, number> = { 
+      all: (filteredActivities.length || 0) + (filteredItineraries.length || 0),
+      itinerary: filteredItineraries.length || 0,
+    };
     filteredActivities.forEach(a => {
       if (a.category) {
         counts[a.category] = (counts[a.category] || 0) + 1;
       }
     });
     return counts;
-  }, [filteredActivities]);
+  }, [filteredActivities, filteredItineraries]);
 
-  const categoriesWithCounts = CATEGORIES.map(cat => ({
+  const categoryChipsWithCounts = CATEGORY_CHIPS.map(cat => ({
     ...cat,
     count: categoryCounts[cat.value] || 0,
   }));
 
-  // Get selected country name for display
-  const selectedCountryName = countries?.find(c => c.id === selectedCountry)?.name_pt;
+  // Handle country change
+  const handleCountryChange = (value: string) => {
+    setSelectedCountry(value);
+    setSelectedCity('all');
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedCountry('all');
+    setSelectedCity('all');
+    setSelectedCategory('all');
+    setSelectedStyle('all');
+    setSearchQuery('');
+  };
+
+  const hasActiveFilters = selectedCountry !== 'all' || selectedCity !== 'all' || 
+    selectedCategory !== 'all' || selectedStyle !== 'all' || searchQuery;
 
   // Loading state
   if (authLoading) {
@@ -149,12 +196,16 @@ const Cla = () => {
 
   const isLoading = activitiesLoading || itinerariesLoading;
 
+  // Determine what content to show based on category
+  const showItineraries = selectedCategory === 'all' || selectedCategory === 'itinerary';
+  const showActivities = selectedCategory === 'all' || selectedCategory !== 'itinerary';
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <img src={kinuLogo} alt="KINU" className="h-8 w-8 object-contain" />
               <div>
@@ -166,18 +217,10 @@ const Cla = () => {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`p-2.5 rounded-xl transition-colors ${
-                showFilters ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'
-              }`}
-            >
-              <Filter size={18} />
-            </button>
           </div>
 
           {/* Search */}
-          <div className="mt-3 relative">
+          <div className="relative mb-3">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar destinos, restaurantes, experiências..."
@@ -194,68 +237,76 @@ const Cla = () => {
               </button>
             )}
           </div>
-        </div>
 
-        {/* Filters Panel */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden border-t border-border"
-            >
-              <div className="px-4 py-3 space-y-3 bg-card/50">
-                <div className="flex gap-3">
-                  {/* Country Filter */}
-                  <Select value={selectedCountry} onValueChange={(v) => { setSelectedCountry(v); setSelectedCity('all'); }}>
-                    <SelectTrigger className="flex-1 bg-background border-border">
-                      <div className="flex items-center gap-2">
-                        <MapPin size={14} className="text-muted-foreground" />
-                        <SelectValue placeholder="País" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">🌍 Todos os países</SelectItem>
-                      {countries?.map((country) => (
-                        <SelectItem key={country.id} value={country.id}>
-                          {country.name_pt}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {/* City Filter - only show when country selected */}
-                  {selectedCountry !== 'all' && cities && cities.length > 0 && (
-                    <Select value={selectedCity} onValueChange={setSelectedCity}>
-                      <SelectTrigger className="flex-1 bg-background border-border">
-                        <SelectValue placeholder="Cidade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as cidades</SelectItem>
-                        {cities.map((city: any) => (
-                          <SelectItem key={city.id} value={city.id}>
-                            {city.name_pt}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+          {/* Filter Dropdowns Row */}
+          <div className="flex gap-2 mb-3">
+            {/* Country Dropdown */}
+            <Select value={selectedCountry} onValueChange={handleCountryChange}>
+              <SelectTrigger className="flex-1 bg-card border-border h-9 text-sm">
+                <div className="flex items-center gap-1.5">
+                  <MapPin size={12} className="text-muted-foreground" />
+                  <SelectValue placeholder="País" />
                 </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">🌍 Todos os países</SelectItem>
+                {countries?.map((country) => (
+                  <SelectItem key={country.id} value={country.id}>
+                    {country.name_pt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-                {/* Clear Filters */}
-                {(selectedCountry !== 'all' || selectedCategory !== 'all') && (
-                  <button
-                    onClick={() => { setSelectedCountry('all'); setSelectedCity('all'); setSelectedCategory('all'); }}
-                    className="text-xs text-primary hover:underline"
-                  >
-                    Limpar filtros
-                  </button>
-                )}
-              </div>
-            </motion.div>
+            {/* City Dropdown - only when country selected */}
+            {selectedCountry !== 'all' && cities && cities.length > 0 && (
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="flex-1 bg-card border-border h-9 text-sm">
+                  <SelectValue placeholder="Cidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as cidades</SelectItem>
+                  {cities.map((city: any) => (
+                    <SelectItem key={city.id} value={city.id}>
+                      {city.name_pt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Style Dropdown */}
+            <Select value={selectedStyle} onValueChange={setSelectedStyle}>
+              <SelectTrigger className="flex-1 bg-card border-border h-9 text-sm">
+                <SelectValue placeholder="Estilo" />
+              </SelectTrigger>
+              <SelectContent>
+                {TRAVEL_STYLES.map((style) => (
+                  <SelectItem key={style.value} value={style.value}>
+                    {style.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Category Chips */}
+          <FilterChips
+            chips={categoryChipsWithCounts}
+            selected={selectedCategory}
+            onChange={setSelectedCategory}
+          />
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-xs text-primary hover:underline mt-2"
+            >
+              Limpar filtros
+            </button>
           )}
-        </AnimatePresence>
+        </div>
       </header>
 
       {/* Main Content */}
@@ -266,8 +317,8 @@ const Cla = () => {
           </div>
         ) : (
           <>
-            {/* Top Picks Carousels */}
-            {!searchQuery && topPicks.length > 0 && (
+            {/* Top Picks Carousel — only show when no search/category filter */}
+            {!searchQuery && selectedCategory === 'all' && topPicks.length > 0 && (
               <section className="pt-6">
                 <TopPicksCarousel
                   title="🔥 Top Picks da Comunidade"
@@ -287,82 +338,95 @@ const Cla = () => {
               </section>
             )}
 
-            {/* Featured Itineraries */}
-            {!searchQuery && itineraries && itineraries.length > 0 && (
+            {/* Itineraries Section */}
+            {showItineraries && filteredItineraries.length > 0 && (
               <section className="px-4">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-semibold text-lg text-foreground font-['Outfit'] flex items-center gap-2">
                     📍 Roteiros Completos
-                    <span className="text-xs text-muted-foreground font-normal">({itineraries.length})</span>
+                    <span className="text-xs text-muted-foreground font-normal">({filteredItineraries.length})</span>
                   </h2>
                 </div>
                 <div className="grid gap-4">
-                  {itineraries.slice(0, 5).map((itinerary: any) => (
+                  {filteredItineraries.slice(0, selectedCategory === 'itinerary' ? 20 : 5).map((itinerary: any) => (
                     <ItineraryCard
                       key={itinerary.id}
                       itinerary={itinerary}
-                      onClick={() => {
-                        // TODO: Navigate to itinerary detail page
-                        console.log('Open itinerary:', itinerary.id);
-                      }}
+                      onClick={() => setSelectedItinerary(itinerary)}
                     />
                   ))}
                 </div>
               </section>
             )}
 
-            {/* Category Tabs */}
-            <section className="px-4">
-              <h2 className="font-semibold text-lg text-foreground font-['Outfit'] mb-3">
-                🎯 Atividades por Categoria
-              </h2>
-              <CategoryTabs
-                categories={categoriesWithCounts}
-                selected={selectedCategory}
-                onChange={setSelectedCategory}
-              />
-            </section>
-
             {/* Activities Grid */}
-            <section className="px-4">
-              {filteredActivities.length > 0 ? (
-                <motion.div
-                  initial="hidden"
-                  animate="visible"
-                  variants={{
-                    hidden: { opacity: 0 },
-                    visible: {
-                      opacity: 1,
-                      transition: { staggerChildren: 0.03 },
-                    },
-                  }}
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                >
-                  {filteredActivities.map((activity: any) => (
-                    <motion.div
-                      key={activity.id}
-                      variants={{
-                        hidden: { opacity: 0, y: 20 },
-                        visible: { opacity: 1, y: 0 },
-                      }}
-                    >
-                      <ActivityCard
-                        activity={activity}
-                        photo={photosByActivity[activity.id]?.[0]}
-                        onClick={() => setSelectedActivity(activity)}
-                      />
-                    </motion.div>
-                  ))}
-                </motion.div>
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground mb-2">Nenhuma atividade encontrada</p>
-                  <p className="text-sm text-muted-foreground/70">
-                    Tente ajustar os filtros ou explore outras categorias
-                  </p>
-                </div>
-              )}
-            </section>
+            {showActivities && (
+              <section className="px-4">
+                {selectedCategory !== 'itinerary' && (
+                  <h2 className="font-semibold text-lg text-foreground font-['Outfit'] mb-4 flex items-center gap-2">
+                    🎯 {selectedCategory === 'all' ? 'Atividades' : CATEGORY_CHIPS.find(c => c.value === selectedCategory)?.label}
+                    <span className="text-xs text-muted-foreground font-normal">({filteredActivities.length})</span>
+                  </h2>
+                )}
+                
+                {filteredActivities.length > 0 ? (
+                  <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                      hidden: { opacity: 0 },
+                      visible: {
+                        opacity: 1,
+                        transition: { staggerChildren: 0.03 },
+                      },
+                    }}
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                  >
+                    {filteredActivities.map((activity: any) => (
+                      <motion.div
+                        key={activity.id}
+                        variants={{
+                          hidden: { opacity: 0, y: 20 },
+                          visible: { opacity: 1, y: 0 },
+                        }}
+                      >
+                        <ActivityCard
+                          activity={activity}
+                          photo={photosByActivity[activity.id]?.[0]}
+                          onClick={() => setSelectedActivity(activity)}
+                        />
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                ) : selectedCategory !== 'itinerary' && (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground mb-2">Nenhuma atividade encontrada</p>
+                    <p className="text-sm text-muted-foreground/70">
+                      Tente ajustar os filtros ou explore outras categorias
+                    </p>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* Empty state when both are empty */}
+            {filteredActivities.length === 0 && filteredItineraries.length === 0 && !isLoading && (
+              <div className="text-center py-20 px-4">
+                <Sparkles size={48} className="mx-auto text-muted-foreground/30 mb-4" />
+                <p className="text-muted-foreground mb-2">Nenhum resultado encontrado</p>
+                <p className="text-sm text-muted-foreground/70">
+                  Tente ajustar os filtros ou explore outras categorias
+                </p>
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="mt-4 text-primary hover:underline text-sm"
+                  >
+                    Limpar todos os filtros
+                  </button>
+                )}
+              </div>
+            )}
           </>
         )}
       </main>
@@ -376,6 +440,14 @@ const Cla = () => {
         onAddToTrip={() => setSelectedActivity(null)}
       />
 
+      {/* Itinerary Detail Modal */}
+      <ItineraryDetailModal
+        itinerary={selectedItinerary}
+        isOpen={!!selectedItinerary}
+        onClose={() => setSelectedItinerary(null)}
+        onCopyToTrip={() => setSelectedItinerary(null)}
+      />
+
       {/* Bottom Navigation */}
       <BottomNav />
     </div>
@@ -387,7 +459,7 @@ function getDefaultImage(category: string | null): string {
     restaurant: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800',
     hotel: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800',
     experience: 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800',
-    transport: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800',
+    transport: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800',
   };
   return defaults[category || ''] || 'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=800';
 }
