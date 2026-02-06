@@ -20,6 +20,7 @@ interface CityResult {
   id: string;
   name_pt: string;
   name_en: string;
+  timezone?: string | null;
   country: { name_pt: string; code: string } | null;
 }
 
@@ -27,7 +28,8 @@ interface AirportResult {
   id: string;
   iata_code: string;
   name_pt: string;
-  city: { name_pt: string } | null;
+  timezone?: string | null;
+  city: { name_pt: string; timezone?: string | null } | null;
   country: { name_pt: string; code: string } | null;
 }
 
@@ -85,10 +87,14 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
   };
 
   const handleDestSelect = (city: CityResult, airport?: AirportResult) => {
+    // Get timezone from city or airport
+    const timezone = city.timezone || airport?.timezone || airport?.city?.timezone || null;
+    
     onChange({
       destinationCity: city.name_pt,
       destinationCityId: city.id,
       destinationAirportCode: airport?.iata_code || '',
+      destinationTimezone: timezone,
     });
     setDestSearch(city.name_pt + (airport ? ` (${airport.iata_code})` : ''));
     setShowDestResults(false);

@@ -27,6 +27,7 @@ const initialData: WizardData = {
   destinationCity: '',
   destinationCityId: null,
   destinationAirportCode: '',
+  destinationTimezone: null,
   departureDate: undefined,
   returnDate: undefined,
   hasDirectFlight: false,
@@ -44,6 +45,10 @@ const initialData: WizardData = {
   budgetCurrency: 'BRL',
   priorities: ['flights', 'accommodation', 'experiences'],
   travelStyle: 'comfort',
+  travelInterests: [],
+  
+  // Step 4
+  biologyAIEnabled: false,
   
   // Computed
   totalDays: 0,

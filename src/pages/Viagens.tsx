@@ -14,6 +14,7 @@ import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
 import { TripCockpit } from '@/components/dashboard';
+import { DraftCockpit } from '@/components/cockpit';
 import { useTripDashboard } from '@/hooks/useTripDashboard';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
 import { PackingData } from '@/types/packing';
@@ -263,11 +264,39 @@ const Viagens = () => {
   // Dashboard data from hook
   const dashboardData = useTripDashboard(selectedTrip);
 
+  // Handle draft cockpit actions
+  const handleSaveDraft = (updatedTrip: any) => {
+    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
+    setTrips(updatedTrips);
+    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+    setSelectedTrip(updatedTrip);
+  };
+
+  const handleActivateDraft = (updatedTrip: any) => {
+    updatedTrip.status = 'active';
+    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
+    setTrips(updatedTrips);
+    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+    setSelectedTrip(updatedTrip);
+  };
+
   if (!user) return null;
 
-  // Trip Dashboard View
+  // Draft Trip View - Use DraftCockpit
+  if (selectedTrip && selectedTrip.status === 'draft') {
+    return (
+      <DraftCockpit
+        trip={selectedTrip as any}
+        onSave={handleSaveDraft}
+        onActivate={handleActivateDraft}
+        onClose={() => setSelectedTrip(null)}
+      />
+    );
+  }
+
+  // Active/Ongoing Trip Dashboard View
   if (selectedTrip) {
-    const currentDay = selectedTrip.days.find((d) => d.day === selectedDay);
+    const currentDay = selectedTrip.days?.find((d) => d.day === selectedDay);
     const showJetLagAlert = selectedTrip.jetLagMode && selectedDay === 1;
 
     return (
