@@ -1,12 +1,24 @@
-// Aba Clã — Comunidade com dados do Supabase
-
-import { useState } from 'react';
+// Aba Clã — Comunidade KINU reestruturada
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, MapPin, Clock, DollarSign, Sparkles, Plus, Loader2, Filter } from 'lucide-react';
+import { Loader2, Filter, MapPin, Search, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCommunityActivities, useCountries } from '@/hooks/useSupabaseData';
+import { 
+  useCommunityActivities, 
+  useCommunityItineraries, 
+  useCommunityPhotos,
+  useCountries,
+  useCities 
+} from '@/hooks/useSupabaseData';
 import { useAuth } from '@/hooks/useAuth';
 import { BottomNav } from '@/components/shared/BottomNav';
+import { 
+  TopPicksCarousel, 
+  ItineraryCard, 
+  ActivityCard, 
+  ActivityDetailModal,
+  CategoryTabs 
+} from '@/components/community';
 import kinuLogo from '@/assets/KINU_logo.png';
 import {
   Select,
@@ -15,55 +27,113 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const CATEGORIES = [
   { value: 'all', label: 'Todos', icon: '🌍' },
+  { value: 'restaurant', label: 'Restaurantes', icon: '🍜' },
   { value: 'experience', label: 'Experiências', icon: '🎭' },
-  { value: 'restaurant', label: 'Gastronomia', icon: '🍜' },
-  { value: 'hotel', label: 'Hospedagem', icon: '🏨' },
+  { value: 'hotel', label: 'Hotéis', icon: '🏨' },
   { value: 'transport', label: 'Transporte', icon: '🚃' },
 ];
 
 const Cla = () => {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
+  
+  // Filters
   const [selectedCountry, setSelectedCountry] = useState<string>('all');
+  const [selectedCity, setSelectedCity] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [showTopPicks, setShowTopPicks] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Detail modal
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
 
   // Fetch data
   const { data: countries, isLoading: countriesLoading } = useCountries();
-  const { data: activities, isLoading: activitiesLoading } = useCommunityActivities({
+  const { data: cities } = useCities(selectedCountry !== 'all' ? selectedCountry : undefined);
+  
+  const { data: allActivities, isLoading: activitiesLoading } = useCommunityActivities({
     countryId: selectedCountry !== 'all' ? selectedCountry : undefined,
+    cityId: selectedCity !== 'all' ? selectedCity : undefined,
     category: selectedCategory !== 'all' 
       ? selectedCategory as 'flight' | 'hotel' | 'experience' | 'restaurant' | 'transport' | 'other' 
       : undefined,
-    isTopPick: showTopPicks ? true : undefined,
   });
 
-  const handleAddToTrip = (activity: any) => {
-    // For now, save to localStorage. Later integrate with trip planning
-    const savedActivities = JSON.parse(localStorage.getItem('kinu_saved_activities') || '[]');
-    if (!savedActivities.find((a: any) => a.id === activity.id)) {
-      savedActivities.push(activity);
-      localStorage.setItem('kinu_saved_activities', JSON.stringify(savedActivities));
-      toast.success('Adicionado à sua lista!', {
-        description: 'Você pode incluir esta atividade no seu próximo roteiro.',
-      });
-    } else {
-      toast.info('Já está na sua lista!');
-    }
-    setSelectedActivity(null);
-  };
+  const { data: itineraries, isLoading: itinerariesLoading } = useCommunityItineraries({
+    countryId: selectedCountry !== 'all' ? selectedCountry : undefined,
+  });
 
+  // Fetch photos for activities
+  const activityIds = useMemo(() => allActivities?.map(a => a.id) || [], [allActivities]);
+  const { data: photos } = useCommunityPhotos(activityIds);
+
+  // Group photos by activity
+  const photosByActivity = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    photos?.forEach(photo => {
+      if (photo.activity_id) {
+        if (!map[photo.activity_id]) map[photo.activity_id] = [];
+        map[photo.activity_id].push(photo);
+      }
+    });
+    return map;
+  }, [photos]);
+
+  // Filter activities
+  const filteredActivities = useMemo(() => {
+    if (!allActivities) return [];
+    if (!searchQuery) return allActivities;
+    
+    const query = searchQuery.toLowerCase();
+    return allActivities.filter(a => 
+      a.title.toLowerCase().includes(query) ||
+      a.description?.toLowerCase().includes(query) ||
+      a.city?.name_pt?.toLowerCase().includes(query) ||
+      a.country?.name_pt?.toLowerCase().includes(query)
+    );
+  }, [allActivities, searchQuery]);
+
+  // Get Top Picks
+  const topPicks = useMemo(() => {
+    return allActivities?.filter(a => a.is_top_pick) || [];
+  }, [allActivities]);
+
+  // Group top picks for carousel sections
+  const topPicksByCountry = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    topPicks.forEach(activity => {
+      const countryName = activity.country?.name_pt || 'Outros';
+      if (!groups[countryName]) groups[countryName] = [];
+      groups[countryName].push(activity);
+    });
+    return groups;
+  }, [topPicks]);
+
+  // Category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: filteredActivities.length };
+    filteredActivities.forEach(a => {
+      if (a.category) {
+        counts[a.category] = (counts[a.category] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [filteredActivities]);
+
+  const categoriesWithCounts = CATEGORIES.map(cat => ({
+    ...cat,
+    count: categoryCounts[cat.value] || 0,
+  }));
+
+  // Get selected country name for display
+  const selectedCountryName = countries?.find(c => c.id === selectedCountry)?.name_pt;
+
+  // Loading state
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -77,210 +147,234 @@ const Cla = () => {
     return null;
   }
 
+  const isLoading = activitiesLoading || itinerariesLoading;
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
-        <div className="flex items-center gap-3">
-          <img src={kinuLogo} alt="KINU" className="h-8 w-8 object-contain" />
-          <div>
-            <h1 className="font-bold text-xl font-['Outfit'] text-foreground">
-              Sabedoria do Clã 🌿
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Dicas reais de viajantes experientes
-            </p>
-          </div>
-        </div>
-      </header>
-
-      {/* Filters */}
-      <div className="px-4 py-4 space-y-3 border-b border-border">
-        {/* Country Filter */}
-        <div className="flex gap-3">
-          <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-            <SelectTrigger className="flex-1 bg-card border-border">
-              <div className="flex items-center gap-2">
-                <MapPin size={16} className="text-muted-foreground" />
-                <SelectValue placeholder="Todos os países" />
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src={kinuLogo} alt="KINU" className="h-8 w-8 object-contain" />
+              <div>
+                <h1 className="font-bold text-xl font-['Outfit'] text-foreground">
+                  Sabedoria do Clã 🌿
+                </h1>
+                <p className="text-xs text-muted-foreground">
+                  Dicas reais de viajantes experientes
+                </p>
               </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">🌍 Todos os países</SelectItem>
-              {countries?.map((country) => (
-                <SelectItem key={country.id} value={country.id}>
-                  {country.name_pt}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <button
-            onClick={() => setShowTopPicks(!showTopPicks)}
-            className={`px-4 py-2 rounded-xl flex items-center gap-2 transition-colors ${
-              showTopPicks 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-card border border-border text-foreground'
-            }`}
-          >
-            <Sparkles size={16} />
-            <span className="text-sm font-medium">Top Picks</span>
-          </button>
-        </div>
-
-        {/* Category Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
-          {CATEGORIES.map((cat) => (
+            </div>
             <button
-              key={cat.value}
-              onClick={() => setSelectedCategory(cat.value)}
-              className={`px-4 py-2 rounded-full whitespace-nowrap transition-all text-sm flex items-center gap-2 ${
-                selectedCategory === cat.value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card border border-border text-muted-foreground hover:text-foreground'
+              onClick={() => setShowFilters(!showFilters)}
+              className={`p-2.5 rounded-xl transition-colors ${
+                showFilters ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'
               }`}
             >
-              <span>{cat.icon}</span>
-              <span>{cat.label}</span>
+              <Filter size={18} />
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Activities Grid */}
-      <main className="px-4 py-6">
-        {activitiesLoading ? (
-          <div className="flex items-center justify-center py-12">
+          {/* Search */}
+          <div className="mt-3 relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar destinos, restaurantes, experiências..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-card border-border"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Filters Panel */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden border-t border-border"
+            >
+              <div className="px-4 py-3 space-y-3 bg-card/50">
+                <div className="flex gap-3">
+                  {/* Country Filter */}
+                  <Select value={selectedCountry} onValueChange={(v) => { setSelectedCountry(v); setSelectedCity('all'); }}>
+                    <SelectTrigger className="flex-1 bg-background border-border">
+                      <div className="flex items-center gap-2">
+                        <MapPin size={14} className="text-muted-foreground" />
+                        <SelectValue placeholder="País" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">🌍 Todos os países</SelectItem>
+                      {countries?.map((country) => (
+                        <SelectItem key={country.id} value={country.id}>
+                          {country.name_pt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* City Filter - only show when country selected */}
+                  {selectedCountry !== 'all' && cities && cities.length > 0 && (
+                    <Select value={selectedCity} onValueChange={setSelectedCity}>
+                      <SelectTrigger className="flex-1 bg-background border-border">
+                        <SelectValue placeholder="Cidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as cidades</SelectItem>
+                        {cities.map((city: any) => (
+                          <SelectItem key={city.id} value={city.id}>
+                            {city.name_pt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+
+                {/* Clear Filters */}
+                {(selectedCountry !== 'all' || selectedCategory !== 'all') && (
+                  <button
+                    onClick={() => { setSelectedCountry('all'); setSelectedCity('all'); setSelectedCategory('all'); }}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Limpar filtros
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+
+      {/* Main Content */}
+      <main className="space-y-6">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
             <Loader2 size={32} className="animate-spin text-primary" />
           </div>
-        ) : activities && activities.length > 0 ? (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: { staggerChildren: 0.05 },
-              },
-            }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4"
-          >
-            {activities.map((activity: any) => (
-              <ActivityCard
-                key={activity.id}
-                activity={activity}
-                onClick={() => setSelectedActivity(activity)}
-              />
-            ))}
-          </motion.div>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-2">Nenhuma atividade encontrada</p>
-            <p className="text-sm text-muted-foreground/70">
-              Tente ajustar os filtros ou explore outras categorias
-            </p>
-          </div>
+          <>
+            {/* Top Picks Carousels */}
+            {!searchQuery && topPicks.length > 0 && (
+              <section className="pt-6">
+                <TopPicksCarousel
+                  title="🔥 Top Picks da Comunidade"
+                  emoji=""
+                  items={topPicks.slice(0, 10).map(activity => ({
+                    id: activity.id,
+                    title: activity.title,
+                    subtitle: `${activity.city?.name_pt || ''}, ${activity.country?.name_pt || ''}`,
+                    image: photosByActivity[activity.id]?.[0]?.url || getDefaultImage(activity.category),
+                    rating: activity.rating_average || undefined,
+                  }))}
+                  onItemClick={(item) => {
+                    const activity = topPicks.find(a => a.id === item.id);
+                    if (activity) setSelectedActivity(activity);
+                  }}
+                />
+              </section>
+            )}
+
+            {/* Featured Itineraries */}
+            {!searchQuery && itineraries && itineraries.length > 0 && (
+              <section className="px-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-semibold text-lg text-foreground font-['Outfit'] flex items-center gap-2">
+                    📍 Roteiros Completos
+                    <span className="text-xs text-muted-foreground font-normal">({itineraries.length})</span>
+                  </h2>
+                </div>
+                <div className="grid gap-4">
+                  {itineraries.slice(0, 5).map((itinerary: any) => (
+                    <ItineraryCard
+                      key={itinerary.id}
+                      itinerary={itinerary}
+                      onClick={() => {
+                        // TODO: Navigate to itinerary detail page
+                        console.log('Open itinerary:', itinerary.id);
+                      }}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Category Tabs */}
+            <section className="px-4">
+              <h2 className="font-semibold text-lg text-foreground font-['Outfit'] mb-3">
+                🎯 Atividades por Categoria
+              </h2>
+              <CategoryTabs
+                categories={categoriesWithCounts}
+                selected={selectedCategory}
+                onChange={setSelectedCategory}
+              />
+            </section>
+
+            {/* Activities Grid */}
+            <section className="px-4">
+              {filteredActivities.length > 0 ? (
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: {
+                      opacity: 1,
+                      transition: { staggerChildren: 0.03 },
+                    },
+                  }}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                >
+                  {filteredActivities.map((activity: any) => (
+                    <motion.div
+                      key={activity.id}
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        visible: { opacity: 1, y: 0 },
+                      }}
+                    >
+                      <ActivityCard
+                        activity={activity}
+                        photo={photosByActivity[activity.id]?.[0]}
+                        onClick={() => setSelectedActivity(activity)}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground mb-2">Nenhuma atividade encontrada</p>
+                  <p className="text-sm text-muted-foreground/70">
+                    Tente ajustar os filtros ou explore outras categorias
+                  </p>
+                </div>
+              )}
+            </section>
+          </>
         )}
       </main>
 
       {/* Activity Detail Modal */}
-      <Dialog open={!!selectedActivity} onOpenChange={() => setSelectedActivity(null)}>
-        <DialogContent className="bg-card border-border max-w-lg">
-          {selectedActivity && (
-            <>
-              <DialogHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    {selectedActivity.is_top_pick && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/20 text-primary rounded-full text-xs mb-2">
-                        <Sparkles size={12} />
-                        Top Pick
-                      </span>
-                    )}
-                    <DialogTitle className="text-xl font-bold text-foreground">
-                      {selectedActivity.title}
-                    </DialogTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {selectedActivity.city?.name_pt}, {selectedActivity.country?.name_pt}
-                    </p>
-                  </div>
-                </div>
-              </DialogHeader>
-
-              <div className="space-y-4 mt-4">
-                {/* Description */}
-                <p className="text-foreground">{selectedActivity.description}</p>
-
-                {/* Details */}
-                <div className="grid grid-cols-3 gap-4 py-3 border-y border-border">
-                  {selectedActivity.estimated_cost_brl && (
-                    <div className="text-center">
-                      <DollarSign size={18} className="mx-auto text-primary mb-1" />
-                      <p className="text-sm font-medium text-foreground">
-                        R$ {selectedActivity.estimated_cost_brl.toLocaleString('pt-BR')}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Custo médio</p>
-                    </div>
-                  )}
-                  {selectedActivity.duration_minutes && (
-                    <div className="text-center">
-                      <Clock size={18} className="mx-auto text-accent mb-1" />
-                      <p className="text-sm font-medium text-foreground">
-                        {Math.floor(selectedActivity.duration_minutes / 60)}h
-                        {selectedActivity.duration_minutes % 60 > 0 && ` ${selectedActivity.duration_minutes % 60}m`}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Duração</p>
-                    </div>
-                  )}
-                  {selectedActivity.rating_average && (
-                    <div className="text-center">
-                      <Star size={18} className="mx-auto text-yellow-500 mb-1 fill-yellow-500" />
-                      <p className="text-sm font-medium text-foreground">
-                        {selectedActivity.rating_average.toFixed(1)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        ({selectedActivity.rating_count || 0} avaliações)
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Tips */}
-                {selectedActivity.tips && selectedActivity.tips.length > 0 && (
-                  <div>
-                    <h4 className="font-medium text-foreground mb-2">💡 Dicas do Clã</h4>
-                    <ul className="space-y-2">
-                      {selectedActivity.tips.map((tip: string, idx: number) => (
-                        <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
-                          <span className="text-primary">•</span>
-                          {tip}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Best time to visit */}
-                {selectedActivity.best_time_to_visit && (
-                  <p className="text-sm text-muted-foreground">
-                    ⏰ Melhor horário: <span className="text-foreground">{selectedActivity.best_time_to_visit}</span>
-                  </p>
-                )}
-
-                {/* Action Button */}
-                <button
-                  onClick={() => handleAddToTrip(selectedActivity)}
-                  className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors"
-                >
-                  <Plus size={18} />
-                  Adicionar à Viagem
-                </button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ActivityDetailModal
+        activity={selectedActivity}
+        photos={selectedActivity ? photosByActivity[selectedActivity.id] : []}
+        isOpen={!!selectedActivity}
+        onClose={() => setSelectedActivity(null)}
+        onAddToTrip={() => setSelectedActivity(null)}
+      />
 
       {/* Bottom Navigation */}
       <BottomNav />
@@ -288,85 +382,14 @@ const Cla = () => {
   );
 };
 
-// Activity Card Component
-const ActivityCard = ({ 
-  activity, 
-  onClick 
-}: { 
-  activity: any; 
-  onClick: () => void;
-}) => (
-  <motion.button
-    variants={{
-      hidden: { opacity: 0, y: 20 },
-      visible: { opacity: 1, y: 0 },
-    }}
-    whileHover={{ scale: 1.02 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={onClick}
-    className="bg-card border border-border rounded-2xl p-4 text-left transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
-  >
-    {/* Header */}
-    <div className="flex items-start justify-between mb-3">
-      <div className="flex-1">
-        {activity.is_top_pick && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/20 text-primary rounded-full text-xs mb-2">
-            <Sparkles size={10} />
-            Top Pick
-          </span>
-        )}
-        <h3 className="font-semibold text-foreground line-clamp-2">{activity.title}</h3>
-      </div>
-      {activity.rating_average && (
-        <div className="flex items-center gap-1 ml-2">
-          <Star size={14} className="text-yellow-500 fill-yellow-500" />
-          <span className="text-sm text-foreground">{activity.rating_average.toFixed(1)}</span>
-        </div>
-      )}
-    </div>
-
-    {/* Location */}
-    <p className="text-sm text-muted-foreground mb-2 flex items-center gap-1">
-      <MapPin size={12} />
-      {activity.city?.name_pt || activity.location_name}, {activity.country?.name_pt}
-    </p>
-
-    {/* Description */}
-    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-      {activity.description}
-    </p>
-
-    {/* Footer */}
-    <div className="flex items-center justify-between pt-3 border-t border-border">
-      {activity.estimated_cost_brl && (
-        <span className="text-sm text-foreground font-medium">
-          R$ {activity.estimated_cost_brl.toLocaleString('pt-BR')}
-        </span>
-      )}
-      {activity.cost_level && (
-        <span className="text-xs text-muted-foreground capitalize">
-          {activity.cost_level}
-        </span>
-      )}
-      {activity.category && (
-        <span className="text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground">
-          {getCategoryLabel(activity.category)}
-        </span>
-      )}
-    </div>
-  </motion.button>
-);
-
-function getCategoryLabel(category: string): string {
-  const labels: Record<string, string> = {
-    experience: 'Experiência',
-    restaurant: 'Gastronomia',
-    hotel: 'Hospedagem',
-    transport: 'Transporte',
-    flight: 'Voo',
-    other: 'Outro',
+function getDefaultImage(category: string | null): string {
+  const defaults: Record<string, string> = {
+    restaurant: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800',
+    hotel: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800',
+    experience: 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800',
+    transport: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800',
   };
-  return labels[category] || category;
+  return defaults[category || ''] || 'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=800';
 }
 
 export default Cla;
