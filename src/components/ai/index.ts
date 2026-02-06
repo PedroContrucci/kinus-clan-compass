@@ -5,3 +5,4 @@ export { KinuQuickActions } from "./KinuQuickActions";
 export { KinuEmergencyActions } from "./KinuEmergencyActions";
 export { KinuTypingIndicator } from "./KinuTypingIndicator";
 export { default as KinuAssistant } from "./KinuAssistant";
+export { KinuWeatherAlert } from "./KinuWeatherAlert";
