@@ -101,6 +101,22 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Unsplash API error:', response.status, errorText);
+      
+      // Handle rate limiting gracefully - return empty photos with fallback flag
+      if (response.status === 403 || response.status === 429) {
+        console.log('Rate limited - returning fallback');
+        return new Response(
+          JSON.stringify({ 
+            photos: [], 
+            total: 0, 
+            cached: false,
+            fallback: true,
+            error: 'rate_limited'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       throw new Error(`Unsplash API error: ${response.status}`);
     }
 
