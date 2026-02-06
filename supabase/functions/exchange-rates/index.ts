@@ -40,7 +40,8 @@ serve(async (req) => {
       const result: ExchangeRateResponse = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch live rates');
+        const errorMsg = typeof result.error === 'string' ? result.error : JSON.stringify(result.error);
+        throw new Error(errorMsg || 'Failed to fetch live rates');
       }
 
       // Convert quotes to a more usable format
@@ -73,7 +74,8 @@ serve(async (req) => {
       const result: TimeframeResponse = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch historical rates');
+        const errorMsg = typeof result.error === 'string' ? result.error : JSON.stringify(result.error);
+        throw new Error(errorMsg || 'Failed to fetch historical rates');
       }
 
       // Convert to array format for charts
