@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Search, Users, Wallet, Clock, Euro, RotateCcw, Trash2, Pin, Tag, CalendarIcon, Plane, Brain, Info } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Search, Users, Wallet, Clock, Euro, RotateCcw, Trash2, Pin, Tag, CalendarIcon, Plane, Brain, Info, Loader2 } from 'lucide-react';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
@@ -17,6 +17,7 @@ import {
   ACTIVITY_IMAGES, getIntensityBadge, ActivityIntensity
 } from '@/types/trip';
 import kinuLogo from '@/assets/KINU_logo.png';
+import { useCityAirportSearch, useCities } from '@/hooks/useSupabaseData';
 import { 
   DayNavigator, 
   MinimalFlightCard, 
@@ -1267,46 +1268,15 @@ const Planejar = () => {
       </header>
 
       <main className="px-4 py-6">
-        {/* Step 1: Destination */}
+        {/* Step 1: Destination with Supabase Autocomplete */}
         {currentStep === 1 && (
-          <div className="animate-fade-in">
-            <h2 className="text-2xl font-bold mb-6 font-['Outfit'] text-[#f8fafc]">
-              Pra onde o coração quer ir?
-            </h2>
-            <div className="relative mb-6">
-              <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
-              <input
-                type="text"
-                placeholder="Busca um destino..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setTripData((prev) => ({ ...prev, destination: e.target.value }));
-                }}
-                className="w-full pl-10 pr-4 py-3 bg-[#1e293b] border border-[#334155] rounded-xl text-[#f8fafc] placeholder-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#10b981]"
-              />
-            </div>
-            <div className="mb-4">
-              <p className="text-sm text-[#94a3b8] mb-3">Em alta no clã 🔥</p>
-              <div className="grid grid-cols-2 gap-3">
-                {popularDestinations.map((dest) => (
-                  <button
-                    key={dest.name}
-                    onClick={() => handleSelectDestination(dest.name)}
-                    className={`p-4 rounded-xl border transition-all ${
-                      tripData.destination === dest.name
-                        ? 'bg-[#10b981]/20 border-[#10b981]'
-                        : 'bg-[#1e293b] border-[#334155] hover:border-[#10b981]/50'
-                    }`}
-                  >
-                    <span className="text-2xl">{dest.emoji}</span>
-                    <p className="font-semibold text-[#f8fafc] font-['Outfit'] mt-1">{dest.name}</p>
-                    <p className="text-xs text-[#94a3b8]">{dest.country}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          <Step1Destination 
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            tripData={tripData}
+            setTripData={setTripData}
+            handleSelectDestination={handleSelectDestination}
+          />
         )}
 
         {/* Step 2: Dates + Flight Times + Biology-Aware AI */}
@@ -1812,6 +1782,186 @@ const BottomNav = ({ currentPath }: { currentPath: string }) => {
         })}
       </div>
     </nav>
+  );
+};
+
+// Step 1 Component with Supabase Autocomplete
+interface Step1Props {
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+  tripData: TripData;
+  setTripData: React.Dispatch<React.SetStateAction<TripData>>;
+  handleSelectDestination: (dest: string) => void;
+}
+
+const Step1Destination = ({ 
+  searchQuery, 
+  setSearchQuery, 
+  tripData, 
+  setTripData,
+  handleSelectDestination 
+}: Step1Props) => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  // Fetch cities from Supabase for autocomplete
+  const { data: searchResults, isLoading: searchLoading } = useCityAirportSearch(searchQuery);
+  const { data: cities } = useCities();
+  
+  // Get popular destinations from Supabase
+  const popularFromDB = useMemo(() => {
+    if (!cities) return [];
+    return cities
+      .filter((c: any) => c.is_popular_destination)
+      .slice(0, 8)
+      .map((c: any) => ({
+        id: c.id,
+        name: c.name_pt,
+        country: c.country?.name_pt || '',
+        emoji: getDestinationEmoji(c.name_pt),
+      }));
+  }, [cities]);
+  
+  // Fallback to static if no DB data
+  const popularDestinationsData = popularFromDB.length > 0 
+    ? popularFromDB 
+    : [
+        { id: '1', name: 'Paris', country: 'França', emoji: '🗼' },
+        { id: '2', name: 'Tóquio', country: 'Japão', emoji: '🏯' },
+        { id: '3', name: 'Roma', country: 'Itália', emoji: '🏛️' },
+        { id: '4', name: 'Lisboa', country: 'Portugal', emoji: '🚃' },
+      ];
+
+  const getDestinationEmoji = (name: string): string => {
+    const emojiMap: Record<string, string> = {
+      'Tóquio': '🏯', 'Tokyo': '🏯', 'Paris': '🗼', 'Roma': '🏛️', 'Rome': '🏛️',
+      'Lisboa': '🚃', 'Lisbon': '🚃', 'Barcelona': '🏖️', 'Nova York': '🗽', 'New York': '🗽',
+      'Londres': '🎡', 'London': '🎡', 'Dubai': '🏙️', 'Bangkok': '🛕', 'Singapore': '🌆',
+      'Singapura': '🌆', 'Sydney': '🦘', 'Amsterdã': '🌷', 'Amsterdam': '🌷',
+      'Madri': '💃', 'Madrid': '💃', 'Zurique': '🏔️', 'Zurich': '🏔️',
+      'Atenas': '🏛️', 'Athens': '🏛️', 'Cairo': '🏺', 'Bali': '🌴',
+    };
+    return emojiMap[name] || '✈️';
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setTripData((prev) => ({ ...prev, destination: value }));
+    setIsDropdownOpen(value.length >= 2);
+  };
+
+  const handleSelectFromSearch = (cityName: string, country?: string) => {
+    setSearchQuery(cityName);
+    setTripData((prev) => ({ ...prev, destination: cityName }));
+    setIsDropdownOpen(false);
+  };
+
+  const hasSearchResults = searchResults && (
+    (searchResults.cities && searchResults.cities.length > 0) || 
+    (searchResults.airports && searchResults.airports.length > 0)
+  );
+
+  return (
+    <div className="animate-fade-in">
+      <h2 className="text-2xl font-bold mb-6 font-['Outfit'] text-foreground">
+        Pra onde o coração quer ir?
+      </h2>
+      
+      {/* Search Input with Autocomplete */}
+      <div className="relative mb-6">
+        <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Busca um destino..."
+          value={searchQuery}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          onFocus={() => searchQuery.length >= 2 && setIsDropdownOpen(true)}
+          className="w-full pl-10 pr-10 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+        {searchLoading && (
+          <Loader2 size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin" />
+        )}
+        
+        {/* Search Results Dropdown */}
+        {isDropdownOpen && hasSearchResults && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
+            {/* Cities */}
+            {searchResults.cities && searchResults.cities.length > 0 && (
+              <div>
+                <div className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border">
+                  Cidades
+                </div>
+                {searchResults.cities.map((city: any) => (
+                  <button
+                    key={city.id}
+                    onClick={() => handleSelectFromSearch(city.name_pt, city.country?.name_pt)}
+                    className="w-full px-4 py-3 text-left hover:bg-muted/50 transition-colors flex items-center gap-3"
+                  >
+                    <span className="text-lg">{getDestinationEmoji(city.name_pt)}</span>
+                    <div>
+                      <div className="text-foreground font-medium">{city.name_pt}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {city.country?.name_pt}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            {/* Airports */}
+            {searchResults.airports && searchResults.airports.length > 0 && (
+              <div>
+                <div className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border">
+                  Aeroportos
+                </div>
+                {searchResults.airports.map((airport: any) => (
+                  <button
+                    key={airport.id}
+                    onClick={() => handleSelectFromSearch(
+                      airport.city?.name_pt || airport.name_pt,
+                      airport.country?.name_pt
+                    )}
+                    className="w-full px-4 py-3 text-left hover:bg-muted/50 transition-colors flex items-center gap-3"
+                  >
+                    <Plane size={18} className="text-accent" />
+                    <div>
+                      <div className="text-foreground font-medium">
+                        {airport.iata_code} — {airport.name_pt}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {airport.city?.name_pt}, {airport.country?.name_pt}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      
+      {/* Popular Destinations */}
+      <div className="mb-4">
+        <p className="text-sm text-muted-foreground mb-3">Em alta no clã 🔥</p>
+        <div className="grid grid-cols-2 gap-3">
+          {popularDestinationsData.slice(0, 4).map((dest) => (
+            <button
+              key={dest.id || dest.name}
+              onClick={() => handleSelectDestination(dest.name)}
+              className={`p-4 rounded-xl border transition-all ${
+                tripData.destination === dest.name
+                  ? 'bg-primary/20 border-primary'
+                  : 'bg-card border-border hover:border-primary/50'
+              }`}
+            >
+              <span className="text-2xl">{dest.emoji}</span>
+              <p className="font-semibold text-foreground font-['Outfit'] mt-1">{dest.name}</p>
+              <p className="text-xs text-muted-foreground">{dest.country}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };
 
