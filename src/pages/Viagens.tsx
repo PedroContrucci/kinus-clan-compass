@@ -59,13 +59,17 @@ const Viagens = () => {
   };
 
   const calculateProgress = (trip: SavedTrip) => {
+    if (!trip?.days || !Array.isArray(trip.days)) return 0;
+    
     let total = 0;
     let confirmed = 0;
     trip.days.forEach((day) => {
-      day.activities.forEach((act) => {
-        total++;
-        if (act.status === 'confirmed') confirmed++;
-      });
+      if (day?.activities && Array.isArray(day.activities)) {
+        day.activities.forEach((act) => {
+          total++;
+          if (act.status === 'confirmed') confirmed++;
+        });
+      }
     });
     return total > 0 ? Math.round((confirmed / total) * 100) : 0;
   };
