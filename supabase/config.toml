@@ -2,3 +2,6 @@ project_id = "lnhbamzhturwkhcwiohr"
 
 [functions.generate-itinerary]
 verify_jwt = false
+
+[functions.kinu-ai]
+verify_jwt = false
