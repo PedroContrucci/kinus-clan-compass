@@ -719,6 +719,42 @@ export type Database = {
         }
         Relationships: []
       }
+      flight_price_estimates: {
+        Row: {
+          business_avg: number | null
+          created_at: string
+          destination_code: string
+          economy_avg: number
+          economy_max: number | null
+          economy_min: number
+          id: string
+          origin_code: string
+          updated_at: string
+        }
+        Insert: {
+          business_avg?: number | null
+          created_at?: string
+          destination_code: string
+          economy_avg?: number
+          economy_max?: number | null
+          economy_min?: number
+          id?: string
+          origin_code: string
+          updated_at?: string
+        }
+        Update: {
+          business_avg?: number | null
+          created_at?: string
+          destination_code?: string
+          economy_avg?: number
+          economy_max?: number | null
+          economy_min?: number
+          id?: string
+          origin_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flight_routes: {
         Row: {
           airlines: string[] | null
