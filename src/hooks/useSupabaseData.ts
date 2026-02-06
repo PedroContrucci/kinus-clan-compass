@@ -172,6 +172,64 @@ export function useCommunityActivities(filters?: {
   });
 }
 
+// Fetch community itineraries
+export function useCommunityItineraries(filters?: {
+  countryId?: string;
+  cityId?: string;
+  isFeatured?: boolean;
+}) {
+  return useQuery({
+    queryKey: ['community_itineraries', filters],
+    queryFn: async () => {
+      let query = supabase
+        .from('community_itineraries')
+        .select(`
+          *,
+          destination_city:cities(*),
+          destination_country:countries(*)
+        `)
+        .eq('is_published', true)
+        .order('likes_count', { ascending: false });
+      
+      if (filters?.countryId) {
+        query = query.eq('destination_country_id', filters.countryId);
+      }
+      if (filters?.cityId) {
+        query = query.eq('destination_city_id', filters.cityId);
+      }
+      if (filters?.isFeatured) {
+        query = query.eq('is_featured', true);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+// Fetch photos for activities
+export function useCommunityPhotos(activityIds?: string[]) {
+  return useQuery({
+    queryKey: ['community_photos', activityIds],
+    queryFn: async () => {
+      if (!activityIds || activityIds.length === 0) return [];
+      
+      const { data, error } = await supabase
+        .from('community_photos')
+        .select('*')
+        .in('activity_id', activityIds)
+        .order('sort_order', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: Boolean(activityIds && activityIds.length > 0),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
 // Fetch user trips
 export function useUserTrips(userId?: string) {
   return useQuery({
