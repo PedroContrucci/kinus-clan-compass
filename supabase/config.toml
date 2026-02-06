@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.unsplash]
 verify_jwt = false
+
+[functions.amadeus-flights]
+verify_jwt = false
