@@ -14,7 +14,7 @@ import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
 import { TripCockpit } from '@/components/dashboard';
-import { DraftCockpit, TripGuide, ExchangeRates, AuctionList } from '@/components/cockpit';
+import { DraftCockpit, TripGuide, ExchangeRates, AuctionList, EnhancedDayTimeline, EnhancedSmartPacking, EnhancedExchangeRates, AuctionConfigModal } from '@/components/cockpit';
 import { useTripDashboard } from '@/hooks/useTripDashboard';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
 import { PackingData } from '@/types/packing';
@@ -382,26 +382,15 @@ const Viagens = () => {
                 />
               )}
 
-              {/* Day Timeline */}
-              <div className="mb-6">
-                <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
-                  {selectedTrip.days.map((day) => (
-                    <button
-                      key={day.day}
-                      onClick={() => handleDayChange(day.day)}
-                      className={`flex-shrink-0 p-4 rounded-2xl transition-all duration-200 border ${
-                        selectedDay === day.day
-                          ? 'bg-[#1e293b] border-[#10b981] ring-2 ring-[#10b981]/30'
-                          : 'bg-[#1e293b] border-[#334155] hover:border-[#10b981]/50'
-                      }`}
-                    >
-                      <div className="text-2xl mb-1">{day.icon}</div>
-                      <div className="font-semibold text-[#f8fafc] font-['Outfit']">Dia {day.day}</div>
-                      <div className="text-xs text-[#94a3b8] max-w-[80px] truncate">{day.title}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Day Timeline - Enhanced with real dates */}
+              {selectedTrip.startDate && (
+                <EnhancedDayTimeline
+                  days={selectedTrip.days}
+                  selectedDay={selectedDay}
+                  onSelectDay={handleDayChange}
+                  tripStartDate={selectedTrip.startDate}
+                />
+              )}
 
               {/* Jet Lag Alert for Day 1 */}
               {showJetLagAlert && selectedTrip.timezone && (
@@ -522,14 +511,13 @@ const Viagens = () => {
             </>
           )}
 
-          {/* Smart Packing Tab */}
+          {/* Smart Packing Tab - Enhanced */}
           {activeTab === 'packing' && (
-            <SmartPacking
+            <EnhancedSmartPacking
               tripId={selectedTrip.id}
               destination={selectedTrip.destination}
               duration={getTripDuration(selectedTrip)}
-              packingData={(selectedTrip as any).packing || null}
-              onUpdate={handlePackingUpdate}
+              month={selectedTrip.startDate ? new Date(selectedTrip.startDate).getMonth() + 1 : undefined}
             />
           )}
 
@@ -552,12 +540,13 @@ const Viagens = () => {
             </div>
           )}
 
-          {/* Câmbio (Exchange) Tab */}
+          {/* Câmbio (Exchange) Tab - Enhanced */}
           {activeTab === 'cambio' && (
             <div className="animate-fade-in">
-              <ExchangeRates
-                destinationCurrency={(selectedTrip as any).currency || 'USD'}
+              <EnhancedExchangeRates
+                destinationCurrency={(selectedTrip as any).currency || 'EUR'}
                 baseCurrency="BRL"
+                budgetBRL={selectedTrip.budget}
               />
             </div>
           )}
