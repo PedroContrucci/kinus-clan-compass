@@ -1,11 +1,13 @@
 // GeneratedItineraryStage — Stage 2: View and edit generated itinerary
+// Now generates complete daily schedules with breakfast, morning activity, lunch, 
+// afternoon activity, dinner, and optional night activity
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Save, PlayCircle, Plus, Pencil, Trash2, RefreshCw,
   Plane, Hotel, MapPin, Sparkles, ChevronLeft, ChevronRight,
-  Check, AlertCircle, Clock, Star, Lightbulb
+  Check, AlertCircle, Clock, Star, Lightbulb, Coffee, Utensils, Moon, Sun
 } from 'lucide-react';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -15,19 +17,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import type { SelectedFlight } from './FlightSelectionStage';
+import { 
+  getRandomActivity, 
+  getActivitiesByCategory,
+  type SuggestedActivity 
+} from '@/data/destinationActivities';
 
 // Types
 interface ItineraryActivity {
   id: string;
   name: string;
-  type: 'flight' | 'hotel' | 'experience' | 'restaurant' | 'checkin' | 'checkout';
+  type: 'flight' | 'hotel' | 'experience' | 'restaurant' | 'checkin' | 'checkout' | 'breakfast' | 'lunch' | 'dinner' | 'morning' | 'afternoon' | 'night';
+  timeSlot: 'breakfast' | 'morning' | 'lunch' | 'afternoon' | 'dinner' | 'night' | 'flight' | 'hotel';
   estimatedCost: number;
   time?: string;
   duration?: string;
   location?: string;
   rating?: number;
   status: 'defined' | 'suggestion' | 'pending';
-  tip?: string;
+  tips?: string[];
   source: 'kinu' | 'clan' | 'custom';
 }
 
@@ -35,7 +43,9 @@ interface ItineraryDay {
   dayNumber: number;
   date: Date;
   label: string;
+  theme?: string;
   activities: ItineraryActivity[];
+  totalCost: number;
 }
 
 interface BudgetBreakdown {
@@ -63,7 +73,49 @@ interface GeneratedItineraryStageProps {
   onBack: () => void;
 }
 
-// Generate smart itinerary based on flights and preferences
+// Day themes based on exploration type
+const dayThemes = [
+  { theme: 'Exploração Cultural', emoji: '🏛️' },
+  { theme: 'Gastronomia & Bairros', emoji: '🍽️' },
+  { theme: 'Arte & Compras', emoji: '🎨' },
+  { theme: 'Natureza & Relax', emoji: '🌿' },
+  { theme: 'Aventura Local', emoji: '🚶' },
+  { theme: 'Descobertas Escondidas', emoji: '✨' },
+];
+
+// Convert SuggestedActivity to ItineraryActivity
+function convertToItineraryActivity(
+  activity: SuggestedActivity,
+  dayIndex: number,
+  timeSlot: ItineraryActivity['timeSlot'],
+  time: string
+): ItineraryActivity {
+  const typeMap: Record<string, ItineraryActivity['type']> = {
+    breakfast: 'breakfast',
+    lunch: 'lunch',
+    dinner: 'dinner',
+    morning: 'experience',
+    afternoon: 'experience',
+    night: 'night',
+  };
+
+  return {
+    id: `day-${dayIndex}-${activity.id}`,
+    name: activity.name,
+    type: typeMap[activity.category] || 'experience',
+    timeSlot,
+    estimatedCost: activity.estimatedCostBRL,
+    time,
+    duration: `${activity.durationHours}h`,
+    location: `${activity.neighborhood}`,
+    rating: activity.rating,
+    status: 'suggestion',
+    tips: activity.tips,
+    source: 'kinu',
+  };
+}
+
+// Generate complete itinerary with multiple activities per day
 function generateItinerary(
   departureDate: Date,
   returnDate: Date,
@@ -78,44 +130,40 @@ function generateItinerary(
   const totalNights = totalDays - 1;
   const flightsCost = outboundFlight.option.price + returnFlight.option.price;
   
-  // Calculate hotel estimate (30% of remaining budget after flights)
+  // Calculate budget allocations
   const remainingAfterFlights = budget - flightsCost;
   const hotelPerNight = Math.round(remainingAfterFlights * 0.35 / totalNights);
   const hotelTotal = hotelPerNight * totalNights;
   
-  // Experience budget
-  const experiencesDays = totalDays - 2; // Exclude arrival and departure days
+  const experiencesDays = Math.max(totalDays - 2, 1);
   const experienceBudgetPerDay = Math.round(remainingAfterFlights * 0.25 / experiencesDays);
   const experiencesTotal = experienceBudgetPerDay * experiencesDays;
   
-  // Food budget
   const foodPerDay = Math.round(remainingAfterFlights * 0.15 / totalDays);
   const foodTotal = foodPerDay * totalDays;
 
   const days: ItineraryDay[] = [];
+  const usedActivityIds: string[] = [];
 
-  // Sample experiences for Paris (can be expanded based on destination)
-  const sampleExperiences: { name: string; tip: string; cost: number }[] = [
-    { name: 'Torre Eiffel', tip: 'Vá no fim da tarde para ver o pôr do sol', cost: 180 },
-    { name: 'Museu do Louvre', tip: 'Reserve ingresso online para evitar filas', cost: 250 },
-    { name: 'Passeio pelo Sena', tip: 'Imperdível ao anoitecer com vista dos monumentos', cost: 150 },
-    { name: 'Montmartre & Sacré-Cœur', tip: 'Comece cedo para evitar multidões', cost: 80 },
-    { name: 'Versailles', tip: 'Reserve um dia inteiro para esta experiência', cost: 350 },
-    { name: 'Champs-Élysées & Arco do Triunfo', tip: 'Ótimo para compras e fotos', cost: 120 },
-  ];
+  // Style tags for filtering (convert interests to lowercase)
+  const styleTags = travelInterests.map(i => i.toLowerCase().replace('🍜 ', '').replace('🏖️ ', '').replace('🌙 ', '').replace('👨‍👩‍👧 ', '').replace('🏛️ ', '').replace('🎨 ', '').replace('🎭 ', '').replace('🏔️ ', '').replace('💆 ', '').replace('🛍️ ', '').replace('🌿 ', ''));
 
   for (let i = 0; i < totalDays; i++) {
     const date = addDays(departureDate, i);
     const activities: ItineraryActivity[] = [];
     let label = '';
+    let theme = '';
+    let dayTotal = 0;
 
-    // Day 1: Departure
+    // Day 1: Departure (flight only)
     if (i === 0) {
       label = 'Partida';
+      theme = '✈️ Dia de Viagem';
       activities.push({
-        id: `day-${i}-flight`,
+        id: `day-${i}-flight-out`,
         name: 'Voo de Ida',
         type: 'flight',
+        timeSlot: 'flight',
         estimatedCost: outboundFlight.option.price,
         time: outboundFlight.option.departureTime,
         duration: outboundFlight.option.duration,
@@ -123,53 +171,115 @@ function generateItinerary(
         status: 'defined',
         source: 'kinu',
       });
+      dayTotal = outboundFlight.option.price;
     }
-    // Day 2: Arrival + Check-in
+    // Day 2: Arrival + Check-in + Light activities
     else if (i === 1) {
       label = `Chegada em ${destination}`;
+      theme = '🛬 Dia de Chegada';
+      
+      // Check-in
       activities.push({
         id: `day-${i}-checkin`,
         name: 'Check-in Hotel',
         type: 'checkin',
+        timeSlot: 'hotel',
         estimatedCost: hotelTotal,
         time: '14:00',
         location: `Hôtel Le Marais ⭐ 4.2 • Le Marais`,
         status: 'suggestion',
+        tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
         source: 'kinu',
-        tip: `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`,
       });
+      dayTotal += hotelTotal;
       
-      const exp = sampleExperiences[0];
-      activities.push({
-        id: `day-${i}-exp`,
-        name: exp.name,
-        type: 'experience',
-        estimatedCost: exp.cost,
-        time: 'Tarde/Noite',
-        status: 'suggestion',
-        source: 'kinu',
-        tip: exp.tip,
-        rating: 4.8,
-      });
+      // Light afternoon walk (arrival day should be relaxed)
+      const afternoonActivity = getRandomActivity(destination, 'afternoon', styleTags, usedActivityIds);
+      if (afternoonActivity) {
+        usedActivityIds.push(afternoonActivity.id);
+        const activity = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '16:00');
+        activity.tips = ['Passeio leve para se ambientar', ...(activity.tips || [])];
+        activities.push(activity);
+        dayTotal += activity.estimatedCost;
+      }
+      
+      // Dinner
+      const dinnerActivity = getRandomActivity(destination, 'dinner', styleTags, usedActivityIds);
+      if (dinnerActivity) {
+        usedActivityIds.push(dinnerActivity.id);
+        const activity = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30');
+        activities.push(activity);
+        dayTotal += activity.estimatedCost;
+      }
     }
-    // Last day: Checkout + Return flight
+    // Last day: Checkout + Morning activity + Flight
     else if (i === totalDays - 1) {
       label = 'Volta';
+      theme = '✈️ Dia de Partida';
+      
+      // Breakfast
+      const breakfastActivity = getRandomActivity(destination, 'breakfast', styleTags, usedActivityIds);
+      if (breakfastActivity) {
+        usedActivityIds.push(breakfastActivity.id);
+        const activity = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00');
+        activities.push(activity);
+        dayTotal += activity.estimatedCost;
+      }
+      
+      // Checkout
       activities.push({
         id: `day-${i}-checkout`,
         name: 'Check-out Hotel',
         type: 'checkout',
+        timeSlot: 'hotel',
         estimatedCost: 0,
-        time: '11:00',
+        time: '10:00',
         status: 'suggestion',
         source: 'kinu',
       });
       
+      // Light morning activity or last-minute shopping
+      const morningActivity = getRandomActivity(destination, 'afternoon', styleTags, usedActivityIds);
+      if (morningActivity) {
+        usedActivityIds.push(morningActivity.id);
+        const activity = convertToItineraryActivity(morningActivity, i, 'morning', '10:30');
+        activity.name = 'Última exploração';
+        activity.tips = ['Aproveite as últimas horas!', ...(activity.tips || [])];
+        activities.push(activity);
+        dayTotal += activity.estimatedCost;
+      }
+      
+      // Lunch before heading to airport
+      const lunchActivity = getRandomActivity(destination, 'lunch', styleTags, usedActivityIds);
+      if (lunchActivity) {
+        usedActivityIds.push(lunchActivity.id);
+        const activity = convertToItineraryActivity(lunchActivity, i, 'lunch', '12:30');
+        activities.push(activity);
+        dayTotal += activity.estimatedCost;
+      }
+      
+      // Transfer to airport
       activities.push({
-        id: `day-${i}-flight`,
+        id: `day-${i}-transfer`,
+        name: 'Transfer para Aeroporto',
+        type: 'experience',
+        timeSlot: 'afternoon',
+        estimatedCost: 100,
+        time: '15:00',
+        duration: '1h',
+        status: 'suggestion',
+        tips: ['Chegue com 3h de antecedência para voos internacionais'],
+        source: 'kinu',
+      });
+      dayTotal += 100;
+      
+      // Return flight
+      activities.push({
+        id: `day-${i}-flight-return`,
         name: 'Voo de Volta',
         type: 'flight',
-        estimatedCost: 0, // Already counted in outbound
+        timeSlot: 'flight',
+        estimatedCost: 0, // Already counted
         time: returnFlight.option.departureTime,
         duration: returnFlight.option.duration,
         location: returnFlight.option.route,
@@ -177,40 +287,95 @@ function generateItinerary(
         source: 'kinu',
       });
     }
-    // Middle days: Experiences
+    // Middle days: Full exploration with 5-6 activities
     else {
-      const expIndex = (i - 2) % sampleExperiences.length;
-      const exp = sampleExperiences[expIndex + 1] || sampleExperiences[0];
-      label = `Exploração`;
+      const themeIndex = (i - 2) % dayThemes.length;
+      const dayTheme = dayThemes[themeIndex];
+      label = 'Exploração';
+      theme = `${dayTheme.emoji} ${dayTheme.theme}`;
       
-      activities.push({
-        id: `day-${i}-exp`,
-        name: exp.name,
-        type: 'experience',
-        estimatedCost: exp.cost,
-        time: 'Dia inteiro',
-        status: 'suggestion',
-        source: 'kinu',
-        tip: exp.tip,
-        rating: 4.5 + Math.random() * 0.5,
-      });
+      // ☕ BREAKFAST (08:00)
+      const breakfastActivity = getRandomActivity(destination, 'breakfast', styleTags, usedActivityIds);
+      if (breakfastActivity) {
+        usedActivityIds.push(breakfastActivity.id);
+        activities.push(convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00'));
+        dayTotal += breakfastActivity.estimatedCostBRL;
+      }
+      
+      // 🏛️ MORNING ACTIVITY (10:00)
+      const morningActivity = getRandomActivity(destination, 'morning', styleTags, usedActivityIds);
+      if (morningActivity) {
+        usedActivityIds.push(morningActivity.id);
+        activities.push(convertToItineraryActivity(morningActivity, i, 'morning', '10:00'));
+        dayTotal += morningActivity.estimatedCostBRL;
+      }
+      
+      // 🍽️ LUNCH (13:00)
+      const lunchActivity = getRandomActivity(destination, 'lunch', styleTags, usedActivityIds);
+      if (lunchActivity) {
+        usedActivityIds.push(lunchActivity.id);
+        activities.push(convertToItineraryActivity(lunchActivity, i, 'lunch', '13:00'));
+        dayTotal += lunchActivity.estimatedCostBRL;
+      }
+      
+      // 🚶 AFTERNOON ACTIVITY (15:00)
+      const afternoonActivity = getRandomActivity(destination, 'afternoon', styleTags, usedActivityIds);
+      if (afternoonActivity) {
+        usedActivityIds.push(afternoonActivity.id);
+        activities.push(convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00'));
+        dayTotal += afternoonActivity.estimatedCostBRL;
+      }
+      
+      // 🍷 DINNER (19:30)
+      const dinnerActivity = getRandomActivity(destination, 'dinner', styleTags, usedActivityIds);
+      if (dinnerActivity) {
+        usedActivityIds.push(dinnerActivity.id);
+        activities.push(convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30'));
+        dayTotal += dinnerActivity.estimatedCostBRL;
+      }
+      
+      // 🌙 NIGHT ACTIVITY - Optional (21:30)
+      const nightActivity = getRandomActivity(destination, 'night', styleTags, usedActivityIds);
+      if (nightActivity) {
+        usedActivityIds.push(nightActivity.id);
+        const activity = convertToItineraryActivity(nightActivity, i, 'night', '21:30');
+        activity.tips = ['(Opcional)', ...(activity.tips || [])];
+        activities.push(activity);
+        dayTotal += nightActivity.estimatedCostBRL;
+      }
     }
 
     days.push({
       dayNumber: i + 1,
       date,
       label,
+      theme,
       activities,
+      totalCost: dayTotal,
     });
   }
 
-  const totalEstimated = flightsCost + hotelTotal + experiencesTotal + foodTotal;
+  // Calculate actual totals from generated activities
+  let actualExperiencesTotal = 0;
+  let actualFoodTotal = 0;
+  
+  days.forEach(day => {
+    day.activities.forEach(activity => {
+      if (['breakfast', 'lunch', 'dinner'].includes(activity.timeSlot)) {
+        actualFoodTotal += activity.estimatedCost;
+      } else if (['morning', 'afternoon', 'night'].includes(activity.timeSlot)) {
+        actualExperiencesTotal += activity.estimatedCost;
+      }
+    });
+  });
+
+  const totalEstimated = flightsCost + hotelTotal + actualExperiencesTotal + actualFoodTotal;
   
   const breakdown: BudgetBreakdown = {
     flights: { amount: flightsCost, percent: Math.round((flightsCost / budget) * 100), status: 'defined' },
     hotel: { amount: hotelTotal, percent: Math.round((hotelTotal / budget) * 100), status: 'estimated' },
-    experiences: { amount: experiencesTotal, percent: Math.round((experiencesTotal / budget) * 100), status: 'estimated' },
-    food: { amount: foodTotal, percent: Math.round((foodTotal / budget) * 100), status: 'estimated' },
+    experiences: { amount: actualExperiencesTotal, percent: Math.round((actualExperiencesTotal / budget) * 100), status: 'estimated' },
+    food: { amount: actualFoodTotal, percent: Math.round((actualFoodTotal / budget) * 100), status: 'estimated' },
     total: totalEstimated,
     available: budget - totalEstimated,
     trustZonePercent: Math.round((totalEstimated / budget) * 100),
@@ -225,7 +390,24 @@ const activityIcons: Record<string, React.ReactNode> = {
   checkin: <Hotel size={18} />,
   checkout: <Hotel size={18} />,
   experience: <Sparkles size={18} />,
-  restaurant: <MapPin size={18} />,
+  restaurant: <Utensils size={18} />,
+  breakfast: <Coffee size={18} />,
+  lunch: <Utensils size={18} />,
+  dinner: <Utensils size={18} />,
+  morning: <Sun size={18} />,
+  afternoon: <MapPin size={18} />,
+  night: <Moon size={18} />,
+};
+
+const timeSlotEmojis: Record<string, string> = {
+  breakfast: '☕',
+  morning: '🏛️',
+  lunch: '🍽️',
+  afternoon: '🚶',
+  dinner: '🍷',
+  night: '🌙',
+  flight: '✈️',
+  hotel: '🏨',
 };
 
 const statusBadges: Record<string, { label: string; className: string }> = {
@@ -440,7 +622,10 @@ export const GeneratedItineraryStage = ({
                 <h2 className="font-bold text-foreground font-['Outfit']">
                   Dia {selectedDay} - {format(currentDay.date, 'dd/MM (EEEE)', { locale: ptBR })}
                 </h2>
-                {currentDay.label && (
+                {currentDay.theme && (
+                  <p className="text-sm text-primary">{currentDay.theme}</p>
+                )}
+                {currentDay.label && !currentDay.theme && (
                   <p className="text-sm text-muted-foreground">{currentDay.label}</p>
                 )}
               </div>
@@ -508,14 +693,10 @@ export const GeneratedItineraryStage = ({
                     </div>
 
                     <div className="flex items-start gap-3">
-                      <div className={cn(
-                        'w-10 h-10 rounded-xl flex items-center justify-center',
-                        activity.type === 'flight' && 'bg-blue-500/20 text-blue-400',
-                        (activity.type === 'hotel' || activity.type === 'checkin' || activity.type === 'checkout') && 'bg-purple-500/20 text-purple-400',
-                        activity.type === 'experience' && 'bg-emerald-500/20 text-emerald-400',
-                        activity.type === 'restaurant' && 'bg-orange-500/20 text-orange-400'
-                      )}>
-                        {activityIcons[activity.type]}
+                      {/* Time Slot Emoji & Icon */}
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-2xl">{timeSlotEmojis[activity.timeSlot] || '📍'}</span>
+                        <span className="text-xs text-muted-foreground font-medium">{activity.time}</span>
                       </div>
                       
                       <div className="flex-1">
@@ -534,35 +715,48 @@ export const GeneratedItineraryStage = ({
                         )}
                         
                         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                          {activity.time && (
-                            <span className="flex items-center gap-1">
-                              <Clock size={12} />
-                              {activity.time}
-                            </span>
-                          )}
                           {activity.duration && (
                             <span>Duração: {activity.duration}</span>
                           )}
                         </div>
                         
-                        {activity.tip && (
-                          <div className="mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                            <p className="text-xs text-amber-400 flex items-start gap-1">
-                              <Lightbulb size={12} className="mt-0.5 flex-shrink-0" />
-                              {activity.tip}
-                            </p>
+                        {activity.tips && activity.tips.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {activity.tips.map((tip, tipIdx) => (
+                              <div key={tipIdx} className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                                <p className="text-xs text-amber-400 flex items-start gap-1">
+                                  <Lightbulb size={12} className="mt-0.5 flex-shrink-0" />
+                                  {tip}
+                                </p>
+                              </div>
+                            ))}
                           </div>
                         )}
                         
                         {activity.estimatedCost > 0 && (
                           <p className="text-sm font-medium text-foreground mt-2">
-                            Estimativa: R$ {activity.estimatedCost.toLocaleString('pt-BR')}
+                            R$ {activity.estimatedCost.toLocaleString('pt-BR')}
                           </p>
                         )}
                       </div>
                     </div>
                   </motion.div>
                 ))
+              )}
+
+              {/* Day Total Summary */}
+              {currentDay.totalCost > 0 && (
+                <div className="mt-4 p-4 rounded-xl bg-card border border-border">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>💰</span>
+                      <span>Total do Dia {selectedDay}</span>
+                    </div>
+                    <span className="font-bold text-foreground">
+                      R$ {currentDay.totalCost.toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                </div>
               )}
 
               {/* Add Activity Button */}
@@ -642,6 +836,7 @@ export const GeneratedItineraryStage = ({
                   id: `custom-${Date.now()}`,
                   name: 'Nova atividade',
                   type: 'experience',
+                  timeSlot: 'afternoon',
                   estimatedCost: 0,
                   status: 'suggestion',
                   source: 'custom',
