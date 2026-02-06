@@ -1,51 +1,102 @@
-// Dashboard — Unified view merging Planejar + Viagens
+// Dashboard — Unified view merging Planejar + Viagens (Supabase connected)
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronDown, ChevronUp, LogOut } from 'lucide-react';
+import { ChevronDown, ChevronUp, LogOut, Loader2 } from 'lucide-react';
 import { TripCard, NewPlanningButton, CompletedTripStats } from '@/components/dashboard';
 import { KinuAssistant } from '@/components/ai/KinuAssistant';
+import { BottomNav } from '@/components/shared/BottomNav';
+import { useUserTrips } from '@/hooks/useSupabaseData';
+import { useAuth } from '@/hooks/useAuth';
 import kinuLogo from '@/assets/KINU_logo.png';
-import type { SavedTrip } from '@/types/trip';
+import { differenceInDays } from 'date-fns';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<{ name: string } | null>(null);
-  const [trips, setTrips] = useState<SavedTrip[]>([]);
+  const { user, isLoading: authLoading, logout } = useAuth();
   const [showCompleted, setShowCompleted] = useState(false);
 
+  // Fetch trips from Supabase
+  const { data: supabaseTrips, isLoading: tripsLoading } = useUserTrips(user?.id);
+
+  // Also check localStorage for backwards compatibility
+  const [localTrips, setLocalTrips] = useState<any[]>([]);
+  
   useEffect(() => {
-    const savedUser = localStorage.getItem('kinu_user');
-    if (!savedUser) {
+    if (!user && !authLoading) {
       navigate('/');
       return;
     }
-    setUser(JSON.parse(savedUser));
-
     const savedTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
-    setTrips(savedTrips);
-  }, [navigate]);
+    setLocalTrips(savedTrips);
+  }, [user, authLoading, navigate]);
 
-  const activeTrips = trips.filter((t) => t.status === 'active' || t.status === 'ongoing' || t.status === 'draft');
-  const completedTrips = trips.filter((t) => t.status === 'completed');
+  // Merge trips from both sources
+  const allTrips = [...(localTrips || [])];
+  
+  // Transform Supabase trips to match local format
+  if (supabaseTrips) {
+    supabaseTrips.forEach((trip: any) => {
+      const transformedTrip = {
+        id: trip.id,
+        destination: trip.destination_city?.name_pt || trip.name,
+        emoji: getDestinationEmoji(trip.destination_city?.name_pt || trip.name),
+        country: trip.destination_city?.country?.name_pt || '',
+        startDate: trip.departure_date,
+        endDate: trip.return_date,
+        budget: trip.budget_total || 0,
+        finances: {
+          total: trip.budget_total || 0,
+          confirmed: trip.budget_used || 0,
+        },
+        progress: calculateProgress(trip.checklist || []),
+        status: trip.status || 'draft',
+      };
+      
+      // Avoid duplicates
+      if (!allTrips.find(t => t.id === trip.id)) {
+        allTrips.push(transformedTrip);
+      }
+    });
+  }
 
-  const handleLogout = () => {
-    localStorage.removeItem('kinu_user');
-    navigate('/');
-  };
+  const activeTrips = allTrips.filter((t) => 
+    t.status === 'active' || t.status === 'ongoing' || t.status === 'draft'
+  );
+  const completedTrips = allTrips.filter((t) => t.status === 'completed');
+
+  // Calculate KPIs for active trips
+  const tripKPIs = activeTrips.map((trip) => {
+    const daysUntil = trip.startDate 
+      ? differenceInDays(new Date(trip.startDate), new Date())
+      : 0;
+    return {
+      ...trip,
+      daysUntil,
+      isUrgent: daysUntil > 0 && daysUntil < 7,
+    };
+  });
 
   const handleTripClick = (tripId: string) => {
     navigate(`/viagens?trip=${tripId}`);
   };
 
-  // Mock completed stats
+  // Mock completed stats (will be enhanced with real data later)
   const completedStats = {
     countriesVisited: completedTrips.length,
     restaurantsCurated: completedTrips.length * 4,
     totalSaved: completedTrips.reduce((acc, t) => acc + (t.finances?.available || 0) * 0.1, 0),
     highlights: ['Sakura em Kyoto', 'Pasta em Roma', 'Sunset em Santorini'],
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!user) return null;
 
@@ -64,7 +115,7 @@ const Dashboard = () => {
             </div>
           </div>
           <button
-            onClick={handleLogout}
+            onClick={logout}
             className="p-2 hover:bg-muted rounded-lg transition-colors"
           >
             <LogOut size={20} className="text-muted-foreground" />
@@ -79,7 +130,7 @@ const Dashboard = () => {
         {/* Active Trips */}
         <section>
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4">
-            Viagens Ativas
+            Viagens Ativas {tripsLoading && <Loader2 size={14} className="inline animate-spin ml-2" />}
           </h2>
 
           {activeTrips.length > 0 ? (
@@ -95,7 +146,7 @@ const Dashboard = () => {
               }}
               className="space-y-4"
             >
-              {activeTrips.map((trip) => (
+              {tripKPIs.map((trip) => (
                 <motion.div
                   key={trip.id}
                   variants={{
@@ -111,7 +162,7 @@ const Dashboard = () => {
               ))}
             </motion.div>
           ) : (
-            <div className="bg-[#1E293B] border border-[#334155] rounded-2xl p-8 text-center">
+            <div className="bg-card border border-border rounded-2xl p-8 text-center">
               <p className="text-muted-foreground mb-2">Nenhuma viagem em andamento</p>
               <p className="text-sm text-muted-foreground/70">
                 Clique em "Novo Planejamento" para começar
@@ -159,34 +210,43 @@ const Dashboard = () => {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t border-border px-4 py-2">
-        <div className="flex justify-around">
-          {[
-            { id: 'dashboard', label: '🏠 Home', path: '/dashboard' },
-            { id: 'planejar', label: '✨ Planejar', path: '/planejar' },
-            { id: 'cla', label: '👥 Clã', path: '/cla' },
-            { id: 'conta', label: '👤 Perfil', path: '/conta' },
-          ].map((item) => (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.path)}
-              className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors ${
-                item.id === 'dashboard'
-                  ? 'text-emerald-400'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <span className="text-lg">{item.label.split(' ')[0]}</span>
-              <span className="text-xs mt-0.5">{item.label.split(' ')[1]}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      <BottomNav />
 
       {/* KINU AI Assistant */}
       <KinuAssistant />
     </div>
   );
 };
+
+// Helper functions
+function getDestinationEmoji(destination: string): string {
+  const emojiMap: Record<string, string> = {
+    'Tóquio': '🏯',
+    'Tokyo': '🏯',
+    'Paris': '🗼',
+    'Roma': '🏛️',
+    'Rome': '🏛️',
+    'Lisboa': '🚃',
+    'Lisbon': '🚃',
+    'Barcelona': '🏖️',
+    'Nova York': '🗽',
+    'New York': '🗽',
+    'Londres': '🎡',
+    'London': '🎡',
+    'Dubai': '🏙️',
+    'Bangkok': '🛕',
+    'Singapore': '🌆',
+    'Singapura': '🌆',
+    'Sydney': '🦘',
+  };
+  
+  return emojiMap[destination] || '✈️';
+}
+
+function calculateProgress(checklist: any[]): number {
+  if (!checklist || checklist.length === 0) return 0;
+  const completed = checklist.filter(item => item.is_completed).length;
+  return Math.round((completed / checklist.length) * 100);
+}
 
 export default Dashboard;
