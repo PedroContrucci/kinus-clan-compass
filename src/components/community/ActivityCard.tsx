@@ -1,6 +1,7 @@
-// Enhanced Activity Card Component with photos
-import { Star, MapPin, Clock, DollarSign, Sparkles } from 'lucide-react';
+// Enhanced Activity Card Component with Unsplash photos
+import { Star, MapPin, Clock, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useCategoryPhoto } from '@/hooks/useUnsplash';
 
 interface ActivityCardProps {
   activity: {
@@ -37,16 +38,15 @@ const categoryEmojis: Record<string, string> = {
   other: '📍',
 };
 
-const defaultImages: Record<string, string> = {
-  restaurant: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800',
-  hotel: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800',
-  experience: 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800',
-  transport: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800',
-  default: 'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=800',
-};
-
 export const ActivityCard = ({ activity, photo, onClick, variant = 'default' }: ActivityCardProps) => {
-  const imageUrl = photo?.url || defaultImages[activity.category || 'default'] || defaultImages.default;
+  // Use Unsplash for dynamic photos
+  const location = activity.city?.name_pt || activity.country?.name_pt;
+  const { imageUrl: unsplashUrl, credit, fallbackGradient, fallbackEmoji } = useCategoryPhoto(
+    activity.category || 'travel',
+    location
+  );
+  
+  const imageUrl = photo?.url || unsplashUrl;
   const emoji = categoryEmojis[activity.category || 'other'] || '📍';
 
   if (variant === 'compact') {
@@ -59,7 +59,13 @@ export const ActivityCard = ({ activity, photo, onClick, variant = 'default' }: 
       >
         {/* Mini Image */}
         <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-          <img src={imageUrl} alt={activity.title} className="w-full h-full object-cover" />
+          {imageUrl ? (
+            <img src={imageUrl} alt={activity.title} className="w-full h-full object-cover" />
+          ) : (
+            <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient}`}>
+              <span className="text-xl">{fallbackEmoji}</span>
+            </div>
+          )}
         </div>
 
         {/* Content */}
@@ -95,11 +101,17 @@ export const ActivityCard = ({ activity, photo, onClick, variant = 'default' }: 
     >
       {/* Image */}
       <div className="relative h-40 overflow-hidden">
-        <img
-          src={imageUrl}
-          alt={activity.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={activity.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient}`}>
+            <span className="text-4xl opacity-60">{fallbackEmoji}</span>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
         {/* Top badges */}
@@ -133,6 +145,18 @@ export const ActivityCard = ({ activity, photo, onClick, variant = 'default' }: 
               R$ {activity.estimated_cost_brl.toLocaleString('pt-BR')}
             </span>
           </div>
+        )}
+
+        {/* Unsplash Credit */}
+        {credit && !photo?.url && (
+          <a
+            href={credit.photoLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute bottom-2 left-2 text-[8px] text-white/50 hover:text-white/80"
+          >
+            📷 {credit.name}
+          </a>
         )}
       </div>
 
