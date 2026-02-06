@@ -566,7 +566,7 @@ const Viagens = () => {
           {activeTab === 'checklist' && (
             <div className="animate-fade-in space-y-6">
               {['documentos', 'reservas', 'packing', 'pre-viagem'].map((category) => {
-                const items = selectedTrip.checklist.filter((i) => i.category === category);
+                const items = (selectedTrip.checklist || []).filter((i) => i.category === category);
                 const categoryLabels: Record<string, string> = {
                   documentos: '📄 Documentos',
                   reservas: '🎫 Reservas',
