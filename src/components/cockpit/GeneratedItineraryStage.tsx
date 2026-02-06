@@ -1,6 +1,7 @@
 // GeneratedItineraryStage — Stage 2: View and edit generated itinerary
 // Now generates complete daily schedules with breakfast, morning activity, lunch, 
 // afternoon activity, dinner, and optional night activity
+// Includes KINU Analysis, Weather, and Exchange Rate integrations
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,6 +23,9 @@ import {
   getActivitiesByCategory,
   type SuggestedActivity 
 } from '@/data/destinationActivities';
+import { KinuAnalysisCard } from './KinuAnalysisCard';
+import { ItineraryDayWeather } from './ItineraryDayWeather';
+import { ItineraryExchangeRate } from './ItineraryExchangeRate';
 
 // Types
 interface ItineraryActivity {
@@ -492,6 +496,25 @@ export const GeneratedItineraryStage = ({
           <span>• {totalDays} dias</span>
         </div>
       </header>
+
+      {/* KINU Analysis Card */}
+      <div className="px-4 pt-4">
+        <KinuAnalysisCard
+          destination={destination}
+          departureDate={departureDate}
+          returnDate={returnDate}
+          budget={budget}
+          flightsCost={breakdown.flights.amount}
+          hotelCost={breakdown.hotel.amount}
+          travelInterests={travelInterests}
+        />
+      </div>
+
+      {/* Info Strip: Weather + Exchange */}
+      <div className="px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+        <ItineraryDayWeather destination={destination} date={departureDate} />
+        <ItineraryExchangeRate destination={destination} />
+      </div>
 
       {/* Budget Breakdown */}
       <div className="px-4 py-4 border-b border-border bg-card/50">

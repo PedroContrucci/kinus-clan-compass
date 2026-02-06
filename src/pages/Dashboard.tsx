@@ -11,6 +11,8 @@ import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { DashboardKinuTip } from '@/components/dashboard/DashboardKinuTip';
+import { TripCardWithPhoto } from '@/components/dashboard/TripCardWithPhoto';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -85,18 +87,12 @@ const Dashboard = () => {
     navigate(`/viagens?trip=${tripId}`);
   };
 
-  // Mock completed stats
-  const completedStats = {
-    countriesVisited: completedTrips.length,
-    restaurantsCurated: completedTrips.length * 4,
-    totalSaved: completedTrips.reduce((acc, t) => acc + (t.finances?.available || 0) * 0.1, 0),
-  };
-
-  // Mock KINU insight
-  const kinuInsight = {
-    message: 'Dezembro é alta temporada no Japão. Reserve hotéis com 3 meses de antecedência para melhores preços!',
-    type: 'tip' as const,
-  };
+  // Get the next upcoming trip for KINU tip context
+  const nextTrip = activeTrips.length > 0 ? {
+    destination: activeTrips[0].destination,
+    startDate: activeTrips[0].startDate,
+    budget: activeTrips[0].budget,
+  } : undefined;
 
   if (authLoading) {
     return (
@@ -151,24 +147,8 @@ const Dashboard = () => {
           <ArrowRight size={24} className="text-white/80 group-hover:translate-x-1 transition-transform" />
         </motion.button>
 
-        {/* KINU Insight Card */}
-        {kinuInsight && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-2xl p-4"
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Sparkles size={20} className="text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground mb-1">💡 Dica da KINU</p>
-                <p className="text-sm text-muted-foreground">{kinuInsight.message}</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
+        {/* KINU AI Tip Card */}
+        <DashboardKinuTip nextTrip={nextTrip} />
 
         {/* Active Trips */}
         <section>
@@ -191,7 +171,7 @@ const Dashboard = () => {
               className="space-y-4"
             >
               {tripKPIs.map((trip) => (
-                <ActiveTripCard
+                <TripCardWithPhoto
                   key={trip.id}
                   trip={trip}
                   onClick={() => handleTripClick(trip.id)}
@@ -253,19 +233,19 @@ const Dashboard = () => {
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
                       <p className="text-2xl font-bold text-foreground font-['Outfit']">
-                        {completedStats.countriesVisited}
+                        {completedTrips.length}
                       </p>
                       <p className="text-xs text-muted-foreground">Países</p>
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-foreground font-['Outfit']">
-                        {completedStats.restaurantsCurated}
+                        {completedTrips.length * 4}
                       </p>
                       <p className="text-xs text-muted-foreground">Restaurantes</p>
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-primary font-['Outfit']">
-                        R$ {completedStats.totalSaved.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+                        R$ {completedTrips.reduce((acc, t) => acc + (t.finances?.available || 0) * 0.1, 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
                       </p>
                       <p className="text-xs text-muted-foreground">Economizados</p>
                     </div>
