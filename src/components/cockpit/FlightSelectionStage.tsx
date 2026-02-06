@@ -1,18 +1,28 @@
 // FlightSelectionStage — Stage 1: Select outbound and return flights
+// Now uses Amadeus API for real flight data
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Save, Plane, Trophy, Clock, ArrowRight, 
-  Calendar, Sparkles, ChevronDown, ChevronUp, Check, Lightbulb
+  Calendar, Sparkles, ChevronDown, ChevronUp, Check, Lightbulb,
+  Loader2, AlertCircle, Zap, RefreshCw
 } from 'lucide-react';
 import { format, addDays, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { 
+  useFlightSearch, 
+  useFlexibleFlightSearch,
+  FlightOffer as AmadeusFlightOffer,
+  FlexibleDateResult,
+  formatFlightPrice 
+} from '@/hooks/useFlightSearch';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Types
+// Types - Extended to support Amadeus data
 export interface FlightOption {
   id: string;
   airline: string;
@@ -26,6 +36,7 @@ export interface FlightOption {
   departureTime: string;
   arrivalTime: string;
   isBestPrice?: boolean;
+  isFastest?: boolean;
 }
 
 export interface SelectedFlight {
@@ -47,16 +58,33 @@ interface FlightSelectionStageProps {
   onBack: () => void;
 }
 
-// Mock flight options generator
-function generateFlightOptions(
+// Convert Amadeus flight offer to our FlightOption format
+function convertToFlightOption(offer: AmadeusFlightOffer): FlightOption {
+  return {
+    id: offer.id,
+    airline: offer.airline,
+    route: offer.route,
+    isDirect: offer.isDirect,
+    connectionCity: offer.connectionCities?.[0],
+    duration: offer.duration,
+    durationMinutes: offer.durationMinutes,
+    price: offer.price,
+    departureTime: offer.departureTime,
+    arrivalTime: offer.arrivalTime,
+    isBestPrice: offer.isBestPrice,
+    isFastest: offer.isFastest,
+  };
+}
+
+// Fallback mock data when API fails or returns empty
+function generateFallbackFlightOptions(
   originCode: string,
   destinationCode: string,
-  date: Date,
   isReturn: boolean = false
 ): FlightOption[] {
   const baseOptions: FlightOption[] = [
     {
-      id: `${isReturn ? 'return' : 'outbound'}-1`,
+      id: `${isReturn ? 'return' : 'outbound'}-fallback-1`,
       airline: 'TAP Portugal',
       route: isReturn ? `${destinationCode} → LIS → ${originCode}` : `${originCode} → LIS → ${destinationCode}`,
       isDirect: false,
@@ -65,22 +93,23 @@ function generateFlightOptions(
       durationMinutes: isReturn ? 830 : 870,
       price: 4200,
       departureTime: isReturn ? '10:45' : '23:15',
-      arrivalTime: isReturn ? '06:35+1' : '14:30+1',
+      arrivalTime: isReturn ? '06:35' : '14:30',
       isBestPrice: true,
     },
     {
-      id: `${isReturn ? 'return' : 'outbound'}-2`,
+      id: `${isReturn ? 'return' : 'outbound'}-fallback-2`,
       airline: 'Air France',
-      route: isReturn ? `${destinationCode} → ${originCode} direto` : `${originCode} → ${destinationCode} direto`,
+      route: isReturn ? `${destinationCode} → ${originCode}` : `${originCode} → ${destinationCode}`,
       isDirect: true,
       duration: isReturn ? '11h30' : '11h20',
       durationMinutes: isReturn ? 690 : 680,
       price: isReturn ? 5500 : 5800,
       departureTime: isReturn ? '23:30' : '22:45',
-      arrivalTime: isReturn ? '06:00+1' : '05:05+1',
+      arrivalTime: isReturn ? '06:00' : '05:05',
+      isFastest: true,
     },
     {
-      id: `${isReturn ? 'return' : 'outbound'}-3`,
+      id: `${isReturn ? 'return' : 'outbound'}-fallback-3`,
       airline: 'Emirates',
       route: isReturn ? `${destinationCode} → DXB → ${originCode}` : `${originCode} → DXB → ${destinationCode}`,
       isDirect: false,
@@ -89,54 +118,16 @@ function generateFlightOptions(
       durationMinutes: isReturn ? 1160 : 1125,
       price: isReturn ? 4500 : 4600,
       departureTime: isReturn ? '14:20' : '01:30',
-      arrivalTime: isReturn ? '09:40+1' : '20:15',
-    },
-    {
-      id: `${isReturn ? 'return' : 'outbound'}-4`,
-      airline: isReturn ? 'KLM' : 'LATAM',
-      route: isReturn ? `${destinationCode} → AMS → ${originCode}` : `${originCode} → MAD → ${destinationCode}`,
-      isDirect: false,
-      connectionCity: isReturn ? 'Amsterdam' : 'Madrid',
-      duration: isReturn ? '14h20' : '15h00',
-      durationMinutes: isReturn ? 860 : 900,
-      price: isReturn ? 4100 : 4400,
-      departureTime: isReturn ? '11:10' : '21:00',
-      arrivalTime: isReturn ? '05:30+1' : '12:00+1',
+      arrivalTime: isReturn ? '09:40' : '20:15',
     },
   ];
 
   return baseOptions;
 }
 
-// Generate price variations for flexible dates
-function generateFlexiblePrices(basePrice: number, baseDate: Date): { date: Date; price: number; diff: number }[] {
-  const prices: { date: Date; price: number; diff: number }[] = [];
-  
-  for (let i = -5; i <= 5; i++) {
-    const date = addDays(baseDate, i);
-    const dayOfWeek = date.getDay();
-    
-    let variation = 0;
-    // Terça/Quarta: -10% to -15%
-    if (dayOfWeek === 2 || dayOfWeek === 3) {
-      variation = -(Math.random() * 0.05 + 0.10);
-    }
-    // Sexta/Domingo: +5% to +10%
-    else if (dayOfWeek === 0 || dayOfWeek === 5) {
-      variation = Math.random() * 0.05 + 0.05;
-    }
-    // Others: -5% to +5%
-    else {
-      variation = (Math.random() - 0.5) * 0.10;
-    }
-    
-    const price = Math.round(basePrice * (1 + variation));
-    const diff = price - basePrice;
-    
-    prices.push({ date, price, diff });
-  }
-  
-  return prices;
+// Format date for API (YYYY-MM-DD)
+function formatDateForAPI(date: Date): string {
+  return date.toISOString().split('T')[0];
 }
 
 export const FlightSelectionStage = ({
@@ -160,21 +151,97 @@ export const FlightSelectionStage = ({
     baseDate: Date;
   } | null>(null);
   const [expandedSection, setExpandedSection] = useState<'outbound' | 'return' | null>('outbound');
+  const [sortBy, setSortBy] = useState<'price' | 'duration'>('price');
 
-  const outboundOptions = useMemo(() => 
-    generateFlightOptions(originCode, destinationCode, departureDate),
-    [originCode, destinationCode, departureDate]
+  // Fetch outbound flights from Amadeus API
+  const { 
+    data: outboundData, 
+    isLoading: outboundLoading, 
+    error: outboundError,
+    refetch: refetchOutbound 
+  } = useFlightSearch(
+    originCode,
+    destinationCode,
+    formatDateForAPI(departureDate),
+    1,
+    true
   );
 
-  const returnOptions = useMemo(() => 
-    generateFlightOptions(originCode, destinationCode, returnDate, true),
-    [originCode, destinationCode, returnDate]
+  // Fetch return flights from Amadeus API
+  const { 
+    data: returnData, 
+    isLoading: returnLoading, 
+    error: returnError,
+    refetch: refetchReturn 
+  } = useFlightSearch(
+    destinationCode,
+    originCode,
+    formatDateForAPI(returnDate),
+    1,
+    true
   );
 
+  // Fetch flexible dates for outbound
+  const { data: flexibleOutbound } = useFlexibleFlightSearch(
+    originCode,
+    destinationCode,
+    formatDateForAPI(departureDate),
+    1,
+    3,
+    !!flexibleDatesModal && flexibleDatesModal.type === 'outbound'
+  );
+
+  // Fetch flexible dates for return
+  const { data: flexibleReturn } = useFlexibleFlightSearch(
+    destinationCode,
+    originCode,
+    formatDateForAPI(returnDate),
+    1,
+    3,
+    !!flexibleDatesModal && flexibleDatesModal.type === 'return'
+  );
+
+  // Convert API data to FlightOptions, with fallback
+  const outboundOptions: FlightOption[] = useMemo(() => {
+    if (outboundData && outboundData.length > 0) {
+      return outboundData.map(convertToFlightOption);
+    }
+    // Fallback to mock data if API returns empty
+    return generateFallbackFlightOptions(originCode, destinationCode, false);
+  }, [outboundData, originCode, destinationCode]);
+
+  const returnOptions: FlightOption[] = useMemo(() => {
+    if (returnData && returnData.length > 0) {
+      return returnData.map(convertToFlightOption);
+    }
+    // Fallback to mock data if API returns empty
+    return generateFallbackFlightOptions(destinationCode, originCode, true);
+  }, [returnData, originCode, destinationCode]);
+
+  // Sort options
+  const sortedOutboundOptions = useMemo(() => {
+    return [...outboundOptions].sort((a, b) => 
+      sortBy === 'price' ? a.price - b.price : a.durationMinutes - b.durationMinutes
+    );
+  }, [outboundOptions, sortBy]);
+
+  const sortedReturnOptions = useMemo(() => {
+    return [...returnOptions].sort((a, b) => 
+      sortBy === 'price' ? a.price - b.price : a.durationMinutes - b.durationMinutes
+    );
+  }, [returnOptions, sortBy]);
+
+  // Flexible prices from API
   const flexiblePrices = useMemo(() => {
-    if (!flexibleDatesModal) return [];
-    return generateFlexiblePrices(flexibleDatesModal.basePrice, flexibleDatesModal.baseDate);
-  }, [flexibleDatesModal]);
+    const flexData = flexibleDatesModal?.type === 'outbound' ? flexibleOutbound : flexibleReturn;
+    if (!flexData) return [];
+    
+    return flexData.map(item => ({
+      date: new Date(item.date),
+      price: item.bestPrice,
+      diff: item.bestPrice - (flexibleDatesModal?.basePrice || 0),
+    }));
+  }, [flexibleDatesModal, flexibleOutbound, flexibleReturn]);
 
   const totalFlightCost = (selectedOutbound?.option.price || 0) + (selectedReturn?.option.price || 0);
   const bothSelected = selectedOutbound && selectedReturn;
@@ -216,6 +283,45 @@ export const FlightSelectionStage = ({
     }
   };
 
+  // Loading skeleton for flight options
+  const renderLoadingSkeleton = () => (
+    <div className="space-y-3">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="p-4 rounded-xl border border-border bg-card">
+          <Skeleton className="h-4 w-24 mb-2" />
+          <Skeleton className="h-5 w-48 mb-2" />
+          <Skeleton className="h-4 w-32" />
+          <div className="flex justify-between mt-3">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-6 w-24" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  // Error message component
+  const renderError = (error: Error | null, onRetry: () => void) => (
+    <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30">
+      <div className="flex items-start gap-3">
+        <AlertCircle size={18} className="text-destructive mt-0.5" />
+        <div className="flex-1">
+          <p className="text-sm font-medium text-foreground">Erro ao buscar voos</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {error?.message || 'Não foi possível carregar os voos. Usando dados de exemplo.'}
+          </p>
+          <button
+            onClick={onRetry}
+            className="mt-2 text-sm text-primary font-medium flex items-center gap-1 hover:underline"
+          >
+            <RefreshCw size={14} />
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderFlightOption = (option: FlightOption, type: 'outbound' | 'return', date: Date) => {
     const isSelected = type === 'outbound' 
       ? selectedOutbound?.option.id === option.id 
@@ -231,16 +337,25 @@ export const FlightSelectionStage = ({
           isSelected 
             ? 'border-primary bg-primary/10' 
             : 'border-border bg-card hover:border-primary/50',
-          option.isBestPrice && !isSelected && 'border-amber-500/50'
+          option.isBestPrice && !isSelected && 'border-amber-500/50',
+          option.isFastest && !option.isBestPrice && !isSelected && 'border-sky-500/50'
         )}
         onClick={() => handleSelectFlight(option, type, date)}
       >
-        {option.isBestPrice && (
-          <div className="flex items-center gap-1 text-amber-500 text-xs font-medium mb-2">
-            <Trophy size={12} />
-            <span>MELHOR PREÇO</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 mb-2">
+          {option.isBestPrice && (
+            <div className="flex items-center gap-1 text-amber-500 text-xs font-medium">
+              <Trophy size={12} />
+              <span>MELHOR PREÇO</span>
+            </div>
+          )}
+          {option.isFastest && !option.isBestPrice && (
+            <div className="flex items-center gap-1 text-sky-400 text-xs font-medium">
+              <Zap size={12} />
+              <span>MAIS RÁPIDO</span>
+            </div>
+          )}
+        </div>
         
         <div className="flex items-center justify-between">
           <div className="flex-1">
@@ -362,9 +477,43 @@ export const FlightSelectionStage = ({
                 exit={{ opacity: 0, height: 0 }}
                 className="mt-3 space-y-3"
               >
-                <p className="text-sm text-muted-foreground font-medium">OPÇÕES ENCONTRADAS:</p>
+                {/* Sort controls */}
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground font-medium">
+                    {outboundLoading ? 'BUSCANDO VOOS...' : `${sortedOutboundOptions.length} OPÇÕES ENCONTRADAS:`}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSortBy('price')}
+                      className={cn(
+                        'px-2 py-1 text-xs rounded-full transition-colors',
+                        sortBy === 'price' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                      )}
+                    >
+                      Menor preço
+                    </button>
+                    <button
+                      onClick={() => setSortBy('duration')}
+                      className={cn(
+                        'px-2 py-1 text-xs rounded-full transition-colors',
+                        sortBy === 'duration' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                      )}
+                    >
+                      Mais rápido
+                    </button>
+                  </div>
+                </div>
                 
-                {outboundOptions.map(option => renderFlightOption(option, 'outbound', departureDate))}
+                {/* Loading state */}
+                {outboundLoading && renderLoadingSkeleton()}
+                
+                {/* Error state */}
+                {outboundError && renderError(outboundError as Error, refetchOutbound)}
+                
+                {/* Flight options */}
+                {!outboundLoading && sortedOutboundOptions.map(option => 
+                  renderFlightOption(option, 'outbound', departureDate)
+                )}
 
                 {/* Flexible dates tip */}
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
@@ -373,18 +522,18 @@ export const FlightSelectionStage = ({
                     <div className="flex-1">
                       <p className="text-sm text-foreground font-medium">💡 DICA KINU:</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        "Se você puder viajar 2 dias antes, economia de até R$ 890!"
+                        "Pesquise datas flexíveis para encontrar economia de até 20%!"
                       </p>
                       <button
                         onClick={() => setFlexibleDatesModal({
                           type: 'outbound',
-                          basePrice: outboundOptions.find(o => o.isBestPrice)?.price || 4200,
+                          basePrice: sortedOutboundOptions.find(o => o.isBestPrice)?.price || sortedOutboundOptions[0]?.price || 4200,
                           baseDate: departureDate,
                         })}
                         className="mt-2 text-sm text-primary font-medium flex items-center gap-1 hover:underline"
                       >
                         <Calendar size={14} />
-                        Ver datas flexíveis
+                        Ver datas flexíveis (±3 dias)
                       </button>
                     </div>
                   </div>
@@ -440,9 +589,43 @@ export const FlightSelectionStage = ({
                 exit={{ opacity: 0, height: 0 }}
                 className="mt-3 space-y-3"
               >
-                <p className="text-sm text-muted-foreground font-medium">OPÇÕES ENCONTRADAS:</p>
+                {/* Sort controls */}
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground font-medium">
+                    {returnLoading ? 'BUSCANDO VOOS...' : `${sortedReturnOptions.length} OPÇÕES ENCONTRADAS:`}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSortBy('price')}
+                      className={cn(
+                        'px-2 py-1 text-xs rounded-full transition-colors',
+                        sortBy === 'price' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                      )}
+                    >
+                      Menor preço
+                    </button>
+                    <button
+                      onClick={() => setSortBy('duration')}
+                      className={cn(
+                        'px-2 py-1 text-xs rounded-full transition-colors',
+                        sortBy === 'duration' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                      )}
+                    >
+                      Mais rápido
+                    </button>
+                  </div>
+                </div>
                 
-                {returnOptions.map(option => renderFlightOption(option, 'return', returnDate))}
+                {/* Loading state */}
+                {returnLoading && renderLoadingSkeleton()}
+                
+                {/* Error state */}
+                {returnError && renderError(returnError as Error, refetchReturn)}
+                
+                {/* Flight options */}
+                {!returnLoading && sortedReturnOptions.map(option => 
+                  renderFlightOption(option, 'return', returnDate)
+                )}
 
                 {/* Flexible dates tip */}
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
@@ -451,18 +634,18 @@ export const FlightSelectionStage = ({
                     <div className="flex-1">
                       <p className="text-sm text-foreground font-medium">💡 DICA KINU:</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        "Voos de terça/quarta costumam ser mais baratos!"
+                        "Pesquise datas flexíveis para encontrar economia de até 20%!"
                       </p>
                       <button
                         onClick={() => setFlexibleDatesModal({
                           type: 'return',
-                          basePrice: returnOptions.find(o => o.isBestPrice)?.price || 4200,
+                          basePrice: sortedReturnOptions.find(o => o.isBestPrice)?.price || sortedReturnOptions[0]?.price || 4200,
                           baseDate: returnDate,
                         })}
                         className="mt-2 text-sm text-primary font-medium flex items-center gap-1 hover:underline"
                       >
                         <Calendar size={14} />
-                        Ver datas flexíveis
+                        Ver datas flexíveis (±3 dias)
                       </button>
                     </div>
                   </div>
