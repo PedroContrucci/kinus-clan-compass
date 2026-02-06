@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Check, Trash2, AlertTriangle, ChevronDown, ChevronUp, Snowflake, Sun, Cloud } from 'lucide-react';
+import { Plus, Check, Trash2, AlertTriangle, ChevronDown, ChevronUp, Snowflake, Sun, Cloud, Sparkles } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { LuggageVisualization } from './LuggageVisualization';
 
 interface PackingItem {
   id: string;
@@ -97,8 +98,8 @@ const getWeatherTips = (destination: string, month: number = new Date().getMonth
   };
 };
 
-// Default packing items
-const getDefaultItems = (): PackingItem[] => [
+// Suggested items by category (user must add them manually)
+const getSuggestedItems = (): PackingItem[] => [
   // Roupas
   { id: 'r1', name: 'Camisetas', weight: 0.16, quantity: 5, category: 'roupas', bagType: 'checked', isChecked: true },
   { id: 'r2', name: 'Calças jeans', weight: 0.6, quantity: 2, category: 'roupas', bagType: 'checked', isChecked: true },
@@ -107,31 +108,22 @@ const getDefaultItems = (): PackingItem[] => [
   { id: 'r5', name: 'Pijama', weight: 0.3, quantity: 1, category: 'roupas', bagType: 'checked', isChecked: true },
   { id: 'r6', name: 'Cuecas/Calcinhas', weight: 0.025, quantity: 8, category: 'roupas', bagType: 'checked', isChecked: true },
   { id: 'r7', name: 'Meias', weight: 0.04, quantity: 8, category: 'roupas', bagType: 'checked', isChecked: true },
-  { id: 'r8', name: 'Roupa social', weight: 0.8, quantity: 1, category: 'roupas', bagType: 'checked', isChecked: true },
   
   // Calçados
   { id: 'c1', name: 'Tênis confortável', weight: 0.8, quantity: 1, category: 'calcados', bagType: 'checked', isChecked: true },
-  { id: 'c2', name: 'Sapato social', weight: 0.7, quantity: 1, category: 'calcados', bagType: 'checked', isChecked: true },
-  { id: 'c3', name: 'Chinelo', weight: 0.2, quantity: 1, category: 'calcados', bagType: 'carry_on', isChecked: true },
   
   // Eletrônicos
-  { id: 'e1', name: 'Notebook', weight: 1.5, quantity: 1, category: 'eletronicos', bagType: 'carry_on', isChecked: true },
-  { id: 'e2', name: 'Carregador notebook', weight: 0.3, quantity: 1, category: 'eletronicos', bagType: 'carry_on', isChecked: true },
-  { id: 'e3', name: 'Celular + carregador', weight: 0.3, quantity: 1, category: 'eletronicos', bagType: 'carry_on', isChecked: true },
-  { id: 'e4', name: 'Adaptador tomada EU', weight: 0.1, quantity: 1, category: 'eletronicos', bagType: 'carry_on', isChecked: true },
-  { id: 'e5', name: 'Power bank', weight: 0.3, quantity: 1, category: 'eletronicos', bagType: 'carry_on', isChecked: true },
-  { id: 'e6', name: 'Fone de ouvido', weight: 0.2, quantity: 1, category: 'eletronicos', bagType: 'carry_on', isChecked: true },
+  { id: 'e1', name: 'Carregador celular', weight: 0.1, quantity: 1, category: 'eletronicos', bagType: 'carry_on', isChecked: true },
+  { id: 'e2', name: 'Adaptador tomada', weight: 0.1, quantity: 1, category: 'eletronicos', bagType: 'carry_on', isChecked: true },
+  { id: 'e3', name: 'Power bank', weight: 0.3, quantity: 1, category: 'eletronicos', bagType: 'carry_on', isChecked: true },
   
   // Higiene
-  { id: 'h1', name: 'Nécessaire completa', weight: 0.8, quantity: 1, category: 'higiene', bagType: 'checked', isChecked: true },
+  { id: 'h1', name: 'Nécessaire', weight: 0.5, quantity: 1, category: 'higiene', bagType: 'checked', isChecked: true },
   { id: 'h2', name: 'Kit líquidos <100ml', weight: 0.3, quantity: 1, category: 'higiene', bagType: 'carry_on', isChecked: true },
-  { id: 'h3', name: 'Medicamentos', weight: 0.2, quantity: 1, category: 'higiene', bagType: 'carry_on', isChecked: true },
-  { id: 'h4', name: 'Protetor solar', weight: 0.2, quantity: 1, category: 'higiene', bagType: 'checked', isChecked: true },
   
-  // Documentos
+  // Documentos (locked - always needed)
   { id: 'd1', name: 'Passaporte', weight: 0.1, quantity: 1, category: 'documentos', bagType: 'carry_on', isChecked: true, isLocked: true },
   { id: 'd2', name: 'Carteira + cartões', weight: 0.1, quantity: 1, category: 'documentos', bagType: 'carry_on', isChecked: true, isLocked: true },
-  { id: 'd3', name: 'Comprovantes impressos', weight: 0.1, quantity: 1, category: 'documentos', bagType: 'carry_on', isChecked: true },
 ];
 
 const categoryConfig = {
@@ -151,9 +143,11 @@ export const EnhancedSmartPacking = ({
   onUpdate,
 }: EnhancedSmartPackingProps) => {
   const [selectedAirline, setSelectedAirline] = useState<AirlineRules>(AIRLINES[0]);
-  const [items, setItems] = useState<PackingItem[]>(getDefaultItems());
+  // START EMPTY - user adds items manually
+  const [items, setItems] = useState<PackingItem[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['roupas', 'eletronicos']);
   const [showAddItem, setShowAddItem] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const [newItem, setNewItem] = useState({ name: '', weight: 0.3, category: 'outros' as PackingItem['category'], bagType: 'checked' as PackingItem['bagType'] });
   
   const weatherTips = useMemo(() => getWeatherTips(destination, month), [destination, month]);
@@ -337,6 +331,24 @@ export const EnhancedSmartPacking = ({
         </motion.div>
       </div>
       
+      {/* 2D Luggage Visualization - only show when has items */}
+      {items.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <LuggageVisualization
+            items={items}
+            bagType="carry_on"
+            maxWeight={selectedAirline.carryOnWeight}
+            dimensions={selectedAirline.carryOnDimensions}
+          />
+          <LuggageVisualization
+            items={items}
+            bagType="checked"
+            maxWeight={selectedAirline.checkedWeight}
+            dimensions="70x50x28cm"
+          />
+        </div>
+      )}
+      
       {/* Weather Tips */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -396,8 +408,43 @@ export const EnhancedSmartPacking = ({
         </div>
       </motion.div>
       
-      {/* Items by Category */}
-      {categories.map((category) => {
+      {/* Empty State */}
+      {items.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card border-2 border-dashed border-border rounded-2xl p-8 text-center"
+        >
+          <div className="text-4xl mb-3">🧳</div>
+          <h3 className="font-semibold text-foreground mb-2">Sua mala está vazia</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Adicione itens para começar a organizar sua bagagem
+          </p>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => setShowAddItem(true)}
+              className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
+            >
+              <Plus size={18} />
+              Adicionar item à mala
+            </button>
+            <button
+              onClick={() => {
+                // Add all suggested items at once
+                const suggestedItems = getSuggestedItems();
+                setItems(suggestedItems);
+              }}
+              className="w-full px-4 py-3 bg-muted text-foreground rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-muted/80 transition-colors"
+            >
+              <Sparkles size={18} />
+              Usar sugestões do KINU
+            </button>
+          </div>
+        </motion.div>
+      )}
+      
+      {/* Items by Category - only show if has items */}
+      {items.length > 0 && categories.map((category) => {
         const categoryItems = items.filter(i => i.category === category);
         if (categoryItems.length === 0 && category !== 'outros') return null;
         

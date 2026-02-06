@@ -39,11 +39,30 @@ const categoryEmojis: Record<string, string> = {
 };
 
 export const ActivityCard = ({ activity, photo, onClick, variant = 'default' }: ActivityCardProps) => {
-  // Use Unsplash for dynamic photos
-  const location = activity.city?.name_pt || activity.country?.name_pt;
+  // Build smart search query: activity name + city for specific results
+  const location = activity.city?.name_pt || activity.country?.name_pt || '';
+  
+  // Build a specific search query based on activity type
+  const buildSearchQuery = () => {
+    const title = activity.title?.toLowerCase() || '';
+    const category = activity.category || 'experience';
+    
+    // For tip/service activities that aren't places, use category-based search
+    const nonPlaceKeywords = ['luggage', 'card', 'pass', 'ticket', 'sim', 'chip', 'tip', 'dica'];
+    const isNonPlace = nonPlaceKeywords.some(kw => title.includes(kw));
+    
+    if (isNonPlace) {
+      // For services/tips, use a contextual search
+      return `${location} ${category} travel`;
+    }
+    
+    // For places, use title + location for specific photos
+    return `${activity.title} ${location}`.trim();
+  };
+  
   const { imageUrl: unsplashUrl, credit, fallbackGradient, fallbackEmoji } = useCategoryPhoto(
     activity.category || 'travel',
-    location
+    buildSearchQuery()
   );
   
   const imageUrl = photo?.url || unsplashUrl;

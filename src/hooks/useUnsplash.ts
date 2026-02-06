@@ -71,7 +71,11 @@ export function useUnsplash(query: string, options: UseUnsplashOptions = {}) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchPhotos = useCallback(async () => {
-    if (!query || !enabled) return;
+    // Skip if no query or disabled - silently fail
+    if (!query?.trim() || !enabled) {
+      setPhotos([]);
+      return;
+    }
 
     const cacheKey = `${query.toLowerCase()}-${perPage}-${orientation}`;
     
@@ -86,10 +90,7 @@ export function useUnsplash(query: string, options: UseUnsplashOptions = {}) {
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('unsplash', {
-        body: null,
-        headers: {},
-      });
+      // Use fetch with query params - direct call to edge function
 
       // Use query params approach
       const response = await fetch(
@@ -135,9 +136,14 @@ export function useUnsplash(query: string, options: UseUnsplashOptions = {}) {
 
 // Get a single photo for a destination/category
 export function useDestinationPhoto(destination: string, category?: string) {
-  const { photos, loading, error } = useUnsplash(`${destination} travel`, { 
+  // Build a more specific search query
+  const searchQuery = destination?.trim() 
+    ? `${destination} travel landscape` 
+    : '';
+    
+  const { photos, loading, error } = useUnsplash(searchQuery, { 
     perPage: 1, 
-    enabled: !!destination 
+    enabled: !!destination?.trim() 
   });
 
   const photo = photos[0] || null;
@@ -162,10 +168,11 @@ export function useDestinationPhoto(destination: string, category?: string) {
   };
 }
 
-// Get category photo
-export function useCategoryPhoto(category: string, location?: string) {
-  const query = location ? `${location} ${category}` : category;
-  const { photos, loading, error } = useUnsplash(query, { perPage: 1 });
+// Get category photo - improved to use specific query
+export function useCategoryPhoto(category: string, searchQuery?: string) {
+  // Use provided search query or fallback to category
+  const query = searchQuery?.trim() || category;
+  const { photos, loading, error } = useUnsplash(query, { perPage: 1, enabled: !!query });
 
   const photo = photos[0] || null;
   const fallbackGradient = fallbackGradients[category] || fallbackGradients.default;
