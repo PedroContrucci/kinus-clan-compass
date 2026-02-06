@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.weather]
 verify_jwt = false
+
+[functions.unsplash]
+verify_jwt = false

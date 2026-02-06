@@ -1,6 +1,7 @@
 // Itinerary Card Component for complete trip itineraries
-import { Calendar, DollarSign, Heart, Copy, Star, Users } from 'lucide-react';
+import { Calendar, DollarSign, Heart, Copy } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useDestinationPhoto } from '@/hooks/useUnsplash';
 
 interface ItineraryCardProps {
   itinerary: {
@@ -21,24 +22,19 @@ interface ItineraryCardProps {
   onClick?: () => void;
 }
 
-const defaultImages = [
-  'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800',
-  'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=800',
-  'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=800',
-  'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800',
-];
+const styleLabels: Record<string, { label: string; emoji: string }> = {
+  cultural: { label: 'Cultural', emoji: '🏛️' },
+  adventure: { label: 'Aventura', emoji: '🧗' },
+  relaxed: { label: 'Relaxado', emoji: '🌴' },
+  romantic: { label: 'Romântico', emoji: '💕' },
+  family: { label: 'Família', emoji: '👨‍👩‍👧‍👦' },
+};
 
 export const ItineraryCard = ({ itinerary, onClick }: ItineraryCardProps) => {
-  const randomImage = defaultImages[Math.floor(Math.random() * defaultImages.length)];
-  const imageUrl = itinerary.cover_image_url || randomImage;
-
-  const styleLabels: Record<string, { label: string; emoji: string }> = {
-    cultural: { label: 'Cultural', emoji: '🏛️' },
-    adventure: { label: 'Aventura', emoji: '🧗' },
-    relaxed: { label: 'Relaxado', emoji: '🌴' },
-    romantic: { label: 'Romântico', emoji: '💕' },
-    family: { label: 'Família', emoji: '👨‍👩‍👧‍👦' },
-  };
+  // Use Unsplash for dynamic photos
+  const destination = itinerary.destination_city?.name_pt || itinerary.destination_country?.name_pt || 'travel';
+  const { imageUrl, credit, fallbackGradient, fallbackEmoji } = useDestinationPhoto(destination);
+  const finalImageUrl = itinerary.cover_image_url || imageUrl;
 
   const style = itinerary.travel_style ? styleLabels[itinerary.travel_style] : null;
 
@@ -49,13 +45,19 @@ export const ItineraryCard = ({ itinerary, onClick }: ItineraryCardProps) => {
       onClick={onClick}
       className="w-full bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-xl hover:shadow-primary/10 text-left group"
     >
-      {/* Cover Image */}
+      {/* Cover Image with Unsplash or Fallback */}
       <div className="relative h-48 overflow-hidden">
-        <img
-          src={imageUrl}
-          alt={itinerary.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
+        {finalImageUrl ? (
+          <img
+            src={finalImageUrl}
+            alt={itinerary.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient}`}>
+            <span className="text-5xl opacity-60">{fallbackEmoji}</span>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
         {/* Travel Style Badge */}
@@ -87,6 +89,18 @@ export const ItineraryCard = ({ itinerary, onClick }: ItineraryCardProps) => {
             </p>
           )}
         </div>
+
+        {/* Unsplash Credit */}
+        {credit && !itinerary.cover_image_url && (
+          <a
+            href={credit.photoLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute bottom-1 right-3 text-[8px] text-white/50 hover:text-white/80"
+          >
+            📷 {credit.name}
+          </a>
+        )}
       </div>
 
       {/* Content */}
@@ -126,7 +140,7 @@ export const ItineraryCard = ({ itinerary, onClick }: ItineraryCardProps) => {
           <div className="flex items-center gap-3">
             {itinerary.likes_count != null && itinerary.likes_count > 0 && (
               <div className="flex items-center gap-1 text-muted-foreground">
-                <Heart size={12} className="text-red-400" />
+                <Heart size={12} className="text-destructive" />
                 <span className="text-xs">{itinerary.likes_count}</span>
               </div>
             )}
