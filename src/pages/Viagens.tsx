@@ -687,8 +687,12 @@ const Viagens = () => {
           <div className="space-y-4">
             {trips.map((trip) => {
               const progress = calculateProgress(trip);
-              const totalActivities = trip.days.reduce((acc, day) => acc + day.activities.length, 0);
-              const confirmedActivities = trip.days.reduce((acc, day) => acc + day.activities.filter((a) => a.status === 'confirmed').length, 0);
+              const days = trip?.days && Array.isArray(trip.days) ? trip.days : [];
+              const totalActivities = days.reduce((acc, day) => acc + (day?.activities?.length || 0), 0);
+              const confirmedActivities = days.reduce((acc, day) => {
+                const activities = day?.activities && Array.isArray(day.activities) ? day.activities : [];
+                return acc + activities.filter((a) => a.status === 'confirmed').length;
+              }, 0);
               const statusInfo = getStatusLabel(trip.status);
 
               return (
@@ -710,7 +714,7 @@ const Viagens = () => {
                         <span className={`text-xs ${statusInfo.color}`}>• {statusInfo.label}</span>
                       </div>
                       <p className="text-sm text-[#94a3b8]">
-                        {trip.startDate && format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} - {trip.endDate && format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })} • {trip.days.length} dias
+                        {trip.startDate && format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} - {trip.endDate && format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })} • {days.length} dias
                       </p>
                     </div>
                     <ChevronRight size={20} className="text-[#94a3b8]" />
