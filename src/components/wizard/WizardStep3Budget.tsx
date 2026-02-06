@@ -1,11 +1,11 @@
-// WizardStep3Budget — Budget Amount, Priorities & Travel Style
+// WizardStep3Budget — Budget Amount, Priorities, Travel Interests & Style
 
 import { useState } from 'react';
 import { motion, Reorder } from 'framer-motion';
 import { Wallet, GripVertical, Info, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { WizardData } from './types';
-import { TRAVEL_STYLES, PRIORITY_OPTIONS } from './types';
+import type { WizardData, TravelInterest } from './types';
+import { TRAVEL_STYLES, PRIORITY_OPTIONS, TRAVEL_INTERESTS } from './types';
 
 interface WizardStep3Props {
   data: WizardData;
@@ -40,17 +40,26 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
     onChange({ travelStyle: style });
   };
 
+  const handleInterestToggle = (interest: TravelInterest) => {
+    const current = data.travelInterests || [];
+    if (current.includes(interest)) {
+      onChange({ travelInterests: current.filter(i => i !== interest) });
+    } else if (current.length < 3) {
+      onChange({ travelInterests: [...current, interest] });
+    }
+  };
+
   // Get priority explanation based on first priority
   const getPriorityExplanation = () => {
     if (data.priorities.length === 0) return null;
     const first = data.priorities[0];
     switch (first) {
       case 'flights':
-        return 'Buscaremos conexões mais rápidas e classes superiores quando possível.';
+        return 'Buscaremos conexões mais rápidas e classes superiores quando possível. (45% do budget)';
       case 'accommodation':
-        return 'Priorizaremos hotéis bem localizados e com melhor qualidade.';
+        return 'Priorizaremos hotéis bem localizados e com melhor qualidade. (45% do budget)';
       case 'experiences':
-        return 'Reservaremos mais budget para passeios e restaurantes incríveis.';
+        return 'Reservaremos mais budget para passeios e restaurantes incríveis. (45% do budget)';
       default:
         return null;
     }
@@ -66,6 +75,44 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
         <h2 className="text-xl font-bold text-foreground font-['Outfit']">
           Budget & Prioridades
         </h2>
+      </div>
+
+      {/* Travel Interests - Multi-select chips */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          🎨 Qual o estilo da sua viagem?
+        </label>
+        <p className="text-xs text-muted-foreground mb-3">
+          Selecione até 3 interesses
+        </p>
+        
+        <div className="flex flex-wrap gap-2">
+          {TRAVEL_INTERESTS.map((interest) => {
+            const isSelected = (data.travelInterests || []).includes(interest.id as TravelInterest);
+            const isDisabled = !isSelected && (data.travelInterests || []).length >= 3;
+            
+            return (
+              <motion.button
+                key={interest.id}
+                whileHover={{ scale: isDisabled ? 1 : 1.05 }}
+                whileTap={{ scale: isDisabled ? 1 : 0.95 }}
+                onClick={() => !isDisabled && handleInterestToggle(interest.id as TravelInterest)}
+                disabled={isDisabled}
+                className={cn(
+                  'px-3 py-2 rounded-full border text-sm flex items-center gap-1.5 transition-all',
+                  isSelected
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : isDisabled
+                    ? 'bg-muted/30 text-muted-foreground border-muted cursor-not-allowed opacity-50'
+                    : 'bg-card border-border hover:border-primary/50'
+                )}
+              >
+                <span>{interest.icon}</span>
+                <span>{interest.label}</span>
+              </motion.button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Budget Input */}
@@ -94,7 +141,7 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
           🎯 Onde você quer investir mais?
         </label>
         <p className="text-xs text-muted-foreground mb-3">
-          Arraste para ordenar por prioridade
+          Arraste para ordenar por prioridade (1º = 45%, 2º = 35%, 3º = 20%)
         </p>
         
         <Reorder.Group
@@ -106,6 +153,8 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
           {data.priorities.map((priorityId, index) => {
             const priority = PRIORITY_OPTIONS.find(p => p.id === priorityId);
             if (!priority) return null;
+            
+            const percentages = [45, 35, 20];
             
             return (
               <Reorder.Item
@@ -133,6 +182,12 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
                     <p className="font-medium text-foreground">{priority.label}</p>
                     <p className="text-xs text-muted-foreground">{priority.description}</p>
                   </div>
+                  <span className={cn(
+                    'text-sm font-bold',
+                    index === 0 ? 'text-primary' : 'text-muted-foreground'
+                  )}>
+                    {percentages[index]}%
+                  </span>
                 </motion.div>
               </Reorder.Item>
             );
@@ -155,7 +210,7 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
       {/* Travel Style */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-3">
-          🎨 Estilo da viagem
+          🏨 Nível de conforto
         </label>
         
         <div className="grid grid-cols-2 gap-3">

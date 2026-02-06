@@ -268,7 +268,7 @@ export function useCityAirportSearch(searchTerm: string) {
       
       const normalizedSearch = searchTerm.toLowerCase();
       
-      // Search cities
+      // Search cities - include timezone
       const { data: cities, error: citiesError } = await supabase
         .from('cities')
         .select(`
@@ -280,12 +280,12 @@ export function useCityAirportSearch(searchTerm: string) {
       
       if (citiesError) throw citiesError;
       
-      // Search airports
+      // Search airports - include timezone
       const { data: airports, error: airportsError } = await supabase
         .from('airports')
         .select(`
           *,
-          city:cities(name_pt),
+          city:cities(name_pt, timezone),
           country:countries(name_pt, code)
         `)
         .or(`name_pt.ilike.%${normalizedSearch}%,name_en.ilike.%${normalizedSearch}%,iata_code.ilike.%${normalizedSearch}%`)
