@@ -12,3 +12,7 @@ export { EnhancedDayTimeline } from './EnhancedDayTimeline';
 export { AuctionConfigModal } from './AuctionConfigModal';
 export { EnhancedSmartPacking } from './EnhancedSmartPacking';
 export { EnhancedExchangeRates } from './EnhancedExchangeRates';
+export { LuggageVisualization } from './LuggageVisualization';
+export { KinuAnalysisCard } from './KinuAnalysisCard';
+export { ItineraryDayWeather } from './ItineraryDayWeather';
+export { ItineraryExchangeRate } from './ItineraryExchangeRate';

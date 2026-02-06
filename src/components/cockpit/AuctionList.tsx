@@ -34,55 +34,6 @@ interface AuctionListProps {
   activities?: any[];
 }
 
-// Mock auction data
-const mockAuctions: AuctionItem[] = [
-  {
-    id: '1',
-    name: 'Voo GRU → NRT',
-    type: 'flight',
-    targetPrice: 18000,
-    currentBestPrice: 19500,
-    bestPriceDate: new Date(),
-    bestPriceUrl: 'https://example.com',
-    kinutEstimate: 17500,
-    startedAt: addDays(new Date(), -5),
-    expiresAt: addDays(new Date(), 10),
-    maxWaitDays: 15,
-    status: 'watching',
-    savings: 0,
-  },
-  {
-    id: '2',
-    name: 'Hotel Shinjuku',
-    type: 'hotel',
-    targetPrice: 5000,
-    currentBestPrice: 4800,
-    bestPriceDate: addDays(new Date(), -1),
-    bestPriceUrl: 'https://example.com',
-    kinutEstimate: 4500,
-    startedAt: addDays(new Date(), -3),
-    expiresAt: addDays(new Date(), 12),
-    maxWaitDays: 15,
-    status: 'won',
-    savings: 200,
-  },
-  {
-    id: '3',
-    name: 'Tour Fushimi Inari',
-    type: 'experience',
-    targetPrice: 350,
-    currentBestPrice: null,
-    bestPriceDate: null,
-    bestPriceUrl: null,
-    kinutEstimate: 320,
-    startedAt: addDays(new Date(), -2),
-    expiresAt: addDays(new Date(), 8),
-    maxWaitDays: 10,
-    status: 'watching',
-    savings: 0,
-  },
-];
-
 const typeIcons = {
   flight: '✈️',
   hotel: '🏨',
@@ -98,7 +49,8 @@ const statusConfig = {
 };
 
 export const AuctionList = ({ tripId, activities }: AuctionListProps) => {
-  const [auctions, setAuctions] = useState<AuctionItem[]>(mockAuctions);
+  // START EMPTY - no mock data, auctions must be activated from the itinerary
+  const [auctions, setAuctions] = useState<AuctionItem[]>([]);
 
   const totalSavings = useMemo(() => {
     return auctions.reduce((acc, a) => acc + a.savings, 0);

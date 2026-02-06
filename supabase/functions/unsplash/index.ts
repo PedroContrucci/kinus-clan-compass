@@ -59,9 +59,15 @@ serve(async (req) => {
     const orientation = url.searchParams.get('orientation') || 'landscape';
 
     if (!query) {
+      // Return empty photos array instead of error - frontend will use fallback
       return new Response(
-        JSON.stringify({ error: 'Query parameter is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          photos: [], 
+          total: 0, 
+          cached: false,
+          fallback: true 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

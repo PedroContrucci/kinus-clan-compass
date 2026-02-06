@@ -274,10 +274,174 @@ const Viagens = () => {
 
   const handleActivateDraft = (updatedTrip: any) => {
     updatedTrip.status = 'active';
+    
+    // Ensure days exist - generate basic itinerary if missing
+    if (!updatedTrip.days || updatedTrip.days.length === 0) {
+      const duration = getTripDuration(updatedTrip);
+      updatedTrip.days = generateBasicDays(updatedTrip, duration);
+    }
+    
     const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
     setTrips(updatedTrips);
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
     setSelectedTrip(updatedTrip);
+  };
+  
+  // Generate basic days for a trip
+  const generateBasicDays = (trip: SavedTrip, duration: number) => {
+    const days = [];
+    
+    for (let i = 0; i < duration; i++) {
+      const isFirstDay = i === 0;
+      const isLastDay = i === duration - 1;
+      
+      let title = 'Exploração';
+      let activities: TripActivity[] = [];
+      
+      if (isFirstDay) {
+        title = 'Chegada';
+        activities = [
+          {
+            id: `day${i + 1}-1`,
+            name: 'Voo de chegada',
+            description: `Chegada em ${trip.destination}`,
+            time: '10:00',
+            duration: '12h',
+            type: 'transport',
+            category: 'voo',
+            cost: 0,
+            status: 'planned' as ActivityStatus,
+          },
+          {
+            id: `day${i + 1}-2`,
+            name: 'Check-in no hotel',
+            description: 'Deixar bagagens e descansar',
+            time: '14:00',
+            duration: '1h',
+            type: 'relax',
+            category: 'hotel',
+            cost: 0,
+            status: 'planned' as ActivityStatus,
+          },
+          {
+            id: `day${i + 1}-3`,
+            name: 'Jantar local',
+            description: 'Explorar a gastronomia local',
+            time: '19:00',
+            duration: '2h',
+            type: 'food',
+            category: 'comida',
+            cost: Math.round(trip.budget * 0.02),
+            status: 'planned' as ActivityStatus,
+          },
+        ];
+      } else if (isLastDay) {
+        title = 'Retorno';
+        activities = [
+          {
+            id: `day${i + 1}-1`,
+            name: 'Café da manhã',
+            description: 'Último café no hotel',
+            time: '08:00',
+            duration: '1h',
+            type: 'food',
+            category: 'comida',
+            cost: 0,
+            status: 'planned' as ActivityStatus,
+          },
+          {
+            id: `day${i + 1}-2`,
+            name: 'Check-out',
+            description: 'Preparar bagagens',
+            time: '10:00',
+            duration: '1h',
+            type: 'relax',
+            category: 'hotel',
+            cost: 0,
+            status: 'planned' as ActivityStatus,
+          },
+          {
+            id: `day${i + 1}-3`,
+            name: 'Voo de retorno',
+            description: 'Volta para casa',
+            time: '14:00',
+            duration: '12h',
+            type: 'transport',
+            category: 'voo',
+            cost: 0,
+            status: 'planned' as ActivityStatus,
+          },
+        ];
+      } else {
+        const themes = ['Cultura e História', 'Gastronomia', 'Passeios', 'Descobertas', 'Aventura'];
+        title = themes[(i - 1) % themes.length];
+        activities = [
+          {
+            id: `day${i + 1}-1`,
+            name: 'Café da manhã',
+            description: 'No hotel ou café local',
+            time: '08:30',
+            duration: '1h',
+            type: 'food',
+            category: 'comida',
+            cost: 0,
+            status: 'planned' as ActivityStatus,
+          },
+          {
+            id: `day${i + 1}-2`,
+            name: 'Atividade da manhã',
+            description: 'Passeio cultural ou turístico',
+            time: '10:00',
+            duration: '2h30',
+            type: 'culture',
+            category: 'passeio',
+            cost: Math.round(trip.budget * 0.03),
+            status: 'planned' as ActivityStatus,
+          },
+          {
+            id: `day${i + 1}-3`,
+            name: 'Almoço',
+            description: 'Restaurante local',
+            time: '13:00',
+            duration: '1h30',
+            type: 'food',
+            category: 'comida',
+            cost: Math.round(trip.budget * 0.02),
+            status: 'planned' as ActivityStatus,
+          },
+          {
+            id: `day${i + 1}-4`,
+            name: 'Atividade da tarde',
+            description: 'Exploração livre',
+            time: '15:00',
+            duration: '3h',
+            type: 'culture',
+            category: 'passeio',
+            cost: Math.round(trip.budget * 0.02),
+            status: 'planned' as ActivityStatus,
+          },
+          {
+            id: `day${i + 1}-5`,
+            name: 'Jantar',
+            description: 'Gastronomia local',
+            time: '19:30',
+            duration: '2h',
+            type: 'food',
+            category: 'comida',
+            cost: Math.round(trip.budget * 0.03),
+            status: 'planned' as ActivityStatus,
+          },
+        ];
+      }
+      
+      days.push({
+        day: i + 1,
+        title,
+        activities,
+      });
+    }
+    
+    return days;
   };
 
   if (!user) return null;
