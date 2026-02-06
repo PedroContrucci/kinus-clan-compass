@@ -287,59 +287,112 @@ const Viagens = () => {
     setSelectedTrip(updatedTrip);
   };
   
-  // Generate basic days for a trip
+  // Generate basic days for a trip - WITH CORRECT DAY LOGIC
+  // Day 1 = DEPARTURE (user is in transit, NO local activities)
+  // Day 2 = ARRIVAL (user arrives, check-in, light activities)
+  // Days 3-N-1 = EXPLORATION (full days)
+  // Day N = RETURN (check-out, flight home)
   const generateBasicDays = (trip: SavedTrip, duration: number) => {
     const days = [];
     
     for (let i = 0; i < duration; i++) {
-      const isFirstDay = i === 0;
+      const dayNum = i + 1;
+      const isFirstDay = i === 0;      // DEPARTURE
+      const isSecondDay = i === 1;     // ARRIVAL
       const isLastDay = i === duration - 1;
       
       let title = 'Exploração';
+      let icon = '🗺️';
       let activities: TripActivity[] = [];
       
       if (isFirstDay) {
-        title = 'Chegada';
+        // DAY 1 = DEPARTURE - User is traveling, NOT at destination
+        title = 'Embarque';
+        icon = '✈️';
         activities = [
           {
-            id: `day${i + 1}-1`,
-            name: 'Voo de chegada',
-            description: `Chegada em ${trip.destination}`,
-            time: '10:00',
+            id: `day${dayNum}-1`,
+            name: 'Embarque para ' + trip.destination,
+            description: 'Voo de ida para o destino',
+            time: '23:00', // Typical night flight to Europe
             duration: '12h',
             type: 'transport',
             category: 'voo',
             cost: 0,
             status: 'planned' as ActivityStatus,
           },
+        ];
+        // NO check-in, NO dinner in destination - user is still flying!
+      } else if (isSecondDay && duration > 2) {
+        // DAY 2 = ARRIVAL - User arrives, jet lag, light day
+        title = 'Chegada';
+        icon = '🛬';
+        activities = [
           {
-            id: `day${i + 1}-2`,
-            name: 'Check-in no hotel',
-            description: 'Deixar bagagens e descansar',
-            time: '14:00',
+            id: `day${dayNum}-1`,
+            name: 'Chegada em ' + trip.destination,
+            description: 'Desembarque e imigração',
+            time: '11:00', // Typical arrival time
             duration: '1h',
-            type: 'relax',
-            category: 'hotel',
+            type: 'transport',
+            category: 'voo',
             cost: 0,
             status: 'planned' as ActivityStatus,
           },
           {
-            id: `day${i + 1}-3`,
-            name: 'Jantar local',
-            description: 'Explorar a gastronomia local',
-            time: '19:00',
+            id: `day${dayNum}-2`,
+            name: 'Transfer para o hotel',
+            description: 'Táxi ou transporte público',
+            time: '12:30',
+            duration: '1h',
+            type: 'transport',
+            category: 'transporte',
+            cost: Math.round(trip.budget * 0.005),
+            status: 'planned' as ActivityStatus,
+          },
+          {
+            id: `day${dayNum}-3`,
+            name: 'Check-in no hotel',
+            description: 'Deixar bagagens e descansar (adaptação jet lag)',
+            time: '14:00',
             duration: '2h',
+            type: 'relax',
+            category: 'hotel',
+            cost: 0,
+            status: 'planned' as ActivityStatus,
+            jetLagFriendly: true,
+          },
+          {
+            id: `day${dayNum}-4`,
+            name: 'Passeio leve pelo bairro',
+            description: 'Explorar a região do hotel',
+            time: '16:30',
+            duration: '2h',
+            type: 'walk',
+            category: 'passeio',
+            cost: 0,
+            status: 'planned' as ActivityStatus,
+            jetLagFriendly: true,
+          },
+          {
+            id: `day${dayNum}-5`,
+            name: 'Jantar local',
+            description: 'Primeira refeição no destino',
+            time: '19:30',
+            duration: '1h30',
             type: 'food',
             category: 'comida',
-            cost: Math.round(trip.budget * 0.02),
+            cost: Math.round(trip.budget * 0.015),
             status: 'planned' as ActivityStatus,
           },
         ];
       } else if (isLastDay) {
+        // LAST DAY = RETURN - Check-out and flight home
         title = 'Retorno';
+        icon = '🏠';
         activities = [
           {
-            id: `day${i + 1}-1`,
+            id: `day${dayNum}-1`,
             name: 'Café da manhã',
             description: 'Último café no hotel',
             time: '08:00',
@@ -350,8 +403,8 @@ const Viagens = () => {
             status: 'planned' as ActivityStatus,
           },
           {
-            id: `day${i + 1}-2`,
-            name: 'Check-out',
+            id: `day${dayNum}-2`,
+            name: 'Check-out do hotel',
             description: 'Preparar bagagens',
             time: '10:00',
             duration: '1h',
@@ -361,7 +414,7 @@ const Viagens = () => {
             status: 'planned' as ActivityStatus,
           },
           {
-            id: `day${i + 1}-3`,
+            id: `day${dayNum}-3`,
             name: 'Voo de retorno',
             description: 'Volta para casa',
             time: '14:00',
@@ -373,11 +426,20 @@ const Viagens = () => {
           },
         ];
       } else {
-        const themes = ['Cultura e História', 'Gastronomia', 'Passeios', 'Descobertas', 'Aventura'];
-        title = themes[(i - 1) % themes.length];
+        // EXPLORATION DAYS - Full day activities
+        const themes = [
+          { title: 'Cultura', icon: '🏛️' },
+          { title: 'Gastronomia', icon: '🍽️' },
+          { title: 'Passeios', icon: '🚶' },
+          { title: 'Descobertas', icon: '🎭' },
+          { title: 'Aventura', icon: '⭐' },
+        ];
+        const theme = themes[(i - 2) % themes.length];
+        title = theme.title;
+        icon = theme.icon;
         activities = [
           {
-            id: `day${i + 1}-1`,
+            id: `day${dayNum}-1`,
             name: 'Café da manhã',
             description: 'No hotel ou café local',
             time: '08:30',
@@ -388,29 +450,29 @@ const Viagens = () => {
             status: 'planned' as ActivityStatus,
           },
           {
-            id: `day${i + 1}-2`,
+            id: `day${dayNum}-2`,
             name: 'Atividade da manhã',
             description: 'Passeio cultural ou turístico',
             time: '10:00',
             duration: '2h30',
             type: 'culture',
             category: 'passeio',
-            cost: Math.round(trip.budget * 0.03),
+            cost: Math.round(trip.budget * 0.02),
             status: 'planned' as ActivityStatus,
           },
           {
-            id: `day${i + 1}-3`,
+            id: `day${dayNum}-3`,
             name: 'Almoço',
             description: 'Restaurante local',
             time: '13:00',
             duration: '1h30',
             type: 'food',
             category: 'comida',
-            cost: Math.round(trip.budget * 0.02),
+            cost: Math.round(trip.budget * 0.015),
             status: 'planned' as ActivityStatus,
           },
           {
-            id: `day${i + 1}-4`,
+            id: `day${dayNum}-4`,
             name: 'Atividade da tarde',
             description: 'Exploração livre',
             time: '15:00',
@@ -421,22 +483,23 @@ const Viagens = () => {
             status: 'planned' as ActivityStatus,
           },
           {
-            id: `day${i + 1}-5`,
+            id: `day${dayNum}-5`,
             name: 'Jantar',
             description: 'Gastronomia local',
             time: '19:30',
             duration: '2h',
             type: 'food',
             category: 'comida',
-            cost: Math.round(trip.budget * 0.03),
+            cost: Math.round(trip.budget * 0.02),
             status: 'planned' as ActivityStatus,
           },
         ];
       }
       
       days.push({
-        day: i + 1,
+        day: dayNum,
         title,
+        icon,
         activities,
       });
     }

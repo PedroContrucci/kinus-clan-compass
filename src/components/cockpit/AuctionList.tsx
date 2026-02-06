@@ -12,6 +12,8 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { formatBRL, formatNumber } from '@/lib/formatCurrency';
+import { EmptyAuctionState } from './EmptyAuctionState';
 
 interface AuctionItem {
   id: string;
@@ -32,6 +34,7 @@ interface AuctionItem {
 interface AuctionListProps {
   tripId: string;
   activities?: any[];
+  onNavigateToItinerary?: () => void;
 }
 
 const typeIcons = {
@@ -48,8 +51,8 @@ const statusConfig = {
   paused: { label: 'Pausado', color: 'bg-muted text-muted-foreground border-muted' },
 };
 
-export const AuctionList = ({ tripId, activities }: AuctionListProps) => {
-  // START EMPTY - no mock data, auctions must be activated from the itinerary
+export const AuctionList = ({ tripId, activities, onNavigateToItinerary }: AuctionListProps) => {
+  // START EMPTY - auctions must be activated from the itinerary
   const [auctions, setAuctions] = useState<AuctionItem[]>([]);
 
   const totalSavings = useMemo(() => {
@@ -68,6 +71,11 @@ export const AuctionList = ({ tripId, activities }: AuctionListProps) => {
     }));
   };
 
+  // Show empty state if no auctions
+  if (auctions.length === 0) {
+    return <EmptyAuctionState onNavigateToItinerary={onNavigateToItinerary} />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Summary Card */}
@@ -80,7 +88,7 @@ export const AuctionList = ({ tripId, activities }: AuctionListProps) => {
           <div>
             <p className="text-sm text-muted-foreground">Economia com leilões</p>
             <p className="text-2xl font-bold text-primary font-['Outfit']">
-              R$ {totalSavings.toLocaleString('pt-BR')}
+              {formatBRL(totalSavings)}
             </p>
           </div>
           <div className="text-right">
@@ -99,92 +107,85 @@ export const AuctionList = ({ tripId, activities }: AuctionListProps) => {
         </h3>
 
         <div className="space-y-3">
-          {activeAuctions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Nenhum leilão ativo</p>
-              <p className="text-sm mt-1">Ative o leilão em alguma atividade para monitorar preços</p>
-            </div>
-          ) : (
-            activeAuctions.map((auction, index) => (
-              <motion.div
-                key={auction.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="bg-card border border-border rounded-xl p-4"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">{typeIcons[auction.type]}</span>
-                    <div>
-                      <p className="font-medium text-foreground">{auction.name}</p>
-                      <Badge variant="outline" className={statusConfig[auction.status].color}>
-                        {statusConfig[auction.status].label}
-                      </Badge>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleToggleAuction(auction.id)}
-                    className="p-2 hover:bg-muted rounded-lg"
-                  >
-                    <Pause size={16} className="text-muted-foreground" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 mb-3">
+          {activeAuctions.map((auction, index) => (
+            <motion.div
+              key={auction.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="bg-card border border-border rounded-xl p-4"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">{typeIcons[auction.type]}</span>
                   <div>
-                    <p className="text-xs text-muted-foreground">Preço Alvo</p>
-                    <p className="font-medium text-foreground">
-                      R$ {auction.targetPrice.toLocaleString('pt-BR')}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Melhor Encontrado</p>
-                    <p className={cn(
-                      'font-medium',
-                      auction.currentBestPrice && auction.currentBestPrice <= auction.targetPrice 
-                        ? 'text-emerald-500' 
-                        : 'text-foreground'
-                    )}>
-                      {auction.currentBestPrice 
-                        ? `R$ ${auction.currentBestPrice.toLocaleString('pt-BR')}`
-                        : '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Estimativa KINU</p>
-                    <p className="font-medium text-primary">
-                      R$ {auction.kinutEstimate.toLocaleString('pt-BR')}
-                    </p>
+                    <p className="font-medium text-foreground">{auction.name}</p>
+                    <Badge variant="outline" className={statusConfig[auction.status].color}>
+                      {statusConfig[auction.status].label}
+                    </Badge>
                   </div>
                 </div>
+                <button
+                  onClick={() => handleToggleAuction(auction.id)}
+                  className="p-2 hover:bg-muted rounded-lg"
+                >
+                  <Pause size={16} className="text-muted-foreground" />
+                </button>
+              </div>
 
-                {/* Time remaining */}
-                <div className="flex items-center gap-2">
-                  <Clock size={14} className="text-muted-foreground" />
-                  <div className="flex-1">
-                    <Progress 
-                      value={
-                        (differenceInDays(new Date(), auction.startedAt) / auction.maxWaitDays) * 100
-                      } 
-                      className="h-1.5"
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {differenceInDays(auction.expiresAt, new Date())} dias restantes
-                  </span>
-                </div>
-
-                {/* KINU insight */}
-                <div className="mt-3 p-2 bg-primary/5 rounded-lg flex items-start gap-2">
-                  <Sparkles size={14} className="text-primary mt-0.5" />
-                  <p className="text-xs text-primary">
-                    Historicamente, preços caem 10-15% nas últimas 2 semanas antes da viagem.
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Preço Alvo</p>
+                  <p className="font-medium text-foreground">
+                    {formatBRL(auction.targetPrice)}
                   </p>
                 </div>
-              </motion.div>
-            ))
-          )}
+                <div>
+                  <p className="text-xs text-muted-foreground">Melhor Encontrado</p>
+                  <p className={cn(
+                    'font-medium',
+                    auction.currentBestPrice && auction.currentBestPrice <= auction.targetPrice 
+                      ? 'text-emerald-500' 
+                      : 'text-foreground'
+                  )}>
+                    {auction.currentBestPrice 
+                      ? formatBRL(auction.currentBestPrice)
+                      : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Estimativa KINU</p>
+                  <p className="font-medium text-primary">
+                    {formatBRL(auction.kinutEstimate)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Time remaining */}
+              <div className="flex items-center gap-2">
+                <Clock size={14} className="text-muted-foreground" />
+                <div className="flex-1">
+                  <Progress 
+                    value={
+                      (differenceInDays(new Date(), auction.startedAt) / auction.maxWaitDays) * 100
+                    } 
+                    className="h-1.5"
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {differenceInDays(auction.expiresAt, new Date())} dias restantes
+                </span>
+              </div>
+
+              {/* KINU insight */}
+              <div className="mt-3 p-2 bg-primary/5 rounded-lg flex items-start gap-2">
+                <Sparkles size={14} className="text-primary mt-0.5" />
+                <p className="text-xs text-primary">
+                  Historicamente, preços caem 10-15% nas últimas 2 semanas antes da viagem.
+                </p>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
 
@@ -210,7 +211,7 @@ export const AuctionList = ({ tripId, activities }: AuctionListProps) => {
                     <div>
                       <p className="font-medium text-foreground">{auction.name}</p>
                       <p className="text-sm text-emerald-500">
-                        Economizou R$ {auction.savings.toLocaleString('pt-BR')}
+                        Economizou {formatBRL(auction.savings)}
                       </p>
                     </div>
                   </div>
