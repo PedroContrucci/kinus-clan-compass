@@ -47,17 +47,26 @@ export const EnhancedDayTimeline = ({
   onSelectDay,
   tripStartDate,
 }: EnhancedDayTimelineProps) => {
-  const startDate = new Date(tripStartDate);
+  const startDate = tripStartDate ? new Date(tripStartDate) : new Date();
+  const safeDays = days || [];
+  
+  if (safeDays.length === 0) {
+    return (
+      <div className="mb-6 p-4 text-center text-muted-foreground">
+        Nenhum dia disponível
+      </div>
+    );
+  }
   
   return (
     <div className="mb-6">
       <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
-        {days.map((day, index) => {
+        {safeDays.map((day, index) => {
           const currentDate = addDays(startDate, index);
-          const dayTheme = getDayTheme(index, days.length);
+          const dayTheme = getDayTheme(index, safeDays.length);
           const isSelected = selectedDay === day.day;
           const isFirst = index === 0;
-          const isLast = index === days.length - 1;
+          const isLast = index === safeDays.length - 1;
           
           return (
             <button
