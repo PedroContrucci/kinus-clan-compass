@@ -14,7 +14,7 @@ import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
 import { TripCockpit } from '@/components/dashboard';
-import { DraftCockpit } from '@/components/cockpit';
+import { DraftCockpit, TripGuide, ExchangeRates, AuctionList } from '@/components/cockpit';
 import { useTripDashboard } from '@/hooks/useTripDashboard';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
 import { PackingData } from '@/types/packing';
@@ -26,7 +26,7 @@ const Viagens = () => {
   const [user, setUser] = useState<{ name: string } | null>(null);
   const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(null);
-  const [activeTab, setActiveTab] = useState<'roteiro' | 'finops' | 'packing' | 'checklist'>('roteiro');
+  const [activeTab, setActiveTab] = useState<'roteiro' | 'leilao' | 'guia' | 'cambio' | 'finops' | 'packing' | 'checklist'>('roteiro');
   const [selectedDay, setSelectedDay] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; activityName: string; activityType: string; estimatedPrice?: number } | null>(null);
@@ -321,11 +321,14 @@ const Viagens = () => {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {[
               { id: 'roteiro' as const, label: '📋 Roteiro' },
-              { id: 'finops' as const, label: '💰 FinOps' },
+              { id: 'leilao' as const, label: '🎯 Leilão' },
               { id: 'packing' as const, label: '🧳 Packing' },
+              { id: 'guia' as const, label: '📖 Guia' },
+              { id: 'cambio' as const, label: '💱 Câmbio' },
+              { id: 'finops' as const, label: '💰 FinOps' },
               { id: 'checklist' as const, label: '✅ Checklist' },
             ].map((tab) => (
               <button
@@ -333,8 +336,8 @@ const Viagens = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-shrink-0 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-[#10b981] text-white'
-                    : 'bg-[#1e293b] text-[#94a3b8] hover:text-[#f8fafc]'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-card text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {tab.label}
@@ -528,6 +531,35 @@ const Viagens = () => {
               packingData={(selectedTrip as any).packing || null}
               onUpdate={handlePackingUpdate}
             />
+          )}
+
+          {/* Leilão (Auction) Tab */}
+          {activeTab === 'leilao' && (
+            <div className="animate-fade-in">
+              <AuctionList
+                tripId={selectedTrip.id}
+                activities={selectedTrip.days?.flatMap(d => d.activities) || []}
+              />
+            </div>
+          )}
+
+          {/* Guia (Travel Guide) Tab */}
+          {activeTab === 'guia' && (
+            <div className="animate-fade-in">
+              <TripGuide
+                destinationCity={selectedTrip.destination}
+              />
+            </div>
+          )}
+
+          {/* Câmbio (Exchange) Tab */}
+          {activeTab === 'cambio' && (
+            <div className="animate-fade-in">
+              <ExchangeRates
+                destinationCurrency={(selectedTrip as any).currency || 'USD'}
+                baseCurrency="BRL"
+              />
+            </div>
           )}
 
           {/* Checklist Tab */}
