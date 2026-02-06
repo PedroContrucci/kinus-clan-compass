@@ -1807,6 +1807,19 @@ const Step1Destination = ({
   const { data: searchResults, isLoading: searchLoading } = useCityAirportSearch(searchQuery);
   const { data: cities } = useCities();
   
+  // Helper function - must be defined before useMemo that uses it
+  const getDestinationEmoji = (name: string): string => {
+    const emojiMap: Record<string, string> = {
+      'Tóquio': '🏯', 'Tokyo': '🏯', 'Paris': '🗼', 'Roma': '🏛️', 'Rome': '🏛️',
+      'Lisboa': '🚃', 'Lisbon': '🚃', 'Barcelona': '🏖️', 'Nova York': '🗽', 'New York': '🗽',
+      'Londres': '🎡', 'London': '🎡', 'Dubai': '🏙️', 'Bangkok': '🛕', 'Singapore': '🌆',
+      'Singapura': '🌆', 'Sydney': '🦘', 'Amsterdã': '🌷', 'Amsterdam': '🌷',
+      'Madri': '💃', 'Madrid': '💃', 'Zurique': '🏔️', 'Zurich': '🏔️',
+      'Atenas': '🏛️', 'Athens': '🏛️', 'Cairo': '🏺', 'Bali': '🌴',
+    };
+    return emojiMap[name] || '✈️';
+  };
+
   // Get popular destinations from Supabase
   const popularFromDB = useMemo(() => {
     if (!cities) return [];
@@ -1830,18 +1843,6 @@ const Step1Destination = ({
         { id: '3', name: 'Roma', country: 'Itália', emoji: '🏛️' },
         { id: '4', name: 'Lisboa', country: 'Portugal', emoji: '🚃' },
       ];
-
-  const getDestinationEmoji = (name: string): string => {
-    const emojiMap: Record<string, string> = {
-      'Tóquio': '🏯', 'Tokyo': '🏯', 'Paris': '🗼', 'Roma': '🏛️', 'Rome': '🏛️',
-      'Lisboa': '🚃', 'Lisbon': '🚃', 'Barcelona': '🏖️', 'Nova York': '🗽', 'New York': '🗽',
-      'Londres': '🎡', 'London': '🎡', 'Dubai': '🏙️', 'Bangkok': '🛕', 'Singapore': '🌆',
-      'Singapura': '🌆', 'Sydney': '🦘', 'Amsterdã': '🌷', 'Amsterdam': '🌷',
-      'Madri': '💃', 'Madrid': '💃', 'Zurique': '🏔️', 'Zurich': '🏔️',
-      'Atenas': '🏛️', 'Athens': '🏛️', 'Cairo': '🏺', 'Bali': '🌴',
-    };
-    return emojiMap[name] || '✈️';
-  };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
