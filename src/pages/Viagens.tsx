@@ -14,10 +14,11 @@ import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
 import { TripCockpit } from '@/components/dashboard';
-import { DraftCockpit, TripGuide, ExchangeRates, AuctionList, EnhancedDayTimeline, EnhancedSmartPacking, EnhancedExchangeRates, AuctionConfigModal } from '@/components/cockpit';
+import { DraftCockpit, TripGuide, ExchangeRates, AuctionList, EnhancedDayTimeline, SmartPackingWithLuggage, EnhancedExchangeRates, AuctionConfigModal, AuctionActivationModal } from '@/components/cockpit';
 import { useTripDashboard } from '@/hooks/useTripDashboard';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
 import { PackingData } from '@/types/packing';
+import { getActivityPrice, determinePriceLevel, mapCategoryToPricingType, CITY_PRICES } from '@/lib/activityPricing';
 import kinuLogo from '@/assets/KINU_logo.png';
 
 const Viagens = () => {
@@ -287,18 +288,27 @@ const Viagens = () => {
     setSelectedTrip(updatedTrip);
   };
   
-  // Generate basic days for a trip - WITH CORRECT DAY LOGIC
+  // Generate basic days for a trip - WITH CORRECT DAY LOGIC AND REALISTIC PRICES
   // Day 1 = DEPARTURE (user is in transit, NO local activities)
   // Day 2 = ARRIVAL (user arrives, check-in, light activities)
   // Days 3-N-1 = EXPLORATION (full days)
   // Day N = RETURN (check-out, flight home)
   const generateBasicDays = (trip: SavedTrip, duration: number) => {
     const days = [];
+    const priceLevel = determinePriceLevel(trip.budget);
+    const destination = trip.destination?.toLowerCase() || '';
+    
+    // Get realistic prices for activities using the pricing system
+    const transferPrice = getActivityPrice('transfer', trip.destination, priceLevel);
+    const lunchPrice = getActivityPrice('restaurant_lunch', trip.destination, priceLevel);
+    const dinnerPrice = getActivityPrice('restaurant_dinner', trip.destination, priceLevel);
+    const museumPrice = getActivityPrice('museum', trip.destination, priceLevel);
+    const tourPrice = getActivityPrice('tour', trip.destination, priceLevel);
     
     for (let i = 0; i < duration; i++) {
       const dayNum = i + 1;
-      const isFirstDay = i === 0;      // DEPARTURE
-      const isSecondDay = i === 1;     // ARRIVAL
+      const isFirstDay = i === 0;
+      const isSecondDay = i === 1;
       const isLastDay = i === duration - 1;
       
       let title = 'Exploração';
@@ -314,15 +324,14 @@ const Viagens = () => {
             id: `day${dayNum}-1`,
             name: 'Embarque para ' + trip.destination,
             description: 'Voo de ida para o destino',
-            time: '23:00', // Typical night flight to Europe
+            time: '23:00',
             duration: '12h',
             type: 'transport',
             category: 'voo',
-            cost: 0,
+            cost: getActivityPrice('flight', trip.destination, priceLevel),
             status: 'planned' as ActivityStatus,
           },
         ];
-        // NO check-in, NO dinner in destination - user is still flying!
       } else if (isSecondDay && duration > 2) {
         // DAY 2 = ARRIVAL - User arrives, jet lag, light day
         title = 'Chegada';
@@ -332,11 +341,11 @@ const Viagens = () => {
             id: `day${dayNum}-1`,
             name: 'Chegada em ' + trip.destination,
             description: 'Desembarque e imigração',
-            time: '11:00', // Typical arrival time
+            time: '11:00',
             duration: '1h',
             type: 'transport',
             category: 'voo',
-            cost: 0,
+            cost: 0, // No cost for arrival
             status: 'planned' as ActivityStatus,
           },
           {
@@ -347,7 +356,7 @@ const Viagens = () => {
             duration: '1h',
             type: 'transport',
             category: 'transporte',
-            cost: Math.round(trip.budget * 0.005),
+            cost: transferPrice,
             status: 'planned' as ActivityStatus,
           },
           {
@@ -358,7 +367,7 @@ const Viagens = () => {
             duration: '2h',
             type: 'relax',
             category: 'hotel',
-            cost: 0,
+            cost: 0, // Hotel cost already included in accommodation
             status: 'planned' as ActivityStatus,
             jetLagFriendly: true,
           },
@@ -370,7 +379,7 @@ const Viagens = () => {
             duration: '2h',
             type: 'walk',
             category: 'passeio',
-            cost: 0,
+            cost: 0, // Free walking activity
             status: 'planned' as ActivityStatus,
             jetLagFriendly: true,
           },
@@ -382,7 +391,7 @@ const Viagens = () => {
             duration: '1h30',
             type: 'food',
             category: 'comida',
-            cost: Math.round(trip.budget * 0.015),
+            cost: dinnerPrice,
             status: 'planned' as ActivityStatus,
           },
         ];
@@ -399,7 +408,7 @@ const Viagens = () => {
             duration: '1h',
             type: 'food',
             category: 'comida',
-            cost: 0,
+            cost: 0, // Included in hotel
             status: 'planned' as ActivityStatus,
           },
           {
@@ -421,12 +430,12 @@ const Viagens = () => {
             duration: '12h',
             type: 'transport',
             category: 'voo',
-            cost: 0,
+            cost: getActivityPrice('flight', trip.destination, priceLevel),
             status: 'planned' as ActivityStatus,
           },
         ];
       } else {
-        // EXPLORATION DAYS - Full day activities
+        // EXPLORATION DAYS - Full day activities with realistic prices
         const themes = [
           { title: 'Cultura', icon: '🏛️' },
           { title: 'Gastronomia', icon: '🍽️' },
@@ -446,7 +455,7 @@ const Viagens = () => {
             duration: '1h',
             type: 'food',
             category: 'comida',
-            cost: 0,
+            cost: 0, // Included in hotel
             status: 'planned' as ActivityStatus,
           },
           {
@@ -457,7 +466,7 @@ const Viagens = () => {
             duration: '2h30',
             type: 'culture',
             category: 'passeio',
-            cost: Math.round(trip.budget * 0.02),
+            cost: museumPrice,
             status: 'planned' as ActivityStatus,
           },
           {
@@ -468,7 +477,7 @@ const Viagens = () => {
             duration: '1h30',
             type: 'food',
             category: 'comida',
-            cost: Math.round(trip.budget * 0.015),
+            cost: lunchPrice,
             status: 'planned' as ActivityStatus,
           },
           {
@@ -479,7 +488,7 @@ const Viagens = () => {
             duration: '3h',
             type: 'culture',
             category: 'passeio',
-            cost: Math.round(trip.budget * 0.02),
+            cost: tourPrice,
             status: 'planned' as ActivityStatus,
           },
           {
@@ -490,7 +499,7 @@ const Viagens = () => {
             duration: '2h',
             type: 'food',
             category: 'comida',
-            cost: Math.round(trip.budget * 0.02),
+            cost: dinnerPrice,
             status: 'planned' as ActivityStatus,
           },
         ];
@@ -738,9 +747,9 @@ const Viagens = () => {
             </>
           )}
 
-          {/* Smart Packing Tab - Enhanced */}
+          {/* Smart Packing Tab - New Flow with Luggage First */}
           {activeTab === 'packing' && (
-            <EnhancedSmartPacking
+            <SmartPackingWithLuggage
               tripId={selectedTrip.id}
               destination={selectedTrip.destination}
               duration={getTripDuration(selectedTrip)}
