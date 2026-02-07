@@ -19,3 +19,6 @@ export { ItineraryExchangeRate } from './ItineraryExchangeRate';
 export { RealDateTimeline } from './RealDateTimeline';
 export { EmptyAuctionState } from './EmptyAuctionState';
 export { EmptyPackingState } from './EmptyPackingState';
+export { AddLuggageModal } from './AddLuggageModal';
+export { SmartPackingWithLuggage } from './SmartPackingWithLuggage';
+export { AuctionActivationModal } from './AuctionActivationModal';
