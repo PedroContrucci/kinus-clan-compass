@@ -26,7 +26,16 @@ const getStatusLabel = (budget: CategoryBudget): { label: string; color: string 
 };
 
 const FinOpsDashboard = ({ finances, destination }: FinOpsDashboardProps) => {
-  const { total, confirmed, bidding, planned, available, categories } = finances;
+  // Default empty budget for null safety
+  const emptyBudget: CategoryBudget = { confirmed: 0, bidding: 0, planned: 0 };
+  
+  // Safe destructuring with defaults
+  const total = finances?.total ?? 0;
+  const confirmed = finances?.confirmed ?? 0;
+  const bidding = finances?.bidding ?? 0;
+  const planned = finances?.planned ?? 0;
+  const available = finances?.available ?? 0;
+  const categories = finances?.categories ?? {} as TripFinances['categories'];
 
   // Calculate allocated budgets (example allocation based on typical trip)
   const categoryAllocations: Record<keyof TripFinances['categories'], number> = {
@@ -39,12 +48,12 @@ const FinOpsDashboard = ({ finances, destination }: FinOpsDashboardProps) => {
   };
 
   const categoryList: CategoryInfo[] = [
-    { key: 'flights', label: 'Voos', icon: Plane, budget: categories.flights, allocatedBudget: categoryAllocations.flights },
-    { key: 'accommodation', label: 'Hospedagem', icon: Building, budget: categories.accommodation, allocatedBudget: categoryAllocations.accommodation },
-    { key: 'tours', label: 'Passeios & Tours', icon: MapPin, budget: categories.tours, allocatedBudget: categoryAllocations.tours },
-    { key: 'food', label: 'Alimentação', icon: Utensils, budget: categories.food, allocatedBudget: categoryAllocations.food },
-    { key: 'transport', label: 'Transporte Local', icon: Car, budget: categories.transport, allocatedBudget: categoryAllocations.transport },
-    { key: 'shopping', label: 'Compras & Extras', icon: ShoppingBag, budget: categories.shopping, allocatedBudget: categoryAllocations.shopping },
+    { key: 'flights', label: 'Voos', icon: Plane, budget: categories.flights ?? emptyBudget, allocatedBudget: categoryAllocations.flights },
+    { key: 'accommodation', label: 'Hospedagem', icon: Building, budget: categories.accommodation ?? emptyBudget, allocatedBudget: categoryAllocations.accommodation },
+    { key: 'tours', label: 'Passeios & Tours', icon: MapPin, budget: categories.tours ?? emptyBudget, allocatedBudget: categoryAllocations.tours },
+    { key: 'food', label: 'Alimentação', icon: Utensils, budget: categories.food ?? emptyBudget, allocatedBudget: categoryAllocations.food },
+    { key: 'transport', label: 'Transporte Local', icon: Car, budget: categories.transport ?? emptyBudget, allocatedBudget: categoryAllocations.transport },
+    { key: 'shopping', label: 'Compras & Extras', icon: ShoppingBag, budget: categories.shopping ?? emptyBudget, allocatedBudget: categoryAllocations.shopping },
   ];
 
   return (
