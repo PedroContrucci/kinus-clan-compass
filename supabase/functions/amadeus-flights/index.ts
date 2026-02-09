@@ -172,15 +172,11 @@ async function searchFlights(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Amadeus flight search error:', errorText);
+    console.error(`Amadeus flight search error (${response.status}):`, errorText);
     
-    // Return empty array instead of throwing for graceful degradation
-    if (response.status === 400) {
-      console.log('No flights found for this route/date');
-      return [];
-    }
-    
-    throw new Error(`Flight search failed: ${response.status}`);
+    // Graceful degradation: return empty for any API error (400, 500, etc.)
+    console.log(`No flights available for ${origin} → ${destination} on ${date} (API status: ${response.status})`);
+    return [];
   }
 
   const data = await response.json();
