@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useKinuAI } from "@/contexts/KinuAIContext";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
@@ -37,6 +38,28 @@ const Viagens = () => {
   const [manualExpenseModal, setManualExpenseModal] = useState(false);
   const [manualExpense, setManualExpense] = useState({ name: '', amount: 0, category: 'shopping' as keyof SavedTrip['finances']['categories'] });
   const [resetModal, setResetModal] = useState(false);
+  const { setTripContext } = useKinuAI();
+
+  // Feed trip context to KINU AI when selected trip changes
+  useEffect(() => {
+    if (selectedTrip) {
+      setTripContext({
+        destination: selectedTrip.destination,
+        country: selectedTrip.country,
+        startDate: selectedTrip.startDate,
+        endDate: selectedTrip.endDate,
+        budget: selectedTrip.budget,
+        budgetUsed: selectedTrip.finances?.confirmed || 0,
+        travelStyle: selectedTrip.budgetType,
+        travelers: selectedTrip.travelers,
+        activities: selectedTrip.days?.flatMap(d => 
+          d.activities.map(a => a.name)
+        ).slice(0, 10) || [],
+      });
+    } else {
+      setTripContext(null);
+    }
+  }, [selectedTrip, setTripContext]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('kinu_user');
@@ -1121,7 +1144,7 @@ const BottomNav = ({ currentPath }: { currentPath: string }) => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-[#1e293b]/90 backdrop-blur-lg border-t border-[#334155] px-4 py-3">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#1e293b]/90 backdrop-blur-lg border-t border-[#334155] px-4 py-3">
       <div className="flex justify-around items-center">
         {navItems.map((item) => {
           const isActive = currentPath === item.path;

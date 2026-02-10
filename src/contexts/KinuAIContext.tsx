@@ -82,13 +82,26 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error("Error sending message to KINU:", error);
-      toast.error("Erro ao enviar mensagem. Tente novamente.");
       
-      // Add error message from KINU
+      const errorMsg = error instanceof Error ? error.message : "Erro desconhecido";
+      const isApiKeyError = errorMsg.includes("ANTHROPIC_API_KEY") || errorMsg.includes("401");
+      const isRateLimit = errorMsg.includes("429") || errorMsg.includes("Muitas requisições");
+      
+      let friendlyMessage: string;
+      if (isApiKeyError) {
+        friendlyMessage = "Estou com um problema de conexão com meu cérebro (API key). Avisa o Pedro que ele resolve rapidinho! 🔧";
+      } else if (isRateLimit) {
+        friendlyMessage = "Calma aí, muita gente falando comigo ao mesmo tempo! Tenta de novo em uns 30 segundos? 😅";
+      } else {
+        friendlyMessage = "Ops, tive um problema aqui. Pode tentar de novo? Se persistir, tenta recarregar a página. 🙏";
+      }
+      
+      toast.error("Erro ao enviar mensagem");
+      
       const errorMessage: KinuMessage = {
         id: `msg-${Date.now()}-error`,
         role: "assistant",
-        content: "Ops, tive um problema aqui. Pode tentar de novo? 🙏",
+        content: friendlyMessage,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);

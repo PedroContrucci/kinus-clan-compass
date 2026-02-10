@@ -58,7 +58,7 @@ export function KinuAIChat() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsOpen(false)}
-            className="fixed inset-0 bg-black/50 z-50"
+            className="fixed inset-0 bg-black/50 z-[60]"
           />
 
           {/* Chat Panel */}
@@ -67,7 +67,7 @@ export function KinuAIChat() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className={`fixed bottom-0 left-0 right-0 z-50 max-h-[75vh] bg-[#1E293B] rounded-t-3xl border-t ${
+            className={`fixed bottom-0 left-0 right-0 z-[60] max-h-[75vh] bg-[#1E293B] rounded-t-3xl border-t ${
               isEmergencyMode ? "border-red-500/50" : "border-emerald-500/30"
             } flex flex-col overflow-hidden`}
           >
