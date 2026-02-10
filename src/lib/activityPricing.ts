@@ -115,11 +115,27 @@ export function getActivityPrice(
 }
 
 /**
- * Determine price level based on total budget
+ * Determine price level based on budget PER PERSON PER DAY, adjusted by city cost.
+ * This ensures the tier reflects actual purchasing power, not just total budget.
  */
-export function determinePriceLevel(budget: number): PriceLevel {
-  if (budget < 50000) return 'budget';
-  if (budget < 100000) return 'midrange';
+export function determinePriceLevel(
+  budget: number,
+  travelers: number = 1,
+  duration: number = 7,
+  city?: string
+): PriceLevel {
+  const activeDays = Math.max(1, duration - 2);
+  const budgetPerPersonPerDay = budget / Math.max(1, travelers) / Math.max(1, activeDays);
+  
+  const cityKey = city?.toLowerCase();
+  const cityConfig = cityKey ? CITY_PRICES[cityKey] : null;
+  const cityMultiplier = cityConfig?.multiplier ?? 1.0;
+  
+  const budgetThreshold = 600 * cityMultiplier;
+  const luxuryThreshold = 1500 * cityMultiplier;
+  
+  if (budgetPerPersonPerDay < budgetThreshold) return 'budget';
+  if (budgetPerPersonPerDay < luxuryThreshold) return 'midrange';
   return 'luxury';
 }
 
@@ -226,32 +242,65 @@ export function calculateTripEstimate(
   hotel: number;
   dailyExpenses: number;
   total: number;
+  perPerson: number;
 } {
   const nights = Math.max(1, duration - 1);
+  const activeDays = Math.max(1, duration - 2);
   
-  // Flight cost (round trip per person)
+  // Flight cost (round trip per person × travelers)
   const flightPerPerson = getActivityPrice('flight', city, priceLevel);
   const flights = flightPerPerson * travelers;
   
-  // Hotel cost (per night, assuming shared rooms)
+  // Hotel cost (per night — shared room, NOT multiplied by travelers)
   const hotelPerNight = getActivityPrice('hotel_night', city, priceLevel);
   const hotel = hotelPerNight * nights;
   
-  // Daily expenses per person (meals + transport + activities)
+  // Daily expenses PER PERSON (meals + transport + activities) × travelers
   const dailyMeals = getActivityPrice('restaurant_lunch', city, priceLevel) + 
                      getActivityPrice('restaurant_dinner', city, priceLevel);
   const dailyTransport = getActivityPrice('transport_local', city, priceLevel);
-  const dailyActivities = getActivityPrice('museum', city, priceLevel);
+  const dailyActivities = getActivityPrice('museum', city, priceLevel) + 
+                          getActivityPrice('tour', city, priceLevel);
   
   const dailyPerPerson = dailyMeals + dailyTransport + dailyActivities;
-  const dailyExpenses = dailyPerPerson * travelers * (duration - 1); // Exclude travel days
+  const dailyExpenses = dailyPerPerson * travelers * activeDays;
+  
+  const total = flights + hotel + dailyExpenses;
+  const perPerson = Math.round(total / Math.max(1, travelers));
   
   return {
     flights,
     hotel,
     dailyExpenses,
-    total: flights + hotel + dailyExpenses,
+    total,
+    perPerson,
   };
+}
+
+/**
+ * Smart tier selection: finds the best price level that fits the budget.
+ * Tries luxury first, falls back to midrange, then budget.
+ */
+export function findBestPriceLevel(
+  city: string,
+  duration: number,
+  travelers: number,
+  budget: number
+): { level: PriceLevel; estimate: number; usage: number } {
+  const tolerance = 1.10;
+  
+  const luxuryEstimate = calculateTripEstimate(city, duration, travelers, 'luxury');
+  if (luxuryEstimate.total <= budget * tolerance) {
+    return { level: 'luxury', estimate: luxuryEstimate.total, usage: Math.round((luxuryEstimate.total / budget) * 100) };
+  }
+  
+  const midrangeEstimate = calculateTripEstimate(city, duration, travelers, 'midrange');
+  if (midrangeEstimate.total <= budget * tolerance) {
+    return { level: 'midrange', estimate: midrangeEstimate.total, usage: Math.round((midrangeEstimate.total / budget) * 100) };
+  }
+  
+  const budgetEstimate = calculateTripEstimate(city, duration, travelers, 'budget');
+  return { level: 'budget', estimate: budgetEstimate.total, usage: Math.round((budgetEstimate.total / budget) * 100) };
 }
 
 /**

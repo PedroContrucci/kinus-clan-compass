@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { differenceInDays, addDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { getActivityPrice, determinePriceLevel, calculateTripEstimate } from '@/lib/activityPricing';
+import { getActivityPrice, determinePriceLevel, calculateTripEstimate, findBestPriceLevel } from '@/lib/activityPricing';
 import type { PriceLevel } from '@/lib/activityPricing';
 import { defaultChecklist, defaultFinances } from '@/types/trip';
 import type { SavedTrip, TripDay, TripActivity, ActivityStatus, TripFinances, ChecklistItem } from '@/types/trip';
@@ -124,12 +124,12 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
       const duration = differenceInDays(data.returnDate, data.departureDate) + 1;
       const totalNights = Math.max(1, duration - 1);
       const totalTravelers = data.adults + data.children.length + data.infants;
-      const priceLevel = determinePriceLevel(data.budgetAmount);
+      const { level: priceLevel } = findBestPriceLevel(destinationCity, duration, totalTravelers, data.budgetAmount);
       const tzDiff = getTimezoneDiff(destinationCity);
       const jetLagMode = data.biologyAIEnabled || Math.abs(tzDiff) > 3;
 
       // Generate days
-      const days = generateDays(destinationCity, duration, data.departureDate, data.returnDate, priceLevel, jetLagMode);
+      const days = generateDays(destinationCity, duration, data.departureDate, data.returnDate, priceLevel, jetLagMode, totalTravelers);
 
       // Calculate finances from generated days
       const estimate = calculateTripEstimate(destinationCity, duration, totalTravelers, priceLevel);
@@ -154,7 +154,7 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
         },
       };
 
-      const flightPrice = getActivityPrice('flight', destinationCity, priceLevel);
+      const flightPrice = getActivityPrice('flight', destinationCity, priceLevel) * totalTravelers;
       const hotelNightPrice = getActivityPrice('hotel_night', destinationCity, priceLevel);
 
       const trip: SavedTrip = {
@@ -406,6 +406,7 @@ function generateDays(
   returnDate: Date,
   priceLevel: PriceLevel,
   jetLagMode: boolean,
+  travelers: number = 1,
 ): TripDay[] {
   const days: TripDay[] = [];
 
@@ -422,26 +423,26 @@ function generateDays(
         title: 'Embarque ✈️',
         icon: '✈️',
         activities: [
-          makeActivity(`act-${dayNum}-1`, '20:00', 'Check-in aeroporto', 'Apresentar documentação e despachar bagagem', '2h', 'transporte', city, 'free', priceLevel),
-          makeActivity(`act-${dayNum}-2`, '23:00', `Voo ${city}`, `Voo de ida para ${city}`, '12h', 'voo', city, 'flight', priceLevel),
+          makeActivity(`act-${dayNum}-1`, '20:00', 'Check-in aeroporto', 'Apresentar documentação e despachar bagagem', '2h', 'transporte', city, 'free', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-2`, '23:00', `Voo ${city}`, `Voo de ida para ${city}`, '12h', 'voo', city, 'flight', priceLevel, travelers),
         ],
       });
     } else if (dayNum === 2) {
       // Chegada
       const activities: TripActivity[] = [
-        makeActivity(`act-${dayNum}-1`, '11:00', `Chegada em ${city}`, 'Desembarque e imigração', '1h30', 'transporte', city, 'free', priceLevel),
-        makeActivity(`act-${dayNum}-2`, '12:30', 'Transfer para hotel', 'Transporte do aeroporto ao hotel', '1h', 'transporte', city, 'transfer', priceLevel),
-        makeActivity(`act-${dayNum}-3`, '14:00', 'Check-in no hotel', 'Acomodação e descanso', '1h', 'hotel', city, 'free', priceLevel),
+        makeActivity(`act-${dayNum}-1`, '11:00', `Chegada em ${city}`, 'Desembarque e imigração', '1h30', 'transporte', city, 'free', priceLevel, travelers),
+        makeActivity(`act-${dayNum}-2`, '12:30', 'Transfer para hotel', 'Transporte do aeroporto ao hotel', '1h', 'transporte', city, 'transfer', priceLevel, travelers),
+        makeActivity(`act-${dayNum}-3`, '14:00', 'Check-in no hotel', 'Acomodação e descanso', '1h', 'hotel', city, 'free', priceLevel, travelers),
       ];
       if (jetLagMode) {
         activities.push(
-          makeActivity(`act-${dayNum}-4`, '15:30', 'Passeio leve pelo bairro', 'Caminhada de adaptação ao fuso horário', '2h', 'passeio', city, 'free', priceLevel, true),
-          makeActivity(`act-${dayNum}-5`, '19:00', 'Jantar leve', 'Restaurante próximo ao hotel', '1h30', 'comida', city, 'restaurant_dinner', priceLevel),
+          makeActivity(`act-${dayNum}-4`, '15:30', 'Passeio leve pelo bairro', 'Caminhada de adaptação ao fuso horário', '2h', 'passeio', city, 'free', priceLevel, travelers, true),
+          makeActivity(`act-${dayNum}-5`, '19:00', 'Jantar leve', 'Restaurante próximo ao hotel', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers),
         );
       } else {
         activities.push(
-          makeActivity(`act-${dayNum}-4`, '15:30', 'Exploração inicial', `Primeiras impressões de ${city}`, '3h', 'passeio', city, 'museum', priceLevel),
-          makeActivity(`act-${dayNum}-5`, '19:30', 'Jantar de boas-vindas', 'Restaurante típico local', '2h', 'comida', city, 'restaurant_dinner', priceLevel),
+          makeActivity(`act-${dayNum}-4`, '15:30', 'Exploração inicial', `Primeiras impressões de ${city}`, '3h', 'passeio', city, 'museum', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-5`, '19:30', 'Jantar de boas-vindas', 'Restaurante típico local', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers),
         );
       }
       days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
@@ -453,10 +454,10 @@ function generateDays(
         title: 'Retorno 🏠',
         icon: '🏠',
         activities: [
-          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Última refeição no destino', '1h', 'comida', city, 'restaurant_lunch', priceLevel),
-          makeActivity(`act-${dayNum}-2`, '10:00', 'Check-out do hotel', 'Liberar quarto e organizar bagagem', '1h', 'hotel', city, 'free', priceLevel),
-          makeActivity(`act-${dayNum}-3`, '11:00', 'Transfer para aeroporto', 'Transporte ao aeroporto', '1h', 'transporte', city, 'transfer', priceLevel),
-          makeActivity(`act-${dayNum}-4`, '14:00', 'Voo de volta', 'Retorno para o Brasil', '12h', 'voo', city, 'flight', priceLevel),
+          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Última refeição no destino', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-2`, '10:00', 'Check-out do hotel', 'Liberar quarto e organizar bagagem', '1h', 'hotel', city, 'free', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-3`, '11:00', 'Transfer para aeroporto', 'Transporte ao aeroporto', '1h', 'transporte', city, 'transfer', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-4`, '14:00', 'Voo de volta', 'Retorno para o Brasil', '12h', 'voo', city, 'flight', priceLevel, travelers),
         ],
       });
     } else {
@@ -469,12 +470,12 @@ function generateDays(
         title: `${theme.title} ${theme.icon}`,
         icon: theme.icon,
         activities: [
-          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Hotel ou padaria local', '1h', 'comida', city, 'restaurant_lunch', priceLevel),
-          makeActivity(`act-${dayNum}-2`, '09:30', theme.activities[0], `Exploração: ${theme.title}`, '2h30', 'passeio', city, 'museum', priceLevel),
-          makeActivity(`act-${dayNum}-3`, '12:30', 'Almoço', 'Restaurante recomendado', '1h30', 'comida', city, 'restaurant_lunch', priceLevel),
-          makeActivity(`act-${dayNum}-4`, '14:30', theme.activities[1], `Continuação: ${theme.title}`, '2h30', 'passeio', city, 'tour', priceLevel),
-          makeActivity(`act-${dayNum}-5`, '17:30', theme.activities[2], 'Passeio no final da tarde', '1h30', 'passeio', city, 'free', priceLevel),
-          makeActivity(`act-${dayNum}-6`, '19:30', 'Jantar', 'Experiência gastronômica local', '2h', 'comida', city, 'restaurant_dinner', priceLevel),
+          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Hotel ou padaria local', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-2`, '09:30', theme.activities[0], `Exploração: ${theme.title}`, '2h30', 'passeio', city, 'museum', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-3`, '12:30', 'Almoço', 'Restaurante recomendado', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-4`, '14:30', theme.activities[1], `Continuação: ${theme.title}`, '2h30', 'passeio', city, 'tour', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-5`, '17:30', theme.activities[2], 'Passeio no final da tarde', '1h30', 'passeio', city, 'free', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-6`, '19:30', 'Jantar', 'Experiência gastronômica local', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers),
         ],
       });
     }
@@ -485,9 +486,13 @@ function generateDays(
 function makeActivity(
   id: string, time: string, name: string, description: string,
   duration: string, category: string, city: string,
-  pricingType: string, priceLevel: PriceLevel, jetLagFriendly = false,
+  pricingType: string, priceLevel: PriceLevel,
+  travelers = 1, jetLagFriendly = false,
 ): TripActivity {
-  const cost = pricingType === 'free' ? 0 : getActivityPrice(pricingType as any, city, priceLevel);
+  const baseCost = pricingType === 'free' ? 0 : getActivityPrice(pricingType as any, city, priceLevel);
+  const sharedTypes = ['free', 'transfer'];
+  const isShared = sharedTypes.includes(pricingType) || category === 'hotel';
+  const cost = isShared ? baseCost : baseCost * travelers;
   return {
     id, time, name, description, duration, cost,
     type: category,

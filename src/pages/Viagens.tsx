@@ -18,7 +18,7 @@ import { DraftCockpit, TripGuide, ExchangeRates, AuctionList, EnhancedDayTimelin
 import { useTripDashboard } from '@/hooks/useTripDashboard';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
 import { PackingData } from '@/types/packing';
-import { getActivityPrice, determinePriceLevel, mapCategoryToPricingType, CITY_PRICES } from '@/lib/activityPricing';
+import { getActivityPrice, determinePriceLevel, findBestPriceLevel, mapCategoryToPricingType, CITY_PRICES } from '@/lib/activityPricing';
 import kinuLogo from '@/assets/KINU_logo.png';
 
 const Viagens = () => {
@@ -295,15 +295,27 @@ const Viagens = () => {
   // Day N = RETURN (check-out, flight home)
   const generateBasicDays = (trip: SavedTrip, duration: number) => {
     const days = [];
-    const priceLevel = determinePriceLevel(trip.budget);
+    const travelers = trip.travelers || 1;
+    
+    // Smart tier: find best price level that fits the declared budget
+    const { level: priceLevel } = findBestPriceLevel(
+      trip.destination, duration, travelers, trip.budget
+    );
     const destination = trip.destination?.toLowerCase() || '';
     
-    // Get realistic prices for activities using the pricing system
-    const transferPrice = getActivityPrice('transfer', trip.destination, priceLevel);
-    const lunchPrice = getActivityPrice('restaurant_lunch', trip.destination, priceLevel);
-    const dinnerPrice = getActivityPrice('restaurant_dinner', trip.destination, priceLevel);
-    const museumPrice = getActivityPrice('museum', trip.destination, priceLevel);
-    const tourPrice = getActivityPrice('tour', trip.destination, priceLevel);
+    // Per-person prices (will be multiplied by travelers where applicable)
+    const transferPricePP = getActivityPrice('transfer', trip.destination, priceLevel);
+    const lunchPricePP = getActivityPrice('restaurant_lunch', trip.destination, priceLevel);
+    const dinnerPricePP = getActivityPrice('restaurant_dinner', trip.destination, priceLevel);
+    const museumPricePP = getActivityPrice('museum', trip.destination, priceLevel);
+    const tourPricePP = getActivityPrice('tour', trip.destination, priceLevel);
+    
+    // Total prices: hotel/transfer shared, meals/entries/tours multiplied
+    const transferPrice = transferPricePP; // Shared (1 taxi for the group)
+    const lunchPrice = lunchPricePP * travelers;
+    const dinnerPrice = dinnerPricePP * travelers;
+    const museumPrice = museumPricePP * travelers;
+    const tourPrice = tourPricePP * travelers;
     
     for (let i = 0; i < duration; i++) {
       const dayNum = i + 1;
@@ -328,7 +340,7 @@ const Viagens = () => {
             duration: '12h',
             type: 'transport',
             category: 'voo',
-            cost: getActivityPrice('flight', trip.destination, priceLevel),
+            cost: getActivityPrice('flight', trip.destination, priceLevel) * travelers,
             status: 'planned' as ActivityStatus,
           },
         ];
@@ -386,7 +398,7 @@ const Viagens = () => {
           {
             id: `day${dayNum}-5`,
             name: 'Jantar local',
-            description: 'Primeira refeição no destino',
+            description: travelers > 1 ? `Primeira refeição no destino (${travelers} pessoas)` : 'Primeira refeição no destino',
             time: '19:30',
             duration: '1h30',
             type: 'food',
@@ -430,7 +442,7 @@ const Viagens = () => {
             duration: '12h',
             type: 'transport',
             category: 'voo',
-            cost: getActivityPrice('flight', trip.destination, priceLevel),
+            cost: getActivityPrice('flight', trip.destination, priceLevel) * travelers,
             status: 'planned' as ActivityStatus,
           },
         ];
@@ -461,7 +473,7 @@ const Viagens = () => {
           {
             id: `day${dayNum}-2`,
             name: 'Atividade da manhã',
-            description: 'Passeio cultural ou turístico',
+            description: travelers > 1 ? `Passeio cultural ou turístico (${travelers} pessoas)` : 'Passeio cultural ou turístico',
             time: '10:00',
             duration: '2h30',
             type: 'culture',
@@ -472,7 +484,7 @@ const Viagens = () => {
           {
             id: `day${dayNum}-3`,
             name: 'Almoço',
-            description: 'Restaurante local',
+            description: travelers > 1 ? `Restaurante local (${travelers} pessoas)` : 'Restaurante local',
             time: '13:00',
             duration: '1h30',
             type: 'food',
@@ -483,7 +495,7 @@ const Viagens = () => {
           {
             id: `day${dayNum}-4`,
             name: 'Atividade da tarde',
-            description: 'Exploração livre',
+            description: travelers > 1 ? `Exploração livre (${travelers} pessoas)` : 'Exploração livre',
             time: '15:00',
             duration: '3h',
             type: 'culture',
@@ -494,7 +506,7 @@ const Viagens = () => {
           {
             id: `day${dayNum}-5`,
             name: 'Jantar',
-            description: 'Gastronomia local',
+            description: travelers > 1 ? `Gastronomia local (${travelers} pessoas)` : 'Gastronomia local',
             time: '19:30',
             duration: '2h',
             type: 'food',
