@@ -12,7 +12,7 @@ export function KinuAIButton() {
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
       onClick={() => setIsOpen(true)}
-      className={`fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors ${
+      className={`fixed bottom-24 right-4 z-[60] w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors ${
         isEmergencyMode
           ? "bg-red-500 shadow-red-500/30"
           : "bg-emerald-500 shadow-emerald-500/30 hover:bg-emerald-600"
