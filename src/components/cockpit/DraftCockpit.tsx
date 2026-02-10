@@ -36,6 +36,10 @@ interface DraftCockpitProps {
   onClose: () => void;
 }
 
+function getTravelers(trip: DraftTrip): number {
+  return trip.travelers || 1;
+}
+
 // Infer airport codes from city names
 function inferAirportCode(city: string): string {
   const codeMap: Record<string, string> = {
@@ -203,6 +207,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
         departureDate={new Date(trip.startDate)}
         returnDate={new Date(trip.endDate)}
         budget={trip.budget}
+        travelers={getTravelers(trip)}
         outboundFlight={selectedOutbound}
         returnFlight={selectedReturn}
         travelInterests={trip.travelInterests}

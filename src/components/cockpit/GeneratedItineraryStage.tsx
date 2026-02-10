@@ -10,6 +10,7 @@ import {
   Plane, Hotel, MapPin, Sparkles, ChevronLeft, ChevronRight,
   Check, AlertCircle, Clock, Star, Lightbulb, Coffee, Utensils, Moon, Sun
 } from 'lucide-react';
+import { getActivityPrice, findBestPriceLevel } from '@/lib/activityPricing';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
@@ -34,6 +35,7 @@ interface ItineraryActivity {
   type: 'flight' | 'hotel' | 'experience' | 'restaurant' | 'checkin' | 'checkout' | 'breakfast' | 'lunch' | 'dinner' | 'morning' | 'afternoon' | 'night';
   timeSlot: 'breakfast' | 'morning' | 'lunch' | 'afternoon' | 'dinner' | 'night' | 'flight' | 'hotel';
   estimatedCost: number;
+  costPerPerson?: number;
   time?: string;
   duration?: string;
   location?: string;
@@ -69,6 +71,7 @@ interface GeneratedItineraryStageProps {
   departureDate: Date;
   returnDate: Date;
   budget: number;
+  travelers: number;
   outboundFlight: SelectedFlight;
   returnFlight: SelectedFlight;
   travelInterests?: string[];
@@ -88,11 +91,14 @@ const dayThemes = [
 ];
 
 // Convert SuggestedActivity to ItineraryActivity
+// Individual consumption items (meals, experiences) are multiplied by travelers
+// Shared items (hotel, transfer) are NOT
 function convertToItineraryActivity(
   activity: SuggestedActivity,
   dayIndex: number,
   timeSlot: ItineraryActivity['timeSlot'],
-  time: string
+  time: string,
+  travelers: number = 1
 ): ItineraryActivity {
   const typeMap: Record<string, ItineraryActivity['type']> = {
     breakfast: 'breakfast',
@@ -103,15 +109,20 @@ function convertToItineraryActivity(
     night: 'night',
   };
 
+  // All activities from destinationActivities are individual (per-person) costs
+  const totalCost = activity.estimatedCostBRL * travelers;
+  const costLabel = travelers > 1 ? ` (${travelers} pax)` : '';
+
   return {
     id: `day-${dayIndex}-${activity.id}`,
     name: activity.name,
     type: typeMap[activity.category] || 'experience',
     timeSlot,
-    estimatedCost: activity.estimatedCostBRL,
+    estimatedCost: totalCost,
+    costPerPerson: activity.estimatedCostBRL,
     time,
     duration: `${activity.durationHours}h`,
-    location: `${activity.neighborhood}`,
+    location: `${activity.neighborhood}${costLabel}`,
     rating: activity.rating,
     status: 'suggestion',
     tips: activity.tips,
@@ -128,23 +139,23 @@ function generateItinerary(
   outboundFlight: SelectedFlight,
   returnFlight: SelectedFlight,
   budget: number,
+  travelers: number = 1,
   travelInterests: string[] = []
 ): { days: ItineraryDay[]; breakdown: BudgetBreakdown } {
   const totalDays = differenceInDays(returnDate, departureDate) + 1;
   const totalNights = totalDays - 1;
-  const flightsCost = outboundFlight.option.price + returnFlight.option.price;
   
-  // Calculate budget allocations
-  const remainingAfterFlights = budget - flightsCost;
-  const hotelPerNight = Math.round(remainingAfterFlights * 0.35 / totalNights);
+  // Use getActivityPrice for flights instead of Amadeus sandbox prices
+  const { level: priceLevel } = findBestPriceLevel(destination, totalDays, travelers, budget);
+  const flightPerPerson = getActivityPrice('flight', destination, priceLevel);
+  const flightsCost = flightPerPerson * travelers * 2; // Round trip × travelers
+  
+  // Hotel is SHARED (not multiplied by travelers)
+  const hotelPerNight = getActivityPrice('hotel_night', destination, priceLevel);
   const hotelTotal = hotelPerNight * totalNights;
   
-  const experiencesDays = Math.max(totalDays - 2, 1);
-  const experienceBudgetPerDay = Math.round(remainingAfterFlights * 0.25 / experiencesDays);
-  const experiencesTotal = experienceBudgetPerDay * experiencesDays;
-  
-  const foodPerDay = Math.round(remainingAfterFlights * 0.15 / totalDays);
-  const foodTotal = foodPerDay * totalDays;
+  // Transfer cost (shared)
+  const transferCost = getActivityPrice('transfer', destination, priceLevel);
 
   const days: ItineraryDay[] = [];
   const usedActivityIds: string[] = [];
@@ -163,19 +174,21 @@ function generateItinerary(
     if (i === 0) {
       label = 'Partida';
       theme = '✈️ Dia de Viagem';
+      const outboundCost = flightsCost / 2; // Half of round trip
       activities.push({
         id: `day-${i}-flight-out`,
         name: 'Voo de Ida',
         type: 'flight',
         timeSlot: 'flight',
-        estimatedCost: outboundFlight.option.price,
+        estimatedCost: outboundCost,
+        costPerPerson: flightPerPerson,
         time: outboundFlight.option.departureTime,
         duration: outboundFlight.option.duration,
-        location: outboundFlight.option.route,
+        location: outboundFlight.option.route + (travelers > 1 ? ` (${travelers} pax)` : ''),
         status: 'defined',
         source: 'kinu',
       });
-      dayTotal = outboundFlight.option.price;
+      dayTotal = outboundCost;
     }
     // Day 2: Arrival + Check-in + Light activities
     else if (i === 1) {
@@ -201,7 +214,7 @@ function generateItinerary(
       const afternoonActivity = getRandomActivity(destination, 'afternoon', styleTags, usedActivityIds);
       if (afternoonActivity) {
         usedActivityIds.push(afternoonActivity.id);
-        const activity = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '16:00');
+        const activity = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '16:00', travelers);
         activity.tips = ['Passeio leve para se ambientar', ...(activity.tips || [])];
         activities.push(activity);
         dayTotal += activity.estimatedCost;
@@ -211,7 +224,7 @@ function generateItinerary(
       const dinnerActivity = getRandomActivity(destination, 'dinner', styleTags, usedActivityIds);
       if (dinnerActivity) {
         usedActivityIds.push(dinnerActivity.id);
-        const activity = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30');
+        const activity = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30', travelers);
         activities.push(activity);
         dayTotal += activity.estimatedCost;
       }
@@ -225,7 +238,7 @@ function generateItinerary(
       const breakfastActivity = getRandomActivity(destination, 'breakfast', styleTags, usedActivityIds);
       if (breakfastActivity) {
         usedActivityIds.push(breakfastActivity.id);
-        const activity = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00');
+        const activity = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers);
         activities.push(activity);
         dayTotal += activity.estimatedCost;
       }
@@ -246,7 +259,7 @@ function generateItinerary(
       const morningActivity = getRandomActivity(destination, 'afternoon', styleTags, usedActivityIds);
       if (morningActivity) {
         usedActivityIds.push(morningActivity.id);
-        const activity = convertToItineraryActivity(morningActivity, i, 'morning', '10:30');
+        const activity = convertToItineraryActivity(morningActivity, i, 'morning', '10:30', travelers);
         activity.name = 'Última exploração';
         activity.tips = ['Aproveite as últimas horas!', ...(activity.tips || [])];
         activities.push(activity);
@@ -257,39 +270,42 @@ function generateItinerary(
       const lunchActivity = getRandomActivity(destination, 'lunch', styleTags, usedActivityIds);
       if (lunchActivity) {
         usedActivityIds.push(lunchActivity.id);
-        const activity = convertToItineraryActivity(lunchActivity, i, 'lunch', '12:30');
+        const activity = convertToItineraryActivity(lunchActivity, i, 'lunch', '12:30', travelers);
         activities.push(activity);
         dayTotal += activity.estimatedCost;
       }
       
-      // Transfer to airport
+      // Transfer to airport (SHARED — not multiplied)
       activities.push({
         id: `day-${i}-transfer`,
         name: 'Transfer para Aeroporto',
         type: 'experience',
         timeSlot: 'afternoon',
-        estimatedCost: 100,
+        estimatedCost: transferCost,
         time: '15:00',
         duration: '1h',
         status: 'suggestion',
         tips: ['Chegue com 3h de antecedência para voos internacionais'],
         source: 'kinu',
       });
-      dayTotal += 100;
+      dayTotal += transferCost;
       
       // Return flight
+      const returnCost = flightsCost / 2;
       activities.push({
         id: `day-${i}-flight-return`,
         name: 'Voo de Volta',
         type: 'flight',
         timeSlot: 'flight',
-        estimatedCost: 0, // Already counted
+        estimatedCost: returnCost,
+        costPerPerson: flightPerPerson,
         time: returnFlight.option.departureTime,
         duration: returnFlight.option.duration,
-        location: returnFlight.option.route,
+        location: returnFlight.option.route + (travelers > 1 ? ` (${travelers} pax)` : ''),
         status: 'defined',
         source: 'kinu',
       });
+      dayTotal += returnCost;
     }
     // Middle days: Full exploration with 5-6 activities
     else {
@@ -302,50 +318,55 @@ function generateItinerary(
       const breakfastActivity = getRandomActivity(destination, 'breakfast', styleTags, usedActivityIds);
       if (breakfastActivity) {
         usedActivityIds.push(breakfastActivity.id);
-        activities.push(convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00'));
-        dayTotal += breakfastActivity.estimatedCostBRL;
+        const act = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers);
+        activities.push(act);
+        dayTotal += act.estimatedCost;
       }
       
       // 🏛️ MORNING ACTIVITY (10:00)
       const morningActivity = getRandomActivity(destination, 'morning', styleTags, usedActivityIds);
       if (morningActivity) {
         usedActivityIds.push(morningActivity.id);
-        activities.push(convertToItineraryActivity(morningActivity, i, 'morning', '10:00'));
-        dayTotal += morningActivity.estimatedCostBRL;
+        const act = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers);
+        activities.push(act);
+        dayTotal += act.estimatedCost;
       }
       
       // 🍽️ LUNCH (13:00)
       const lunchActivity = getRandomActivity(destination, 'lunch', styleTags, usedActivityIds);
       if (lunchActivity) {
         usedActivityIds.push(lunchActivity.id);
-        activities.push(convertToItineraryActivity(lunchActivity, i, 'lunch', '13:00'));
-        dayTotal += lunchActivity.estimatedCostBRL;
+        const act = convertToItineraryActivity(lunchActivity, i, 'lunch', '13:00', travelers);
+        activities.push(act);
+        dayTotal += act.estimatedCost;
       }
       
       // 🚶 AFTERNOON ACTIVITY (15:00)
       const afternoonActivity = getRandomActivity(destination, 'afternoon', styleTags, usedActivityIds);
       if (afternoonActivity) {
         usedActivityIds.push(afternoonActivity.id);
-        activities.push(convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00'));
-        dayTotal += afternoonActivity.estimatedCostBRL;
+        const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00', travelers);
+        activities.push(act);
+        dayTotal += act.estimatedCost;
       }
       
       // 🍷 DINNER (19:30)
       const dinnerActivity = getRandomActivity(destination, 'dinner', styleTags, usedActivityIds);
       if (dinnerActivity) {
         usedActivityIds.push(dinnerActivity.id);
-        activities.push(convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30'));
-        dayTotal += dinnerActivity.estimatedCostBRL;
+        const act = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30', travelers);
+        activities.push(act);
+        dayTotal += act.estimatedCost;
       }
       
       // 🌙 NIGHT ACTIVITY - Optional (21:30)
       const nightActivity = getRandomActivity(destination, 'night', styleTags, usedActivityIds);
       if (nightActivity) {
         usedActivityIds.push(nightActivity.id);
-        const activity = convertToItineraryActivity(nightActivity, i, 'night', '21:30');
-        activity.tips = ['(Opcional)', ...(activity.tips || [])];
-        activities.push(activity);
-        dayTotal += nightActivity.estimatedCostBRL;
+        const act = convertToItineraryActivity(nightActivity, i, 'night', '21:30', travelers);
+        act.tips = ['(Opcional)', ...(act.tips || [])];
+        activities.push(act);
+        dayTotal += act.estimatedCost;
       }
     }
 
@@ -427,6 +448,7 @@ export const GeneratedItineraryStage = ({
   departureDate,
   returnDate,
   budget,
+  travelers,
   outboundFlight,
   returnFlight,
   travelInterests = [],
@@ -435,8 +457,8 @@ export const GeneratedItineraryStage = ({
   onBack,
 }: GeneratedItineraryStageProps) => {
   const { days: initialDays, breakdown: initialBreakdown } = useMemo(() => 
-    generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelInterests),
-    [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelInterests]
+    generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests),
+    [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests]
   );
 
   const [days, setDays] = useState(initialDays);
@@ -757,9 +779,16 @@ export const GeneratedItineraryStage = ({
                         )}
                         
                         {activity.estimatedCost > 0 && (
-                          <p className="text-sm font-medium text-foreground mt-2">
-                            R$ {activity.estimatedCost.toLocaleString('pt-BR')}
-                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-sm font-medium text-foreground">
+                              R$ {activity.estimatedCost.toLocaleString('pt-BR')}
+                            </span>
+                            {activity.costPerPerson && activity.costPerPerson !== activity.estimatedCost && (
+                              <span className="text-xs text-muted-foreground">
+                                (R$ {activity.costPerPerson.toLocaleString('pt-BR')}/pessoa)
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
