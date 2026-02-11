@@ -50,7 +50,11 @@ serve(async (req) => {
   try {
     const UNSPLASH_ACCESS_KEY = Deno.env.get('UNSPLASH_ACCESS_KEY');
     if (!UNSPLASH_ACCESS_KEY) {
-      throw new Error('UNSPLASH_ACCESS_KEY is not configured');
+      console.error('UNSPLASH_ACCESS_KEY is not configured');
+      return new Response(
+        JSON.stringify({ photos: [], total: 0, cached: false, fallback: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const url = new URL(req.url);
@@ -153,8 +157,8 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error fetching photos:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ photos: [], total: 0, cached: false, fallback: true }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

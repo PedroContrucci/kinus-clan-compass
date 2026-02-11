@@ -68,7 +68,11 @@ serve(async (req) => {
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     
     if (!ANTHROPIC_API_KEY) {
-      throw new Error("ANTHROPIC_API_KEY não está configurada");
+      console.error("ANTHROPIC_API_KEY is not configured");
+      return new Response(
+        JSON.stringify({ error: "Serviço temporariamente indisponível" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const body: RequestBody = await req.json();
@@ -141,7 +145,10 @@ serve(async (req) => {
         );
       }
       
-      throw new Error(`Erro na API do Claude: ${response.status}`);
+      return new Response(
+        JSON.stringify({ error: "Erro ao processar mensagem. Tente novamente." }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const data = await response.json();
@@ -162,9 +169,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("kinu-ai error:", error);
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Erro desconhecido ao processar mensagem" 
-      }),
+      JSON.stringify({ error: "Erro ao processar mensagem. Tente novamente." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

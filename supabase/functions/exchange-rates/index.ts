@@ -26,7 +26,11 @@ serve(async (req) => {
   try {
     const API_KEY = Deno.env.get('EXCHANGERATE_API_KEY');
     if (!API_KEY) {
-      throw new Error('EXCHANGERATE_API_KEY not configured');
+      console.error('EXCHANGERATE_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Serviço de câmbio temporariamente indisponível' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const { action, source = 'BRL', currencies = 'USD,EUR,JPY,GBP', startDate, endDate } = await req.json();
@@ -175,7 +179,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        error: 'Erro ao buscar taxas de câmbio. Tente novamente.' 
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
