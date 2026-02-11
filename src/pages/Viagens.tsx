@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useKinuAI } from "@/contexts/KinuAIContext";
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings } from 'lucide-react';
+import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Target } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -357,10 +357,10 @@ const Viagens = () => {
         activities = [
           {
             id: `day${dayNum}-1`,
-            name: 'Embarque para ' + trip.destination,
-            description: 'Voo de ida para o destino',
-            time: '23:00',
-            duration: '12h',
+            name: `Voo para ${trip.destination}`,
+            description: `Check-in 3h antes no aeroporto • Apresentar documentação e despachar bagagem`,
+            time: '22:00',
+            duration: trip.flights?.outbound?.duration || '12h',
             type: 'transport',
             category: 'voo',
             cost: getActivityPrice('flight', trip.destination, priceLevel) * travelers,
@@ -704,9 +704,24 @@ const Viagens = () => {
                                 <Clock size={14} className="inline mr-1" />
                                 {activity.time}
                               </span>
+                              {/* Preço estimado — visível quando cost > 0 e NÃO confirmado */}
+                              {activity.cost > 0 && activity.status !== 'confirmed' && (
+                                <span className="text-xs bg-[#334155] text-[#94a3b8] px-2 py-0.5 rounded-full font-medium">
+                                  ~R$ {activity.cost.toLocaleString('pt-BR')}
+                                </span>
+                              )}
+                              {/* Preço pago — quando confirmado */}
                               {activity.status === 'confirmed' && activity.paidAmount && (
-                                <span className="text-xs bg-[#10b981] text-white px-2 py-0.5 rounded-full">
-                                  R$ {activity.paidAmount.toLocaleString()}
+                                <span className="text-xs bg-[#10b981] text-white px-2 py-0.5 rounded-full font-medium">
+                                  ✓ R$ {activity.paidAmount.toLocaleString('pt-BR')}
+                                </span>
+                              )}
+                              {/* Badge grátis */}
+                              {activity.cost === 0 && activity.status !== 'confirmed' && 
+                               !['info', 'transport'].includes(activity.type) && 
+                               activity.category !== 'voo' && activity.category !== 'hotel' && (
+                                <span className="text-xs bg-[#334155]/50 text-[#64748b] px-2 py-0.5 rounded-full">
+                                  Grátis
                                 </span>
                               )}
                               {activity.jetLagFriendly && (
@@ -718,16 +733,10 @@ const Viagens = () => {
                             <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
                             <p className="text-sm text-[#94a3b8]">{activity.description}</p>
 
-                            {/* Actions */}
-                            {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (
+                            {/* Actions — only for bookable activities */}
+                            {activity.status !== 'confirmed' && activity.status !== 'cancelled' && 
+                             (activity.cost > 0 || activity.category === 'voo') && (
                               <div className="flex gap-2 mt-3 flex-wrap">
-                                <button
-                                  onClick={() => handleStartBidding(activity, dayIndex, actIndex)}
-                                  className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-[#10b981] transition-colors"
-                                >
-                                  <Tag size={12} />
-                                  {activity.status === 'bidding' ? 'Ver Leilão' : 'Ver Ofertas'}
-                                </button>
                                 <button
                                   onClick={() => setConfirmModal({ isOpen: true, activity, dayIndex, actIndex })}
                                   className="flex items-center gap-1 px-3 py-1.5 bg-[#10b981] rounded-lg text-xs text-white hover:bg-[#10b981]/80 transition-colors"
@@ -735,6 +744,29 @@ const Viagens = () => {
                                   <Check size={12} />
                                   Confirmar
                                 </button>
+                                {activity.cost > 0 && (
+                                  <button
+                                    onClick={() => handleStartBidding(activity, dayIndex, actIndex)}
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-[#8b5cf6] hover:text-[#8b5cf6] transition-colors"
+                                  >
+                                    <Tag size={12} />
+                                    Ver Ofertas
+                                  </button>
+                                )}
+                                {activity.cost > 0 && (
+                                  <button
+                                    onClick={() => setAuctionModal({
+                                      isOpen: true,
+                                      activityName: activity.name,
+                                      activityType: activity.type,
+                                      estimatedPrice: activity.cost,
+                                    })}
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#eab308]/40 rounded-lg text-xs text-[#eab308] hover:border-[#eab308] transition-colors"
+                                  >
+                                    <Target size={12} />
+                                    Leilão
+                                  </button>
+                                )}
                               </div>
                             )}
                           </div>
@@ -742,6 +774,34 @@ const Viagens = () => {
                       );
                     })}
                   </div>
+
+                  {/* Subtotal do dia */}
+                  {(() => {
+                    const dayTotal = currentDay.activities.reduce((sum, a) => sum + (a.cost || 0), 0);
+                    const confirmedTotal = currentDay.activities
+                      .filter(a => a.status === 'confirmed')
+                      .reduce((sum, a) => sum + (a.paidAmount || 0), 0);
+                    
+                    if (dayTotal === 0 && confirmedTotal === 0) return null;
+                    
+                    return (
+                      <div className="mt-4 pt-3 border-t border-[#334155] flex justify-between items-center text-sm">
+                        <span className="text-[#94a3b8] font-['Outfit']">💰 Total do dia</span>
+                        <div className="flex items-center gap-3">
+                          {dayTotal > 0 && (
+                            <span className="text-[#f8fafc] font-medium font-['Outfit']">
+                              ~R$ {dayTotal.toLocaleString('pt-BR')}
+                            </span>
+                          )}
+                          {confirmedTotal > 0 && (
+                            <span className="text-[#10b981] font-medium">
+                              ✓ R$ {confirmedTotal.toLocaleString('pt-BR')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
