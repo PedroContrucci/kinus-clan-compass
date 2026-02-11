@@ -54,7 +54,8 @@ async function getAmadeusToken(): Promise<string> {
   const apiSecret = Deno.env.get('AMADEUS_API_SECRET');
 
   if (!apiKey || !apiSecret) {
-    throw new Error('Amadeus API credentials not configured');
+    console.error('Amadeus API credentials not configured');
+    throw new Error('Flight search service temporarily unavailable');
   }
 
   console.log('Fetching new Amadeus token...');
@@ -73,8 +74,8 @@ async function getAmadeusToken(): Promise<string> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Amadeus auth error:', errorText);
-    throw new Error(`Amadeus authentication failed: ${response.status}`);
+    console.error('Amadeus auth error:', response.status, errorText);
+    throw new Error('Flight search service temporarily unavailable');
   }
 
   const data = await response.json();
@@ -349,7 +350,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Erro ao buscar voos. Tente novamente.',
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

@@ -60,7 +60,11 @@ serve(async (req) => {
     const OPENWEATHER_API_KEY = Deno.env.get("OPENWEATHER_API_KEY");
     
     if (!OPENWEATHER_API_KEY) {
-      throw new Error("OPENWEATHER_API_KEY não está configurada");
+      console.error("OPENWEATHER_API_KEY not configured");
+      return new Response(
+        JSON.stringify({ error: "Serviço de previsão temporariamente indisponível" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const { city, country } = await req.json();
@@ -96,10 +100,8 @@ serve(async (req) => {
       if (response.status === 404) {
         throw new Error(`Cidade "${city}" não encontrada`);
       }
-      if (response.status === 401) {
-        throw new Error("API key inválida");
-      }
-      throw new Error(`Erro ao buscar previsão: ${response.status}`);
+      console.error("OpenWeatherMap API error:", response.status);
+      throw new Error("Erro ao buscar previsão do tempo");
     }
 
     const data = await response.json();
@@ -185,10 +187,11 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("weather error:", error);
+    const message = error instanceof Error && error.message.includes("não encontrada")
+      ? error.message
+      : "Erro ao buscar previsão do tempo. Tente novamente.";
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Erro desconhecido ao buscar previsão" 
-      }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
