@@ -40,16 +40,16 @@ function generatePrediction(currentRate: number, trend: 'up' | 'down' | 'stable'
 
 const getCurrencySymbol = (currency: string): string => {
   const symbols: Record<string, string> = {
-    'USD': '$',
-    'EUR': '€',
-    'GBP': '£',
-    'JPY': '¥',
-    'CAD': 'CA$',
-    'AUD': 'AU$',
-    'CHF': 'CHF',
-    'ARS': 'ARS$',
-    'CLP': 'CLP$',
-    'PEN': 'S/',
+    'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥',
+    'CAD': 'CA$', 'AUD': 'AU$', 'CHF': 'CHF', 'NZD': 'NZ$',
+    'ARS': 'AR$', 'CLP': 'CL$', 'COP': 'CO$', 'MXN': 'MX$',
+    'PEN': 'S/', 'UYU': '$U', 'BRL': 'R$',
+    'SEK': 'kr', 'DKK': 'kr', 'NOK': 'kr', 'PLN': 'zł',
+    'CZK': 'Kč', 'HUF': 'Ft', 'TRY': '₺', 'RUB': '₽',
+    'THB': '฿', 'KRW': '₩', 'CNY': '¥', 'HKD': 'HK$',
+    'SGD': 'S$', 'IDR': 'Rp', 'VND': '₫', 'INR': '₹',
+    'AED': 'د.إ', 'ILS': '₪', 'ZAR': 'R', 'EGP': 'E£',
+    'MAD': 'MAD',
   };
   return symbols[currency] || currency;
 };

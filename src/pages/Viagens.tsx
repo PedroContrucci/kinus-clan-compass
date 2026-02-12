@@ -22,6 +22,62 @@ import { PackingData } from '@/types/packing';
 import { getActivityPrice, determinePriceLevel, findBestPriceLevel, mapCategoryToPricingType, CITY_PRICES } from '@/lib/activityPricing';
 import kinuLogo from '@/assets/KINU_logo.png';
 
+const DESTINATION_CURRENCY: Record<string, string> = {
+  // Europa
+  'paris': 'EUR', 'roma': 'EUR', 'amsterdam': 'EUR', 'barcelona': 'EUR',
+  'madri': 'EUR', 'berlim': 'EUR', 'viena': 'EUR', 'atenas': 'EUR',
+  'dublin': 'EUR', 'lisboa': 'EUR', 'milão': 'EUR', 'florença': 'EUR',
+  'praga': 'CZK', 'budapeste': 'HUF', 'varsóvia': 'PLN',
+  'londres': 'GBP', 'edimburgo': 'GBP',
+  'zurique': 'CHF', 'genebra': 'CHF',
+  'estocolmo': 'SEK', 'copenhague': 'DKK', 'oslo': 'NOK',
+  'istambul': 'TRY', 'moscou': 'RUB',
+  // Américas
+  'nova york': 'USD', 'new york': 'USD', 'miami': 'USD', 'los angeles': 'USD',
+  'san francisco': 'USD', 'orlando': 'USD', 'las vegas': 'USD', 'chicago': 'USD',
+  'toronto': 'CAD', 'vancouver': 'CAD', 'montreal': 'CAD',
+  'cancún': 'MXN', 'cidade do méxico': 'MXN', 'playa del carmen': 'MXN',
+  'buenos aires': 'ARS', 'mendoza': 'ARS', 'bariloche': 'ARS',
+  'santiago': 'CLP', 'lima': 'PEN', 'cusco': 'PEN', 'bogotá': 'COP',
+  'cartagena': 'COP', 'montevidéu': 'UYU',
+  // Ásia
+  'tóquio': 'JPY', 'tokyo': 'JPY', 'quioto': 'JPY', 'osaka': 'JPY',
+  'bangkok': 'THB', 'seul': 'KRW', 'seoul': 'KRW',
+  'pequim': 'CNY', 'xangai': 'CNY', 'hong kong': 'HKD',
+  'singapura': 'SGD', 'bali': 'IDR', 'hanói': 'VND',
+  'dubai': 'AED', 'abu dhabi': 'AED',
+  'nova delhi': 'INR', 'mumbai': 'INR',
+  'tel aviv': 'ILS', 'jerusalém': 'ILS',
+  // Oceania
+  'sydney': 'AUD', 'melbourne': 'AUD', 'auckland': 'NZD',
+  // África
+  'cidade do cabo': 'ZAR', 'cairo': 'EGP', 'marrakech': 'MAD',
+};
+
+function getDestinationCurrency(destination: string): string {
+  const normalized = destination.toLowerCase().trim();
+  if (DESTINATION_CURRENCY[normalized]) return DESTINATION_CURRENCY[normalized];
+  for (const [city, currency] of Object.entries(DESTINATION_CURRENCY)) {
+    if (normalized.includes(city) || city.includes(normalized)) return currency;
+  }
+  const countryCurrency: Record<string, string> = {
+    'argentina': 'ARS', 'chile': 'CLP', 'peru': 'PEN', 'colômbia': 'COP',
+    'méxico': 'MXN', 'uruguai': 'UYU', 'estados unidos': 'USD', 'eua': 'USD',
+    'canadá': 'CAD', 'japão': 'JPY', 'china': 'CNY', 'coreia': 'KRW',
+    'tailândia': 'THB', 'índia': 'INR', 'austrália': 'AUD',
+    'inglaterra': 'GBP', 'reino unido': 'GBP', 'suíça': 'CHF',
+    'portugal': 'EUR', 'espanha': 'EUR', 'itália': 'EUR', 'frança': 'EUR',
+    'alemanha': 'EUR', 'holanda': 'EUR', 'grécia': 'EUR', 'irlanda': 'EUR',
+    'áustria': 'EUR', 'bélgica': 'EUR', 'finlândia': 'EUR',
+    'turquia': 'TRY', 'israel': 'ILS', 'egito': 'EGP', 'marrocos': 'MAD',
+    'áfrica do sul': 'ZAR', 'emirados': 'AED',
+  };
+  for (const [country, currency] of Object.entries(countryCurrency)) {
+    if (normalized.includes(country)) return currency;
+  }
+  return 'USD';
+}
+
 const Viagens = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -875,7 +931,7 @@ const Viagens = () => {
           {activeTab === 'cambio' && (
             <div className="animate-fade-in">
               <EnhancedExchangeRates
-                destinationCurrency={(selectedTrip as any).currency || 'EUR'}
+                destinationCurrency={getDestinationCurrency(selectedTrip.destination)}
                 baseCurrency="BRL"
                 budgetBRL={selectedTrip.budget}
               />
