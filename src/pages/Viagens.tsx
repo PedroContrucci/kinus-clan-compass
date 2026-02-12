@@ -94,6 +94,12 @@ const Viagens = () => {
   const [manualExpenseModal, setManualExpenseModal] = useState(false);
   const [manualExpense, setManualExpense] = useState({ name: '', amount: 0, category: 'shopping' as keyof SavedTrip['finances']['categories'] });
   const [resetModal, setResetModal] = useState(false);
+  const [auctionConfigModal, setAuctionConfigModal] = useState<{
+    isOpen: boolean;
+    activity: { id: string; name: string; type: string; cost: number };
+    dayIndex: number;
+    actIndex: number;
+  } | null>(null);
   const { setTripContext } = useKinuAI();
 
   // Feed trip context to KINU AI when selected trip changes
@@ -252,6 +258,55 @@ const Viagens = () => {
       title: "Oferta selecionada! 🎉",
       description: `Fechou a reserva? Confirme para atualizar o FinOps.`,
     });
+  };
+
+  const handleActivateAuction = (config: { targetPrice: number; waitDays: number }) => {
+    if (!selectedTrip || !auctionConfigModal) return;
+    const { activity, dayIndex, actIndex } = auctionConfigModal;
+
+    const newAuction = {
+      id: `auction-${Date.now()}`,
+      activityId: activity.id,
+      name: activity.name,
+      type: activity.type as 'flight' | 'hotel' | 'experience' | 'transport',
+      targetPrice: config.targetPrice,
+      currentBestPrice: null,
+      bestPriceDate: null,
+      bestPriceUrl: null,
+      kinutEstimate: activity.cost,
+      startedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + config.waitDays * 24 * 60 * 60 * 1000).toISOString(),
+      maxWaitDays: config.waitDays,
+      status: 'watching' as const,
+      savings: 0,
+    };
+
+    const updatedTrip = { ...selectedTrip };
+    if (!(updatedTrip as any).auctions) {
+      (updatedTrip as any).auctions = [];
+    }
+    const auctions = (updatedTrip as any).auctions as any[];
+    const existingIndex = auctions.findIndex((a: any) => a.activityId === activity.id);
+    if (existingIndex >= 0) {
+      auctions[existingIndex] = newAuction;
+    } else {
+      auctions.push(newAuction);
+    }
+
+    if (updatedTrip.days[dayIndex]?.activities[actIndex]) {
+      updatedTrip.days[dayIndex].activities[actIndex].status = 'bidding';
+    }
+
+    setSelectedTrip(updatedTrip);
+    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
+    setTrips(updatedTrips);
+    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+
+    toast({
+      title: "Leilão ativado! 🎯",
+      description: `Monitorando "${activity.name}" por ${config.waitDays} dias. Preço alvo: R$ ${config.targetPrice.toLocaleString('pt-BR')}`,
+    });
+    setAuctionConfigModal(null);
   };
 
   const handleAddManualExpense = () => {
@@ -687,11 +742,11 @@ const Viagens = () => {
                 <FlightCard
                   flight={selectedTrip.flights.outbound}
                   type="outbound"
-                  onOpenAuction={() => setAuctionModal({
+                  onOpenAuction={() => setAuctionConfigModal({
                     isOpen: true,
-                    activityName: 'Voo de Ida',
-                    activityType: 'flight',
-                    estimatedPrice: selectedTrip.flights?.outbound?.price,
+                    activity: { id: 'flight-outbound', name: 'Voo de Ida', type: 'flight', cost: selectedTrip.flights?.outbound?.price || 0 },
+                    dayIndex: 0,
+                    actIndex: 0,
                   })}
                 />
               )}
@@ -700,11 +755,11 @@ const Viagens = () => {
               {selectedTrip.accommodation && (
                 <HotelCard
                   hotel={selectedTrip.accommodation}
-                  onOpenAuction={() => setAuctionModal({
+                  onOpenAuction={() => setAuctionConfigModal({
                     isOpen: true,
-                    activityName: selectedTrip.accommodation?.name || 'Hotel',
-                    activityType: 'hotel',
-                    estimatedPrice: selectedTrip.accommodation?.totalPrice,
+                    activity: { id: 'hotel-main', name: selectedTrip.accommodation?.name || 'Hotel', type: 'hotel', cost: selectedTrip.accommodation?.totalPrice || 0 },
+                    dayIndex: 0,
+                    actIndex: 0,
                   })}
                 />
               )}
@@ -811,11 +866,11 @@ const Viagens = () => {
                                 )}
                                 {activity.cost > 0 && (
                                   <button
-                                    onClick={() => setAuctionModal({
+                                    onClick={() => setAuctionConfigModal({
                                       isOpen: true,
-                                      activityName: activity.name,
-                                      activityType: activity.type,
-                                      estimatedPrice: activity.cost,
+                                      activity: { id: activity.id, name: activity.name, type: activity.type, cost: activity.cost },
+                                      dayIndex,
+                                      actIndex,
                                     })}
                                     className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#eab308]/40 rounded-lg text-xs text-[#eab308] hover:border-[#eab308] transition-colors"
                                   >
@@ -867,11 +922,11 @@ const Viagens = () => {
                   <FlightCard
                     flight={selectedTrip.flights.return}
                     type="return"
-                    onOpenAuction={() => setAuctionModal({
+                    onOpenAuction={() => setAuctionConfigModal({
                       isOpen: true,
-                      activityName: 'Voo de Volta',
-                      activityType: 'flight',
-                      estimatedPrice: selectedTrip.flights?.return?.price,
+                      activity: { id: 'flight-return', name: 'Voo de Volta', type: 'flight', cost: selectedTrip.flights?.return?.price || 0 },
+                      dayIndex: selectedTrip.days.length - 1,
+                      actIndex: 0,
                     })}
                   />
                 </div>
@@ -914,6 +969,8 @@ const Viagens = () => {
               <AuctionList
                 tripId={selectedTrip.id}
                 activities={selectedTrip.days?.flatMap(d => d.activities) || []}
+                auctions={(selectedTrip as any).auctions || []}
+                onNavigateToItinerary={() => setActiveTab('roteiro')}
               />
             </div>
           )}
@@ -995,6 +1052,16 @@ const Viagens = () => {
             destination={selectedTrip.destination}
             estimatedPrice={auctionModal.estimatedPrice}
             onAcceptOffer={handleAcceptOffer}
+          />
+        )}
+
+        {/* Auction Config Modal — Leilão Reverso */}
+        {auctionConfigModal && (
+          <AuctionConfigModal
+            isOpen={auctionConfigModal.isOpen}
+            onClose={() => setAuctionConfigModal(null)}
+            activity={auctionConfigModal.activity}
+            onActivate={handleActivateAuction}
           />
         )}
 

@@ -1,6 +1,6 @@
 // AuctionList — Reverse auction list for trip activities
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Clock, TrendingDown, Bell, CheckCircle, AlertTriangle, 
@@ -34,6 +34,7 @@ interface AuctionItem {
 interface AuctionListProps {
   tripId: string;
   activities?: any[];
+  auctions?: any[];
   onNavigateToItinerary?: () => void;
 }
 
@@ -51,9 +52,30 @@ const statusConfig = {
   paused: { label: 'Pausado', color: 'bg-muted text-muted-foreground border-muted' },
 };
 
-export const AuctionList = ({ tripId, activities, onNavigateToItinerary }: AuctionListProps) => {
-  // START EMPTY - auctions must be activated from the itinerary
+export const AuctionList = ({ tripId, activities, auctions: externalAuctions, onNavigateToItinerary }: AuctionListProps) => {
   const [auctions, setAuctions] = useState<AuctionItem[]>([]);
+
+  // Sync auctions from props whenever they change
+  useEffect(() => {
+    if (externalAuctions && externalAuctions.length > 0) {
+      const mapped: AuctionItem[] = externalAuctions.map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        type: a.type || 'experience',
+        targetPrice: a.targetPrice,
+        currentBestPrice: a.currentBestPrice || null,
+        bestPriceDate: a.bestPriceDate ? new Date(a.bestPriceDate) : null,
+        bestPriceUrl: a.bestPriceUrl || null,
+        kinutEstimate: a.kinutEstimate,
+        startedAt: new Date(a.startedAt),
+        expiresAt: new Date(a.expiresAt),
+        maxWaitDays: a.maxWaitDays,
+        status: a.status || 'watching',
+        savings: a.savings || 0,
+      }));
+      setAuctions(mapped);
+    }
+  }, [externalAuctions]);
 
   const totalSavings = useMemo(() => {
     return auctions.reduce((acc, a) => acc + a.savings, 0);
