@@ -15,7 +15,7 @@ import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
 import { TripCockpit } from '@/components/dashboard';
-import { DraftCockpit, TripGuide, ExchangeRates, AuctionList, EnhancedDayTimeline, SmartPackingWithLuggage, EnhancedExchangeRates, AuctionConfigModal, AuctionActivationModal } from '@/components/cockpit';
+import { DraftCockpit, TripGuide, ExchangeRates, AuctionList, EnhancedDayTimeline, SmartPackingWithLuggage, EnhancedExchangeRates, AuctionConfigModal } from '@/components/cockpit';
 import { useTripDashboard } from '@/hooks/useTripDashboard';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
 import { PackingData } from '@/types/packing';
