@@ -135,10 +135,60 @@ export function useUnsplash(query: string, options: UseUnsplashOptions = {}) {
 }
 
 // Get a single photo for a destination/category
+// Destination-specific photo keywords for better Unsplash results
+const DESTINATION_PHOTO_HINTS: Record<string, string> = {
+  'paris': 'Paris Eiffel Tower skyline',
+  'roma': 'Rome Colosseum historic',
+  'londres': 'London Big Ben Thames',
+  'nova york': 'New York Manhattan skyline',
+  'tóquio': 'Tokyo Shibuya neon city',
+  'tokyo': 'Tokyo Shibuya neon city',
+  'barcelona': 'Barcelona Sagrada Familia architecture',
+  'lisboa': 'Lisbon Alfama tram colorful',
+  'amsterdã': 'Amsterdam canals bicycles',
+  'amsterdam': 'Amsterdam canals bicycles',
+  'madri': 'Madrid Plaza Mayor historic',
+  'madrid': 'Madrid Plaza Mayor historic',
+  'buenos aires': 'Buenos Aires La Boca colorful',
+  'santiago': 'Santiago Chile Andes mountains',
+  'cusco': 'Cusco Peru Machu Picchu ruins',
+  'cancún': 'Cancun Mexico turquoise beach',
+  'cancun': 'Cancun Mexico turquoise beach',
+  'miami': 'Miami Beach art deco ocean',
+  'orlando': 'Orlando Florida theme park',
+  'dubai': 'Dubai Burj Khalifa skyline',
+  'bangkok': 'Bangkok Thailand temple golden',
+  'berlim': 'Berlin Brandenburg Gate',
+  'berlin': 'Berlin Brandenburg Gate',
+  'praga': 'Prague Charles Bridge old town',
+  'viena': 'Vienna Schoenbrunn palace',
+  'istambul': 'Istanbul Blue Mosque Bosphorus',
+  'istanbul': 'Istanbul Blue Mosque Bosphorus',
+  'cairo': 'Cairo Egypt pyramids Giza',
+  'marrakech': 'Marrakech Morocco medina colorful',
+  'cape town': 'Cape Town Table Mountain coast',
+  'sydney': 'Sydney Opera House harbour',
+  'rio de janeiro': 'Rio de Janeiro Christ Redeemer Sugarloaf',
+  'salvador': 'Salvador Bahia Pelourinho colorful',
+  'são paulo': 'São Paulo Paulista Avenue urban',
+  'florianópolis': 'Florianopolis Brazil beach island',
+  'cartagena': 'Cartagena Colombia walled city colorful',
+  'montevidéu': 'Montevideo Uruguay Rambla coast',
+  'lima': 'Lima Peru Miraflores coast',
+  'bogotá': 'Bogota Colombia Candelaria historic',
+  'singapura': 'Singapore Marina Bay skyline',
+  'singapore': 'Singapore Marina Bay skyline',
+  'hong kong': 'Hong Kong Victoria Peak skyline',
+  'seul': 'Seoul South Korea Bukchon hanok',
+  'seoul': 'Seoul South Korea Bukchon hanok',
+};
+
 export function useDestinationPhoto(destination: string, category?: string) {
-  // Build a more specific search query
+  // Build a specific search query using destination hints
+  const destKey = destination?.trim().toLowerCase() || '';
+  const hint = DESTINATION_PHOTO_HINTS[destKey];
   const searchQuery = destination?.trim() 
-    ? `${destination} travel landscape` 
+    ? (hint || `${destination} landmark travel`) 
     : '';
     
   const { photos, loading, error } = useUnsplash(searchQuery, { 
