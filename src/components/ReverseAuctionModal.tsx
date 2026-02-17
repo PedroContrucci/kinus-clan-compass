@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ExternalLink, Check, Star, ArrowLeft, Plane, Hotel, MapPin, Clock, Users, Calendar, TrendingUp } from 'lucide-react';
+import { ExternalLink, Check, Star, ArrowLeft, Plane, Hotel, MapPin, Clock, Users, Calendar, TrendingUp, Loader2 } from 'lucide-react';
 import { Offer } from '@/types/trip';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { calculateSuccessChance } from '@/lib/tierSystem';
+import { useViatorSearch, ViatorProduct } from '@/hooks/useViatorSearch';
 
 // Item type for contextual auction
 export type AuctionItemType = 'flight' | 'hotel' | 'activity';
@@ -143,6 +144,8 @@ const ReverseAuctionModal = ({
   const [competingOffers, setCompetingOffers] = useState<{ provider: string; price: number; progress: number }[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [showOtherOffers, setShowOtherOffers] = useState(false);
+  
+  const { search: searchViator, results: viatorResults, loading: viatorLoading } = useViatorSearch();
 
   // CRITICAL: Create item from legacy props if not provided
   // Ensure strict typing - category is determined at mount time and NEVER changes
@@ -179,6 +182,21 @@ const ReverseAuctionModal = ({
       setOffers([]);
     }
   }, [isOpen, currentCost]);
+
+  // Fetch real Viator offers when modal opens
+  useEffect(() => {
+    if (isOpen && destination) {
+      const name = auctionItem.name;
+      const type = auctionItem.type === 'activity' ? (legacyType || '') : auctionItem.type;
+      searchViator({
+        destination,
+        activityName: name,
+        activityType: type,
+        currency: 'BRL',
+        count: 5,
+      });
+    }
+  }, [isOpen, destination]);
 
   const startAuction = () => {
     setStep('competing');
@@ -618,9 +636,78 @@ const ReverseAuctionModal = ({
               </div>
             )}
 
+            {/* Real Viator Offers */}
+            {(viatorResults.length > 0 || viatorLoading) && (
+              <div className="space-y-3 border-t border-border pt-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-foreground font-['Outfit'] flex items-center gap-2">
+                    🌍 Ofertas Reais — Viator
+                  </h4>
+                  {viatorLoading && (
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Loader2 size={12} className="animate-spin" />
+                      Buscando...
+                    </span>
+                  )}
+                </div>
+
+                {viatorResults.map((product) => (
+                  <div
+                    key={product.id}
+                    className="bg-muted border border-border rounded-xl p-3 hover:border-primary/50 transition-colors"
+                  >
+                    <div className="flex gap-3">
+                      {product.image && (
+                        <img
+                          src={product.image}
+                          alt={product.title}
+                          className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h5 className="font-medium text-foreground text-sm font-['Outfit'] line-clamp-2">
+                          {product.title}
+                        </h5>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          {product.rating > 0 && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Star size={10} className="text-amber-500 fill-amber-500" />
+                              {product.rating.toFixed(1)} ({product.reviewCount})
+                            </span>
+                          )}
+                          {product.duration && (
+                            <span className="text-xs text-muted-foreground">⏱ {product.duration}</span>
+                          )}
+                          {product.freeCancellation && (
+                            <span className="text-xs text-emerald-500 font-medium">✓ Cancelamento grátis</span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-primary font-bold text-sm font-['Outfit']">
+                            R$ {product.price.toLocaleString('pt-BR')}
+                          </span>
+                          <a
+                            href={product.bookingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-1 font-medium"
+                          >
+                            Ver na Viator <ExternalLink size={10} />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Disclaimer */}
             <p className="text-xs text-muted-foreground text-center">
-              Preços simulados • Links abrem em nova aba
+              {viatorResults.length > 0 
+                ? 'Ofertas reais do Viator • Preços simulados das outras fontes • Links abrem em nova aba'
+                : 'Preços simulados • Links abrem em nova aba'
+              }
             </p>
           </div>
         )}
