@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   FileCheck, Syringe, Wallet, Plug, Phone, Lightbulb, 
-  Shield, AlertTriangle, ChevronDown, ChevronUp 
+  Shield, AlertTriangle, ChevronDown, ChevronUp, UtensilsCrossed
 } from 'lucide-react';
+import { getTopMichelinForCity, getMichelinStarDisplay, getMichelinCountForCity } from '@/lib/michelinData';
 import { supabase } from '@/integrations/supabase/client';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
@@ -85,7 +86,34 @@ export const TripGuide = ({ destinationCity, countryId }: TripGuideProps) => {
     );
   }
 
+  const michelinCount = getMichelinCountForCity(destinationCity);
+  const topMichelin = michelinCount > 0 ? getTopMichelinForCity(destinationCity, 5) : [];
+
   const sections = [
+    // Michelin section — only if city has data
+    ...(michelinCount > 0 ? [{
+      id: 'michelin',
+      icon: <UtensilsCrossed size={18} />,
+      title: `Restaurantes Michelin (${michelinCount})`,
+      content: (
+        <div className="space-y-3">
+          {topMichelin.map((restaurant, index) => (
+            <div key={index} className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-foreground text-sm truncate">{restaurant.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {restaurant.cuisine} · {restaurant.priceRange}
+                  {restaurant.neighborhood && ` · ${restaurant.neighborhood}`}
+                </p>
+              </div>
+              <span className="text-sm flex-shrink-0">
+                {getMichelinStarDisplay(restaurant.stars)}
+              </span>
+            </div>
+          ))}
+        </div>
+      ),
+    }] : []),
     {
       id: 'visa',
       icon: <FileCheck size={18} />,

@@ -21,6 +21,7 @@ import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextu
 import { PackingData } from '@/types/packing';
 import { getActivityPrice, determinePriceLevel, findBestPriceLevel, mapCategoryToPricingType, CITY_PRICES } from '@/lib/activityPricing';
 import kinuLogo from '@/assets/KINU_logo.png';
+import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
 
 const DESTINATION_CURRENCY: Record<string, string> = {
   // Europa
@@ -842,6 +843,17 @@ const Viagens = () => {
                               )}
                             </div>
                             <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
+                            {/* Michelin Badge */}
+                            {(() => {
+                              const isFoodActivity = activity.type === 'food' || activity.category === 'comida' || activity.name?.toLowerCase().includes('restaurante') || activity.name?.toLowerCase().includes('jantar') || activity.name?.toLowerCase().includes('almoço');
+                              const michelinMatch = isFoodActivity ? findMichelinMatch(activity.name || '', selectedTrip.destination) : null;
+                              return michelinMatch ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30 mt-0.5 w-fit">
+                                  {getMichelinStarDisplay(michelinMatch.stars)} Michelin
+                                  {michelinMatch.stars > 1 && ` · ${michelinMatch.cuisine}`}
+                                </span>
+                              ) : null;
+                            })()}
                             <p className="text-sm text-[#94a3b8]">{activity.description}</p>
 
                             {/* Actions — only for bookable activities */}
