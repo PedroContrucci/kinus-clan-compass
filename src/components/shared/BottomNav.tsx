@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 
 const navItems = [
   { id: 'dashboard', icon: '🏠', label: 'Home', path: '/dashboard' },
+  { id: 'cla', icon: '👥', label: 'Clã', path: '/cla' },
   { id: 'planejar', icon: '🧭', label: 'Planejar', path: '/planejar' },
   { id: 'viagens', icon: '💼', label: 'Viagens', path: '/viagens' },
   { id: 'conta', icon: '👤', label: 'Perfil', path: '/conta' },
@@ -30,7 +31,7 @@ export const BottomNav = () => {
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`relative flex flex-col items-center py-2 px-4 rounded-xl transition-all ${
+              className={`relative flex flex-col items-center py-2 px-2 rounded-xl transition-all ${
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
