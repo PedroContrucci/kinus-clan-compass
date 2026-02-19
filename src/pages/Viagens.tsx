@@ -24,6 +24,7 @@ import kinuLogo from '@/assets/KINU_logo.png';
 import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
 import { BottomNav } from '@/components/shared/BottomNav';
 
+
 const DESTINATION_CURRENCY: Record<string, string> = {
   // Europa
   'paris': 'EUR', 'roma': 'EUR', 'amsterdam': 'EUR', 'barcelona': 'EUR',
