@@ -356,29 +356,76 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
 
 function getTimezoneDiff(city: string): number {
   const diffs: Record<string, number> = {
+    // Europa
     'Roma': 4, 'Paris': 4, 'Lisboa': 3, 'Barcelona': 4,
-    'Londres': 3, 'Amsterdã': 4, 'Tóquio': 12, 'Nova York': -2,
-    'Madri': 4, 'Berlim': 4, 'Miami': -2, 'Buenos Aires': 0,
+    'Londres': 3, 'Amsterdã': 4, 'Madri': 4, 'Berlim': 4,
+    'Viena': 4, 'Praga': 4, 'Dublin': 3, 'Atenas': 5,
+    'Budapeste': 4, 'Varsóvia': 4, 'Estocolmo': 4,
+    'Copenhague': 4, 'Oslo': 4, 'Zurique': 4,
+    'Edimburgo': 3, 'Milão': 4, 'Florença': 4,
+    'Istambul': 6,
+    // Américas
+    'Nova York': -2, 'Miami': -2, 'Los Angeles': -5,
+    'San Francisco': -5, 'Orlando': -2, 'Las Vegas': -5,
+    'Chicago': -3, 'Toronto': -2, 'Vancouver': -5,
+    'Cancún': -3, 'Buenos Aires': 0, 'Santiago': -1,
+    'Lima': -2, 'Bogotá': -2, 'Montevidéu': 0,
+    // Ásia
+    'Tóquio': 12, 'Quioto': 12, 'Osaka': 12,
+    'Bangkok': 10, 'Seul': 12, 'Pequim': 11,
+    'Xangai': 11, 'Hong Kong': 11, 'Singapura': 11,
+    'Bali': 11, 'Hanói': 10, 'Dubai': 7, 'Abu Dhabi': 7,
+    'Nova Delhi': 8, 'Tel Aviv': 5,
+    // Oceania
+    'Sydney': 14, 'Melbourne': 14, 'Auckland': 15,
+    // África
+    'Cidade do Cabo': 5, 'Cairo': 5, 'Marrakech': 4,
   };
   return diffs[city] ?? 4;
 }
 
 function getCountryForCity(city: string): string {
   const countries: Record<string, string> = {
+    // Europa
     'Roma': 'Itália', 'Paris': 'França', 'Lisboa': 'Portugal',
     'Barcelona': 'Espanha', 'Londres': 'Inglaterra', 'Amsterdã': 'Holanda',
-    'Tóquio': 'Japão', 'Nova York': 'EUA', 'Madri': 'Espanha',
-    'Berlim': 'Alemanha', 'Miami': 'EUA', 'Buenos Aires': 'Argentina',
-    'Santiago': 'Chile', 'Praga': 'República Tcheca', 'Viena': 'Áustria',
-    'Dublin': 'Irlanda',
+    'Madri': 'Espanha', 'Berlim': 'Alemanha', 'Viena': 'Áustria',
+    'Praga': 'República Tcheca', 'Dublin': 'Irlanda', 'Atenas': 'Grécia',
+    'Budapeste': 'Hungria', 'Varsóvia': 'Polônia', 'Estocolmo': 'Suécia',
+    'Copenhague': 'Dinamarca', 'Oslo': 'Noruega', 'Zurique': 'Suíça',
+    'Edimburgo': 'Escócia', 'Milão': 'Itália', 'Florença': 'Itália',
+    'Istambul': 'Turquia',
+    // Américas
+    'Nova York': 'EUA', 'Miami': 'EUA', 'Los Angeles': 'EUA',
+    'San Francisco': 'EUA', 'Orlando': 'EUA', 'Las Vegas': 'EUA',
+    'Chicago': 'EUA', 'Toronto': 'Canadá', 'Vancouver': 'Canadá',
+    'Cancún': 'México', 'Buenos Aires': 'Argentina', 'Santiago': 'Chile',
+    'Lima': 'Peru', 'Bogotá': 'Colômbia', 'Montevidéu': 'Uruguai',
+    // Ásia
+    'Tóquio': 'Japão', 'Quioto': 'Japão', 'Osaka': 'Japão',
+    'Bangkok': 'Tailândia', 'Seul': 'Coreia do Sul', 'Pequim': 'China',
+    'Xangai': 'China', 'Hong Kong': 'China', 'Singapura': 'Singapura',
+    'Bali': 'Indonésia', 'Hanói': 'Vietnã', 'Dubai': 'Emirados Árabes',
+    'Abu Dhabi': 'Emirados Árabes', 'Nova Delhi': 'Índia',
+    'Tel Aviv': 'Israel',
+    // Oceania
+    'Sydney': 'Austrália', 'Melbourne': 'Austrália', 'Auckland': 'Nova Zelândia',
+    // África
+    'Cidade do Cabo': 'África do Sul', 'Cairo': 'Egito', 'Marrakech': 'Marrocos',
   };
   return countries[city] ?? '';
 }
 
 function getDestinationEmoji(destination: string): string {
   const emojiMap: Record<string, string> = {
-    'Tóquio': '🏯', 'Paris': '🗼', 'Roma': '🏛️', 'Lisboa': '🚃',
-    'Bangkok': '🛕', 'Barcelona': '🏖️', 'Nova York': '🗽', 'Londres': '🎡',
+    'Tóquio': '🏯', 'Quioto': '⛩️', 'Osaka': '🏯',
+    'Paris': '🗼', 'Roma': '🏛️', 'Lisboa': '🚃',
+    'Bangkok': '🛕', 'Barcelona': '🏖️', 'Nova York': '🗽',
+    'Londres': '🎡', 'Dubai': '🏙️', 'Singapura': '🌆',
+    'Sydney': '🦘', 'Buenos Aires': '💃', 'Cancún': '🏖️',
+    'Miami': '🌴', 'Amsterdã': '🌷', 'Berlim': '🏗️',
+    'Praga': '🏰', 'Istambul': '🕌', 'Cairo': '🏺',
+    'Marrakech': '🕌', 'Seul': '🏯', 'Auckland': '🗻',
   };
   return emojiMap[destination] || '✈️';
 }

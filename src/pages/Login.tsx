@@ -29,7 +29,7 @@ const Login = () => {
     // Save to localStorage
     const user = { email, name: name || email.split('@')[0] };
     localStorage.setItem('kinu_user', JSON.stringify(user));
-    navigate('/cla');
+    navigate('/dashboard');
   };
 
   return (

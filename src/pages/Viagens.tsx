@@ -22,6 +22,7 @@ import { PackingData } from '@/types/packing';
 import { getActivityPrice, determinePriceLevel, findBestPriceLevel, mapCategoryToPricingType, CITY_PRICES } from '@/lib/activityPricing';
 import kinuLogo from '@/assets/KINU_logo.png';
 import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
+import { BottomNav } from '@/components/shared/BottomNav';
 
 const DESTINATION_CURRENCY: Record<string, string> = {
   // Europa
@@ -1052,7 +1053,7 @@ const Viagens = () => {
         </main>
 
         {/* Bottom Nav */}
-        <BottomNav currentPath={location.pathname} />
+        <BottomNav />
 
         {/* Reverse Auction Modal */}
         {auctionModal && (
@@ -1253,12 +1254,12 @@ const Viagens = () => {
           <div className="flex flex-col items-center justify-center py-16">
             <div className="text-6xl mb-4">🗺️</div>
             <p className="text-[#f8fafc] font-['Outfit'] text-lg mb-2">Nenhuma viagem salva ainda</p>
-            <p className="text-[#94a3b8] text-center mb-6">Cria teu primeiro roteiro no Nexo!</p>
+            <p className="text-[#94a3b8] text-center mb-6">Planeje sua primeira aventura!</p>
             <button
               onClick={() => navigate('/planejar')}
               className="px-6 py-3 bg-gradient-to-r from-[#10b981] to-[#0ea5e9] text-white rounded-xl font-semibold font-['Outfit']"
             >
-              🧭 Ir para O Nexo
+              ✈️ Planejar Nova Viagem
             </button>
           </div>
         )}
@@ -1322,41 +1323,9 @@ const Viagens = () => {
       </Dialog>
 
       {/* Bottom Nav */}
-      <BottomNav currentPath={location.pathname} />
+      <BottomNav />
       <Toaster />
     </div>
-  );
-};
-
-const BottomNav = ({ currentPath }: { currentPath: string }) => {
-  const navigate = useNavigate();
-  
-  const navItems = [
-    { path: '/cla', icon: '🌿', label: 'Clã' },
-    { path: '/planejar', icon: '🧭', label: 'Planejar' },
-    { path: '/viagens', icon: '💼', label: 'Viagens' },
-    { path: '/conta', icon: '👤', label: 'Conta' },
-  ];
-
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#1e293b]/90 backdrop-blur-lg border-t border-[#334155] px-4 py-3">
-      <div className="flex justify-around items-center">
-        {navItems.map((item) => {
-          const isActive = currentPath === item.path;
-          return (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`flex flex-col items-center gap-1 ${isActive ? 'text-[#10b981]' : 'text-[#94a3b8]'}`}
-            >
-              {isActive && <div className="w-8 h-0.5 bg-[#10b981] rounded-full mb-1" />}
-              <span className="text-xl">{item.icon}</span>
-              <span className="text-xs font-['Plus_Jakarta_Sans']">{item.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
   );
 };
 
