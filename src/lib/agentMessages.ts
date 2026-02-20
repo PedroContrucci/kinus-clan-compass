@@ -8,17 +8,53 @@ export function getIcarusRoteiro(trip: SavedTrip, dayNum: number): string {
   const totalDays = trip.days?.length || 7;
   const dest = trip.destination || 'o destino';
   const day = trip.days?.find(d => d.day === dayNum);
-
-  if (dayNum === 1) return `Boa viagem para ${dest}! Descanse no voo.`;
-  if (dayNum === 2 && trip.jetLagMode) return 'Dia leve de adaptacao ao fuso. Amanha voce ataca!';
-  if (dayNum === 2) return `Primeiro dia em ${dest}! Explore o bairro do hotel.`;
-  if (dayNum === totalDays) return `Ultimo dia! Confira a mala antes de sair do hotel.`;
-
+  const destKey = dest.toLowerCase();
   const theme = day?.title?.replace(/[^\w\sà-ú]/gi, '').trim() || '';
-  if (theme.includes('Cultura')) return `Dia de cultura em ${dest}! Museus e monumentos te esperam.`;
-  if (theme.includes('Gastronomia')) return `Dia de sabores! Prove tudo que ${dest} tem a oferecer.`;
-  if (theme.includes('Aventura')) return `Dia de aventura! Explore os arredores de ${dest}.`;
-  return `Aproveite ${dest}! Cada momento conta.`;
+
+  if (dayNum === 1) return `Boa viagem para ${dest}! Descanse no voo — ajuste o relógio para o fuso local.`;
+  if (dayNum === 2 && trip.jetLagMode) return 'Dia leve de adaptação ao fuso. Amanhã você ataca!';
+  if (dayNum === 2) return `Primeiro dia em ${dest}! Explore o bairro do hotel.`;
+  if (dayNum === totalDays) return `Último dia em ${dest}! Guarde as compras de última hora para o duty free.`;
+
+  // Bangkok-specific
+  if (destKey.includes('bangkok')) {
+    if (theme.includes('Cultura')) return 'O Grand Palace abre às 8:30 — chegue cedo para evitar filas! Vista calça comprida e ombros cobertos (obrigatório).';
+    if (theme.includes('Gastronomia')) return 'Rua Yaowarat (Chinatown) tem o melhor street food de Bangkok. Peça pad thai no Thipsamai — fila de 1h mas vale cada minuto!';
+    if (theme.includes('Aventura')) return 'Se for ao mercado flutuante, saia antes das 7h. Após as 10h fica lotado de turistas.';
+  }
+
+  // Paris-specific
+  if (destKey.includes('paris')) {
+    if (theme.includes('Cultura')) return 'Reserve ingressos do Louvre online (15€) — a fila sem reserva passa de 2 horas. Quarta e sexta o museu fica aberto até 21:45!';
+    if (theme.includes('Gastronomia')) return 'Evite restaurantes colados em pontos turísticos. Os melhores bistrots ficam nas ruas laterais de Saint-Germain e Le Marais.';
+  }
+
+  // Roma-specific
+  if (destKey.includes('roma')) {
+    if (theme.includes('Cultura')) return 'Compre o Roma Pass (72h/52€) — inclui Coliseu, Fórum e transporte público ilimitado. Economiza tempo e dinheiro!';
+    if (theme.includes('Gastronomia')) return 'Regra de ouro em Roma: se o restaurante tem fotos no cardápio, saia correndo. Os melhores são os que só têm lousa na parede.';
+  }
+
+  // Tóquio-specific
+  if (destKey.includes('toquio') || destKey.includes('tóquio') || destKey.includes('tokyo')) {
+    if (theme.includes('Cultura')) return 'O templo Senso-ji em Asakusa abre às 6h — vá cedo para fotos sem multidão. Compre um omikuji (papel da sorte) por ¥100!';
+    if (theme.includes('Gastronomia')) return 'Tóquio tem mais estrelas Michelin que qualquer cidade do mundo. Mas o melhor ramen custa ¥900 numa bancada de 8 lugares.';
+  }
+
+  // Londres-specific
+  if (destKey.includes('londres')) {
+    if (theme.includes('Cultura')) return 'O British Museum e o Tate Modern são gratuitos! Reserve o dia inteiro — são dos melhores museus do mundo.';
+    if (theme.includes('Gastronomia')) return 'Borough Market é obrigatório. Queijos artesanais, ostras frescas e o melhor fish and chips de Londres.';
+  }
+
+  // Generic with more personality
+  if (theme.includes('Cultura')) return `Dia de cultura em ${dest}! Dica: museus costumam ter entrada gratuita no primeiro domingo do mês.`;
+  if (theme.includes('Gastronomia')) return `Dia gastronômico! Pergunte aos locais onde ELES comem — as melhores experiências raramente estão no TripAdvisor.`;
+  if (theme.includes('Aventura')) return `Dia de aventura! Leve protetor solar, água e sapato confortável. Câmera carregada é obrigatório!`;
+  if (theme.includes('Passeios')) return `Explore ${dest} hoje! Perca-se nas ruas — as melhores descobertas acontecem quando você sai do mapa.`;
+  if (theme.includes('Descobertas')) return `Dia de descobertas em ${dest}! Saia do roteiro turístico e explore bairros alternativos.`;
+
+  return `Aproveite ${dest}! Cada momento conta. Dica: baixe o mapa offline do Google Maps para não depender de internet.`;
 }
 
 export function getIcarusGuia(trip: SavedTrip): string {

@@ -1,7 +1,7 @@
 // TripPanel — Orchestrated Executive Dashboard
 
 import { motion } from 'framer-motion';
-import { Check, FileText, ChevronRight, Plane, Building, CreditCard, Package, AlertTriangle } from 'lucide-react';
+import { Check, FileText, TrendingUp, AlertTriangle } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -53,7 +53,7 @@ interface OrchestratedAction {
   priority: number;
   title: string;
   message: string;
-  actionType: 'confirm-flight' | 'confirm-hotel' | 'open-auction-flight' | 'open-auction-hotel' | 'navigate-checklist' | 'navigate-cambio' | 'navigate-packing' | 'export-pdf' | 'celebrate';
+  actionType: 'confirm-flight' | 'confirm-hotel' | 'open-auction-flight' | 'open-auction-hotel' | 'navigate-checklist' | 'navigate-cambio' | 'navigate-packing' | 'navigate-roteiro' | 'export-pdf' | 'celebrate';
   actionLabel: string;
   completed: boolean;
 }
@@ -80,23 +80,45 @@ function getOrchestratedActions(trip: SavedTrip): OrchestratedAction[] {
   const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
   const checklistPct = getChecklistPct(trip);
-  const daysLeft = getDaysLeft(trip);
+  const daysUntil = getDaysLeft(trip);
   const currency = (trip as any).destinationCurrency || 'USD';
   const originCode = trip.flights?.outbound?.origin || 'GRU';
   const destCode = trip.flights?.outbound?.destination || dest;
 
-  // 1. Voo
-  actions.push({
-    agent: 'icarus',
-    priority: flightConfirmed ? 99 : 1,
-    title: 'Voo Ida e Volta',
-    message: flightConfirmed
-      ? `Voo confirmado! ${originCode} → ${destCode} → ${originCode}`
-      : `Confirme o voo para ${dest}. Quanto antes, melhor o preço.`,
-    actionType: flightConfirmed ? 'celebrate' : 'open-auction-flight',
-    actionLabel: flightConfirmed ? '✅ Confirmado' : '🎯 Buscar Voos',
-    completed: flightConfirmed,
-  });
+  // 1. Flight — urgency-based messaging
+  if (!flightConfirmed && daysUntil <= 14 && daysUntil > 0) {
+    actions.push({
+      agent: 'icarus',
+      priority: 1,
+      title: 'Comprar voo AGORA',
+      message: `Urgente! Faltam apenas ${daysUntil} dias. Precos de voo tendem a subir nas ultimas 2 semanas. Feche agora para garantir!`,
+      actionType: 'open-auction-flight',
+      actionLabel: '🎯 Buscar Ofertas Agora',
+      completed: false,
+    });
+  } else if (!flightConfirmed && daysUntil > 30) {
+    actions.push({
+      agent: 'icarus',
+      priority: 2,
+      title: 'Monitorar preco do voo',
+      message: `Faltam ${daysUntil} dias. Historicamente, voos para ${dest} caem de preco 45-60 dias antes. Quer monitorar por 7 dias?`,
+      actionType: 'open-auction-flight',
+      actionLabel: '🎯 Monitorar Voos',
+      completed: false,
+    });
+  } else {
+    actions.push({
+      agent: 'icarus',
+      priority: flightConfirmed ? 99 : 1,
+      title: 'Voo Ida e Volta',
+      message: flightConfirmed
+        ? `Voo confirmado! ${originCode} → ${destCode} → ${originCode}`
+        : `Confirme o voo para ${dest}. Quanto antes, melhor o preco.`,
+      actionType: flightConfirmed ? 'celebrate' : 'open-auction-flight',
+      actionLabel: flightConfirmed ? '✅ Confirmado' : '🎯 Buscar Voos',
+      completed: flightConfirmed,
+    });
+  }
 
   // 2. Hotel
   actions.push({
@@ -111,21 +133,35 @@ function getOrchestratedActions(trip: SavedTrip): OrchestratedAction[] {
     completed: hotelConfirmed,
   });
 
-  // 3. Câmbio (Héstia)
-  actions.push({
-    agent: 'hestia',
-    priority: flightConfirmed && hotelConfirmed ? 3 : 5,
-    title: 'Câmbio',
-    message: `Comece a comprar ${currency} aos poucos. Diluir o câmbio reduz o risco.`,
-    actionType: 'navigate-cambio',
-    actionLabel: '💱 Ver Câmbio',
-    completed: false,
-  });
+  // 3. Câmbio (Héstia) — volatile currency alert
+  const volatileCurrencies = ['ARS', 'TRY', 'EGP'];
+  const destCurrency = (trip as any).destinationCurrency || '';
+  if (volatileCurrencies.includes(destCurrency)) {
+    actions.push({
+      agent: 'hestia',
+      priority: 3,
+      title: 'Câmbio instável',
+      message: `A moeda do destino (${destCurrency}) tem alta volatilidade. Considere levar USD como backup e comprar moeda local gradualmente.`,
+      actionType: 'navigate-cambio',
+      actionLabel: '💱 Ver Câmbio',
+      completed: false,
+    });
+  } else {
+    actions.push({
+      agent: 'hestia',
+      priority: flightConfirmed && hotelConfirmed ? 3 : 5,
+      title: 'Câmbio',
+      message: `Comece a comprar ${currency} aos poucos. Diluir o câmbio reduz o risco.`,
+      actionType: 'navigate-cambio',
+      actionLabel: '💱 Ver Câmbio',
+      completed: false,
+    });
+  }
 
   // 4. Checklist (Hermes)
   actions.push({
     agent: 'hermes',
-    priority: checklistPct === 100 ? 99 : (daysLeft <= 14 ? 2 : 4),
+    priority: checklistPct === 100 ? 99 : (daysUntil <= 14 ? 2 : 4),
     title: 'Preparação',
     message: checklistPct === 100
       ? `Tudo pronto! Você está preparado para ${dest}!`
@@ -137,7 +173,37 @@ function getOrchestratedActions(trip: SavedTrip): OrchestratedAction[] {
     completed: checklistPct === 100,
   });
 
-  // 5. Smart Packing — só aparece quando checklist > 50%
+  // 5. Gastronomy suggestion
+  const gastroDay = trip.days?.find(d => d.title?.toLowerCase().includes('gastro'));
+  if (gastroDay) {
+    const hasMichelin = gastroDay.activities?.some(a => a.name?.toLowerCase().includes('michelin'));
+    if (!hasMichelin) {
+      actions.push({
+        agent: 'icarus',
+        priority: 40,
+        title: 'Experiência Gastronômica',
+        message: `No Dia ${gastroDay.day} (${gastroDay.title}), considere trocar um restaurante por um Michelin local. A diferença de preço pode valer a experiência!`,
+        actionType: 'navigate-roteiro',
+        actionLabel: '📋 Ver no Roteiro',
+        completed: false,
+      });
+    }
+  }
+
+  // 6. Early booking reminder
+  if (daysUntil > 7 && daysUntil < 30 && flightConfirmed) {
+    actions.push({
+      agent: 'hermes',
+      priority: 50,
+      title: 'Reserve passeios populares',
+      message: `Faltam ${daysUntil} dias. Passeios populares em ${dest} costumam esgotar. Confirme os principais no roteiro!`,
+      actionType: 'navigate-roteiro',
+      actionLabel: '📋 Ver Roteiro',
+      completed: false,
+    });
+  }
+
+  // 7. Smart Packing — só quando checklist > 50%
   if (checklistPct > 50) {
     actions.push({
       agent: 'hermes',
@@ -204,6 +270,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
       case 'navigate-checklist': onNavigateTab('checklist'); break;
       case 'navigate-cambio': onNavigateTab('cambio'); break;
       case 'navigate-packing': onNavigateTab('packing'); break;
+      case 'navigate-roteiro': onNavigateTab('roteiro'); break;
       case 'export-pdf': exportTripPDF(trip); break;
     }
   };
@@ -226,7 +293,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           {dateRange} • {trip.travelers} viajante(s) • Faixa {tierLabel}
         </p>
         <div className="flex gap-2 mt-4">
-          <MiniKPI label={isPast ? 'em viagem' : 'dias'} value={isPast ? '🛫' : String(daysLeft)} urgent={!isPast && daysLeft <= 7} />
+          <MiniKPI label={isPast ? 'em viagem' : 'dias'} value={isPast ? 'Em viagem' : String(daysLeft)} urgent={!isPast && daysLeft <= 7} />
           <MiniKPI label="progresso" value={`${progressPct}%`} />
           <MiniKPI label="gasto" value={`R$${fmt(trip.finances.confirmed / 1000)}k`} />
           <MiniKPI label="checklist" value={`${checklistPct}%`} />
@@ -310,7 +377,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         <DialogContent className="bg-card border-border max-w-sm mx-auto">
           <DialogHeader>
             <DialogTitle className="font-['Outfit']">
-              {confirmModal?.type === 'flight' ? '✈️ Confirmar Voo' : '🏨 Confirmar Hospedagem'}
+              {confirmModal?.type === 'flight' ? 'Confirmar Voo' : 'Confirmar Hospedagem'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">

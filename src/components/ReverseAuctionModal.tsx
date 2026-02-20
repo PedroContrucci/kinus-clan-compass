@@ -56,6 +56,7 @@ interface ReverseAuctionModalProps {
   destination?: string;
   estimatedPrice?: number;
   onAcceptOffer?: (offer: Offer) => void;
+  onStartMonitoring?: (data: { activity: any; targetPrice: number }) => void;
 }
 
 // Provider data by type
@@ -137,7 +138,8 @@ const ReverseAuctionModal = ({
   activityType: legacyType,
   destination,
   estimatedPrice = 280,
-  onAcceptOffer
+  onAcceptOffer,
+  onStartMonitoring,
 }: ReverseAuctionModalProps) => {
   const [step, setStep] = useState<AuctionStep>('target');
   const [targetPrice, setTargetPrice] = useState<number>(0);
@@ -701,6 +703,33 @@ const ReverseAuctionModal = ({
                 ))}
               </div>
             )}
+
+            {/* Monitoring Section */}
+            <div className="mt-4 p-4 bg-gradient-to-br from-sky-500/10 to-cyan-500/10 border border-sky-500/20 rounded-2xl">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xl">🦅</span>
+                <div>
+                  <p className="text-sm font-semibold text-sky-400 font-['Outfit']">Ícaro sugere</p>
+                  <p className="text-xs text-muted-foreground">Monitorar preços por alguns dias pode render economia</p>
+                </div>
+              </div>
+              <p className="text-sm text-foreground mb-3">
+                Nenhuma oferta agradou? Posso monitorar esse item por até 7 dias e te avisar quando o preço cair para o valor que você quer.
+              </p>
+              <button
+                onClick={() => {
+                  onClose();
+                  onStartMonitoring?.({
+                    activity: item || { type: auctionItem.type, id: `act-${Date.now()}`, name: auctionItem.name, cost: auctionItem.cost },
+                    targetPrice: targetPrice,
+                  });
+                }}
+                className="w-full py-3 bg-sky-500/20 border border-sky-500/30 rounded-xl text-sky-400 font-medium text-sm hover:bg-sky-500/30 transition-colors flex items-center justify-center gap-2"
+              >
+                <TrendingUp size={16} />
+                Ativar Monitoramento de Preço
+              </button>
+            </div>
 
             {/* Disclaimer */}
             <p className="text-xs text-muted-foreground text-center">

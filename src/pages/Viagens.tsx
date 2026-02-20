@@ -1091,6 +1091,27 @@ const Viagens = () => {
             destination={selectedTrip.destination}
             estimatedPrice={auctionModal.estimatedPrice}
             onAcceptOffer={handleAcceptOffer}
+            onStartMonitoring={(data) => {
+              setAuctionModal(null);
+              let foundDayIndex = 0;
+              let foundActIndex = 0;
+              selectedTrip?.days?.forEach((day, di) => {
+                day.activities?.forEach((act, ai) => {
+                  if (act.name === auctionModal?.activityName) {
+                    foundDayIndex = di;
+                    foundActIndex = ai;
+                  }
+                });
+              });
+              setAuctionConfigModal({
+                isOpen: true,
+                activity: selectedTrip?.days?.[foundDayIndex]?.activities?.[foundActIndex]
+                  ? { id: selectedTrip.days[foundDayIndex].activities[foundActIndex].id, name: auctionModal?.activityName || '', type: auctionModal?.activityType || 'activity', cost: data.targetPrice }
+                  : { id: 'tmp', name: auctionModal?.activityName || '', type: auctionModal?.activityType || 'activity', cost: data.targetPrice },
+                dayIndex: foundDayIndex,
+                actIndex: foundActIndex,
+              });
+            }}
           />
         )}
 
