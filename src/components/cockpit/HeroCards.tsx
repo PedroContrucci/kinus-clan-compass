@@ -14,13 +14,14 @@ const TIER_LABELS: Record<string, string> = {
 interface HeroCardsProps {
   trip: SavedTrip;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
+  onConfirm: (type: 'flight' | 'hotel', amount: number) => void;
 }
 
 function fmt(n: number) {
   return n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
 }
 
-export const HeroCards = ({ trip, onOpenAuction }: HeroCardsProps) => {
+export const HeroCards = ({ trip, onOpenAuction, onConfirm }: HeroCardsProps) => {
   const [confirmModal, setConfirmModal] = useState<{ type: 'flight' | 'hotel'; isOpen: boolean } | null>(null);
   const [confirmAmount, setConfirmAmount] = useState('');
 
@@ -45,7 +46,9 @@ export const HeroCards = ({ trip, onOpenAuction }: HeroCardsProps) => {
   const destCode = flights?.outbound?.destination || trip.destination;
 
   const handleConfirm = () => {
-    // In a real app, this would update the trip data
+    if (confirmModal) {
+      onConfirm(confirmModal.type, parseFloat(confirmAmount) || 0);
+    }
     setConfirmModal(null);
     setConfirmAmount('');
   };
