@@ -178,7 +178,7 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
 
       const trip: SavedTrip = {
         id: tripId,
-        status: 'draft',
+        status: 'active',
         destination: destinationCity,
         country: cityInfo?.country.country || data.selectedCountry || getCountryForCity(destinationCity),
         emoji: getDestinationEmoji(destinationCity),
@@ -253,14 +253,14 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
       localStorage.setItem('kinu_trips', JSON.stringify(existingTrips));
 
       toast({
-        title: "Rascunho criado! 🌿",
-        description: "Seu roteiro está pronto para edição.",
+        title: "Viagem ativada! 🚀",
+        description: "Seu roteiro está pronto. Bora explorar!",
       });
 
       if (onComplete) {
         onComplete(data);
       } else {
-        navigate('/dashboard');
+        navigate(`/viagens?trip=${tripId}`);
       }
     } catch (error) {
       console.error('Error generating draft:', error);
@@ -357,7 +357,7 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
           ) : currentStep === 4 ? (
             <>
               <Sparkles size={20} />
-              <span className="font-['Outfit'] text-lg">Gerar Rascunho</span>
+              <span className="font-['Outfit'] text-lg">Ativar Viagem 🚀</span>
             </>
           ) : (
             <>
@@ -377,27 +377,18 @@ function getTimezoneDiff(city: string): number {
   const cityInfo = findCityInfo(city);
   if (!cityInfo) return 4;
   
-  // Calculate diff from São Paulo (UTC-3)
-  const tzOffsets: Record<string, number> = {
-    'Europe/Rome': 1, 'Europe/Paris': 1, 'Europe/Lisbon': 0, 'Europe/Madrid': 1,
-    'Europe/London': 0, 'Europe/Amsterdam': 1, 'Europe/Berlin': 1, 'Europe/Prague': 1,
-    'Europe/Vienna': 1, 'Europe/Istanbul': 3, 'Europe/Athens': 2, 'Europe/Zurich': 1,
-    'Europe/Dublin': 0, 'Europe/Zagreb': 1, 'Europe/Budapest': 1,
-    'America/New_York': -5, 'America/Los_Angeles': -8, 'America/Argentina/Buenos_Aires': -3,
-    'America/Santiago': -3, 'America/Lima': -5, 'America/Bogota': -5, 'America/Cancun': -5,
-    'America/Mexico_City': -6, 'America/Montevideo': -3, 'America/Toronto': -5,
-    'America/Vancouver': -8, 'America/Havana': -5, 'America/Sao_Paulo': -3,
-    'America/Bahia': -3, 'America/Recife': -3, 'America/Fortaleza': -3, 'America/Manaus': -4,
-    'Asia/Tokyo': 9, 'Asia/Bangkok': 7, 'Asia/Dubai': 4, 'Asia/Singapore': 8,
-    'Asia/Seoul': 9, 'Asia/Shanghai': 8, 'Asia/Kolkata': 5.5, 'Asia/Ho_Chi_Minh': 7,
-    'Asia/Jerusalem': 2, 'Indian/Maldives': 5,
-    'Australia/Sydney': 11, 'Pacific/Auckland': 13,
-    'Africa/Cairo': 2, 'Africa/Casablanca': 1, 'Africa/Johannesburg': 2, 'Africa/Nairobi': 3,
-  };
+  const destTz = cityInfo.city.timezone;
+  const spTz = 'America/Sao_Paulo';
   
-  const destOffset = tzOffsets[cityInfo.city.timezone] ?? 1;
-  const spOffset = -3;
-  return destOffset - spOffset;
+  try {
+    const now = new Date();
+    const destTime = new Date(now.toLocaleString('en-US', { timeZone: destTz }));
+    const spTime = new Date(now.toLocaleString('en-US', { timeZone: spTz }));
+    const diffMs = destTime.getTime() - spTime.getTime();
+    return Math.round(diffMs / (1000 * 60 * 60));
+  } catch {
+    return 4;
+  }
 }
 
 function getCountryForCity(city: string): string {
@@ -463,15 +454,15 @@ function generateDays(
         title: 'Embarque ✈️',
         icon: '✈️',
         activities: [
-          makeActivity(`act-${dayNum}-1`, '20:00', 'Check-in aeroporto', 'Apresentar documentação e despachar bagagem', '2h', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-2`, '23:00', `Voo ${city}`, `Voo de ida para ${city}`, '12h', 'voo', city, 'flight', priceLevel, travelers, tierMultiplier),
+          { ...makeActivity(`act-${dayNum}-1`, '20:00', 'Check-in aeroporto', 'Apresentar documentação e despachar bagagem', '2h', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
+          { ...makeActivity(`act-${dayNum}-2`, '23:00', `Voo ${city}`, `Voo de ida para ${city}`, '12h', 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
         ],
       });
     } else if (dayNum === 2) {
       const activities: TripActivity[] = [
-        makeActivity(`act-${dayNum}-1`, '11:00', `Chegada em ${city}`, 'Desembarque e imigração', '1h30', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier),
+        { ...makeActivity(`act-${dayNum}-1`, '11:00', `Chegada em ${city}`, 'Desembarque e imigração', '1h30', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
         makeActivity(`act-${dayNum}-2`, '12:30', 'Transfer para hotel', 'Transporte do aeroporto ao hotel', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
-        makeActivity(`act-${dayNum}-3`, '14:00', 'Check-in no hotel', 'Acomodação e descanso', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier),
+        { ...makeActivity(`act-${dayNum}-3`, '14:00', 'Check-in no hotel', 'Acomodação e descanso', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
       ];
       if (jetLagMode) {
         activities.push(
@@ -493,9 +484,9 @@ function generateDays(
         icon: '🏠',
         activities: [
           makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Última refeição no destino', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-2`, '10:00', 'Check-out do hotel', 'Liberar quarto e organizar bagagem', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier),
+          { ...makeActivity(`act-${dayNum}-2`, '10:00', 'Check-out do hotel', 'Liberar quarto e organizar bagagem', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
           makeActivity(`act-${dayNum}-3`, '11:00', 'Transfer para aeroporto', 'Transporte ao aeroporto', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-4`, '14:00', 'Voo de volta', 'Retorno para o Brasil', '12h', 'voo', city, 'flight', priceLevel, travelers, tierMultiplier),
+          { ...makeActivity(`act-${dayNum}-4`, '14:00', 'Voo de volta', 'Retorno para o Brasil', '12h', 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
         ],
       });
     } else {
