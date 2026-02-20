@@ -11,7 +11,7 @@ import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { DashboardKinuTip } from '@/components/dashboard/DashboardKinuTip';
+import { AgentCards } from '@/components/dashboard/AgentCards';
 import { TripCardWithPhoto } from '@/components/dashboard/TripCardWithPhoto';
 
 const Dashboard = () => {
@@ -87,13 +87,6 @@ const Dashboard = () => {
     navigate(`/viagens?trip=${tripId}`);
   };
 
-  // Get the next upcoming trip for KINU tip context
-  const nextTrip = activeTrips.length > 0 ? {
-    destination: activeTrips[0].destination,
-    startDate: activeTrips[0].startDate,
-    budget: activeTrips[0].budget,
-  } : undefined;
-
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -147,8 +140,8 @@ const Dashboard = () => {
           <ArrowRight size={24} className="text-white/80 group-hover:translate-x-1 transition-transform" />
         </motion.button>
 
-        {/* KINU AI Tip Card */}
-        <DashboardKinuTip nextTrip={nextTrip} />
+        {/* Agent Cards */}
+        <AgentCards trips={allTrips} onNavigate={navigate} />
 
         {/* Active Trips */}
         <section>
