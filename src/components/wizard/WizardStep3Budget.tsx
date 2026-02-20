@@ -1,11 +1,12 @@
-// WizardStep3Budget — Budget Amount, Priorities, Travel Interests & Style
+// WizardStep3Budget — Budget Tier Cards, Priorities, Travel Interests
 
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { motion, Reorder } from 'framer-motion';
 import { Wallet, GripVertical, Info, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { calculateTripEstimate } from '@/lib/activityPricing';
 import type { WizardData, TravelInterest } from './types';
-import { TRAVEL_STYLES, PRIORITY_OPTIONS, TRAVEL_INTERESTS } from './types';
+import { BUDGET_TIERS, PRIORITY_OPTIONS, TRAVEL_INTERESTS } from './types';
 
 interface WizardStep3Props {
   data: WizardData;
@@ -13,31 +14,34 @@ interface WizardStep3Props {
 }
 
 export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
-  const [budgetInput, setBudgetInput] = useState(
-    data.budgetAmount > 0 ? data.budgetAmount.toLocaleString('pt-BR') : ''
-  );
 
-  const handleBudgetChange = (value: string) => {
-    // Remove non-numeric characters except dots and commas
-    const cleaned = value.replace(/[^\d.,]/g, '').replace(',', '.');
-    const numericValue = parseFloat(cleaned.replace(/\./g, '')) || 0;
+  const handleTierSelect = (tierId: WizardData['budgetTier']) => {
+    const tier = BUDGET_TIERS.find(t => t.id === tierId)!;
+    const priceLevel = tier.priceLevel;
+    const multiplier = tier.multiplier;
     
-    setBudgetInput(value);
-    onChange({ budgetAmount: numericValue });
-  };
-
-  const handleBudgetBlur = () => {
-    if (data.budgetAmount > 0) {
-      setBudgetInput(data.budgetAmount.toLocaleString('pt-BR'));
-    }
+    const totalTravelers = data.adults + data.children.length + data.infants;
+    const duration = data.totalDays || 7;
+    const city = data.destinationCity || 'Roma';
+    
+    const estimate = calculateTripEstimate(city, duration, totalTravelers, priceLevel);
+    const adjustedTotal = Math.round(estimate.total * multiplier);
+    
+    // Min/max range: -15% to +20%
+    const min = Math.round(adjustedTotal * 0.85);
+    const max = Math.round(adjustedTotal * 1.20);
+    
+    onChange({
+      budgetTier: tierId,
+      budgetEstimateMin: min,
+      budgetEstimateMax: max,
+      budgetAmount: adjustedTotal,
+      travelStyle: tierId === 'backpacker' ? 'backpacker' : tierId === 'economic' ? 'economic' : tierId === 'comfort' ? 'comfort' : 'luxury',
+    });
   };
 
   const handlePriorityReorder = (newOrder: string[]) => {
     onChange({ priorities: newOrder as WizardData['priorities'] });
-  };
-
-  const handleStyleSelect = (style: WizardData['travelStyle']) => {
-    onChange({ travelStyle: style });
   };
 
   const handleInterestToggle = (interest: TravelInterest) => {
@@ -49,7 +53,6 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
     }
   };
 
-  // Get priority explanation based on first priority
   const getPriorityExplanation = () => {
     if (data.priorities.length === 0) return null;
     const first = data.priorities[0];
@@ -63,6 +66,10 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
       default:
         return null;
     }
+  };
+
+  const formatBRL = (val: number) => {
+    return val.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
   };
 
   return (
@@ -115,25 +122,66 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
         </div>
       </div>
 
-      {/* Budget Input */}
+      {/* Budget Tier Cards */}
       <div>
-        <label className="block text-sm font-medium text-foreground mb-2">
-          💰 Qual seu orçamento total?
+        <label className="block text-sm font-medium text-foreground mb-3">
+          💰 Qual sua faixa de orçamento?
         </label>
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
-            R$
-          </span>
-          <input
-            type="text"
-            value={budgetInput}
-            onChange={(e) => handleBudgetChange(e.target.value)}
-            onBlur={handleBudgetBlur}
-            placeholder="15.000"
-            className="w-full pl-12 pr-4 py-4 bg-card border border-border rounded-2xl text-foreground text-xl font-bold font-['Outfit'] placeholder:text-muted-foreground placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-          />
+        
+        <div className="grid grid-cols-2 gap-3">
+          {BUDGET_TIERS.map((tier) => {
+            const isSelected = data.budgetTier === tier.id;
+            return (
+              <motion.button
+                key={tier.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleTierSelect(tier.id)}
+                className={cn(
+                  'relative p-4 rounded-xl border text-left transition-all',
+                  isSelected
+                    ? 'bg-gradient-to-br from-primary/15 to-primary/5 border-primary shadow-lg shadow-primary/10'
+                    : 'bg-card border-border hover:border-primary/50'
+                )}
+              >
+                {isSelected && (
+                  <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                    <Check size={12} className="text-primary-foreground" />
+                  </div>
+                )}
+                <span className="text-2xl mb-2 block">{tier.icon}</span>
+                <p className="font-semibold text-foreground">{tier.label}</p>
+                <p className="text-xs text-primary font-medium">{tier.subtitle}</p>
+                <p className="text-xs text-muted-foreground mt-1">{tier.description}</p>
+              </motion.button>
+            );
+          })}
         </div>
       </div>
+
+      {/* Budget Estimate */}
+      {data.budgetTier && data.destinationCity && data.budgetEstimateMin > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-primary/10 border border-primary/20 rounded-xl"
+        >
+          <div className="flex items-start gap-2">
+            <span className="text-lg">💰</span>
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Estimativa para {data.destinationCity} ({data.totalNights || 6} noites, {data.adults + data.children.length} viajante{(data.adults + data.children.length) > 1 ? 's' : ''}):
+              </p>
+              <p className="text-lg font-bold text-primary font-['Outfit'] mt-1">
+                R$ {formatBRL(data.budgetEstimateMin)} – R$ {formatBRL(data.budgetEstimateMax)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                O KINU vai otimizar para o menor valor possível dentro desta faixa.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Priority Ordering */}
       <div>
@@ -173,7 +221,7 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
                   <GripVertical size={18} className="text-muted-foreground" />
                   <div className={cn(
                     'w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold',
-                    index === 0 ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
+                    index === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
                   )}>
                     {index + 1}
                   </div>
@@ -205,39 +253,6 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
             <p className="text-sm text-primary">{getPriorityExplanation()}</p>
           </motion.div>
         )}
-      </div>
-
-      {/* Travel Style */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-3">
-          🏨 Nível de conforto
-        </label>
-        
-        <div className="grid grid-cols-2 gap-3">
-          {TRAVEL_STYLES.map((style) => (
-            <motion.button
-              key={style.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => handleStyleSelect(style.id as WizardData['travelStyle'])}
-              className={cn(
-                'relative p-4 rounded-xl border text-left transition-all',
-                data.travelStyle === style.id
-                  ? 'bg-primary/10 border-primary'
-                  : 'bg-card border-border hover:border-primary/50'
-              )}
-            >
-              {data.travelStyle === style.id && (
-                <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                  <Check size={12} className="text-white" />
-                </div>
-              )}
-              <span className="text-2xl mb-2 block">{style.icon}</span>
-              <p className="font-medium text-foreground">{style.label}</p>
-              <p className="text-xs text-muted-foreground mt-1">{style.description}</p>
-            </motion.button>
-          ))}
-        </div>
       </div>
     </div>
   );

@@ -7,10 +7,12 @@ import { ArrowLeft, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { differenceInDays, addDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { getActivityPrice, determinePriceLevel, calculateTripEstimate, findBestPriceLevel } from '@/lib/activityPricing';
+import { getActivityPrice, calculateTripEstimate } from '@/lib/activityPricing';
 import type { PriceLevel } from '@/lib/activityPricing';
-import { defaultChecklist, defaultFinances } from '@/types/trip';
-import type { SavedTrip, TripDay, TripActivity, ActivityStatus, TripFinances, ChecklistItem } from '@/types/trip';
+import { defaultChecklist } from '@/types/trip';
+import type { SavedTrip, TripDay, TripActivity, ActivityStatus, TripFinances } from '@/types/trip';
+import { findCityInfo } from '@/data/destinationCatalog';
+import { BUDGET_TIERS } from './types';
 import { WizardStep1Logistics } from './WizardStep1Logistics';
 import { WizardStep2Travelers } from './WizardStep2Travelers';
 import { WizardStep3Budget } from './WizardStep3Budget';
@@ -36,6 +38,12 @@ const initialData: WizardData = {
   destinationTimezone: null,
   departureDate: undefined,
   returnDate: undefined,
+  selectedRegion: '',
+  selectedCountry: '',
+  selectedCountryFlag: '',
+  destinationCurrency: '',
+  destinationTimezoneId: '',
+  destinationAirports: [],
   hasDirectFlight: false,
   connections: [],
   estimatedFlightDuration: null,
@@ -47,6 +55,9 @@ const initialData: WizardData = {
   infants: 0,
   
   // Step 3
+  budgetTier: 'comfort',
+  budgetEstimateMin: 0,
+  budgetEstimateMax: 0,
   budgetAmount: 0,
   budgetCurrency: 'BRL',
   priorities: ['flights', 'accommodation', 'experiences'],
@@ -83,7 +94,7 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
       case 2:
         return data.adults > 0;
       case 3:
-        return data.budgetAmount > 0;
+        return !!data.budgetTier;
       case 4:
         return true;
       default:
@@ -124,55 +135,63 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
       const duration = differenceInDays(data.returnDate, data.departureDate) + 1;
       const totalNights = Math.max(1, duration - 1);
       const totalTravelers = data.adults + data.children.length + data.infants;
-      const { level: priceLevel } = findBestPriceLevel(destinationCity, duration, totalTravelers, data.budgetAmount);
+      
+      // Map budget tier to price level
+      const tier = BUDGET_TIERS.find(t => t.id === data.budgetTier)!;
+      const priceLevel: PriceLevel = tier.priceLevel;
+      const tierMultiplier = tier.multiplier;
+      
       const tzDiff = getTimezoneDiff(destinationCity);
       const jetLagMode = data.biologyAIEnabled || Math.abs(tzDiff) > 3;
 
       // Generate days
-      const days = generateDays(destinationCity, duration, data.departureDate, data.returnDate, priceLevel, jetLagMode, totalTravelers);
+      const days = generateDays(destinationCity, duration, data.departureDate, data.returnDate, priceLevel, jetLagMode, totalTravelers, tierMultiplier);
 
       // Calculate finances from generated days
       const estimate = calculateTripEstimate(destinationCity, duration, totalTravelers, priceLevel);
       const toursCost = sumCostsByCategory(days, 'passeio');
       const foodCost = sumCostsByCategory(days, 'comida');
       const transportCost = sumCostsByCategory(days, 'transporte');
-      const totalPlanned = estimate.flights + estimate.hotel + toursCost + foodCost + transportCost;
+      const totalPlanned = Math.round((estimate.flights + estimate.hotel + toursCost + foodCost + transportCost) * tierMultiplier);
+      const budgetTotal = data.budgetAmount || totalPlanned;
 
       const finances: TripFinances = {
-        total: data.budgetAmount,
+        total: budgetTotal,
         confirmed: 0,
         bidding: 0,
         planned: totalPlanned,
-        available: Math.max(0, data.budgetAmount - totalPlanned),
+        available: Math.max(0, budgetTotal - totalPlanned),
         categories: {
-          flights: { planned: estimate.flights, confirmed: 0, bidding: 0 },
-          accommodation: { planned: estimate.hotel, confirmed: 0, bidding: 0 },
-          tours: { planned: toursCost, confirmed: 0, bidding: 0 },
-          food: { planned: foodCost, confirmed: 0, bidding: 0 },
-          transport: { planned: transportCost, confirmed: 0, bidding: 0 },
+          flights: { planned: Math.round(estimate.flights * tierMultiplier), confirmed: 0, bidding: 0 },
+          accommodation: { planned: Math.round(estimate.hotel * tierMultiplier), confirmed: 0, bidding: 0 },
+          tours: { planned: Math.round(toursCost * tierMultiplier), confirmed: 0, bidding: 0 },
+          food: { planned: Math.round(foodCost * tierMultiplier), confirmed: 0, bidding: 0 },
+          transport: { planned: Math.round(transportCost * tierMultiplier), confirmed: 0, bidding: 0 },
           shopping: { planned: 0, confirmed: 0, bidding: 0 },
         },
       };
 
-      const flightPrice = getActivityPrice('flight', destinationCity, priceLevel) * totalTravelers;
-      const hotelNightPrice = getActivityPrice('hotel_night', destinationCity, priceLevel);
+      const flightPrice = Math.round(getActivityPrice('flight', destinationCity, priceLevel) * totalTravelers * tierMultiplier);
+      const hotelNightPrice = Math.round(getActivityPrice('hotel_night', destinationCity, priceLevel) * tierMultiplier);
+
+      const cityInfo = findCityInfo(destinationCity);
 
       const trip: SavedTrip = {
         id: tripId,
         status: 'draft',
         destination: destinationCity,
-        country: getCountryForCity(destinationCity),
+        country: cityInfo?.country.country || data.selectedCountry || getCountryForCity(destinationCity),
         emoji: getDestinationEmoji(destinationCity),
         startDate: data.departureDate.toISOString(),
         endDate: data.returnDate.toISOString(),
-        budget: data.budgetAmount,
+        budget: budgetTotal,
         budgetType: data.travelStyle,
         travelers: totalTravelers,
         priorities: data.priorities,
         progress: 0,
         timezone: {
           origin: 'America/Sao_Paulo',
-          destination: data.destinationTimezone || 'Europe/Rome',
+          destination: data.destinationTimezoneId || data.destinationTimezone || 'Europe/Rome',
           diff: tzDiff,
         },
         jetLagMode,
@@ -355,70 +374,40 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
 // ─── Helper Functions ───
 
 function getTimezoneDiff(city: string): number {
-  const diffs: Record<string, number> = {
-    // Europa
-    'Roma': 4, 'Paris': 4, 'Lisboa': 3, 'Barcelona': 4,
-    'Londres': 3, 'Amsterdã': 4, 'Madri': 4, 'Berlim': 4,
-    'Viena': 4, 'Praga': 4, 'Dublin': 3, 'Atenas': 5,
-    'Budapeste': 4, 'Varsóvia': 4, 'Estocolmo': 4,
-    'Copenhague': 4, 'Oslo': 4, 'Zurique': 4,
-    'Edimburgo': 3, 'Milão': 4, 'Florença': 4,
-    'Istambul': 6,
-    // Américas
-    'Nova York': -2, 'Miami': -2, 'Los Angeles': -5,
-    'San Francisco': -5, 'Orlando': -2, 'Las Vegas': -5,
-    'Chicago': -3, 'Toronto': -2, 'Vancouver': -5,
-    'Cancún': -3, 'Buenos Aires': 0, 'Santiago': -1,
-    'Lima': -2, 'Bogotá': -2, 'Montevidéu': 0,
-    // Ásia
-    'Tóquio': 12, 'Quioto': 12, 'Osaka': 12,
-    'Bangkok': 10, 'Seul': 12, 'Pequim': 11,
-    'Xangai': 11, 'Hong Kong': 11, 'Singapura': 11,
-    'Bali': 11, 'Hanói': 10, 'Dubai': 7, 'Abu Dhabi': 7,
-    'Nova Delhi': 8, 'Tel Aviv': 5,
-    // Oceania
-    'Sydney': 14, 'Melbourne': 14, 'Auckland': 15,
-    // África
-    'Cidade do Cabo': 5, 'Cairo': 5, 'Marrakech': 4,
+  const cityInfo = findCityInfo(city);
+  if (!cityInfo) return 4;
+  
+  // Calculate diff from São Paulo (UTC-3)
+  const tzOffsets: Record<string, number> = {
+    'Europe/Rome': 1, 'Europe/Paris': 1, 'Europe/Lisbon': 0, 'Europe/Madrid': 1,
+    'Europe/London': 0, 'Europe/Amsterdam': 1, 'Europe/Berlin': 1, 'Europe/Prague': 1,
+    'Europe/Vienna': 1, 'Europe/Istanbul': 3, 'Europe/Athens': 2, 'Europe/Zurich': 1,
+    'Europe/Dublin': 0, 'Europe/Zagreb': 1, 'Europe/Budapest': 1,
+    'America/New_York': -5, 'America/Los_Angeles': -8, 'America/Argentina/Buenos_Aires': -3,
+    'America/Santiago': -3, 'America/Lima': -5, 'America/Bogota': -5, 'America/Cancun': -5,
+    'America/Mexico_City': -6, 'America/Montevideo': -3, 'America/Toronto': -5,
+    'America/Vancouver': -8, 'America/Havana': -5, 'America/Sao_Paulo': -3,
+    'America/Bahia': -3, 'America/Recife': -3, 'America/Fortaleza': -3, 'America/Manaus': -4,
+    'Asia/Tokyo': 9, 'Asia/Bangkok': 7, 'Asia/Dubai': 4, 'Asia/Singapore': 8,
+    'Asia/Seoul': 9, 'Asia/Shanghai': 8, 'Asia/Kolkata': 5.5, 'Asia/Ho_Chi_Minh': 7,
+    'Asia/Jerusalem': 2, 'Indian/Maldives': 5,
+    'Australia/Sydney': 11, 'Pacific/Auckland': 13,
+    'Africa/Cairo': 2, 'Africa/Casablanca': 1, 'Africa/Johannesburg': 2, 'Africa/Nairobi': 3,
   };
-  return diffs[city] ?? 4;
+  
+  const destOffset = tzOffsets[cityInfo.city.timezone] ?? 1;
+  const spOffset = -3;
+  return destOffset - spOffset;
 }
 
 function getCountryForCity(city: string): string {
-  const countries: Record<string, string> = {
-    // Europa
-    'Roma': 'Itália', 'Paris': 'França', 'Lisboa': 'Portugal',
-    'Barcelona': 'Espanha', 'Londres': 'Inglaterra', 'Amsterdã': 'Holanda',
-    'Madri': 'Espanha', 'Berlim': 'Alemanha', 'Viena': 'Áustria',
-    'Praga': 'República Tcheca', 'Dublin': 'Irlanda', 'Atenas': 'Grécia',
-    'Budapeste': 'Hungria', 'Varsóvia': 'Polônia', 'Estocolmo': 'Suécia',
-    'Copenhague': 'Dinamarca', 'Oslo': 'Noruega', 'Zurique': 'Suíça',
-    'Edimburgo': 'Escócia', 'Milão': 'Itália', 'Florença': 'Itália',
-    'Istambul': 'Turquia',
-    // Américas
-    'Nova York': 'EUA', 'Miami': 'EUA', 'Los Angeles': 'EUA',
-    'San Francisco': 'EUA', 'Orlando': 'EUA', 'Las Vegas': 'EUA',
-    'Chicago': 'EUA', 'Toronto': 'Canadá', 'Vancouver': 'Canadá',
-    'Cancún': 'México', 'Buenos Aires': 'Argentina', 'Santiago': 'Chile',
-    'Lima': 'Peru', 'Bogotá': 'Colômbia', 'Montevidéu': 'Uruguai',
-    // Ásia
-    'Tóquio': 'Japão', 'Quioto': 'Japão', 'Osaka': 'Japão',
-    'Bangkok': 'Tailândia', 'Seul': 'Coreia do Sul', 'Pequim': 'China',
-    'Xangai': 'China', 'Hong Kong': 'China', 'Singapura': 'Singapura',
-    'Bali': 'Indonésia', 'Hanói': 'Vietnã', 'Dubai': 'Emirados Árabes',
-    'Abu Dhabi': 'Emirados Árabes', 'Nova Delhi': 'Índia',
-    'Tel Aviv': 'Israel',
-    // Oceania
-    'Sydney': 'Austrália', 'Melbourne': 'Austrália', 'Auckland': 'Nova Zelândia',
-    // África
-    'Cidade do Cabo': 'África do Sul', 'Cairo': 'Egito', 'Marrakech': 'Marrocos',
-  };
-  return countries[city] ?? '';
+  const info = findCityInfo(city);
+  return info?.country.country ?? '';
 }
 
 function getDestinationEmoji(destination: string): string {
   const emojiMap: Record<string, string> = {
-    'Tóquio': '🏯', 'Quioto': '⛩️', 'Osaka': '🏯',
+    'Tóquio': '🏯', 'Kyoto': '⛩️', 'Osaka': '🏯',
     'Paris': '🗼', 'Roma': '🏛️', 'Lisboa': '🚃',
     'Bangkok': '🛕', 'Barcelona': '🏖️', 'Nova York': '🗽',
     'Londres': '🎡', 'Dubai': '🏙️', 'Singapura': '🌆',
@@ -426,6 +415,10 @@ function getDestinationEmoji(destination: string): string {
     'Miami': '🌴', 'Amsterdã': '🌷', 'Berlim': '🏗️',
     'Praga': '🏰', 'Istambul': '🕌', 'Cairo': '🏺',
     'Marrakech': '🕌', 'Seul': '🏯', 'Auckland': '🗻',
+    'Rio de Janeiro': '🏖️', 'Salvador': '🎭', 'Florianópolis': '🏖️',
+    'Havana': '🇨🇺', 'Cusco': '🏔️', 'Bariloche': '⛷️',
+    'Santorini': '🏝️', 'Dubrovnik': '🏰', 'Veneza': '🛶',
+    'Malé': '🏝️', 'Phuket': '🏖️',
   };
   return emojiMap[destination] || '✈️';
 }
@@ -454,6 +447,7 @@ function generateDays(
   priceLevel: PriceLevel,
   jetLagMode: boolean,
   travelers: number = 1,
+  tierMultiplier: number = 1.0,
 ): TripDay[] {
   const days: TripDay[] = [];
 
@@ -463,52 +457,48 @@ function generateDays(
     const dateStr = format(dayDate, "dd/MM (EEEE)", { locale: ptBR });
 
     if (dayNum === 1) {
-      // Embarque
       days.push({
         day: dayNum,
         date: dateStr,
         title: 'Embarque ✈️',
         icon: '✈️',
         activities: [
-          makeActivity(`act-${dayNum}-1`, '20:00', 'Check-in aeroporto', 'Apresentar documentação e despachar bagagem', '2h', 'transporte', city, 'free', priceLevel, travelers),
-          makeActivity(`act-${dayNum}-2`, '23:00', `Voo ${city}`, `Voo de ida para ${city}`, '12h', 'voo', city, 'flight', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-1`, '20:00', 'Check-in aeroporto', 'Apresentar documentação e despachar bagagem', '2h', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-2`, '23:00', `Voo ${city}`, `Voo de ida para ${city}`, '12h', 'voo', city, 'flight', priceLevel, travelers, tierMultiplier),
         ],
       });
     } else if (dayNum === 2) {
-      // Chegada
       const activities: TripActivity[] = [
-        makeActivity(`act-${dayNum}-1`, '11:00', `Chegada em ${city}`, 'Desembarque e imigração', '1h30', 'transporte', city, 'free', priceLevel, travelers),
-        makeActivity(`act-${dayNum}-2`, '12:30', 'Transfer para hotel', 'Transporte do aeroporto ao hotel', '1h', 'transporte', city, 'transfer', priceLevel, travelers),
-        makeActivity(`act-${dayNum}-3`, '14:00', 'Check-in no hotel', 'Acomodação e descanso', '1h', 'hotel', city, 'free', priceLevel, travelers),
+        makeActivity(`act-${dayNum}-1`, '11:00', `Chegada em ${city}`, 'Desembarque e imigração', '1h30', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier),
+        makeActivity(`act-${dayNum}-2`, '12:30', 'Transfer para hotel', 'Transporte do aeroporto ao hotel', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
+        makeActivity(`act-${dayNum}-3`, '14:00', 'Check-in no hotel', 'Acomodação e descanso', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier),
       ];
       if (jetLagMode) {
         activities.push(
-          makeActivity(`act-${dayNum}-4`, '15:30', 'Passeio leve pelo bairro', 'Caminhada de adaptação ao fuso horário', '2h', 'passeio', city, 'free', priceLevel, travelers, true),
-          makeActivity(`act-${dayNum}-5`, '19:00', 'Jantar leve', 'Restaurante próximo ao hotel', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-4`, '15:30', 'Passeio leve pelo bairro', 'Caminhada de adaptação ao fuso horário', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-5`, '19:00', 'Jantar leve', 'Restaurante próximo ao hotel', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
       } else {
         activities.push(
-          makeActivity(`act-${dayNum}-4`, '15:30', 'Exploração inicial', `Primeiras impressões de ${city}`, '3h', 'passeio', city, 'museum', priceLevel, travelers),
-          makeActivity(`act-${dayNum}-5`, '19:30', 'Jantar de boas-vindas', 'Restaurante típico local', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-4`, '15:30', 'Exploração inicial', `Primeiras impressões de ${city}`, '3h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-5`, '19:30', 'Jantar de boas-vindas', 'Restaurante típico local', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
       }
       days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
     } else if (dayNum === duration) {
-      // Retorno
       days.push({
         day: dayNum,
         date: dateStr,
         title: 'Retorno 🏠',
         icon: '🏠',
         activities: [
-          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Última refeição no destino', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers),
-          makeActivity(`act-${dayNum}-2`, '10:00', 'Check-out do hotel', 'Liberar quarto e organizar bagagem', '1h', 'hotel', city, 'free', priceLevel, travelers),
-          makeActivity(`act-${dayNum}-3`, '11:00', 'Transfer para aeroporto', 'Transporte ao aeroporto', '1h', 'transporte', city, 'transfer', priceLevel, travelers),
-          makeActivity(`act-${dayNum}-4`, '14:00', 'Voo de volta', 'Retorno para o Brasil', '12h', 'voo', city, 'flight', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Última refeição no destino', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-2`, '10:00', 'Check-out do hotel', 'Liberar quarto e organizar bagagem', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-3`, '11:00', 'Transfer para aeroporto', 'Transporte ao aeroporto', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, '14:00', 'Voo de volta', 'Retorno para o Brasil', '12h', 'voo', city, 'flight', priceLevel, travelers, tierMultiplier),
         ],
       });
     } else {
-      // Exploration days
       const themeIndex = (dayNum - 3) % EXPLORATION_THEMES.length;
       const theme = EXPLORATION_THEMES[themeIndex];
       days.push({
@@ -517,12 +507,12 @@ function generateDays(
         title: `${theme.title} ${theme.icon}`,
         icon: theme.icon,
         activities: [
-          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Hotel ou padaria local', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers),
-          makeActivity(`act-${dayNum}-2`, '09:30', theme.activities[0], `Exploração: ${theme.title}`, '2h30', 'passeio', city, 'museum', priceLevel, travelers),
-          makeActivity(`act-${dayNum}-3`, '12:30', 'Almoço', 'Restaurante recomendado', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers),
-          makeActivity(`act-${dayNum}-4`, '14:30', theme.activities[1], `Continuação: ${theme.title}`, '2h30', 'passeio', city, 'tour', priceLevel, travelers),
-          makeActivity(`act-${dayNum}-5`, '17:30', theme.activities[2], 'Passeio no final da tarde', '1h30', 'passeio', city, 'free', priceLevel, travelers),
-          makeActivity(`act-${dayNum}-6`, '19:30', 'Jantar', 'Experiência gastronômica local', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers),
+          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Hotel ou padaria local', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-2`, '09:30', theme.activities[0], `Exploração: ${theme.title}`, '2h30', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-3`, '12:30', 'Almoço', 'Restaurante recomendado', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, '14:30', theme.activities[1], `Continuação: ${theme.title}`, '2h30', 'passeio', city, 'tour', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-5`, '17:30', theme.activities[2], 'Passeio no final da tarde', '1h30', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-6`, '19:30', 'Jantar', 'Experiência gastronômica local', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         ],
       });
     }
@@ -534,12 +524,12 @@ function makeActivity(
   id: string, time: string, name: string, description: string,
   duration: string, category: string, city: string,
   pricingType: string, priceLevel: PriceLevel,
-  travelers = 1, jetLagFriendly = false,
+  travelers = 1, tierMultiplier = 1.0, jetLagFriendly = false,
 ): TripActivity {
   const baseCost = pricingType === 'free' ? 0 : getActivityPrice(pricingType as any, city, priceLevel);
   const sharedTypes = ['free', 'transfer'];
   const isShared = sharedTypes.includes(pricingType) || category === 'hotel';
-  const cost = isShared ? baseCost : baseCost * travelers;
+  const cost = Math.round((isShared ? baseCost : baseCost * travelers) * tierMultiplier);
   return {
     id, time, name, description, duration, cost,
     type: category,

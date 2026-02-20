@@ -24,6 +24,14 @@ export interface WizardData {
   departureDate: Date | undefined;
   returnDate: Date | undefined;
   
+  // Step 1: New cascading fields
+  selectedRegion: string;
+  selectedCountry: string;
+  selectedCountryFlag: string;
+  destinationCurrency: string;
+  destinationTimezoneId: string;
+  destinationAirports: string[];
+  
   // Route info
   hasDirectFlight: boolean;
   connections: string[];
@@ -36,7 +44,10 @@ export interface WizardData {
   infants: number;
   
   // Step 3: Budget
-  budgetAmount: number;
+  budgetTier: 'backpacker' | 'economic' | 'comfort' | 'luxury';
+  budgetEstimateMin: number;
+  budgetEstimateMax: number;
+  budgetAmount: number; // kept for backwards compat, computed from tier
   budgetCurrency: 'BRL' | 'USD' | 'EUR';
   priorities: ('flights' | 'accommodation' | 'experiences')[];
   travelStyle: 'economic' | 'comfort' | 'luxury' | 'backpacker';
@@ -98,6 +109,45 @@ export const TRAVEL_INTERESTS = [
   { id: 'shopping', label: 'Compras', icon: '🛍️' },
   { id: 'nature', label: 'Natureza', icon: '🌿' },
   { id: 'winter', label: 'Inverno/Neve', icon: '❄️' },
+] as const;
+
+export const BUDGET_TIERS = [
+  {
+    id: 'backpacker' as const,
+    icon: '🎒',
+    label: 'Mochileiro',
+    subtitle: 'Máxima economia',
+    description: 'Hostels, street food, transporte público',
+    priceLevel: 'budget' as const,
+    multiplier: 0.6,
+  },
+  {
+    id: 'economic' as const,
+    icon: '💚',
+    label: 'Econômico',
+    subtitle: 'Bom custo-benefício',
+    description: 'Hotel 3★, restaurantes locais, tours em grupo',
+    priceLevel: 'budget' as const,
+    multiplier: 1.0,
+  },
+  {
+    id: 'comfort' as const,
+    icon: '✨',
+    label: 'Conforto',
+    subtitle: 'Equilíbrio perfeito',
+    description: 'Hotel 4★, restaurantes recomendados, tours privados',
+    priceLevel: 'midrange' as const,
+    multiplier: 1.0,
+  },
+  {
+    id: 'luxury' as const,
+    icon: '👑',
+    label: 'Luxo',
+    subtitle: 'Experiência premium',
+    description: 'Hotel 5★, Michelin, classe executiva',
+    priceLevel: 'luxury' as const,
+    multiplier: 1.0,
+  },
 ] as const;
 
 // Budget allocation percentages based on priority order
