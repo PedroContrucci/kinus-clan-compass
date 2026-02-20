@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Info, ChevronRight } from 'lucide-react';
+import { Calendar, Info, ChevronRight, ChevronDown } from 'lucide-react';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { UnsplashThumbnail } from '@/components/shared/UnsplashImage';
 import { REGIONS, DESTINATION_CATALOG, type RegionName, type CountryEntry, type CityEntry } from '@/data/destinationCatalog';
+import { cn } from '@/lib/utils';
 import type { WizardData } from './types';
 
 interface WizardStep1Props {
@@ -126,17 +127,95 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
 
   const countries = selectedRegion ? DESTINATION_CATALOG[selectedRegion] : [];
 
+  const ORIGIN_AIRPORTS = [
+    { city: 'São Paulo', airports: [{ code: 'GRU', name: 'Guarulhos' }, { code: 'CGH', name: 'Congonhas' }] },
+    { city: 'Rio de Janeiro', airports: [{ code: 'GIG', name: 'Galeão' }, { code: 'SDU', name: 'Santos Dumont' }] },
+    { city: 'Belo Horizonte', airports: [{ code: 'CNF', name: 'Confins' }] },
+    { city: 'Brasília', airports: [{ code: 'BSB', name: 'Juscelino Kubitschek' }] },
+    { city: 'Curitiba', airports: [{ code: 'CWB', name: 'Afonso Pena' }] },
+    { city: 'Porto Alegre', airports: [{ code: 'POA', name: 'Salgado Filho' }] },
+    { city: 'Recife', airports: [{ code: 'REC', name: 'Guararapes' }] },
+    { city: 'Fortaleza', airports: [{ code: 'FOR', name: 'Pinto Martins' }] },
+    { city: 'Salvador', airports: [{ code: 'SSA', name: 'Luís Eduardo Magalhães' }] },
+    { city: 'Campinas', airports: [{ code: 'VCP', name: 'Viracopos' }] },
+  ];
+
+  const [originOpen, setOriginOpen] = useState(false);
+
+  const currentOrigin = ORIGIN_AIRPORTS.find(o => o.city === data.originCity) || ORIGIN_AIRPORTS[0];
+  const currentAirport = currentOrigin.airports.find(a => a.code === data.originAirportCode) || currentOrigin.airports[0];
+
+  const handleOriginCitySelect = (origin: typeof ORIGIN_AIRPORTS[0]) => {
+    onChange({
+      originCity: origin.city,
+      originAirportCode: origin.airports[0].code,
+    });
+    if (origin.airports.length === 1) {
+      setOriginOpen(false);
+    }
+  };
+
+  const handleOriginAirportSelect = (code: string) => {
+    onChange({ originAirportCode: code });
+    setOriginOpen(false);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Origin - Fixed */}
+      {/* Origin - Selectable */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
           ✈️ De onde você parte?
         </label>
-        <div className="px-4 py-4 bg-card border border-border rounded-2xl text-foreground">
-          <span className="font-medium">São Paulo (GRU)</span>
-          <span className="text-muted-foreground text-sm ml-2">• Guarulhos</span>
-        </div>
+        <Popover open={originOpen} onOpenChange={setOriginOpen}>
+          <PopoverTrigger asChild>
+            <button className="w-full px-4 py-4 bg-card border border-border rounded-2xl text-foreground text-left hover:border-primary/50 transition-colors flex items-center justify-between">
+              <div>
+                <span className="font-medium">{currentOrigin.city} ({currentAirport.code})</span>
+                <span className="text-muted-foreground text-sm ml-2">• {currentAirport.name}</span>
+              </div>
+              <ChevronDown size={16} className="text-muted-foreground" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-2 max-h-80 overflow-y-auto" align="start">
+            <div className="space-y-1">
+              {ORIGIN_AIRPORTS.map((origin) => (
+                <div key={origin.city}>
+                  <button
+                    onClick={() => handleOriginCitySelect(origin)}
+                    className={cn(
+                      "w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors hover:bg-muted",
+                      data.originCity === origin.city && "bg-primary/10 text-primary font-medium"
+                    )}
+                  >
+                    {origin.city}
+                    {origin.airports.length === 1 && (
+                      <span className="text-muted-foreground ml-1">• {origin.airports[0].code}</span>
+                    )}
+                  </button>
+                  {data.originCity === origin.city && origin.airports.length > 1 && (
+                    <div className="flex gap-2 px-3 pb-2">
+                      {origin.airports.map((ap) => (
+                        <button
+                          key={ap.code}
+                          onClick={() => handleOriginAirportSelect(ap.code)}
+                          className={cn(
+                            "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                            data.originAirportCode === ap.code
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          )}
+                        >
+                          {ap.code} • {ap.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Destination Selection */}
@@ -394,7 +473,9 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
                 selected={data.returnDate}
                 onSelect={(date) => onChange({ returnDate: date })}
                 disabled={(date) => date < (data.departureDate || new Date())}
+                defaultMonth={data.departureDate ? addDays(data.departureDate, 1) : undefined}
                 initialFocus
+                className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>
           </Popover>

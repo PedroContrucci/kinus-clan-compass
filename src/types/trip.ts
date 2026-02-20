@@ -116,6 +116,7 @@ export interface SavedTrip {
   id: string;
   status: TripStatus;
   destination: string;
+  origin?: string;
   country: string;
   emoji: string;
   startDate: string;
