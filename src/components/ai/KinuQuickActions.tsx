@@ -4,33 +4,21 @@ interface KinuQuickActionsProps {
   disabled?: boolean;
 }
 
-interface QuickAction {
-  id: string;
-  icon: string;
-  label: string;
-  prompt: string;
-}
-
-const DEFAULT_ACTIONS: QuickAction[] = [
-  { id: 'plan', icon: '🧭', label: 'Me ajude a planejar', prompt: 'Quero planejar uma viagem mas não sei pra onde. Me ajude!' },
-  { id: 'cheap', icon: '💰', label: 'Destino barato', prompt: 'Qual destino internacional mais barato saindo do Brasil agora?' },
-  { id: 'tips', icon: '🗺️', label: 'Dicas gerais', prompt: 'Me dá dicas para viajar internacional pela primeira vez.' },
-];
-
-function getContextualActions(context: { destination?: string } | null): QuickAction[] {
-  if (!context?.destination) return DEFAULT_ACTIONS;
-  const dest = context.destination;
-  return [
-    { id: 'next', icon: '🎯', label: 'Próximo passo?', prompt: `Qual deve ser meu próximo passo para a viagem para ${dest}?` },
-    { id: 'save', icon: '💰', label: 'Economizar', prompt: `Como posso economizar na viagem para ${dest}?` },
-    { id: 'pack', icon: '🧳', label: 'O que levar?', prompt: `O que devo levar na mala para ${dest}?` },
-    { id: 'food', icon: '🍽️', label: 'Onde comer?', prompt: `Quais os melhores restaurantes em ${dest}?` },
-  ];
-}
-
 export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
   const { sendMessage, tripContext } = useKinuAI();
-  const actions = getContextualActions(tripContext);
+
+  const actions = tripContext?.destination
+    ? [
+        { id: 'next',  icon: '🎯', label: 'Proximo passo?', prompt: `Qual meu proximo passo para ${tripContext.destination}?` },
+        { id: 'save',  icon: '💰', label: 'Economizar',     prompt: `Como economizar em ${tripContext.destination}?` },
+        { id: 'food',  icon: '🍽️', label: 'Onde comer?',   prompt: `Melhores restaurantes em ${tripContext.destination}?` },
+        { id: 'tips',  icon: '💡', label: 'Dicas locais',   prompt: `Dicas que so locais sabem sobre ${tripContext.destination}?` },
+      ]
+    : [
+        { id: 'plan',  icon: '🧭', label: 'Planejar viagem', prompt: 'Me ajude a escolher um destino de viagem!' },
+        { id: 'cheap', icon: '💰', label: 'Destino barato',  prompt: 'Destinos baratos saindo do Brasil?' },
+        { id: 'tips',  icon: '💡', label: 'Dicas gerais',    prompt: 'Dicas para viajar mais barato?' },
+      ];
 
   return (
     <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[#334155]">

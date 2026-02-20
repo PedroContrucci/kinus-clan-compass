@@ -1,11 +1,10 @@
-// TripPanel — Executive dashboard for active trips
+// TripPanel — Orchestrated Executive Dashboard
 
 import { motion } from 'framer-motion';
-import { Plane, Building, Target, Check, ChevronRight, FileText } from 'lucide-react';
-import { differenceInDays } from 'date-fns';
+import { Check, FileText, ChevronRight, Plane, Building, CreditCard, Package, AlertTriangle } from 'lucide-react';
+import { differenceInDays, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
-import { AgentTip } from '@/components/shared/AgentTip';
 import { exportTripPDF } from '@/lib/tripPdfExport';
 import type { SavedTrip } from '@/types/trip';
 import { useState } from 'react';
@@ -25,33 +24,145 @@ const TIER_LABELS: Record<string, string> = {
   backpacker: 'Mochileiro', economic: 'Econômico', comfort: 'Conforto', luxury: 'Luxo',
 };
 
-function getAgentMessage(trip: SavedTrip): { agent: 'icarus' | 'hestia' | 'hermes'; message: string; actionLabel?: string; actionTab?: string } {
-  const daysLeft = trip.startDate ? differenceInDays(new Date(trip.startDate), new Date()) : 999;
+const AGENTS = {
+  icarus: {
+    emoji: '🦅',
+    name: 'Ícaro',
+    gradient: 'from-sky-500/10 to-cyan-500/10',
+    border: 'border-sky-500/20',
+    accentColor: 'text-sky-400',
+  },
+  hestia: {
+    emoji: '🏛️',
+    name: 'Héstia',
+    gradient: 'from-amber-500/10 to-yellow-500/10',
+    border: 'border-amber-500/20',
+    accentColor: 'text-amber-400',
+  },
+  hermes: {
+    emoji: '⚡',
+    name: 'Hermes',
+    gradient: 'from-emerald-500/10 to-teal-500/10',
+    border: 'border-emerald-500/20',
+    accentColor: 'text-emerald-400',
+  },
+};
+
+interface OrchestratedAction {
+  agent: 'icarus' | 'hestia' | 'hermes';
+  priority: number;
+  title: string;
+  message: string;
+  actionType: 'confirm-flight' | 'confirm-hotel' | 'open-auction-flight' | 'open-auction-hotel' | 'navigate-checklist' | 'navigate-cambio' | 'navigate-packing' | 'export-pdf' | 'celebrate';
+  actionLabel: string;
+  completed: boolean;
+}
+
+function getDaysLeft(trip: SavedTrip): number {
+  if (!trip.startDate) return 999;
+  return differenceInDays(new Date(trip.startDate), new Date());
+}
+
+function getChecklistPct(trip: SavedTrip): number {
+  const total = trip.checklist?.length || 0;
+  const done = trip.checklist?.filter(i => i.checked).length || 0;
+  return total > 0 ? Math.round((done / total) * 100) : 0;
+}
+
+function getPendingItems(trip: SavedTrip): string {
+  const pending = trip.checklist?.filter(i => !i.checked).slice(0, 2).map(i => i.label) || [];
+  return pending.join(', ') || 'itens';
+}
+
+function getOrchestratedActions(trip: SavedTrip): OrchestratedAction[] {
+  const actions: OrchestratedAction[] = [];
+  const dest = trip.destination || 'o destino';
   const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
-  const checklistTotal = trip.checklist?.length || 0;
-  const checklistDone = trip.checklist?.filter(i => i.checked).length || 0;
-  const checklistPct = checklistTotal > 0 ? Math.round((checklistDone / checklistTotal) * 100) : 0;
+  const checklistPct = getChecklistPct(trip);
+  const daysLeft = getDaysLeft(trip);
+  const currency = (trip as any).destinationCurrency || 'USD';
+  const originCode = trip.flights?.outbound?.origin || 'GRU';
+  const destCode = trip.flights?.outbound?.destination || dest;
 
-  if (daysLeft <= 7 && daysLeft > 0) {
-    return { agent: 'hermes', message: `⚠️ ${daysLeft} dias! Checklist em ${checklistPct}%. Corre lá!`, actionLabel: '✅ Checklist', actionTab: 'checklist' };
+  // 1. Voo
+  actions.push({
+    agent: 'icarus',
+    priority: flightConfirmed ? 99 : 1,
+    title: 'Voo Ida e Volta',
+    message: flightConfirmed
+      ? `Voo confirmado! ${originCode} → ${destCode} → ${originCode}`
+      : `Confirme o voo para ${dest}. Quanto antes, melhor o preço.`,
+    actionType: flightConfirmed ? 'celebrate' : 'open-auction-flight',
+    actionLabel: flightConfirmed ? '✅ Confirmado' : '🎯 Buscar Voos',
+    completed: flightConfirmed,
+  });
+
+  // 2. Hotel
+  actions.push({
+    agent: 'icarus',
+    priority: hotelConfirmed ? 99 : (flightConfirmed ? 2 : 3),
+    title: 'Hospedagem',
+    message: hotelConfirmed
+      ? `Hotel reservado! ${trip.accommodation?.totalNights || 0} noites em ${dest}`
+      : `Reserve o hotel em ${dest}. Hotéis centrais oferecem melhor custo-benefício.`,
+    actionType: hotelConfirmed ? 'celebrate' : 'open-auction-hotel',
+    actionLabel: hotelConfirmed ? '✅ Confirmado' : '🎯 Buscar Hotel',
+    completed: hotelConfirmed,
+  });
+
+  // 3. Câmbio (Héstia)
+  actions.push({
+    agent: 'hestia',
+    priority: flightConfirmed && hotelConfirmed ? 3 : 5,
+    title: 'Câmbio',
+    message: `Comece a comprar ${currency} aos poucos. Diluir o câmbio reduz o risco.`,
+    actionType: 'navigate-cambio',
+    actionLabel: '💱 Ver Câmbio',
+    completed: false,
+  });
+
+  // 4. Checklist (Hermes)
+  actions.push({
+    agent: 'hermes',
+    priority: checklistPct === 100 ? 99 : (daysLeft <= 14 ? 2 : 4),
+    title: 'Preparação',
+    message: checklistPct === 100
+      ? `Tudo pronto! Você está preparado para ${dest}!`
+      : checklistPct > 50
+        ? `Checklist em ${checklistPct}%. Faltam: ${getPendingItems(trip)}`
+        : `Muita coisa pendente! Comece pelo passaporte e seguro viagem.`,
+    actionType: checklistPct === 100 ? 'celebrate' : 'navigate-checklist',
+    actionLabel: checklistPct === 100 ? '✅ Tudo Pronto' : '✅ Ver Checklist',
+    completed: checklistPct === 100,
+  });
+
+  // 5. Smart Packing — só aparece quando checklist > 50%
+  if (checklistPct > 50) {
+    actions.push({
+      agent: 'hermes',
+      priority: 6,
+      title: 'Mala Inteligente',
+      message: `Hora de montar a mala! Vou te ajudar com base no clima de ${dest}.`,
+      actionType: 'navigate-packing',
+      actionLabel: '🧳 Montar Mala',
+      completed: false,
+    });
   }
-  if (!flightConfirmed) {
-    return { agent: 'icarus', message: `Próximo passo: confirme o voo. Quer que eu busque ofertas?`, actionLabel: '🎯 Buscar Ofertas', actionTab: 'flight-auction' };
-  }
-  if (!hotelConfirmed) {
-    return { agent: 'icarus', message: `Voo fechado! Agora confirme o hotel. Posso ajudar!`, actionLabel: '🎯 Buscar Ofertas', actionTab: 'hotel-auction' };
-  }
-  if (checklistPct < 50) {
-    return { agent: 'hermes', message: `Checklist em ${checklistPct}%. Pendente: ${trip.checklist?.find(i => !i.checked)?.label || 'itens'}`, actionLabel: '✅ Checklist', actionTab: 'checklist' };
-  }
-  const confirmed = trip.finances.confirmed;
-  const total = trip.finances.total;
-  if (confirmed > total) {
-    return { agent: 'hestia', message: `⚠️ Gastos ultrapassaram o orçamento em R$ ${fmt(confirmed - total)}.`, actionLabel: '📊 Ver Detalhes', actionTab: 'cambio' };
-  }
-  return { agent: 'hestia', message: `Tudo encaminhado! Orçamento saudável. 🎉`, actionLabel: '💱 Ver Câmbio', actionTab: 'cambio' };
+
+  return actions.sort((a, b) => {
+    if (a.completed && !b.completed) return 1;
+    if (!a.completed && b.completed) return -1;
+    return a.priority - b.priority;
+  });
 }
+
+const MiniKPI = ({ label, value, urgent }: { label: string; value: string; urgent?: boolean }) => (
+  <div className={`flex-1 text-center py-2 rounded-xl ${urgent ? 'bg-amber-500/20 border border-amber-500/40' : 'bg-white/5 border border-white/5'}`}>
+    <p className={`text-sm font-bold font-['Outfit'] ${urgent ? 'text-amber-400' : 'text-foreground'}`}>{value}</p>
+    <p className="text-[10px] text-muted-foreground">{label}</p>
+  </div>
+);
 
 export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: TripPanelProps) => {
   const [confirmModal, setConfirmModal] = useState<{ type: 'flight' | 'hotel'; isOpen: boolean } | null>(null);
@@ -64,24 +175,17 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const confirmedActivities = trip.days?.reduce((sum, d) => sum + (d.activities?.filter(a => a.status === 'confirmed').length || 0), 0) || 0;
   const progressPct = totalActivities > 0 ? Math.round((confirmedActivities / totalActivities) * 100) : 0;
 
-  const checklistTotal = trip.checklist?.length || 0;
-  const checklistDone = trip.checklist?.filter(i => i.checked).length || 0;
-  const checklistPct = checklistTotal > 0 ? Math.round((checklistDone / checklistTotal) * 100) : 0;
-
-  const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
-  const hotelConfirmed = trip.accommodation?.status === 'confirmed';
-  const flightTotal = (trip.flights?.outbound?.price || 0) + (trip.flights?.return?.price || 0);
-  const hotelTotal = trip.accommodation?.totalPrice || 0;
+  const checklistPct = getChecklistPct(trip);
   const tierLabel = TIER_LABELS[(trip as any).budgetTier || trip.budgetType || 'comfort'] || 'Conforto';
-  const originCode = trip.flights?.outbound?.origin || 'GRU';
-  const destCode = trip.flights?.outbound?.destination || trip.destination;
-  const totalNights = trip.accommodation?.totalNights || 0;
 
   const confirmedPct = trip.finances.total > 0 ? Math.round((trip.finances.confirmed / trip.finances.total) * 100) : 0;
-  const plannedPct = trip.finances.total > 0 ? Math.round((trip.finances.planned / trip.finances.total) * 100) : 0;
-  const availablePct = Math.max(0, 100 - confirmedPct - plannedPct);
+  const plannedPct = trip.finances.total > 0 ? Math.min(100 - confirmedPct, Math.round((trip.finances.planned / trip.finances.total) * 100)) : 0;
 
-  const agentData = getAgentMessage(trip);
+  const actions = getOrchestratedActions(trip);
+
+  const dateRange = trip.startDate && trip.endDate
+    ? `${format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} – ${format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })}`
+    : '';
 
   const handleConfirm = () => {
     if (confirmModal) {
@@ -91,147 +195,114 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
     setConfirmAmount('');
   };
 
-  const handleAgentAction = () => {
-    if (agentData.actionTab === 'flight-auction') onOpenAuction('flight');
-    else if (agentData.actionTab === 'hotel-auction') onOpenAuction('hotel');
-    else if (agentData.actionTab) onNavigateTab(agentData.actionTab);
+  const handleAction = (action: OrchestratedAction) => {
+    switch (action.actionType) {
+      case 'open-auction-flight': onOpenAuction('flight'); break;
+      case 'open-auction-hotel': onOpenAuction('hotel'); break;
+      case 'confirm-flight': setConfirmModal({ type: 'flight', isOpen: true }); break;
+      case 'confirm-hotel': setConfirmModal({ type: 'hotel', isOpen: true }); break;
+      case 'navigate-checklist': onNavigateTab('checklist'); break;
+      case 'navigate-cambio': onNavigateTab('cambio'); break;
+      case 'navigate-packing': onNavigateTab('packing'); break;
+      case 'export-pdf': exportTripPDF(trip); break;
+    }
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-4 animate-fade-in"
+      className="space-y-4"
     >
-      {/* KPIs */}
-      <div className="grid grid-cols-4 gap-2">
-        {[
-          { label: isPast ? '🛫 Em viagem' : 'dias', value: isPast ? '—' : String(daysLeft), accent: daysLeft <= 7 },
-          { label: 'progresso', value: `${progressPct}%`, accent: false },
-          { label: 'gasto', value: `R$ ${fmt(trip.finances.confirmed)}`, accent: false },
-          { label: 'checklist', value: `${checklistPct}%`, accent: false },
-        ].map((kpi) => (
-          <div key={kpi.label} className={`bg-card border border-border rounded-xl p-3 text-center ${kpi.accent ? 'border-yellow-500/50' : ''}`}>
-            <p className={`text-lg font-bold font-['Outfit'] ${kpi.accent ? 'text-yellow-400' : 'text-foreground'}`}>{kpi.value}</p>
-            <p className="text-xs text-muted-foreground">{kpi.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Key Items */}
-      <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
-        <h3 className="text-sm font-semibold text-muted-foreground font-['Outfit']">Itens Chave</h3>
-
-        {/* Flight */}
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Plane size={16} className="text-sky-400" />
-            <span className="text-sm font-medium text-foreground">Voo Ida+Volta</span>
-            <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${flightConfirmed ? 'bg-emerald-500/20 text-emerald-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-              {flightConfirmed ? '🟢 Confirmado' : '🟡 Pendente'}
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground pl-6">{originCode} → {destCode} → {originCode}</p>
-          <p className="text-xs text-muted-foreground pl-6">
-            {flightConfirmed ? `R$ ${fmt(trip.flights?.outbound?.price || 0)}` : `~R$ ${fmt(flightTotal)}`}
-          </p>
-          {!flightConfirmed && (
-            <div className="flex gap-2 pl-6 mt-1">
-              <button onClick={() => onOpenAuction('flight')} className="flex items-center gap-1 text-xs text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-lg hover:bg-sky-500/20 transition-colors">
-                <Target size={12} /> Buscar Ofertas
-              </button>
-              <button onClick={() => setConfirmModal({ type: 'flight', isOpen: true })} className="flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg hover:bg-emerald-500/20 transition-colors">
-                <Check size={12} /> Já Comprei
-              </button>
-            </div>
-          )}
+      {/* 1. Header Premium */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0f172a] to-[#1e293b] p-5 border border-[#334155]">
+        <div className="absolute top-2 right-3 text-7xl opacity-10 select-none pointer-events-none">
+          {trip.emoji}
         </div>
-
-        {/* Hotel */}
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Building size={16} className="text-amber-400" />
-            <span className="text-sm font-medium text-foreground">Hospedagem</span>
-            <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${hotelConfirmed ? 'bg-emerald-500/20 text-emerald-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-              {hotelConfirmed ? '🟢 Confirmado' : '🟡 Pendente'}
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground pl-6">{totalNights} noites • Faixa {tierLabel}</p>
-          <p className="text-xs text-muted-foreground pl-6">
-            {hotelConfirmed ? `R$ ${fmt(trip.accommodation?.totalPrice || 0)}` : `~R$ ${fmt(hotelTotal)}`}
-          </p>
-          {!hotelConfirmed && (
-            <div className="flex gap-2 pl-6 mt-1">
-              <button onClick={() => onOpenAuction('hotel')} className="flex items-center gap-1 text-xs text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg hover:bg-amber-500/20 transition-colors">
-                <Target size={12} /> Buscar Ofertas
-              </button>
-              <button onClick={() => setConfirmModal({ type: 'hotel', isOpen: true })} className="flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg hover:bg-emerald-500/20 transition-colors">
-                <Check size={12} /> Já Reservei
-              </button>
-            </div>
-          )}
+        <h2 className="text-xl font-bold text-foreground font-['Outfit']">
+          {trip.emoji} {trip.destination}, {trip.country}
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          {dateRange} • {trip.travelers} viajante(s) • Faixa {tierLabel}
+        </p>
+        <div className="flex gap-2 mt-4">
+          <MiniKPI label={isPast ? 'em viagem' : 'dias'} value={isPast ? '🛫' : String(daysLeft)} urgent={!isPast && daysLeft <= 7} />
+          <MiniKPI label="progresso" value={`${progressPct}%`} />
+          <MiniKPI label="gasto" value={`R$${fmt(trip.finances.confirmed / 1000)}k`} />
+          <MiniKPI label="checklist" value={`${checklistPct}%`} />
         </div>
       </div>
 
-      {/* Financial */}
-      <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-muted-foreground font-['Outfit']">Financeiro</h3>
-        <div className="h-3 w-full rounded-full bg-muted overflow-hidden flex">
+      {/* 2. Próximos Passos — Agentes orquestrando */}
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+          Próximos Passos
+        </h3>
+        {actions.map((action, i) => {
+          const agent = AGENTS[action.agent];
+          return (
+            <div
+              key={i}
+              className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${
+                action.completed
+                  ? 'bg-emerald-500/5 border-emerald-500/20 opacity-60'
+                  : `bg-gradient-to-r ${agent.gradient} ${agent.border}`
+              }`}
+            >
+              <span className="text-lg flex-shrink-0 mt-0.5">{agent.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-xs font-bold font-['Outfit'] ${action.completed ? 'text-emerald-400' : agent.accentColor}`}>
+                    {agent.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">•</span>
+                  <span className="text-xs font-medium text-foreground">{action.title}</span>
+                  {action.completed && <Check size={12} className="text-emerald-400 ml-auto" />}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{action.message}</p>
+                {!action.completed && action.actionType !== 'celebrate' && (
+                  <button
+                    onClick={() => handleAction(action)}
+                    className={`mt-2 inline-flex items-center gap-1 text-xs font-medium ${agent.accentColor} bg-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors`}
+                  >
+                    {action.actionLabel}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 3. Resumo Financeiro Compacto */}
+      <div className="bg-card border border-border rounded-xl p-3 space-y-2">
+        <div className="flex justify-between items-center">
+          <span className="text-xs font-medium text-muted-foreground">Financeiro</span>
+          <span className="text-xs text-foreground font-['Outfit']">
+            R$ {fmt(trip.finances.confirmed)} / R$ {fmt(trip.finances.total)}
+          </span>
+        </div>
+        <div className="h-2 w-full rounded-full bg-muted overflow-hidden flex">
           <div className="h-full bg-emerald-500 transition-all" style={{ width: `${confirmedPct}%` }} />
           <div className="h-full bg-yellow-500 transition-all" style={{ width: `${plannedPct}%` }} />
         </div>
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="text-muted-foreground">Confirmado</span>
-            <span className="text-foreground font-medium ml-auto">R$ {fmt(trip.finances.confirmed)}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-            <span className="text-muted-foreground">Planejado</span>
-            <span className="text-foreground font-medium ml-auto">R$ {fmt(trip.finances.planned)}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30" />
-            <span className="text-muted-foreground">Disponível</span>
-            <span className="text-foreground font-medium ml-auto">R$ {fmt(trip.finances.available)}</span>
-          </div>
+        <div className="flex gap-3 text-[10px]">
+          <span className="flex items-center gap-1 text-muted-foreground">
+            <div className="w-2 h-2 rounded-full bg-emerald-500" /> Confirmado: R$ {fmt(trip.finances.confirmed)}
+          </span>
+          <span className="flex items-center gap-1 text-muted-foreground">
+            <div className="w-2 h-2 rounded-full bg-yellow-500" /> Planejado: R$ {fmt(trip.finances.planned)}
+          </span>
         </div>
       </div>
 
-      {/* Checklist Summary */}
-      <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-muted-foreground font-['Outfit']">Checklist</h3>
-        <div className="flex flex-wrap gap-2">
-          {(trip.checklist || []).slice(0, 6).map((item) => (
-            <span key={item.id} className={`text-xs px-2 py-1 rounded-lg ${item.checked ? 'bg-emerald-500/10 text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
-              {item.checked ? '✅' : '⬜'} {item.label}
-            </span>
-          ))}
-        </div>
-        <button
-          onClick={() => onNavigateTab('checklist')}
-          className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
-        >
-          Ver checklist completa <ChevronRight size={14} />
-        </button>
-      </div>
-
-      {/* Agent Action */}
-      <AgentTip
-        agent={agentData.agent}
-        variant="full"
-        message={agentData.message}
-        action={agentData.actionLabel ? { label: agentData.actionLabel, onClick: handleAgentAction } : undefined}
-      />
-
-      {/* Export PDF */}
+      {/* 4. Export PDF */}
       <button
         onClick={() => exportTripPDF(trip)}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-card border border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors text-sm"
+        className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-500/10 to-sky-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 hover:text-emerald-300 hover:border-emerald-500/40 transition-colors text-sm font-medium"
       >
         <FileText size={16} />
-        📄 Exportar PDF da Viagem
+        Exportar PDF Premium
       </button>
 
       {/* Confirm Modal */}
@@ -239,7 +310,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         <DialogContent className="bg-card border-border max-w-sm mx-auto">
           <DialogHeader>
             <DialogTitle className="font-['Outfit']">
-              ✅ {confirmModal?.type === 'flight' ? 'Confirmar Voo' : 'Confirmar Hospedagem'}
+              {confirmModal?.type === 'flight' ? '✈️ Confirmar Voo' : '🏨 Confirmar Hospedagem'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">

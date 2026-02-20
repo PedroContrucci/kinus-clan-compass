@@ -902,7 +902,14 @@ const Viagens = () => {
                                 </span>
                               )}
                             </div>
-                            <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
+                              {activity.status === 'confirmed' && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-medium border border-emerald-500/20">
+                                  <Check size={10} /> Confirmado
+                                </span>
+                              )}
+                            </div>
                             {/* Michelin Badge */}
                             {(() => {
                               const isFoodActivity = activity.type === 'food' || activity.category === 'comida' || activity.name?.toLowerCase().includes('restaurante') || activity.name?.toLowerCase().includes('jantar') || activity.name?.toLowerCase().includes('almoço');

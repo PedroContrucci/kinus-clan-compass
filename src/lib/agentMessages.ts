@@ -7,15 +7,18 @@ import type { SavedTrip } from '@/types/trip';
 export function getIcarusRoteiro(trip: SavedTrip, dayNum: number): string {
   const totalDays = trip.days?.length || 7;
   const dest = trip.destination || 'o destino';
-
-  if (dayNum === 1) return 'Boa viagem! Aproveite o voo para descansar. 🌙';
-  if (dayNum === 2 && trip.jetLagMode) return 'Dia leve por conta do fuso. Amanhã você ataca com tudo! 🌿';
-  if (dayNum === 2) return `Primeiro dia em ${dest}! Explore o bairro do hotel para se ambientar.`;
-  if (dayNum === totalDays) return 'Último dia! Não esqueça de conferir se tem tudo na mala. 🧳';
-
   const day = trip.days?.find(d => d.day === dayNum);
-  const theme = day?.title?.replace(/[^\w\sà-ú]/gi, '').trim() || 'Exploração';
-  return `Dia de ${theme}! Aproveite cada momento em ${dest}. ✨`;
+
+  if (dayNum === 1) return `Boa viagem para ${dest}! Descanse no voo.`;
+  if (dayNum === 2 && trip.jetLagMode) return 'Dia leve de adaptacao ao fuso. Amanha voce ataca!';
+  if (dayNum === 2) return `Primeiro dia em ${dest}! Explore o bairro do hotel.`;
+  if (dayNum === totalDays) return `Ultimo dia! Confira a mala antes de sair do hotel.`;
+
+  const theme = day?.title?.replace(/[^\w\sà-ú]/gi, '').trim() || '';
+  if (theme.includes('Cultura')) return `Dia de cultura em ${dest}! Museus e monumentos te esperam.`;
+  if (theme.includes('Gastronomia')) return `Dia de sabores! Prove tudo que ${dest} tem a oferecer.`;
+  if (theme.includes('Aventura')) return `Dia de aventura! Explore os arredores de ${dest}.`;
+  return `Aproveite ${dest}! Cada momento conta.`;
 }
 
 export function getIcarusGuia(trip: SavedTrip): string {
