@@ -72,6 +72,7 @@ export interface TripActivity {
   category?: ActivityCategory;
   jetLagFriendly?: boolean;
   auction?: AuctionData;
+  isHeroItem?: boolean;
 }
 
 export interface TripDay {

@@ -16,6 +16,9 @@ import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
 import { TripCockpit } from '@/components/dashboard';
 import { DraftCockpit, TripGuide, ExchangeRates, AuctionList, EnhancedDayTimeline, SmartPackingWithLuggage, EnhancedExchangeRates, AuctionConfigModal } from '@/components/cockpit';
+import { HeroCards } from '@/components/cockpit/HeroCards';
+import { AgentTip } from '@/components/shared/AgentTip';
+import { getIcarusRoteiro, getIcarusGuia, getIcarusLeilao, getHestiaFinOps, getHestiaCambio, getHestiaLeilao, getHermesChecklist, getHermesPacking } from '@/lib/agentMessages';
 import { useTripDashboard } from '@/hooks/useTripDashboard';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
 import { PackingData } from '@/types/packing';
@@ -667,17 +670,7 @@ const Viagens = () => {
 
   if (!user) return null;
 
-  // Draft Trip View - Use DraftCockpit
-  if (selectedTrip && selectedTrip.status === 'draft') {
-    return (
-      <DraftCockpit
-        trip={selectedTrip as any}
-        onSave={handleSaveDraft}
-        onActivate={handleActivateDraft}
-        onClose={() => setSelectedTrip(null)}
-      />
-    );
-  }
+  // All trips now go to full cockpit (no DraftCockpit redirect)
 
   // Active/Ongoing Trip Dashboard View
   if (selectedTrip) {
@@ -732,7 +725,27 @@ const Viagens = () => {
         </header>
 
         <main className="px-4 py-6">
-          {/* Trip Cockpit — KPIs Dashboard */}
+          {/* Hero Cards — Flight & Hotel */}
+          <HeroCards
+            trip={selectedTrip}
+            onOpenAuction={(type) => {
+              if (type === 'flight') {
+                setAuctionConfigModal({
+                  isOpen: true,
+                  activity: { id: 'flight-outbound', name: 'Voo de Ida e Volta', type: 'flight', cost: (selectedTrip.flights?.outbound?.price || 0) + (selectedTrip.flights?.return?.price || 0) },
+                  dayIndex: 0,
+                  actIndex: 0,
+                });
+              } else {
+                setAuctionConfigModal({
+                  isOpen: true,
+                  activity: { id: 'hotel-main', name: selectedTrip.accommodation?.name || 'Hotel', type: 'hotel', cost: selectedTrip.accommodation?.totalPrice || 0 },
+                  dayIndex: 0,
+                  actIndex: 0,
+                });
+              }
+            }}
+          />
           {dashboardData && (
             <TripCockpit data={dashboardData} />
           )}
@@ -740,6 +753,7 @@ const Viagens = () => {
           {/* Roteiro Tab */}
           {activeTab === 'roteiro' && (
             <div className="animate-fade-in">
+              <AgentTip agent="icarus" variant="compact" message={getIcarusRoteiro(selectedTrip, selectedDay)} />
               {/* Fixed Flight Card - Outbound */}
               {selectedTrip.flights?.outbound && (
                 <FlightCard
@@ -799,6 +813,32 @@ const Viagens = () => {
                     {currentDay.activities.map((activity, actIndex) => {
                       const dayIndex = selectedTrip.days.findIndex((d) => d.day === currentDay.day);
                       
+                      // Hero items (flight/hotel) render as muted markers
+                      if (activity.isHeroItem) {
+                        return (
+                          <div key={activity.id} className="flex gap-3 opacity-50">
+                            <div className="flex flex-col items-center">
+                              <div className="text-xl">{getActivityIcon(activity.type)}</div>
+                              {actIndex < currentDay.activities.length - 1 && (
+                                <div className="w-0.5 flex-1 bg-[#334155] mt-2" />
+                              )}
+                            </div>
+                            <div className="flex-1 pb-4">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm text-[#64748b]">
+                                  <Clock size={14} className="inline mr-1" />
+                                  {activity.time}
+                                </span>
+                              </div>
+                              <h4 className="font-medium text-[#64748b] font-['Outfit'] text-sm">{activity.name}</h4>
+                              {(activity.category === 'voo') && (
+                                <p className="text-xs text-[#475569] mt-0.5">Ver Hero Card acima ☝️</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div key={activity.id} className={`flex gap-3 ${
                           activity.status === 'confirmed' ? 'bg-[#10b981]/10 -mx-2 px-2 py-2 rounded-xl border border-[#10b981]/30' :
@@ -951,6 +991,7 @@ const Viagens = () => {
           {/* FinOps Tab */}
           {activeTab === 'finops' && (
             <>
+              <AgentTip agent="hestia" variant="full" message={getHestiaFinOps(selectedTrip)} />
               <FinOpsDashboard
                 finances={selectedTrip.finances}
                 destination={selectedTrip.destination}
@@ -969,17 +1010,22 @@ const Viagens = () => {
 
           {/* Smart Packing Tab - New Flow with Luggage First */}
           {activeTab === 'packing' && (
-            <SmartPackingWithLuggage
+            <div>
+              <AgentTip agent="hermes" variant="full" message={getHermesPacking(selectedTrip)} />
+              <SmartPackingWithLuggage
               tripId={selectedTrip.id}
               destination={selectedTrip.destination}
               duration={getTripDuration(selectedTrip)}
               month={selectedTrip.startDate ? new Date(selectedTrip.startDate).getMonth() + 1 : undefined}
             />
+            </div>
           )}
 
           {/* Leilão (Auction) Tab */}
           {activeTab === 'leilao' && (
             <div className="animate-fade-in">
+              <AgentTip agent="icarus" variant="compact" message={getIcarusLeilao()} />
+              <AgentTip agent="hestia" variant="compact" message={getHestiaLeilao()} />
               <AuctionList
                 tripId={selectedTrip.id}
                 activities={selectedTrip.days?.flatMap(d => d.activities) || []}
@@ -992,6 +1038,7 @@ const Viagens = () => {
           {/* Guia (Travel Guide) Tab */}
           {activeTab === 'guia' && (
             <div className="animate-fade-in">
+              <AgentTip agent="icarus" variant="full" message={getIcarusGuia(selectedTrip)} />
               <TripGuide
                 destinationCity={selectedTrip.destination}
               />
@@ -1001,6 +1048,7 @@ const Viagens = () => {
           {/* Câmbio (Exchange) Tab - Enhanced */}
           {activeTab === 'cambio' && (
             <div className="animate-fade-in">
+              <AgentTip agent="hestia" variant="full" message={getHestiaCambio(selectedTrip)} />
               <EnhancedExchangeRates
                 destinationCurrency={getDestinationCurrency(selectedTrip.destination)}
                 baseCurrency="BRL"
@@ -1012,6 +1060,7 @@ const Viagens = () => {
           {/* Checklist Tab */}
           {activeTab === 'checklist' && (
             <div className="animate-fade-in space-y-6">
+              <AgentTip agent="hermes" variant="full" message={getHermesChecklist(selectedTrip)} />
               {['documentos', 'reservas', 'packing', 'pre-viagem'].map((category) => {
                 const items = (selectedTrip.checklist || []).filter((i) => i.category === category);
                 const categoryLabels: Record<string, string> = {

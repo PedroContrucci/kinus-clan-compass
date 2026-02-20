@@ -77,7 +77,7 @@ function getChecklistStats(trip: Trip) {
 }
 
 function buildCards(trips: Trip[]): AgentCardData[] {
-  const activeOrDraft = trips.filter(t => t.status === 'active' || t.status === 'draft' || t.status === 'ongoing');
+  const activeOrDraft = trips.filter(t => t.status === 'active' || t.status === 'ongoing');
 
   // Scenario A — no trips
   if (activeOrDraft.length === 0) {
@@ -99,8 +99,32 @@ function buildCards(trips: Trip[]): AgentCardData[] {
   const estimateMax = trip.budgetEstimateMax || trip.budget || 0;
   const available = Math.max(0, estimateMax - confirmed);
 
+  // Scenario D — active trip < 7 days (URGENT)
+  if (daysUntil <= 7 && daysUntil > 0) {
+    return [
+      {
+        agent: 'icarus',
+        message: `Mal posso esperar! ${dest} vai ser incrível! 🎉`,
+        buttonLabel: '📖 Ver Guia',
+        buttonPath: `/viagens?trip=${trip.id}&tab=guia`,
+      },
+      {
+        agent: 'hestia',
+        message: `Último check: câmbio atualizado. Já comprou toda a moeda? Orçamento: R$ ${fmt(confirmed)} de R$ ${fmt(estimateMax)}.`,
+        buttonLabel: '💱 Ver Câmbio',
+        buttonPath: `/viagens?trip=${trip.id}&tab=cambio`,
+      },
+      {
+        agent: 'hermes',
+        message: `⚠️ ${daysUntil} DIAS! Checklist em ${percent}%. Falta: ${firstPending}. Passaporte? Seguro? AGORA!`,
+        buttonLabel: '✅ Checklist',
+        buttonPath: `/viagens?trip=${trip.id}&tab=checklist`,
+      },
+    ];
+  }
+
   // Scenario C — active trip < 30 days
-  if ((trip.status === 'active' || trip.status === 'ongoing') && daysUntil <= 30 && daysUntil > 0) {
+  if (daysUntil <= 30 && daysUntil > 0) {
     return [
       {
         agent: 'icarus',
@@ -110,21 +134,27 @@ function buildCards(trips: Trip[]): AgentCardData[] {
       },
       {
         agent: 'hestia',
-        message: `Orçamento ${tierLabel}: R$ ${fmt(estimateMin)}–${fmt(estimateMax)}. Já confirmou R$ ${fmt(confirmed)}. Ainda tem margem de R$ ${fmt(available)}.`,
+        message: `Orçamento ${tierLabel}: R$ ${fmt(estimateMin)}–${fmt(estimateMax)}. Já confirmou R$ ${fmt(confirmed)}. Margem: R$ ${fmt(available)}.`,
         buttonLabel: '📊 Ver FinOps',
         buttonPath: `/viagens?trip=${trip.id}&tab=finops`,
       },
       {
         agent: 'hermes',
-        message: `⚠️ ${daysUntil} dias! Checklist em ${percent}%. Pendente: ${firstPending}. Passaporte? Seguro? Vamos garantir tudo.`,
+        message: `⚠️ ${daysUntil} dias! Checklist em ${percent}%. Pendente: ${firstPending}. Vamos garantir tudo.`,
         buttonLabel: '✅ Checklist',
         buttonPath: `/viagens?trip=${trip.id}&tab=checklist`,
       },
     ];
   }
 
-  // Scenario B — draft or active > 30 days
+  // Scenario B — active trip > 30 days
   return [
+    {
+      agent: 'icarus',
+      message: `${dest} vai ser demais! Explore o guia para descobrir experiências imperdíveis. 🌍`,
+      buttonLabel: '📖 Ver Guia',
+      buttonPath: `/viagens?trip=${trip.id}&tab=guia`,
+    },
     {
       agent: 'hestia',
       message: `Vi que ${dest} está na faixa ${tierLabel}. Fique de olho no câmbio — pode ser bom momento para começar a comprar moeda.`,
