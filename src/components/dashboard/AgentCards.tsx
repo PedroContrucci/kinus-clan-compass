@@ -16,6 +16,8 @@ interface Trip {
   progress?: number;
   checklist?: { item: string; is_completed?: boolean }[];
   finances?: { total?: number; confirmed?: number; available?: number };
+  flights?: { outbound?: { status?: string } };
+  accommodation?: { status?: string };
 }
 
 interface AgentCardsProps {
@@ -76,161 +78,130 @@ function getChecklistStats(trip: Trip) {
   return { percent, firstPending };
 }
 
-function buildCards(trips: Trip[]): AgentCardData[] {
+function fmt(n: number) {
+  return n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+}
+
+function buildPriorityCard(trips: Trip[]): AgentCardData {
   const activeOrDraft = trips.filter(t => t.status === 'active' || t.status === 'ongoing');
 
-  // Scenario A — no trips
+  // No trips
   if (activeOrDraft.length === 0) {
-    return [{
+    return {
       agent: 'icarus',
       message: 'Ainda sem destino? Vou te ajudar a descobrir o lugar perfeito. Toque abaixo e me conte: praia, cultura ou aventura?',
       buttonLabel: '🧭 Planejar Viagem',
       buttonPath: '/planejar',
-    }];
+    };
   }
 
   const trip = activeOrDraft[0];
   const dest = trip.destination || 'seu destino';
   const daysUntil = trip.startDate ? differenceInDays(new Date(trip.startDate), new Date()) : 999;
-  const tierLabel = TIER_LABELS[trip.budgetTier || 'comfort'] || 'Conforto';
   const { percent, firstPending } = getChecklistStats(trip);
-  const confirmed = trip.finances?.confirmed || trip.budgetUsed || 0;
-  const estimateMin = trip.budgetEstimateMin || trip.budget || 0;
-  const estimateMax = trip.budgetEstimateMax || trip.budget || 0;
-  const available = Math.max(0, estimateMax - confirmed);
+  const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
+  const hotelConfirmed = trip.accommodation?.status === 'confirmed';
 
-  // Scenario D — active trip < 7 days (URGENT)
+  // Priority 1: < 7 days → Hermes urgency
   if (daysUntil <= 7 && daysUntil > 0) {
-    return [
-      {
-        agent: 'icarus',
-        message: `Mal posso esperar! ${dest} vai ser incrível! 🎉`,
-        buttonLabel: '📖 Ver Guia',
-        buttonPath: `/viagens?trip=${trip.id}&tab=guia`,
-      },
-      {
-        agent: 'hestia',
-        message: `Último check: câmbio atualizado. Já comprou toda a moeda? Orçamento: R$ ${fmt(confirmed)} de R$ ${fmt(estimateMax)}.`,
-        buttonLabel: '💱 Ver Câmbio',
-        buttonPath: `/viagens?trip=${trip.id}&tab=cambio`,
-      },
-      {
-        agent: 'hermes',
-        message: `⚠️ ${daysUntil} DIAS! Checklist em ${percent}%. Falta: ${firstPending}. Passaporte? Seguro? AGORA!`,
-        buttonLabel: '✅ Checklist',
-        buttonPath: `/viagens?trip=${trip.id}&tab=checklist`,
-      },
-    ];
+    return {
+      agent: 'hermes',
+      message: `⚠️ ${daysUntil} DIAS para ${dest}! Checklist em ${percent}%. Falta: ${firstPending}. Passaporte? Seguro? AGORA!`,
+      buttonLabel: '✅ Checklist',
+      buttonPath: `/viagens?trip=${trip.id}&tab=checklist`,
+    };
   }
 
-  // Scenario C — active trip < 30 days
-  if (daysUntil <= 30 && daysUntil > 0) {
-    return [
-      {
-        agent: 'icarus',
-        message: `${dest} te espera! Quer que eu sugira os melhores restaurantes e experiências para a noite de chegada?`,
-        buttonLabel: '📖 Ver Guia',
-        buttonPath: `/viagens?trip=${trip.id}&tab=guia`,
-      },
-      {
-        agent: 'hestia',
-        message: `Orçamento ${tierLabel}: R$ ${fmt(estimateMin)}–${fmt(estimateMax)}. Já confirmou R$ ${fmt(confirmed)}. Margem: R$ ${fmt(available)}.`,
-        buttonLabel: '📊 Ver FinOps',
-        buttonPath: `/viagens?trip=${trip.id}&tab=finops`,
-      },
-      {
-        agent: 'hermes',
-        message: `⚠️ ${daysUntil} dias! Checklist em ${percent}%. Pendente: ${firstPending}. Vamos garantir tudo.`,
-        buttonLabel: '✅ Checklist',
-        buttonPath: `/viagens?trip=${trip.id}&tab=checklist`,
-      },
-    ];
-  }
-
-  // Scenario B — active trip > 30 days
-  return [
-    {
+  // Priority 2: Flight not confirmed → Ícaro
+  if (!flightConfirmed) {
+    return {
       agent: 'icarus',
-      message: `${dest} vai ser demais! Explore o guia para descobrir experiências imperdíveis. 🌍`,
-      buttonLabel: '📖 Ver Guia',
-      buttonPath: `/viagens?trip=${trip.id}&tab=guia`,
-    },
-    {
+      message: `${dest} te espera! Próximo passo: confirmar o voo. Quer que eu busque as melhores ofertas?`,
+      buttonLabel: '📊 Ir ao Painel',
+      buttonPath: `/viagens?trip=${trip.id}&tab=painel`,
+    };
+  }
+
+  // Priority 3: Hotel not confirmed → Ícaro
+  if (!hotelConfirmed) {
+    return {
+      agent: 'icarus',
+      message: `Voo fechado para ${dest}! Agora é hora de garantir a hospedagem.`,
+      buttonLabel: '📊 Ir ao Painel',
+      buttonPath: `/viagens?trip=${trip.id}&tab=painel`,
+    };
+  }
+
+  // Priority 4: Checklist < 50% → Hermes
+  if (percent < 50) {
+    return {
+      agent: 'hermes',
+      message: `Checklist em ${percent}% para ${dest}. Pendente: ${firstPending}. Vamos resolver!`,
+      buttonLabel: '✅ Checklist',
+      buttonPath: `/viagens?trip=${trip.id}&tab=checklist`,
+    };
+  }
+
+  // Priority 5: Over budget → Héstia
+  const confirmed = trip.finances?.confirmed || 0;
+  const total = trip.finances?.total || 0;
+  if (confirmed > total && total > 0) {
+    return {
       agent: 'hestia',
-      message: `Vi que ${dest} está na faixa ${tierLabel}. Fique de olho no câmbio — pode ser bom momento para começar a comprar moeda.`,
+      message: `⚠️ Gastos ultrapassaram o orçamento em R$ ${fmt(confirmed - total)}. Quer que eu sugira onde economizar?`,
       buttonLabel: '💱 Ver Câmbio',
       buttonPath: `/viagens?trip=${trip.id}&tab=cambio`,
-    },
-    {
-      agent: 'hermes',
-      message: `Faltam ${daysUntil > 0 ? daysUntil : '?'} dias para ${dest}. Sua checklist está em ${percent}%. Não esqueça: ${firstPending}.`,
-      buttonLabel: '✅ Ver Checklist',
-      buttonPath: `/viagens?trip=${trip.id}&tab=checklist`,
-    },
-  ];
-}
+    };
+  }
 
-function fmt(n: number) {
-  return n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+  // Priority 6: All good → Ícaro inspiration
+  return {
+    agent: 'icarus',
+    message: `${dest} vai ser demais! Tudo encaminhado. Explore o guia para descobrir experiências imperdíveis. 🌍`,
+    buttonLabel: '📖 Ver Guia',
+    buttonPath: `/viagens?trip=${trip.id}&tab=guia`,
+  };
 }
 
 export const AgentCards = ({ trips, onNavigate }: AgentCardsProps) => {
-  const cards = buildCards(trips);
+  const card = buildPriorityCard(trips);
+  const agent = AGENTS[card.agent];
 
   return (
     <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={{
-        hidden: { opacity: 0 },
-        visible: {
-          opacity: 1,
-          transition: { staggerChildren: 0.2 },
-        },
-      }}
-      className="space-y-3"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
     >
-      {cards.map((card, i) => {
-        const agent = AGENTS[card.agent];
-        return (
-          <motion.div
-            key={`${card.agent}-${i}`}
-            variants={{
-              hidden: { opacity: 0, y: 16 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            className={`relative bg-gradient-to-r ${agent.gradient} ${agent.border} border rounded-2xl p-4 overflow-hidden`}
+      <div className={`relative bg-gradient-to-r ${agent.gradient} ${agent.border} border rounded-2xl p-4 overflow-hidden`}>
+        {/* Left accent bar */}
+        <div className={`absolute left-0 top-0 bottom-0 w-1 ${agent.barColor} rounded-l-2xl`} />
+
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-2 pl-2">
+          <span className="text-xl">{agent.emoji}</span>
+          <span className={`font-bold text-sm font-['Outfit'] ${agent.accentColor}`}>
+            {agent.name}
+          </span>
+          <span className="text-xs text-muted-foreground">• {agent.role}</span>
+        </div>
+
+        {/* Message */}
+        <p className="text-sm text-muted-foreground pl-2 mb-3 leading-relaxed">
+          "{card.message}"
+        </p>
+
+        {/* Action button */}
+        <div className="flex justify-end pl-2">
+          <button
+            onClick={() => onNavigate(card.buttonPath)}
+            className={`flex items-center gap-1.5 text-xs font-medium ${agent.accentColor} hover:opacity-80 transition-opacity`}
           >
-            {/* Left accent bar */}
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${agent.barColor} rounded-l-2xl`} />
-
-            {/* Header */}
-            <div className="flex items-center gap-2 mb-2 pl-2">
-              <span className="text-xl">{agent.emoji}</span>
-              <span className={`font-bold text-sm font-['Outfit'] ${agent.accentColor}`}>
-                {agent.name}
-              </span>
-              <span className="text-xs text-muted-foreground">• {agent.role}</span>
-            </div>
-
-            {/* Message */}
-            <p className="text-sm text-muted-foreground pl-2 mb-3 leading-relaxed">
-              "{card.message}"
-            </p>
-
-            {/* Action button */}
-            <div className="flex justify-end pl-2">
-              <button
-                onClick={() => onNavigate(card.buttonPath)}
-                className={`flex items-center gap-1.5 text-xs font-medium ${agent.accentColor} hover:opacity-80 transition-opacity`}
-              >
-                {card.buttonLabel}
-                <ArrowRight size={14} />
-              </button>
-            </div>
-          </motion.div>
-        );
-      })}
+            {card.buttonLabel}
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      </div>
     </motion.div>
   );
 };

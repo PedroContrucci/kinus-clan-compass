@@ -13,7 +13,7 @@ import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
 import { DraftCockpit, TripGuide, ExchangeRates, AuctionList, EnhancedDayTimeline, SmartPackingWithLuggage, EnhancedExchangeRates, AuctionConfigModal } from '@/components/cockpit';
-import { HeroCards } from '@/components/cockpit/HeroCards';
+import { TripPanel } from '@/components/cockpit/TripPanel';
 import { AgentTip } from '@/components/shared/AgentTip';
 import { getIcarusRoteiro, getIcarusGuia, getIcarusLeilao, getHestiaFinOps, getHestiaCambio, getHestiaLeilao, getHermesChecklist, getHermesPacking } from '@/lib/agentMessages';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
@@ -86,7 +86,7 @@ const Viagens = () => {
   const [user, setUser] = useState<{ name: string } | null>(null);
   const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(null);
-  const [activeTab, setActiveTab] = useState<'roteiro' | 'leilao' | 'guia' | 'cambio' | 'finops' | 'packing' | 'checklist'>('roteiro');
+  const [activeTab, setActiveTab] = useState<'painel' | 'roteiro' | 'leilao' | 'guia' | 'cambio' | 'packing' | 'checklist'>('painel');
   const [selectedDay, setSelectedDay] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; activityName: string; activityType: string; estimatedPrice?: number } | null>(null);
@@ -702,7 +702,17 @@ const Viagens = () => {
 
   if (!user) return null;
 
-  // All trips now go to full cockpit (no DraftCockpit redirect)
+  // Draft Trip → Flight Selection Flow
+  if (selectedTrip && selectedTrip.status === 'draft') {
+    return (
+      <DraftCockpit
+        trip={selectedTrip as any}
+        onSave={handleSaveDraft}
+        onActivate={handleActivateDraft}
+        onClose={() => setSelectedTrip(null)}
+      />
+    );
+  }
 
   // Active/Ongoing Trip Dashboard View
   if (selectedTrip) {
@@ -733,12 +743,12 @@ const Viagens = () => {
           {/* Tabs */}
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {[
+              { id: 'painel' as const, label: '📊 Painel' },
               { id: 'roteiro' as const, label: '📋 Roteiro' },
-              { id: 'leilao' as const, label: '🎯 Leilão' },
+              { id: 'leilao' as const, label: '🎯 Ofertas' },
+              { id: 'cambio' as const, label: '💱 Câmbio' },
               { id: 'packing' as const, label: '🧳 Packing' },
               { id: 'guia' as const, label: '📖 Guia' },
-              { id: 'cambio' as const, label: '💱 Câmbio' },
-              { id: 'finops' as const, label: '💰 FinOps' },
               { id: 'checklist' as const, label: '✅ Checklist' },
             ].map((tab) => (
               <button
@@ -757,26 +767,29 @@ const Viagens = () => {
         </header>
 
         <main className="px-4 py-6">
+          {/* Painel Tab */}
+          {activeTab === 'painel' && (
+            <TripPanel
+              trip={selectedTrip}
+              onConfirm={handleHeroConfirm}
+              onOpenAuction={(type) => {
+                setAuctionModal({
+                  isOpen: true,
+                  activityName: type === 'flight' ? 'Voo de Ida e Volta' : 'Hospedagem',
+                  activityType: type,
+                  estimatedPrice: type === 'flight'
+                    ? (selectedTrip.flights?.outbound?.price || 0) + (selectedTrip.flights?.return?.price || 0)
+                    : selectedTrip.accommodation?.totalPrice || 0,
+                });
+              }}
+              onNavigateTab={(tab) => setActiveTab(tab as any)}
+            />
+          )}
+
           {/* Roteiro Tab */}
           {activeTab === 'roteiro' && (
             <div className="animate-fade-in">
               <AgentTip agent="icarus" variant="compact" message={getIcarusRoteiro(selectedTrip, selectedDay)} />
-
-              {/* Hero Cards — Voo e Hotel */}
-              <HeroCards
-                trip={selectedTrip}
-                onOpenAuction={(type) => {
-                  setAuctionModal({
-                    isOpen: true,
-                    activityName: type === 'flight' ? 'Voo de Ida e Volta' : 'Hospedagem',
-                    activityType: type,
-                    estimatedPrice: type === 'flight'
-                      ? (selectedTrip.flights?.outbound?.price || 0) + (selectedTrip.flights?.return?.price || 0)
-                      : selectedTrip.accommodation?.totalPrice || 0,
-                  });
-                }}
-                onConfirm={handleHeroConfirm}
-              />
 
               {/* Day Timeline */}
               {selectedTrip.startDate && (
@@ -810,17 +823,18 @@ const Viagens = () => {
                     {currentDay.activities.map((activity, actIndex) => {
                       const dayIndex = selectedTrip.days.findIndex((d) => d.day === currentDay.day);
                       
-                      // Auto-detect hero activities (flight/check-in/check-out)
-                      const isHeroActivity = activity.isHeroItem || 
+                      // Auto-detect logistics activities (flight/check-in/check-out/transfer)
+                      const isLogisticsActivity = activity.isHeroItem ||
                         activity.category === 'voo' || 
                         (activity.category === 'hotel' && (
                           activity.name?.toLowerCase().includes('check-in') ||
                           activity.name?.toLowerCase().includes('check-out')
                         )) ||
-                        activity.name?.toLowerCase().includes('check-in aeroporto');
+                        activity.name?.toLowerCase().includes('check-in aeroporto') ||
+                        activity.name?.toLowerCase().includes('transfer');
 
                       // Hero items render as muted markers
-                      if (isHeroActivity) {
+                      if (isLogisticsActivity) {
                         return (
                           <div key={activity.id} className="flex gap-3 opacity-40">
                             <div className="flex flex-col items-center">
@@ -837,7 +851,7 @@ const Viagens = () => {
                                 </span>
                               </div>
                               <h4 className="font-medium text-[#64748b] font-['Outfit'] text-sm">{activity.name}</h4>
-                              <p className="text-xs text-[#475569] mt-0.5">🔗 Gerenciado nos cards acima</p>
+                              <p className="text-xs text-[#475569] mt-0.5">📍 Logística — gerenciado no Painel</p>
                             </div>
                           </div>
                         );
@@ -962,26 +976,6 @@ const Viagens = () => {
                 </div>
               )}
             </div>
-          )}
-
-          {/* FinOps Tab */}
-          {activeTab === 'finops' && (
-            <>
-              <AgentTip agent="hestia" variant="compact" message={getHestiaFinOps(selectedTrip)} />
-              <FinOpsDashboard
-                finances={selectedTrip.finances}
-                destination={selectedTrip.destination}
-              />
-
-              {/* Add Manual Expense */}
-              <button
-                onClick={() => setManualExpenseModal(true)}
-                className="w-full mt-6 py-4 bg-[#1e293b] border border-dashed border-[#334155] rounded-2xl text-[#94a3b8] font-['Outfit'] flex items-center justify-center gap-2 hover:border-[#10b981] hover:text-[#f8fafc] transition-colors"
-              >
-                <Plus size={20} />
-                Adicionar Gasto Manual
-              </button>
-            </>
           )}
 
           {/* Smart Packing Tab - New Flow with Luggage First */}
@@ -1243,7 +1237,7 @@ const Viagens = () => {
                   onClick={() => {
                     setSelectedTrip(trip);
                     setSelectedDay(1);
-                    setActiveTab('roteiro');
+                    setActiveTab('painel');
                   }}
                   className="w-full bg-[#1e293b] border border-[#334155] rounded-2xl p-4 text-left hover:border-[#10b981]/50 transition-colors"
                 >

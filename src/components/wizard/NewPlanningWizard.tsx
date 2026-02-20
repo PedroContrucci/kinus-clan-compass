@@ -178,8 +178,9 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
 
       const trip: SavedTrip = {
         id: tripId,
-        status: 'active',
+        status: 'draft',
         destination: destinationCity,
+        origin: data.originCity,
         country: cityInfo?.country.country || data.selectedCountry || getCountryForCity(destinationCity),
         emoji: getDestinationEmoji(destinationCity),
         startDate: data.departureDate.toISOString(),
@@ -253,8 +254,8 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
       localStorage.setItem('kinu_trips', JSON.stringify(existingTrips));
 
       toast({
-        title: "Viagem ativada! 🚀",
-        description: "Seu roteiro está pronto. Bora explorar!",
+        title: "Buscando voos... ✈️",
+        description: "Escolha os melhores voos para sua viagem!",
       });
 
       if (onComplete) {
@@ -357,7 +358,7 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
           ) : currentStep === 4 ? (
             <>
               <Sparkles size={20} />
-              <span className="font-['Outfit'] text-lg">Ativar Viagem 🚀</span>
+              <span className="font-['Outfit'] text-lg">Escolher Voos ✈️</span>
             </>
           ) : (
             <>
