@@ -1,4 +1,4 @@
-// tripPdfExport — Premium PDF with KINU branding
+// tripPdfExport — Premium PDF with KINU branding + destination photos
 // CRITICAL: NO emoji in PDF text — jsPDF Helvetica does not support Unicode emoji
 
 import jsPDF from 'jspdf';
@@ -20,6 +20,78 @@ const B = {
   gray500:  [100, 116, 139] as const,
 };
 
+// ── Destination cover photos (Unsplash direct links) ──
+const DESTINATION_COVER_PHOTOS: Record<string, string[]> = {
+  'paris': [
+    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1200&q=80',
+    'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=1200&q=80',
+  ],
+  'roma': [
+    'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1200&q=80',
+    'https://images.unsplash.com/photo-1525874684015-58379d421a52?w=1200&q=80',
+  ],
+  'londres': [
+    'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&q=80',
+    'https://images.unsplash.com/photo-1529655683826-aba9b3e77383?w=1200&q=80',
+  ],
+  'bangkok': [
+    'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=1200&q=80',
+    'https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=1200&q=80',
+  ],
+  'toquio': [
+    'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1200&q=80',
+    'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=1200&q=80',
+  ],
+  'dubai': [
+    'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200&q=80',
+    'https://images.unsplash.com/photo-1518684079-3c830dcef090?w=1200&q=80',
+  ],
+  'nova york': [
+    'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1200&q=80',
+    'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=1200&q=80',
+  ],
+  'lisboa': [
+    'https://images.unsplash.com/photo-1558383817-e83c8a641067?w=1200&q=80',
+    'https://images.unsplash.com/photo-1548707309-dcebeab426c8?w=1200&q=80',
+  ],
+  'barcelona': [
+    'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=1200&q=80',
+    'https://images.unsplash.com/photo-1523531294919-4bcd7c65e216?w=1200&q=80',
+  ],
+  'buenos aires': [
+    'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?w=1200&q=80',
+    'https://images.unsplash.com/photo-1612294037637-ec328d0e075e?w=1200&q=80',
+  ],
+  'amsterdam': [
+    'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=1200&q=80',
+    'https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?w=1200&q=80',
+  ],
+  'cairo': [
+    'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=1200&q=80',
+    'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=1200&q=80',
+  ],
+  'phuket': [
+    'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=1200&q=80',
+    'https://images.unsplash.com/photo-1537956965359-7573183d1f57?w=1200&q=80',
+  ],
+  'bali': [
+    'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1200&q=80',
+    'https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=1200&q=80',
+  ],
+  'cancun': [
+    'https://images.unsplash.com/photo-1552074284-5e88ef1aef18?w=1200&q=80',
+    'https://images.unsplash.com/photo-1510097467424-192d713fd8b2?w=1200&q=80',
+  ],
+  'miami': [
+    'https://images.unsplash.com/photo-1514214246283-d427a95c5d2f?w=1200&q=80',
+    'https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=1200&q=80',
+  ],
+  'singapura': [
+    'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=1200&q=80',
+    'https://images.unsplash.com/photo-1496939376851-89342e90adcd?w=1200&q=80',
+  ],
+};
+
 // ── Destination descriptions (NO accents to avoid jsPDF encoding issues) ──
 const DESTINATION_DESCRIPTIONS: Record<string, string> = {
   'cairo': 'Cairo, capital do Egito, e uma das cidades mais antigas e fascinantes do mundo. Com mais de 20 milhoes de habitantes, a cidade e o coracao cultural do Oriente Medio. As lendarias Piramides de Giza, o Museu Egipcio e o vibrante bazar Khan el-Khalili sao imperdiveis. A culinaria local vai do koshari nas ruas ate sofisticados restaurantes a beira do Nilo.',
@@ -35,6 +107,7 @@ const DESTINATION_DESCRIPTIONS: Record<string, string> = {
   'dubai': 'Dubai e onde o impossivel se torna realidade. O Burj Khalifa, o Dubai Mall, as ilhas artificiais — tudo e superlativo. Mas alem do luxo, ha o Dubai historico: o Creek, os souks de ouro e especiarias, e a calorosa hospitalidade arabe.',
   'lisboa': 'Lisboa e uma das capitais mais charmosas da Europa. Os bondes historicos sobem as colinas entre miradouros com vistas deslumbrantes. O pasteis de nata, o fado nos bares de Alfama e os azulejos nas fachadas criam uma atmosfera unica que mistura nostalgia e modernidade.',
   'amsterdam': 'Amsterdam encanta com seus canais, bicicletas e museus de classe mundial. O Rijksmuseum, o Museu Van Gogh e a Casa de Anne Frank estao a uma pedalada de distancia. A cidade e conhecida por sua tolerancia, vida noturna animada e mercados flutuantes coloridos.',
+  'phuket': 'Phuket, a maior ilha da Tailandia, e um paraiso tropical que combina praias de areia branca, templos budistas e uma vibrante cultura local. De Patong Beach ao centro historico de Old Phuket Town, a ilha oferece desde aventuras aquaticas ate experiencias gastronomicas autenticas.',
 };
 
 // ── Day narratives by destination + theme ──
@@ -48,6 +121,16 @@ const DESTINATION_DAY_NARRATIVES: Record<string, Record<string, string>> = {
     'Descobertas': 'Descubra o lado contemporaneo de Bangkok: galerias de arte em Charoen Krung, rooftop bars em Silom, e o vibrante bairro de Ari com seus cafes artesanais.',
     'Aventura': 'Explore os arredores de Bangkok — um day trip ao mercado ferroviario de Maeklong ou ao parque historico de Ayutthaya (patrimonio UNESCO) revela outra dimensao da Tailandia.',
     'Retorno': 'Ultimo cafe da manha em Bangkok. Aproveite para compras de ultima hora no MBK Center ou Chatuchak Weekend Market antes do transfer ao aeroporto.',
+  },
+  'phuket': {
+    'Embarque': 'Saida rumo ao paraiso tailandes. O voo para Phuket dura em media 22 horas com conexao, geralmente via Bangkok ou Singapura.',
+    'Chegada': 'Bem-vindo a Phuket! A maior ilha da Tailandia recebe voce com praias de areia branca e agua cristalina. O centro historico de Old Phuket Town, com arquitetura sino-portuguesa, e uma surpresa charmosa.',
+    'Cultura': 'Phuket guarda mais historia do que aparenta. O templo Wat Chalong, o mais importante da ilha, e o Big Buddha de 45 metros no topo da colina Nakkerd oferecem uma perspectiva contemplativa alem das praias.',
+    'Gastronomia': 'A culinaria de Phuket tem identidade propria — o mee hokkien (macarrao frito), o oh tao (ostra frita) e o kanom jeen (curry com noodles) sao especialidades locais. O Night Market de Chillva e imperdivel.',
+    'Passeios': 'As praias de Phuket sao diversas: Patong para agitacao, Kata para familias, Freedom Beach para isolamento. O mirante de Promthep Cape ao por do sol e uma das vistas mais bonitas da Tailandia.',
+    'Descobertas': 'Explore Old Phuket Town — grafites coloridos, cafes artesanais e galerias escondidas nas ruas Thalang e Soi Romanee. Aos domingos, a Walking Street Market ganha vida com comida e artesanato.',
+    'Aventura': 'Um dia nas ilhas Phi Phi e obrigatorio — Maya Bay (cenario do filme "A Praia"), snorkeling em Bamboo Island e almoco em Phi Phi Don. Outra opcao imperdivel: a baia de Phang Nga com seus monolitos calcarios.',
+    'Retorno': 'Ultimo mergulho antes de partir! Aproveite o cafe da manha com vista para o mar e faca compras de ultima hora no Jungceylon Mall.',
   },
   'paris': {
     'Embarque': 'Saida rumo a Cidade Luz. O voo para Paris dura em media 11 horas direto de Guarulhos.',
@@ -105,6 +188,7 @@ const GENERIC_DAY_NARRATIVES: Record<string, string> = {
 // ── Destination practical info ──
 const DESTINATION_INFO: Record<string, { timezone: string; voltage: string; language: string; currency: string; visa: string }> = {
   'bangkok': { timezone: 'UTC+7 (10h a frente do Brasil)', voltage: '220V - Tomada tipo A/B/C', language: 'Tailandes (ingles turistico)', currency: 'Baht Tailandes (THB)', visa: 'Isento para brasileiros ate 90 dias' },
+  'phuket': { timezone: 'UTC+7 (10h a frente do Brasil)', voltage: '220V - Tomada tipo A/B/C', language: 'Tailandes (ingles turistico)', currency: 'Baht Tailandes (THB)', visa: 'Isento para brasileiros ate 90 dias' },
   'paris': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/E', language: 'Frances', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
   'roma': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F/L', language: 'Italiano', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
   'toquio': { timezone: 'UTC+9 (12h a frente do Brasil)', voltage: '100V - Tomada tipo A/B', language: 'Japones', currency: 'Iene Japones (JPY)', visa: 'Isento para brasileiros ate 90 dias' },
@@ -133,7 +217,6 @@ function getDayNarrative(destination: string, dayTitle: string): string {
   const key = destination.toLowerCase().trim();
   const cleanTitle = dayTitle.replace(/[^\w\sà-úÀ-Ú—·•\-,]/gi, '').trim();
 
-  // Check destination-specific narratives
   for (const [destKey, narratives] of Object.entries(DESTINATION_DAY_NARRATIVES)) {
     if (key.includes(destKey) || destKey.includes(key)) {
       for (const [theme, narrative] of Object.entries(narratives)) {
@@ -142,7 +225,6 @@ function getDayNarrative(destination: string, dayTitle: string): string {
     }
   }
 
-  // Fallback to generic
   for (const [theme, narrative] of Object.entries(GENERIC_DAY_NARRATIVES)) {
     if (cleanTitle.toLowerCase().includes(theme.toLowerCase())) return narrative;
   }
@@ -159,7 +241,6 @@ function getDestInfo(destination: string) {
   return null;
 }
 
-// Remove emojis and special Unicode from text
 function cleanText(text: string): string {
   return text.replace(/[^\w\sà-úÀ-Ú—·•\-,.;:!?()\/'"@#$%&*+=<>{}[\]|\\~`^°ºª§¢£¥€]/gi, '').trim();
 }
@@ -168,13 +249,58 @@ function fmt(n: number) {
   return n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
 }
 
-// ── Main Export Function ──
+// ── Image fetching ──
 
-export function exportTripPDF(trip: SavedTrip) {
+function getDestCoverPhotos(destination: string): string[] {
+  const key = destination.toLowerCase().trim();
+  if (DESTINATION_COVER_PHOTOS[key]) return DESTINATION_COVER_PHOTOS[key];
+  for (const [k, v] of Object.entries(DESTINATION_COVER_PHOTOS)) {
+    if (key.includes(k) || k.includes(key)) return v;
+  }
+  return ['https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80'];
+}
+
+async function fetchImageAsBase64(url: string): Promise<string | null> {
+  try {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const maxW = 800;
+          const scale = Math.min(1, maxW / img.width);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { resolve(null); return; }
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        } catch { resolve(null); }
+      };
+      img.onerror = () => resolve(null);
+      setTimeout(() => resolve(null), 5000);
+      img.src = url;
+    });
+  } catch {
+    return null;
+  }
+}
+
+// ── Main Export Function (ASYNC for image fetching) ──
+
+export async function exportTripPDF(trip: SavedTrip) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.getWidth();  // 210
   const ph = doc.internal.pageSize.getHeight(); // 297
   let y = 0;
+
+  // Fetch cover photos in parallel
+  const coverUrls = getDestCoverPhotos(trip.destination);
+  const [coverBase64, secondBase64] = await Promise.all([
+    fetchImageAsBase64(coverUrls[0]),
+    coverUrls.length > 1 ? fetchImageAsBase64(coverUrls[1]) : Promise.resolve(null),
+  ]);
 
   const setC = (rgb: readonly number[], fill = true) => {
     if (fill) doc.setFillColor(rgb[0], rgb[1], rgb[2]);
@@ -186,7 +312,6 @@ export function exportTripPDF(trip: SavedTrip) {
     doc.rect(x, yPos, w, h, 'F');
   };
 
-  // Status indicator circle
   const drawStatusDot = (x: number, yPos: number, color: readonly number[]) => {
     doc.setFillColor(color[0], color[1], color[2]);
     doc.circle(x, yPos, 1.2, 'F');
@@ -228,32 +353,42 @@ export function exportTripPDF(trip: SavedTrip) {
   const totalDays = trip.days?.length || 0;
 
   // ════════════════════════════════════════
-  // PAGE 1 — COVER
+  // PAGE 1 — COVER WITH PHOTO
   // ════════════════════════════════════════
 
-  // Full page navy background
+  // Full navy background
   drawRect(0, 0, pw, ph, B.night);
 
-  // KINU logotype
+  // Cover photo in top section
+  if (coverBase64) {
+    try {
+      doc.addImage(coverBase64, 'JPEG', 0, 0, pw, 130);
+      // Solid navy block at bottom of photo for smooth transition
+      drawRect(0, 105, pw, 25, B.night);
+    } catch {
+      // Fallback: no photo, just navy
+    }
+  }
+
+  // KINU branding — below photo area
+  const titleY = coverBase64 ? 140 : 50;
+
   setC(B.white, false);
   doc.setFontSize(28);
   doc.setFont('helvetica', 'bold');
-  doc.text('KINU', pw / 2, 25, { align: 'center' });
+  doc.text('KINU', pw / 2, titleY, { align: 'center' });
 
-  // Subtitle
   setC(B.gray400, false);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('Travel Intelligence', pw / 2, 33, { align: 'center' });
+  doc.text('Travel Intelligence', pw / 2, titleY + 8, { align: 'center' });
 
   // Emerald accent line
-  drawRect(pw / 2 - 30, 38, 60, 0.6, B.emerald);
-
-  // Gold thin accent
-  drawRect(pw / 2 - 20, 40, 40, 0.3, B.gold);
+  drawRect(pw / 2 - 30, titleY + 13, 60, 0.6, B.emerald);
+  drawRect(pw / 2 - 20, titleY + 15, 40, 0.3, B.gold);
 
   // Destination
-  y = 58;
+  y = titleY + 28;
   setC(B.white, false);
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
@@ -274,30 +409,49 @@ export function exportTripPDF(trip: SavedTrip) {
   y += 6;
   doc.text(`${totalDays} dias  |  ${trip.travelers} viajante(s)  |  Faixa ${tierLabel}`, pw / 2, y, { align: 'center' });
 
-  // Divider
-  y += 14;
-  drawRect(14, y, pw - 28, 0.3, B.surface);
-  y += 10;
+  // About destination section (only if space, i.e. no photo pushed it down too much)
+  if (y + 40 < ph - 22) {
+    y += 14;
+    drawRect(14, y, pw - 28, 0.3, B.surface);
+    y += 10;
 
-  // ── SECTION: Sobre o Destino ──
-  setC(B.emerald, false);
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('SOBRE O DESTINO', 14, y);
-  y += 6;
+    setC(B.emerald, false);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SOBRE O DESTINO', 14, y);
+    y += 6;
 
-  setC(B.gray400, false);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  const desc = getDestDescription(trip.destination);
-  const descLines = doc.splitTextToSize(desc, pw - 28);
-  doc.text(descLines, 14, y);
-  y += descLines.length * 4.2 + 6;
+    setC(B.gray400, false);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const desc = getDestDescription(trip.destination);
+    const maxDescWidth = pw - 28;
+    const descLines = doc.splitTextToSize(desc, maxDescWidth);
+    const availableLines = Math.floor((ph - 22 - y) / 4.2);
+    const linesToShow = descLines.slice(0, Math.min(descLines.length, availableLines));
+    doc.text(linesToShow, 14, y);
+    y += linesToShow.length * 4.2;
+  }
 
-  drawRect(14, y, pw - 28, 0.3, B.surface);
-  y += 10;
+  addFooter();
 
-  // ── SECTION: Resumo Financeiro ──
+  // ════════════════════════════════════════
+  // PAGE 2 — OVERVIEW (Photo strip + Financial + Flight/Hotel)
+  // ════════════════════════════════════════
+  doc.addPage();
+  addPageHeader();
+
+  // Second photo strip
+  if (secondBase64) {
+    try {
+      doc.addImage(secondBase64, 'JPEG', 14, y, pw - 28, 50);
+      y += 54;
+    } catch {
+      // Skip
+    }
+  }
+
+  // Resumo Financeiro
   checkPage(45);
   setC(B.emerald, false);
   doc.setFontSize(10);
@@ -305,10 +459,9 @@ export function exportTripPDF(trip: SavedTrip) {
   doc.text('RESUMO FINANCEIRO', 14, y);
   y += 6;
 
-  // Financial box
   const boxH = 34;
   drawRect(14, y, pw - 28, boxH, B.deep);
-  drawRect(14, y, 2, boxH, B.emerald); // Left accent
+  drawRect(14, y, 2, boxH, B.emerald);
 
   const finData = [
     { label: 'Orcamento total', value: `R$ ${fmt(trip.finances?.total || trip.budget || 0)}`, color: B.white },
@@ -342,7 +495,7 @@ export function exportTripPDF(trip: SavedTrip) {
 
   y = barY + 10;
 
-  // ── SECTION: Voo & Hospedagem ──
+  // Voo & Hospedagem
   checkPage(30);
   drawRect(14, y, pw - 28, 0.3, B.surface);
   y += 8;
@@ -352,7 +505,6 @@ export function exportTripPDF(trip: SavedTrip) {
   doc.text('VOO & HOSPEDAGEM', 14, y);
   y += 7;
 
-  // Flight
   const originCode = trip.flights?.outbound?.origin || 'GRU';
   const destCode = trip.flights?.outbound?.destination || trip.destination;
   const flightStatus = trip.flights?.outbound?.status === 'confirmed' ? 'Confirmado' : 'Planejado';
@@ -369,7 +521,6 @@ export function exportTripPDF(trip: SavedTrip) {
   doc.text(`Status: ${flightStatus}  |  R$ ${fmt(flightPrice)}`, 20, y);
   y += 7;
 
-  // Hotel
   if (trip.accommodation) {
     const hotelStatus = trip.accommodation.status === 'confirmed' ? 'Confirmado' : 'Planejado';
     drawStatusDot(16, y - 1, hotelStatus === 'Confirmado' ? B.emerald : B.gold);
@@ -385,7 +536,7 @@ export function exportTripPDF(trip: SavedTrip) {
   addFooter();
 
   // ════════════════════════════════════════
-  // PAGE 2+ — ROTEIRO DIA A DIA
+  // PAGE 3+ — ROTEIRO DIA A DIA
   // ════════════════════════════════════════
   doc.addPage();
   addPageHeader();
@@ -399,7 +550,6 @@ export function exportTripPDF(trip: SavedTrip) {
   (trip.days || []).forEach((day) => {
     checkPage(22);
 
-    // Day header with emerald underline
     drawRect(14, y - 4, pw - 28, 0.3, B.surface);
     y += 2;
 
@@ -410,7 +560,6 @@ export function exportTripPDF(trip: SavedTrip) {
     doc.setFont('helvetica', 'bold');
     doc.text(`DIA ${day.day}  —  ${cleanTitle}`, 14, y);
 
-    // Date if available
     if (trip.startDate) {
       const dayDate = new Date(trip.startDate);
       dayDate.setDate(dayDate.getDate() + day.day - 1);
@@ -423,7 +572,6 @@ export function exportTripPDF(trip: SavedTrip) {
     drawRect(14, y + 2, 40, 0.4, B.emerald);
     y += 6;
 
-    // Day narrative
     const narrative = getDayNarrative(trip.destination, day.title || '');
     if (narrative) {
       checkPage(12);
@@ -435,28 +583,23 @@ export function exportTripPDF(trip: SavedTrip) {
       y += narrativeLines.length * 3.8 + 3;
     }
 
-    // Activities
     (day.activities || []).forEach((act) => {
       checkPage(7);
       const isLogistics = act.category === 'voo' ||
         (act.category === 'hotel' && (act.name?.toLowerCase().includes('check-in') || act.name?.toLowerCase().includes('check-out'))) ||
         act.name?.toLowerCase().includes('transfer');
 
-      // Time
       setC(isLogistics ? B.gray500 : B.white, false);
       doc.setFontSize(8.5);
       doc.setFont('helvetica', isLogistics ? 'italic' : 'normal');
       const timeStr = act.time || '     ';
       doc.text(timeStr, 16, y);
 
-      // Activity name (cleaned of emojis)
       const actName = cleanText(act.name || '');
       doc.text(actName, 30, y);
 
-      // Cost right-aligned with dots
       const priceStr = act.cost > 0 ? `R$ ${fmt(act.cost)}` : '';
       if (priceStr) {
-        // Status dot
         if (act.status === 'confirmed') {
           drawStatusDot(pw - 16 - doc.getTextWidth(priceStr) - 4, y - 0.5, B.emerald);
         }
@@ -464,7 +607,6 @@ export function exportTripPDF(trip: SavedTrip) {
         doc.setFont('helvetica', 'bold');
         doc.text(priceStr, pw - 16, y, { align: 'right' });
 
-        // Dotted line
         const nameWidth = doc.getTextWidth(actName) + 32;
         const priceWidth = doc.getTextWidth(priceStr) + 6;
         const dotStart = nameWidth;

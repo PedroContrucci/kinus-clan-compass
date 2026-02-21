@@ -1,7 +1,7 @@
 // TripPanel — Orchestrated Executive Dashboard
 
 import { motion } from 'framer-motion';
-import { Check, FileText, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Check, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -88,28 +88,21 @@ function getOrchestratedActions(trip: SavedTrip): OrchestratedAction[] {
   // 1. Flight — urgency-based messaging
   if (!flightConfirmed && daysUntil <= 14 && daysUntil > 0) {
     actions.push({
-      agent: 'icarus',
-      priority: 1,
+      agent: 'icarus', priority: 1,
       title: 'Comprar voo AGORA',
       message: `Urgente! Faltam apenas ${daysUntil} dias. Precos de voo tendem a subir nas ultimas 2 semanas. Feche agora para garantir!`,
-      actionType: 'open-auction-flight',
-      actionLabel: '🎯 Buscar Ofertas Agora',
-      completed: false,
+      actionType: 'open-auction-flight', actionLabel: '🎯 Buscar Ofertas Agora', completed: false,
     });
   } else if (!flightConfirmed && daysUntil > 30) {
     actions.push({
-      agent: 'icarus',
-      priority: 2,
+      agent: 'icarus', priority: 2,
       title: 'Monitorar preco do voo',
       message: `Faltam ${daysUntil} dias. Historicamente, voos para ${dest} caem de preco 45-60 dias antes. Quer monitorar por 7 dias?`,
-      actionType: 'open-auction-flight',
-      actionLabel: '🎯 Monitorar Voos',
-      completed: false,
+      actionType: 'open-auction-flight', actionLabel: '🎯 Monitorar Voos', completed: false,
     });
   } else {
     actions.push({
-      agent: 'icarus',
-      priority: flightConfirmed ? 99 : 1,
+      agent: 'icarus', priority: flightConfirmed ? 99 : 1,
       title: 'Voo Ida e Volta',
       message: flightConfirmed
         ? `Voo confirmado! ${originCode} → ${destCode} → ${originCode}`
@@ -122,8 +115,7 @@ function getOrchestratedActions(trip: SavedTrip): OrchestratedAction[] {
 
   // 2. Hotel
   actions.push({
-    agent: 'icarus',
-    priority: hotelConfirmed ? 99 : (flightConfirmed ? 2 : 3),
+    agent: 'icarus', priority: hotelConfirmed ? 99 : (flightConfirmed ? 2 : 3),
     title: 'Hospedagem',
     message: hotelConfirmed
       ? `Hotel reservado! ${trip.accommodation?.totalNights || 0} noites em ${dest}`
@@ -133,35 +125,28 @@ function getOrchestratedActions(trip: SavedTrip): OrchestratedAction[] {
     completed: hotelConfirmed,
   });
 
-  // 3. Câmbio (Héstia) — volatile currency alert
+  // 3. Câmbio (Héstia)
   const volatileCurrencies = ['ARS', 'TRY', 'EGP'];
   const destCurrency = (trip as any).destinationCurrency || '';
   if (volatileCurrencies.includes(destCurrency)) {
     actions.push({
-      agent: 'hestia',
-      priority: 3,
+      agent: 'hestia', priority: 3,
       title: 'Câmbio instável',
       message: `A moeda do destino (${destCurrency}) tem alta volatilidade. Considere levar USD como backup e comprar moeda local gradualmente.`,
-      actionType: 'navigate-cambio',
-      actionLabel: '💱 Ver Câmbio',
-      completed: false,
+      actionType: 'navigate-cambio', actionLabel: '💱 Ver Câmbio', completed: false,
     });
   } else {
     actions.push({
-      agent: 'hestia',
-      priority: flightConfirmed && hotelConfirmed ? 3 : 5,
+      agent: 'hestia', priority: flightConfirmed && hotelConfirmed ? 3 : 5,
       title: 'Câmbio',
       message: `Comece a comprar ${currency} aos poucos. Diluir o câmbio reduz o risco.`,
-      actionType: 'navigate-cambio',
-      actionLabel: '💱 Ver Câmbio',
-      completed: false,
+      actionType: 'navigate-cambio', actionLabel: '💱 Ver Câmbio', completed: false,
     });
   }
 
   // 4. Checklist (Hermes)
   actions.push({
-    agent: 'hermes',
-    priority: checklistPct === 100 ? 99 : (daysUntil <= 14 ? 2 : 4),
+    agent: 'hermes', priority: checklistPct === 100 ? 99 : (daysUntil <= 14 ? 2 : 4),
     title: 'Preparação',
     message: checklistPct === 100
       ? `Tudo pronto! Você está preparado para ${dest}!`
@@ -179,13 +164,10 @@ function getOrchestratedActions(trip: SavedTrip): OrchestratedAction[] {
     const hasMichelin = gastroDay.activities?.some(a => a.name?.toLowerCase().includes('michelin'));
     if (!hasMichelin) {
       actions.push({
-        agent: 'icarus',
-        priority: 40,
+        agent: 'icarus', priority: 40,
         title: 'Experiência Gastronômica',
         message: `No Dia ${gastroDay.day} (${gastroDay.title}), considere trocar um restaurante por um Michelin local. A diferença de preço pode valer a experiência!`,
-        actionType: 'navigate-roteiro',
-        actionLabel: '📋 Ver no Roteiro',
-        completed: false,
+        actionType: 'navigate-roteiro', actionLabel: '📋 Ver no Roteiro', completed: false,
       });
     }
   }
@@ -193,26 +175,20 @@ function getOrchestratedActions(trip: SavedTrip): OrchestratedAction[] {
   // 6. Early booking reminder
   if (daysUntil > 7 && daysUntil < 30 && flightConfirmed) {
     actions.push({
-      agent: 'hermes',
-      priority: 50,
+      agent: 'hermes', priority: 50,
       title: 'Reserve passeios populares',
       message: `Faltam ${daysUntil} dias. Passeios populares em ${dest} costumam esgotar. Confirme os principais no roteiro!`,
-      actionType: 'navigate-roteiro',
-      actionLabel: '📋 Ver Roteiro',
-      completed: false,
+      actionType: 'navigate-roteiro', actionLabel: '📋 Ver Roteiro', completed: false,
     });
   }
 
-  // 7. Smart Packing — só quando checklist > 50%
+  // 7. Smart Packing
   if (checklistPct > 50) {
     actions.push({
-      agent: 'hermes',
-      priority: 6,
+      agent: 'hermes', priority: 6,
       title: 'Mala Inteligente',
       message: `Hora de montar a mala! Vou te ajudar com base no clima de ${dest}.`,
-      actionType: 'navigate-packing',
-      actionLabel: '🧳 Montar Mala',
-      completed: false,
+      actionType: 'navigate-packing', actionLabel: '🧳 Montar Mala', completed: false,
     });
   }
 
@@ -233,6 +209,8 @@ const MiniKPI = ({ label, value, urgent }: { label: string; value: string; urgen
 export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: TripPanelProps) => {
   const [confirmModal, setConfirmModal] = useState<{ type: 'flight' | 'hotel'; isOpen: boolean } | null>(null);
   const [confirmAmount, setConfirmAmount] = useState('');
+  const [showAllActions, setShowAllActions] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const daysLeft = trip.startDate ? Math.max(0, differenceInDays(new Date(trip.startDate), new Date())) : 0;
   const isPast = trip.startDate ? differenceInDays(new Date(trip.startDate), new Date()) < 0 : false;
@@ -247,7 +225,9 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const confirmedPct = trip.finances.total > 0 ? Math.round((trip.finances.confirmed / trip.finances.total) * 100) : 0;
   const plannedPct = trip.finances.total > 0 ? Math.min(100 - confirmedPct, Math.round((trip.finances.planned / trip.finances.total) * 100)) : 0;
 
-  const actions = getOrchestratedActions(trip);
+  const allActions = getOrchestratedActions(trip);
+  const visibleActions = showAllActions ? allActions : allActions.slice(0, 3);
+  const hiddenCount = allActions.length - 3;
 
   const dateRange = trip.startDate && trip.endDate
     ? `${format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} – ${format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })}`
@@ -271,9 +251,25 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
       case 'navigate-cambio': onNavigateTab('cambio'); break;
       case 'navigate-packing': onNavigateTab('packing'); break;
       case 'navigate-roteiro': onNavigateTab('roteiro'); break;
-      case 'export-pdf': exportTripPDF(trip); break;
+      case 'export-pdf': {
+        setPdfLoading(true);
+        exportTripPDF(trip).finally(() => setPdfLoading(false));
+        break;
+      }
     }
   };
+
+  const handleExportPdf = async () => {
+    setPdfLoading(true);
+    try {
+      await exportTripPDF(trip);
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  // Find first non-completed action index
+  const firstActiveIdx = allActions.findIndex(a => !a.completed);
 
   return (
     <motion.div
@@ -300,24 +296,35 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         </div>
       </div>
 
-      {/* 2. Próximos Passos — Agentes orquestrando */}
+      {/* 2. Próximos Passos — Agentes orquestrando (prioritized, max 3 visible) */}
       <div className="space-y-2">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
           Próximos Passos
         </h3>
-        {actions.map((action, i) => {
+        {visibleActions.map((action, i) => {
           const agent = AGENTS[action.agent];
+          const globalIdx = allActions.indexOf(action);
+          const isFirstActive = globalIdx === firstActiveIdx;
+
           return (
-            <div
+            <motion.div
               key={i}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
               className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${
                 action.completed
                   ? 'bg-emerald-500/5 border-emerald-500/20 opacity-60'
                   : `bg-gradient-to-r ${agent.gradient} ${agent.border}`
-              }`}
+              } ${isFirstActive ? 'ring-1 ring-emerald-500/30' : ''}`}
             >
               <span className="text-lg flex-shrink-0 mt-0.5">{agent.emoji}</span>
               <div className="flex-1 min-w-0">
+                {isFirstActive && (
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1 block">
+                    Proximo Passo
+                  </span>
+                )}
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className={`text-xs font-bold font-['Outfit'] ${action.completed ? 'text-emerald-400' : agent.accentColor}`}>
                     {agent.name}
@@ -336,9 +343,19 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
                   </button>
                 )}
               </div>
-            </div>
+            </motion.div>
           );
         })}
+
+        {hiddenCount > 0 && (
+          <button
+            onClick={() => setShowAllActions(!showAllActions)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mx-auto"
+          >
+            {showAllActions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {showAllActions ? 'Menos' : `+ ${hiddenCount} ações`}
+          </button>
+        )}
       </div>
 
       {/* 3. Resumo Financeiro Compacto */}
@@ -365,11 +382,12 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
 
       {/* 4. Export PDF */}
       <button
-        onClick={() => exportTripPDF(trip)}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-500/10 to-sky-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 hover:text-emerald-300 hover:border-emerald-500/40 transition-colors text-sm font-medium"
+        onClick={handleExportPdf}
+        disabled={pdfLoading}
+        className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-500/10 to-sky-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 hover:text-emerald-300 hover:border-emerald-500/40 transition-colors text-sm font-medium disabled:opacity-50"
       >
         <FileText size={16} />
-        Exportar PDF Premium
+        {pdfLoading ? 'Gerando PDF...' : 'Exportar PDF Premium'}
       </button>
 
       {/* Confirm Modal */}
