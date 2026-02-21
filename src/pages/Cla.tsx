@@ -1,5 +1,5 @@
 // Aba Clã — Comunidade KINU reestruturada com filtros robustos
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, MapPin, Search, X, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -51,10 +51,35 @@ const TRAVEL_STYLES = [
   { value: 'family', label: '👨‍👩‍👧‍👦 Família' },
 ];
 
+function getClanInsight(trip: any): string {
+  const dest = (trip.destination || '').toLowerCase();
+  const interests = trip.travelInterests || [];
+  if (dest.includes('bangkok') || dest.includes('phuket')) {
+    if (interests.includes('gastronomy')) return 'O Cla avaliou restaurantes na Tailandia. Os mais bem avaliados sao street food — confira!';
+    return 'A comunidade tem dicas incriveis sobre templos, mercados e praias na Tailandia. Filtre por pais!';
+  }
+  if (dest.includes('paris') || dest.includes('roma') || dest.includes('barcelona') || dest.includes('lisboa')) {
+    return `Viajantes do Cla compartilharam roteiros detalhados para ${trip.destination}. Veja restaurantes e experiencias avaliadas!`;
+  }
+  return `Explore o que a comunidade diz sobre ${trip.destination}. Dicas reais de quem ja foi!`;
+}
+
 const Cla = () => {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
   
+  // Active trip from localStorage
+  const [activeTrip, setActiveTrip] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const trips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+      const upcoming = trips.filter((t: any) => t.status === 'active' && t.startDate && new Date(t.startDate) > new Date());
+      if (upcoming.length > 0) setActiveTrip(upcoming[0]);
+      else if (trips.length > 0) setActiveTrip(trips[trips.length - 1]);
+    } catch { /* ignore */ }
+  }, []);
+
   // Filters state
   const [selectedCountry, setSelectedCountry] = useState<string>('all');
   const [selectedCity, setSelectedCity] = useState<string>('all');
@@ -308,6 +333,19 @@ const Cla = () => {
           )}
         </div>
       </header>
+
+      {/* Agent Insight Banner */}
+      {activeTrip?.destination && (
+        <div className="mx-4 mt-4 p-3 bg-gradient-to-r from-sky-500/10 to-cyan-500/10 border border-sky-500/20 rounded-xl">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sm">🦅</span>
+            <span className="text-xs font-semibold text-sky-400 font-['Outfit']">Icaro recomenda para {activeTrip.destination}</span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {getClanInsight(activeTrip)}
+          </p>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="space-y-6">
