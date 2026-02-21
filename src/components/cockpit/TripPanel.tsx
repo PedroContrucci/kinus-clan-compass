@@ -6,6 +6,7 @@ import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { exportTripPDF } from '@/lib/tripPdfExport';
+import { getIcarusRoteiroInsight } from '@/lib/agentMessages';
 import type { SavedTrip } from '@/types/trip';
 import { useState } from 'react';
 
@@ -356,6 +357,67 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             {showAllActions ? 'Menos' : `+ ${hiddenCount} ações`}
           </button>
         )}
+      </div>
+
+      {/* 2.5 — Roteiro Executivo */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border">
+          <span className="text-sm">🦅</span>
+          <p className="flex-1 text-xs text-muted-foreground leading-relaxed">
+            {getIcarusRoteiroInsight(trip)}
+          </p>
+          <button
+            onClick={() => onNavigateTab('roteiro')}
+            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+          >
+            Editar →
+          </button>
+        </div>
+        <div className="divide-y divide-border">
+          {(trip.days || []).map((day) => {
+            const realActivities = (day.activities || []).filter(a =>
+              a.category !== 'voo' &&
+              !(a.category === 'hotel' && (a.name?.toLowerCase().includes('check-in') || a.name?.toLowerCase().includes('check-out'))) &&
+              !a.name?.toLowerCase().includes('transfer')
+            );
+            const confirmedCount = realActivities.filter(a => a.status === 'confirmed').length;
+            const dayTotal = realActivities.reduce((sum, a) => sum + (a.cost || 0), 0);
+            const dayDate = trip.startDate
+              ? format(new Date(new Date(trip.startDate).getTime() + (day.day - 1) * 86400000), "dd/MM (EEE)", { locale: ptBR })
+              : '';
+            const cleanTitle = (day.title || '').replace(/[^\w\sà-úÀ-Ú—·•\-,]/gi, '').trim();
+
+            return (
+              <button
+                key={day.day}
+                onClick={() => onNavigateTab('roteiro')}
+                className="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-muted/30 transition-colors text-left"
+              >
+                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground flex-shrink-0">
+                  {day.day}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-foreground truncate">{cleanTitle || `Dia ${day.day}`}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {dayDate} · {realActivities.length} atividades
+                    {confirmedCount > 0 && ` · ${confirmedCount} confirmadas`}
+                  </p>
+                </div>
+                {dayTotal > 0 && (
+                  <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
+                    R$ {fmt(dayTotal)}
+                  </span>
+                )}
+                <div className="w-8 h-1.5 rounded-full bg-muted overflow-hidden flex-shrink-0">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full"
+                    style={{ width: `${realActivities.length > 0 ? (confirmedCount / realActivities.length) * 100 : 0}%` }}
+                  />
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* 3. Resumo Financeiro Compacto */}

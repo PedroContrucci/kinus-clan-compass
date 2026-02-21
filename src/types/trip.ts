@@ -128,6 +128,7 @@ export interface SavedTrip {
   progress: number;
   timezone?: TimezoneInfo;
   jetLagMode?: boolean;
+  travelInterests?: string[];
   flights?: {
     outbound?: FlightCard;
     return?: FlightCard;
