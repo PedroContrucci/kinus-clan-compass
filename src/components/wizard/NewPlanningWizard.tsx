@@ -9,6 +9,7 @@ import { differenceInDays, addDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getActivityPrice, calculateTripEstimate } from '@/lib/activityPricing';
 import { getIdealHotelZone } from '@/lib/hotelZones';
+import { getDestinationThemes } from '@/data/destinationActivities';
 import type { PriceLevel } from '@/lib/activityPricing';
 import { defaultChecklist } from '@/types/trip';
 import type { SavedTrip, TripDay, TripActivity, ActivityStatus, TripFinances } from '@/types/trip';
@@ -430,13 +431,7 @@ function sumCostsByCategory(days: TripDay[], category: string): number {
   }, 0);
 }
 
-const EXPLORATION_THEMES = [
-  { title: 'Cultura', icon: '🏛️', activities: ['Museu principal', 'Tour guiado', 'Atração histórica'] },
-  { title: 'Gastronomia', icon: '🍽️', activities: ['Tour gastronômico', 'Mercado local', 'Restaurante típico'] },
-  { title: 'Passeios', icon: '🚶', activities: ['Bairro histórico', 'Parque ou jardim', 'Vista panorâmica'] },
-  { title: 'Descobertas', icon: '🎭', activities: ['Galeria de arte', 'Show ou evento local', 'Rua famosa'] },
-  { title: 'Aventura', icon: '⭐', activities: ['Passeio de barco', 'Excursão fora da cidade', 'Experiência única'] },
-];
+// EXPLORATION_THEMES removed — now uses getDestinationThemes() from destinationActivities.ts
 
 function generateDays(
   city: string,
@@ -498,8 +493,9 @@ function generateDays(
         ],
       });
     } else {
-      const themeIndex = (dayNum - 3) % EXPLORATION_THEMES.length;
-      const theme = EXPLORATION_THEMES[themeIndex];
+      const themes = getDestinationThemes(city);
+      const themeIndex = (dayNum - 3) % themes.length;
+      const theme = themes[themeIndex];
       days.push({
         day: dayNum,
         date: dateStr,
@@ -508,10 +504,10 @@ function generateDays(
         activities: [
           makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Hotel ou padaria local', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-2`, '09:30', theme.activities[0], `Exploração: ${theme.title}`, '2h30', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-3`, '12:30', 'Almoço', 'Restaurante recomendado', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-3`, '12:30', `Almoço: ${theme.restaurants.lunch}`, theme.restaurants.lunch, '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-4`, '14:30', theme.activities[1], `Continuação: ${theme.title}`, '2h30', 'passeio', city, 'tour', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-5`, '17:30', theme.activities[2], 'Passeio no final da tarde', '1h30', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-6`, '19:30', 'Jantar', 'Experiência gastronômica local', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-6`, '19:30', `Jantar: ${theme.restaurants.dinner}`, theme.restaurants.dinner, '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         ],
       });
     }

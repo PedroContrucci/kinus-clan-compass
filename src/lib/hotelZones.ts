@@ -8,6 +8,12 @@ export interface HotelZone {
 }
 
 export const HOTEL_ZONES: Record<string, HotelZone[]> = {
+  'milao': [
+    { name: 'Duomo/Centro', neighborhood: 'Centro', whyGood: 'Duomo, Galleria, La Scala a pe. O coracao de Milao. Shopping de luxo no Quadrilatero.', interests: ['culture', 'shopping', 'history', 'art'] },
+    { name: 'Navigli', neighborhood: 'Navigli', whyGood: 'Canais historicos, vida noturna, restaurantes, galerias. O bairro mais charmoso de Milao.', interests: ['nightlife', 'gastronomy', 'art'] },
+    { name: 'Brera', neighborhood: 'Brera', whyGood: 'Bairro artistico. Pinacoteca, galerias, cafes bohemios. Milao sofisticado e cultural.', interests: ['art', 'culture', 'gastronomy'] },
+    { name: 'Porta Nuova/Isola', neighborhood: 'Isola', whyGood: 'Milao contemporaneo. Bosco Verticale, Eataly, design e inovacao.', interests: ['shopping', 'gastronomy', 'adventure'] },
+  ],
   'bangkok': [
     { name: 'Sukhumvit (Asok/Nana)', neighborhood: 'Sukhumvit', whyGood: 'Epicentro de Bangkok. BTS Skytrain, rooftop bars, restaurantes internacionais.', interests: ['nightlife', 'gastronomy', 'shopping'] },
     { name: 'Riverside (Chao Phraya)', neighborhood: 'Riverside', whyGood: 'Hoteis premium a beira do rio. Acesso facil ao Grand Palace e Wat Arun de barco.', interests: ['culture', 'history', 'relaxation'] },
@@ -108,11 +114,13 @@ export function getIdealHotelZone(
   destination: string,
   interests: string[]
 ): HotelZone | null {
-  const key = destination.toLowerCase().trim();
+  const key = destination.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
   let zones: HotelZone[] | undefined;
 
   for (const [k, v] of Object.entries(HOTEL_ZONES)) {
-    if (key.includes(k) || k.includes(key)) {
+    if (v.length === 0) continue; // skip empty alias entries
+    const normalK = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (key === normalK || key.includes(normalK) || normalK.includes(key)) {
       zones = v;
       break;
     }
