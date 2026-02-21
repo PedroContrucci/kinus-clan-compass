@@ -90,6 +90,10 @@ const DESTINATION_COVER_PHOTOS: Record<string, string[]> = {
     'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=1200&q=80',
     'https://images.unsplash.com/photo-1496939376851-89342e90adcd?w=1200&q=80',
   ],
+  'milao': [
+    'https://images.unsplash.com/photo-1513581166391-887a96ddeafd?w=1200&q=80',
+    'https://images.unsplash.com/photo-1520175480921-4edfa2983e0f?w=1200&q=80',
+  ],
 };
 
 // ── Destination descriptions (NO accents to avoid jsPDF encoding issues) ──
@@ -108,6 +112,7 @@ const DESTINATION_DESCRIPTIONS: Record<string, string> = {
   'lisboa': 'Lisboa e uma das capitais mais charmosas da Europa. Os bondes historicos sobem as colinas entre miradouros com vistas deslumbrantes. O pasteis de nata, o fado nos bares de Alfama e os azulejos nas fachadas criam uma atmosfera unica que mistura nostalgia e modernidade.',
   'amsterdam': 'Amsterdam encanta com seus canais, bicicletas e museus de classe mundial. O Rijksmuseum, o Museu Van Gogh e a Casa de Anne Frank estao a uma pedalada de distancia. A cidade e conhecida por sua tolerancia, vida noturna animada e mercados flutuantes coloridos.',
   'phuket': 'Phuket, a maior ilha da Tailandia, e um paraiso tropical que combina praias de areia branca, templos budistas e uma vibrante cultura local. De Patong Beach ao centro historico de Old Phuket Town, a ilha oferece desde aventuras aquaticas ate experiencias gastronomicas autenticas.',
+  'milao': 'Milao e a capital da moda e do design, mas tambem guarda tesouros culturais impressionantes. O Duomo, a maior catedral gotica da Italia, domina a paisagem. La Scala e referencia mundial em opera. Os canais de Navigli, a Pinacoteca di Brera e a efervescente cena gastronomica fazem de Milao muito mais do que um destino de compras.',
 };
 
 // ── Day narratives by destination + theme ──
@@ -172,6 +177,16 @@ const DESTINATION_DAY_NARRATIVES: Record<string, Record<string, string>> = {
     'Passeios': 'O deserto e tao impressionante quanto a cidade. Um safari com jantar beduino sob as estrelas e uma experiencia transformadora.',
     'Retorno': 'Ma al-salama! Ultimas compras no Dubai Mall antes do voo.',
   },
+  'milao': {
+    'Embarque': 'Saida de Guarulhos rumo a capital da moda italiana. O voo para Milao (Malpensa) dura em media 12 horas com conexao.',
+    'Chegada': 'Benvenuti a Milano! A cidade surpreende ja na chegada — o design italiano esta em cada detalhe, da arquitetura do aeroporto ate o metro elegante.',
+    'Cultura': 'Dia dedicado a grandiosidade de Milao. O Duomo levou 6 seculos para ser construido — suba ao terraco para vistas de tirar o folego. A Pinacoteca di Brera abriga obras de Caravaggio e Raphael.',
+    'Gastronomia': 'Milao tem uma cena gastronomica surpreendente. O risotto alla milanese (com acafrao), o ossobuco e a cotoletta sao os classicos. O Mercato Centrale e obrigatorio.',
+    'Passeios': 'A Galleria Vittorio Emanuele II e o shopping mais bonito do mundo — mosaicos no teto, lojas de luxo e o famoso touro da sorte no chao. O Castelo Sforzesco abriga a ultima escultura de Michelangelo.',
+    'Descobertas': 'O bairro Isola e o novo polo criativo de Milao — Bosco Verticale, galerias independentes e restaurantes de autor. Navigli ao por do sol e imperdivel para aperitivo.',
+    'Aventura': 'O Lago di Como esta a apenas 1h de trem. Bellagio, a perola do lago, tem vilas historicas, jardins e vistas que parecem pintura.',
+    'Retorno': 'Ultimo espresso italiano! Aproveite para compras de ultima hora na Via Montenapoleone ou no Eataly Milano antes do transfer a Malpensa.',
+  },
 };
 
 const GENERIC_DAY_NARRATIVES: Record<string, string> = {
@@ -200,25 +215,30 @@ const DESTINATION_INFO: Record<string, { timezone: string; voltage: string; lang
   'barcelona': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Espanhol/Catalao', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
   'amsterdam': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Holandes (ingles universal)', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
   'cairo': { timezone: 'UTC+2 (5h a frente do Brasil)', voltage: '220V - Tomada tipo C/F', language: 'Arabe', currency: 'Libra Egipcia (EGP)', visa: 'Visto na chegada (USD 25)' },
+  'milao': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F/L', language: 'Italiano', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
 };
 
 // ── Helpers ──
 
+function normalizeForMatch(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
 function getDestDescription(destination: string): string {
-  const key = destination.toLowerCase().trim();
-  if (DESTINATION_DESCRIPTIONS[key]) return DESTINATION_DESCRIPTIONS[key];
+  const key = normalizeForMatch(destination);
   for (const [k, v] of Object.entries(DESTINATION_DESCRIPTIONS)) {
-    if (key.includes(k) || k.includes(key)) return v;
+    if (normalizeForMatch(k) === key || key.includes(normalizeForMatch(k)) || normalizeForMatch(k).includes(key)) return v;
   }
   return `${destination} e um destino fascinante que oferece cultura rica, gastronomia autentica e experiencias inesqueciveis. Prepare-se para descobrir monumentos historicos, mercados vibrantes e a hospitalidade local que torna cada viagem unica e especial.`;
 }
 
 function getDayNarrative(destination: string, dayTitle: string): string {
-  const key = destination.toLowerCase().trim();
+  const key = normalizeForMatch(destination);
   const cleanTitle = dayTitle.replace(/[^\w\sà-úÀ-Ú—·•\-,]/gi, '').trim();
 
   for (const [destKey, narratives] of Object.entries(DESTINATION_DAY_NARRATIVES)) {
-    if (key.includes(destKey) || destKey.includes(key)) {
+    const ndk = normalizeForMatch(destKey);
+    if (key.includes(ndk) || ndk.includes(key)) {
       for (const [theme, narrative] of Object.entries(narratives)) {
         if (cleanTitle.toLowerCase().includes(theme.toLowerCase())) return narrative;
       }
@@ -233,10 +253,10 @@ function getDayNarrative(destination: string, dayTitle: string): string {
 }
 
 function getDestInfo(destination: string) {
-  const key = destination.toLowerCase().trim();
-  if (DESTINATION_INFO[key]) return DESTINATION_INFO[key];
+  const key = normalizeForMatch(destination);
   for (const [k, v] of Object.entries(DESTINATION_INFO)) {
-    if (key.includes(k) || k.includes(key)) return v;
+    const nk = normalizeForMatch(k);
+    if (key === nk || key.includes(nk) || nk.includes(key)) return v;
   }
   return null;
 }
@@ -252,10 +272,10 @@ function fmt(n: number) {
 // ── Image fetching ──
 
 function getDestCoverPhotos(destination: string): string[] {
-  const key = destination.toLowerCase().trim();
-  if (DESTINATION_COVER_PHOTOS[key]) return DESTINATION_COVER_PHOTOS[key];
+  const key = normalizeForMatch(destination);
   for (const [k, v] of Object.entries(DESTINATION_COVER_PHOTOS)) {
-    if (key.includes(k) || k.includes(key)) return v;
+    const nk = normalizeForMatch(k);
+    if (key === nk || key.includes(nk) || nk.includes(key)) return v;
   }
   return ['https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80'];
 }
@@ -341,6 +361,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   const addPage = () => {
     addFooter();
     doc.addPage();
+    drawRect(0, 0, pw, ph, B.night); // Navy background on EVERY page
     addPageHeader();
   };
 
@@ -439,6 +460,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   // PAGE 2 — OVERVIEW (Photo strip + Financial + Flight/Hotel)
   // ════════════════════════════════════════
   doc.addPage();
+  drawRect(0, 0, pw, ph, B.night); // Navy background
   addPageHeader();
 
   // Second photo strip
@@ -539,6 +561,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   // PAGE 3+ — ROTEIRO DIA A DIA
   // ════════════════════════════════════════
   doc.addPage();
+  drawRect(0, 0, pw, ph, B.night); // Navy background
   addPageHeader();
 
   setC(B.emerald, false);

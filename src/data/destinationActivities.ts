@@ -960,3 +960,151 @@ export function getRandomActivity(
   if (activities.length === 0) return null;
   return activities[Math.floor(Math.random() * activities.length)];
 }
+
+// ── Curated day themes per destination (used by NewPlanningWizard) ──
+
+export interface DestinationTheme {
+  title: string;
+  icon: string;
+  activities: [string, string, string];
+  restaurants: { lunch: string; dinner: string };
+}
+
+const CURATED_THEMES: Record<string, DestinationTheme[]> = {
+  'milao': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Duomo di Milano + Terraço', 'Pinacoteca di Brera', 'Teatro alla Scala (visita guiada)'], restaurants: { lunch: 'Luini (panzerotti)', dinner: 'Trattoria Milanese' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Mercato Centrale Milano', 'Tour gastronômico em Navigli', 'Eataly Milano Smeraldo'], restaurants: { lunch: 'Taglio (cortes artesanais)', dinner: 'Osteria del Binari' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Galleria Vittorio Emanuele II', 'Castelo Sforzesco + Parque Sempione', 'Bairro Brera (galerias e cafés)'], restaurants: { lunch: 'Princi Bakery', dinner: 'Carlo e Camilla in Segheria' } },
+    { title: 'Descobertas', icon: '🎭', activities: ['Fondazione Prada', 'Bairro Isola (street art + design)', 'Navigli ao pôr do sol'], restaurants: { lunch: 'Pavé (brunch)', dinner: 'Langosteria (frutos do mar)' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Bate-volta Lago di Como (Bellagio)', 'Villa Carlotta + jardins', 'Passeio de barco pelo lago'], restaurants: { lunch: 'Ristorante Bilacus (Bellagio)', dinner: 'Antica Osteria Cavallini' } },
+  ],
+  'paris': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Museu do Louvre (ala Denon)', "Museu d'Orsay (impressionistas)", 'Jardins des Tuileries'], restaurants: { lunch: 'Café Marly (vista Louvre)', dinner: 'Le Bouillon Chartier' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Rue Cler (mercado de rua)', 'Aula de croissant', 'Tour de queijos em Saint-Germain'], restaurants: { lunch: 'Breizh Café (crepes)', dinner: 'Le Comptoir du Panthéon' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Montmartre + Sacré-Cœur', 'Le Marais (Praça des Vosges)', 'Cruzeiro pelo Sena ao pôr do sol'], restaurants: { lunch: "L'As du Fallafel", dinner: 'Pink Mamma' } },
+    { title: 'Descobertas', icon: '🎭', activities: ['Sainte-Chapelle (vitrais)', 'Canal Saint-Martin', 'Rooftop do Galeries Lafayette'], restaurants: { lunch: 'Café de Flore', dinner: 'Chez Janou' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Palácio de Versalhes', 'Jardins de Versalhes (bicicleta)', 'Grand/Petit Trianon'], restaurants: { lunch: 'La Petite Venise (Versalhes)', dinner: 'Le Train Bleu' } },
+  ],
+  'roma': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Coliseu + Fórum Romano + Palatino', 'Museus do Vaticano + Capela Sistina', 'Basílica de São Pedro'], restaurants: { lunch: 'Roscioli', dinner: 'Da Enzo al 29 (Trastevere)' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Tour gastronômico em Testaccio', 'Mercato di Campo de Fiori', 'Aula de pasta artesanal'], restaurants: { lunch: 'Supplizio (supplì)', dinner: 'Armando al Pantheon' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Fontana di Trevi + Piazza Navona', 'Panteão + Piazza della Rotonda', 'Trastevere (ruelas + mirante Gianicolo)'], restaurants: { lunch: 'Antico Forno Roscioli', dinner: 'Tonnarello' } },
+    { title: 'Descobertas', icon: '🎭', activities: ['Galleria Borghese', 'Villa Borghese (jardins)', 'Via Appia Antica (catacumbas)'], restaurants: { lunch: 'Pizzarium (Bonci)', dinner: 'Trattoria Da Teo' } },
+    { title: 'Aventura', icon: '⭐', activities: ["Bate-volta a Tivoli (Villa d'Este)", 'Jardins da Villa Adriana', 'Fontes renascentistas'], restaurants: { lunch: 'Sibilla (Tivoli)', dinner: 'Felice a Testaccio' } },
+  ],
+  'bangkok': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Grand Palace + Wat Phra Kaew', 'Wat Pho (Buda Reclinado)', 'Wat Arun (Templo do Amanhecer)'], restaurants: { lunch: 'Thipsamai (pad thai)', dinner: 'Supanniga Eating Room' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Chinatown (Yaowarat Road)', 'Or Tor Kor Market', 'Aula de culinária tailandesa'], restaurants: { lunch: 'Jay Fai (street Michelin)', dinner: 'Gaggan Anand' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Chatuchak Weekend Market', 'Jim Thompson House', 'Lumpini Park ao entardecer'], restaurants: { lunch: 'Som Tam Nua', dinner: 'Bo.lan (thai moderno)' } },
+    { title: 'Descobertas', icon: '🎭', activities: ['Charoen Krung (galerias de arte)', 'ICONSIAM (floating market)', 'Sky Bar (rooftop)'], restaurants: { lunch: 'Nai Mong Hoi Tod', dinner: 'Sirocco (rooftop)' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Mercado flutuante Damnoen Saduak', 'Mercado ferroviário Maeklong', 'Ayutthaya (ruínas UNESCO)'], restaurants: { lunch: 'Restaurante local em Ayutthaya', dinner: 'Vertigo (Banyan Tree)' } },
+  ],
+  'toquio': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Senso-ji + Nakamise-dori (Asakusa)', 'Meiji Jingu (Harajuku)', 'Museu Nacional de Tóquio'], restaurants: { lunch: 'Fuunji Ramen (Shinjuku)', dinner: 'Gonpachi' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Tsukiji Outer Market', 'Tour de ramen em Shinjuku', 'Depachika (food hall subterrâneo)'], restaurants: { lunch: 'Sushi Dai (Toyosu)', dinner: 'Narisawa (Michelin)' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Shibuya Crossing + Hachiko', 'Harajuku (Takeshita-dori)', 'Shinjuku Gyoen (jardim)'], restaurants: { lunch: 'Ichiran Ramen', dinner: 'Uobei (sushi conveyor)' } },
+    { title: 'Descobertas', icon: '🎭', activities: ['TeamLab Borderless', 'Akihabara (eletrônicos + anime)', 'Ginza Six (arte + compras)'], restaurants: { lunch: 'CoCo Ichibanya (curry)', dinner: 'Afuri (yuzu ramen)' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Bate-volta Kamakura (Grande Buda)', 'Enoshima Island', 'Praia de Shonan'], restaurants: { lunch: 'Bills Kamakura', dinner: 'Torikizoku (yakitori)' } },
+  ],
+  'londres': [
+    { title: 'Cultura', icon: '🏛️', activities: ['British Museum', 'Tower of London + Joias da Coroa', 'National Gallery'], restaurants: { lunch: 'Dishoom (indiano)', dinner: 'Flat Iron (steak)' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Borough Market', 'Brick Lane (curry mile)', 'Afternoon tea no Sketch'], restaurants: { lunch: 'Padella (pasta fresca)', dinner: 'Hawksmoor' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Westminster + Big Ben + Abadia', 'Buckingham Palace (troca da guarda)', 'South Bank (Tate Modern)'], restaurants: { lunch: 'The Breakfast Club', dinner: 'Duck & Waffle (vista)' } },
+    { title: 'Descobertas', icon: '🎭', activities: ['Notting Hill + Portobello Market', 'Camden Town + canal', 'Sky Garden (rooftop gratuito)'], restaurants: { lunch: 'Ottolenghi', dinner: 'Bao' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Bate-volta Stonehenge + Bath', 'Banhos romanos de Bath', 'Royal Crescent'], restaurants: { lunch: "Sally Lunn's (Bath)", dinner: 'The Ivy' } },
+  ],
+  'lisboa': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Mosteiro dos Jerônimos', 'Torre de Belém', 'Castelo de São Jorge'], restaurants: { lunch: 'Pastéis de Belém', dinner: 'Cervejaria Ramiro' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Mercado da Ribeira (Time Out Market)', 'Tour de pastéis de nata', 'Ginjinha (licor de ginja)'], restaurants: { lunch: 'A Cevicheria', dinner: 'Taberna da Rua das Flores' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Alfama + bonde 28', 'Miradouro da Graça + Portas do Sol', 'Bairro Alto ao entardecer'], restaurants: { lunch: 'Café A Brasileira', dinner: 'A Baíuca (fado ao vivo)' } },
+    { title: 'Descobertas', icon: '🎭', activities: ['LX Factory (arte + design)', 'Museu Nacional do Azulejo', 'Parque das Nações (Oceanário)'], restaurants: { lunch: 'Landeau Chocolate', dinner: 'Belcanto (Michelin)' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Bate-volta Sintra (Palácio da Pena)', 'Quinta da Regaleira', 'Cabo da Roca'], restaurants: { lunch: 'Piriquita (Sintra)', dinner: 'Solar dos Presuntos' } },
+  ],
+  'barcelona': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Sagrada Família', 'Casa Batlló + Casa Milà', 'Museu Picasso'], restaurants: { lunch: 'Cervecería Catalana', dinner: 'Can Paixano' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['La Boqueria (mercado)', 'Tour de tapas no El Born', 'Aula de paella'], restaurants: { lunch: 'Cal Pep (frutos do mar)', dinner: 'Tickets (Albert Adrià)' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Park Güell', 'Las Ramblas + Barrio Gótico', 'Barceloneta (praia + chiringuitos)'], restaurants: { lunch: 'La Pepita (tapas)', dinner: 'Els Quatre Gats' } },
+    { title: 'Descobertas', icon: '🎭', activities: ['El Raval (MACBA + galerias)', 'Bunkers del Carmel (melhor vista)', 'Palau de la Música'], restaurants: { lunch: 'Federal Café', dinner: 'Bar Mut' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Montserrat (mosteiro + trilha)', 'Teleférico + Montjuïc', 'Fundação Joan Miró'], restaurants: { lunch: 'Restaurante Montserrat', dinner: 'El Nacional' } },
+  ],
+  'dubai': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Burj Khalifa (observatório)', 'Dubai Museum (Al Fahidi)', 'Jumeirah Mosque'], restaurants: { lunch: 'Arabian Tea House', dinner: 'Al Mallah (shawarma)' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Souk de Especiarias + Ouro', 'Dubai Creek (abra ride)', 'Aula de culinária árabe'], restaurants: { lunch: 'Ravi Restaurant', dinner: 'Pierchic' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Dubai Mall + Aquário', 'Palm Jumeirah + Atlantis', 'JBR Beach Walk'], restaurants: { lunch: 'The Maine (JBR)', dinner: 'At.mosphere (Burj Khalifa)' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Safari no deserto (4x4)', 'Sandboarding nas dunas', 'Jantar beduíno sob as estrelas'], restaurants: { lunch: 'Pícnic no deserto', dinner: 'Acampamento beduíno' } },
+  ],
+  'nova york': [
+    { title: 'Cultura', icon: '🏛️', activities: ['MET Museum', 'MoMA', 'Central Park (Bethesda → Bow Bridge)'], restaurants: { lunch: 'The Halal Guys', dinner: "Joe's Pizza" } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Chelsea Market', 'Smorgasburg (Brooklyn)', 'Tour de pizza em Manhattan'], restaurants: { lunch: 'Los Tacos No. 1', dinner: 'Peter Luger (steak)' } },
+    { title: 'Passeios', icon: '🚶', activities: ['High Line + Hudson Yards', 'Brooklyn Bridge + DUMBO', 'Times Square + Broadway'], restaurants: { lunch: 'Shake Shack', dinner: "Katz's Delicatessen" } },
+    { title: 'Descobertas', icon: '🎭', activities: ['Top of the Rock (vista)', 'SoHo + Greenwich Village', 'Little Italy + Chinatown'], restaurants: { lunch: 'Prince Street Pizza', dinner: 'Carbone' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Estátua da Liberdade + Ellis Island', 'Governors Island (bike)', 'Coney Island'], restaurants: { lunch: "Nathan's (Coney Island)", dinner: 'Balthazar' } },
+  ],
+  'buenos aires': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Teatro Colón (visita guiada)', 'MALBA', 'Cemitério da Recoleta'], restaurants: { lunch: 'El Sanjuanino (empanadas)', dinner: 'Don Julio (parrilla)' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Mercado de San Telmo', 'Tour de asado', 'Fábrica de alfajores'], restaurants: { lunch: 'La Cabrera', dinner: 'Chila (Michelin)' } },
+    { title: 'Passeios', icon: '🚶', activities: ['San Telmo (feira de domingo)', 'La Boca (Caminito)', 'Palermo Soho (galerias + cafés)'], restaurants: { lunch: 'El Federal', dinner: 'Proper (Palermo)' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Bate-volta Tigre (delta do Paraná)', 'Passeio de barco pelos canais', 'Puerto de Frutos'], restaurants: { lunch: 'Il Nuovo María del Luján', dinner: 'Elena (Four Seasons)' } },
+  ],
+  'amsterdam': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Rijksmuseum', 'Museu Van Gogh', 'Casa de Anne Frank'], restaurants: { lunch: 'The Pancake Bakery', dinner: 'De Kas' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Albert Cuyp Market', 'Heineken Experience', 'Food tour em Jordaan'], restaurants: { lunch: 'Foodhallen', dinner: 'Restaurant Blauw' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Passeio de barco pelos canais', 'Vondelpark', 'Jordaan (galerias + cafés)'], restaurants: { lunch: 'Café Winkel 43', dinner: 'Restaurant Moeders' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Bate-volta Zaanse Schans (moinhos)', 'Mercado de queijos em Edam', 'Bike pelo interior holandês'], restaurants: { lunch: 'Panqueca holandesa', dinner: 'Pont 13' } },
+  ],
+  'phuket': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Wat Chalong', 'Big Buddha (colina Nakkerd)', 'Old Phuket Town'], restaurants: { lunch: 'Raya Restaurant', dinner: 'Suay Restaurant' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Chillva Night Market', 'Banzaan Fresh Market', 'Aula de culinária tailandesa'], restaurants: { lunch: 'One Chun (mee hokkien)', dinner: 'The Supper Club' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Patong Beach + Bangla Road', 'Promthep Cape (pôr do sol)', 'Kata Beach (snorkeling)'], restaurants: { lunch: 'Beach bar em Kata', dinner: 'Baan Rim Pa' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Phi Phi Islands (lancha)', 'Maya Bay + snorkeling', 'Phang Nga Bay (canoa)'], restaurants: { lunch: 'Restaurante flutuante', dinner: 'Kan Eang @ Pier' } },
+  ],
+  'bali': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Tirta Empul (purificação)', 'Tegallalang Rice Terraces', 'Ubud Monkey Forest'], restaurants: { lunch: 'Locavore', dinner: 'Mozaic (Michelin)' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Ubud Market', 'Aula de culinária balinesa', 'Jimbaran seafood ao pôr do sol'], restaurants: { lunch: 'Warung Babi Guling Ibu Oka', dinner: 'Sardine' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Tanah Lot (templo no mar)', 'Seminyak Beach Walk', 'Uluwatu Temple (dança Kecak)'], restaurants: { lunch: 'La Brisa', dinner: 'Potato Head (sunset)' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Trekking Monte Batur (nascer do sol)', 'Nusa Penida (Kelingking Beach)', 'Snorkeling em Manta Point'], restaurants: { lunch: 'Pícnic no Monte Batur', dinner: 'Swept Away' } },
+  ],
+  'cairo': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Pirâmides de Gizé + Esfinge', 'Museu Egípcio', 'Cidadela de Saladino'], restaurants: { lunch: 'Felfela', dinner: 'Abou El Sid' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Khan el-Khalili (bazar)', 'Tour de street food no Cairo', 'Mesquita de Muhammad Ali'], restaurants: { lunch: 'Naguib Mahfouz Café', dinner: 'Sequoia (Nilo)' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Cairo Islâmico (mesquitas)', 'Passeio de felucca no Nilo', 'Torre do Cairo'], restaurants: { lunch: 'Zooba', dinner: 'Andrea' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Bate-volta Memphis + Saqqara', 'Pirâmide de Djoser', 'Passeio de camelo no deserto'], restaurants: { lunch: 'Restaurante em Saqqara', dinner: 'Koshary Abou Tarek' } },
+  ],
+  'cancun': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Chichén Itzá', 'Cenote Ik Kil', 'Museu Subaquático MUSA'], restaurants: { lunch: 'Hacienda Chichén', dinner: 'Puerto Madero' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Isla Mujeres (ferry)', 'Zona Hoteleira (praias)', 'Xcaret (parque ecológico)'], restaurants: { lunch: 'Beach bar em Isla Mujeres', dinner: 'La Habichuela' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Snorkeling no recife', 'Cenote Dos Ojos', 'Tulum (ruínas à beira-mar)'], restaurants: { lunch: 'Restaurante em Tulum', dinner: "Harry's Prime" } },
+  ],
+  'miami': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Art Deco Walking Tour', 'Pérez Art Museum', 'Vizcaya Museum'], restaurants: { lunch: 'Versailles (cubano)', dinner: "Cecconi's" } },
+    { title: 'Passeios', icon: '🚶', activities: ['South Beach (Ocean Drive)', 'Key Biscayne', 'Coconut Grove + Coral Gables'], restaurants: { lunch: 'Greenstreet Cafe', dinner: "Joe's Stone Crab" } },
+    { title: 'Aventura', icon: '⭐', activities: ['Bate-volta Everglades (airboat)', 'Snorkeling em Key Largo', 'Baía de Biscayne (barco)'], restaurants: { lunch: "Alabama Jack's", dinner: 'Juvia (rooftop)' } },
+  ],
+  'singapura': [
+    { title: 'Cultura', icon: '🏛️', activities: ['Marina Bay Sands (SkyPark)', 'Gardens by the Bay + Supertrees', 'ArtScience Museum'], restaurants: { lunch: 'Hawker Chan (Michelin)', dinner: 'Jumbo Seafood' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Chinatown Complex', 'Little India (Tekka Centre)', 'Kampong Glam (Haji Lane)'], restaurants: { lunch: 'Tian Tian (chicken rice)', dinner: 'Burnt Ends (Michelin)' } },
+    { title: 'Passeios', icon: '🚶', activities: ['Orchard Road (compras)', 'Sentosa Island', 'Clarke Quay + Singapore River'], restaurants: { lunch: 'PS. Cafe', dinner: 'Lau Pa Sat (satay)' } },
+    { title: 'Aventura', icon: '⭐', activities: ['Night Safari', 'Southern Ridges (trilha)', 'Pulau Ubin (bike)'], restaurants: { lunch: 'Pícnic em Pulau Ubin', dinner: 'Ce La Vi (rooftop)' } },
+  ],
+};
+
+const GENERIC_THEMES: DestinationTheme[] = [
+  { title: 'Cultura', icon: '🏛️', activities: ['Museu principal', 'Tour histórico guiado', 'Monumento icônico'], restaurants: { lunch: 'Restaurante típico local', dinner: 'Restaurante recomendado' } },
+  { title: 'Gastronomia', icon: '🍽️', activities: ['Tour gastronômico', 'Mercado local', 'Experiência culinária'], restaurants: { lunch: 'Street food local', dinner: 'Restaurante tradicional' } },
+  { title: 'Passeios', icon: '🚶', activities: ['Bairro histórico', 'Parque ou jardim', 'Vista panorâmica'], restaurants: { lunch: 'Café local', dinner: 'Restaurante com vista' } },
+  { title: 'Descobertas', icon: '🎭', activities: ['Galeria de arte', 'Bairro alternativo', 'Experiência local'], restaurants: { lunch: 'Brunch artesanal', dinner: 'Restaurante inovador' } },
+  { title: 'Aventura', icon: '⭐', activities: ['Excursão aos arredores', 'Atividade ao ar livre', 'Experiência única'], restaurants: { lunch: 'Restaurante no caminho', dinner: 'Restaurante de despedida' } },
+];
+
+function normalizeCity(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
+export function getDestinationThemes(city: string): DestinationTheme[] {
+  const key = normalizeCity(city);
+  for (const [k, v] of Object.entries(CURATED_THEMES)) {
+    const nk = normalizeCity(k);
+    if (key === nk || key.includes(nk) || nk.includes(key)) return v;
+  }
+  return GENERIC_THEMES;
+}

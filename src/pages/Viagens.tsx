@@ -58,24 +58,30 @@ const DESTINATION_CURRENCY: Record<string, string> = {
 
 function getDestinationCurrency(destination: string): string {
   const normalized = destination.toLowerCase().trim();
+  const normalizedNA = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  
   if (DESTINATION_CURRENCY[normalized]) return DESTINATION_CURRENCY[normalized];
+  
+  // Try with accent normalization
   for (const [city, currency] of Object.entries(DESTINATION_CURRENCY)) {
-    if (normalized.includes(city) || city.includes(normalized)) return currency;
+    const cityNA = city.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (normalizedNA === cityNA || normalizedNA.includes(cityNA) || cityNA.includes(normalizedNA)) return currency;
   }
+  
   const countryCurrency: Record<string, string> = {
-    'argentina': 'ARS', 'chile': 'CLP', 'peru': 'PEN', 'colômbia': 'COP',
-    'méxico': 'MXN', 'uruguai': 'UYU', 'estados unidos': 'USD', 'eua': 'USD',
-    'canadá': 'CAD', 'japão': 'JPY', 'china': 'CNY', 'coreia': 'KRW',
-    'tailândia': 'THB', 'índia': 'INR', 'austrália': 'AUD',
-    'inglaterra': 'GBP', 'reino unido': 'GBP', 'suíça': 'CHF',
-    'portugal': 'EUR', 'espanha': 'EUR', 'itália': 'EUR', 'frança': 'EUR',
-    'alemanha': 'EUR', 'holanda': 'EUR', 'grécia': 'EUR', 'irlanda': 'EUR',
-    'áustria': 'EUR', 'bélgica': 'EUR', 'finlândia': 'EUR',
+    'argentina': 'ARS', 'chile': 'CLP', 'peru': 'PEN', 'colombia': 'COP',
+    'mexico': 'MXN', 'uruguai': 'UYU', 'estados unidos': 'USD', 'eua': 'USD',
+    'canada': 'CAD', 'japao': 'JPY', 'china': 'CNY', 'coreia': 'KRW',
+    'tailandia': 'THB', 'india': 'INR', 'australia': 'AUD',
+    'inglaterra': 'GBP', 'reino unido': 'GBP', 'suica': 'CHF',
+    'portugal': 'EUR', 'espanha': 'EUR', 'italia': 'EUR', 'franca': 'EUR',
+    'alemanha': 'EUR', 'holanda': 'EUR', 'grecia': 'EUR', 'irlanda': 'EUR',
+    'austria': 'EUR', 'belgica': 'EUR', 'finlandia': 'EUR',
     'turquia': 'TRY', 'israel': 'ILS', 'egito': 'EGP', 'marrocos': 'MAD',
-    'áfrica do sul': 'ZAR', 'emirados': 'AED',
+    'africa do sul': 'ZAR', 'emirados': 'AED',
   };
   for (const [country, currency] of Object.entries(countryCurrency)) {
-    if (normalized.includes(country)) return currency;
+    if (normalizedNA.includes(country)) return currency;
   }
   return 'USD';
 }
