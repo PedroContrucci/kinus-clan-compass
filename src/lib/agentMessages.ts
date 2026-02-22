@@ -116,9 +116,24 @@ export function getIcarusHeroFlight(trip: SavedTrip, confirmed: boolean): string
 
 export function getIcarusHeroHotel(trip: SavedTrip, confirmed: boolean): string {
   const dest = trip.destination || 'o destino';
-  const zone = (trip.accommodation as any)?.neighborhood;
-  if (confirmed) return zone ? `Hotel confirmado em ${zone}, ${dest}!` : `Hotel confirmado em ${dest}!`;
-  return zone ? `Recomendo hoteis em ${zone} — combina com seu perfil!` : `Reserve o hotel em ${dest}. Hoteis centrais oferecem melhor custo-beneficio.`;
+  const hotelName = trip.accommodation?.name || '';
+  const neighborhood = trip.accommodation?.neighborhood || '';
+  const description = trip.accommodation?.description || '';
+  const stars = trip.accommodation?.stars || 3;
+
+  if (confirmed) {
+    return hotelName ? `${hotelName.split(' — ')[0]} confirmado! ${stars}★` : `Hotel confirmado em ${dest}!`;
+  }
+
+  if (hotelName && !hotelName.startsWith('Hotel em')) {
+    return `Sugestao: ${hotelName.split(' — ')[0]} em ${neighborhood || dest} — ${stars}★. ${description}`;
+  }
+
+  if (neighborhood) {
+    return `Recomendo hoteis em ${neighborhood} — combina com seu perfil de viagem!`;
+  }
+
+  return `Reserve o hotel em ${dest}. Hoteis centrais oferecem melhor custo-beneficio.`;
 }
 
 // ─── Héstia (Financeiro/Câmbio) ───

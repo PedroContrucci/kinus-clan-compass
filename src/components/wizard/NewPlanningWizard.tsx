@@ -8,7 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { differenceInDays, addDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getActivityPrice, calculateTripEstimate } from '@/lib/activityPricing';
-import { getIdealHotelZone } from '@/lib/hotelZones';
+import { getIdealHotelZone, getHotelRecommendation } from '@/lib/hotelZones';
 import { getDestinationThemes } from '@/data/destinationActivities';
 import type { PriceLevel } from '@/lib/activityPricing';
 import { defaultChecklist } from '@/types/trip';
@@ -179,9 +179,13 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
       const cityInfo = findCityInfo(destinationCity);
 
       const idealZone = getIdealHotelZone(destinationCity, data.travelInterests || []);
-      const hotelName = idealZone
-        ? `Hotel em ${idealZone.neighborhood}, ${destinationCity}`
-        : `Hotel em ${destinationCity}`;
+      const hotelRec = getHotelRecommendation(destinationCity, data.budgetTier, data.travelInterests || []);
+
+      const hotelName = hotelRec
+        ? `${hotelRec.name} — ${hotelRec.neighborhood}, ${destinationCity}`
+        : idealZone
+          ? `Hotel em ${idealZone.neighborhood}, ${destinationCity}`
+          : `Hotel em ${destinationCity}`;
 
       const trip: SavedTrip = {
         id: tripId,
@@ -239,7 +243,9 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
         accommodation: {
           id: 'hotel-main',
           name: hotelName,
-          stars: priceLevel === 'luxury' ? 5 : priceLevel === 'midrange' ? 4 : 3,
+          neighborhood: hotelRec?.neighborhood || idealZone?.neighborhood || '',
+          description: hotelRec?.whyGood || idealZone?.whyGood || '',
+          stars: hotelRec?.stars || (priceLevel === 'luxury' ? 5 : priceLevel === 'midrange' ? 4 : 3),
           checkIn: addDays(data.departureDate, 1).toISOString(),
           checkOut: data.returnDate.toISOString(),
           nightlyRate: hotelNightPrice,
