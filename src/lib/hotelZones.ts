@@ -110,6 +110,243 @@ export const HOTEL_ZONES: Record<string, HotelZone[]> = {
   ],
 };
 
+// ── Hotel Recommendations — Real hotel names by destination × budget tier ──
+
+export interface HotelRecommendation {
+  name: string;
+  stars: number;
+  neighborhood: string;
+  whyGood: string;
+  perNight: number;
+}
+
+export const HOTEL_RECOMMENDATIONS: Record<string, Record<string, HotelRecommendation[]>> = {
+  'paris': {
+    'economic': [
+      { name: 'Generator Paris', stars: 2, neighborhood: 'Le Marais', whyGood: 'Hostel design no coracao de Paris. Otimo custo-beneficio.', perNight: 350 },
+    ],
+    'comfort': [
+      { name: 'Hotel Le Marais', stars: 3, neighborhood: 'Le Marais', whyGood: 'Charmoso e central. Praca des Vosges a 5 min a pe.', perNight: 550 },
+      { name: 'Hotel Monge', stars: 4, neighborhood: 'Quartier Latin', whyGood: 'Boutique hotel no coracao intelectual de Paris.', perNight: 650 },
+    ],
+    'premium': [
+      { name: 'Hotel Montalembert', stars: 4, neighborhood: 'Saint-Germain', whyGood: 'Rive Gauche sofisticada. Museu dOrsay a 3 min.', perNight: 900 },
+    ],
+    'luxury': [
+      { name: 'Le Bristol Paris', stars: 5, neighborhood: 'Champs-Elysees', whyGood: 'Palace parisino com 3 estrelas Michelin (Epicure).', perNight: 2000 },
+    ],
+  },
+  'roma': {
+    'economic': [
+      { name: 'Hotel Centro Budget Roma', stars: 2, neighborhood: 'Termini', whyGood: 'Perto da estacao central. Acesso facil a tudo.', perNight: 250 },
+    ],
+    'comfort': [
+      { name: 'Hotel Raffaello', stars: 3, neighborhood: 'Monti', whyGood: 'Entre Termini e o bairro Monti. Coliseu a 15 min a pe.', perNight: 450 },
+    ],
+    'premium': [
+      { name: 'Hotel Artemide', stars: 4, neighborhood: 'Via Nazionale', whyGood: 'Art Nouveau elegante. Spa, rooftop com vista.', perNight: 750 },
+    ],
+    'luxury': [
+      { name: 'Hotel de Russie', stars: 5, neighborhood: 'Piazza del Popolo', whyGood: 'Rocco Forte no coracao de Roma. Jardim italiano.', perNight: 1500 },
+    ],
+  },
+  'milao': {
+    'economic': [
+      { name: 'Ostello Bello Grande', stars: 2, neighborhood: 'Stazione Centrale', whyGood: 'Melhor hostel de Milao. Rooftop, bar, cozinha.', perNight: 200 },
+    ],
+    'comfort': [
+      { name: 'Hotel Milano Scala', stars: 4, neighborhood: 'Brera', whyGood: 'Boutique eco-friendly a 5 min do Duomo e La Scala.', perNight: 500 },
+    ],
+    'premium': [
+      { name: 'Palazzo Parigi', stars: 5, neighborhood: 'Brera', whyGood: 'Palazzo do sec. XIX com spa e jardim privativo.', perNight: 900 },
+    ],
+    'luxury': [
+      { name: 'Four Seasons Milano', stars: 5, neighborhood: 'Montenapoleone', whyGood: 'Convento do sec. XV convertido. Spa, jardim.', perNight: 1800 },
+    ],
+  },
+  'londres': {
+    'comfort': [
+      { name: 'The Hoxton Southwark', stars: 4, neighborhood: 'South Bank', whyGood: 'Design hotel cool. Tate Modern e Borough Market a pe.', perNight: 500 },
+    ],
+    'premium': [
+      { name: 'The Ned', stars: 5, neighborhood: 'City of London', whyGood: 'Banco dos anos 20 convertido. 9 restaurantes, rooftop pool.', perNight: 900 },
+    ],
+    'luxury': [
+      { name: 'The Savoy', stars: 5, neighborhood: 'Strand', whyGood: 'Lendario desde 1889. Thames Suite com vista para o rio.', perNight: 2000 },
+    ],
+  },
+  'toquio': {
+    'comfort': [
+      { name: 'Hotel Gracery Shinjuku', stars: 3, neighborhood: 'Shinjuku', whyGood: 'Famoso hotel do Godzilla. Kabukicho na porta.', perNight: 550 },
+    ],
+    'premium': [
+      { name: 'Park Hyatt Tokyo', stars: 5, neighborhood: 'Shinjuku', whyGood: 'O hotel de Lost in Translation. New York Bar no 52o andar.', perNight: 1100 },
+    ],
+    'luxury': [
+      { name: 'Aman Tokyo', stars: 5, neighborhood: 'Otemachi', whyGood: 'Minimalismo japones elevado ao maximo. Spa Aman.', perNight: 2500 },
+    ],
+  },
+  'barcelona': {
+    'comfort': [
+      { name: 'Hotel Brummell', stars: 3, neighborhood: 'Poble Sec', whyGood: 'Boutique artsy com pool no rooftop. Montjuic a pe.', perNight: 380 },
+    ],
+    'premium': [
+      { name: 'Hotel Arts Barcelona', stars: 5, neighborhood: 'Port Olimpic', whyGood: 'Torre iconica a beira-mar. Enoteca (2 Michelin).', perNight: 700 },
+    ],
+    'luxury': [
+      { name: 'Mandarin Oriental Barcelona', stars: 5, neighborhood: 'Passeig de Gracia', whyGood: 'Entre Casa Batllo e La Pedrera. Moments (2 Michelin).', perNight: 1400 },
+    ],
+  },
+  'lisboa': {
+    'comfort': [
+      { name: 'Hotel Lisboa Plaza', stars: 4, neighborhood: 'Avenida da Liberdade', whyGood: 'Familiar e acolhedor. A melhor avenida de Lisboa.', perNight: 350 },
+    ],
+    'premium': [
+      { name: 'Four Seasons Ritz Lisbon', stars: 5, neighborhood: 'Marques de Pombal', whyGood: 'Classico de Lisboa. Spa, jardim, vista Eduardo VII.', perNight: 600 },
+    ],
+    'luxury': [
+      { name: 'Olissippo Lapa Palace', stars: 5, neighborhood: 'Lapa', whyGood: 'Palacio do sec. XIX com jardim tropical.', perNight: 1200 },
+    ],
+  },
+  'amsterdam': {
+    'comfort': [
+      { name: 'Hotel V Nesplein', stars: 3, neighborhood: 'Centro', whyGood: 'Design hotel nos canais. Dam Square a 5 min.', perNight: 500 },
+    ],
+    'premium': [
+      { name: 'Pulitzer Amsterdam', stars: 5, neighborhood: 'Jordaan', whyGood: '25 casas historicas conectadas nos canais.', perNight: 850 },
+    ],
+  },
+  'bangkok': {
+    'comfort': [
+      { name: 'Riva Surya Bangkok', stars: 4, neighborhood: 'Riverside', whyGood: 'Boutique a beira do Chao Phraya. Grand Palace a 10 min.', perNight: 350 },
+    ],
+    'premium': [
+      { name: 'Mandarin Oriental Bangkok', stars: 5, neighborhood: 'Riverside', whyGood: 'Lendario desde 1876. Somerset Maugham hospedou aqui.', perNight: 800 },
+    ],
+    'luxury': [
+      { name: 'The Siam', stars: 5, neighborhood: 'Dusit', whyGood: 'Boutique art-deco a beira do rio. Muay Thai ring.', perNight: 1500 },
+    ],
+  },
+  'dubai': {
+    'comfort': [
+      { name: 'Rove Downtown', stars: 3, neighborhood: 'Downtown', whyGood: 'Vista para o Burj Khalifa. Dubai Mall a pe.', perNight: 400 },
+    ],
+    'premium': [
+      { name: 'Address Downtown', stars: 5, neighborhood: 'Downtown', whyGood: 'Ao lado do Dubai Mall. Vista iconica da Fountain.', perNight: 900 },
+    ],
+    'luxury': [
+      { name: 'Burj Al Arab', stars: 5, neighborhood: 'Jumeirah', whyGood: 'O hotel mais luxuoso do mundo. Suites duplex.', perNight: 5000 },
+    ],
+  },
+  'buenos aires': {
+    'comfort': [
+      { name: 'Mine Hotel', stars: 4, neighborhood: 'Palermo', whyGood: 'Boutique intimo em Palermo Soho. Jardim com pool.', perNight: 300 },
+    ],
+    'premium': [
+      { name: 'Alvear Palace Hotel', stars: 5, neighborhood: 'Recoleta', whyGood: 'O grand hotel de Buenos Aires. Spa Alvear.', perNight: 600 },
+    ],
+  },
+  'nova york': {
+    'comfort': [
+      { name: 'citizenM New York Bowery', stars: 4, neighborhood: 'Lower East Side', whyGood: 'Tech-forward. Rooftop bar com vista para Manhattan.', perNight: 600 },
+    ],
+    'premium': [
+      { name: 'The Standard High Line', stars: 4, neighborhood: 'Meatpacking', whyGood: 'Sobre o High Line. Le Bain rooftop.', perNight: 900 },
+    ],
+    'luxury': [
+      { name: 'The Mark', stars: 5, neighborhood: 'Upper East Side', whyGood: 'MET Museum na esquina. Jean-Georges restaurante.', perNight: 2000 },
+    ],
+  },
+  'singapura': {
+    'comfort': [
+      { name: 'Naumi Hotel', stars: 4, neighborhood: 'City Hall', whyGood: 'Boutique design. National Gallery e Marina Bay a pe.', perNight: 400 },
+    ],
+    'premium': [
+      { name: 'Marina Bay Sands', stars: 5, neighborhood: 'Marina Bay', whyGood: 'Infinity pool no rooftop mais famoso do mundo.', perNight: 900 },
+    ],
+  },
+  'bali': {
+    'comfort': [
+      { name: 'Bisma Eight Ubud', stars: 4, neighborhood: 'Ubud', whyGood: 'Pool infinita sobre a floresta. Eco-luxury.', perNight: 300 },
+    ],
+    'premium': [
+      { name: 'Four Seasons Sayan', stars: 5, neighborhood: 'Ubud', whyGood: 'Sobre o vale do rio Ayung. Chegada pela ponte suspensa.', perNight: 800 },
+    ],
+  },
+  'cancun': {
+    'comfort': [
+      { name: 'Hyatt Ziva Cancun', stars: 4, neighborhood: 'Zona Hoteleira', whyGood: 'All-inclusive premium. Praia privativa, 6 restaurantes.', perNight: 500 },
+    ],
+    'premium': [
+      { name: 'Nizuc Resort & Spa', stars: 5, neighborhood: 'Punta Nizuc', whyGood: 'Isolado no extremo da zona hoteleira. 2 praias.', perNight: 1200 },
+    ],
+  },
+  'miami': {
+    'comfort': [
+      { name: 'The Confidante', stars: 4, neighborhood: 'Mid Beach', whyGood: 'Art Deco renovado. 2 pools, Birds & Bees bar.', perNight: 500 },
+    ],
+    'premium': [
+      { name: 'Faena Hotel Miami Beach', stars: 5, neighborhood: 'Mid Beach', whyGood: 'Obra-prima de Baz Luhrmann. Los Fuegos (Mallmann).', perNight: 1000 },
+    ],
+  },
+  'phuket': {
+    'comfort': [
+      { name: 'Katathani Phuket Beach Resort', stars: 4, neighborhood: 'Kata', whyGood: 'Resort a beira-mar em Kata Noi. 6 pools, spa.', perNight: 350 },
+    ],
+    'premium': [
+      { name: 'Trisara', stars: 5, neighborhood: 'Nai Thon', whyGood: 'Vilas privativas com piscina e vista para o mar.', perNight: 1200 },
+    ],
+  },
+  'cairo': {
+    'comfort': [
+      { name: 'Kempinski Nile Hotel', stars: 5, neighborhood: 'Garden City', whyGood: 'Elegante a beira do Nilo. Museo Egipcio a pe.', perNight: 400 },
+    ],
+    'premium': [
+      { name: 'Marriott Mena House', stars: 5, neighborhood: 'Giza', whyGood: 'Vista direta para as Piramides do quarto.', perNight: 700 },
+    ],
+  },
+};
+
+function getTierKey(budgetTier: string): string {
+  const map: Record<string, string> = {
+    'budget': 'economic', 'economic': 'economic', 'backpacker': 'economic',
+    'comfort': 'comfort', 'conforto': 'comfort', 'midrange': 'comfort',
+    'premium': 'premium', 'elite': 'luxury', 'luxury': 'luxury',
+  };
+  return map[budgetTier?.toLowerCase()] || 'comfort';
+}
+
+export function getHotelRecommendation(
+  destination: string,
+  budgetTier: string,
+  interests: string[]
+): HotelRecommendation | null {
+  const destKey = destination.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const tierKey = getTierKey(budgetTier);
+
+  let destHotels: Record<string, HotelRecommendation[]> | undefined;
+  for (const [k, v] of Object.entries(HOTEL_RECOMMENDATIONS)) {
+    const nk = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (destKey === nk || destKey.includes(nk) || nk.includes(destKey)) {
+      destHotels = v;
+      break;
+    }
+  }
+  if (!destHotels) return null;
+
+  const hotels = destHotels[tierKey] || destHotels['comfort'] || Object.values(destHotels)[0];
+  if (!hotels || hotels.length === 0) return null;
+
+  const zone = getIdealHotelZone(destination, interests);
+  if (zone) {
+    const zoneN = zone.neighborhood.toLowerCase();
+    const matched = hotels.find(h => h.neighborhood.toLowerCase().includes(zoneN) || zoneN.includes(h.neighborhood.toLowerCase()));
+    if (matched) return matched;
+  }
+
+  return hotels[0];
+}
+
 export function getIdealHotelZone(
   destination: string,
   interests: string[]

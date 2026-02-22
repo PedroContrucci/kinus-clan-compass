@@ -5,6 +5,7 @@ import jsPDF from 'jspdf';
 import type { SavedTrip } from '@/types/trip';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { getTopMichelinForCity } from '@/lib/michelinData';
 
 // ── Branding colors (RGB) ──
 const B = {
@@ -143,6 +144,8 @@ const DESTINATION_DAY_NARRATIVES: Record<string, Record<string, string>> = {
     'Cultura': 'O Louvre merece um dia inteiro, mas se o tempo e curto, foque na ala Denon (Mona Lisa, Venus de Milo). Pela tarde, o Museu dOrsay abriga a maior colecao impressionista do mundo.',
     'Gastronomia': 'Paris e a capital mundial da gastronomia. Dos bistrots classicos de Saint-Germain aos mercados de rua do Marais, cada refeicao e uma celebracao.',
     'Passeios': 'Montmartre e o coracao boemio de Paris. Suba ate a Basilica de Sacre-Coeur para a melhor vista da cidade. Um cruzeiro pelo Sena ao por do sol revela Paris de um angulo inesquecivel.',
+    'Descobertas': 'Paris fora do obvio: a Sainte-Chapelle tem os vitrais mais impressionantes da Europa (sec. XIII). O Canal Saint-Martin e o bairro preferido dos parisienses — bistrots e boutiques longe dos turistas. O rooftop das Galeries Lafayette oferece vista gratuita de 360 graus.',
+    'Aventura': 'Versalhes merece um dia inteiro. O Palacio de Luis XIV tem 2.300 salas, mas o jardim de 800 hectares e onde a magia acontece. Alugue bicicleta para explorar o Grand e Petit Trianon — o refugio privado de Maria Antonieta.',
     'Retorno': 'Dernier jour! Um cafe final nos Champs-Elysees antes de partir. Bon voyage!',
   },
   'roma': {
@@ -151,6 +154,8 @@ const DESTINATION_DAY_NARRATIVES: Record<string, Record<string, string>> = {
     'Cultura': 'O Coliseu, o Forum Romano e o Palatino formam o coracao da Roma antiga. Construido em 80 d.C., o Coliseu podia receber 50 mil espectadores. O Vaticano, com a Capela Sistina de Michelangelo, e uma experiencia transcendente.',
     'Gastronomia': 'A culinaria romana e simples e genial. Carbonara, cacio e pepe, amatriciana — cada prato e uma aula de sabor com poucos ingredientes. Prove um suppli na rua.',
     'Passeios': 'Trastevere e o bairro mais charmoso de Roma — ruelas de paralelepipedos, fachadas cobertas de hera e cantinas onde os romanos de verdade jantam.',
+    'Descobertas': 'A Galleria Borghese exige reserva antecipada mas e a colecao de arte mais preciosa de Roma — Bernini, Caravaggio, Raphael em uma villa renascentista. A Via Appia Antica oferece catacumbas e ruinas fora do circuito turistico.',
+    'Aventura': 'Tivoli, a 30km de Roma, abriga duas joias UNESCO: a Villa dEste com suas 500 fontes renascentistas e a Villa Adriana, o retiro do imperador Adriano. O jardim da Villa dEste e o mais fotografado da Italia.',
     'Retorno': 'Ultimo espresso italiano. Arrivederci, Roma!',
   },
   'toquio': {
@@ -159,6 +164,8 @@ const DESTINATION_DAY_NARRATIVES: Record<string, Record<string, string>> = {
     'Cultura': 'Asakusa e o coracao tradicional de Toquio. O templo Senso-ji, fundado em 645 d.C., e o mais antigo da cidade. O santuario Meiji em Harajuku oferece um oasis de paz.',
     'Gastronomia': 'Toquio tem mais estrelas Michelin que qualquer cidade do mundo. Do sushi no Tsukiji ao ramen em Shinjuku, cada refeicao e uma obra-prima.',
     'Passeios': 'Shibuya, Akihabara, Ginza — cada bairro e um universo. O cruzamento de Shibuya e o mais movimentado do mundo.',
+    'Descobertas': 'TeamLab Borderless e arte digital imersiva que redefine museus — caminhe dentro das obras. Akihabara e o epicentro da cultura otaku. Ginza Six combina arte contemporanea com compras de luxo.',
+    'Aventura': 'Kamakura, a 1h de trem, foi a capital do Japao medieval. O Grande Buda de bronze (13m, 1252 d.C.) e impressionante. A ilha de Enoshima oferece grutas, santuarios e vista do Monte Fuji em dias claros.',
     'Retorno': 'Sayonara! Um ultimo bento no aeroporto de Narita e a despedida perfeita.',
   },
   'londres': {
@@ -167,6 +174,8 @@ const DESTINATION_DAY_NARRATIVES: Record<string, Record<string, string>> = {
     'Cultura': 'O British Museum e gratuito e abriga tesouros de toda a historia humana. A Tower of London guarda as Joias da Coroa e 1.000 anos de historia.',
     'Gastronomia': 'Borough Market e obrigatorio — queijos artesanais, ostras frescas e o melhor fish and chips. Brick Lane oferece o melhor curry fora da India.',
     'Passeios': 'Um passeio pelo Thames Path revela Londres de outra perspectiva — do Big Ben ao Tate Modern, da St Pauls ao Shakespeare Globe.',
+    'Descobertas': 'Notting Hill encanta com casas coloridas e o Portobello Road Market (sabados). Camden Town mistura punk, street food e mercados alternativos. O Sky Garden (gratuito com reserva) tem a melhor vista de Londres.',
+    'Aventura': 'Stonehenge e Bath em um dia: o misterio neolitico de 5.000 anos seguido dos banhos romanos mais preservados do mundo. A cidade georgiana de Bath e um charme a parte.',
     'Retorno': 'Cheerio! Um ultimo afternoon tea antes de partir.',
   },
   'dubai': {
@@ -175,6 +184,8 @@ const DESTINATION_DAY_NARRATIVES: Record<string, Record<string, string>> = {
     'Cultura': 'Alem do luxo, Dubai guarda historia no bairro Al Fahidi — casas tradicionais com torres de vento, o Creek e os souks de ouro e especiarias.',
     'Gastronomia': 'A culinaria de Dubai e um mosaico do Oriente Medio — shawarma, falafel, machboos. Restaurantes como Al Mallah em Satwa oferecem comida autentica.',
     'Passeios': 'O deserto e tao impressionante quanto a cidade. Um safari com jantar beduino sob as estrelas e uma experiencia transformadora.',
+    'Descobertas': 'O bairro de Alserkal Avenue e o polo de arte contemporanea de Dubai — galerias, estudio de artistas e cafes criativos escondidos em armazens industriais.',
+    'Aventura': 'Safari no deserto com 4x4, sandboarding nas dunas e jantar beduino sob as estrelas. O por do sol sobre as dunas e hipnotizante.',
     'Retorno': 'Ma al-salama! Ultimas compras no Dubai Mall antes do voo.',
   },
   'milao': {
@@ -186,6 +197,66 @@ const DESTINATION_DAY_NARRATIVES: Record<string, Record<string, string>> = {
     'Descobertas': 'O bairro Isola e o novo polo criativo de Milao — Bosco Verticale, galerias independentes e restaurantes de autor. Navigli ao por do sol e imperdivel para aperitivo.',
     'Aventura': 'O Lago di Como esta a apenas 1h de trem. Bellagio, a perola do lago, tem vilas historicas, jardins e vistas que parecem pintura.',
     'Retorno': 'Ultimo espresso italiano! Aproveite para compras de ultima hora na Via Montenapoleone ou no Eataly Milano antes do transfer a Malpensa.',
+  },
+  'barcelona': {
+    'Embarque': 'Saida rumo a capital catala. O voo para Barcelona dura em media 12 horas com conexao.',
+    'Chegada': 'Benvinguts a Barcelona! A cidade de Gaudi recebe voce com sol, mar e uma energia contagiante.',
+    'Cultura': 'A Sagrada Familia e a obra-prima inacabada de Gaudi — 140 anos em construcao. As fachadas contam a historia de Cristo em pedra. A Casa Batllo e a Casa Mila completam o trio modernista.',
+    'Gastronomia': 'La Boqueria e um dos mercados mais vibrantes do mundo — frutas exoticas, presunto iberico, frutos do mar. As tapas no El Born sao uma experiencia social: bar em bar, prato a prato.',
+    'Passeios': 'Park Guell e Gaudi em modo natureza — mosaicos ondulantes, colunas inclinadas e a melhor vista de Barcelona. Barceloneta ao por do sol e obrigatoria.',
+    'Descobertas': 'O Bunkers del Carmel e o segredo mais mal guardado de Barcelona — mirante 360 graus. O Palau de la Musica e art nouveau em estado puro.',
+    'Aventura': 'Montserrat, a 1h de trem, e uma montanha sagrada com mosteiro beneditino e trilhas com vistas absurdas. O coral Escolania canta ao meio-dia.',
+    'Retorno': 'Adeu Barcelona! Um ultimo passeio pela Barceloneta antes de partir.',
+  },
+  'lisboa': {
+    'Embarque': 'Saida rumo a capital portuguesa. O voo para Lisboa dura em media 10 horas direto.',
+    'Chegada': 'Bem-vindo a Lisboa! A cidade das sete colinas recebe voce com luz dourada, azulejos e o aroma de pasteis de nata.',
+    'Cultura': 'O Mosteiro dos Jeronimos (1502) e obra-prima do estilo manuelino. A Torre de Belem guardava a entrada do Tejo. O Castelo de Sao Jorge oferece a melhor vista de Lisboa.',
+    'Gastronomia': 'O Time Out Market (Mercado da Ribeira) reune os melhores chefs de Portugal sob um teto. O pastel de nata da fabrica original em Belem usa receita secreta de monges do sec. XVIII.',
+    'Passeios': 'O Bonde 28 corta os bairros historicos — Alfama, Graca, Baixa. Os miradouros de Lisboa sao o melhor programa gratuito da cidade.',
+    'Descobertas': 'LX Factory e uma antiga fabrica convertida em polo criativo — livrarias, restaurantes, galerias. O Museu Nacional do Azulejo conta 5 seculos de historia.',
+    'Aventura': 'Sintra e magia pura: o Palacio da Pena, a Quinta da Regaleira (tuneis secretos) e o Cabo da Roca — o ponto mais ocidental da Europa continental.',
+    'Retorno': 'Ate breve, Lisboa! Um ultimo cafe no Chiado e pasteis de nata para levar.',
+  },
+  'nova york': {
+    'Embarque': 'Saida rumo a Big Apple. O voo para Nova York dura em media 10 horas direto de GRU.',
+    'Chegada': 'Welcome to New York! A energia e palpavel desde o momento em que voce sai do JFK. O skyline de Manhattan e hipnotizante.',
+    'Cultura': 'O MET e um dos maiores museus do mundo — 2 milhoes de obras. O MoMA abriga Starry Night de Van Gogh. Central Park e o pulmao verde de Manhattan.',
+    'Gastronomia': 'NY e a capital culinaria mais diversa do mundo — pizza artesanal no Village, pastrami no Katzs, dim sum em Chinatown.',
+    'Passeios': 'O High Line transformou uma ferrovia abandonada em parque aereo. Brooklyn Bridge a pe oferece vistas iconicas. DUMBO tem as melhores fotos de Manhattan.',
+    'Descobertas': 'Top of the Rock supera o Empire State em vistas. SoHo e Greenwich Village sao o coracao criativo de NY. Little Italy e Chinatown ficam a metros uma da outra.',
+    'Aventura': 'A Estatua da Liberdade e Ellis Island contam a historia da imigracao americana. Reserve ingresso para a coroa com antecedencia.',
+    'Retorno': 'See you later, NYC! Um ultimo bagel e cafe no Upper West Side antes do JFK.',
+  },
+  'buenos aires': {
+    'Embarque': 'Saida rumo a capital argentina. O voo para Buenos Aires dura apenas 3 horas direto.',
+    'Chegada': 'Bienvenido a Buenos Aires! A energia portena e contagiante desde a primeira empanada.',
+    'Cultura': 'O Teatro Colon e um dos teatros de opera mais importantes do mundo. O MALBA abriga arte latino-americana contemporanea. O Cemiterio da Recoleta e arte e historia a ceu aberto.',
+    'Gastronomia': 'Buenos Aires e a capital do asado. Don Julio e La Cabrera sao referencias de parrilla. O alfajor e sobremesa obrigatoria.',
+    'Passeios': 'San Telmo aos domingos e uma festa — feira de antiguidades, tango na rua e parillas. La Boca (Caminito) e pura cor e energia.',
+    'Descobertas': 'Palermo Soho e o bairro mais descolado — restaurantes de autor, bares craft, design argentino. Os murais de street art estao em cada esquina.',
+    'Aventura': 'Tigre, a 1h de trem, e o delta do Parana com canais, ilhas e natureza. Passeio de barco e almoco a beira do rio.',
+    'Retorno': 'Hasta luego, Buenos Aires! Ultimo cafe com medialunas antes de partir.',
+  },
+  'amsterdam': {
+    'Embarque': 'Saida rumo a Holanda. O voo para Amsterdam dura em media 12 horas com conexao.',
+    'Chegada': 'Welkom in Amsterdam! A cidade dos canais e bicicletas recebe voce com charme e liberdade.',
+    'Cultura': 'O Rijksmuseum e o museu mais importante da Holanda — A Ronda Noturna de Rembrandt e monumental. O Museu Van Gogh e a Casa de Anne Frank completam o trio cultural.',
+    'Gastronomia': 'O Albert Cuyp Market e o maior mercado de rua de Amsterdam. Stroopwafels frescos, arenque, bitterballen. O Foodhallen reune o melhor street food sob um teto.',
+    'Passeios': 'Um passeio de barco pelos canais e a melhor forma de conhecer Amsterdam. Jordaan e o bairro mais charmoso — galerias, cafes acolhedores e flores.',
+    'Descobertas': 'De Pijp e o bairro mais multicultural — Heineken Experience, restaurantes surinameses e indonesios. Vondelpark e o Central Park de Amsterdam.',
+    'Aventura': 'Zaanse Schans (30min de trem) tem os classicos moinhos holandeses, fabricas de queijo e tamancos. Edam e o paraiso do queijo holandes.',
+    'Retorno': 'Tot ziens! Ultimo pannenkoek e compras de queijo antes do voo.',
+  },
+  'cairo': {
+    'Embarque': 'Saida rumo ao Egito. O voo para Cairo dura em media 14 horas com conexao.',
+    'Chegada': 'Ahlan wa sahlan! O Cairo e caos e magia — buzinas, minaretes e as Piramides no horizonte.',
+    'Cultura': 'As Piramides de Giza e a Esfinge sao a unica Maravilha do Mundo Antigo que sobreviveu. O Museu Egipcio abriga o tesouro de Tutankhamon.',
+    'Gastronomia': 'O koshari e o prato nacional — arroz, lentilha, macarrao e molho de tomate. Prove o ful medames (fava) e o ta\'amiya (falafel egipcio).',
+    'Passeios': 'Khan el-Khalili e o bazar mais antigo do Oriente Medio — especiarias, perfumes, artesanato. Pechinche sem medo!',
+    'Descobertas': 'Zamalek, a ilha no Nilo, e o bairro mais cosmopolita — galerias, restaurantes e a vista do Cairo Tower.',
+    'Aventura': 'Um passeio de felucca (barco a vela) pelo Nilo ao por do sol e uma experiencia atemporal.',
+    'Retorno': 'Ma al-salama! Ultimas compras no Khan el-Khalili antes do aeroporto.',
   },
 };
 
@@ -545,14 +616,35 @@ export async function exportTripPDF(trip: SavedTrip) {
 
   if (trip.accommodation) {
     const hotelStatus = trip.accommodation.status === 'confirmed' ? 'Confirmado' : 'Planejado';
+    const hotelNeighborhood = trip.accommodation?.neighborhood || '';
+    const hotelDescription = trip.accommodation?.description || '';
+    const hotelStars = trip.accommodation.stars || 3;
+
     drawStatusDot(16, y - 1, hotelStatus === 'Confirmado' ? B.emerald : B.gold);
     setC(B.white, false);
     doc.setFont('helvetica', 'bold');
-    doc.text(`HOTEL: ${trip.accommodation.totalNights} noites  |  Faixa ${tierLabel}`, 20, y);
+    doc.setFontSize(9);
+
+    const displayName = trip.accommodation.name || `Hotel em ${trip.destination}`;
+    doc.text(displayName, 20, y);
     y += 5;
+
     setC(B.gray400, false);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Status: ${hotelStatus}  |  R$ ${fmt(trip.accommodation.totalPrice)}`, 20, y);
+    const starsStr = Array(hotelStars).fill('*').join('');
+    doc.text(`${starsStr}  |  ${trip.accommodation.totalNights} noites  |  Faixa ${tierLabel}  |  R$ ${fmt(trip.accommodation.nightlyRate)}/noite`, 20, y);
+    y += 5;
+    doc.text(`Status: ${hotelStatus}  |  Total: R$ ${fmt(trip.accommodation.totalPrice)}`, 20, y);
+    y += 5;
+
+    if (hotelDescription) {
+      setC(B.gray500, false);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'italic');
+      const descLines = doc.splitTextToSize(hotelDescription, pw - 40);
+      doc.text(descLines, 20, y);
+      y += descLines.length * 3.2 + 2;
+    }
   }
 
   addFooter();
@@ -646,6 +738,17 @@ export async function exportTripPDF(trip: SavedTrip) {
       setC(B.white, false);
       doc.setFont('helvetica', 'normal');
       y += 5;
+
+      // Activity description line
+      if (act.description && act.description !== act.name && !isLogistics && act.description.length > 5) {
+        checkPage(4);
+        setC(B.gray500, false);
+        doc.setFontSize(6.5);
+        doc.setFont('helvetica', 'italic');
+        const descText = act.description.length > 80 ? act.description.substring(0, 77) + '...' : act.description;
+        doc.text(descText, 30, y);
+        y += 3.5;
+      }
     });
 
     y += 4;

@@ -48,6 +48,8 @@ export interface FlightCard {
 export interface HotelCard {
   id: string;
   name: string;
+  neighborhood?: string;
+  description?: string;
   stars: number;
   checkIn: string;
   checkOut: string;
