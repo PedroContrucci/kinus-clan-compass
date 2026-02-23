@@ -13,6 +13,7 @@ import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
 import { DraftCockpit, TripGuide, ExchangeRates, AuctionList, EnhancedDayTimeline, SmartPackingWithLuggage, EnhancedExchangeRates, AuctionConfigModal } from '@/components/cockpit';
+import { DayMapLink } from '@/components/cockpit/DayMapLink';
 import { TripPanel } from '@/components/cockpit/TripPanel';
 import { AgentTip } from '@/components/shared/AgentTip';
 import { getIcarusRoteiro, getIcarusGuia, getIcarusLeilao, getHestiaFinOps, getHestiaCambio, getHestiaLeilao, getHermesChecklist, getHermesPacking } from '@/lib/agentMessages';
@@ -841,9 +842,17 @@ const Viagens = () => {
                     isTransitioning ? 'opacity-0' : 'opacity-100'
                   }`}
                 >
-                  <h3 className="font-semibold text-lg mb-4 text-[#f8fafc] font-['Outfit']">
+                  <h3 className="font-semibold text-lg mb-2 text-[#f8fafc] font-['Outfit']">
                     Dia {currentDay.day}: {currentDay.title}
                   </h3>
+
+                  {/* Google Maps link for main activity */}
+                  <DayMapLink
+                    destination={selectedTrip.destination}
+                    dayActivities={currentDay.activities}
+                    hotelName={selectedTrip.accommodation?.name}
+                  />
+
                   <div className="space-y-4">
                     {currentDay.activities.map((activity, actIndex) => {
                       const dayIndex = selectedTrip.days.findIndex((d) => d.day === currentDay.day);
