@@ -6,6 +6,7 @@ import type { SavedTrip } from '@/types/trip';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getTopMichelinForCity } from '@/lib/michelinData';
+import { getExpandedCityData } from '@/data/destinationPdfData';
 
 // ── Branding colors (RGB) ──
 const B = {
@@ -24,76 +25,76 @@ const B = {
 // ── Destination cover photos (Unsplash direct links) ──
 const DESTINATION_COVER_PHOTOS: Record<string, string[]> = {
   'paris': [
-    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1200&q=80',
+    'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=1200&q=80',
   ],
   'roma': [
-    'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1525874684015-58379d421a52?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1200&q=80',
+    'https://images.unsplash.com/photo-1525874684015-58379d421a52?w=1200&q=80',
   ],
   'londres': [
-    'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1529655683826-aba9b3e77383?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&q=80',
+    'https://images.unsplash.com/photo-1529655683826-aba9b3e77383?w=1200&q=80',
   ],
   'bangkok': [
-    'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=1200&q=80',
+    'https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=1200&q=80',
   ],
   'toquio': [
-    'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1200&q=80',
+    'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=1200&q=80',
   ],
   'dubai': [
-    'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1518684079-3c830dcef090?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200&q=80',
+    'https://images.unsplash.com/photo-1518684079-3c830dcef090?w=1200&q=80',
   ],
   'nova york': [
-    'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1200&q=80',
+    'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=1200&q=80',
   ],
   'lisboa': [
-    'https://images.unsplash.com/photo-1585208798174-6cedd86e019a?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1548707309-dcebeab426c8?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1558383817-e83c8a641067?w=1200&q=80',
+    'https://images.unsplash.com/photo-1548707309-dcebeab426c8?w=1200&q=80',
   ],
   'barcelona': [
-    'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1523531294919-4bcd7c65e216?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=1200&q=80',
+    'https://images.unsplash.com/photo-1523531294919-4bcd7c65e216?w=1200&q=80',
   ],
   'buenos aires': [
-    'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1612294037637-ec328d0e075e?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?w=1200&q=80',
+    'https://images.unsplash.com/photo-1612294037637-ec328d0e075e?w=1200&q=80',
   ],
   'amsterdam': [
-    'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=1200&q=80',
+    'https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?w=1200&q=80',
   ],
   'cairo': [
-    'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=1200&q=80',
+    'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=1200&q=80',
   ],
   'phuket': [
-    'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1537956965359-7573183d1f57?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=1200&q=80',
+    'https://images.unsplash.com/photo-1537956965359-7573183d1f57?w=1200&q=80',
   ],
   'bali': [
-    'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1200&q=80',
+    'https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=1200&q=80',
   ],
   'cancun': [
-    'https://images.unsplash.com/photo-1552074284-5e88ef1aef18?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1510097467424-192d713fd8b2?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1552074284-5e88ef1aef18?w=1200&q=80',
+    'https://images.unsplash.com/photo-1510097467424-192d713fd8b2?w=1200&q=80',
   ],
   'miami': [
-    'https://images.unsplash.com/photo-1514214246283-d427a95c5d2f?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1514214246283-d427a95c5d2f?w=1200&q=80',
+    'https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=1200&q=80',
   ],
   'singapura': [
-    'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1496939376851-89342e90adcd?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=1200&q=80',
+    'https://images.unsplash.com/photo-1496939376851-89342e90adcd?w=1200&q=80',
   ],
   'milao': [
-    'https://images.unsplash.com/photo-1513581166391-887a96ddeafd?w=1200&h=800&fit=crop&fm=jpg&q=80',
-    'https://images.unsplash.com/photo-1520175480921-4edfa2983e0f?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1513581166391-887a96ddeafd?w=1200&q=80',
+    'https://images.unsplash.com/photo-1520175480921-4edfa2983e0f?w=1200&q=80',
   ],
 };
 
@@ -433,6 +434,9 @@ function getDestTips(destination: string) {
     const nk = normalizeForMatch(k);
     if (key === nk || key.includes(nk) || nk.includes(key)) return v;
   }
+  // Fallback: check expanded data
+  const expanded = getExpandedCityData(destination);
+  if (expanded?.tips) return expanded.tips;
   return null;
 }
 
@@ -447,6 +451,9 @@ function getDestDescription(destination: string): string {
   for (const [k, v] of Object.entries(DESTINATION_DESCRIPTIONS)) {
     if (normalizeForMatch(k) === key || key.includes(normalizeForMatch(k)) || normalizeForMatch(k).includes(key)) return v;
   }
+  // Fallback: check expanded data
+  const expanded = getExpandedCityData(destination);
+  if (expanded?.description) return expanded.description;
   return `${destination} e um destino fascinante que oferece cultura rica, gastronomia autentica e experiencias inesqueciveis. Prepare-se para descobrir monumentos historicos, mercados vibrantes e a hospitalidade local que torna cada viagem unica e especial.`;
 }
 
@@ -463,6 +470,14 @@ function getDayNarrative(destination: string, dayTitle: string): string {
     }
   }
 
+  // Fallback: check expanded data narratives
+  const expanded = getExpandedCityData(destination);
+  if (expanded?.narratives) {
+    for (const [theme, narrative] of Object.entries(expanded.narratives)) {
+      if (cleanTitle.toLowerCase().includes(theme.toLowerCase())) return narrative;
+    }
+  }
+
   for (const [theme, narrative] of Object.entries(GENERIC_DAY_NARRATIVES)) {
     if (cleanTitle.toLowerCase().includes(theme.toLowerCase())) return narrative;
   }
@@ -476,6 +491,9 @@ function getDestInfo(destination: string) {
     const nk = normalizeForMatch(k);
     if (key === nk || key.includes(nk) || nk.includes(key)) return v;
   }
+  // Fallback: check expanded data
+  const expanded = getExpandedCityData(destination);
+  if (expanded?.info) return expanded.info;
   return null;
 }
 
@@ -495,7 +513,13 @@ function getDestCoverPhotos(destination: string): string[] {
     const nk = normalizeForMatch(k);
     if (key === nk || key.includes(nk) || nk.includes(key)) return v;
   }
-  return ['https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80'];
+  // Fallback: check expanded data
+  const expanded = getExpandedCityData(destination);
+  if (expanded?.photos?.length) return expanded.photos;
+  return [
+    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1200&h=800&fit=crop&fm=jpg&q=80',
+  ];
 }
 
 async function fetchImageAsBase64(url: string): Promise<string | null> {
@@ -523,14 +547,12 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
   };
 
   // Attempt 1: original URL with longer timeout
-  const result = await tryFetch(url, 10000);
+  const result = await tryFetch(url, 12000);
   if (result) return result;
 
-  // Attempt 2: slightly different URL params for better CORS
-  const retryUrl = url.includes('?')
-    ? url + '&fit=crop&fm=jpg'
-    : url + '?w=1200&fit=crop&fm=jpg&q=80';
-  const result2 = await tryFetch(retryUrl, 8000);
+  // Attempt 2: slightly modified URL for retry
+  const retryUrl = url.includes('&fm=') ? url.replace('&q=80', '&q=75') : url + '&fm=jpg&q=75';
+  const result2 = await tryFetch(retryUrl, 10000);
   if (result2) return result2;
 
   return null;
@@ -610,27 +632,25 @@ export async function exportTripPDF(trip: SavedTrip) {
   drawRect(0, 0, pw, ph, B.night);
 
   // Cover photo in top section
-  let hasCover = false;
   if (coverBase64) {
     try {
       doc.addImage(coverBase64, 'JPEG', 0, 0, pw, 130);
       // Solid navy block at bottom of photo for smooth transition
       drawRect(0, 105, pw, 25, B.night);
-      hasCover = true;
     } catch {
-      // Fallback below
+      // Fallback: no photo, just navy
     }
   }
 
-  // Fallback visual header when no photo loads
-  if (!hasCover) {
-    drawRect(0, 0, pw, 42, B.surface);
-    drawRect(0, 0, pw / 3, 42, B.emerald);
-    drawRect(0, 40, pw, 2, B.emerald);
+  // If no cover photo, create visual header with emerald accent
+  if (!coverBase64) {
+    drawRect(0, 0, pw, 50, B.surface);
+    drawRect(0, 0, pw * 0.4, 50, B.emerald);
+    drawRect(0, 48, pw, 2, B.emerald);
   }
 
   // KINU branding — below photo area
-  const titleY = hasCover ? 140 : 55;
+  const titleY = coverBase64 ? 140 : 55;
 
   setC(B.white, false);
   doc.setFontSize(28);
@@ -926,6 +946,18 @@ export async function exportTripPDF(trip: SavedTrip) {
         const descText = act.description.length > 80 ? act.description.substring(0, 77) + '...' : act.description;
         doc.text(descText, 30, y);
         y += 3.5;
+      }
+
+      // Google Maps link for non-logistics activities
+      if (!isLogistics && actName && !actName.toLowerCase().includes('cafe da manha')) {
+        const cleanActName = actName.replace(/^(Almoco|Jantar|Cafe):\s*/i, '');
+        const actMapsQuery = encodeURIComponent(cleanActName + ', ' + trip.destination);
+        const actMapsUrl = 'https://www.google.com/maps/search/' + actMapsQuery;
+        setC(B.horizon, false);
+        doc.setFontSize(5.5);
+        doc.setFont('helvetica', 'normal');
+        doc.textWithLink('Ver no Maps', 30, y, { url: actMapsUrl });
+        y += 3;
       }
     });
 
