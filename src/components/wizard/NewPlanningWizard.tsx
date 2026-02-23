@@ -475,13 +475,13 @@ function generateDays(
       ];
       if (jetLagMode) {
         activities.push(
-          makeActivity(`act-${dayNum}-4`, '15:30', 'Passeio leve pelo bairro', 'Caminhada de adaptação ao fuso horário', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`act-${dayNum}-5`, '19:00', 'Jantar leve', 'Restaurante próximo ao hotel', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, '15:30', 'Passeio leve pelo bairro', '', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-5`, '19:00', 'Jantar leve', '', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
       } else {
         activities.push(
-          makeActivity(`act-${dayNum}-4`, '15:30', 'Exploração inicial', `Primeiras impressões de ${city}`, '3h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-5`, '19:30', 'Jantar de boas-vindas', 'Restaurante típico local', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, '15:30', 'Exploração inicial', '', '3h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-5`, '19:30', 'Jantar de boas-vindas', '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
       }
       days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
@@ -508,7 +508,7 @@ function generateDays(
         title: `${theme.title} ${theme.icon}`,
         icon: theme.icon,
         activities: [
-          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Hotel ou padaria local', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', '', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-2`, '09:30', theme.activities[0], '', '2h30', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-3`, '12:30', `Almoço: ${theme.restaurants.lunch}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-4`, '14:30', theme.activities[1], '', '2h30', 'passeio', city, 'tour', priceLevel, travelers, tierMultiplier),
