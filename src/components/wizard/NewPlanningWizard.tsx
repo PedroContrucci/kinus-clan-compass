@@ -509,11 +509,11 @@ function generateDays(
         icon: theme.icon,
         activities: [
           makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Hotel ou padaria local', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-2`, '09:30', theme.activities[0], `Exploração: ${theme.title}`, '2h30', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-3`, '12:30', `Almoço: ${theme.restaurants.lunch}`, theme.restaurants.lunch, '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-4`, '14:30', theme.activities[1], `Continuação: ${theme.title}`, '2h30', 'passeio', city, 'tour', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-5`, '17:30', theme.activities[2], 'Passeio no final da tarde', '1h30', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-6`, '19:30', `Jantar: ${theme.restaurants.dinner}`, theme.restaurants.dinner, '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-2`, '09:30', theme.activities[0], '', '2h30', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-3`, '12:30', `Almoço: ${theme.restaurants.lunch}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, '14:30', theme.activities[1], '', '2h30', 'passeio', city, 'tour', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-5`, '17:30', theme.activities[2], '', '1h30', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-6`, '19:30', `Jantar: ${theme.restaurants.dinner}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         ],
       });
     }

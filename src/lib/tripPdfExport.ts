@@ -24,76 +24,76 @@ const B = {
 // ── Destination cover photos (Unsplash direct links) ──
 const DESTINATION_COVER_PHOTOS: Record<string, string[]> = {
   'paris': [
-    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1200&q=80',
-    'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=1200&q=80',
+    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'roma': [
-    'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1200&q=80',
-    'https://images.unsplash.com/photo-1525874684015-58379d421a52?w=1200&q=80',
+    'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1525874684015-58379d421a52?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'londres': [
-    'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&q=80',
-    'https://images.unsplash.com/photo-1529655683826-aba9b3e77383?w=1200&q=80',
+    'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1529655683826-aba9b3e77383?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'bangkok': [
-    'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=1200&q=80',
-    'https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=1200&q=80',
+    'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'toquio': [
-    'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1200&q=80',
-    'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=1200&q=80',
+    'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'dubai': [
-    'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200&q=80',
-    'https://images.unsplash.com/photo-1518684079-3c830dcef090?w=1200&q=80',
+    'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1518684079-3c830dcef090?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'nova york': [
-    'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1200&q=80',
-    'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=1200&q=80',
+    'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'lisboa': [
-    'https://images.unsplash.com/photo-1558383817-e83c8a641067?w=1200&q=80',
-    'https://images.unsplash.com/photo-1548707309-dcebeab426c8?w=1200&q=80',
+    'https://images.unsplash.com/photo-1585208798174-6cedd86e019a?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1548707309-dcebeab426c8?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'barcelona': [
-    'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=1200&q=80',
-    'https://images.unsplash.com/photo-1523531294919-4bcd7c65e216?w=1200&q=80',
+    'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1523531294919-4bcd7c65e216?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'buenos aires': [
-    'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?w=1200&q=80',
-    'https://images.unsplash.com/photo-1612294037637-ec328d0e075e?w=1200&q=80',
+    'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1612294037637-ec328d0e075e?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'amsterdam': [
-    'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=1200&q=80',
-    'https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?w=1200&q=80',
+    'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'cairo': [
-    'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=1200&q=80',
-    'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=1200&q=80',
+    'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'phuket': [
-    'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=1200&q=80',
-    'https://images.unsplash.com/photo-1537956965359-7573183d1f57?w=1200&q=80',
+    'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1537956965359-7573183d1f57?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'bali': [
-    'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1200&q=80',
-    'https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=1200&q=80',
+    'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'cancun': [
-    'https://images.unsplash.com/photo-1552074284-5e88ef1aef18?w=1200&q=80',
-    'https://images.unsplash.com/photo-1510097467424-192d713fd8b2?w=1200&q=80',
+    'https://images.unsplash.com/photo-1552074284-5e88ef1aef18?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1510097467424-192d713fd8b2?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'miami': [
-    'https://images.unsplash.com/photo-1514214246283-d427a95c5d2f?w=1200&q=80',
-    'https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=1200&q=80',
+    'https://images.unsplash.com/photo-1514214246283-d427a95c5d2f?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'singapura': [
-    'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=1200&q=80',
-    'https://images.unsplash.com/photo-1496939376851-89342e90adcd?w=1200&q=80',
+    'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1496939376851-89342e90adcd?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
   'milao': [
-    'https://images.unsplash.com/photo-1513581166391-887a96ddeafd?w=1200&q=80',
-    'https://images.unsplash.com/photo-1520175480921-4edfa2983e0f?w=1200&q=80',
+    'https://images.unsplash.com/photo-1513581166391-887a96ddeafd?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    'https://images.unsplash.com/photo-1520175480921-4edfa2983e0f?w=1200&h=800&fit=crop&fm=jpg&q=80',
   ],
 };
 
@@ -499,7 +499,7 @@ function getDestCoverPhotos(destination: string): string[] {
 }
 
 async function fetchImageAsBase64(url: string): Promise<string | null> {
-  try {
+  const tryFetch = (attemptUrl: string, timeout: number): Promise<string | null> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -517,12 +517,23 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
         } catch { resolve(null); }
       };
       img.onerror = () => resolve(null);
-      setTimeout(() => resolve(null), 5000);
-      img.src = url;
+      setTimeout(() => resolve(null), timeout);
+      img.src = attemptUrl;
     });
-  } catch {
-    return null;
-  }
+  };
+
+  // Attempt 1: original URL with longer timeout
+  const result = await tryFetch(url, 10000);
+  if (result) return result;
+
+  // Attempt 2: slightly different URL params for better CORS
+  const retryUrl = url.includes('?')
+    ? url + '&fit=crop&fm=jpg'
+    : url + '?w=1200&fit=crop&fm=jpg&q=80';
+  const result2 = await tryFetch(retryUrl, 8000);
+  if (result2) return result2;
+
+  return null;
 }
 
 // ── Main Export Function (ASYNC for image fetching) ──
@@ -599,18 +610,27 @@ export async function exportTripPDF(trip: SavedTrip) {
   drawRect(0, 0, pw, ph, B.night);
 
   // Cover photo in top section
+  let hasCover = false;
   if (coverBase64) {
     try {
       doc.addImage(coverBase64, 'JPEG', 0, 0, pw, 130);
       // Solid navy block at bottom of photo for smooth transition
       drawRect(0, 105, pw, 25, B.night);
+      hasCover = true;
     } catch {
-      // Fallback: no photo, just navy
+      // Fallback below
     }
   }
 
+  // Fallback visual header when no photo loads
+  if (!hasCover) {
+    drawRect(0, 0, pw, 42, B.surface);
+    drawRect(0, 0, pw / 3, 42, B.emerald);
+    drawRect(0, 40, pw, 2, B.emerald);
+  }
+
   // KINU branding — below photo area
-  const titleY = coverBase64 ? 140 : 50;
+  const titleY = hasCover ? 140 : 55;
 
   setC(B.white, false);
   doc.setFontSize(28);

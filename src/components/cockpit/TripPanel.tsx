@@ -1,7 +1,7 @@
 // TripPanel — Orchestrated Executive Dashboard
 
 import { motion } from 'framer-motion';
-import { Check, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, FileText, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -297,6 +297,17 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         <p className="text-sm text-muted-foreground mt-1">
           {dateRange} • {trip.travelers} viajante(s) • Faixa {tierLabel}
         </p>
+        {trip.accommodation?.name && (
+          <a
+            href={`https://www.google.com/maps/search/${encodeURIComponent(trip.accommodation.name + ', ' + trip.destination)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 mt-2 text-xs text-primary hover:text-primary/80 transition-colors"
+          >
+            <MapPin size={12} />
+            Ver hotel no mapa
+          </a>
+        )}
         <div className="flex gap-2 mt-4">
           <MiniKPI label={isPast ? 'em viagem' : 'dias'} value={isPast ? 'Em viagem' : String(daysLeft)} urgent={!isPast && daysLeft <= 7} />
           <MiniKPI label="progresso" value={`${progressPct}%`} />
