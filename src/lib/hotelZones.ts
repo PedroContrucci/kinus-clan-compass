@@ -246,35 +246,6 @@ export const HOTEL_ZONES: Record<string, HotelZone[]> = {
     { name: 'Jurere/Canasvieiras', neighborhood: 'Jurere', whyGood: 'Praias calmas, beach clubs, familia.', interests: ['relaxation', 'nature', 'family'] },
     { name: 'Campeche/Morro das Pedras', neighborhood: 'Campeche', whyGood: 'Praias selvagens, surfe, tranquilidade.', interests: ['nature', 'relaxation'] },
   ],
-  'cidade do cabo': [
-    { name: 'V&A Waterfront', neighborhood: 'Waterfront', whyGood: 'Porto revitalizado com restaurantes, lojas e vista da Table Mountain.', interests: ['shopping', 'gastronomy', 'culture'] },
-    { name: 'Camps Bay', neighborhood: 'Camps Bay', whyGood: 'Praia espetacular com montanhas atras. Restaurantes e bares de praia.', interests: ['relaxation', 'nature', 'nightlife'] },
-    { name: 'City Bowl/Gardens', neighborhood: 'Gardens', whyGood: 'Aos pes da Table Mountain. Museus, galerias, cafes.', interests: ['culture', 'art', 'history'] },
-    { name: 'Woodstock', neighborhood: 'Woodstock', whyGood: 'Bairro criativo. Old Biscuit Mill, street art, galerias.', interests: ['art', 'gastronomy', 'culture'] },
-  ],
-  'santiago': [
-    { name: 'Lastarria/Bellas Artes', neighborhood: 'Lastarria', whyGood: 'Bairro bohemio com galerias, cafes e restaurantes de autor.', interests: ['culture', 'art', 'gastronomy'] },
-    { name: 'Providencia', neighborhood: 'Providencia', whyGood: 'Metro, restaurantes, seguro. Equilibrio perfeito.', interests: ['shopping', 'gastronomy', 'nightlife'] },
-    { name: 'Bellavista', neighborhood: 'Bellavista', whyGood: 'Casa de Neruda, vida noturna, arte de rua.', interests: ['nightlife', 'art', 'culture'] },
-  ],
-  'lima': [
-    { name: 'Miraflores', neighborhood: 'Miraflores', whyGood: 'Bairro mais seguro e turistico. Malecon, restaurantes, parques.', interests: ['gastronomy', 'shopping', 'culture'] },
-    { name: 'Barranco', neighborhood: 'Barranco', whyGood: 'Bairro bohemio com galerias, bares e vista do Pacifico.', interests: ['art', 'nightlife', 'culture'] },
-  ],
-  'praga': [
-    { name: 'Stare Mesto (Cidade Velha)', neighborhood: 'Stare Mesto', whyGood: 'Relogio Astronomico, Ponte Carlos, vida cultural.', interests: ['culture', 'history', 'gastronomy'] },
-    { name: 'Mala Strana', neighborhood: 'Mala Strana', whyGood: 'Bairro charmoso aos pes do Castelo. Cervejarias tradicionais.', interests: ['history', 'gastronomy', 'art'] },
-  ],
-  'istambul': [
-    { name: 'Sultanahmet', neighborhood: 'Sultanahmet', whyGood: 'Hagia Sophia, Mesquita Azul, Grande Bazar. Centro historico.', interests: ['culture', 'history', 'shopping'] },
-    { name: 'Beyoglu/Galata', neighborhood: 'Beyoglu', whyGood: 'Torre de Galata, Istiklal, vida noturna e contemporanea.', interests: ['nightlife', 'art', 'gastronomy'] },
-    { name: 'Karakoy', neighborhood: 'Karakoy', whyGood: 'Bairro hipster renascido. Cafes, galerias, street food.', interests: ['gastronomy', 'art', 'culture'] },
-  ],
-  'rio de janeiro': [
-    { name: 'Copacabana', neighborhood: 'Copacabana', whyGood: 'A praia mais famosa do mundo. Vida noturna, restaurantes.', interests: ['nightlife', 'gastronomy', 'culture'] },
-    { name: 'Ipanema/Leblon', neighborhood: 'Ipanema', whyGood: 'Praias sofisticadas, restaurantes premium, seguranca.', interests: ['gastronomy', 'shopping', 'relaxation'] },
-    { name: 'Santa Teresa', neighborhood: 'Santa Teresa', whyGood: 'Bairro bohemio com arte, mirantes e charme colonial.', interests: ['art', 'culture', 'history'] },
-  ],
 };
 
 // ── Hotel Recommendations — Real hotel names by destination × budget tier ──
@@ -472,15 +443,6 @@ export const HOTEL_RECOMMENDATIONS: Record<string, Record<string, HotelRecommend
       { name: 'Marriott Mena House', stars: 5, neighborhood: 'Giza', whyGood: 'Vista direta para as Piramides do quarto.', perNight: 700 },
     ],
   },
-};
-
-function getTierKey(budgetTier: string): string {
-  const map: Record<string, string> = {
-    'budget': 'economic', 'economic': 'economic', 'backpacker': 'economic',
-    'comfort': 'comfort', 'conforto': 'comfort', 'midrange': 'comfort',
-    'premium': 'premium', 'elite': 'luxury', 'luxury': 'luxury',
-  
-  // ── Additional cities ──
   'cidade do cabo': {
     'budget': [{ name: 'Once in Cape Town', stars: 2, neighborhood: 'City Centre', whyGood: 'Hostel boutique premiado no centro.', perNight: 180 }],
     'comfort': [{ name: 'Southern Sun Waterfront', stars: 3, neighborhood: 'V&A Waterfront', whyGood: 'Vista do porto e Table Mountain. Localizacao privilegiada.', perNight: 450 }],
@@ -549,7 +511,7 @@ function getTierKey(budgetTier: string): string {
   },
   'hanoi': {
     'budget': [{ name: 'Hanoi La Siesta Hotel', stars: 3, neighborhood: 'Old Quarter', whyGood: 'No coracao do Old Quarter. Cafe da manha no terraço.', perNight: 120 }],
-    'comfort': [{ name: 'Hotel de l Opera Hanoi', stars: 4, neighborhood: 'Hoan Kiem', whyGood: 'Estilo colonial frances. Em frente a Opera.', perNight: 300 }],
+    'comfort': [{ name: "Hotel de l'Opera Hanoi", stars: 4, neighborhood: 'Hoan Kiem', whyGood: 'Estilo colonial frances. Em frente a Opera.', perNight: 300 }],
     'premium': [{ name: 'Sofitel Legend Metropole', stars: 5, neighborhood: 'Hoan Kiem', whyGood: 'Hotel lendario desde 1901. Bunker da Guerra do Vietna no subsolo.', perNight: 600 }],
     'luxury': [{ name: 'Capella Hanoi', stars: 5, neighborhood: 'Hoan Kiem', whyGood: 'Boutique de luxo inspirado na opera. 47 suites apenas.', perNight: 1200 }],
   },
@@ -560,6 +522,13 @@ function getTierKey(budgetTier: string): string {
     'luxury': [{ name: 'Belmond Copacabana Palace', stars: 5, neighborhood: 'Copacabana', whyGood: 'O hotel mais iconico do Brasil desde 1923.', perNight: 3000 }],
   },
 };
+
+function getTierKey(budgetTier: string): string {
+  const map: Record<string, string> = {
+    'budget': 'budget', 'economic': 'budget', 'backpacker': 'budget',
+    'comfort': 'comfort', 'conforto': 'comfort', 'midrange': 'comfort',
+    'premium': 'premium', 'elite': 'luxury', 'luxury': 'luxury',
+  };
   return map[budgetTier?.toLowerCase()] || 'comfort';
 }
 
