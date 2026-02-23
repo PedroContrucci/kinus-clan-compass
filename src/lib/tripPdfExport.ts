@@ -287,7 +287,154 @@ const DESTINATION_INFO: Record<string, { timezone: string; voltage: string; lang
   'amsterdam': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Holandes (ingles universal)', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
   'cairo': { timezone: 'UTC+2 (5h a frente do Brasil)', voltage: '220V - Tomada tipo C/F', language: 'Arabe', currency: 'Libra Egipcia (EGP)', visa: 'Visto na chegada (USD 25)' },
   'milao': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F/L', language: 'Italiano', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
+  'bali': { timezone: 'UTC+8 (11h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Indonesio (ingles turistico)', currency: 'Rupia Indonesa (IDR)', visa: 'Isento para brasileiros ate 30 dias' },
+  'cancun': { timezone: 'UTC-5 (2h atras do Brasil)', voltage: '127V - Tomada tipo A/B', language: 'Espanhol', currency: 'Peso Mexicano (MXN)', visa: 'Isento para brasileiros com visto EUA valido ou autorizacao eletronica' },
+  'miami': { timezone: 'UTC-5 (2h atras do Brasil)', voltage: '120V - Tomada tipo A/B', language: 'Ingles/Espanhol', currency: 'Dolar Americano (USD)', visa: 'Necessario visto B1/B2' },
+  'singapura': { timezone: 'UTC+8 (11h a frente do Brasil)', voltage: '230V - Tomada tipo G', language: 'Ingles/Mandarim/Malaio/Tamil', currency: 'Dolar de Singapura (SGD)', visa: 'Isento para brasileiros ate 30 dias' },
+  'seul': { timezone: 'UTC+9 (12h a frente do Brasil)', voltage: '220V - Tomada tipo C/F', language: 'Coreano', currency: 'Won Sul-Coreano (KRW)', visa: 'Isento para brasileiros ate 90 dias' },
+  'berlim': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Alemao', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
+  'marrakech': { timezone: 'UTC+1', voltage: '220V - Tomada tipo C/E', language: 'Arabe/Frances', currency: 'Dirham Marroquino (MAD)', visa: 'Isento para brasileiros ate 90 dias' },
+  'santorini': { timezone: 'UTC+2 (5h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Grego', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
 };
+
+// ── Destination tips (phrases, embassy, tipping, water) ──
+const DESTINATION_TIPS: Record<string, { tips: string; water: string; tipping: string; phrases: string[]; embassy: string }> = {
+  'paris': {
+    tips: 'Sempre cumprimente com "Bonjour" ao entrar em lojas. Metro e o transporte mais eficiente.',
+    water: 'Segura da torneira',
+    tipping: 'Service compris (gorjeta inclusa). Arredondar a conta e gentileza.',
+    phrases: ['Bonjour (Ola)', 'Merci (Obrigado)', 'Sil vous plait (Por favor)', 'Combien? (Quanto?)', 'Parlez-vous anglais? (Fala ingles?)', 'Au revoir (Adeus)'],
+    embassy: 'Embaixada do Brasil: +33 1 45 61 63 00 | 34 Cours Albert 1er, 75008',
+  },
+  'roma': {
+    tips: 'Cuidado com golpes perto do Coliseu. Fontes nasoni tem agua potavel gratis pela cidade.',
+    water: 'Segura da torneira (e das fontes)',
+    tipping: 'Coperto (taxa de servico) ja incluso. Gorjeta extra nao e esperada.',
+    phrases: ['Buongiorno (Bom dia)', 'Grazie (Obrigado)', 'Per favore (Por favor)', 'Quanto costa? (Quanto custa?)', 'Il conto (A conta)', 'Scusi (Com licenca)'],
+    embassy: 'Embaixada do Brasil: +39 06 6835 7800 | Piazza Navona 14',
+  },
+  'milao': {
+    tips: 'Reserve a Ultima Ceia de Da Vinci com meses de antecedencia. Metro linha M1 (vermelha) conecta tudo.',
+    water: 'Segura da torneira',
+    tipping: 'Nao obrigatoria. Coperto incluso na conta.',
+    phrases: ['Buongiorno (Bom dia)', 'Grazie (Obrigado)', 'Quanto costa? (Quanto custa?)', 'Il conto (A conta)', 'Dove...? (Onde fica...?)', 'Scusi (Com licenca)'],
+    embassy: 'Consulado do Brasil em Milao: +39 02 7602 5524 | Corso Europa 12',
+  },
+  'londres': {
+    tips: 'Oyster Card ou contactless no transporte. Museus nacionais sao gratuitos.',
+    water: 'Segura da torneira',
+    tipping: '10-12.5% em restaurantes (verifique se service charge ja esta incluso).',
+    phrases: ['Cheers (Obrigado/Saude)', 'Excuse me (Com licenca)', 'Could I have the bill? (A conta?)', 'Mind the gap (Cuidado com o vao)'],
+    embassy: 'Embaixada do Brasil: +44 20 7399 9000 | 14-16 Cockspur Street, SW1',
+  },
+  'toquio': {
+    tips: 'Compre Suica/Pasmo card para transporte. Sapatos saem antes de entrar em casas e templos.',
+    water: 'Segura da torneira',
+    tipping: 'NUNCA de gorjeta — e considerado ofensivo no Japao.',
+    phrases: ['Konnichiwa (Ola)', 'Arigatou gozaimasu (Muito obrigado)', 'Sumimasen (Com licenca)', 'Ikura desu ka? (Quanto custa?)', 'Oishii! (Delicioso!)'],
+    embassy: 'Embaixada do Brasil: +81 3 5488 5531 | 2-11-12 Kita-Aoyama, Minato-ku',
+  },
+  'barcelona': {
+    tips: 'Cuidado com batedores de carteira em Las Ramblas e metro. Jantar so comeca as 21h.',
+    water: 'Segura mas com gosto. Muitos preferem engarrafada.',
+    tipping: 'Arredondar a conta. 5-10% em restaurantes finos.',
+    phrases: ['Hola (Ola)', 'Gracias (Obrigado)', 'La cuenta (A conta)', 'Cuanto cuesta? (Quanto custa?)', 'Perdon (Com licenca)'],
+    embassy: 'Consulado do Brasil: +34 93 488 2288 | Av. Diagonal 468',
+  },
+  'lisboa': {
+    tips: 'Use calcados confortaveis — Lisboa e feita de ladeiras. Bonde 28 lota rapido, va cedo.',
+    water: 'Segura da torneira',
+    tipping: '5-10% em restaurantes. Nao obrigatoria.',
+    phrases: ['Ola (Ola)', 'Obrigado/a', 'Por favor', 'A conta (A conta)', 'Quanto custa? (Quanto custa?)'],
+    embassy: 'Embaixada do Brasil: +351 21 724 8510 | Estrada das Laranjeiras 144',
+  },
+  'amsterdam': {
+    tips: 'Bike e rei. Cuidado ao cruzar ciclovias. OV-chipkaart para transporte.',
+    water: 'Segura da torneira',
+    tipping: 'Arredondar a conta. 5-10% em restaurantes.',
+    phrases: ['Hallo (Ola)', 'Dank je wel (Obrigado)', 'Alsjeblieft (Por favor)', 'Hoeveel? (Quanto?)', 'Spreekt u Engels? (Fala ingles?)'],
+    embassy: 'Embaixada do Brasil: +31 70 302 3959 | Mauritskade 19, Haia',
+  },
+  'bangkok': {
+    tips: 'Wai (curvatura com maos juntas) e o cumprimento local. Nunca toque a cabeca de alguem.',
+    water: 'NAO beba da torneira. Use engarrafada.',
+    tipping: 'Nao obrigatoria. 20-50 baht em restaurantes e gentileza.',
+    phrases: ['Sawadee krap/ka (Ola)', 'Khop khun krap/ka (Obrigado)', 'Tao rai? (Quanto?)', 'Aroy! (Delicioso!)', 'Mai phet (Sem pimenta)'],
+    embassy: 'Embaixada do Brasil: +66 2 285 6081 | Sathorn 34, Sathorn Road',
+  },
+  'phuket': {
+    tips: 'Negocie preco de longtail boats. Cuidado com golpes de tuk-tuk. Protetor solar e obrigatorio.',
+    water: 'NAO beba da torneira. Use engarrafada.',
+    tipping: 'Nao obrigatoria. 20-50 baht em restaurantes.',
+    phrases: ['Sawadee krap/ka (Ola)', 'Khop khun krap/ka (Obrigado)', 'Tao rai? (Quanto?)', 'Aroy! (Delicioso!)'],
+    embassy: 'Embaixada do Brasil em Bangkok: +66 2 285 6081',
+  },
+  'dubai': {
+    tips: 'Vestimenta modesta fora dos resorts. Alcool so em bares de hotel licenciados.',
+    water: 'Dessalinizada, segura mas com sabor. Engarrafada recomendada.',
+    tipping: '10-15% em restaurantes (verifique se service charge ja esta).',
+    phrases: ['As-salamu alaykum (Paz)', 'Shukran (Obrigado)', 'Bikam? (Quanto?)', 'Yalla! (Vamos!)', 'Inshallah (Se Deus quiser)'],
+    embassy: 'Embaixada do Brasil: +971 2 632 6600 | Abu Dhabi (cobre Dubai)',
+  },
+  'nova york': {
+    tips: 'MetroCard ou OMNY (contactless) no subway. Gorjeta e obrigatoria em restaurantes.',
+    water: 'Segura da torneira (famosa por ser boa)',
+    tipping: '18-22% OBRIGATORIO em restaurantes. $1-2 por drink em bares.',
+    phrases: ['How much? (Quanto?)', 'Check please (A conta)', 'Excuse me (Com licenca)', 'Thank you (Obrigado)'],
+    embassy: 'Consulado do Brasil: +1 917 777 7777 | 225 E 41st Street, Manhattan',
+  },
+  'buenos aires': {
+    tips: 'Leve dolares em especie — cambio paralelo (dolar blue) pode ser vantajoso.',
+    water: 'Segura da torneira',
+    tipping: '10% em restaurantes (propina).',
+    phrases: ['Che! (informal, Ei!)', 'Gracias (Obrigado)', 'La cuenta (A conta)', 'Cuanto sale? (Quanto custa?)', 'Barbaro! (Legal!)'],
+    embassy: 'Embaixada do Brasil: +54 11 4515 2400 | Cerrito 1350',
+  },
+  'cairo': {
+    tips: 'Pechinche SEMPRE nos bazares. Leve dolares em especie para cambio.',
+    water: 'NAO beba da torneira. Use engarrafada.',
+    tipping: 'Baksheesh e esperado em toda parte. 10-15% em restaurantes.',
+    phrases: ['Marhaba (Ola)', 'Shukran (Obrigado)', 'Bikam? (Quanto?)', 'La shukran (Nao obrigado)', 'Inshallah (Se Deus quiser)'],
+    embassy: 'Embaixada do Brasil: +20 2 2749 6688 | 1125 Corniche El Nil, Cairo',
+  },
+  'bali': {
+    tips: 'Alugue scooter so com CNH internacional. Templos exigem sarong (disponivel na entrada).',
+    water: 'NAO beba da torneira. Use engarrafada.',
+    tipping: 'Nao obrigatoria. 5-10% em restaurantes finos.',
+    phrases: ['Selamat siang (Boa tarde)', 'Terima kasih (Obrigado)', 'Berapa? (Quanto?)', 'Tolong (Por favor)'],
+    embassy: 'Embaixada do Brasil em Jacarta: +62 21 526 5656',
+  },
+  'cancun': {
+    tips: 'Negocie passeios na praia. Leve pesos mexicanos para mercados locais.',
+    water: 'NAO beba da torneira. Use engarrafada.',
+    tipping: '10-15% em restaurantes. Propina e esperada.',
+    phrases: ['Hola (Ola)', 'Gracias (Obrigado)', 'La cuenta (A conta)', 'Cuanto cuesta? (Quanto custa?)'],
+    embassy: 'Embaixada do Brasil: +52 55 5164 5959 | Cidade do Mexico',
+  },
+  'miami': {
+    tips: 'Uber e Lyft funcionam bem. Outlets sao mais baratos que os shoppings.',
+    water: 'Segura da torneira',
+    tipping: '18-22% OBRIGATORIO em restaurantes. $1-2 por drink.',
+    phrases: ['How much? (Quanto?)', 'Check please (A conta)', 'Thank you (Obrigado)'],
+    embassy: 'Consulado do Brasil em Miami: +1 305 285 6200 | 80 SW 8th Street',
+  },
+  'singapura': {
+    tips: 'Mascar chiclete e proibido. Metro (MRT) e o transporte mais eficiente.',
+    water: 'Segura da torneira',
+    tipping: 'Nao esperada. Service charge de 10% ja incluso.',
+    phrases: ['Hello (Ola)', 'Thank you (Obrigado)', 'How much? (Quanto?)', 'Can lah! (Pode sim!)'],
+    embassy: 'Embaixada do Brasil: +65 6256 6001 | 101 Thomson Road',
+  },
+};
+
+function getDestTips(destination: string) {
+  const key = normalizeForMatch(destination);
+  for (const [k, v] of Object.entries(DESTINATION_TIPS)) {
+    const nk = normalizeForMatch(k);
+    if (key === nk || key.includes(nk) || nk.includes(key)) return v;
+  }
+  return null;
+}
 
 // ── Helpers ──
 
@@ -755,6 +902,52 @@ export async function exportTripPDF(trip: SavedTrip) {
   });
 
   // ════════════════════════════════════════
+  // GASTRONOMIA MICHELIN
+  // ════════════════════════════════════════
+  const michelinList = getTopMichelinForCity(trip.destination, 5);
+  if (michelinList && michelinList.length > 0) {
+    checkPage(40);
+    drawRect(14, y, pw - 28, 0.3, B.surface);
+    y += 8;
+
+    setC(B.emerald, false);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('GASTRONOMIA MICHELIN', 14, y);
+    y += 4;
+
+    setC(B.gray400, false);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Restaurantes com estrela Michelin proximos ao seu roteiro', 14, y);
+    y += 7;
+
+    michelinList.forEach((r) => {
+      checkPage(10);
+      const starsStr = Array(r.stars).fill('*').join('');
+
+      setC(B.white, false);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text(cleanText(r.name), 20, y);
+
+      setC(B.gold, false);
+      doc.setFontSize(7);
+      doc.text(starsStr, 20 + doc.getTextWidth(cleanText(r.name)) + 3, y);
+
+      setC(B.gray400, false);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      const details = `${r.cuisine}  |  ${r.priceRange}${r.neighborhood ? '  |  ' + r.neighborhood : ''}`;
+      doc.text(details, 20, y + 3.5);
+
+      y += 10;
+    });
+
+    y += 3;
+  }
+
+  // ════════════════════════════════════════
   // CHECKLIST
   // ════════════════════════════════════════
   checkPage(24);
@@ -800,7 +993,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   });
 
   // ════════════════════════════════════════
-  // INFORMACOES UTEIS
+  // INFORMACOES UTEIS + DICAS + FRASES + EMERGENCIA
   // ════════════════════════════════════════
   const destInfo = getDestInfo(trip.destination);
   if (destInfo) {
@@ -833,6 +1026,100 @@ export async function exportTripPDF(trip: SavedTrip) {
       doc.text(value, 55, y);
       y += 6;
     });
+  }
+
+  // ── Dicas locais, agua, gorjeta ──
+  const tips = getDestTips(trip.destination);
+  if (tips) {
+    y += 4;
+
+    // Dica local
+    checkPage(10);
+    setC(B.white, false);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Dica local:', 16, y);
+    setC(B.gray400, false);
+    doc.setFont('helvetica', 'normal');
+    const tipLines = doc.splitTextToSize(tips.tips, pw - 50);
+    doc.text(tipLines, 38, y);
+    y += tipLines.length * 3.5 + 3;
+
+    // Agua
+    checkPage(6);
+    setC(B.white, false);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Agua:', 16, y);
+    setC(B.gray400, false);
+    doc.setFont('helvetica', 'normal');
+    doc.text(tips.water, 38, y);
+    y += 5;
+
+    // Gorjeta
+    checkPage(6);
+    setC(B.white, false);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Gorjeta:', 16, y);
+    setC(B.gray400, false);
+    doc.setFont('helvetica', 'normal');
+    const tipTipLines = doc.splitTextToSize(tips.tipping, pw - 50);
+    doc.text(tipTipLines, 38, y);
+    y += tipTipLines.length * 3.5 + 3;
+
+    // Frases uteis
+    if (tips.phrases && tips.phrases.length > 0) {
+      checkPage(18);
+      y += 3;
+      drawRect(14, y - 2, pw - 28, 0.3, B.surface);
+      y += 6;
+      setC(B.emerald, false);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('FRASES UTEIS', 14, y);
+      y += 6;
+
+      tips.phrases.forEach(phrase => {
+        checkPage(5);
+        setC(B.white, false);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`- ${phrase}`, 16, y);
+        y += 4.5;
+      });
+      y += 2;
+    }
+
+    // Embaixada / Emergencia
+    if (tips.embassy) {
+      checkPage(18);
+      drawRect(14, y, pw - 28, 0.3, B.surface);
+      y += 6;
+      setC(B.emerald, false);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('EMERGENCIA', 14, y);
+      y += 6;
+
+      setC(B.white, false);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Consulado/Embaixada do Brasil:', 16, y);
+      y += 4;
+      setC(B.gray400, false);
+      doc.setFont('helvetica', 'normal');
+      const embLines = doc.splitTextToSize(tips.embassy, pw - 36);
+      doc.text(embLines, 16, y);
+      y += embLines.length * 3.5 + 4;
+
+      setC(B.white, false);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Emergencia geral (Europa): 112  |  Global: ligue operadora local', 16, y);
+      y += 4;
+      setC(B.gray400, false);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Seguro viagem: ligue para a central do cartao ou seguradora ANTES do atendimento', 16, y);
+      y += 5;
+    }
   }
 
   // ════════════════════════════════════════
