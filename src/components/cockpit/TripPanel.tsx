@@ -302,10 +302,10 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             href={`https://www.google.com/maps/search/${encodeURIComponent(trip.accommodation.name + ', ' + trip.destination)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 mt-2 text-xs text-primary hover:text-primary/80 transition-colors"
+            className="flex items-center gap-1.5 mt-2 text-xs text-sky-400 hover:text-sky-300 transition"
           >
-            <MapPin size={12} />
-            Ver hotel no mapa
+            <MapPin className="w-3 h-3" />
+            <span>{trip.accommodation.name} — Ver no mapa</span>
           </a>
         )}
         <div className="flex gap-2 mt-4">
