@@ -368,6 +368,25 @@ const Viagens = () => {
     navigate('/planejar');
   };
 
+  const handleDeleteTrip = (tripId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const confirmed = window.confirm('Tem certeza que deseja excluir esta viagem?');
+    if (!confirmed) return;
+
+    const filtered = trips.filter((t) => t.id !== tripId);
+    localStorage.setItem('kinu_trips', JSON.stringify(filtered));
+    setTrips(filtered);
+
+    if (selectedTrip?.id === tripId) {
+      setSelectedTrip(filtered.length > 0 ? filtered[0] : null);
+    }
+
+    toast({
+      title: "Viagem excluída 🗑️",
+      description: "A viagem foi removida da sua lista.",
+    });
+  };
+
   const handlePackingUpdate = (packingData: PackingData) => {
     if (!selectedTrip) return;
 
@@ -1287,7 +1306,16 @@ const Viagens = () => {
                         {trip.startDate && format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} - {trip.endDate && format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })} • {days.length} dias
                       </p>
                     </div>
-                    <ChevronRight size={20} className="text-[#94a3b8]" />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => handleDeleteTrip(trip.id, e)}
+                        className="p-1.5 rounded-lg hover:bg-red-500/20 text-[#64748b] hover:text-red-400 transition-colors"
+                        title="Excluir viagem"
+                      >
+                        <X size={16} />
+                      </button>
+                      <ChevronRight size={20} className="text-[#94a3b8]" />
+                    </div>
                   </div>
                   <p className="text-sm text-[#94a3b8] mb-3">Orçamento: R$ {trip.budget.toLocaleString()}</p>
                   <div className="mb-2">

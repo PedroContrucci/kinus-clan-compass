@@ -784,13 +784,24 @@ export async function exportTripPDF(trip: SavedTrip) {
     doc.text(`Status: ${hotelStatus}  |  Total: R$ ${fmt(trip.accommodation.totalPrice)}`, 20, y);
     y += 5;
 
-    if (hotelDescription) {
+   if (hotelDescription) {
       setC(B.gray500, false);
       doc.setFontSize(7.5);
       doc.setFont('helvetica', 'italic');
       const descLines = doc.splitTextToSize(hotelDescription, pw - 40);
       doc.text(descLines, 20, y);
       y += descLines.length * 3.2 + 2;
+    }
+
+    // Google Maps link for hotel
+    if (hotelNeighborhood || trip.accommodation.name) {
+      const mapsQuery = encodeURIComponent((trip.accommodation.name || '') + ', ' + trip.destination);
+      const mapsLink = `https://www.google.com/maps/search/${mapsQuery}`;
+      setC(B.emerald, false);
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.textWithLink('> Ver no Google Maps', 20, y, { url: mapsLink });
+      y += 5;
     }
   }
 
