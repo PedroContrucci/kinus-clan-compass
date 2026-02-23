@@ -22,7 +22,7 @@ import { getActivityPrice, determinePriceLevel, findBestPriceLevel, mapCategoryT
 import kinuLogo from '@/assets/KINU_logo.png';
 import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
 import { BottomNav } from '@/components/shared/BottomNav';
-import { DayMapLink, ActivityMapLink } from '@/components/cockpit/DayMapLink';
+import { DayMapLink } from '@/components/cockpit/DayMapLink';
 
 
 const DESTINATION_CURRENCY: Record<string, string> = {
@@ -953,7 +953,7 @@ const Viagens = () => {
                               ) : null;
                             })()}
                             <p className="text-sm text-[#94a3b8]">{activity.description}</p>
-                            <ActivityMapLink activityName={activity.name || ''} destination={selectedTrip.destination} />
+                            
 
                             {/* Actions — max 2 buttons: Confirmar + Ver Ofertas */}
                             {activity.status !== 'confirmed' && activity.status !== 'cancelled' && activity.cost > 0 && (

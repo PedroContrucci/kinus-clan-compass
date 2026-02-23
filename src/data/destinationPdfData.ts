@@ -772,7 +772,7 @@ const EXPANDED_CITY_DATA: Record<string, CityPdfData> = {
       tips: 'Opal Card para transporte. Bondi to Coogee coastal walk e gratuita e espetacular.',
       water: 'Segura da torneira',
       tipping: 'Nao obrigatoria. 10% em restaurantes finos e gentileza.',
-      phrases: ['G\\'day (Ola)', 'Cheers (Obrigado)', 'No worries (Sem problemas)', 'Arvo (Tarde)'],
+      phrases: ["G'day (Ola)", 'Cheers (Obrigado)', 'No worries (Sem problemas)', 'Arvo (Tarde)'],
       embassy: 'Embaixada do Brasil: +61 2 6273 2372 | Canberra',
     },
     narratives: {},
