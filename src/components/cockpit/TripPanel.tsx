@@ -6,7 +6,7 @@ import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { exportTripPDF } from '@/lib/tripPdfExport';
-import { getIcarusRoteiroInsight } from '@/lib/agentMessages';
+import { getIcarusRoteiroInsight, getIcarusHeroFlight, getIcarusHeroHotel, getHermesHotelInsight } from '@/lib/agentMessages';
 import type { SavedTrip } from '@/types/trip';
 import { useState } from 'react';
 
@@ -105,9 +105,7 @@ function getOrchestratedActions(trip: SavedTrip): OrchestratedAction[] {
     actions.push({
       agent: 'icarus', priority: flightConfirmed ? 99 : 1,
       title: 'Voo Ida e Volta',
-      message: flightConfirmed
-        ? `Voo confirmado! ${originCode} → ${destCode} → ${originCode}`
-        : `Confirme o voo para ${dest}. Quanto antes, melhor o preco.`,
+      message: getIcarusHeroFlight(trip, flightConfirmed),
       actionType: flightConfirmed ? 'celebrate' : 'open-auction-flight',
       actionLabel: flightConfirmed ? '✅ Confirmado' : '🎯 Buscar Voos',
       completed: flightConfirmed,
@@ -118,13 +116,23 @@ function getOrchestratedActions(trip: SavedTrip): OrchestratedAction[] {
   actions.push({
     agent: 'icarus', priority: hotelConfirmed ? 99 : (flightConfirmed ? 2 : 3),
     title: 'Hospedagem',
-    message: hotelConfirmed
-      ? `Hotel reservado! ${trip.accommodation?.totalNights || 0} noites em ${dest}`
-      : `Reserve o hotel em ${dest}. Hotéis centrais oferecem melhor custo-benefício.`,
+    message: getIcarusHeroHotel(trip, hotelConfirmed),
     actionType: hotelConfirmed ? 'celebrate' : 'open-auction-hotel',
     actionLabel: hotelConfirmed ? '✅ Confirmado' : '🎯 Buscar Hotel',
     completed: hotelConfirmed,
   });
+
+  // 2b. Hermes hotel insight (only when hotel has neighborhood and not confirmed)
+  if (trip.accommodation?.neighborhood && !hotelConfirmed) {
+    actions.push({
+      agent: 'hermes', priority: 6,
+      title: 'Dica de Hospedagem',
+      message: getHermesHotelInsight(trip),
+      actionType: 'navigate-roteiro',
+      actionLabel: '📍 Ver Roteiro',
+      completed: false,
+    });
+  }
 
   // 3. Câmbio (Héstia)
   const volatileCurrencies = ['ARS', 'TRY', 'EGP'];
