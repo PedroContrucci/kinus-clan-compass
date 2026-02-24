@@ -23,6 +23,7 @@ import kinuLogo from '@/assets/KINU_logo.png';
 import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { DayMapLink } from '@/components/cockpit/DayMapLink';
+import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
 
 
 const DESTINATION_CURRENCY: Record<string, string> = {
@@ -845,6 +846,13 @@ const Viagens = () => {
                   <h3 className="font-semibold text-lg mb-4 text-[#f8fafc] font-['Outfit']">
                     Dia {currentDay.day}: {currentDay.title}
                   </h3>
+                  {/* Daily route map — skip Embarque and Retorno days */}
+                  {!currentDay.title.includes('Embarque') && !currentDay.title.includes('Retorno') && (
+                    <DailyRouteMap
+                      destination={selectedTrip.destination}
+                      activities={currentDay.activities}
+                    />
+                  )}
                   <DayMapLink
                     destination={selectedTrip.destination}
                     dayActivities={currentDay.activities}

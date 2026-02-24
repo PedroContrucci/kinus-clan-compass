@@ -23,3 +23,4 @@ export { AddLuggageModal } from './AddLuggageModal';
 export { SmartPackingWithLuggage } from './SmartPackingWithLuggage';
 export { AuctionActivationModal } from './AuctionActivationModal';
 export { TripPanel } from './TripPanel';
+export { DailyRouteMap } from './DailyRouteMap';
