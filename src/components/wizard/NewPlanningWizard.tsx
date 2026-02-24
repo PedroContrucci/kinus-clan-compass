@@ -468,6 +468,8 @@ function generateDays(
         ],
       });
     } else if (dayNum === 2) {
+      const arrivalThemes = getDestinationThemes(city);
+      const arrivalTheme = arrivalThemes[0];
       const activities: TripActivity[] = [
         { ...makeActivity(`act-${dayNum}-1`, '11:00', `Chegada em ${city}`, 'Desembarque e imigração', '1h30', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
         makeActivity(`act-${dayNum}-2`, '12:30', 'Transfer para hotel', 'Transporte do aeroporto ao hotel', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
@@ -475,13 +477,13 @@ function generateDays(
       ];
       if (jetLagMode) {
         activities.push(
-          makeActivity(`act-${dayNum}-4`, '15:30', 'Passeio leve pelo bairro', '', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`act-${dayNum}-5`, '19:00', 'Jantar leve', '', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, '15:30', arrivalTheme.activities[0], '', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-5`, '19:00', `Jantar: ${arrivalTheme.restaurants.dinner}`, '', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
       } else {
         activities.push(
-          makeActivity(`act-${dayNum}-4`, '15:30', 'Exploração inicial', '', '3h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-5`, '19:30', 'Jantar de boas-vindas', '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, '15:30', arrivalTheme.activities[0], '', '3h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-5`, '19:30', `Jantar: ${arrivalTheme.restaurants.dinner}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
       }
       days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
@@ -492,7 +494,7 @@ function generateDays(
         title: 'Retorno 🏠',
         icon: '🏠',
         activities: [
-          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Última refeição no destino', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', '', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
           { ...makeActivity(`act-${dayNum}-2`, '10:00', 'Check-out do hotel', 'Liberar quarto e organizar bagagem', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
           makeActivity(`act-${dayNum}-3`, '11:00', 'Transfer para aeroporto', 'Transporte ao aeroporto', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
           { ...makeActivity(`act-${dayNum}-4`, '14:00', 'Voo de volta', 'Retorno para o Brasil', '12h', 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
