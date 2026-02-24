@@ -1,6 +1,6 @@
 // Dashboard — Unified view with active trips, drafts, completed, and KINU insights
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp, LogOut, Loader2, Plane, Sparkles, Clock, CheckCircle2, TrendingUp, Calendar, MapPin, ArrowRight } from 'lucide-react';
 import { BottomNav } from '@/components/shared/BottomNav';
@@ -14,8 +14,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { AgentCards } from '@/components/dashboard/AgentCards';
 import { TripCardWithPhoto } from '@/components/dashboard/TripCardWithPhoto';
 
+const ApiStatus = lazy(() => import('@/components/debug/ApiStatus').then(m => ({ default: m.ApiStatus })));
+
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const debugMode = searchParams.get('debug') === 'true';
   const { user, isLoading: authLoading, logout } = useAuth();
   const [showCompleted, setShowCompleted] = useState(false);
 
@@ -119,6 +123,12 @@ const Dashboard = () => {
           </button>
         </div>
       </header>
+
+      {debugMode && (
+        <Suspense fallback={null}>
+          <ApiStatus />
+        </Suspense>
+      )}
 
       <main className="px-4 py-6 space-y-6">
         {/* CTA Button — Plan New Trip */}
