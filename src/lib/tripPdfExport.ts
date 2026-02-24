@@ -961,6 +961,32 @@ export async function exportTripPDF(trip: SavedTrip) {
       }
     });
 
+    // Google Maps directions link for the entire day
+    const dayVisitables = (day.activities || []).filter((a: any) =>
+      !['voo', 'transporte', 'hotel'].includes(a.category || '') &&
+      !a.name?.toLowerCase().includes('transfer') &&
+      !a.name?.toLowerCase().includes('check-in') &&
+      !a.name?.toLowerCase().includes('check-out') &&
+      !a.name?.toLowerCase().includes('cafe da manha') &&
+      !a.name?.toLowerCase().includes('café da manhã')
+    );
+    if (dayVisitables.length > 1) {
+      checkPage(14);
+      y += 1;
+      drawRect(16, y, pw - 32, 10, B.deep);
+      doc.setFillColor(B.deep[0], B.deep[1], B.deep[2]);
+      doc.roundedRect(16, y, pw - 32, 10, 2, 2, 'F');
+      setC(B.emerald, false);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      const waypoints = dayVisitables
+        .map((a: any) => encodeURIComponent((a.name || '') + ', ' + trip.destination))
+        .join('/');
+      const dayMapsUrl = `https://www.google.com/maps/dir/${waypoints}`;
+      doc.textWithLink('[MAP] Ver rota do dia no Google Maps', 20, y + 6, { url: dayMapsUrl });
+      y += 14;
+    }
+
     y += 4;
   });
 
