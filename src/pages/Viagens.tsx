@@ -744,7 +744,13 @@ const Viagens = () => {
   // Active/Ongoing Trip Dashboard View
   if (selectedTrip) {
     const currentDay = selectedTrip.days?.find((d) => d.day === selectedDay);
-    const showJetLagAlert = selectedTrip.jetLagMode && selectedDay === 1;
+    const tripSeverity = selectedTrip.jetLagSeverity || 'BAIXO';
+    const showJetLagAlert = selectedTrip.jetLagMode && (
+      (tripSeverity === 'MODERADO' && selectedDay === 1) ||
+      (tripSeverity === 'ALTO' && selectedDay <= 2) ||
+      (tripSeverity === 'SEVERO' && selectedDay <= 3)
+    );
+    const isRecoveryDay = selectedDay > 1 && tripSeverity === 'SEVERO';
 
     return (
       <div className="min-h-screen bg-[#0f172a] pb-20">
@@ -828,11 +834,13 @@ const Viagens = () => {
                 />
               )}
 
-              {/* Jet Lag Alert for Day 1 */}
+              {/* Jet Lag Alert */}
               {showJetLagAlert && selectedTrip.timezone && (
                 <JetLagAlert
                   destination={selectedTrip.destination}
                   timezoneDiff={selectedTrip.timezone.diff}
+                  severity={selectedTrip.jetLagSeverity}
+                  isRecoveryDay={isRecoveryDay}
                 />
               )}
 

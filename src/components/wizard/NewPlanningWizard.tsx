@@ -11,7 +11,7 @@ import { getActivityPrice, calculateTripEstimate } from '@/lib/activityPricing';
 import { getIdealHotelZone, getHotelRecommendation } from '@/lib/hotelZones';
 import { getDestinationThemes } from '@/data/destinationActivities';
 import type { PriceLevel } from '@/lib/activityPricing';
-import { defaultChecklist } from '@/types/trip';
+import { defaultChecklist, FLIGHT_DURATION, calculateArrivalTime, calculateJetLagImpact } from '@/types/trip';
 import type { SavedTrip, TripDay, TripActivity, ActivityStatus, TripFinances } from '@/types/trip';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { BUDGET_TIERS } from './types';
@@ -144,10 +144,25 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
       const tierMultiplier = tier.multiplier;
       
       const tzDiff = getTimezoneDiff(destinationCity);
-      const jetLagMode = data.biologyAIEnabled || Math.abs(tzDiff) > 3;
+      const jetLagImpact = calculateJetLagImpact(tzDiff);
+      const jetLagMode = data.biologyAIEnabled || jetLagImpact.level !== 'BAIXO';
+      const jetLagSeverity = jetLagImpact.level;
+
+      // Calculate flight duration
+      const flightHours = getFlightDuration(data.originCity || 'São Paulo', destinationCity, tzDiff);
+      const isLongHaul = flightHours > 10;
+      const departureTime = isLongHaul ? '23:00' : (flightHours > 6 ? '21:00' : '08:00');
+      
+      // Calculate arrival
+      const { arrivalTime, arrivalDate: arrDate, nextDay } = calculateArrivalTime(
+        departureTime, data.departureDate, flightHours, tzDiff
+      );
+      const flightArrivalDate = arrDate;
+      // For very long flights (>18h), arrival might be 2 days later
+      const arrivalDaysLater = flightHours > 18 ? 2 : 1;
 
       // Generate days
-      const days = generateDays(destinationCity, duration, data.departureDate, data.returnDate, priceLevel, jetLagMode, totalTravelers, tierMultiplier);
+      const days = generateDays(destinationCity, duration, data.departureDate, data.returnDate, priceLevel, jetLagMode, totalTravelers, tierMultiplier, jetLagSeverity, departureTime, arrivalTime, flightHours);
 
       // Calculate finances from generated days
       const estimate = calculateTripEstimate(destinationCity, duration, totalTravelers, priceLevel);
@@ -207,6 +222,8 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
           diff: tzDiff,
         },
         jetLagMode,
+        jetLagSeverity: jetLagImpact.level,
+        jetLagDescription: jetLagImpact.description,
         travelInterests: data.travelInterests || [],
         flights: {
           outbound: {
@@ -216,10 +233,10 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
             origin: data.originAirportCode || 'GRU',
             destination: data.destinationAirportCode || destinationCity,
             departureDate: data.departureDate.toISOString(),
-            departureTime: '23:00',
-            arrivalDate: addDays(data.departureDate, 1).toISOString(),
-            arrivalTime: '11:00',
-            duration: data.estimatedFlightDuration ? `${data.estimatedFlightDuration}h` : '12h',
+            departureTime: departureTime,
+            arrivalDate: addDays(data.departureDate, arrivalDaysLater).toISOString(),
+            arrivalTime: arrivalTime,
+            duration: `${flightHours}h`,
             stops: data.hasDirectFlight ? 0 : 1,
             price: flightPrice,
             status: 'planned' as ActivityStatus,
@@ -233,8 +250,8 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
             departureDate: data.returnDate.toISOString(),
             departureTime: '14:00',
             arrivalDate: data.returnDate.toISOString(),
-            arrivalTime: '23:00',
-            duration: data.estimatedFlightDuration ? `${data.estimatedFlightDuration}h` : '12h',
+            arrivalTime: calculateArrivalTime('14:00', data.returnDate, flightHours, -tzDiff).arrivalTime,
+            duration: `${flightHours}h`,
             stops: data.hasDirectFlight ? 0 : 1,
             price: flightPrice,
             status: 'planned' as ActivityStatus,
@@ -388,6 +405,24 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
 
 // ─── Helper Functions ───
 
+function getFlightDuration(origin: string, destination: string, tzDiff?: number): number {
+  const key1 = `São Paulo-${destination}`;
+  const key2 = `Brasil-${destination}`;
+  if (FLIGHT_DURATION[key1]) return FLIGHT_DURATION[key1];
+  if (FLIGHT_DURATION[key2]) return FLIGHT_DURATION[key2];
+  // Also try with origin
+  const key3 = `${origin}-${destination}`;
+  if (FLIGHT_DURATION[key3]) return FLIGHT_DURATION[key3];
+  
+  // Estimate by timezone difference
+  const absDiff = Math.abs(tzDiff ?? 4);
+  if (absDiff <= 2) return 4;    // Americas close
+  if (absDiff <= 5) return 11;   // Europe
+  if (absDiff <= 8) return 15;   // Middle East / East Europe
+  if (absDiff <= 12) return 22;  // Asia
+  return 24;                      // Oceania / Far East
+}
+
 function getTimezoneDiff(city: string): number {
   const cityInfo = findCityInfo(city);
   if (!cityInfo) return 4;
@@ -448,8 +483,24 @@ function generateDays(
   jetLagMode: boolean,
   travelers: number = 1,
   tierMultiplier: number = 1.0,
+  jetLagSeverity: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO' = 'BAIXO',
+  smartDepartureTime: string = '23:00',
+  smartArrivalTime: string = '11:00',
+  flightHours: number = 12,
 ): TripDay[] {
   const days: TripDay[] = [];
+  
+  // Calculate check-in time (2h before departure for short, 3h for long)
+  const [depH] = smartDepartureTime.split(':').map(Number);
+  const checkInH = Math.max(0, depH - (flightHours > 10 ? 3 : 2));
+  const checkInTime = `${checkInH.toString().padStart(2, '0')}:00`;
+
+  // Calculate post-arrival times
+  const [arrH, arrM] = smartArrivalTime.split(':').map(Number);
+  const transferFinishH = arrH + 2; // arrival + ~1.5h immigration + transfer
+  const checkInHotelH = transferFinishH + 1;
+
+  const fmtTime = (h: number, m = 0) => `${Math.min(23, Math.max(0, h)).toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 
   for (let i = 0; i < duration; i++) {
     const dayNum = i + 1;
@@ -463,26 +514,41 @@ function generateDays(
         title: 'Embarque ✈️',
         icon: '✈️',
         activities: [
-          { ...makeActivity(`act-${dayNum}-1`, '20:00', 'Check-in aeroporto', 'Apresentar documentação e despachar bagagem', '2h', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
-          { ...makeActivity(`act-${dayNum}-2`, '23:00', `Voo ${city}`, `Voo de ida para ${city}`, '12h', 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
+          { ...makeActivity(`act-${dayNum}-1`, checkInTime, 'Check-in aeroporto', 'Apresentar documentação e despachar bagagem', '2h', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
+          { ...makeActivity(`act-${dayNum}-2`, smartDepartureTime, `Voo ${city}`, `Voo de ida para ${city}`, `${flightHours}h`, 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
         ],
       });
     } else if (dayNum === 2) {
       const arrivalThemes = getDestinationThemes(city);
       const arrivalTheme = arrivalThemes[0];
       const activities: TripActivity[] = [
-        { ...makeActivity(`act-${dayNum}-1`, '11:00', `Chegada em ${city}`, 'Desembarque e imigração', '1h30', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
-        makeActivity(`act-${dayNum}-2`, '12:30', 'Transfer para hotel', 'Transporte do aeroporto ao hotel', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
-        { ...makeActivity(`act-${dayNum}-3`, '14:00', 'Check-in no hotel', 'Acomodação e descanso', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
+        { ...makeActivity(`act-${dayNum}-1`, smartArrivalTime, `Chegada em ${city}`, 'Desembarque e imigração', '1h30', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
+        makeActivity(`act-${dayNum}-2`, fmtTime(transferFinishH - 1, 30), 'Transfer para hotel', 'Transporte do aeroporto ao hotel', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
+        { ...makeActivity(`act-${dayNum}-3`, fmtTime(checkInHotelH), 'Check-in no hotel', 'Acomodação e descanso', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
       ];
-      if (jetLagMode) {
+
+      if (jetLagSeverity === 'SEVERO') {
+        // SEVERO: Only check-in + rest. No activities, no dinner out.
         activities.push(
-          makeActivity(`act-${dayNum}-4`, '15:30', arrivalTheme.activities[0], '', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-4`, fmtTime(checkInHotelH + 1), 'Descanso obrigatório — fuso horário severo', `Diferença de fuso significativa. Seu corpo precisa de descanso completo.`, '5h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-5`, '20:00', 'Room service ou restaurante do hotel', 'Refeição leve sem sair do hotel', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier, true),
+        );
+      } else if (jetLagSeverity === 'ALTO') {
+        // ALTO: Only check-in + rest + light dinner near hotel
+        activities.push(
+          makeActivity(`act-${dayNum}-4`, fmtTime(checkInHotelH + 1), 'Descanso e adaptação ao fuso', 'Descanso no hotel para adaptação ao novo fuso horário', '3h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-5`, '19:00', `Jantar leve próximo ao hotel`, 'Refeição leve na região do hotel', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier, true),
+        );
+      } else if (jetLagMode) {
+        // MODERADO: 1 light activity + dinner
+        activities.push(
+          makeActivity(`act-${dayNum}-4`, fmtTime(checkInHotelH + 1, 30), arrivalTheme.activities[0], '', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
           makeActivity(`act-${dayNum}-5`, '19:00', `Jantar: ${arrivalTheme.restaurants.dinner}`, '', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
       } else {
+        // BAIXO: Normal day
         activities.push(
-          makeActivity(`act-${dayNum}-4`, '15:30', arrivalTheme.activities[0], '', '3h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, fmtTime(checkInHotelH + 1, 30), arrivalTheme.activities[0], '', '3h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-5`, '19:30', `Jantar: ${arrivalTheme.restaurants.dinner}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
       }
@@ -497,13 +563,31 @@ function generateDays(
           makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', '', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
           { ...makeActivity(`act-${dayNum}-2`, '10:00', 'Check-out do hotel', 'Liberar quarto e organizar bagagem', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
           makeActivity(`act-${dayNum}-3`, '11:00', 'Transfer para aeroporto', 'Transporte ao aeroporto', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
-          { ...makeActivity(`act-${dayNum}-4`, '14:00', 'Voo de volta', 'Retorno para o Brasil', '12h', 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
+          { ...makeActivity(`act-${dayNum}-4`, '14:00', 'Voo de volta', 'Retorno para o Brasil', `${flightHours}h`, 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
+        ],
+      });
+    } else if (dayNum === 3 && jetLagSeverity === 'SEVERO') {
+      // SEVERO Day 3: Recovery day — only 2 light activities
+      const themes = getDestinationThemes(city);
+      const theme = themes[0];
+      days.push({
+        day: dayNum,
+        date: dateStr,
+        title: `Recuperação 🌿`,
+        icon: '🌿',
+        activities: [
+          makeActivity(`act-${dayNum}-1`, '09:00', 'Café da manhã', '', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-2`, '10:30', theme.activities[0], 'Atividade leve — corpo em adaptação', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-3`, '13:00', `Almoço: ${theme.restaurants.lunch}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, '15:00', 'Descanso — adaptação ao fuso', 'Intervalo de descanso recomendado pela KINU AI', '2h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-5`, '17:30', theme.activities.length > 1 ? theme.activities[1] : 'Caminhada leve', 'Atividade leve ao pôr do sol', '1h30', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-6`, '19:30', `Jantar: ${theme.restaurants.dinner}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         ],
       });
     } else {
       const themes = getDestinationThemes(city);
-      const themeIndex = (dayNum - 3) % themes.length;
-      const theme = themes[themeIndex];
+      const themeIndex = jetLagSeverity === 'SEVERO' ? (dayNum - 4) % themes.length : (dayNum - 3) % themes.length;
+      const theme = themes[Math.max(0, themeIndex)];
       days.push({
         day: dayNum,
         date: dateStr,
