@@ -17,6 +17,8 @@ const B = {
   emeraldL: [110, 231, 183] as const,
   horizon:  [14, 165, 233] as const,
   gold:     [234, 179, 8] as const,
+  red:      [239, 68, 68] as const,
+  amber:    [245, 158, 11] as const,
   white:    [248, 250, 252] as const,
   gray400:  [148, 163, 184] as const,
   gray500:  [100, 116, 139] as const,
@@ -710,6 +712,32 @@ export async function exportTripPDF(trip: SavedTrip) {
     const linesToShow = descLines.slice(0, Math.min(descLines.length, availableLines));
     doc.text(linesToShow, 14, y);
     y += linesToShow.length * 4.2;
+
+    // ── Flight summary on cover ──
+    const flightDuration = trip.flights?.outbound?.duration || '';
+    const flightDurNum = parseFloat(flightDuration) || 0;
+    const tzDiff = trip.timezone?.diff || 0;
+    const originCity = trip.flights?.outbound?.origin || 'GRU';
+    const destCity = trip.destination || '';
+    if (flightDurNum > 0 || Math.abs(tzDiff) > 0) {
+      y += 6;
+      checkPage(12);
+      setC(B.horizon, false);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'bold');
+      const flightLine = `Voo: ${originCity} > ${cleanText(destCity)}  |  ~${flightDurNum || '?'}h  |  Fuso: ${tzDiff > 0 ? '+' : ''}${tzDiff}h`;
+      doc.text(flightLine, 14, y);
+      y += 5;
+
+      const severity = (trip as any).jetLagSeverity;
+      if (severity === 'ALTO' || severity === 'SEVERO') {
+        setC(severity === 'SEVERO' ? B.red : B.amber, false);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Impacto de fuso: ${severity}`, 14, y);
+        y += 4;
+      }
+    }
   }
 
   addFooter();
@@ -885,6 +913,33 @@ export async function exportTripPDF(trip: SavedTrip) {
     drawRect(14, y + 2, 40, 0.4, B.emerald);
     y += 6;
 
+    // ── Daily route summary (non-logistics days only) ──
+    const isLogisticsDay = (day.title || '').toLowerCase().includes('embarque') ||
+      (day.title || '').toLowerCase().includes('retorno');
+    if (!isLogisticsDay && (day.activities || []).length > 1) {
+      const routeStops = (day.activities || [])
+        .filter((a: any) => {
+          const n = (a.name || '').toLowerCase();
+          return !n.includes('transfer') && !n.includes('check-in') && !n.includes('check-out') &&
+            !n.includes('cafe da manha') && !n.includes('café da manhã') &&
+            a.category !== 'voo' && a.category !== 'transporte';
+        })
+        .map((a: any) => {
+          const n = (a.name || '');
+          return n.replace(/^(Almoco|Jantar|Cafe|Almoço|Café):\s*/i, '').substring(0, 20);
+        });
+      if (routeStops.length >= 2) {
+        checkPage(5);
+        setC(B.gray500, false);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'italic');
+        const routeText = `Rota: Hotel > ${routeStops.join(' > ')} > Hotel`;
+        const truncated = routeText.length > 100 ? routeText.substring(0, 97) + '...' : routeText;
+        doc.text(truncated, 16, y);
+        y += 4;
+      }
+    }
+
     const narrative = getDayNarrative(trip.destination, day.title || '');
     if (narrative) {
       checkPage(12);
@@ -936,6 +991,23 @@ export async function exportTripPDF(trip: SavedTrip) {
       setC(B.white, false);
       doc.setFont('helvetica', 'normal');
       y += 5;
+
+      // ── Distance hint between activities ──
+      if (!isLogistics) {
+        const actIdx = (day.activities || []).indexOf(act);
+        const nextAct = (day.activities || [])[actIdx + 1];
+        if (nextAct && nextAct.category !== 'voo' && nextAct.category !== 'hotel' &&
+            !(nextAct.name || '').toLowerCase().includes('transfer')) {
+          checkPage(3);
+          setC(B.gray500, false);
+          doc.setFontSize(6);
+          doc.setFont('helvetica', 'italic');
+          // Alternate between walking and taxi estimates
+          const distHint = actIdx % 2 === 0 ? '~10 min a pe' : '~20 min de taxi/transporte';
+          doc.text(distHint, 30, y);
+          y += 3;
+        }
+      }
 
       // Activity description line
       if (act.description && act.description !== act.name && !isLogistics && act.description.length > 5) {
@@ -1115,6 +1187,44 @@ export async function exportTripPDF(trip: SavedTrip) {
       doc.text(value, 55, y);
       y += 6;
     });
+  }
+
+  // ── Biology AI — Protocolo de Adaptacao ──
+  const jetLagSev = (trip as any).jetLagSeverity as string | undefined;
+  if (trip.jetLagMode && jetLagSev && jetLagSev !== 'BAIXO') {
+    y += 4;
+    checkPage(30);
+    drawRect(14, y - 2, pw - 28, 0.3, B.surface);
+    y += 6;
+
+    const protocolColor = jetLagSev === 'SEVERO' ? B.red : jetLagSev === 'ALTO' ? B.amber : B.gold;
+
+    // Border box
+    drawRect(14, y, pw - 28, 1, protocolColor);
+    const boxStartY = y + 1;
+    const protocolContent = jetLagSev === 'SEVERO'
+      ? 'Dia 1: descanso total. Dia 2: atividades leves. Dia 3: 70% intensidade. Dia 4+: roteiro completo.'
+      : jetLagSev === 'ALTO'
+        ? 'Dia 1: descanso ate 15h. Dia 2: retomada gradual. Evite alcool nas primeiras 24h.'
+        : 'Dia 1: atividades leves. Dia 2+: roteiro normal. Hidrate-se!';
+    const protocolLines = doc.splitTextToSize(protocolContent, pw - 44);
+    const boxH2 = 12 + protocolLines.length * 3.8;
+
+    drawRect(14, boxStartY, pw - 28, boxH2, B.deep);
+    drawRect(14, boxStartY, 2, boxH2, protocolColor);
+    drawRect(14, boxStartY + boxH2, pw - 28, 1, protocolColor);
+
+    setC(protocolColor, false);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Biology AI — Protocolo de Adaptacao', 20, boxStartY + 6);
+
+    setC(B.gray400, false);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(protocolLines, 20, boxStartY + 12);
+
+    y = boxStartY + boxH2 + 4;
   }
 
   // ── Dicas locais, agua, gorjeta ──
