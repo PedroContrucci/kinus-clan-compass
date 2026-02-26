@@ -1,7 +1,8 @@
 import { memo, useEffect, useState, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
+import { DayMapLink } from './DayMapLink';
 
 interface DailyRouteMapProps {
   destination: string;
@@ -53,7 +54,6 @@ function createNumberedIcon(num: number): L.DivIcon {
   });
 }
 
-// Auto-fit map bounds to markers
 function FitBounds({ points }: { points: GeoPoint[] }) {
   const map = useMap();
   useEffect(() => {
@@ -64,12 +64,12 @@ function FitBounds({ points }: { points: GeoPoint[] }) {
   return null;
 }
 
-// Geocoding cache shared across renders
 const geocodeCache = new Map<string, { lat: number; lng: number } | null>();
 
 export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapProps) => {
   const [points, setPoints] = useState<GeoPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mapError, setMapError] = useState(false);
   const abortRef = useRef(false);
 
   const filteredActivities = activities.filter(a => !isLogistics(a));
@@ -78,11 +78,31 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
     const key = `${name}|${dest}`;
     if (geocodeCache.has(key)) return geocodeCache.get(key)!;
 
+    // Try pre-computed coordinates first (instant, no API call)
+    const coordKey = `${name.toLowerCase()}, ${dest.toLowerCase()}`;
+    const preComputed = ATTRACTION_COORDS[coordKey];
+    if (preComputed) {
+      geocodeCache.set(key, preComputed);
+      return preComputed;
+    }
+
+    // Partial match: strip meal prefixes and try
+    const partialMatch = Object.entries(ATTRACTION_COORDS).find(([k]) => {
+      const actNameClean = name.toLowerCase().replace(/^(almoço|jantar|café):\s*/i, '');
+      return k.includes(actNameClean) && k.includes(dest.toLowerCase());
+    });
+    if (partialMatch) {
+      geocodeCache.set(key, partialMatch[1]);
+      return partialMatch[1];
+    }
+
+    // Fallback to Nominatim
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name + ', ' + dest)}&format=json&limit=1`,
-        { headers: { 'User-Agent': 'KINU-TravelOS/1.0' } }
+        { headers: { 'User-Agent': 'KINU-TravelOS/1.0' }, signal: AbortSignal.timeout(5000) }
       );
+      if (!res.ok) { geocodeCache.set(key, null); return null; }
       const data = await res.json();
       if (data.length > 0) {
         const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
@@ -101,6 +121,7 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
     abortRef.current = false;
     setLoading(true);
     setPoints([]);
+    setMapError(false);
 
     if (filteredActivities.length === 0) {
       setLoading(false);
@@ -115,7 +136,7 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
         if (coords) {
           results.push({ name: act.name, time: act.time, ...coords });
         }
-        // Rate limit: 1 second between uncached requests
+        // Rate limit only for uncached Nominatim requests
         if (!geocodeCache.has(`${act.name}|${destination}`)) {
           await new Promise(r => setTimeout(r, 1000));
         }
@@ -131,6 +152,7 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
   }, [destination, JSON.stringify(filteredActivities.map(a => a.name)), geocode]);
 
   if (filteredActivities.length === 0) return null;
+
   if (loading) {
     return (
       <div className="mb-4">
@@ -145,7 +167,15 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
     );
   }
 
-  if (points.length === 0) return null;
+  // Fallback to Google Maps link if no points resolved or map errored
+  if (points.length === 0 || mapError) {
+    return (
+      <div className="mb-4">
+        <p className="text-xs font-medium text-muted-foreground mb-2 font-['Outfit']">🗺️ Rota do Dia</p>
+        <DayMapLink destination={destination} dayActivities={filteredActivities} />
+      </div>
+    );
+  }
 
   const polylinePositions = points.map(p => [p.lat, p.lng] as [number, number]);
 

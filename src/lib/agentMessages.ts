@@ -12,7 +12,19 @@ export function getIcarusRoteiro(trip: SavedTrip, dayNum: number): string {
   const theme = (day?.title || '').replace(/[^\w\sà-ú]/gi, '').trim().toLowerCase();
 
   if (dayNum === 1) return `Boa viagem! Ajuste o relogio para o fuso local durante o voo.`;
-  if (dayNum === 2 && trip.jetLagMode) return 'Dia leve de adaptacao ao fuso. Amanha voce ataca!';
+
+  if (dayNum === 2 && trip.jetLagMode) {
+    const severity = (trip as any).jetLagSeverity || 'MODERADO';
+    const diff = Math.abs(trip.timezone?.diff || 0);
+    if (severity === 'SEVERO') return `Fuso de ${diff}h e severo. Hoje e so descanso — seu corpo precisa. Amanha comecaremos devagar.`;
+    if (severity === 'ALTO') return `Fuso de ${diff}h e significativo. Dia leve hoje: descanse ate 15h, passeio leve ao por do sol.`;
+    return `Fuso de ${diff}h. Dia de adaptacao leve — explore o bairro do hotel e jante cedo!`;
+  }
+
+  if (dayNum === 3 && (trip as any).jetLagSeverity === 'SEVERO') {
+    return `Segundo dia pos-fuso severo. Corpo em adaptacao — aproveite 70% do ritmo normal. Beba agua!`;
+  }
+
   if (dayNum === 2) return `Primeiro dia em ${trip.destination}! Explore o bairro do hotel.`;
   if (dayNum === totalDays) return `Ultimo dia em ${trip.destination}! Guarde compras de ultima hora para o duty free.`;
 
@@ -174,8 +186,32 @@ export function getHermesChecklist(trip: SavedTrip): string {
   return 'Muita coisa pendente! Comece pelo passaporte e seguro viagem — sao os mais criticos.';
 }
 
+function getAdapterTip(dest: string): string {
+  const uk = ['londres', 'london', 'edimburgo', 'dublin'];
+  const eu = ['paris', 'roma', 'barcelona', 'madrid', 'berlim', 'amsterdam', 'praga', 'viena', 'atenas', 'lisboa', 'istambul'];
+  const us = ['nova york', 'miami', 'orlando', 'los angeles', 'las vegas', 'toronto', 'cancun', 'sao francisco'];
+  const asia = ['toquio', 'tokyo', 'kyoto', 'seul', 'bangkok', 'phuket', 'singapura', 'bali'];
+  const aus = ['sydney', 'auckland'];
+  const d = dest.toLowerCase();
+  if (uk.some(c => d.includes(c))) return 'Adaptador tipo G (tres pinos retangulares)';
+  if (eu.some(c => d.includes(c))) return 'Adaptador tipo C/F (dois pinos redondos)';
+  if (us.some(c => d.includes(c))) return 'Adaptador tipo A/B (dois pinos chatos)';
+  if (asia.some(c => d.includes(c))) return 'Adaptador universal recomendado';
+  if (aus.some(c => d.includes(c))) return 'Adaptador tipo I (tres pinos angulados)';
+  return 'Leve adaptador universal';
+}
+
 export function getHermesPacking(trip: SavedTrip): string {
   const dest = (trip.destination || '').toLowerCase();
+  const severity = (trip as any).jetLagSeverity;
+
+  if (severity === 'SEVERO') {
+    return `Fuso severo para ${trip.destination}! Leve: melatonina, mascara de dormir, tampoes de ouvido. ${getAdapterTip(dest)}.`;
+  }
+  if (severity === 'ALTO') {
+    return `Fuso alto para ${trip.destination}. Leve mascara de dormir e snacks leves para o voo. ${getAdapterTip(dest)}.`;
+  }
+
   const cold = ['londres', 'paris', 'berlim', 'praga', 'viena', 'toquio', 'seul', 'toronto'];
   const tropical = ['bangkok', 'phuket', 'cancun', 'miami', 'dubai', 'singapura', 'bali', 'cartagena'];
   if (cold.some(c => dest.includes(c))) return `${trip.destination} pede casacos! Nao esqueca adaptador de tomada.`;
@@ -188,4 +224,23 @@ export function getHermesHotelInsight(trip: SavedTrip): string {
   const desc = (trip.accommodation as any)?.description;
   if (zone && desc) return `Hotel em ${zone}: ${desc}`;
   return 'Dica: hoteis centrais economizam tempo e transporte. Priorize localizacao sobre estrelas!';
+}
+
+// ─── Biology AI Insight ───
+
+export function getBiologyAIInsight(trip: SavedTrip): string {
+  const severity = (trip as any).jetLagSeverity;
+  const diff = Math.abs(trip.timezone?.diff || 0);
+  const dest = trip.destination || '';
+
+  if (!severity || severity === 'BAIXO') {
+    return `${dest} tem fuso similar ao Brasil. Sem necessidade de adaptacao — roteiro completo desde o dia 1!`;
+  }
+  if (severity === 'MODERADO') {
+    return `Fuso de ${diff}h para ${dest}. Impacto moderado — dia 1 sera leve, a partir do dia 2 roteiro completo.`;
+  }
+  if (severity === 'ALTO') {
+    return `Fuso de ${diff}h para ${dest}. Impacto alto no corpo. Dias 1-2 com atividades reduzidas. Hidratacao e fundamental!`;
+  }
+  return `Alerta: fuso de ${diff}h para ${dest}. Protocolo severo ativado: dia 1 = descanso total, dia 2 = leve, dia 3 = 70%. Seu corpo agradece!`;
 }
