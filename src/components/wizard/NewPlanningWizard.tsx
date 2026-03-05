@@ -502,10 +502,16 @@ function generateDays(
 
   const fmtTime = (h: number, m = 0) => `${Math.min(23, Math.max(0, h)).toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 
+  const needsTransitDay = flightHours >= 20;
+
   for (let i = 0; i < duration; i++) {
     const dayNum = i + 1;
     const dayDate = addDays(departureDate, i);
     const dateStr = format(dayDate, "dd/MM (EEEE)", { locale: ptBR });
+
+    const isArrivalDay = (!needsTransitDay && dayNum === 2) || (needsTransitDay && dayNum === 3);
+    const isRecoveryDay = (needsTransitDay && dayNum === 4 && jetLagSeverity === 'SEVERO') ||
+                          (!needsTransitDay && dayNum === 3 && jetLagSeverity === 'SEVERO');
 
     if (dayNum === 1) {
       days.push({
@@ -518,7 +524,21 @@ function generateDays(
           { ...makeActivity(`act-${dayNum}-2`, smartDepartureTime, `Voo ${city}`, `Voo de ida para ${city}`, `${flightHours}h`, 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
         ],
       });
-    } else if (dayNum === 2) {
+    } else if (needsTransitDay && dayNum === 2) {
+      // In Transit day — person is on the airplane
+      days.push({
+        day: dayNum,
+        date: dateStr,
+        title: 'Em Trânsito ✈️',
+        icon: '✈️',
+        activities: [
+          { ...makeActivity(`act-${dayNum}-1`, '00:00', `Voo para ${city}`,
+            `Em voo — duração total: ${flightHours}h. Hidrate-se, levante a cada 2h e ajuste o relógio para o horário local.`,
+            `${flightHours}h`, 'voo', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
+        ],
+      });
+    } else if (isArrivalDay) {
+      // Chegada — shifted by 1 if transit day exists
       const arrivalThemes = getDestinationThemes(city);
       const arrivalTheme = arrivalThemes[0];
       const activities: TripActivity[] = [
@@ -534,7 +554,6 @@ function generateDays(
         );
         days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
       } else if (jetLagSeverity === 'SEVERO') {
-        // SEVERO: Only check-in + rest. No activities, no dinner out.
         const restStartH = checkInHotelH + 1;
         const dinnerH = Math.max(19, Math.min(22, restStartH + 2));
         activities.push(
@@ -543,7 +562,6 @@ function generateDays(
         );
         days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
       } else if (jetLagSeverity === 'ALTO') {
-        // ALTO: Only check-in + rest + light dinner near hotel
         const restStartH = checkInHotelH + 1;
         const dinnerH = Math.max(19, Math.min(22, restStartH + 3));
         activities.push(
@@ -552,7 +570,6 @@ function generateDays(
         );
         days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
       } else if (jetLagMode) {
-        // MODERADO: 1 light activity + dinner
         const actStartH = checkInHotelH + 1;
         const dinnerH = Math.max(19, Math.min(22, actStartH + 2 + 1));
         activities.push(
@@ -561,7 +578,6 @@ function generateDays(
         );
         days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
       } else {
-        // BAIXO: Normal day
         const actStartH = checkInHotelH + 1;
         const dinnerH = Math.max(19, Math.min(22, actStartH + 3 + 1));
         activities.push(
@@ -583,8 +599,8 @@ function generateDays(
           { ...makeActivity(`act-${dayNum}-4`, '14:00', 'Voo de volta', 'Retorno para o Brasil', `${flightHours}h`, 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
         ],
       });
-    } else if (dayNum === 3 && jetLagSeverity === 'SEVERO') {
-      // SEVERO Day 3: Recovery day — only 2 light activities
+    } else if (isRecoveryDay) {
+      // SEVERO Recovery day — only light activities
       const themes = getDestinationThemes(city);
       const theme = themes[0];
       days.push({
@@ -603,7 +619,10 @@ function generateDays(
       });
     } else {
       const themes = getDestinationThemes(city);
-      const themeIndex = jetLagSeverity === 'SEVERO' ? (dayNum - 4) % themes.length : (dayNum - 3) % themes.length;
+      const explorationStart = needsTransitDay
+        ? (jetLagSeverity === 'SEVERO' ? 5 : 4)
+        : (jetLagSeverity === 'SEVERO' ? 4 : 3);
+      const themeIndex = (dayNum - explorationStart) % themes.length;
       const theme = themes[Math.max(0, themeIndex)];
       days.push({
         day: dayNum,
