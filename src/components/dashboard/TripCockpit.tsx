@@ -25,6 +25,9 @@ export const TripCockpit = ({ data }: TripCockpitProps) => {
         daysLeft={countdown.daysLeft}
         isUrgent={countdown.isUrgent}
         isPast={countdown.isPast}
+        destination=""
+        emoji="✈️"
+        trip={{}}
       />
 
       <ChecklistProgress
