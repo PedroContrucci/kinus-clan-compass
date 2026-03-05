@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Check, FileText, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
 import { WeatherBadge } from './WeatherBadge';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -216,11 +217,29 @@ const MiniKPI = ({ label, value, urgent }: { label: string; value: string; urgen
   </div>
 );
 
+// Helper to get destination currency
+const DEST_CURRENCY_MAP: Record<string, string> = {
+  'paris': 'EUR', 'roma': 'EUR', 'amsterdam': 'EUR', 'barcelona': 'EUR',
+  'madri': 'EUR', 'berlim': 'EUR', 'viena': 'EUR', 'atenas': 'EUR',
+  'lisboa': 'EUR', 'londres': 'GBP', 'tóquio': 'JPY', 'tokyo': 'JPY',
+  'nova york': 'USD', 'miami': 'USD', 'orlando': 'USD', 'los angeles': 'USD',
+  'bangkok': 'THB', 'buenos aires': 'ARS', 'santiago': 'CLP',
+  'toronto': 'CAD', 'sydney': 'AUD', 'dubai': 'AED', 'seul': 'KRW',
+};
+
+function getTripCurrency(dest: string): string {
+  const n = dest.toLowerCase().trim();
+  return DEST_CURRENCY_MAP[n] || 'USD';
+}
+
 export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: TripPanelProps) => {
   const [confirmModal, setConfirmModal] = useState<{ type: 'flight' | 'hotel'; isOpen: boolean } | null>(null);
   const [confirmAmount, setConfirmAmount] = useState('');
   const [showAllActions, setShowAllActions] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+
+  const destCurrency = (trip as any).destinationCurrency || getTripCurrency(trip.destination);
+  const { rates, loading: ratesLoading, updatedAgo } = useExchangeRates(destCurrency);
 
   const daysLeft = trip.startDate ? Math.max(0, differenceInDays(new Date(trip.startDate), new Date())) : 0;
   const isPast = trip.startDate ? differenceInDays(new Date(trip.startDate), new Date()) < 0 : false;
@@ -479,6 +498,15 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             <div className="w-2 h-2 rounded-full bg-yellow-500" /> Planejado: R$ {fmt(trip.finances.planned)}
           </span>
         </div>
+        {/* Currency badge */}
+        {rates[destCurrency] && (
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+              💱 1 BRL = {rates[destCurrency].toFixed(4)} {destCurrency}
+            </span>
+            <span className="text-[10px] text-muted-foreground">{updatedAgo}</span>
+          </div>
+        )}
       </div>
 
       {/* 4. Export PDF */}

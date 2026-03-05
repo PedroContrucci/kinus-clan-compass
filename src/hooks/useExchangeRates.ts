@@ -1,10 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
-interface ExchangeRate {
-  currency: string;
-  rate: number;
-}
 
 interface HistoryPoint {
   date: string;
@@ -29,8 +24,18 @@ interface ExchangeRatesData {
   lastUpdated: Date | null;
 }
 
-const CACHE_KEY = 'kinu_exchange_rates_cache';
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
+const CACHE_KEY = 'kinu_exchange_rates_v2';
+const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours
+
+const FALLBACK_RATES: Record<string, number> = {
+  USD: 0.18, EUR: 0.16, GBP: 0.14, JPY: 27.5, THB: 6.12,
+  ARS: 180, CLP: 160, COP: 720, MXN: 3.1, PEN: 0.67,
+  CAD: 0.25, AUD: 0.28, CHF: 0.16, NZD: 0.30,
+  SEK: 1.85, DKK: 1.22, NOK: 1.90, CZK: 4.15, HUF: 65,
+  PLN: 0.72, TRY: 5.8, KRW: 245, CNY: 1.30, HKD: 1.41,
+  SGD: 0.24, IDR: 2830, VND: 4500, INR: 15.2, AED: 0.66,
+  ILS: 0.65, ZAR: 3.28, EGP: 8.8, MAD: 1.78, UYU: 7.2,
+};
 
 interface CacheData {
   rates: Record<string, number>;
@@ -47,7 +52,7 @@ export function useExchangeRates(targetCurrency: string = 'EUR') {
     statistics: null,
     loading: true,
     error: null,
-    lastUpdated: null
+    lastUpdated: null,
   });
 
   const getCache = useCallback((): CacheData | null => {
@@ -55,35 +60,25 @@ export function useExchangeRates(targetCurrency: string = 'EUR') {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
         const parsed: CacheData = JSON.parse(cached);
-        const now = Date.now();
-        // Check if cache is still valid and for same currency
-        if (now - parsed.timestamp < CACHE_DURATION && parsed.currency === targetCurrency) {
+        if (Date.now() - parsed.timestamp < CACHE_DURATION && parsed.currency === targetCurrency) {
           return parsed;
         }
       }
-    } catch (e) {
-      console.error('Error reading cache:', e);
-    }
+    } catch {}
     return null;
   }, [targetCurrency]);
 
   const setCache = useCallback((rates: Record<string, number>, history: HistoryPoint[], statistics: Statistics | null) => {
     try {
-      const cacheData: CacheData = {
-        rates,
-        history,
-        statistics,
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        rates, history, statistics,
         timestamp: Date.now(),
-        currency: targetCurrency
-      };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-    } catch (e) {
-      console.error('Error setting cache:', e);
-    }
+        currency: targetCurrency,
+      }));
+    } catch {}
   }, [targetCurrency]);
 
-  const fetchRates = useCallback(async (forceRefresh: boolean = false) => {
-    // Check cache first
+  const fetchRates = useCallback(async (forceRefresh = false) => {
     if (!forceRefresh) {
       const cached = getCache();
       if (cached) {
@@ -93,7 +88,7 @@ export function useExchangeRates(targetCurrency: string = 'EUR') {
           statistics: cached.statistics,
           loading: false,
           error: null,
-          lastUpdated: new Date(cached.timestamp)
+          lastUpdated: new Date(cached.timestamp),
         });
         return;
       }
@@ -102,52 +97,41 @@ export function useExchangeRates(targetCurrency: string = 'EUR') {
     setData(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      // Calculate date range for last 30 days
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 30);
-      
-      const formatDate = (d: Date) => d.toISOString().split('T')[0];
+      const fmt = (d: Date) => d.toISOString().split('T')[0];
 
-      // Fetch live rates and history in parallel
-      const [liveResponse, historyResponse] = await Promise.all([
+      const [liveRes, histRes] = await Promise.all([
         supabase.functions.invoke('exchange-rates', {
           body: {
-            action: 'live',
-            source: 'BRL',
-            currencies: `${targetCurrency},USD,EUR,JPY,GBP`
-          }
+            base: 'BRL',
+            targets: [targetCurrency, 'USD', 'EUR', 'JPY', 'GBP'],
+          },
         }),
         supabase.functions.invoke('exchange-rates', {
           body: {
             action: 'history',
-            source: 'BRL',
+            base: 'BRL',
+            targets: [targetCurrency],
             currencies: targetCurrency,
-            startDate: formatDate(startDate),
-            endDate: formatDate(endDate)
-          }
-        })
+            startDate: fmt(startDate),
+            endDate: fmt(endDate),
+          },
+        }),
       ]);
 
-      if (liveResponse.error) {
-        throw new Error(liveResponse.error.message);
-      }
-      if (historyResponse.error) {
-        throw new Error(historyResponse.error.message);
-      }
+      if (liveRes.error) throw new Error(liveRes.error.message);
 
-      const liveData = liveResponse.data;
-      const historyData = historyResponse.data;
+      const liveData = liveRes.data;
+      const histData = histRes.data;
 
-      if (!liveData.success) {
-        throw new Error(liveData.error || 'Failed to fetch live rates');
-      }
+      if (!liveData?.success) throw new Error(liveData?.error || 'Failed to fetch rates');
 
       const rates = liveData.rates || {};
-      const history = historyData.history || [];
-      const statistics = historyData.statistics || null;
+      const history = histData?.history || [];
+      const statistics = histData?.statistics || null;
 
-      // Update cache
       setCache(rates, history, statistics);
 
       setData({
@@ -156,72 +140,63 @@ export function useExchangeRates(targetCurrency: string = 'EUR') {
         statistics,
         loading: false,
         error: null,
-        lastUpdated: new Date()
+        lastUpdated: new Date(liveData.updated_at || Date.now()),
       });
-
     } catch (error) {
-      console.error('Error fetching exchange rates:', error);
+      console.error('Exchange rates error:', error);
+      // Use fallback rates
+      const fallback: Record<string, number> = {};
+      for (const c of [targetCurrency, 'USD', 'EUR', 'JPY', 'GBP']) {
+        fallback[c] = FALLBACK_RATES[c] || 1;
+      }
       setData(prev => ({
         ...prev,
+        rates: Object.keys(prev.rates).length > 0 ? prev.rates : fallback,
         loading: false,
-        error: error instanceof Error ? error.message : 'Erro ao buscar cotações'
+        error: error instanceof Error ? error.message : 'Erro ao buscar cotações',
       }));
     }
   }, [targetCurrency, getCache, setCache]);
 
-  const refresh = useCallback(() => {
-    fetchRates(true);
-  }, [fetchRates]);
+  const refresh = useCallback(() => fetchRates(true), [fetchRates]);
 
-  useEffect(() => {
-    fetchRates();
-  }, [fetchRates]);
+  useEffect(() => { fetchRates(); }, [fetchRates]);
 
-  // Convert BRL to target currency
   const convert = useCallback((amountBRL: number): number => {
     const rate = data.rates[targetCurrency];
-    if (!rate) return 0;
-    return amountBRL * rate;
+    return rate ? amountBRL * rate : 0;
   }, [data.rates, targetCurrency]);
 
-  // Convert target currency to BRL
   const convertToBRL = useCallback((amount: number): number => {
     const rate = data.rates[targetCurrency];
-    if (!rate) return 0;
-    return amount / rate;
+    return rate ? amount / rate : 0;
   }, [data.rates, targetCurrency]);
 
-  // Get KINU insight based on statistics
   const getInsight = useCallback((): { message: string; type: 'positive' | 'negative' | 'neutral' } => {
-    if (!data.statistics) {
-      return { message: 'Carregando análise...', type: 'neutral' };
-    }
-
+    if (!data.statistics) return { message: 'Carregando análise...', type: 'neutral' };
     const { current, avg, trend, trendPercent } = data.statistics;
-    const percentFromAvg = ((current - avg) / avg) * 100;
+    const pctFromAvg = ((current - avg) / avg) * 100;
 
-    if (percentFromAvg < -2) {
-      return {
-        message: `Ótimo momento para comprar! A cotação está ${Math.abs(percentFromAvg).toFixed(1)}% abaixo da média dos últimos 30 dias.`,
-        type: 'positive'
-      };
-    } else if (percentFromAvg > 2 && trend === 'down') {
-      return {
-        message: `Aguarde um pouco. A cotação está acima da média, mas há tendência de queda (${Math.abs(parseFloat(trendPercent)).toFixed(1)}% na última semana).`,
-        type: 'neutral'
-      };
+    if (pctFromAvg < -2) {
+      return { message: `Ótimo momento para comprar! Cotação ${Math.abs(pctFromAvg).toFixed(1)}% abaixo da média.`, type: 'positive' };
+    } else if (pctFromAvg > 2 && trend === 'down') {
+      return { message: `Aguarde — cotação acima da média mas com tendência de queda (${Math.abs(parseFloat(trendPercent)).toFixed(1)}%).`, type: 'neutral' };
     } else if (trend === 'up') {
-      return {
-        message: `Atenção: tendência de alta de ${parseFloat(trendPercent).toFixed(1)}% na última semana. Considere comprar agora para evitar preços maiores.`,
-        type: 'negative'
-      };
-    } else {
-      return {
-        message: 'Cotação estável. Bom momento para planejar sua compra de moeda estrangeira.',
-        type: 'neutral'
-      };
+      return { message: `Atenção: alta de ${parseFloat(trendPercent).toFixed(1)}% na semana. Considere comprar agora.`, type: 'negative' };
     }
+    return { message: 'Cotação estável. Bom momento para planejar.', type: 'neutral' };
   }, [data.statistics]);
+
+  // Formatted "updated ago" string
+  const updatedAgo = useMemo(() => {
+    if (!data.lastUpdated) return '';
+    const diffMs = Date.now() - data.lastUpdated.getTime();
+    const hours = Math.floor(diffMs / 3600000);
+    const mins = Math.floor((diffMs % 3600000) / 60000);
+    if (hours > 0) return `Atualizado há ${hours}h${mins > 0 ? `${mins}min` : ''}`;
+    if (mins > 0) return `Atualizado há ${mins}min`;
+    return 'Atualizado agora';
+  }, [data.lastUpdated]);
 
   return {
     ...data,
@@ -229,6 +204,7 @@ export function useExchangeRates(targetCurrency: string = 'EUR') {
     convert,
     convertToBRL,
     getInsight,
-    targetCurrency
+    targetCurrency,
+    updatedAgo,
   };
 }
