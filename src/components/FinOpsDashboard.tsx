@@ -1,6 +1,7 @@
 import { Plane, Building, MapPin, Utensils, Car, ShoppingBag } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { TripFinances, CategoryBudget, ActivityStatus } from '@/types/trip';
+import { useCountUp } from '@/hooks/useCountUp';
 
 interface FinOpsDashboardProps {
   finances: TripFinances;
@@ -23,6 +24,11 @@ const getStatusLabel = (budget: CategoryBudget): { label: string; color: string 
     return { label: `🟡 ${Math.ceil(budget.bidding / 100)} em leilão`, color: 'text-[#eab308]' };
   }
   return { label: '⚪ Estimativa', color: 'text-[#64748b]' };
+};
+
+const AnimatedBRL = ({ value, className }: { value: number; className?: string }) => {
+  const animated = useCountUp(value, 600);
+  return <span className={className}>R$ {Math.round(animated).toLocaleString('pt-BR')}</span>;
 };
 
 const FinOpsDashboard = ({ finances, destination }: FinOpsDashboardProps) => {
@@ -68,7 +74,7 @@ const FinOpsDashboard = ({ finances, destination }: FinOpsDashboardProps) => {
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[#94a3b8]">Orçamento Total</span>
-            <span className="text-2xl font-bold text-[#f8fafc] font-['Outfit']">R$ {total.toLocaleString()}</span>
+            <AnimatedBRL value={total} className="text-2xl font-bold text-[#f8fafc] font-['Outfit']" />
           </div>
           <div className="h-3 bg-[#334155] rounded-full overflow-hidden flex">
             <div 

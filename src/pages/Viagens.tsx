@@ -98,6 +98,8 @@ const Viagens = () => {
   const [activeTab, setActiveTab] = useState<'painel' | 'roteiro' | 'leilao' | 'guia' | 'cambio' | 'packing' | 'checklist'>('painel');
   const [selectedDay, setSelectedDay] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
+  const [recentlyConfirmed, setRecentlyConfirmed] = useState<string | null>(null);
   const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; activityName: string; activityType: string; estimatedPrice?: number } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; activity: TripActivity; dayIndex: number; actIndex: number } | null>(null);
   const [confirmAmount, setConfirmAmount] = useState('');
@@ -149,6 +151,7 @@ const Viagens = () => {
 
   const handleDayChange = (day: number) => {
     if (day === selectedDay) return;
+    setSlideDirection(day > selectedDay ? 'left' : 'right');
     setIsTransitioning(true);
     setTimeout(() => {
       setSelectedDay(day);
@@ -228,11 +231,17 @@ const Viagens = () => {
     setTrips(updatedTrips);
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
 
+    // Haptic feedback on mobile
+    if (navigator.vibrate) navigator.vibrate(50);
+
+    // Track recently confirmed for animation
+    setRecentlyConfirmed(activity.id);
+    setTimeout(() => setRecentlyConfirmed(null), 1500);
+
     // Show contextual tip
-    const tip = contextualTips.confirmation[Math.floor(Math.random() * contextualTips.confirmation.length)];
     toast({
-      title: "Atividade confirmada! ✅",
-      description: tip,
+      title: `✅ ${activity.name} confirmado`,
+      description: `R$ ${amount.toLocaleString('pt-BR')} registrado no FinOps.`,
     });
 
     setConfirmModal(null);
@@ -458,6 +467,9 @@ const Viagens = () => {
     const updatedTrips = trips.map(t => t.id === updatedTrip.id ? updatedTrip : t);
     setTrips(updatedTrips);
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+
+    // Haptic feedback
+    if (navigator.vibrate) navigator.vibrate(50);
 
     toast({
       title: type === 'flight' ? '✈️ Voo confirmado!' : '🏨 Hotel confirmado!',
@@ -856,7 +868,9 @@ const Viagens = () => {
                 return (
                 <div
                   className={`bg-card border border-border rounded-2xl overflow-hidden transition-all duration-200 ${
-                    isTransitioning ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'
+                    isTransitioning 
+                      ? slideDirection === 'left' ? 'opacity-0 -translate-x-3' : 'opacity-0 translate-x-3'
+                      : 'opacity-100 translate-x-0'
                   }`}
                 >
                   {/* Day banner image */}
@@ -945,11 +959,11 @@ const Viagens = () => {
                       }
 
                       return (
-                        <div key={activity.id} className={`flex gap-3 ${
+                        <div key={activity.id} className={`flex gap-3 transition-all duration-500 ${
                           activity.status === 'confirmed' ? 'bg-[#10b981]/10 -mx-2 px-2 py-2 rounded-xl border border-[#10b981]/30' :
                           activity.status === 'bidding' ? 'bg-[#eab308]/10 -mx-2 px-2 py-2 rounded-xl border border-[#eab308]/30' :
                           activity.status === 'cancelled' ? 'opacity-50' : ''
-                        }`}>
+                        } ${recentlyConfirmed === activity.id ? 'ring-2 ring-emerald-400 ring-opacity-75' : ''}`}>
                           <div className="flex flex-col items-center">
                             <div className="text-xl">{getActivityIcon(activity.type)}</div>
                             {actIndex < currentDay.activities.length - 1 && (
@@ -992,8 +1006,8 @@ const Viagens = () => {
                             <div className="flex items-center gap-2 flex-wrap">
                               <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
                               {activity.status === 'confirmed' && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-medium border border-emerald-500/20">
-                                  <Check size={10} /> Confirmado
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-medium border border-emerald-500/20 animate-scale-in">
+                                  <Check size={10} className="animate-scale-in" /> Confirmado
                                 </span>
                               )}
                             </div>
