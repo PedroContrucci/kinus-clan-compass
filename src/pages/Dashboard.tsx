@@ -13,6 +13,8 @@ import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { AgentCards } from '@/components/dashboard/AgentCards';
 import { TripCardWithPhoto } from '@/components/dashboard/TripCardWithPhoto';
+import { CountdownCard } from '@/components/dashboard/CountdownCard';
+import { exportTripPDF } from '@/lib/tripPdfExport';
 
 const ApiStatus = lazy(() => import('@/components/debug/ApiStatus').then(m => ({ default: m.ApiStatus })));
 
@@ -173,6 +175,23 @@ const Dashboard = () => {
               }}
               className="space-y-4"
             >
+              {/* Countdown for nearest active trip */}
+              {(() => {
+                const nearest = tripKPIs.sort((a, b) => a.daysUntil - b.daysUntil)[0];
+                if (!nearest) return null;
+                return (
+                  <CountdownCard
+                    daysLeft={Math.max(0, nearest.daysUntil)}
+                    isUrgent={nearest.isUrgent}
+                    isPast={nearest.daysUntil < 0}
+                    destination={nearest.destination}
+                    emoji={nearest.emoji || '✈️'}
+                    trip={nearest}
+                    onNavigate={(tab) => navigate(`/viagens?trip=${nearest.id}&tab=${tab}`)}
+                    onExportPdf={() => exportTripPDF(nearest)}
+                  />
+                );
+              })()}
               {tripKPIs.map((trip) => (
                 <TripCardWithPhoto
                   key={trip.id}
