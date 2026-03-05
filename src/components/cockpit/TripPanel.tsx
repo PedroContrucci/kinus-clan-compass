@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Check, FileText, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
+import { WeatherBadge } from './WeatherBadge';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -297,6 +298,9 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         <p className="text-sm text-muted-foreground mt-1">
           {dateRange} • {trip.travelers} viajante(s) • Faixa {tierLabel}
         </p>
+        <div className="mt-1.5">
+          <WeatherBadge destination={trip.destination} startDate={trip.startDate} />
+        </div>
         {trip.accommodation?.name && (
           <a
             href={`https://www.google.com/maps/search/${encodeURIComponent(trip.accommodation.name + ', ' + trip.destination)}`}
