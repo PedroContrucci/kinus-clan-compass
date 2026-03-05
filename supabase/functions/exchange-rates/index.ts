@@ -5,186 +5,183 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-interface ExchangeRateResponse {
-  success: boolean;
-  quotes?: Record<string, number>;
-  error?: string;
-}
+// In-memory cache (persists across warm invocations)
+let cachedRates: Record<string, number> | null = null;
+let cachedAt = 0;
+const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
-interface TimeframeResponse {
-  success: boolean;
-  quotes?: Record<string, Record<string, number>>;
-  error?: string;
-}
+const FALLBACK_RATES: Record<string, number> = {
+  USD: 0.18, EUR: 0.16, GBP: 0.14, JPY: 27.5, THB: 6.12,
+  ARS: 180, CLP: 160, COP: 720, MXN: 3.1, PEN: 0.67,
+  CAD: 0.25, AUD: 0.28, CHF: 0.16, NZD: 0.30,
+  SEK: 1.85, DKK: 1.22, NOK: 1.90, CZK: 4.15, HUF: 65,
+  PLN: 0.72, TRY: 5.8, KRW: 245, CNY: 1.30, HKD: 1.41,
+  SGD: 0.24, IDR: 2830, VND: 4500, INR: 15.2, AED: 0.66,
+  ILS: 0.65, ZAR: 3.28, EGP: 8.8, MAD: 1.78, UYU: 7.2,
+  RUB: 16, CRC: 92,
+};
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const API_KEY = Deno.env.get('EXCHANGERATE_API_KEY');
-    if (!API_KEY) {
-      console.error('EXCHANGERATE_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Serviço de câmbio temporariamente indisponível' }),
-        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const body = await req.json();
+    
+    // Support both old format (action/source/currencies) and new format (base/targets)
+    const base = body.base || body.source || 'BRL';
+    const targets: string[] = body.targets || (body.currencies ? body.currencies.split(',') : ['USD', 'EUR', 'JPY', 'GBP']);
+    const action = body.action || 'live';
+
+    // For history action, use the paid API if available
+    if (action === 'history') {
+      return await handleHistory(body, base);
     }
 
-    const { action, source = 'BRL', currencies = 'USD,EUR,JPY,GBP', startDate, endDate } = await req.json();
-
-    let data;
-
-    if (action === 'live') {
-      // Get current exchange rates
-      const url = `https://api.exchangerate.host/live?access_key=${API_KEY}&source=${source}&currencies=${currencies}`;
-      const response = await fetch(url);
-      const result: ExchangeRateResponse = await response.json();
-
-      if (!result.success) {
-        const errorMsg = typeof result.error === 'string' ? result.error : JSON.stringify(result.error);
-        // Check if rate limited - return fallback data
-        if (errorMsg.includes('rate_limit') || errorMsg.includes('106')) {
-          console.warn('Rate limit hit, returning fallback data');
-          data = {
-            success: true,
-            source,
-            rates: { EUR: 0.16, USD: 0.19, JPY: 29.5, GBP: 0.14 }, // Fallback rates
-            timestamp: new Date().toISOString(),
-            isFallback: true
-          };
-        } else {
-          throw new Error(errorMsg || 'Failed to fetch live rates');
-        }
-      } else {
-        // Convert quotes to a more usable format
-        const rates: Record<string, number> = {};
-        if (result.quotes) {
-          for (const [key, value] of Object.entries(result.quotes)) {
-            const currency = key.replace(source, '');
-            rates[currency] = value;
-          }
-        }
-
-        data = {
-          success: true,
-          source,
-          rates,
-          timestamp: new Date().toISOString()
-        };
+    // Check cache
+    const now = Date.now();
+    if (cachedRates && (now - cachedAt) < CACHE_TTL) {
+      console.log('Returning cached rates');
+      const filtered: Record<string, number> = {};
+      for (const t of targets) {
+        filtered[t] = cachedRates[t] || FALLBACK_RATES[t] || 0;
       }
-
-    } else if (action === 'history') {
-      // Get historical exchange rates
-      if (!startDate || !endDate) {
-        throw new Error('startDate and endDate are required for history');
-      }
-
-      const currency = currencies.split(',')[0];
-      const url = `https://api.exchangerate.host/timeframe?access_key=${API_KEY}&start_date=${startDate}&end_date=${endDate}&source=${source}&currencies=${currency}`;
-      const response = await fetch(url);
-      const result: TimeframeResponse = await response.json();
-
-      if (!result.success) {
-        const errorMsg = typeof result.error === 'string' ? result.error : JSON.stringify(result.error);
-        // Check if rate limited - return fallback data
-        if (errorMsg.includes('rate_limit') || errorMsg.includes('106')) {
-          console.warn('Rate limit hit, returning fallback history');
-          // Generate synthetic 30-day history
-          const fallbackHistory: Array<{ date: string; rate: number }> = [];
-          const baseRate = 0.16;
-          const start = new Date(startDate);
-          const end = new Date(endDate);
-          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            fallbackHistory.push({
-              date: d.toISOString().split('T')[0],
-              rate: baseRate + (Math.random() - 0.5) * 0.01
-            });
-          }
-          
-          data = {
-            success: true,
-            source,
-            currency,
-            history: fallbackHistory,
-            statistics: {
-              min: baseRate - 0.005,
-              max: baseRate + 0.005,
-              avg: baseRate,
-              current: baseRate,
-              trend: 'stable' as const,
-              trendPercent: '0.00'
-            },
-            timestamp: new Date().toISOString(),
-            isFallback: true
-          };
-        } else {
-          throw new Error(errorMsg || 'Failed to fetch historical rates');
-        }
-      } else {
-        // Convert to array format for charts
-        const history: Array<{ date: string; rate: number }> = [];
-        if (result.quotes) {
-          for (const [date, rates] of Object.entries(result.quotes)) {
-            const rateKey = `${source}${currency}`;
-            if (rates[rateKey]) {
-              history.push({ date, rate: rates[rateKey] });
-            }
-          }
-        }
-
-        history.sort((a, b) => a.date.localeCompare(b.date));
-
-        const rates = history.map(h => h.rate);
-        const min = Math.min(...rates);
-        const max = Math.max(...rates);
-        const avg = rates.reduce((a, b) => a + b, 0) / rates.length;
-        const current = rates[rates.length - 1] || 0;
-
-        const recentRates = rates.slice(-7);
-        const previousRates = rates.slice(-14, -7);
-        const recentAvg = recentRates.reduce((a, b) => a + b, 0) / recentRates.length;
-        const previousAvg = previousRates.length > 0 
-          ? previousRates.reduce((a, b) => a + b, 0) / previousRates.length 
-          : recentAvg;
-        
-        const trendPercent = ((recentAvg - previousAvg) / previousAvg) * 100;
-        let trend: 'up' | 'down' | 'stable';
-        if (trendPercent > 1) trend = 'up';
-        else if (trendPercent < -1) trend = 'down';
-        else trend = 'stable';
-
-        data = {
-          success: true,
-          source,
-          currency,
-          history,
-          statistics: { min, max, avg, current, trend, trendPercent: trendPercent.toFixed(2) },
-          timestamp: new Date().toISOString()
-        };
-      }
-    } else {
-      throw new Error('Invalid action. Use "live" or "history"');
+      return jsonResponse({
+        success: true,
+        rates: filtered,
+        source: base,
+        updated_at: new Date(cachedAt).toISOString(),
+        cached: true,
+      });
     }
 
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200
-    });
+    // Fetch from free API (no key needed)
+    const url = `https://open.er-api.com/v6/latest/${base}`;
+    console.log('Fetching fresh rates from:', url);
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.result === 'success' && data.rates) {
+      // Cache all rates
+      cachedRates = data.rates;
+      cachedAt = now;
+
+      const filtered: Record<string, number> = {};
+      for (const t of targets) {
+        filtered[t] = data.rates[t] || FALLBACK_RATES[t] || 0;
+      }
+
+      return jsonResponse({
+        success: true,
+        rates: filtered,
+        source: base,
+        updated_at: data.time_last_update_utc || new Date().toISOString(),
+        cached: false,
+      });
+    }
+
+    // API failed — return fallback
+    console.warn('API returned unexpected result, using fallback');
+    return returnFallback(targets, base);
 
   } catch (error) {
     console.error('Exchange rate error:', error);
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: 'Erro ao buscar taxas de câmbio. Tente novamente.' 
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
-      }
-    );
+    // Return fallback on any error
+    try {
+      const body = await req.clone().json().catch(() => ({}));
+      const targets = (body as any).targets || ['USD', 'EUR', 'JPY', 'GBP'];
+      return returnFallback(targets, 'BRL');
+    } catch {
+      return returnFallback(['USD', 'EUR', 'JPY', 'GBP'], 'BRL');
+    }
   }
 });
+
+async function handleHistory(body: any, base: string) {
+  const { startDate, endDate, currencies } = body;
+  const currency = (body.targets?.[0]) || (currencies ? currencies.split(',')[0] : 'USD');
+
+  // Try paid API first
+  const API_KEY = Deno.env.get('EXCHANGERATE_API_KEY');
+  if (API_KEY && startDate && endDate) {
+    try {
+      const url = `https://api.exchangerate.host/timeframe?access_key=${API_KEY}&start_date=${startDate}&end_date=${endDate}&source=${base}&currencies=${currency}`;
+      const response = await fetch(url);
+      const result = await response.json();
+
+      if (result.success && result.quotes) {
+        const history: Array<{ date: string; rate: number }> = [];
+        for (const [date, rates] of Object.entries(result.quotes)) {
+          const rateKey = `${base}${currency}`;
+          if ((rates as any)[rateKey]) {
+            history.push({ date, rate: (rates as any)[rateKey] });
+          }
+        }
+        history.sort((a, b) => a.date.localeCompare(b.date));
+
+        const rateValues = history.map(h => h.rate);
+        const min = Math.min(...rateValues);
+        const max = Math.max(...rateValues);
+        const avg = rateValues.reduce((a, b) => a + b, 0) / rateValues.length;
+        const current = rateValues[rateValues.length - 1] || 0;
+        const recentRates = rateValues.slice(-7);
+        const previousRates = rateValues.slice(-14, -7);
+        const recentAvg = recentRates.reduce((a, b) => a + b, 0) / recentRates.length;
+        const previousAvg = previousRates.length > 0 ? previousRates.reduce((a, b) => a + b, 0) / previousRates.length : recentAvg;
+        const trendPercent = ((recentAvg - previousAvg) / previousAvg) * 100;
+        const trend = trendPercent > 1 ? 'up' : trendPercent < -1 ? 'down' : 'stable';
+
+        return jsonResponse({
+          success: true, source: base, currency, history,
+          statistics: { min, max, avg, current, trend, trendPercent: trendPercent.toFixed(2) },
+        });
+      }
+    } catch (e) {
+      console.warn('Paid API failed for history, generating synthetic:', e);
+    }
+  }
+
+  // Generate synthetic history as fallback
+  const baseRate = FALLBACK_RATES[currency] || 1;
+  const fallbackHistory: Array<{ date: string; rate: number }> = [];
+  const start = new Date(startDate || Date.now() - 30 * 86400000);
+  const end = new Date(endDate || Date.now());
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    fallbackHistory.push({
+      date: d.toISOString().split('T')[0],
+      rate: baseRate + (Math.random() - 0.5) * baseRate * 0.02,
+    });
+  }
+
+  return jsonResponse({
+    success: true, source: base, currency,
+    history: fallbackHistory,
+    statistics: {
+      min: baseRate * 0.99, max: baseRate * 1.01, avg: baseRate,
+      current: baseRate, trend: 'stable' as const, trendPercent: '0.00',
+    },
+    isFallback: true,
+  });
+}
+
+function returnFallback(targets: string[], base: string) {
+  const filtered: Record<string, number> = {};
+  for (const t of targets) {
+    filtered[t] = FALLBACK_RATES[t] || 0;
+  }
+  return jsonResponse({
+    success: true,
+    rates: filtered,
+    source: base,
+    updated_at: new Date().toISOString(),
+    isFallback: true,
+  });
+}
+
+function jsonResponse(data: any, status = 200) {
+  return new Response(JSON.stringify(data), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status,
+  });
+}

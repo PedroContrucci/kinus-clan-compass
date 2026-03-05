@@ -68,7 +68,8 @@ export const EnhancedExchangeRates = ({
     lastUpdated, 
     refresh, 
     getInsight,
-    targetCurrency 
+    targetCurrency,
+    updatedAgo,
   } = useExchangeRates(destinationCurrency);
   
   const [calcBRL, setCalcBRL] = useState<string>('1000');
@@ -217,7 +218,7 @@ export const EnhancedExchangeRates = ({
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Atualizado: {lastUpdated ? lastUpdated.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+              {updatedAgo || '--:--'}
             </p>
           </div>
         </div>
