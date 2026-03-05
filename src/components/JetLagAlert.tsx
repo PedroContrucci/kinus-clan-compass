@@ -1,5 +1,4 @@
 import { Brain } from 'lucide-react';
-import { contextualTips } from '@/types/trip';
 
 interface JetLagAlertProps {
   destination: string;
