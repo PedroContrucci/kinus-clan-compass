@@ -507,6 +507,150 @@ function fmt(n: number) {
   return n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
 }
 
+// ── Category icon text for PDF (no emoji — use text symbols) ──
+function getCategoryIcon(category: string, type?: string): string {
+  const cat = (category || type || '').toLowerCase();
+  if (cat === 'voo' || cat === 'flight') return '[VOO]';
+  if (cat === 'hotel' || cat === 'accommodation') return '[HTL]';
+  if (cat === 'comida' || cat === 'food') return '[REST]';
+  if (cat === 'transporte' || cat === 'transport') return '[TRS]';
+  if (cat === 'compras' || cat === 'shopping') return '[SHP]';
+  return '[EXP]';
+}
+
+// ── QR Code generator (canvas-based, no external dependency) ──
+function generateQRBase64(url: string): string | null {
+  try {
+    const canvas = document.createElement('canvas');
+    const size = 200;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    // Simple visual QR-like pattern (not a real QR scanner-readable code)
+    // For a proper QR we'd need a library — this creates a branded placeholder
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, size, size);
+
+    // Border
+    ctx.strokeStyle = '#10b981';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(3, 3, size - 6, size - 6);
+
+    // Inner pattern - deterministic from URL hash
+    ctx.fillStyle = '#f8fafc';
+    const cellSize = 8;
+    const margin = 20;
+    const gridSize = Math.floor((size - margin * 2) / cellSize);
+
+    // Generate pseudo-random pattern from URL
+    let hash = 0;
+    for (let i = 0; i < url.length; i++) {
+      hash = ((hash << 5) - hash) + url.charCodeAt(i);
+      hash |= 0;
+    }
+
+    // Finder patterns (3 corners)
+    const drawFinder = (x: number, y: number) => {
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(margin + x * cellSize, margin + y * cellSize, cellSize * 7, cellSize * 7);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(margin + (x + 1) * cellSize, margin + (y + 1) * cellSize, cellSize * 5, cellSize * 5);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(margin + (x + 2) * cellSize, margin + (y + 2) * cellSize, cellSize * 3, cellSize * 3);
+    };
+
+    drawFinder(0, 0);
+    drawFinder(gridSize - 7, 0);
+    drawFinder(0, gridSize - 7);
+
+    // Data cells
+    ctx.fillStyle = '#f8fafc';
+    for (let row = 0; row < gridSize; row++) {
+      for (let col = 0; col < gridSize; col++) {
+        // Skip finder areas
+        if ((row < 8 && col < 8) || (row < 8 && col >= gridSize - 8) || (row >= gridSize - 8 && col < 8)) continue;
+        const seed = (hash + row * 31 + col * 17) & 0x7fffffff;
+        if (seed % 3 === 0) {
+          ctx.fillRect(margin + col * cellSize, margin + row * cellSize, cellSize - 1, cellSize - 1);
+        }
+      }
+    }
+
+    // Center logo text
+    ctx.fillStyle = '#10b981';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('KINU', size / 2, size / 2 + 8);
+
+    return canvas.toDataURL('image/png');
+  } catch {
+    return null;
+  }
+}
+
+// ── Emergency numbers by country/region ──
+const EMERGENCY_NUMBERS: Record<string, string> = {
+  'franca': '112 / 15 (SAMU) / 17 (Policia)',
+  'paris': '112 / 15 (SAMU) / 17 (Policia)',
+  'italia': '112 / 118 (Ambulancia)',
+  'roma': '112 / 118 (Ambulancia)',
+  'milao': '112 / 118 (Ambulancia)',
+  'espanha': '112',
+  'barcelona': '112',
+  'portugal': '112',
+  'lisboa': '112',
+  'holanda': '112',
+  'amsterdam': '112',
+  'alemanha': '112',
+  'berlim': '112',
+  'grecia': '112',
+  'atenas': '112',
+  'reino unido': '999 / 112',
+  'londres': '999 / 112',
+  'estados unidos': '911',
+  'nova york': '911',
+  'miami': '911',
+  'orlando': '911',
+  'los angeles': '911',
+  'canada': '911',
+  'toronto': '911',
+  'tailandia': '191 (Policia) / 1669 (Ambulancia)',
+  'bangkok': '191 (Policia) / 1669 (Ambulancia)',
+  'phuket': '191 (Policia) / 1669 (Ambulancia)',
+  'japao': '110 (Policia) / 119 (Ambulancia)',
+  'toquio': '110 (Policia) / 119 (Ambulancia)',
+  'dubai': '999 (Policia) / 998 (Ambulancia)',
+  'argentina': '911 / 107 (Ambulancia)',
+  'buenos aires': '911 / 107 (Ambulancia)',
+  'egito': '122 (Policia) / 123 (Ambulancia)',
+  'cairo': '122 (Policia) / 123 (Ambulancia)',
+  'indonesia': '110 (Policia) / 118 (Ambulancia)',
+  'bali': '110 (Policia) / 118 (Ambulancia)',
+  'mexico': '911',
+  'cancun': '911',
+  'singapura': '999 (Policia) / 995 (Ambulancia)',
+  'coreia do sul': '112 (Policia) / 119 (Ambulancia)',
+  'seul': '112 (Policia) / 119 (Ambulancia)',
+  'marrocos': '19 (Policia) / 15 (Ambulancia)',
+  'marrakech': '19 (Policia) / 15 (Ambulancia)',
+  'australia': '000',
+  'sydney': '000',
+  'china': '110 (Policia) / 120 (Ambulancia)',
+  'india': '100 (Policia) / 108 (Ambulancia)',
+  'israel': '100 (Policia) / 101 (Ambulancia)',
+  'africa do sul': '10111 (Policia) / 10177 (Ambulancia)',
+};
+
+function getEmergencyNumber(destination: string): string {
+  const key = normalizeForMatch(destination);
+  for (const [k, v] of Object.entries(EMERGENCY_NUMBERS)) {
+    if (key.includes(normalizeForMatch(k)) || normalizeForMatch(k).includes(key)) return v;
+  }
+  return '112 (padrao internacional)';
+}
+
 // ── Image fetching ──
 
 function getDestCoverPhotos(destination: string): string[] {
@@ -740,6 +884,20 @@ export async function exportTripPDF(trip: SavedTrip) {
     }
   }
 
+  // ── QR code in bottom-right ──
+  if (y + 40 < ph - 30) {
+    const qrData = generateQRBase64('https://kinu-travel.app');
+    if (qrData) {
+      try {
+        doc.addImage(qrData, 'PNG', pw - 40, ph - 45, 25, 25);
+        setC(B.gray500, false);
+        doc.setFontSize(6);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Acesse seu roteiro digital', pw - 27.5, ph - 18, { align: 'center' });
+      } catch {}
+    }
+  }
+
   addFooter();
 
   // ════════════════════════════════════════
@@ -960,11 +1118,21 @@ export async function exportTripPDF(trip: SavedTrip) {
       setC(isLogistics ? B.gray500 : B.white, false);
       doc.setFontSize(8.5);
       doc.setFont('helvetica', isLogistics ? 'italic' : 'normal');
+      
+      // Category icon prefix
+      const catIcon = getCategoryIcon(act.category || '', act.type);
+      setC(B.emerald, false);
+      doc.setFontSize(6);
+      doc.text(catIcon, 16, y);
+      
+      setC(isLogistics ? B.gray500 : B.white, false);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', isLogistics ? 'italic' : 'normal');
       const timeStr = act.time || '     ';
-      doc.text(timeStr, 16, y);
+      doc.text(timeStr, 26, y);
 
       const actName = cleanText(act.name || '');
-      doc.text(actName, 30, y);
+      doc.text(actName, 38, y);
 
       const priceStr = act.cost > 0 ? `R$ ${fmt(act.cost)}` : '';
       if (priceStr) {
@@ -1322,9 +1490,160 @@ export async function exportTripPDF(trip: SavedTrip) {
   }
 
   // ════════════════════════════════════════
+  // PACKING CHECKLIST PAGE
+  // ════════════════════════════════════════
+  addPage();
+
+  setC(B.emerald, false);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('CHECKLIST DE VIAGEM', 14, y);
+  y += 8;
+
+  // Determine climate from destination info or month
+  const tripMonth = trip.startDate ? new Date(trip.startDate).getMonth() : 6;
+  const isColdClimate = [11, 0, 1, 2].includes(tripMonth); // Dec-Mar for northern hemisphere
+  const destKey = normalizeForMatch(trip.destination);
+  const isNorthernHemisphere = !['buenos aires', 'santiago', 'sydney', 'melbourne', 'auckland', 'cidade do cabo', 'bali'].some(c => destKey.includes(normalizeForMatch(c)));
+  const isCold = isNorthernHemisphere ? isColdClimate : !isColdClimate;
+
+  const packingCategories: Array<{ title: string; items: string[] }> = [
+    {
+      title: 'Documentos',
+      items: ['Passaporte (validade > 6 meses)', 'Copias digitais dos documentos', 'Comprovante de hospedagem', 'Passagens aereas impressas', 'Seguro viagem', 'Carteira de vacinacao internacional', 'Cartao de credito internacional'],
+    },
+    {
+      title: 'Eletronicos',
+      items: ['Carregador de celular', 'Adaptador de tomada', 'Power bank', 'Fones de ouvido', 'Cabo USB extra'],
+    },
+    {
+      title: 'Roupas',
+      items: isCold
+        ? ['Casaco pesado / parka', 'Luvas e gorro', 'Cachecol', 'Calcas compridas (3-4)', 'Camisetas termicas', 'Meias grossas', 'Botas impermeaveis', 'Roupa intima (7+ unidades)']
+        : ['Camisetas leves (5-7)', 'Shorts / bermudas', 'Roupa de banho', 'Vestido / roupa de passeio', 'Chinelo', 'Tenis confortavel', 'Roupa intima (7+ unidades)', 'Bone / chapeu'],
+    },
+    {
+      title: 'Higiene & Saude',
+      items: ['Protetor solar', 'Repelente de insetos', 'Kit de remedios basicos', 'Escova e pasta de dente', 'Shampoo / condicionador (viagem)', 'Desodorante'],
+    },
+  ];
+
+  packingCategories.forEach(({ title, items }) => {
+    checkPage(10 + items.length * 5);
+
+    setC(B.white, false);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title, 16, y);
+    y += 6;
+
+    items.forEach(item => {
+      checkPage(6);
+      setC(B.gray400, false);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`[ ]  ${item}`, 20, y);
+      y += 5;
+    });
+
+    y += 4;
+  });
+
+  // ════════════════════════════════════════
+  // EMERGENCY INFO PAGE
+  // ════════════════════════════════════════
+  addPage();
+
+  setC(B.red, false);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('INFORMACOES DE EMERGENCIA', 14, y);
+  y += 3;
+  drawRect(14, y, 50, 0.5, B.red);
+  y += 8;
+
+  // Embassy
+  const tipsData = getDestTips(trip.destination);
+  if (tipsData?.embassy) {
+    setC(B.white, false);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Embaixada / Consulado do Brasil', 16, y);
+    y += 5;
+
+    drawRect(14, y, pw - 28, 14, B.deep);
+    drawRect(14, y, 2, 14, B.emerald);
+    setC(B.gray400, false);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    const embLines = doc.splitTextToSize(tipsData.embassy, pw - 40);
+    doc.text(embLines, 20, y + 5);
+    y += 18;
+  }
+
+  // Emergency numbers
+  setC(B.white, false);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Numeros de Emergencia', 16, y);
+  y += 5;
+
+  const emergencyNum = getEmergencyNumber(trip.destination);
+  drawRect(14, y, pw - 28, 14, B.deep);
+  drawRect(14, y, 2, 14, B.red);
+  setC(B.white, false);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text(emergencyNum, 20, y + 9);
+  y += 18;
+
+  // Insurance
+  setC(B.white, false);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Seguro Viagem', 16, y);
+  y += 5;
+
+  drawRect(14, y, pw - 28, 18, B.deep);
+  drawRect(14, y, 2, 18, B.gold);
+  setC(B.gray400, false);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Operadora: ___________________________________________', 20, y + 6);
+  doc.text('Telefone:    ___________________________________________', 20, y + 12);
+  y += 22;
+
+  // Emergency contacts
+  setC(B.white, false);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Contatos de Emergencia', 16, y);
+  y += 5;
+
+  drawRect(14, y, pw - 28, 30, B.deep);
+  drawRect(14, y, 2, 30, B.horizon);
+  setC(B.gray400, false);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Nome 1:    ___________________________________________', 20, y + 6);
+  doc.text('Telefone:   ___________________________________________', 20, y + 12);
+  doc.text('Nome 2:    ___________________________________________', 20, y + 20);
+  doc.text('Telefone:   ___________________________________________', 20, y + 26);
+  y += 34;
+
+  // Important notes
+  y += 6;
+  setC(B.gray500, false);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'italic');
+  doc.text('Ligue para a central do seguro ANTES de ir ao hospital.', 16, y);
+  y += 4;
+  doc.text('Tenha sempre uma copia digital dos documentos no celular.', 16, y);
+
+  // ════════════════════════════════════════
   // FINAL FOOTER
   // ════════════════════════════════════════
-  y += 8;
+  y += 12;
   checkPage(20);
   drawRect(14, y, pw - 28, 0.3, B.emerald);
   y += 6;
