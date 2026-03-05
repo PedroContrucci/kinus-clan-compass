@@ -1,8 +1,23 @@
-import { memo, useEffect, useState, useRef, useCallback } from 'react';
+import { memo, useEffect, useState, useRef, useCallback, Component, ErrorInfo, ReactNode } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
 import { DayMapLink } from './DayMapLink';
+
+class MapErrorBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('Map render error:', error, info);
+  }
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
 
 interface DailyRouteMapProps {
   destination: string;
@@ -69,7 +84,6 @@ const geocodeCache = new Map<string, { lat: number; lng: number } | null>();
 export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapProps) => {
   const [points, setPoints] = useState<GeoPoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mapError, setMapError] = useState(false);
   const abortRef = useRef(false);
 
   const filteredActivities = activities.filter(a => !isLogistics(a));
@@ -86,18 +100,26 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
       return preComputed;
     }
 
-    // Partial match: strip meal prefixes and try
+    // Partial match: strip meal prefixes, parentheticals, extras and check both directions
     const partialMatch = Object.entries(ATTRACTION_COORDS).find(([k]) => {
-      const actNameClean = name.toLowerCase().replace(/^(almoço|jantar|café):\s*/i, '');
-      return k.includes(actNameClean) && k.includes(dest.toLowerCase());
+      const actNameClean = name.toLowerCase()
+        .replace(/^(almoço|jantar|café):\s*/i, '')
+        .replace(/\s*\(.*?\)/g, '')
+        .replace(/\s*\+\s*.*/g, '')
+        .trim();
+      const keyAttractionPart = k.split(',')[0].trim();
+      const keyCity = k.split(',')[1]?.trim() || '';
+      if (!keyCity.includes(dest.toLowerCase())) return false;
+      return actNameClean.includes(keyAttractionPart) || keyAttractionPart.includes(actNameClean);
     });
     if (partialMatch) {
       geocodeCache.set(key, partialMatch[1]);
       return partialMatch[1];
     }
 
-    // Fallback to Nominatim
+    // Fallback to Nominatim (rate-limited)
     try {
+      await new Promise(r => setTimeout(r, 1000));
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name + ', ' + dest)}&format=json&limit=1`,
         { headers: { 'User-Agent': 'KINU-TravelOS/1.0' }, signal: AbortSignal.timeout(5000) }
@@ -121,7 +143,6 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
     abortRef.current = false;
     setLoading(true);
     setPoints([]);
-    setMapError(false);
 
     if (filteredActivities.length === 0) {
       setLoading(false);
@@ -135,10 +156,6 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
         const coords = await geocode(act.name, destination);
         if (coords) {
           results.push({ name: act.name, time: act.time, ...coords });
-        }
-        // Rate limit only for uncached Nominatim requests
-        if (!geocodeCache.has(`${act.name}|${destination}`)) {
-          await new Promise(r => setTimeout(r, 1000));
         }
       }
       if (!abortRef.current) {
@@ -167,8 +184,8 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
     );
   }
 
-  // Fallback to Google Maps link if no points resolved or map errored
-  if (points.length === 0 || mapError) {
+  // Fallback to Google Maps link if no points resolved
+  if (points.length === 0) {
     return (
       <div className="mb-4">
         <p className="text-xs font-medium text-muted-foreground mb-2 font-['Outfit']">🗺️ Rota do Dia</p>
@@ -182,42 +199,46 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
   return (
     <div className="mb-4">
       <p className="text-xs font-medium text-muted-foreground mb-2 font-['Outfit']">🗺️ Rota do Dia</p>
-      <div className="h-[250px] rounded-xl border border-border/50 overflow-hidden">
-        <MapContainer
-          center={[points[0].lat, points[0].lng]}
-          zoom={13}
-          style={{ height: '100%', width: '100%' }}
-          zoomControl={false}
-          attributionControl={false}
-        >
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          />
-          <FitBounds points={points} />
-          {points.map((point, idx) => (
-            <Marker key={idx} position={[point.lat, point.lng]} icon={createNumberedIcon(idx + 1)}>
-              <Popup>
-                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#1e293b' }}>
-                  <strong>{idx + 1}. {point.name}</strong>
-                  {point.time && <div style={{ fontSize: '12px', color: '#64748b' }}>🕐 {point.time}</div>}
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-          {polylinePositions.length > 1 && (
-            <Polyline
-              positions={polylinePositions}
-              pathOptions={{
-                color: 'hsl(199, 89%, 48%)',
-                weight: 3,
-                dashArray: '8, 6',
-                opacity: 0.8,
-              }}
+      <MapErrorBoundary fallback={
+        <DayMapLink destination={destination} dayActivities={filteredActivities} />
+      }>
+        <div className="h-[250px] rounded-xl border border-border/50 overflow-hidden">
+          <MapContainer
+            center={[points[0].lat, points[0].lng]}
+            zoom={13}
+            style={{ height: '100%', width: '100%' }}
+            zoomControl={false}
+            attributionControl={false}
+          >
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             />
-          )}
-        </MapContainer>
-      </div>
+            <FitBounds points={points} />
+            {points.map((point, idx) => (
+              <Marker key={idx} position={[point.lat, point.lng]} icon={createNumberedIcon(idx + 1)}>
+                <Popup>
+                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#1e293b' }}>
+                    <strong>{idx + 1}. {point.name}</strong>
+                    {point.time && <div style={{ fontSize: '12px', color: '#64748b' }}>🕐 {point.time}</div>}
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+            {polylinePositions.length > 1 && (
+              <Polyline
+                positions={polylinePositions}
+                pathOptions={{
+                  color: 'hsl(199, 89%, 48%)',
+                  weight: 3,
+                  dashArray: '8, 6',
+                  opacity: 0.8,
+                }}
+              />
+            )}
+          </MapContainer>
+        </div>
+      </MapErrorBoundary>
     </div>
   );
 });

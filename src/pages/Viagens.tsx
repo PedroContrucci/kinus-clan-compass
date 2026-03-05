@@ -22,7 +22,7 @@ import { getActivityPrice, determinePriceLevel, findBestPriceLevel, mapCategoryT
 import kinuLogo from '@/assets/KINU_logo.png';
 import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
 import { BottomNav } from '@/components/shared/BottomNav';
-import { DayMapLink } from '@/components/cockpit/DayMapLink';
+
 import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
 
 
@@ -861,11 +861,6 @@ const Viagens = () => {
                       activities={currentDay.activities}
                     />
                   )}
-                  <DayMapLink
-                    destination={selectedTrip.destination}
-                    dayActivities={currentDay.activities}
-                    hotelName={selectedTrip.accommodation?.name}
-                  />
                   <div className="space-y-4">
                     {currentDay.activities.map((activity, actIndex) => {
                       const dayIndex = selectedTrip.days.findIndex((d) => d.day === currentDay.day);
