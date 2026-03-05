@@ -1,12 +1,13 @@
 // SmartPackingWithLuggage — Correct flow: Add luggage first, then items
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Check, Trash2, ChevronDown, ChevronUp, Sparkles, AlertTriangle, Briefcase, Package } from 'lucide-react';
+import { Plus, Check, Trash2, ChevronDown, ChevronUp, Sparkles, AlertTriangle, Briefcase, Package, CloudRain, Thermometer } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { AddLuggageModal } from './AddLuggageModal';
 import { LuggageVisualization } from './LuggageVisualization';
+import { useWeather } from '@/hooks/useWeather';
 
 // Interfaces
 interface PackingItem {
@@ -49,6 +50,7 @@ interface SmartPackingWithLuggageProps {
   destination: string;
   duration: number;
   month?: number;
+  startDate?: string;
   onUpdate?: (data: any) => void;
 }
 
@@ -116,6 +118,7 @@ export const SmartPackingWithLuggage = ({
   destination,
   duration,
   month,
+  startDate,
   onUpdate,
 }: SmartPackingWithLuggageProps) => {
   const [luggages, setLuggages] = useState<Luggage[]>([]);
@@ -130,6 +133,28 @@ export const SmartPackingWithLuggage = ({
   });
 
   const weatherTips = useMemo(() => getWeatherTips(destination, month), [destination, month]);
+
+  // Weather-aware tip from real forecast
+  const { forecast: liveForecast, fetchWeather } = useWeather();
+  
+  useEffect(() => {
+    if (destination) fetchWeather(destination);
+  }, [destination, fetchWeather]);
+
+  const weatherAlertTip = useMemo(() => {
+    if (!liveForecast?.days?.length) return null;
+    const tips: string[] = [];
+    
+    const hasRain = liveForecast.days.some(d => d.rain_probability > 50);
+    const maxTemp = Math.max(...liveForecast.days.map(d => d.temp_max));
+    const minTemp = Math.min(...liveForecast.days.map(d => d.temp_min));
+    
+    if (hasRain) tips.push('🌧️ Leve guarda-chuva — previsão de chuva');
+    if (maxTemp > 30) tips.push('🌡️ Calor intenso — protetor solar e roupas leves');
+    if (minTemp < 10) tips.push('🧥 Frio — casaco pesado e luvas recomendados');
+    
+    return tips.length > 0 ? tips : null;
+  }, [liveForecast]);
 
   // Calculate totals for all luggages
   const luggageStats = useMemo(() => {
@@ -227,6 +252,18 @@ export const SmartPackingWithLuggage = ({
   if (luggages.length === 0) {
     return (
       <div className="space-y-6 animate-fade-in">
+        {/* Weather Alert Tips */}
+        {weatherAlertTip && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-sky-500/10 border border-sky-500/20 rounded-xl p-3 space-y-1"
+          >
+            {weatherAlertTip.map((tip, i) => (
+              <p key={i} className="text-sm text-foreground">{tip}</p>
+            ))}
+          </motion.div>
+        )}
         {/* Empty State */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -301,6 +338,18 @@ export const SmartPackingWithLuggage = ({
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Weather Alert Tips */}
+      {weatherAlertTip && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-sky-500/10 border border-sky-500/20 rounded-xl p-3 space-y-1"
+        >
+          {weatherAlertTip.map((tip, i) => (
+            <p key={i} className="text-sm text-foreground">{tip}</p>
+          ))}
+        </motion.div>
+      )}
       {/* Luggage Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {luggages.map((luggage) => {

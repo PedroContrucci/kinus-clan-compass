@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useKinuAI } from "@/contexts/KinuAIContext";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Target } from 'lucide-react';
@@ -24,6 +24,7 @@ import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
 import { BottomNav } from '@/components/shared/BottomNav';
 
 import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
+import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
 
 
 const DESTINATION_CURRENCY: Record<string, string> = {
@@ -851,8 +852,15 @@ const Viagens = () => {
                     isTransitioning ? 'opacity-0' : 'opacity-100'
                   }`}
                 >
-                  <h3 className="font-semibold text-lg mb-4 text-[#f8fafc] font-['Outfit']">
-                    Dia {currentDay.day}: {currentDay.title}
+                  <h3 className="font-semibold text-lg mb-4 text-[#f8fafc] font-['Outfit'] flex items-center gap-2">
+                    <span>Dia {currentDay.day}: {currentDay.title}</span>
+                    {selectedTrip.startDate && (
+                      <ItineraryDayWeather
+                        destination={selectedTrip.destination}
+                        date={new Date(new Date(selectedTrip.startDate).getTime() + (currentDay.day - 1) * 86400000)}
+                        compact
+                      />
+                    )}
                   </h3>
                   {/* Daily route map — skip Embarque and Retorno days */}
                   {!currentDay.title.includes('Embarque') && !currentDay.title.includes('Retorno') && (
@@ -1033,11 +1041,12 @@ const Viagens = () => {
             <div>
               <AgentTip agent="hermes" variant="compact" message={getHermesPacking(selectedTrip)} />
               <SmartPackingWithLuggage
-              tripId={selectedTrip.id}
-              destination={selectedTrip.destination}
-              duration={getTripDuration(selectedTrip)}
-              month={selectedTrip.startDate ? new Date(selectedTrip.startDate).getMonth() + 1 : undefined}
-            />
+                tripId={selectedTrip.id}
+                destination={selectedTrip.destination}
+                duration={getTripDuration(selectedTrip)}
+                month={selectedTrip.startDate ? new Date(selectedTrip.startDate).getMonth() + 1 : undefined}
+                startDate={selectedTrip.startDate}
+              />
             </div>
           )}
 
