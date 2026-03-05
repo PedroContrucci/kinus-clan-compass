@@ -846,22 +846,59 @@ const Viagens = () => {
               )}
 
               {/* Day Activities */}
-              {currentDay && (
+              {currentDay && (() => {
+                const isSkipPhoto = currentDay.title?.includes('Embarque') || currentDay.title?.includes('Retorno') || currentDay.title?.includes('Trânsito');
+                const mainActivity = currentDay.activities?.find(a => 
+                  a.category !== 'voo' && a.category !== 'hotel' && !a.name?.toLowerCase().includes('transfer') && !a.name?.toLowerCase().includes('check-')
+                );
+                const photoQuery = mainActivity?.name || currentDay.title || selectedTrip.destination;
+                
+                return (
                 <div
-                  className={`bg-[#1e293b] border border-[#334155] rounded-2xl p-4 transition-opacity duration-300 ${
-                    isTransitioning ? 'opacity-0' : 'opacity-100'
+                  className={`bg-card border border-border rounded-2xl overflow-hidden transition-all duration-200 ${
+                    isTransitioning ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'
                   }`}
                 >
-                  <h3 className="font-semibold text-lg mb-4 text-[#f8fafc] font-['Outfit'] flex items-center gap-2">
-                    <span>Dia {currentDay.day}: {currentDay.title}</span>
-                    {selectedTrip.startDate && (
-                      <ItineraryDayWeather
-                        destination={selectedTrip.destination}
-                        date={new Date(new Date(selectedTrip.startDate).getTime() + (currentDay.day - 1) * 86400000)}
-                        compact
+                  {/* Day banner image */}
+                  {!isSkipPhoto && (
+                    <div className="relative h-[80px] overflow-hidden">
+                      <img
+                        src={`https://source.unsplash.com/600x150/?${encodeURIComponent(photoQuery)}`}
+                        alt={currentDay.title}
+                        loading="lazy"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                       />
-                    )}
-                  </h3>
+                      <div className="absolute inset-0 bg-gradient-to-t from-card via-card/70 to-transparent" />
+                      <div className="absolute bottom-2 left-4 right-4">
+                        <h3 className="font-semibold text-lg text-foreground font-['Outfit'] flex items-center gap-2 drop-shadow-lg">
+                          <span>Dia {currentDay.day}: {currentDay.title}</span>
+                          {selectedTrip.startDate && (
+                            <ItineraryDayWeather
+                              destination={selectedTrip.destination}
+                              date={new Date(new Date(selectedTrip.startDate).getTime() + (currentDay.day - 1) * 86400000)}
+                              compact
+                            />
+                          )}
+                        </h3>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="p-4">
+                  {/* Day title fallback for Embarque/Retorno/Trânsito */}
+                  {isSkipPhoto && (
+                    <h3 className="font-semibold text-lg mb-4 text-foreground font-['Outfit'] flex items-center gap-2">
+                      <span>Dia {currentDay.day}: {currentDay.title}</span>
+                      {selectedTrip.startDate && (
+                        <ItineraryDayWeather
+                          destination={selectedTrip.destination}
+                          date={new Date(new Date(selectedTrip.startDate).getTime() + (currentDay.day - 1) * 86400000)}
+                          compact
+                        />
+                      )}
+                    </h3>
+                  )}
                   {/* Daily route map — skip Embarque and Retorno days */}
                   {!currentDay.title.includes('Embarque') && !currentDay.title.includes('Retorno') && (
                     <DailyRouteMap
@@ -1031,8 +1068,10 @@ const Viagens = () => {
                       </div>
                     );
                   })()}
+                  </div> {/* close p-4 wrapper */}
                 </div>
-              )}
+                );
+              })()}
             </div>
           )}
 
