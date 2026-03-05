@@ -39,16 +39,18 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <KinuAIWrapper />
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/cla" element={<Cla />} />
-            <Route path="/planejar" element={<NewPlanejar />} />
-            <Route path="/viagens" element={<Viagens />} />
-            <Route path="/conta" element={<Conta />} />
-            <Route path="/destino/:id" element={<DestinationDetail />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <div className="mx-auto w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl min-h-screen bg-background">
+            <Routes>
+              <Route path="/" element={<Login />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/cla" element={<Cla />} />
+              <Route path="/planejar" element={<NewPlanejar />} />
+              <Route path="/viagens" element={<Viagens />} />
+              <Route path="/conta" element={<Conta />} />
+              <Route path="/destino/:id" element={<DestinationDetail />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
         </BrowserRouter>
       </KinuAIProvider>
     </TooltipProvider>
