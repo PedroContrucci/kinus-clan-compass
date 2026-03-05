@@ -746,11 +746,11 @@ const Viagens = () => {
     const currentDay = selectedTrip.days?.find((d) => d.day === selectedDay);
     const tripSeverity = selectedTrip.jetLagSeverity || 'BAIXO';
     const showJetLagAlert = selectedTrip.jetLagMode && (
-      (tripSeverity === 'MODERADO' && selectedDay === 1) ||
-      (tripSeverity === 'ALTO' && selectedDay <= 2) ||
-      (tripSeverity === 'SEVERO' && selectedDay <= 3)
+      (tripSeverity === 'MODERADO' && selectedDay === 2) ||
+      (tripSeverity === 'ALTO' && selectedDay >= 2 && selectedDay <= 3) ||
+      (tripSeverity === 'SEVERO' && selectedDay >= 2 && selectedDay <= 4)
     );
-    const isRecoveryDay = selectedDay > 1 && tripSeverity === 'SEVERO';
+    const isRecoveryDay = tripSeverity === 'SEVERO' && selectedDay >= 3 && selectedDay <= 4;
 
     return (
       <div className="min-h-screen bg-[#0f172a] pb-20">
