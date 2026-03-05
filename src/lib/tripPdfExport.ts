@@ -729,7 +729,7 @@ export async function exportTripPDF(trip: SavedTrip) {
       doc.text(flightLine, 14, y);
       y += 5;
 
-      const severity = (trip as any).jetLagSeverity;
+      const severity = trip.jetLagSeverity;
       if (severity === 'ALTO' || severity === 'SEVERO') {
         setC(severity === 'SEVERO' ? B.red : B.amber, false);
         doc.setFontSize(7.5);
@@ -1190,7 +1190,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   }
 
   // ── Biology AI — Protocolo de Adaptacao ──
-  const jetLagSev = (trip as any).jetLagSeverity as string | undefined;
+  const jetLagSev = trip.jetLagSeverity as string | undefined;
   if (trip.jetLagMode && jetLagSev && jetLagSev !== 'BAIXO') {
     y += 4;
     checkPage(30);

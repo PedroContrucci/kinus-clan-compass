@@ -14,14 +14,14 @@ export function getIcarusRoteiro(trip: SavedTrip, dayNum: number): string {
   if (dayNum === 1) return `Boa viagem! Ajuste o relogio para o fuso local durante o voo.`;
 
   if (dayNum === 2 && trip.jetLagMode) {
-    const severity = (trip as any).jetLagSeverity || 'MODERADO';
+    const severity = trip.jetLagSeverity || 'MODERADO';
     const diff = Math.abs(trip.timezone?.diff || 0);
     if (severity === 'SEVERO') return `Fuso de ${diff}h e severo. Hoje e so descanso — seu corpo precisa. Amanha comecaremos devagar.`;
     if (severity === 'ALTO') return `Fuso de ${diff}h e significativo. Dia leve hoje: descanse ate 15h, passeio leve ao por do sol.`;
     return `Fuso de ${diff}h. Dia de adaptacao leve — explore o bairro do hotel e jante cedo!`;
   }
 
-  if (dayNum === 3 && (trip as any).jetLagSeverity === 'SEVERO') {
+  if (dayNum === 3 && trip.jetLagSeverity === 'SEVERO') {
     return `Segundo dia pos-fuso severo. Corpo em adaptacao — aproveite 70% do ritmo normal. Beba agua!`;
   }
 
@@ -203,7 +203,7 @@ function getAdapterTip(dest: string): string {
 
 export function getHermesPacking(trip: SavedTrip): string {
   const dest = (trip.destination || '').toLowerCase();
-  const severity = (trip as any).jetLagSeverity;
+  const severity = trip.jetLagSeverity;
 
   if (severity === 'SEVERO') {
     return `Fuso severo para ${trip.destination}! Leve: melatonina, mascara de dormir, tampoes de ouvido. ${getAdapterTip(dest)}.`;
@@ -229,7 +229,7 @@ export function getHermesHotelInsight(trip: SavedTrip): string {
 // ─── Biology AI Insight ───
 
 export function getBiologyAIInsight(trip: SavedTrip): string {
-  const severity = (trip as any).jetLagSeverity;
+  const severity = trip.jetLagSeverity;
   const diff = Math.abs(trip.timezone?.diff || 0);
   const dest = trip.destination || '';
 
