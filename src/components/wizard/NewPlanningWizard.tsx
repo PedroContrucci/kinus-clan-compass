@@ -527,32 +527,49 @@ function generateDays(
         { ...makeActivity(`act-${dayNum}-3`, fmtTime(checkInHotelH), 'Check-in no hotel', 'Acomodação e descanso', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
       ];
 
-      if (jetLagSeverity === 'SEVERO') {
-        // SEVERO: Only check-in + rest. No activities, no dinner out.
+      // If arrival is very late (check-in after 22:00), override everything to just room service
+      if (checkInHotelH >= 22) {
         activities.push(
-          makeActivity(`act-${dayNum}-4`, fmtTime(checkInHotelH + 1), 'Descanso obrigatório — fuso horário severo', `Diferença de fuso significativa. Seu corpo precisa de descanso completo.`, '5h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`act-${dayNum}-5`, '20:00', 'Room service ou restaurante do hotel', 'Refeição leve sem sair do hotel', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-4`, fmtTime(Math.min(23, checkInHotelH + 1)), 'Room service — chegada tardia', 'Refeição leve e descanso após chegada noturna', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier, true),
         );
+        days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
+      } else if (jetLagSeverity === 'SEVERO') {
+        // SEVERO: Only check-in + rest. No activities, no dinner out.
+        const restStartH = checkInHotelH + 1;
+        const dinnerH = Math.max(19, Math.min(22, restStartH + 2));
+        activities.push(
+          makeActivity(`act-${dayNum}-4`, fmtTime(restStartH), 'Descanso obrigatório — fuso horário severo', `Diferença de fuso significativa. Seu corpo precisa de descanso completo.`, `${Math.max(1, dinnerH - restStartH)}h`, 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), 'Room service ou restaurante do hotel', 'Refeição leve sem sair do hotel', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier, true),
+        );
+        days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
       } else if (jetLagSeverity === 'ALTO') {
         // ALTO: Only check-in + rest + light dinner near hotel
+        const restStartH = checkInHotelH + 1;
+        const dinnerH = Math.max(19, Math.min(22, restStartH + 3));
         activities.push(
-          makeActivity(`act-${dayNum}-4`, fmtTime(checkInHotelH + 1), 'Descanso e adaptação ao fuso', 'Descanso no hotel para adaptação ao novo fuso horário', '3h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`act-${dayNum}-5`, '19:00', `Jantar leve próximo ao hotel`, 'Refeição leve na região do hotel', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-4`, fmtTime(restStartH), 'Descanso e adaptação ao fuso', 'Descanso no hotel para adaptação ao novo fuso horário', '3h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), `Jantar leve próximo ao hotel`, 'Refeição leve na região do hotel', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier, true),
         );
+        days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
       } else if (jetLagMode) {
         // MODERADO: 1 light activity + dinner
+        const actStartH = checkInHotelH + 1;
+        const dinnerH = Math.max(19, Math.min(22, actStartH + 2 + 1));
         activities.push(
-          makeActivity(`act-${dayNum}-4`, fmtTime(checkInHotelH + 1, 30), arrivalTheme.activities[0], '', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`act-${dayNum}-5`, '19:00', `Jantar: ${arrivalTheme.restaurants.dinner}`, '', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, fmtTime(actStartH, 30), arrivalTheme.activities[0], '', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), `Jantar: ${arrivalTheme.restaurants.dinner}`, '', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
+        days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
       } else {
         // BAIXO: Normal day
+        const actStartH = checkInHotelH + 1;
+        const dinnerH = Math.max(19, Math.min(22, actStartH + 3 + 1));
         activities.push(
-          makeActivity(`act-${dayNum}-4`, fmtTime(checkInHotelH + 1, 30), arrivalTheme.activities[0], '', '3h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-5`, '19:30', `Jantar: ${arrivalTheme.restaurants.dinner}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, fmtTime(actStartH, 30), arrivalTheme.activities[0], '', '3h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), `Jantar: ${arrivalTheme.restaurants.dinner}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
+        days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
       }
-      days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
     } else if (dayNum === duration) {
       days.push({
         day: dayNum,
