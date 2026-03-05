@@ -287,36 +287,52 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
       animate={{ opacity: 1, y: 0 }}
       className="space-y-4"
     >
-      {/* 1. Header Premium */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0f172a] to-[#1e293b] p-5 border border-[#334155]">
-        <div className="absolute top-2 right-3 text-7xl opacity-10 select-none pointer-events-none">
-          {trip.emoji}
+      {/* 1. Header Premium with Hero Image */}
+      <div className="relative overflow-hidden rounded-2xl border border-border">
+        {/* Hero banner image */}
+        <div className="relative h-[150px] overflow-hidden bg-gradient-to-br from-[#0f172a] to-[#1e293b]">
+          <img
+            src={`https://source.unsplash.com/800x300/?${encodeURIComponent(trip.destination)}+travel+landmark`}
+            alt={trip.destination}
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/60 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-5">
+            <h2 className="text-xl font-bold text-foreground font-['Outfit'] drop-shadow-lg">
+              {trip.emoji} {trip.destination}, {trip.country}
+            </h2>
+          </div>
+          <div className="absolute top-2 right-3 text-7xl opacity-10 select-none pointer-events-none">
+            {trip.emoji}
+          </div>
         </div>
-        <h2 className="text-xl font-bold text-foreground font-['Outfit']">
-          {trip.emoji} {trip.destination}, {trip.country}
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          {dateRange} • {trip.travelers} viajante(s) • Faixa {tierLabel}
-        </p>
-        <div className="mt-1.5">
-          <WeatherBadge destination={trip.destination} startDate={trip.startDate} />
-        </div>
-        {trip.accommodation?.name && (
-          <a
-            href={`https://www.google.com/maps/search/${encodeURIComponent(trip.accommodation.name + ', ' + trip.destination)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 mt-2 text-xs text-sky-400 hover:text-sky-300 transition"
-          >
-            <MapPin className="w-3 h-3" />
-            <span>{trip.accommodation.name} — Ver no mapa</span>
-          </a>
-        )}
-        <div className="flex gap-2 mt-4">
-          <MiniKPI label={isPast ? 'em viagem' : 'dias'} value={isPast ? 'Em viagem' : String(daysLeft)} urgent={!isPast && daysLeft <= 7} />
-          <MiniKPI label="progresso" value={`${progressPct}%`} />
-          <MiniKPI label="gasto" value={`R$${fmt(trip.finances.confirmed / 1000)}k`} />
-          <MiniKPI label="checklist" value={`${checklistPct}%`} />
+        {/* Info below hero */}
+        <div className="p-5 pt-3 bg-gradient-to-br from-[#0f172a] to-[#1e293b]">
+          <p className="text-sm text-muted-foreground">
+            {dateRange} • {trip.travelers} viajante(s) • Faixa {tierLabel}
+          </p>
+          <div className="mt-1.5">
+            <WeatherBadge destination={trip.destination} startDate={trip.startDate} />
+          </div>
+          {trip.accommodation?.name && (
+            <a
+              href={`https://www.google.com/maps/search/${encodeURIComponent(trip.accommodation.name + ', ' + trip.destination)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 mt-2 text-xs text-sky-400 hover:text-sky-300 transition"
+            >
+              <MapPin className="w-3 h-3" />
+              <span>{trip.accommodation.name} — Ver no mapa</span>
+            </a>
+          )}
+          <div className="flex gap-2 mt-4">
+            <MiniKPI label={isPast ? 'em viagem' : 'dias'} value={isPast ? 'Em viagem' : String(daysLeft)} urgent={!isPast && daysLeft <= 7} />
+            <MiniKPI label="progresso" value={`${progressPct}%`} />
+            <MiniKPI label="gasto" value={`R$${fmt(trip.finances.confirmed / 1000)}k`} />
+            <MiniKPI label="checklist" value={`${checklistPct}%`} />
+          </div>
         </div>
       </div>
 
