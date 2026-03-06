@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { KinuAIProvider } from "@/contexts/KinuAIContext";
 import { KinuAIButton, KinuAIChat } from "@/components/ai";
+import { TopNav } from "@/components/shared/TopNav";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Cla from "./pages/Cla";
@@ -38,6 +39,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <TopNav />
           <KinuAIWrapper />
           <div className="min-h-screen bg-background">
             <div className="lg:max-w-5xl xl:max-w-6xl lg:mx-auto">
