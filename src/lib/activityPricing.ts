@@ -281,6 +281,7 @@ const BASE_PRICES: Record<ActivityType, Record<PriceLevel, number>> = {
   transfer: { budget: 120, midrange: 220, luxury: 450 },
   museum: { budget: 60, midrange: 130, luxury: 220 },
   tour: { budget: 180, midrange: 400, luxury: 900 },
+  breakfast: { budget: 30, midrange: 60, luxury: 120 },
   restaurant_lunch: { budget: 90, midrange: 160, luxury: 320 },
   restaurant_dinner: { budget: 130, midrange: 280, luxury: 550 },
   transport_local: { budget: 15, midrange: 25, luxury: 50 },
