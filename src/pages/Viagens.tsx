@@ -1669,6 +1669,11 @@ const Viagens = () => {
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-[#94a3b8] text-sm">{confirmModal?.activity.name}</p>
+              {confirmModal?.activity.cost === 0 && (
+                <p className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+                  Atividade gratuita — confirme para marcar como concluída
+                </p>
+              )}
               <div>
                 <label className="block text-sm text-[#94a3b8] mb-2">Valor pago (R$)</label>
                 <input

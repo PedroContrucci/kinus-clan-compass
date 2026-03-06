@@ -12,6 +12,7 @@ import { getIcarusRoteiroInsight, getIcarusHeroFlight, getIcarusHeroHotel, getHe
 import type { SavedTrip } from '@/types/trip';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { supabase } from '@/integrations/supabase/client';
 
 const TIER_DESCRIPTIONS: Record<string, string> = {
   backpacker: 'Hostels, street food, tours gratuitos',
@@ -314,6 +315,8 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const [confirmAmount, setConfirmAmount] = useState('');
   const [showAllActions, setShowAllActions] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [flightResults, setFlightResults] = useState<any[] | null>(null);
+  const [searchingFlights, setSearchingFlights] = useState(false);
 
   const destCurrency = (trip as any).destinationCurrency || getTripCurrency(trip.destination);
   const { rates, loading: ratesLoading, updatedAgo } = useExchangeRates(destCurrency);
@@ -385,6 +388,31 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
       await exportTripPDF(trip);
     } finally {
       setPdfLoading(false);
+    }
+  };
+
+  const searchRealFlights = async () => {
+    if (!trip.flights?.outbound) return;
+    setSearchingFlights(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('amadeus-flights', {
+        body: {
+          action: 'search',
+          origin: trip.flights.outbound.origin || 'GRU',
+          destination: trip.flights.outbound.destination || trip.destination,
+          date: trip.startDate?.split('T')[0],
+          adults: trip.travelers || 1,
+        },
+      });
+      if (data?.data && Array.isArray(data.data)) {
+        setFlightResults(data.data.slice(0, 3));
+      } else if (data?.offers) {
+        setFlightResults(data.offers.slice(0, 3));
+      }
+    } catch (err) {
+      console.error('Amadeus search failed:', err);
+    } finally {
+      setSearchingFlights(false);
     }
   };
 
@@ -470,12 +498,21 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             {trip.flights?.outbound?.duration || '—'} · {trip.flights?.outbound?.stops === 0 ? 'Direto' : `${trip.flights?.outbound?.stops || 1} parada`}
           </p>
           {!flightConfirmed && (
-            <button 
-              onClick={() => onOpenAuction('flight')}
-              className="mt-3 w-full text-xs font-semibold py-2 rounded-lg bg-sky-500 text-white hover:bg-sky-600 transition-colors"
-            >
-              🎯 Buscar Ofertas
-            </button>
+            <>
+              <button 
+                onClick={() => onOpenAuction('flight')}
+                className="mt-3 w-full text-xs font-semibold py-2 rounded-lg bg-sky-500 text-white hover:bg-sky-600 transition-colors"
+              >
+                🎯 Buscar Ofertas
+              </button>
+              <button
+                onClick={searchRealFlights}
+                disabled={searchingFlights}
+                className="mt-1.5 w-full text-[10px] font-medium py-1.5 rounded-lg border border-sky-500/30 text-sky-400 hover:bg-sky-500/10 transition-colors disabled:opacity-50"
+              >
+                {searchingFlights ? '✈️ Buscando...' : '✈️ Voos Reais (Amadeus)'}
+              </button>
+            </>
           )}
         </div>
         {/* Hotel Card */}
@@ -509,6 +546,25 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           )}
         </div>
       </div>
+
+      {/* Flight Results from Amadeus */}
+      {flightResults && flightResults.length > 0 && (
+        <div className="bg-sky-500/5 border border-sky-500/20 rounded-xl p-3 space-y-2">
+          <p className="text-xs font-semibold text-sky-400 font-['Outfit']">✈️ Voos encontrados:</p>
+          {flightResults.map((flight: any, i: number) => (
+            <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/30 last:border-0">
+              <div>
+                <p className="text-xs font-medium text-foreground">{flight.airline || 'Companhia'}</p>
+                <p className="text-[10px] text-muted-foreground">{flight.duration || ''} · {flight.isDirect ? 'Direto' : `${flight.connectionCities?.length || 1} parada`}</p>
+              </div>
+              <span className="text-sm font-bold text-sky-400 font-['Outfit']">
+                R$ {(flight.price || 0).toLocaleString('pt-BR')}
+              </span>
+            </div>
+          ))}
+          <p className="text-[9px] text-muted-foreground text-center">Preços via Amadeus (referência)</p>
+        </div>
+      )}
 
       {/* 1.75 — Activity Summary by Category */}
       {(() => {
