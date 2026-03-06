@@ -1,5 +1,6 @@
 import { differenceInDays } from 'date-fns';
 import { SavedTrip } from '@/types/trip';
+import { getMichelinCountForCity } from '@/lib/michelinData';
 
 export interface AgentInsight {
   id: string;
