@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 const navItems = [
   { id: 'dashboard', icon: '🏠', label: 'Home', path: '/dashboard' },
-  { id: 'cla', icon: '👥', label: 'Clã', path: '/cla' },
+  { id: 'cla', icon: '🌿', label: 'Clã', path: '/cla' },
   { id: 'planejar', icon: '🧭', label: 'Planejar', path: '/planejar' },
   { id: 'viagens', icon: '💼', label: 'Viagens', path: '/viagens' },
   { id: 'conta', icon: '👤', label: 'Perfil', path: '/conta' },

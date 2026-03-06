@@ -914,7 +914,7 @@ const Viagens = () => {
           <div className="flex items-center gap-3 mb-3">
             <button
               onClick={() => setSelectedTrip(null)}
-              className="p-2 hover:bg-[#1e293b] rounded-lg transition-colors lg:hidden"
+              className="p-2 hover:bg-[#1e293b] rounded-lg transition-colors"
             >
               <ArrowLeft size={20} className="text-[#f8fafc]" />
             </button>

@@ -410,6 +410,78 @@ const Cla = () => {
           </section>
         )}
 
+        {/* Top Roteiros Curados — always visible */}
+        {!searchQuery && selectedCategory === 'all' && (
+          <section className="px-4 pt-4">
+            <h2 className="font-semibold text-lg text-foreground font-['Outfit'] flex items-center gap-2 mb-3">
+              🏆 Top Roteiros Curados
+            </h2>
+            <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2" style={{ scrollSnapType: 'x mandatory' }}>
+              {[
+                { city: 'Paris', country: 'França', emoji: '🇫🇷', image: 'paris+france', days: 7, highlight: 'Louvre, Notre-Dame, Gastronomia' },
+                { city: 'Roma', country: 'Itália', emoji: '🇮🇹', image: 'rome+italy', days: 6, highlight: 'Coliseu, Vaticano, Trastevere' },
+                { city: 'Tóquio', country: 'Japão', emoji: '🇯🇵', image: 'tokyo+japan', days: 8, highlight: 'Senso-ji, Shibuya, Tsukiji' },
+                { city: 'Bangkok', country: 'Tailândia', emoji: '🇹🇭', image: 'bangkok+thailand', days: 6, highlight: 'Grand Palace, Street Food, Templos' },
+                { city: 'Lisboa', country: 'Portugal', emoji: '🇵🇹', image: 'lisbon+portugal', days: 5, highlight: 'Belém, Alfama, Pastéis de Nata' },
+                { city: 'Barcelona', country: 'Espanha', emoji: '🇪🇸', image: 'barcelona+spain', days: 6, highlight: 'Sagrada Família, La Rambla, Tapas' },
+                { city: 'Nova York', country: 'EUA', emoji: '🇺🇸', image: 'new+york+city', days: 7, highlight: 'Central Park, Broadway, SoHo' },
+                { city: 'Phuket', country: 'Tailândia', emoji: '🇹🇭', image: 'phuket+thailand', days: 7, highlight: 'Phi Phi, Patong, Old Town' },
+                { city: 'Buenos Aires', country: 'Argentina', emoji: '🇦🇷', image: 'buenos+aires', days: 5, highlight: 'San Telmo, La Boca, Parrillas' },
+                { city: 'Dubai', country: 'Emirados', emoji: '🇦🇪', image: 'dubai+uae', days: 5, highlight: 'Burj Khalifa, Deserto, Souks' },
+              ].map((dest, i) => (
+                <button
+                  key={i}
+                  onClick={() => navigate('/planejar')}
+                  className="flex-shrink-0 w-48 bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-colors"
+                  style={{ scrollSnapAlign: 'start' }}
+                >
+                  <div className="relative h-28 overflow-hidden">
+                    <img
+                      src={`https://source.unsplash.com/400x300/?${dest.image}`}
+                      alt={dest.city}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <div className="absolute bottom-2 left-2">
+                      <p className="text-white font-semibold text-sm font-['Outfit']">{dest.emoji} {dest.city}</p>
+                    </div>
+                  </div>
+                  <div className="p-2">
+                    <p className="text-[10px] text-muted-foreground">{dest.days} dias · {dest.country}</p>
+                    <p className="text-[10px] text-foreground/70 line-clamp-1 mt-0.5">{dest.highlight}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground/60 mt-2 text-center">
+              Toque em um destino para planejar seu roteiro
+            </p>
+          </section>
+        )}
+
+        {/* Favoritos da Comunidade — category cards */}
+        {!searchQuery && selectedCategory === 'all' && (
+          <section className="px-4">
+            <h2 className="font-semibold text-lg text-foreground font-['Outfit'] flex items-center gap-2 mb-3">
+              ⭐ Favoritos da Comunidade
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { icon: '🍽️', label: 'Gastronomia', count: 47, example: 'Restaurantes avaliados' },
+                { icon: '🏛️', label: 'Cultura', count: 32, example: 'Museus e monumentos' },
+                { icon: '🏖️', label: 'Praias', count: 28, example: 'Praias paradisíacas' },
+                { icon: '🏔️', label: 'Aventura', count: 19, example: 'Trilhas e experiências' },
+              ].map((cat, i) => (
+                <div key={i} className="bg-card border border-border rounded-xl p-3 text-center">
+                  <span className="text-2xl">{cat.icon}</span>
+                  <p className="text-sm font-semibold text-foreground mt-1 font-['Outfit']">{cat.label}</p>
+                  <p className="text-[10px] text-muted-foreground">{cat.count} {cat.example}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 size={32} className="animate-spin text-primary" />
@@ -418,7 +490,7 @@ const Cla = () => {
           <>
             {/* Top Picks Carousel — only show when no search/category filter */}
             {!searchQuery && selectedCategory === 'all' && topPicks.length > 0 && (
-              <section className="pt-6">
+              <section className="pt-2">
                 <TopPicksCarousel
                   title="🔥 Top Picks da Comunidade"
                   emoji=""
@@ -497,7 +569,7 @@ const Cla = () => {
                       </motion.div>
                     ))}
                   </motion.div>
-                ) : selectedCategory !== 'itinerary' && (
+                ) : selectedCategory !== 'itinerary' && !searchQuery && selectedCategory === 'all' ? null : (
                   <div className="text-center py-12">
                     <p className="text-muted-foreground mb-2">Nenhuma atividade encontrada</p>
                     <p className="text-sm text-muted-foreground/70">
@@ -507,31 +579,29 @@ const Cla = () => {
                 )}
               </section>
             )}
-
-            {/* Empty state when both are empty */}
-            {filteredActivities.length === 0 && filteredItineraries.length === 0 && !isLoading && (
-              <div className="text-center py-12 px-4">
-                <div className="text-5xl mb-4">👥</div>
-                <h3 className="font-semibold text-lg text-foreground font-['Outfit'] mb-2">
-                  Comunidade KINU
-                </h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Em breve: roteiros avaliados pela comunidade, dicas reais de viajantes e recomendações exclusivas.
-                </p>
-                <p className="text-xs text-primary">
-                  🚀 Seus roteiros serão os primeiros a aparecer aqui!
-                </p>
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="mt-4 text-primary hover:underline text-sm"
-                  >
-                    Limpar todos os filtros
-                  </button>
-                )}
-              </div>
-            )}
           </>
+        )}
+
+        {/* Community CTA */}
+        {!searchQuery && selectedCategory === 'all' && (
+          <section className="px-4 pb-6">
+            <div className="bg-gradient-to-br from-primary/10 via-emerald-500/5 to-transparent border border-primary/20 rounded-2xl p-6 text-center">
+              <span className="text-4xl">🌿</span>
+              <h3 className="font-semibold text-lg text-foreground font-['Outfit'] mt-3">
+                A sabedoria cresce com você
+              </h3>
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-sm mx-auto">
+                Cada viagem planejada no KINU enriquece o Clã. 
+                Confirme atividades, avalie restaurantes e ajude outros viajantes.
+              </p>
+              <button
+                onClick={() => navigate('/planejar')}
+                className="mt-4 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors"
+              >
+                🧭 Planejar Minha Viagem
+              </button>
+            </div>
+          </section>
         )}
       </main>
 
