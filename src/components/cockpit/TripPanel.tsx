@@ -312,7 +312,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   };
 
   // Find first non-completed action index
-  const firstActiveIdx = allActions.findIndex(a => !a.completed);
+  const firstActiveIdx = filteredActions.findIndex(a => !a.completed);
 
   return (
     <motion.div
