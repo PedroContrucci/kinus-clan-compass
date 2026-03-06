@@ -552,7 +552,7 @@ function generateDays(
       // If arrival is very late (check-in after 22:00), override everything to just room service
       if (checkInHotelH >= 22) {
         activities.push(
-          makeActivity(`act-${dayNum}-4`, fmtTime(Math.min(23, checkInHotelH + 1)), 'Room service — chegada tardia', 'Refeição leve e descanso após chegada noturna', '1h', 'comida', city, 'breakfast', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-4`, fmtTime(Math.min(23, checkInHotelH + 1)), 'Room service — chegada tardia', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier, true),
         );
         days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
       } else if (jetLagSeverity === 'SEVERO') {
