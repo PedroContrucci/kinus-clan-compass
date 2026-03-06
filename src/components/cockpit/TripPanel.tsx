@@ -391,6 +391,31 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
     }
   };
 
+  const searchRealFlights = async () => {
+    if (!trip.flights?.outbound) return;
+    setSearchingFlights(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('amadeus-flights', {
+        body: {
+          action: 'search',
+          origin: trip.flights.outbound.origin || 'GRU',
+          destination: trip.flights.outbound.destination || trip.destination,
+          date: trip.startDate?.split('T')[0],
+          adults: trip.travelers || 1,
+        },
+      });
+      if (data?.data && Array.isArray(data.data)) {
+        setFlightResults(data.data.slice(0, 3));
+      } else if (data?.offers) {
+        setFlightResults(data.offers.slice(0, 3));
+      }
+    } catch (err) {
+      console.error('Amadeus search failed:', err);
+    } finally {
+      setSearchingFlights(false);
+    }
+  };
+
   // Find first non-completed action index
   const firstActiveIdx = filteredActions.findIndex(a => !a.completed);
 
