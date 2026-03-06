@@ -11,6 +11,83 @@ import { exportTripPDF } from '@/lib/tripPdfExport';
 import { getIcarusRoteiroInsight, getIcarusHeroFlight, getIcarusHeroHotel, getHermesHotelInsight } from '@/lib/agentMessages';
 import type { SavedTrip } from '@/types/trip';
 import { useState } from 'react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+const TIER_DESCRIPTIONS: Record<string, string> = {
+  backpacker: 'Hostels, street food, tours gratuitos',
+  economic: 'Hotels 3★, restaurantes locais, tours em grupo',
+  comfort: 'Hotels 4★, restaurantes recomendados, tours privados',
+  luxury: 'Hotels 5★, restaurantes Michelin, tours VIP',
+};
+
+function CurationSources({ trip }: { trip: SavedTrip }) {
+  const [open, setOpen] = useState(false);
+  const interests = trip.travelInterests || [];
+  const tierLabel = TIER_LABELS[trip.budgetType || 'comfort'] || 'Conforto';
+  const tierDesc = TIER_DESCRIPTIONS[trip.budgetType || 'comfort'] || '';
+  const hasGastronomy = interests.includes('gastronomy');
+  const jetLagHours = trip.timezone?.diff ? Math.abs(trip.timezone.diff) : 0;
+
+  const interestLabels: Record<string, string> = {
+    gastronomy: 'Gastronomia', culture: 'Cultura', history: 'História',
+    art: 'Arte', adventure: 'Aventura', nature: 'Natureza',
+    beach: 'Praia', relaxation: 'Relaxamento', shopping: 'Compras',
+    nightlife: 'Vida Noturna', family: 'Família', winter: 'Inverno',
+  };
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <span>📚 Fontes da curadoria</span>
+        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-2 bg-card border border-border rounded-xl p-4 space-y-2.5">
+        {interests.length > 0 && (
+          <div className="flex items-start gap-2">
+            <div className="w-0.5 self-stretch rounded-full bg-emerald-500 shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              <span className="text-emerald-400 font-medium">Interesses:</span> {interests.map(i => interestLabels[i] || i).join(', ')}
+            </p>
+          </div>
+        )}
+        <div className="flex items-start gap-2">
+          <div className="w-0.5 self-stretch rounded-full bg-sky-500 shrink-0" />
+          <p className="text-xs text-muted-foreground">
+            <span className="text-sky-400 font-medium">Base curada KINU:</span> Conde Nast Traveler, Lonely Planet, guias especializados
+          </p>
+        </div>
+        {hasGastronomy && (
+          <div className="flex items-start gap-2">
+            <div className="w-0.5 self-stretch rounded-full bg-amber-500 shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              <span className="text-amber-400 font-medium">Guia Michelin:</span> restaurantes estrelados para {trip.destination}
+            </p>
+          </div>
+        )}
+        {trip.jetLagMode && jetLagHours > 0 && (
+          <div className="flex items-start gap-2">
+            <div className="w-0.5 self-stretch rounded-full bg-purple-500 shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              <span className="text-purple-400 font-medium">Biology AI:</span> fuso de {jetLagHours}h adaptado
+            </p>
+          </div>
+        )}
+        <div className="flex items-start gap-2">
+          <div className="w-0.5 self-stretch rounded-full bg-violet-500 shrink-0" />
+          <p className="text-xs text-muted-foreground">
+            <span className="text-violet-400 font-medium">Hotel Intelligence:</span> bairro por interesses e orçamento
+          </p>
+        </div>
+        <div className="flex items-start gap-2">
+          <div className="w-0.5 self-stretch rounded-full bg-green-500 shrink-0" />
+          <p className="text-xs text-muted-foreground">
+            <span className="text-green-400 font-medium">Perfil {tierLabel}:</span> {tierDesc}
+          </p>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 
 interface TripPanelProps {
   trip: SavedTrip;
@@ -596,6 +673,9 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         <FileText size={16} />
         {pdfLoading ? 'Gerando PDF...' : 'Exportar PDF Premium'}
       </button>
+
+      {/* 5. Curation Sources (collapsible) */}
+      <CurationSources trip={trip} />
 
       {/* Confirm Modal */}
       <Dialog open={confirmModal?.isOpen || false} onOpenChange={() => setConfirmModal(null)}>
