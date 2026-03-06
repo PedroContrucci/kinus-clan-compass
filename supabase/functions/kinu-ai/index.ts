@@ -176,6 +176,36 @@ serve(async (req) => {
         }
       }
       
+      // Enriched context fields
+      const daysUntil = sanitizeNumber(ctx.daysUntilTrip, 0, 999);
+      if (daysUntil !== null) parts.push(`Faltam ${daysUntil} dias para a viagem`);
+
+      const hotel = sanitizeText(ctx.hotelName, 200);
+      if (hotel) parts.push(`Hotel: ${hotel}`);
+
+      const neighborhood = sanitizeText(ctx.hotelNeighborhood, 100);
+      if (neighborhood) parts.push(`Bairro: ${neighborhood}`);
+
+      const jetLag = sanitizeText(ctx.jetLagSeverity, 20);
+      if (jetLag) parts.push(`Jet lag: ${jetLag}`);
+
+      const checklistProg = sanitizeNumber(ctx.checklistProgress, 0, 100);
+      if (checklistProg !== null) parts.push(`Checklist: ${checklistProg}% concluído`);
+
+      if (ctx.flightConfirmed === true) parts.push('Voo: CONFIRMADO');
+      else if (ctx.flightConfirmed === false) parts.push('Voo: PENDENTE');
+
+      if (ctx.hotelConfirmed === true) parts.push('Hotel: CONFIRMADO');
+      else if (ctx.hotelConfirmed === false) parts.push('Hotel: PENDENTE');
+
+      if (Array.isArray(ctx.interests)) {
+        const interests = ctx.interests.slice(0, 5).filter((i): i is string => typeof i === 'string').map(i => sanitizeText(i, 50));
+        if (interests.length > 0) parts.push(`Interesses: ${interests.join(', ')}`);
+      }
+
+      const flightDur = sanitizeText(ctx.flightDuration, 20);
+      if (flightDur) parts.push(`Duração do voo: ${flightDur}`);
+
       if (parts.length > 0) {
         contextStr = `<trip_context>\n${parts.join("\n")}\n</trip_context>\n\n`;
       }

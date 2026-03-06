@@ -16,6 +16,17 @@ export interface KinuTripContext {
   travelStyle?: string;
   travelers?: number;
   activities?: string[];
+  daysUntilTrip?: number;
+  hotelName?: string;
+  hotelNeighborhood?: string;
+  jetLagSeverity?: string;
+  checklistProgress?: number;
+  confirmedActivities?: number;
+  totalActivities?: number;
+  flightConfirmed?: boolean;
+  hotelConfirmed?: boolean;
+  interests?: string[];
+  flightDuration?: string;
 }
 
 export interface KinuInsight {
