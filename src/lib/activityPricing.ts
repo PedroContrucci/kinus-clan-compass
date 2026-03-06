@@ -388,7 +388,7 @@ export function calculateTripEstimate(
   const hotel = hotelPerNight * nights;
   const dailyMeals = getActivityPrice('restaurant_lunch', city, priceLevel) + getActivityPrice('restaurant_dinner', city, priceLevel);
   const dailyTransport = getActivityPrice('transport_local', city, priceLevel);
-  const dailyActivities = getActivityPrice('museum', city, priceLevel) + getActivityPrice('tour', city, priceLevel);
+  const dailyActivities = getActivityPrice('museum', city, priceLevel); // avg of 1 paid activity/day
   const dailyPerPerson = dailyMeals + dailyTransport + dailyActivities;
   const dailyExpenses = dailyPerPerson * travelers * activeDays;
   const total = flights + hotel + dailyExpenses;
