@@ -18,19 +18,21 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Component to conditionally render KINU AI (not on login)
 function KinuAIWrapper() {
   const location = useLocation();
-  const isLoginPage = location.pathname === "/";
-  
-  if (isLoginPage) return null;
-  
+  if (location.pathname === "/") return null;
   return (
     <>
       <KinuAIButton />
       <KinuAIChat />
     </>
   );
+}
+
+function BetaFeedbackWrapper() {
+  const location = useLocation();
+  if (location.pathname === "/") return null;
+  return <FeedbackButton />;
 }
 
 const App = () => (
