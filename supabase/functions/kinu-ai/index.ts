@@ -60,6 +60,17 @@ interface RequestBody {
     travelStyle?: string;
     travelers?: number;
     activities?: string[];
+    daysUntilTrip?: number;
+    hotelName?: string;
+    hotelNeighborhood?: string;
+    jetLagSeverity?: string;
+    checklistProgress?: number;
+    confirmedActivities?: number;
+    totalActivities?: number;
+    flightConfirmed?: boolean;
+    hotelConfirmed?: boolean;
+    interests?: string[];
+    flightDuration?: string;
   };
   history?: ChatMessage[];
   isEmergency?: boolean;
