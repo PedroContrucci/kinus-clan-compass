@@ -1102,8 +1102,8 @@ const Viagens = () => {
                   const categories = [
                     { id: null as string | null, label: '📅 Por Dia', count: null as number | null, confirmed: 0 },
                     { id: 'comida', label: '🍽️ Alimentação',
-                      count: allActivities.filter(a => a.category === 'comida').length,
-                      confirmed: allActivities.filter(a => a.category === 'comida' && a.status === 'confirmed').length },
+                      count: allActivities.filter(a => a.category === 'comida' && !a.name?.toLowerCase().includes('café da manhã') && !a.name?.toLowerCase().includes('room service')).length,
+                      confirmed: allActivities.filter(a => a.category === 'comida' && !a.name?.toLowerCase().includes('café da manhã') && !a.name?.toLowerCase().includes('room service') && a.status === 'confirmed').length },
                     { id: 'passeio', label: '🏛️ Passeios',
                       count: allActivities.filter(a => a.category === 'passeio').length,
                       confirmed: allActivities.filter(a => a.category === 'passeio' && a.status === 'confirmed').length },
