@@ -510,6 +510,60 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         </div>
       </div>
 
+      {/* 1.75 — Activity Summary by Category */}
+      {(() => {
+        const CATEGORY_STYLES: Record<string, { bg: string; border: string; bar: string; hover: string }> = {
+          passeio: { bg: 'bg-sky-500/5', border: 'border-sky-500/20', bar: 'bg-sky-500', hover: 'hover:bg-sky-500/10' },
+          comida: { bg: 'bg-amber-500/5', border: 'border-amber-500/20', bar: 'bg-amber-500', hover: 'hover:bg-amber-500/10' },
+          transporte: { bg: 'bg-violet-500/5', border: 'border-violet-500/20', bar: 'bg-violet-500', hover: 'hover:bg-violet-500/10' },
+          hotel: { bg: 'bg-emerald-500/5', border: 'border-emerald-500/20', bar: 'bg-emerald-500', hover: 'hover:bg-emerald-500/10' },
+        };
+        const CATEGORY_META: Record<string, { icon: string; label: string }> = {
+          passeio: { icon: '🏛️', label: 'Passeios' },
+          comida: { icon: '🍽️', label: 'Refeições' },
+          transporte: { icon: '🚕', label: 'Transporte' },
+          hotel: { icon: '🏨', label: 'Hospedagem' },
+        };
+        const allActivities = trip.days?.flatMap(d => d.activities) || [];
+        const cats = ['passeio', 'comida', 'transporte', 'hotel'] as const;
+
+        return (
+          <div className="space-y-2">
+            <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1">
+              Atividades por Categoria
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              {cats.map(cat => {
+                const items = allActivities.filter(a => a.category === cat);
+                const confirmed = items.filter(a => a.status === 'confirmed').length;
+                const total = items.length;
+                const totalCost = items.reduce((s, a) => s + (a.cost || 0), 0);
+                const pct = total > 0 ? Math.round((confirmed / total) * 100) : 0;
+                const style = CATEGORY_STYLES[cat];
+                const meta = CATEGORY_META[cat];
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => onNavigateTab('roteiro')}
+                    className={`rounded-xl border p-3 text-left transition-colors ${style.bg} ${style.border} ${style.hover}`}
+                  >
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className="text-base">{meta.icon}</span>
+                      <span className="text-[11px] font-semibold text-foreground font-['Outfit']">{meta.label}</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">{confirmed}/{total} confirmadas</p>
+                    <p className="text-xs font-bold text-foreground font-['Outfit'] mt-0.5">R$ {fmt(totalCost)}</p>
+                    <div className="w-full h-1 bg-muted rounded-full mt-2 overflow-hidden">
+                      <div className={`h-full rounded-full ${style.bar} transition-all`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* 2. Próximos Passos — Agentes orquestrando (prioritized, max 3 visible) */}
       <div className="space-y-2">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
