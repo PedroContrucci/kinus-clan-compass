@@ -985,6 +985,81 @@ const Viagens = () => {
                   </div>
                 );
               })()}
+              {/* Curadoria do Roteiro Card */}
+              {(selectedTrip as any).travelInterests && (selectedTrip as any).travelInterests.length > 0 && (
+                <div className="mb-4 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-accent/5 overflow-hidden">
+                  <div className="p-4 pb-2">
+                    <h3 className="text-sm font-bold text-foreground font-['Outfit']">🎯 Roteiro curado para você</h3>
+                  </div>
+                  <div className="px-4 pb-3 space-y-2">
+                    {((selectedTrip as any).travelInterests as string[]).map(interest => {
+                      const keywordMap: Record<string, string[]> = {
+                        'gastronomy': ['restaurante', 'jantar', 'almoço', 'café', 'market', 'culinária', 'gastronomia', 'michelin', 'food'],
+                        'culture': ['museu', 'museum', 'catedral', 'igreja', 'templo', 'palace', 'castelo', 'história', 'cultural'],
+                        'art': ['museu', 'museum', 'galeria', 'gallery', 'arte', 'art', 'orsay', 'louvre', 'uffizi'],
+                        'history': ['museu', 'museum', 'ruínas', 'fort', 'castelo', 'palace', 'histórico', 'antiga', 'romano'],
+                        'adventure': ['trekking', 'snorkeling', 'kayak', 'surf', 'mountain', 'canoa', 'mergulho', 'hiking'],
+                        'beach': ['beach', 'praia', 'island', 'ilha', 'bay', 'baía', 'costa', 'snorkeling'],
+                        'nature': ['parque', 'garden', 'jardim', 'mountain', 'floresta', 'cachoeira', 'natureza', 'trilha'],
+                        'nightlife': ['bar', 'rooftop', 'club', 'noturno', 'night', 'jazz', 'música'],
+                        'shopping': ['shopping', 'mercado', 'market', 'bazar', 'loja', 'compras', 'souk'],
+                        'relaxation': ['spa', 'praia', 'beach', 'termas', 'relax', 'piscina', 'jardim'],
+                        'family': ['parque', 'zoo', 'aquário', 'museu', 'praia', 'beach'],
+                        'winter': ['ski', 'neve', 'snow', 'mountain', 'termas', 'chocolate'],
+                      };
+                      const interestMeta = TRAVEL_INTERESTS.find(i => i.id === interest);
+                      const keywords = keywordMap[interest] || [];
+                      const matches = (selectedTrip.days || []).flatMap(day =>
+                        day.activities.filter(act => {
+                          const name = (act.name || '').toLowerCase();
+                          return keywords.some(kw => name.includes(kw)) &&
+                            act.category !== 'voo' && act.category !== 'transporte' && act.category !== 'hotel';
+                        })
+                      ).slice(0, 4);
+                      if (matches.length === 0) return null;
+                      return (
+                        <div key={interest} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-muted/50">
+                          <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0 border border-emerald-500/20">
+                            <span className="text-sm">{interestMeta?.icon}</span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-foreground">{interestMeta?.icon} {interestMeta?.label}</p>
+                            <p className="text-[11px] text-muted-foreground leading-tight mt-0.5 truncate">
+                              {matches.map(m => m.name.replace(/^(Jantar|Almoço|Café):\s*/i, '')).join(' · ')}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Biology AI */}
+                    {(selectedTrip as any).jetLagMode && (
+                      <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-muted/50">
+                        <div className="w-7 h-7 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0 border border-purple-500/20">
+                          <span className="text-sm">🧠</span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-foreground">🧠 Biology AI</p>
+                          <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                            Ritmo adaptado ao fuso ({(selectedTrip as any).jetLagSeverity || 'MODERADO'})
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Stats */}
+                    <p className="text-[11px] text-muted-foreground text-center pt-1 border-t border-border/50">
+                      {selectedTrip.days?.reduce((s, d) => s + d.activities.filter(a =>
+                        a.category !== 'voo' && a.category !== 'transporte' && a.category !== 'hotel'
+                      ).length, 0) || 0} atividades curadas · {
+                        selectedTrip.days?.reduce((s, d) => s + d.activities.filter(a =>
+                          a.category === 'comida'
+                        ).length, 0) || 0} restaurantes selecionados
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <TripPanel
               trip={selectedTrip}
               onConfirm={handleHeroConfirm}
