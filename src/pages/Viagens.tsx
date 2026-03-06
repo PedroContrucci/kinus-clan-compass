@@ -1084,6 +1084,123 @@ const Viagens = () => {
             <div className="animate-fade-in">
               <AgentTip agent="icarus" variant="compact" message={getIcarusRoteiro(selectedTrip, selectedDay)} />
 
+              {/* Category Quick Filters */}
+              <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide">
+                {(() => {
+                  const allActivities = (selectedTrip.days || []).flatMap(d => d.activities);
+                  const categories = [
+                    { id: null as string | null, label: '📅 Por Dia', count: null as number | null, confirmed: 0 },
+                    { id: 'comida', label: '🍽️ Alimentação',
+                      count: allActivities.filter(a => a.category === 'comida').length,
+                      confirmed: allActivities.filter(a => a.category === 'comida' && a.status === 'confirmed').length },
+                    { id: 'passeio', label: '🏛️ Passeios',
+                      count: allActivities.filter(a => a.category === 'passeio').length,
+                      confirmed: allActivities.filter(a => a.category === 'passeio' && a.status === 'confirmed').length },
+                    { id: 'logistics', label: '✈️ Logística',
+                      count: allActivities.filter(a => ['voo', 'transporte', 'hotel'].includes(a.category)).length,
+                      confirmed: allActivities.filter(a => ['voo', 'transporte', 'hotel'].includes(a.category) && a.status === 'confirmed').length },
+                  ];
+                  return categories.map(cat => (
+                    <button
+                      key={cat.id || 'all'}
+                      onClick={() => setRoteiroCategoryFilter(cat.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                        roteiroCategoryFilter === cat.id
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:text-foreground border border-border'
+                      }`}
+                    >
+                      {cat.label}
+                      {cat.count !== null && (
+                        <span className="text-[10px] opacity-70">
+                          {cat.confirmed}/{cat.count}
+                        </span>
+                      )}
+                    </button>
+                  ));
+                })()}
+              </div>
+
+              {roteiroCategoryFilter !== null ? (
+                /* FILTERED VIEW: All activities of this category across all days */
+                <div className="space-y-3">
+                  {(selectedTrip.days || []).flatMap((day, dayIdx) =>
+                    day.activities
+                      .filter(act => {
+                        if (roteiroCategoryFilter === 'comida') return act.category === 'comida';
+                        if (roteiroCategoryFilter === 'passeio') return act.category === 'passeio';
+                        if (roteiroCategoryFilter === 'logistics') return ['voo', 'transporte', 'hotel'].includes(act.category);
+                        return true;
+                      })
+                      .map((activity, actIdx) => {
+                        const realActIdx = day.activities.indexOf(activity);
+                        return (
+                          <div key={`${dayIdx}-${actIdx}`} className={`flex gap-3 p-3 rounded-xl border ${
+                            activity.status === 'confirmed'
+                              ? 'bg-emerald-500/10 border-emerald-500/30'
+                              : 'bg-card border-border'
+                          }`}>
+                            <div className="flex flex-col items-center gap-1 min-w-[50px]">
+                              <span className="text-[10px] text-muted-foreground font-bold">Dia {day.day}</span>
+                              <span className="text-lg">{getActivityIcon(activity.type)}</span>
+                              <span className="text-[10px] text-muted-foreground">{activity.time}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm text-foreground font-['Outfit'] truncate">{activity.name}</h4>
+                              {activity.description && (
+                                <p className="text-[10px] text-muted-foreground truncate">{activity.description}</p>
+                              )}
+                              <div className="flex items-center gap-3 mt-1">
+                                {activity.cost > 0 && (
+                                  <span className="text-xs text-muted-foreground">R$ {activity.cost.toLocaleString('pt-BR')}</span>
+                                )}
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                  activity.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                                }`}>
+                                  {activity.status === 'confirmed' ? '✅ Confirmado' : '⏳ Pendente'}
+                                </span>
+                              </div>
+                            </div>
+                            {activity.status !== 'confirmed' && activity.cost > 0 && (
+                              <button
+                                onClick={() => setConfirmModal({ isOpen: true, activity, dayIndex: dayIdx, actIndex: realActIdx })}
+                                className="self-center px-3 py-1.5 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-colors whitespace-nowrap"
+                              >
+                                Confirmar
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })
+                  )}
+
+                  {/* Category total */}
+                  {(() => {
+                    const filtered = (selectedTrip.days || []).flatMap(d => d.activities).filter(a => {
+                      if (roteiroCategoryFilter === 'comida') return a.category === 'comida';
+                      if (roteiroCategoryFilter === 'passeio') return a.category === 'passeio';
+                      if (roteiroCategoryFilter === 'logistics') return ['voo', 'transporte', 'hotel'].includes(a.category);
+                      return true;
+                    });
+                    const total = filtered.reduce((s, a) => s + (a.cost || 0), 0);
+                    const confirmed = filtered.filter(a => a.status === 'confirmed').reduce((s, a) => s + (a.paidAmount || a.cost || 0), 0);
+                    return (
+                      <div className="p-3 rounded-xl bg-card border border-border mt-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Total da categoria</span>
+                          <span className="font-bold text-foreground">R$ {total.toLocaleString('pt-BR')}</span>
+                        </div>
+                        <div className="flex justify-between text-xs mt-1">
+                          <span className="text-emerald-400">Confirmado: R$ {confirmed.toLocaleString('pt-BR')}</span>
+                          <span className="text-amber-400">Pendente: R$ {(total - confirmed).toLocaleString('pt-BR')}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : (
+                /* EXISTING DAY-BY-DAY VIEW */
+                <>
               {/* Day Timeline */}
               {selectedTrip.startDate && (
                 <EnhancedDayTimeline
@@ -1333,6 +1450,8 @@ const Viagens = () => {
                 </div>
                 );
               })()}
+                </>
+              )}
             </div>
           )}
 
