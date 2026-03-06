@@ -440,7 +440,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         </h3>
         {visibleActions.map((action, i) => {
           const agent = AGENTS[action.agent];
-          const globalIdx = allActions.indexOf(action);
+          const globalIdx = filteredActions.indexOf(action);
           const isFirstActive = globalIdx === firstActiveIdx;
 
           return (
