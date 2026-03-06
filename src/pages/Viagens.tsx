@@ -1172,7 +1172,7 @@ const Viagens = () => {
                                 </span>
                               </div>
                             </div>
-                            {activity.status !== 'confirmed' && activity.cost > 0 && (
+                            {activity.status !== 'confirmed' && (
                               <button
                                 onClick={() => setConfirmModal({ isOpen: true, activity, dayIndex: dayIdx, actIndex: realActIdx })}
                                 className="self-center px-3 py-1.5 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-colors whitespace-nowrap"
