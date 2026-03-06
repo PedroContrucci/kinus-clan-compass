@@ -1074,7 +1074,18 @@ const Viagens = () => {
                     : selectedTrip.accommodation?.totalPrice || 0,
                 });
               }}
-              onNavigateTab={(tab) => setActiveTab(tab as any)}
+              onNavigateTab={(tab, categoryFilter) => {
+                setActiveTab(tab as any);
+                if (categoryFilter) {
+                  const filterMap: Record<string, string> = {
+                    'passeio': 'passeio',
+                    'comida': 'comida',
+                    'transporte': 'logistics',
+                    'hotel': 'logistics',
+                  };
+                  setRoteiroCategoryFilter(filterMap[categoryFilter] || null);
+                }
+              }}
             />
             </div>
           )}
