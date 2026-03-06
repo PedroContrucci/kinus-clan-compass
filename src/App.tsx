@@ -39,7 +39,8 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <KinuAIWrapper />
-          <div className="mx-auto w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl min-h-screen bg-background">
+          <div className="min-h-screen bg-background">
+            <div className="lg:max-w-5xl xl:max-w-6xl lg:mx-auto">
             <Routes>
               <Route path="/" element={<Login />} />
               <Route path="/dashboard" element={<Dashboard />} />
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="/destino/:id" element={<DestinationDetail />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </div>
           </div>
         </BrowserRouter>
       </KinuAIProvider>
