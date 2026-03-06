@@ -575,7 +575,7 @@ function generateDays(
         const actStartH = checkInHotelH + 1;
         const dinnerH = Math.max(19, Math.min(22, actStartH + 2 + 1));
         activities.push(
-          makeActivity(`act-${dayNum}-4`, fmtTime(actStartH, 30), arrivalTheme.activities[0], '', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-4`, fmtTime(actStartH, 30), arrivalTheme.activities[0], '', '2h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier, true),
           makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), `Jantar: ${arrivalTheme.restaurants.dinner}`, '', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
         days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
