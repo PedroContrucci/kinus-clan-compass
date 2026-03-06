@@ -595,7 +595,7 @@ function generateDays(
         title: 'Retorno 🏠',
         icon: '🏠',
         activities: [
-          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', '', '1h', 'comida', city, 'breakfast', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier),
           { ...makeActivity(`act-${dayNum}-2`, '10:00', 'Check-out do hotel', 'Liberar quarto e organizar bagagem', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
           makeActivity(`act-${dayNum}-3`, '11:00', 'Transfer para aeroporto', 'Transporte ao aeroporto', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
           { ...makeActivity(`act-${dayNum}-4`, '14:00', 'Voo de volta', 'Retorno para o Brasil', `${flightHours}h`, 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
