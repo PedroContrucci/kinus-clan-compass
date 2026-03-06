@@ -391,6 +391,24 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
     }
   };
 
+  const handleShareTrip = async () => {
+    const days = trip.days || [];
+    const totalActs = days.reduce((s, d) => s + d.activities.length, 0);
+    const confirmed = days.reduce((s, d) => s + d.activities.filter(a => a.status === 'confirmed').length, 0);
+    const highlights = days
+      .flatMap(d => d.activities)
+      .filter(a => a.category === 'passeio' || (a.category === 'comida' && !a.name?.toLowerCase().includes('café da manhã')))
+      .slice(0, 5)
+      .map(a => a.name?.replace(/^(Jantar|Almoço):\s*/i, ''))
+      .join(', ');
+    const text = `✈️ Minha viagem para ${trip.destination}!\n📅 ${days.length} dias · ${totalActs} atividades\n🎯 ${confirmed} confirmadas · ${progressPct}% pronto\n📍 Destaques: ${highlights}\n\nPlanejado com KINU Travel OS 🧭`;
+    if (navigator.share) {
+      try { await navigator.share({ title: `Viagem: ${trip.destination}`, text }); } catch { /* cancelled */ }
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+  };
+
   const searchRealFlights = async () => {
     if (!trip.flights?.outbound) return;
     setSearchingFlights(true);

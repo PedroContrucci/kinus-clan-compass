@@ -359,7 +359,11 @@ const Cla = () => {
             </h2>
             <div className="space-y-3">
               {myTrips.map((trip, i) => (
-                <div key={i} className="bg-card border border-border rounded-xl p-3">
+                <button
+                  key={i}
+                  onClick={() => navigate('/viagens')}
+                  className="w-full bg-card border border-border rounded-xl p-3 text-left hover:border-primary/30 transition-colors"
+                >
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-2xl">{trip.emoji || '✈️'}</span>
                     <div className="flex-1 min-w-0">
@@ -368,7 +372,23 @@ const Cla = () => {
                         {trip.days?.length || 0} dias · {trip.days?.reduce((s: number, d: any) => s + (d.activities?.length || 0), 0) || 0} atividades
                       </p>
                     </div>
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">Meu roteiro</span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-[10px] px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">Meu roteiro</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const text = `✈️ Confira meu roteiro para ${trip.destination} — ${trip.days?.length || 0} dias de viagem!\nPlanejado com KINU Travel OS 🧭`;
+                          if (navigator.share) {
+                            navigator.share({ title: `Roteiro: ${trip.destination}`, text });
+                          } else {
+                            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                          }
+                        }}
+                        className="text-[10px] px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                      >
+                        📤 Compartilhar
+                      </button>
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {trip.days?.flatMap((d: any) => d.activities || [])
@@ -381,7 +401,10 @@ const Cla = () => {
                       ))
                     }
                   </div>
-                </div>
+                  <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border">
+                    <span className="text-[10px] text-primary font-medium">Ver roteiro completo →</span>
+                  </div>
+                </button>
               ))}
             </div>
           </section>

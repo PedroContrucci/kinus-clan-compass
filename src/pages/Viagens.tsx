@@ -1369,9 +1369,9 @@ const Viagens = () => {
                                 {activity.time}
                               </span>
                               {/* Preço estimado */}
-                              {activity.cost > 0 && activity.status !== 'confirmed' && (
-                                <span className="text-xs bg-[#334155] text-[#94a3b8] px-2 py-0.5 rounded-full font-medium">
-                                  ~R$ {activity.cost.toLocaleString('pt-BR')}
+                              {activity.cost > 0 && (
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${activity.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#334155] text-[#94a3b8]'}`}>
+                                  {activity.status === 'confirmed' ? '✓' : '~'}R$ {activity.cost.toLocaleString('pt-BR')}
                                 </span>
                               )}
                               {/* Preço pago */}
