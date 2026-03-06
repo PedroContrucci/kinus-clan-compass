@@ -254,9 +254,23 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const confirmedPct = trip.finances.total > 0 ? Math.round((trip.finances.confirmed / trip.finances.total) * 100) : 0;
   const plannedPct = trip.finances.total > 0 ? Math.min(100 - confirmedPct, Math.round((trip.finances.planned / trip.finances.total) * 100)) : 0;
 
+  const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
+  const hotelConfirmed = trip.accommodation?.status === 'confirmed';
+  const flightPrice = trip.flights?.outbound?.price || trip.finances.planned * 0.4 || 0;
+  const dest = trip.destination || 'o destino';
+
   const allActions = getOrchestratedActions(trip);
-  const visibleActions = showAllActions ? allActions : allActions.slice(0, 3);
-  const hiddenCount = allActions.length - 3;
+  // Filter out flight/hotel actions since they have dedicated hero cards
+  const filteredActions = allActions.filter(a => 
+    a.actionType !== 'open-auction-flight' && 
+    a.actionType !== 'open-auction-hotel' && 
+    a.actionType !== 'confirm-flight' && 
+    a.actionType !== 'confirm-hotel' &&
+    !(a.title === 'Voo Ida e Volta') &&
+    !(a.title === 'Hospedagem')
+  );
+  const visibleActions = showAllActions ? filteredActions : filteredActions.slice(0, 3);
+  const hiddenCount = filteredActions.length - 3;
 
   const dateRange = trip.startDate && trip.endDate
     ? `${format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} – ${format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })}`
