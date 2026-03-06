@@ -10,6 +10,7 @@ import { ptBR } from 'date-fns/locale';
 import { getActivityPrice, calculateTripEstimate } from '@/lib/activityPricing';
 import { getIdealHotelZone, getHotelRecommendation } from '@/lib/hotelZones';
 import { getDestinationThemes } from '@/data/destinationActivities';
+import { getTopMichelinForCity } from '@/lib/michelinData';
 import type { PriceLevel } from '@/lib/activityPricing';
 import { defaultChecklist, FLIGHT_DURATION, calculateArrivalTime, calculateJetLagImpact } from '@/types/trip';
 import type { SavedTrip, TripDay, TripActivity, ActivityStatus, TripFinances } from '@/types/trip';
