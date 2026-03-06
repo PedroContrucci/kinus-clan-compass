@@ -1401,7 +1401,7 @@ const Viagens = () => {
                             
 
                             {/* Actions — max 2 buttons: Confirmar + Ver Ofertas */}
-                            {activity.status !== 'confirmed' && activity.status !== 'cancelled' && activity.cost > 0 && (
+                            {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (
                               <div className="flex gap-2 mt-3 flex-wrap">
                                 <button
                                   onClick={() => setConfirmModal({ isOpen: true, activity, dayIndex, actIndex })}
