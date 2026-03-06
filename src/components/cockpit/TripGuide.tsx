@@ -10,6 +10,7 @@ import { getTopMichelinForCity, getMichelinStarDisplay, getMichelinCountForCity 
 import { supabase } from '@/integrations/supabase/client';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import { PlaceInfoCard } from './PlaceInfoCard';
 
 interface CountryInfo {
   id: string;

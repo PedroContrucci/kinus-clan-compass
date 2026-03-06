@@ -1188,6 +1188,8 @@ const Viagens = () => {
                                   {activity.status === 'confirmed' ? '✅ Confirmado' : '⏳ Pendente'}
                                 </span>
                               </div>
+                              {/* Google Places Info */}
+                              <PlaceInfoCard activityName={activity.name} destination={selectedTrip.destination} />
                             </div>
                             {activity.status !== 'confirmed' && (
                               <button
