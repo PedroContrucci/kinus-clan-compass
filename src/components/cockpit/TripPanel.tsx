@@ -498,12 +498,21 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             {trip.flights?.outbound?.duration || '—'} · {trip.flights?.outbound?.stops === 0 ? 'Direto' : `${trip.flights?.outbound?.stops || 1} parada`}
           </p>
           {!flightConfirmed && (
-            <button 
-              onClick={() => onOpenAuction('flight')}
-              className="mt-3 w-full text-xs font-semibold py-2 rounded-lg bg-sky-500 text-white hover:bg-sky-600 transition-colors"
-            >
-              🎯 Buscar Ofertas
-            </button>
+            <>
+              <button 
+                onClick={() => onOpenAuction('flight')}
+                className="mt-3 w-full text-xs font-semibold py-2 rounded-lg bg-sky-500 text-white hover:bg-sky-600 transition-colors"
+              >
+                🎯 Buscar Ofertas
+              </button>
+              <button
+                onClick={searchRealFlights}
+                disabled={searchingFlights}
+                className="mt-1.5 w-full text-[10px] font-medium py-1.5 rounded-lg border border-sky-500/30 text-sky-400 hover:bg-sky-500/10 transition-colors disabled:opacity-50"
+              >
+                {searchingFlights ? '✈️ Buscando...' : '✈️ Voos Reais (Amadeus)'}
+              </button>
+            </>
           )}
         </div>
         {/* Hotel Card */}
