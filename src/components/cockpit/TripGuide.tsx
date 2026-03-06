@@ -10,6 +10,7 @@ import { getTopMichelinForCity, getMichelinStarDisplay, getMichelinCountForCity 
 import { supabase } from '@/integrations/supabase/client';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import { PlaceInfoCard } from './PlaceInfoCard';
 
 interface CountryInfo {
   id: string;
@@ -156,17 +157,24 @@ export const TripGuide = ({ destinationCity, countryId }: TripGuideProps) => {
       content: (
         <div className="space-y-3">
           {topMichelin.map((restaurant, index) => (
-            <div key={index} className="flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground text-sm truncate">{restaurant.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {restaurant.cuisine} · {restaurant.priceRange}
-                  {restaurant.neighborhood && ` · ${restaurant.neighborhood}`}
-                </p>
+            <div key={index}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground text-sm truncate">{restaurant.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {restaurant.cuisine} · {restaurant.priceRange}
+                    {restaurant.neighborhood && ` · ${restaurant.neighborhood}`}
+                  </p>
+                </div>
+                <span className="text-sm flex-shrink-0">
+                  {getMichelinStarDisplay(restaurant.stars)}
+                </span>
               </div>
-              <span className="text-sm flex-shrink-0">
-                {getMichelinStarDisplay(restaurant.stars)}
-              </span>
+              <PlaceInfoCard 
+                activityName={restaurant.name} 
+                destination={destinationCity} 
+                compact={false} 
+              />
             </div>
           ))}
         </div>

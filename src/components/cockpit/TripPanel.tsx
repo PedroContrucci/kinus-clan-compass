@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { exportTripPDF } from '@/lib/tripPdfExport';
 import { getIcarusRoteiroInsight, getIcarusHeroFlight, getIcarusHeroHotel, getHermesHotelInsight } from '@/lib/agentMessages';
 import type { SavedTrip } from '@/types/trip';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -317,6 +317,16 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const [pdfLoading, setPdfLoading] = useState(false);
   const [flightResults, setFlightResults] = useState<any[] | null>(null);
   const [searchingFlights, setSearchingFlights] = useState(false);
+  const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
+
+  // Fetch maps embed URL
+  useEffect(() => {
+    supabase.functions.invoke('maps-embed', { 
+      body: { query: trip.destination, zoom: 12 } 
+    }).then(({ data }) => {
+      if (data?.embedUrl) setMapEmbedUrl(data.embedUrl);
+    }).catch(() => {});
+  }, [trip.destination]);
 
   const destCurrency = (trip as any).destinationCurrency || getTripCurrency(trip.destination);
   const { rates, loading: ratesLoading, updatedAgo } = useExchangeRates(destCurrency);
@@ -597,6 +607,22 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             </div>
           ))}
           <p className="text-[9px] text-muted-foreground text-center">Preços via Amadeus (referência)</p>
+        </div>
+      )}
+
+      {/* Destination Map Embed */}
+      {mapEmbedUrl && (
+        <div className="rounded-xl overflow-hidden border border-border">
+          <iframe
+            src={mapEmbedUrl}
+            width="100%"
+            height="200"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title={`Mapa de ${trip.destination}`}
+          />
         </div>
       )}
 

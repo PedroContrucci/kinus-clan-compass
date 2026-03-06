@@ -28,6 +28,7 @@ import { TRAVEL_INTERESTS } from '@/components/wizard/types';
 
 import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
+import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 
 
 const DESTINATION_CURRENCY: Record<string, string> = {
@@ -1187,6 +1188,8 @@ const Viagens = () => {
                                   {activity.status === 'confirmed' ? '✅ Confirmado' : '⏳ Pendente'}
                                 </span>
                               </div>
+                              {/* Google Places Info */}
+                              <PlaceInfoCard activityName={activity.name} destination={selectedTrip.destination} />
                             </div>
                             {activity.status !== 'confirmed' && (
                               <button
@@ -1415,6 +1418,8 @@ const Viagens = () => {
                             })()}
                             <p className="text-sm text-[#94a3b8]">{activity.description}</p>
                             
+                            {/* Google Places Info */}
+                            <PlaceInfoCard activityName={activity.name} destination={selectedTrip.destination} />
 
                             {/* Actions — max 2 buttons: Confirmar + Ver Ofertas */}
                             {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (
