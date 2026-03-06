@@ -547,6 +547,25 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         </div>
       </div>
 
+      {/* Flight Results from Amadeus */}
+      {flightResults && flightResults.length > 0 && (
+        <div className="bg-sky-500/5 border border-sky-500/20 rounded-xl p-3 space-y-2">
+          <p className="text-xs font-semibold text-sky-400 font-['Outfit']">✈️ Voos encontrados:</p>
+          {flightResults.map((flight: any, i: number) => (
+            <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/30 last:border-0">
+              <div>
+                <p className="text-xs font-medium text-foreground">{flight.airline || 'Companhia'}</p>
+                <p className="text-[10px] text-muted-foreground">{flight.duration || ''} · {flight.isDirect ? 'Direto' : `${flight.connectionCities?.length || 1} parada`}</p>
+              </div>
+              <span className="text-sm font-bold text-sky-400 font-['Outfit']">
+                R$ {(flight.price || 0).toLocaleString('pt-BR')}
+              </span>
+            </div>
+          ))}
+          <p className="text-[9px] text-muted-foreground text-center">Preços via Amadeus (referência)</p>
+        </div>
+      )}
+
       {/* 1.75 — Activity Summary by Category */}
       {(() => {
         const CATEGORY_STYLES: Record<string, { bg: string; border: string; bar: string; hover: string }> = {

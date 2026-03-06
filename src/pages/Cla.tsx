@@ -351,6 +351,42 @@ const Cla = () => {
 
       {/* Main Content */}
       <main className="space-y-6">
+        {/* My Shared Itineraries */}
+        {myTrips.length > 0 && (
+          <section className="px-4 pt-4">
+            <h2 className="font-semibold text-lg text-foreground font-['Outfit'] flex items-center gap-2 mb-3">
+              📋 Meus Roteiros
+            </h2>
+            <div className="space-y-3">
+              {myTrips.map((trip, i) => (
+                <div key={i} className="bg-card border border-border rounded-xl p-3">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-2xl">{trip.emoji || '✈️'}</span>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm text-foreground font-['Outfit'] truncate">{trip.destination}</h3>
+                      <p className="text-[10px] text-muted-foreground">
+                        {trip.days?.length || 0} dias · {trip.days?.reduce((s: number, d: any) => s + (d.activities?.length || 0), 0) || 0} atividades
+                      </p>
+                    </div>
+                    <span className="text-[10px] px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">Meu roteiro</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {trip.days?.flatMap((d: any) => d.activities || [])
+                      .filter((a: any) => a.category === 'passeio' || a.category === 'comida')
+                      .slice(0, 4)
+                      .map((a: any, j: number) => (
+                        <span key={j} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                          {a.name?.replace(/^(Jantar|Almoço|Café):\s*/i, '').substring(0, 25)}
+                        </span>
+                      ))
+                    }
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 size={32} className="animate-spin text-primary" />
