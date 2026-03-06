@@ -70,10 +70,12 @@ const Cla = () => {
   
   // Active trip from localStorage
   const [activeTrip, setActiveTrip] = useState<any>(null);
+  const [myTrips, setMyTrips] = useState<any[]>([]);
 
   useEffect(() => {
     try {
       const trips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+      setMyTrips(trips.filter((t: any) => t.days && t.days.length > 0));
       const upcoming = trips.filter((t: any) => t.status === 'active' && t.startDate && new Date(t.startDate) > new Date());
       if (upcoming.length > 0) setActiveTrip(upcoming[0]);
       else if (trips.length > 0) setActiveTrip(trips[trips.length - 1]);
