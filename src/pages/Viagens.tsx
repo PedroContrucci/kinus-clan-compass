@@ -1188,7 +1188,7 @@ const Viagens = () => {
                   {/* Category total */}
                   {(() => {
                     const filtered = (selectedTrip.days || []).flatMap(d => d.activities).filter(a => {
-                      if (roteiroCategoryFilter === 'comida') return a.category === 'comida';
+                    if (roteiroCategoryFilter === 'comida') return a.category === 'comida' && !a.name?.toLowerCase().includes('café da manhã') && !a.name?.toLowerCase().includes('room service');
                       if (roteiroCategoryFilter === 'passeio') return a.category === 'passeio';
                       if (roteiroCategoryFilter === 'logistics') return ['voo', 'transporte', 'hotel'].includes(a.category);
                       return true;
