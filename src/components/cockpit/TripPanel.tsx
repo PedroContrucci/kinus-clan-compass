@@ -545,12 +545,20 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             {trip.accommodation?.totalNights || '—'} noites · {trip.accommodation?.stars || 3}★
           </p>
           {!hotelConfirmed && (
-            <button 
-              onClick={() => onOpenAuction('hotel')}
-              className="mt-3 w-full text-xs font-semibold py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
-            >
-              🎯 Buscar Hotel
-            </button>
+            <div className="mt-3 grid grid-cols-2 gap-1.5">
+              <button 
+                onClick={() => setConfirmModal({ type: 'hotel', isOpen: true })}
+                className="text-xs font-semibold py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+              >
+                ✅ Confirmar
+              </button>
+              <button 
+                onClick={() => onOpenAuction('hotel')}
+                className="text-xs font-semibold py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+              >
+                🎯 Buscar Hotel
+              </button>
+            </div>
           )}
         </div>
       </div>
