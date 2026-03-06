@@ -100,6 +100,7 @@ const Viagens = () => {
   const [activeTab, setActiveTab] = useState<'painel' | 'roteiro' | 'financeiro' | 'preparacao'>('painel');
   const [selectedDay, setSelectedDay] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [roteiroCategoryFilter, setRoteiroCategoryFilter] = useState<string | null>(null);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
   const [recentlyConfirmed, setRecentlyConfirmed] = useState<string | null>(null);
   const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; activityName: string; activityType: string; estimatedPrice?: number } | null>(null);
