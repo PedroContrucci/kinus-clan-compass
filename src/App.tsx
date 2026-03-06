@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { KinuAIProvider } from "@/contexts/KinuAIContext";
 import { KinuAIButton, KinuAIChat } from "@/components/ai";
 import { TopNav } from "@/components/shared/TopNav";
+import { FeedbackButton } from "@/components/shared/FeedbackButton";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Cla from "./pages/Cla";
