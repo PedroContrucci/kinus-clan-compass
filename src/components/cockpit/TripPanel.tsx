@@ -317,6 +317,16 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const [pdfLoading, setPdfLoading] = useState(false);
   const [flightResults, setFlightResults] = useState<any[] | null>(null);
   const [searchingFlights, setSearchingFlights] = useState(false);
+  const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
+
+  // Fetch maps embed URL
+  useEffect(() => {
+    supabase.functions.invoke('maps-embed', { 
+      body: { query: trip.destination, zoom: 12 } 
+    }).then(({ data }) => {
+      if (data?.embedUrl) setMapEmbedUrl(data.embedUrl);
+    }).catch(() => {});
+  }, [trip.destination]);
 
   const destCurrency = (trip as any).destinationCurrency || getTripCurrency(trip.destination);
   const { rates, loading: ratesLoading, updatedAgo } = useExchangeRates(destCurrency);
