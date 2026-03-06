@@ -170,6 +170,71 @@ export function analyzeTrip(trip: SavedTrip): AgentInsight[] {
     });
   }
 
+  // ─── ÍCARO — New trip welcome ───
+  if (daysUntilTrip > 30 && confirmedActivities === 0 &&
+      trip.flights?.outbound?.status !== 'confirmed') {
+    insights.push({
+      id: 'icarus-new-trip',
+      agent: 'icarus',
+      priority: 'medium',
+      title: `Roteiro para ${trip.destination} criado!`,
+      message: `${totalActivities} atividades em ${trip.days?.length || 0} dias. Próximo passo: confirmar voo e hotel. Quanto antes, melhor o preço!`,
+      action: { label: 'Ver Painel', tab: 'painel' },
+    });
+  }
+
+  // ─── ÍCARO — Interest alignment: Michelin ───
+  const interests = (trip as any).travelInterests || [];
+  if (interests.length > 0 && trip.days && trip.days.length > 0) {
+    if (interests.includes('gastronomy')) {
+      const hasMichelinActivity = trip.days.some(d =>
+        d.activities.some(a => (a.name || '').toLowerCase().includes('michelin'))
+      );
+      const cityHasMichelin = getMichelinCountForCity(trip.destination) > 0;
+      if (!hasMichelinActivity && cityHasMichelin) {
+        insights.push({
+          id: 'icarus-michelin-available',
+          agent: 'icarus',
+          priority: 'medium',
+          title: 'Restaurantes Michelin disponíveis!',
+          message: `${trip.destination} tem restaurantes estrelados. Seu interesse em gastronomia merece uma experiência Michelin!`,
+          action: { label: 'Ver Guia', tab: 'preparacao' },
+        });
+      }
+    }
+  }
+
+  // ─── HÉSTIA — Economy intelligence ───
+  if ((trip as any).budgetTier === 'backpacker' || (trip as any).budgetTier === 'economic' ||
+      trip.budgetType === 'backpacker' || trip.budgetType === 'economic') {
+    insights.push({
+      id: 'hestia-savings-tip',
+      agent: 'hestia',
+      priority: 'low',
+      title: 'Dica de economia',
+      message: `Para ${trip.destination}: compre voos na terça/quarta, reserve hotel com cancelamento grátis, e use transporte público local.`,
+      action: { label: 'Ver Financeiro', tab: 'financeiro' },
+    });
+  }
+
+  // ─── HERMES — Visa reminder ───
+  const visaCountries = ['Estados Unidos', 'Canadá', 'Austrália', 'China', 'Índia', 'Rússia', 'Japão'];
+  if (trip.country && visaCountries.some(c => trip.country?.includes(c)) && daysUntilTrip > 0) {
+    const hasVisaChecked = checklist.some(i =>
+      (i.label.toLowerCase().includes('visto') || i.label.toLowerCase().includes('visa')) && i.checked
+    );
+    if (!hasVisaChecked) {
+      insights.push({
+        id: 'hermes-visa-needed',
+        agent: 'hermes',
+        priority: daysUntilTrip < 60 ? 'critical' : 'high',
+        title: 'Visto necessário!',
+        message: `${trip.country} exige visto para brasileiros. Verifique os requisitos com antecedência.`,
+        action: { label: 'Ver Preparação', tab: 'preparacao' },
+      });
+    }
+  }
+
   // Sort by priority
   const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
   return insights.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
