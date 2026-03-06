@@ -345,10 +345,12 @@ export function mapCategoryToPricingType(
   const nameLower = activityName?.toLowerCase() ?? '';
   const freeKeywords = ['passeio livre', 'caminh', 'free', 'grát', 'view', 'mirante', 'foto'];
   if (freeKeywords.some(kw => nameLower.includes(kw))) return 'free';
+  if (nameLower.includes('café da manhã') || nameLower.includes('breakfast')) return 'breakfast';
   switch (category?.toLowerCase()) {
     case 'voo': case 'flight': return 'flight';
     case 'hotel': case 'hospedagem': case 'accommodation': return 'hotel_night';
     case 'comida': case 'food': case 'restaurante':
+      if (nameLower.includes('café da manhã') || nameLower.includes('breakfast')) return 'breakfast';
       if (nameLower.includes('almoço') || nameLower.includes('lunch')) return 'restaurant_lunch';
       return 'restaurant_dinner';
     case 'transporte': case 'transport':
