@@ -95,7 +95,7 @@ const Viagens = () => {
   const [user, setUser] = useState<{ name: string } | null>(null);
   const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(null);
-  const [activeTab, setActiveTab] = useState<'painel' | 'roteiro' | 'leilao' | 'guia' | 'cambio' | 'packing' | 'checklist'>('painel');
+  const [activeTab, setActiveTab] = useState<'painel' | 'roteiro' | 'financeiro' | 'preparacao'>('painel');
   const [selectedDay, setSelectedDay] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
@@ -918,12 +918,9 @@ const Viagens = () => {
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {[
               { id: 'painel' as const, label: '📊 Painel' },
-              { id: 'roteiro' as const, label: '📋 Roteiro' },
-              { id: 'leilao' as const, label: '🎯 Ofertas' },
-              { id: 'cambio' as const, label: '💱 Câmbio' },
-              { id: 'packing' as const, label: '🧳 Packing' },
-              { id: 'guia' as const, label: '📖 Guia' },
-              { id: 'checklist' as const, label: '✅ Checklist' },
+              { id: 'roteiro' as const, label: '🗺️ Roteiro' },
+              { id: 'financeiro' as const, label: '💰 Financeiro' },
+              { id: 'preparacao' as const, label: '✅ Preparação' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1217,98 +1214,138 @@ const Viagens = () => {
             </div>
           )}
 
-          {/* Smart Packing Tab - New Flow with Luggage First */}
-          {activeTab === 'packing' && (
-            <div>
-              <AgentTip agent="hermes" variant="compact" message={getHermesPacking(selectedTrip)} />
-              <SmartPackingWithLuggage
-                tripId={selectedTrip.id}
-                destination={selectedTrip.destination}
-                duration={getTripDuration(selectedTrip)}
-                month={selectedTrip.startDate ? new Date(selectedTrip.startDate).getMonth() + 1 : undefined}
-                startDate={selectedTrip.startDate}
-              />
-            </div>
-          )}
-
-          {/* Leilão (Auction) Tab */}
-          {activeTab === 'leilao' && (
-            <div className="animate-fade-in">
-              <AgentTip agent="icarus" variant="compact" message={getIcarusLeilao()} />
-              <AuctionList
-                tripId={selectedTrip.id}
-                activities={selectedTrip.days?.flatMap(d => d.activities) || []}
-                auctions={(selectedTrip as any).auctions || []}
-                onNavigateToItinerary={() => setActiveTab('roteiro')}
-              />
-            </div>
-          )}
-
-          {/* Guia (Travel Guide) Tab */}
-          {activeTab === 'guia' && (
-            <div className="animate-fade-in">
-              <AgentTip agent="icarus" variant="compact" message={getIcarusGuia(selectedTrip)} />
-              <TripGuide
-                destinationCity={selectedTrip.destination}
-              />
-            </div>
-          )}
-
-          {/* Câmbio (Exchange) Tab - Enhanced */}
-          {activeTab === 'cambio' && (
-            <div className="animate-fade-in">
-              <AgentTip agent="hestia" variant="compact" message={getHestiaCambio(selectedTrip)} />
-              <EnhancedExchangeRates
-                destinationCurrency={getDestinationCurrency(selectedTrip.destination)}
-                baseCurrency="BRL"
-                budgetBRL={selectedTrip.budget}
-              />
-            </div>
-          )}
-
-          {/* Checklist Tab */}
-          {activeTab === 'checklist' && (
+          {/* Financeiro Tab = Ofertas + Câmbio combined */}
+          {activeTab === 'financeiro' && (
             <div className="animate-fade-in space-y-6">
-              <AgentTip agent="hermes" variant="compact" message={getHermesChecklist(selectedTrip)} />
-              {['documentos', 'reservas', 'packing', 'pre-viagem'].map((category) => {
-                const items = (selectedTrip.checklist || []).filter((i) => i.category === category);
-                const categoryLabels: Record<string, string> = {
-                  documentos: '📄 Documentos',
-                  reservas: '🎫 Reservas',
-                  packing: '🧳 Packing',
-                  'pre-viagem': '✈️ Pré-Viagem',
-                };
-                
-                return (
-                  <div key={category} className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
-                    <h3 className="font-semibold text-[#f8fafc] mb-3 font-['Outfit']">{categoryLabels[category]}</h3>
-                    <div className="space-y-2">
-                      {items.map((item) => (
-                        <button
-                          key={item.id}
-                          onClick={() => handleToggleChecklist(item.id)}
-                          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
-                            item.checked ? 'bg-[#10b981]/10' : 'bg-[#0f172a]'
-                          }`}
-                        >
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                            item.checked ? 'bg-[#10b981] border-[#10b981]' : 'border-[#334155]'
-                          }`}>
-                            {item.checked && <Check size={14} className="text-white" />}
-                          </div>
-                          <span className={`text-sm font-['Plus_Jakarta_Sans'] ${
-                            item.checked ? 'text-[#94a3b8] line-through' : 'text-[#f8fafc]'
-                          }`}>
-                            {item.label}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+              <AgentTip agent="hestia" variant="compact" message={getHestiaCambio(selectedTrip)} />
+              
+              {/* Budget Summary */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
+                  <p className="text-xs text-[#94a3b8]">Orçamento</p>
+                  <p className="text-lg font-bold text-[#f8fafc] font-['Outfit']">R$ {(selectedTrip.budget / 1000).toFixed(0)}k</p>
+                </div>
+                <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
+                  <p className="text-xs text-[#94a3b8]">Confirmado</p>
+                  <p className="text-lg font-bold text-[#10b981] font-['Outfit']">R$ {((selectedTrip.finances?.confirmed || 0) / 1000).toFixed(1)}k</p>
+                </div>
+                <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
+                  <p className="text-xs text-[#94a3b8]">Disponível</p>
+                  <p className="text-lg font-bold text-[#0ea5e9] font-['Outfit']">R$ {((selectedTrip.finances?.available || 0) / 1000).toFixed(1)}k</p>
+                </div>
+              </div>
+
+              {/* Exchange Rates */}
+              <div>
+                <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">💱 Câmbio</h3>
+                <EnhancedExchangeRates
+                  destinationCurrency={getDestinationCurrency(selectedTrip.destination)}
+                  baseCurrency="BRL"
+                  budgetBRL={selectedTrip.budget}
+                />
+              </div>
+
+              {/* Auctions / Offers */}
+              <div>
+                <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">🎯 Ofertas & Leilões</h3>
+                <AuctionList
+                  tripId={selectedTrip.id}
+                  activities={selectedTrip.days?.flatMap(d => d.activities) || []}
+                  auctions={(selectedTrip as any).auctions || []}
+                  onNavigateToItinerary={() => setActiveTab('roteiro')}
+                />
+              </div>
             </div>
           )}
+
+          {/* Preparação Tab = Packing + Checklist + Guia combined */}
+          {activeTab === 'preparacao' && (() => {
+            const checklist = selectedTrip.checklist || [];
+            const totalItems = checklist.length;
+            const checkedItems = checklist.filter(i => i.checked).length;
+            const readiness = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
+
+            return (
+              <div className="animate-fade-in space-y-6">
+                <AgentTip agent="hermes" variant="compact" message={getHermesPacking(selectedTrip)} />
+
+                {/* Readiness Score */}
+                <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-[#f8fafc] font-['Outfit']">🎯 Prontidão da Viagem</h3>
+                    <span className={`text-2xl font-bold font-['Outfit'] ${readiness >= 80 ? 'text-[#10b981]' : readiness >= 50 ? 'text-[#eab308]' : 'text-[#ef4444]'}`}>
+                      {readiness}%
+                    </span>
+                  </div>
+                  <Progress value={readiness} className="h-2 bg-[#334155]" />
+                  <p className="text-xs text-[#94a3b8] mt-2">{checkedItems} de {totalItems} itens prontos</p>
+                </div>
+
+                {/* Smart Packing */}
+                <div>
+                  <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">🧳 Smart Packing</h3>
+                  <SmartPackingWithLuggage
+                    tripId={selectedTrip.id}
+                    destination={selectedTrip.destination}
+                    duration={getTripDuration(selectedTrip)}
+                    month={selectedTrip.startDate ? new Date(selectedTrip.startDate).getMonth() + 1 : undefined}
+                    startDate={selectedTrip.startDate}
+                  />
+                </div>
+
+                {/* Checklist */}
+                <div>
+                  <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">✅ Checklist</h3>
+                  <div className="space-y-4">
+                    {['documentos', 'reservas', 'packing', 'pre-viagem'].map((category) => {
+                      const items = checklist.filter((i) => i.category === category);
+                      if (items.length === 0) return null;
+                      const categoryLabels: Record<string, string> = {
+                        documentos: '📄 Documentos',
+                        reservas: '🎫 Reservas',
+                        packing: '🧳 Packing',
+                        'pre-viagem': '✈️ Pré-Viagem',
+                      };
+                      
+                      return (
+                        <div key={category} className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
+                          <h3 className="font-semibold text-[#f8fafc] mb-3 font-['Outfit']">{categoryLabels[category]}</h3>
+                          <div className="space-y-2">
+                            {items.map((item) => (
+                              <button
+                                key={item.id}
+                                onClick={() => handleToggleChecklist(item.id)}
+                                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                                  item.checked ? 'bg-[#10b981]/10' : 'bg-[#0f172a]'
+                                }`}
+                              >
+                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                  item.checked ? 'bg-[#10b981] border-[#10b981]' : 'border-[#334155]'
+                                }`}>
+                                  {item.checked && <Check size={14} className="text-white" />}
+                                </div>
+                                <span className={`text-sm font-['Plus_Jakarta_Sans'] ${
+                                  item.checked ? 'text-[#94a3b8] line-through' : 'text-[#f8fafc]'
+                                }`}>
+                                  {item.label}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Trip Guide */}
+                <div>
+                  <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">📖 Guia do Destino</h3>
+                  <TripGuide destinationCity={selectedTrip.destination} />
+                </div>
+              </div>
+            );
+          })()}
         </main>
 
 

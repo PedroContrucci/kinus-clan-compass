@@ -276,9 +276,9 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
       case 'open-auction-hotel': onOpenAuction('hotel'); break;
       case 'confirm-flight': setConfirmModal({ type: 'flight', isOpen: true }); break;
       case 'confirm-hotel': setConfirmModal({ type: 'hotel', isOpen: true }); break;
-      case 'navigate-checklist': onNavigateTab('checklist'); break;
-      case 'navigate-cambio': onNavigateTab('cambio'); break;
-      case 'navigate-packing': onNavigateTab('packing'); break;
+      case 'navigate-checklist': onNavigateTab('preparacao'); break;
+      case 'navigate-cambio': onNavigateTab('financeiro'); break;
+      case 'navigate-packing': onNavigateTab('preparacao'); break;
       case 'navigate-roteiro': onNavigateTab('roteiro'); break;
       case 'export-pdf': {
         setPdfLoading(true);
