@@ -23,7 +23,7 @@ export const BottomNav = () => {
   const activeTab = getActiveTab();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-lg border-t border-border px-4 py-2 z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-lg border-t border-border px-4 py-2 z-50 lg:hidden">
       <div className="flex justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;

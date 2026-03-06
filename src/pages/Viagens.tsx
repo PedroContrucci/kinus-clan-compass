@@ -754,8 +754,136 @@ const Viagens = () => {
     );
   }
 
-  // Active/Ongoing Trip Dashboard View
-  if (selectedTrip) {
+  // --- Reusable trip list renderer ---
+  const renderTripList = (isSidebar: boolean) => {
+    const containerClass = isSidebar
+      ? "h-screen overflow-y-auto border-r border-border bg-[#0f172a]"
+      : "min-h-screen bg-[#0f172a] pb-20";
+
+    return (
+      <div className={containerClass}>
+        <header className="sticky top-0 z-40 bg-[#0f172a]/80 backdrop-blur-lg border-b border-[#334155] px-4 py-3">
+          <div className="flex items-center gap-2">
+            <img src={kinuLogo} alt="KINU" className="h-8 w-8 object-contain" />
+            <span className="font-bold text-xl font-['Outfit'] text-[#f8fafc]">KINU</span>
+          </div>
+        </header>
+
+        <main className="px-4 py-4">
+          <h1 className={`font-bold mb-2 font-['Outfit'] text-[#f8fafc] ${isSidebar ? 'text-lg' : 'text-2xl'}`}>Minhas Viagens 💼</h1>
+          {!isSidebar && <p className="text-[#94a3b8] mb-6 font-['Plus_Jakarta_Sans']">Teus roteiros salvos aparecem aqui.</p>}
+
+          {trips.length > 0 ? (
+            <div className="space-y-3">
+              {trips.map((trip) => {
+                const progress = calculateProgress(trip);
+                const days = trip?.days && Array.isArray(trip.days) ? trip.days : [];
+                const statusInfo = getStatusLabel(trip.status);
+                const isSelected = selectedTrip?.id === trip.id;
+                const totalActivities = days.reduce((acc, day) => acc + (day?.activities?.length || 0), 0);
+                const confirmedActivities = days.reduce((acc, day) => {
+                  const activities = day?.activities && Array.isArray(day.activities) ? day.activities : [];
+                  return acc + activities.filter((a) => a.status === 'confirmed').length;
+                }, 0);
+
+                return (
+                  <button
+                    key={trip.id}
+                    onClick={() => {
+                      setSelectedTrip(trip);
+                      setSelectedDay(1);
+                      setActiveTab('painel');
+                    }}
+                    className={`w-full bg-[#1e293b] border rounded-2xl p-4 text-left transition-colors ${
+                      isSelected && isSidebar
+                        ? 'border-primary/60 bg-primary/5'
+                        : 'border-[#334155] hover:border-[#10b981]/50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className={`font-semibold text-[#f8fafc] font-['Outfit'] truncate ${isSidebar ? 'text-sm' : 'text-lg'}`}>
+                            {trip.emoji} {trip.destination}{!isSidebar && `, ${trip.country}`}
+                          </h3>
+                          <span className={`text-xs flex-shrink-0 ${statusInfo.color}`}>• {statusInfo.label}</span>
+                        </div>
+                        <p className="text-xs text-[#94a3b8]">
+                          {trip.startDate && format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} - {trip.endDate && format(new Date(trip.endDate), "dd MMM", { locale: ptBR })}
+                          {!isSidebar && ` • ${days.length} dias`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={(e) => handleDeleteTrip(trip.id, e)}
+                          className="p-1 rounded-lg hover:bg-red-500/20 text-[#64748b] hover:text-red-400 transition-colors"
+                        >
+                          <X size={14} />
+                        </button>
+                        {!isSidebar && <ChevronRight size={20} className="text-[#94a3b8]" />}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-[#94a3b8]">R$ {(trip.budget/1000).toFixed(0)}k</span>
+                        <span className="text-[#f8fafc]">{progress}%</span>
+                      </div>
+                      <Progress value={progress} className="h-1.5 bg-[#334155]" />
+                    </div>
+                    {!isSidebar && <p className="text-xs text-[#94a3b8] mt-1">{confirmedActivities} de {totalActivities} itens fechados</p>}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="text-6xl mb-4">🗺️</div>
+              <p className="text-[#f8fafc] font-['Outfit'] text-lg mb-2">Nenhuma viagem salva</p>
+              <button
+                onClick={() => navigate('/planejar')}
+                className="px-6 py-3 bg-gradient-to-r from-[#10b981] to-[#0ea5e9] text-white rounded-xl font-semibold font-['Outfit'] mt-4"
+              >
+                ✈️ Planejar Nova Viagem
+              </button>
+            </div>
+          )}
+
+          {trips.length > 0 && !isSidebar && (
+            <div className="mt-8 pt-6 border-t border-[#334155]">
+              <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Settings size={16} className="text-[#64748b]" />
+                  <span className="text-sm text-[#64748b]">Modo Teste</span>
+                </div>
+                <button
+                  onClick={() => setResetModal(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#94a3b8] hover:text-[#f8fafc] hover:border-[#ef4444] transition-colors"
+                >
+                  <RotateCcw size={16} />
+                  Reiniciar Jornada
+                </button>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  };
+
+  // --- Desktop: empty state for detail panel ---
+  const renderEmptyDetail = () => (
+    <div className="flex-1 flex items-center justify-center h-screen bg-[#0f172a]">
+      <div className="text-center">
+        <div className="text-5xl mb-4">👈</div>
+        <p className="text-[#94a3b8] font-['Outfit'] text-lg">Selecione uma viagem</p>
+      </div>
+    </div>
+  );
+
+  // --- Trip detail renderer ---
+  const renderTripDetailContent = () => {
+    if (!selectedTrip) return null;
+    
     const currentDay = selectedTrip.days?.find((d) => d.day === selectedDay);
     const tripSeverity = selectedTrip.jetLagSeverity || 'BAIXO';
     const showJetLagAlert = selectedTrip.jetLagMode && (
@@ -766,13 +894,13 @@ const Viagens = () => {
     const isRecoveryDay = tripSeverity === 'SEVERO' && selectedDay >= 3 && selectedDay <= 4;
 
     return (
-      <div className="min-h-screen bg-[#0f172a] pb-20">
+      <div className="min-h-screen lg:h-screen lg:overflow-y-auto bg-[#0f172a] pb-20 lg:pb-0">
         {/* Header */}
         <header className="sticky top-0 z-40 bg-[#0f172a]/80 backdrop-blur-lg border-b border-[#334155] px-4 py-3">
           <div className="flex items-center gap-3 mb-3">
             <button
               onClick={() => setSelectedTrip(null)}
-              className="p-2 hover:bg-[#1e293b] rounded-lg transition-colors"
+              className="p-2 hover:bg-[#1e293b] rounded-lg transition-colors lg:hidden"
             >
               <ArrowLeft size={20} className="text-[#f8fafc]" />
             </button>
@@ -1183,8 +1311,6 @@ const Viagens = () => {
           )}
         </main>
 
-        {/* Bottom Nav */}
-        <BottomNav />
 
         {/* Reverse Auction Modal */}
         {auctionModal && (
@@ -1334,121 +1460,29 @@ const Viagens = () => {
         <Toaster />
       </div>
     );
-  }
+  };
 
-  // Trips List View
+  // ========== MAIN RENDER ==========
+  // Mobile: show list OR detail (not both)
+  // Desktop (lg+): show sidebar list + detail side-by-side
   return (
-    <div className="min-h-screen bg-[#0f172a] pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#0f172a]/80 backdrop-blur-lg border-b border-[#334155] px-4 py-3">
-        <div className="flex items-center gap-2">
-          <img src={kinuLogo} alt="KINU" className="h-8 w-8 object-contain" />
-          <span className="font-bold text-xl font-['Outfit'] text-[#f8fafc]">KINU</span>
+    <>
+      {/* DESKTOP LAYOUT */}
+      <div className="hidden lg:flex lg:h-screen">
+        <div className="w-80 flex-shrink-0">
+          {renderTripList(true)}
         </div>
-      </header>
+        <div className="flex-1">
+          {selectedTrip ? renderTripDetailContent() : renderEmptyDetail()}
+        </div>
+      </div>
 
-      {/* Content */}
-      <main className="px-4 py-6">
-        <h1 className="text-2xl font-bold mb-2 font-['Outfit'] text-[#f8fafc]">Minhas Viagens 💼</h1>
-        <p className="text-[#94a3b8] mb-6 font-['Plus_Jakarta_Sans']">Teus roteiros salvos aparecem aqui.</p>
+      {/* MOBILE LAYOUT */}
+      <div className="lg:hidden">
+        {selectedTrip ? renderTripDetailContent() : renderTripList(false)}
+      </div>
 
-        {trips.length > 0 ? (
-          <div className="space-y-4">
-            {trips.map((trip) => {
-              const progress = calculateProgress(trip);
-              const days = trip?.days && Array.isArray(trip.days) ? trip.days : [];
-              const totalActivities = days.reduce((acc, day) => acc + (day?.activities?.length || 0), 0);
-              const confirmedActivities = days.reduce((acc, day) => {
-                const activities = day?.activities && Array.isArray(day.activities) ? day.activities : [];
-                return acc + activities.filter((a) => a.status === 'confirmed').length;
-              }, 0);
-              const statusInfo = getStatusLabel(trip.status);
-
-              return (
-                <button
-                  key={trip.id}
-                  onClick={() => {
-                    setSelectedTrip(trip);
-                    setSelectedDay(1);
-                    setActiveTab('painel');
-                  }}
-                  className="w-full bg-[#1e293b] border border-[#334155] rounded-2xl p-4 text-left hover:border-[#10b981]/50 transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-lg text-[#f8fafc] font-['Outfit']">
-                          {trip.emoji} {trip.destination}, {trip.country}
-                        </h3>
-                        <span className={`text-xs ${statusInfo.color}`}>• {statusInfo.label}</span>
-                      </div>
-                      <p className="text-sm text-[#94a3b8]">
-                        {trip.startDate && format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} - {trip.endDate && format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })} • {days.length} dias
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => handleDeleteTrip(trip.id, e)}
-                        className="p-1.5 rounded-lg hover:bg-red-500/20 text-[#64748b] hover:text-red-400 transition-colors"
-                        title="Excluir viagem"
-                      >
-                        <X size={16} />
-                      </button>
-                      <ChevronRight size={20} className="text-[#94a3b8]" />
-                    </div>
-                  </div>
-                  <p className="text-sm text-[#94a3b8] mb-3">Orçamento: R$ {trip.budget.toLocaleString()}</p>
-                  <div className="mb-2">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-[#94a3b8]">Progresso</span>
-                      <span className="text-[#f8fafc]">{progress}%</span>
-                    </div>
-                    <Progress value={progress} className="h-2 bg-[#334155]" />
-                  </div>
-                  <p className="text-xs text-[#94a3b8]">{confirmedActivities} de {totalActivities} itens fechados</p>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          /* Empty State */
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="text-6xl mb-4">🗺️</div>
-            <p className="text-[#f8fafc] font-['Outfit'] text-lg mb-2">Nenhuma viagem salva ainda</p>
-            <p className="text-[#94a3b8] text-center mb-6">Planeje sua primeira aventura!</p>
-            <button
-              onClick={() => navigate('/planejar')}
-              className="px-6 py-3 bg-gradient-to-r from-[#10b981] to-[#0ea5e9] text-white rounded-xl font-semibold font-['Outfit']"
-            >
-              ✈️ Planejar Nova Viagem
-            </button>
-          </div>
-        )}
-
-        {/* Test Mode - Reset Button */}
-        {trips.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-[#334155]">
-            <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Settings size={16} className="text-[#64748b]" />
-                <span className="text-sm text-[#64748b]">Modo Teste</span>
-              </div>
-              <button
-                onClick={() => setResetModal(true)}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#94a3b8] hover:text-[#f8fafc] hover:border-[#ef4444] transition-colors"
-              >
-                <RotateCcw size={16} />
-                Reiniciar Jornada
-              </button>
-              <p className="text-xs text-[#64748b] mt-2 text-center">
-                Limpa o roteiro atual para testar novamente
-              </p>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Reset Confirmation Modal */}
+      {/* Reset Modal — shared */}
       <Dialog open={resetModal} onOpenChange={setResetModal}>
         <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc] max-w-sm mx-auto">
           <DialogHeader>
@@ -1457,7 +1491,7 @@ const Viagens = () => {
               Reiniciar Jornada?
             </DialogTitle>
             <DialogDescription className="text-[#94a3b8]">
-              Isso vai remover o roteiro atual e todos os dados salvos. Você poderá criar um novo roteiro do zero.
+              Isso vai remover o roteiro atual e todos os dados salvos.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
@@ -1468,13 +1502,13 @@ const Viagens = () => {
             <div className="flex gap-3">
               <button
                 onClick={() => setResetModal(false)}
-                className="flex-1 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] font-medium hover:bg-[#1e293b] transition-colors"
+                className="flex-1 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] font-medium"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleResetJourney}
-                className="flex-1 py-3 bg-[#ef4444] rounded-xl text-white font-semibold hover:bg-[#dc2626] transition-colors"
+                className="flex-1 py-3 bg-[#ef4444] rounded-xl text-white font-semibold"
               >
                 Confirmar Reset
               </button>
@@ -1483,10 +1517,8 @@ const Viagens = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Bottom Nav */}
       <BottomNav />
-      <Toaster />
-    </div>
+    </>
   );
 };
 
