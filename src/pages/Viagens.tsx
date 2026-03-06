@@ -990,6 +990,7 @@ const Viagens = () => {
               }}
               onNavigateTab={(tab) => setActiveTab(tab as any)}
             />
+            </div>
           )}
 
           {/* Roteiro Tab */}
