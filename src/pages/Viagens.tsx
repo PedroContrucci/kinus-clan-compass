@@ -28,6 +28,7 @@ import { TRAVEL_INTERESTS } from '@/components/wizard/types';
 
 import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
+import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 
 
 const DESTINATION_CURRENCY: Record<string, string> = {
