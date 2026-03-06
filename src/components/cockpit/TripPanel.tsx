@@ -610,6 +610,22 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         </div>
       )}
 
+      {/* Destination Map Embed */}
+      {mapEmbedUrl && (
+        <div className="rounded-xl overflow-hidden border border-border">
+          <iframe
+            src={mapEmbedUrl}
+            width="100%"
+            height="200"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title={`Mapa de ${trip.destination}`}
+          />
+        </div>
+      )}
+
       {/* 1.75 — Activity Summary by Category */}
       {(() => {
         const CATEGORY_STYLES: Record<string, { bg: string; border: string; bar: string; hover: string }> = {
