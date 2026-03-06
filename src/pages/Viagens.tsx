@@ -1088,6 +1088,21 @@ const Viagens = () => {
                 }
               }}
             />
+
+              {/* Sticky PDF Export Bar */}
+              <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-card border border-border">
+                <span className="text-2xl">📄</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground font-['Outfit']">Exportar Roteiro em PDF</p>
+                  <p className="text-[10px] text-muted-foreground">PDF premium com fotos, mapa e dicas</p>
+                </div>
+                <button
+                  onClick={() => exportTripPDF(selectedTrip)}
+                  className="px-4 py-2 text-xs font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  Gerar PDF
+                </button>
+              </div>
             </div>
           )}
 
