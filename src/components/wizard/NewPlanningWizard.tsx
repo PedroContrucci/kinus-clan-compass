@@ -620,11 +620,49 @@ function generateDays(
       });
     } else {
       const themes = getDestinationThemes(city);
+      
+      // Interest-aware theme ordering
+      const interestToTheme: Record<string, string> = {
+        'gastronomy': 'Gastronomia', 'culture': 'Cultura', 'history': 'Cultura',
+        'art': 'Cultura', 'adventure': 'Aventura', 'nature': 'Aventura',
+        'beach': 'Passeios', 'relaxation': 'Passeios', 'shopping': 'Passeios',
+        'nightlife': 'Descobertas', 'family': 'Passeios', 'winter': 'Aventura',
+      };
+      const scoredThemes = themes.map(theme => {
+        const matchCount = travelInterests.filter(interest => interestToTheme[interest] === theme.title).length;
+        return { theme, score: matchCount };
+      });
+      scoredThemes.sort((a, b) => b.score - a.score);
+      const orderedThemes = scoredThemes.map(s => s.theme);
+
       const explorationStart = needsTransitDay
         ? (jetLagSeverity === 'SEVERO' ? 5 : 4)
         : (jetLagSeverity === 'SEVERO' ? 4 : 3);
-      const themeIndex = (dayNum - explorationStart) % themes.length;
-      const theme = themes[Math.max(0, themeIndex)];
+      
+      // Focus day: first exploration day uses the theme matching user's #1 interest
+      let themeIndex = (dayNum - explorationStart) % orderedThemes.length;
+      if (dayNum === explorationStart && travelInterests.length > 0) {
+        const focusThemeName = interestToTheme[travelInterests[0]];
+        const focusIdx = orderedThemes.findIndex(t => t.title === focusThemeName);
+        if (focusIdx >= 0) themeIndex = focusIdx;
+      }
+      
+      let theme = orderedThemes[Math.max(0, themeIndex)];
+      
+      // Michelin injection for gastronomy lovers
+      if (travelInterests.includes('gastronomy') && theme.title === 'Gastronomia') {
+        const michelin = getTopMichelinForCity(city, 3);
+        if (michelin.length > 0) {
+          theme = {
+            ...theme,
+            restaurants: {
+              lunch: theme.restaurants.lunch,
+              dinner: `${michelin[0].name} (⭐ Michelin)`,
+            },
+          };
+        }
+      }
+
       days.push({
         day: dayNum,
         date: dateStr,
