@@ -162,7 +162,7 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
       const arrivalDaysLater = flightHours > 18 ? 2 : 1;
 
       // Generate days
-      const days = generateDays(destinationCity, duration, data.departureDate, data.returnDate, priceLevel, jetLagMode, totalTravelers, tierMultiplier, jetLagSeverity, departureTime, arrivalTime, flightHours);
+      const days = generateDays(destinationCity, duration, data.departureDate, data.returnDate, priceLevel, jetLagMode, totalTravelers, tierMultiplier, jetLagSeverity, departureTime, arrivalTime, flightHours, data.travelInterests || []);
 
       // Calculate finances from generated days
       const estimate = calculateTripEstimate(destinationCity, duration, totalTravelers, priceLevel);
