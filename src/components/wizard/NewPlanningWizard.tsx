@@ -560,7 +560,7 @@ function generateDays(
         const dinnerH = Math.max(19, Math.min(22, restStartH + 2));
         activities.push(
           makeActivity(`act-${dayNum}-4`, fmtTime(restStartH), 'Descanso obrigatório — fuso horário severo', `Diferença de fuso significativa. Seu corpo precisa de descanso completo.`, `${Math.max(1, dinnerH - restStartH)}h`, 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), 'Room service ou restaurante do hotel', 'Refeição leve sem sair do hotel', '1h', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), 'Room service ou restaurante do hotel', 'Refeição leve sem sair do hotel', '1h', 'comida', city, 'breakfast', priceLevel, travelers, tierMultiplier, true),
         );
         days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
       } else if (jetLagSeverity === 'ALTO') {
