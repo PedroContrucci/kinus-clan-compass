@@ -7,6 +7,7 @@ export type ActivityType =
   | 'transfer' 
   | 'museum' 
   | 'tour' 
+  | 'breakfast'
   | 'restaurant_lunch' 
   | 'restaurant_dinner' 
   | 'free'
