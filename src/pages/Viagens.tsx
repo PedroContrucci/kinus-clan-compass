@@ -128,9 +128,18 @@ const Viagens = () => {
         budgetUsed: selectedTrip.finances?.confirmed || 0,
         travelStyle: selectedTrip.budgetType,
         travelers: selectedTrip.travelers,
-        activities: selectedTrip.days?.flatMap(d => 
-          d.activities.map(a => a.name)
-        ).slice(0, 10) || [],
+        activities: selectedTrip.days?.flatMap(d => d.activities.map(a => a.name)).slice(0, 10) || [],
+        daysUntilTrip: selectedTrip.startDate ? differenceInDays(new Date(selectedTrip.startDate), new Date()) : undefined,
+        hotelName: selectedTrip.accommodation?.name,
+        hotelNeighborhood: selectedTrip.accommodation?.neighborhood,
+        jetLagSeverity: (selectedTrip as any).jetLagSeverity,
+        checklistProgress: Math.round(((selectedTrip.checklist || []).filter(i => i.checked).length / Math.max(1, (selectedTrip.checklist || []).length)) * 100),
+        confirmedActivities: selectedTrip.days?.reduce((s, d) => s + d.activities.filter(a => a.status === 'confirmed').length, 0) || 0,
+        totalActivities: selectedTrip.days?.reduce((s, d) => s + d.activities.length, 0) || 0,
+        flightConfirmed: selectedTrip.flights?.outbound?.status === 'confirmed',
+        hotelConfirmed: selectedTrip.accommodation?.status === 'confirmed',
+        interests: (selectedTrip as any).travelInterests,
+        flightDuration: selectedTrip.flights?.outbound?.duration,
       });
     } else {
       setTripContext(null);
