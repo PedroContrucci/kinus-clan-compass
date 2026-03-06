@@ -487,11 +487,16 @@ const Cla = () => {
 
             {/* Empty state when both are empty */}
             {filteredActivities.length === 0 && filteredItineraries.length === 0 && !isLoading && (
-              <div className="text-center py-20 px-4">
-                <Sparkles size={48} className="mx-auto text-muted-foreground/30 mb-4" />
-                <p className="text-muted-foreground mb-2">Nenhum resultado encontrado</p>
-                <p className="text-sm text-muted-foreground/70">
-                  Tente ajustar os filtros ou explore outras categorias
+              <div className="text-center py-12 px-4">
+                <div className="text-5xl mb-4">👥</div>
+                <h3 className="font-semibold text-lg text-foreground font-['Outfit'] mb-2">
+                  Comunidade KINU
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Em breve: roteiros avaliados pela comunidade, dicas reais de viajantes e recomendações exclusivas.
+                </p>
+                <p className="text-xs text-primary">
+                  🚀 Seus roteiros serão os primeiros a aparecer aqui!
                 </p>
                 {hasActiveFilters && (
                   <button
