@@ -126,6 +126,50 @@ const Conta = () => {
           </button>
         </div>
 
+        {/* Beta Feedback Viewer */}
+        {(() => {
+          const feedbacks: any[] = JSON.parse(localStorage.getItem('kinu_feedback') || '[]');
+          if (feedbacks.length === 0) return null;
+          return (
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-bold font-['Outfit'] text-foreground">
+                  📝 Feedbacks Recebidos ({feedbacks.length})
+                </h2>
+                <button
+                  onClick={() => {
+                    const data = JSON.stringify(feedbacks, null, 2);
+                    const blob = new Blob([data], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `kinu-feedback-${new Date().toISOString().split('T')[0]}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="text-xs text-primary hover:text-primary/80 transition-colors"
+                >
+                  📥 Exportar JSON
+                </button>
+              </div>
+              <div className="space-y-2">
+                {[...feedbacks].reverse().map((fb: any, i: number) => (
+                  <div key={i} className="bg-card border border-border rounded-xl p-3">
+                    <div className="flex items-center gap-2 text-sm mb-1">
+                      <span>{fb.category === 'bug' ? '🐛' : fb.category === 'confusing' ? '😕' : fb.category === 'suggestion' ? '💡' : '❤️'}</span>
+                      <span className="font-medium text-foreground">{fb.category}</span>
+                      <span className="text-muted-foreground">· {fb.page || '?'}</span>
+                      <span className="text-amber-400 ml-auto">{'★'.repeat(fb.rating || 0)}</span>
+                    </div>
+                    <p className="text-sm text-foreground">{fb.message}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{new Date(fb.timestamp).toLocaleString('pt-BR')}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Version */}
         <p className="text-center text-xs text-muted-foreground/50 mt-8 font-['Plus_Jakarta_Sans']">
           KINU v0.1.0 • The Travel OS

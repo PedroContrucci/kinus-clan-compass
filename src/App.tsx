@@ -44,6 +44,7 @@ const App = () => (
         <BrowserRouter>
           <TopNav />
           <KinuAIWrapper />
+          <BetaFeedbackWrapper />
           <div className="min-h-screen bg-background">
             <div className="lg:max-w-5xl xl:max-w-6xl lg:mx-auto">
             <Routes>
