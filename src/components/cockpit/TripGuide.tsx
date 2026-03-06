@@ -117,6 +117,17 @@ export const TripGuide = ({ destinationCity, countryId }: TripGuideProps) => {
     fetchCountryInfo();
   }, [destinationCity, countryId]);
 
+  // Fallback to local data if Supabase didn't return anything
+  useEffect(() => {
+    if (!loading && !countryInfo) {
+      const countryName = CITY_TO_COUNTRY[destinationCity] || destinationCity;
+      const fallback = COUNTRY_FALLBACK[countryName];
+      if (fallback) {
+        setCountryInfo({ id: 'fallback', ...fallback } as CountryInfo);
+      }
+    }
+  }, [loading, countryInfo, destinationCity]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
