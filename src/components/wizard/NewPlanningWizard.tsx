@@ -611,7 +611,7 @@ function generateDays(
         title: `Recuperação 🌿`,
         icon: '🌿',
         activities: [
-          makeActivity(`act-${dayNum}-1`, '09:00', 'Café da manhã', '', '1h', 'comida', city, 'breakfast', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-1`, '09:00', 'Café da manhã', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-2`, '10:30', theme.activities[0], 'Atividade leve — corpo em adaptação', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
           makeActivity(`act-${dayNum}-3`, '13:00', `Almoço: ${theme.restaurants.lunch}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-4`, '15:00', 'Descanso — adaptação ao fuso', 'Intervalo de descanso recomendado pela KINU AI', '2h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
