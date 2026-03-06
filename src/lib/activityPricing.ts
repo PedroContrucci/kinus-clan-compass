@@ -7,6 +7,7 @@ export type ActivityType =
   | 'transfer' 
   | 'museum' 
   | 'tour' 
+  | 'breakfast'
   | 'restaurant_lunch' 
   | 'restaurant_dinner' 
   | 'free'
@@ -280,6 +281,7 @@ const BASE_PRICES: Record<ActivityType, Record<PriceLevel, number>> = {
   transfer: { budget: 120, midrange: 220, luxury: 450 },
   museum: { budget: 60, midrange: 130, luxury: 220 },
   tour: { budget: 180, midrange: 400, luxury: 900 },
+  breakfast: { budget: 30, midrange: 60, luxury: 120 },
   restaurant_lunch: { budget: 90, midrange: 160, luxury: 320 },
   restaurant_dinner: { budget: 130, midrange: 280, luxury: 550 },
   transport_local: { budget: 15, midrange: 25, luxury: 50 },
@@ -343,10 +345,12 @@ export function mapCategoryToPricingType(
   const nameLower = activityName?.toLowerCase() ?? '';
   const freeKeywords = ['passeio livre', 'caminh', 'free', 'grát', 'view', 'mirante', 'foto'];
   if (freeKeywords.some(kw => nameLower.includes(kw))) return 'free';
+  if (nameLower.includes('café da manhã') || nameLower.includes('breakfast')) return 'breakfast';
   switch (category?.toLowerCase()) {
     case 'voo': case 'flight': return 'flight';
     case 'hotel': case 'hospedagem': case 'accommodation': return 'hotel_night';
     case 'comida': case 'food': case 'restaurante':
+      if (nameLower.includes('café da manhã') || nameLower.includes('breakfast')) return 'breakfast';
       if (nameLower.includes('almoço') || nameLower.includes('lunch')) return 'restaurant_lunch';
       return 'restaurant_dinner';
     case 'transporte': case 'transport':
@@ -384,7 +388,7 @@ export function calculateTripEstimate(
   const hotel = hotelPerNight * nights;
   const dailyMeals = getActivityPrice('restaurant_lunch', city, priceLevel) + getActivityPrice('restaurant_dinner', city, priceLevel);
   const dailyTransport = getActivityPrice('transport_local', city, priceLevel);
-  const dailyActivities = getActivityPrice('museum', city, priceLevel) + getActivityPrice('tour', city, priceLevel);
+  const dailyActivities = getActivityPrice('museum', city, priceLevel); // avg of 1 paid activity/day
   const dailyPerPerson = dailyMeals + dailyTransport + dailyActivities;
   const dailyExpenses = dailyPerPerson * travelers * activeDays;
   const total = flights + hotel + dailyExpenses;
