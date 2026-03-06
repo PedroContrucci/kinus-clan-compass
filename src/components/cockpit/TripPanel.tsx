@@ -793,15 +793,23 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         )}
       </div>
 
-      {/* 4. Export PDF */}
-      <button
-        onClick={handleExportPdf}
-        disabled={pdfLoading}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-500/10 to-sky-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 hover:text-emerald-300 hover:border-emerald-500/40 transition-colors text-sm font-medium disabled:opacity-50"
-      >
-        <FileText size={16} />
-        {pdfLoading ? 'Gerando PDF...' : 'Exportar PDF Premium'}
-      </button>
+      {/* 4. Actions Bar: Share + Export PDF */}
+      <div className="flex gap-2">
+        <button
+          onClick={handleShareTrip}
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 hover:text-emerald-300 hover:border-emerald-500/40 transition-colors text-sm font-medium"
+        >
+          📤 Compartilhar
+        </button>
+        <button
+          onClick={handleExportPdf}
+          disabled={pdfLoading}
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-sky-500/10 border border-sky-500/20 rounded-xl text-sky-400 hover:text-sky-300 hover:border-sky-500/40 transition-colors text-sm font-medium disabled:opacity-50"
+        >
+          <FileText size={16} />
+          {pdfLoading ? 'Gerando...' : 'Exportar PDF'}
+        </button>
+      </div>
 
       {/* 5. Curation Sources (collapsible) */}
       <CurationSources trip={trip} />
