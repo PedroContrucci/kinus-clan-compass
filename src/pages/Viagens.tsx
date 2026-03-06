@@ -952,7 +952,30 @@ const Viagens = () => {
         <main className="px-4 py-6">
           {/* Painel Tab */}
           {activeTab === 'painel' && (
-            <TripPanel
+            <div className="animate-fade-in">
+              {/* Agent Proactive Insights */}
+              {(() => {
+                const insights = analyzeTrip(selectedTrip);
+                const topInsights = insights.slice(0, 3);
+                if (topInsights.length === 0) return null;
+                return (
+                  <div className="mb-4 space-y-2">
+                    {topInsights.map((insight) => (
+                      <AgentTip
+                        key={insight.id}
+                        agent={insight.agent}
+                        variant="full"
+                        message={insight.message}
+                        action={insight.action ? {
+                          label: insight.action.label,
+                          onClick: () => setActiveTab(insight.action!.tab as any),
+                        } : undefined}
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
+              <TripPanel
               trip={selectedTrip}
               onConfirm={handleHeroConfirm}
               onOpenAuction={(type) => {
