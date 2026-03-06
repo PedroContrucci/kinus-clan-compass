@@ -1416,6 +1416,8 @@ const Viagens = () => {
                             })()}
                             <p className="text-sm text-[#94a3b8]">{activity.description}</p>
                             
+                            {/* Google Places Info */}
+                            <PlaceInfoCard activityName={activity.name} destination={selectedTrip.destination} />
 
                             {/* Actions — max 2 buttons: Confirmar + Ver Ofertas */}
                             {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (
