@@ -43,7 +43,7 @@ export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
 
   return (
     <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[#334155]">
-      {actions.map((action) => (
+      {visibleActions.map((action) => (
         <button
           key={action.id}
           onClick={() => sendMessage(action.prompt)}
