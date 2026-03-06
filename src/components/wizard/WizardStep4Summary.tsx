@@ -249,6 +249,70 @@ export const WizardStep4Summary = ({ data, onChange, onGenerateDraft, isGenerati
           </div>
         </motion.div>
       )}
+
+      {/* Curation Justification Card */}
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
+        <h3 className="font-semibold text-foreground font-['Outfit'] text-base">
+          🎯 Curadoria do seu Roteiro
+        </h3>
+
+        {interestLabels.length > 0 && (
+          <div className="flex items-start gap-3 pl-1">
+            <div className="w-1 self-stretch rounded-full bg-emerald-500 shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              <span className="text-emerald-400 font-medium">Seus interesses:</span>{' '}
+              {interestLabels.map(i => i!.label).join(', ')} — dias temáticos priorizados de acordo com suas preferências
+            </p>
+          </div>
+        )}
+
+        <div className="flex items-start gap-3 pl-1">
+          <div className="w-1 self-stretch rounded-full bg-sky-500 shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            <span className="text-sky-400 font-medium">Base curada KINU:</span>{' '}
+            atividades e restaurantes selecionados por curadoria inspirada em Conde Nast Traveler, Lonely Planet e guias especializados
+          </p>
+        </div>
+
+        {(data.travelInterests || []).includes('gastronomy') && (
+          <div className="flex items-start gap-3 pl-1">
+            <div className="w-1 self-stretch rounded-full bg-amber-500 shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              <span className="text-amber-400 font-medium">Guia Michelin:</span>{' '}
+              restaurantes estrelados incluídos no roteiro quando disponíveis para {data.destinationCity}
+            </p>
+          </div>
+        )}
+
+        {data.biologyAIEnabled && jetLag.hours > 0 && (
+          <div className="flex items-start gap-3 pl-1">
+            <div className="w-1 self-stretch rounded-full bg-purple-500 shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              <span className="text-purple-400 font-medium">Biology AI:</span>{' '}
+              ritmo adaptado ao fuso horário ({jetLag.hours}h de diferença)
+            </p>
+          </div>
+        )}
+
+        <div className="flex items-start gap-3 pl-1">
+          <div className="w-1 self-stretch rounded-full bg-violet-500 shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            <span className="text-violet-400 font-medium">Hotel Intelligence:</span>{' '}
+            bairro recomendado com base nos interesses e orçamento
+          </p>
+        </div>
+
+        <div className="flex items-start gap-3 pl-1">
+          <div className="w-1 self-stretch rounded-full bg-green-500 shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            <span className="text-green-400 font-medium">Perfil {tier?.label}:</span>{' '}
+            {tier?.id === 'luxury' ? 'Hotels 5★, restaurantes Michelin, tours VIP' :
+             tier?.id === 'comfort' ? 'Hotels 4★, restaurantes recomendados, tours privados' :
+             tier?.id === 'economic' ? 'Hotels 3★, restaurantes locais, tours em grupo' :
+             'Hostels, street food, tours gratuitos'}
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

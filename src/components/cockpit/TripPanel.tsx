@@ -597,6 +597,9 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         {pdfLoading ? 'Gerando PDF...' : 'Exportar PDF Premium'}
       </button>
 
+      {/* 5. Curation Sources (collapsible) */}
+      <CurationSources trip={trip} />
+
       {/* Confirm Modal */}
       <Dialog open={confirmModal?.isOpen || false} onOpenChange={() => setConfirmModal(null)}>
         <DialogContent className="bg-card border-border max-w-sm mx-auto">
