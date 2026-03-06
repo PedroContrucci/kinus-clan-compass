@@ -487,6 +487,7 @@ function generateDays(
   smartDepartureTime: string = '23:00',
   smartArrivalTime: string = '11:00',
   flightHours: number = 12,
+  travelInterests: string[] = [],
 ): TripDay[] {
   const days: TripDay[] = [];
   
