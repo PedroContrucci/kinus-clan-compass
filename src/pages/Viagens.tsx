@@ -16,6 +16,7 @@ import { DraftCockpit, TripGuide, ExchangeRates, AuctionList, EnhancedDayTimelin
 import { TripPanel } from '@/components/cockpit/TripPanel';
 import { AgentTip } from '@/components/shared/AgentTip';
 import { getIcarusRoteiro, getIcarusGuia, getIcarusLeilao, getHestiaFinOps, getHestiaCambio, getHestiaLeilao, getHermesChecklist, getHermesPacking } from '@/lib/agentMessages';
+import { analyzeTrip, AgentInsight } from '@/engines/agentIntelligence';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
 import { PackingData } from '@/types/packing';
 import { getActivityPrice, determinePriceLevel, findBestPriceLevel, mapCategoryToPricingType, CITY_PRICES } from '@/lib/activityPricing';
