@@ -552,7 +552,7 @@ function generateDays(
       // If arrival is very late (check-in after 22:00), override everything to just room service
       if (checkInHotelH >= 22) {
         activities.push(
-          makeActivity(`act-${dayNum}-4`, fmtTime(Math.min(23, checkInHotelH + 1)), 'Room service — chegada tardia', 'Refeição leve e descanso após chegada noturna', '1h', 'comida', city, 'breakfast', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-4`, fmtTime(Math.min(23, checkInHotelH + 1)), 'Room service — chegada tardia', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier, true),
         );
         days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
       } else if (jetLagSeverity === 'SEVERO') {
@@ -560,7 +560,7 @@ function generateDays(
         const dinnerH = Math.max(19, Math.min(22, restStartH + 2));
         activities.push(
           makeActivity(`act-${dayNum}-4`, fmtTime(restStartH), 'Descanso obrigatório — fuso horário severo', `Diferença de fuso significativa. Seu corpo precisa de descanso completo.`, `${Math.max(1, dinnerH - restStartH)}h`, 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), 'Room service ou restaurante do hotel', 'Refeição leve sem sair do hotel', '1h', 'comida', city, 'breakfast', priceLevel, travelers, tierMultiplier, true),
+          makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), 'Room service ou restaurante do hotel', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier, true),
         );
         days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
       } else if (jetLagSeverity === 'ALTO') {
@@ -595,7 +595,7 @@ function generateDays(
         title: 'Retorno 🏠',
         icon: '🏠',
         activities: [
-          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', '', '1h', 'comida', city, 'breakfast', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier),
           { ...makeActivity(`act-${dayNum}-2`, '10:00', 'Check-out do hotel', 'Liberar quarto e organizar bagagem', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
           makeActivity(`act-${dayNum}-3`, '11:00', 'Transfer para aeroporto', 'Transporte ao aeroporto', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
           { ...makeActivity(`act-${dayNum}-4`, '14:00', 'Voo de volta', 'Retorno para o Brasil', `${flightHours}h`, 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
@@ -611,7 +611,7 @@ function generateDays(
         title: `Recuperação 🌿`,
         icon: '🌿',
         activities: [
-          makeActivity(`act-${dayNum}-1`, '09:00', 'Café da manhã', '', '1h', 'comida', city, 'breakfast', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-1`, '09:00', 'Café da manhã', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-2`, '10:30', theme.activities[0], 'Atividade leve — corpo em adaptação', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
           makeActivity(`act-${dayNum}-3`, '13:00', `Almoço: ${theme.restaurants.lunch}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-4`, '15:00', 'Descanso — adaptação ao fuso', 'Intervalo de descanso recomendado pela KINU AI', '2h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
@@ -670,7 +670,7 @@ function generateDays(
         title: `${theme.title} ${theme.icon}`,
         icon: theme.icon,
         activities: [
-          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', '', '1h', 'comida', city, 'breakfast', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-2`, '09:30', theme.activities[0], '', '2h30', 'passeio', city, (dayNum % 2 === 0) ? 'museum' : 'free', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-3`, '12:30', `Almoço: ${theme.restaurants.lunch}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-4`, '14:30', theme.activities[1], '', '2h30', 'passeio', city, (dayNum % 2 === 0) ? 'free' : 'tour', priceLevel, travelers, tierMultiplier),

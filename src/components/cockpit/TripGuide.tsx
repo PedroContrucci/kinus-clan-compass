@@ -31,6 +31,53 @@ interface TripGuideProps {
   countryId?: string;
 }
 
+const COUNTRY_FALLBACK: Record<string, Partial<CountryInfo>> = {
+  'Tailândia': { name_pt: 'Tailândia', code: 'TH', currency_code: 'THB', visa_required_br: false, visa_notes: 'Isento até 90 dias', voltage: '220V', power_plug: 'A/B/C/O' },
+  'Japão': { name_pt: 'Japão', code: 'JP', currency_code: 'JPY', visa_required_br: false, visa_notes: 'Isento até 90 dias', voltage: '100V', power_plug: 'A/B' },
+  'França': { name_pt: 'França', code: 'FR', currency_code: 'EUR', visa_required_br: false, visa_notes: 'Schengen: isento até 90 dias', voltage: '230V', power_plug: 'C/E' },
+  'Itália': { name_pt: 'Itália', code: 'IT', currency_code: 'EUR', visa_required_br: false, visa_notes: 'Schengen: isento até 90 dias', voltage: '230V', power_plug: 'C/F/L' },
+  'Portugal': { name_pt: 'Portugal', code: 'PT', currency_code: 'EUR', visa_required_br: false, visa_notes: 'Schengen: isento até 90 dias', voltage: '230V', power_plug: 'C/F' },
+  'Espanha': { name_pt: 'Espanha', code: 'ES', currency_code: 'EUR', visa_required_br: false, visa_notes: 'Schengen: isento até 90 dias', voltage: '230V', power_plug: 'C/F' },
+  'Reino Unido': { name_pt: 'Reino Unido', code: 'GB', currency_code: 'GBP', visa_required_br: false, visa_notes: 'ETA necessário (£10)', voltage: '230V', power_plug: 'G' },
+  'Estados Unidos': { name_pt: 'Estados Unidos', code: 'US', currency_code: 'USD', visa_required_br: true, visa_notes: 'Visto B1/B2 necessário', voltage: '120V', power_plug: 'A/B' },
+  'Emirados Árabes': { name_pt: 'Emirados Árabes', code: 'AE', currency_code: 'AED', visa_required_br: false, visa_notes: 'Isento até 90 dias', voltage: '220V', power_plug: 'C/D/G' },
+  'Grécia': { name_pt: 'Grécia', code: 'GR', currency_code: 'EUR', visa_required_br: false, visa_notes: 'Schengen: isento até 90 dias', voltage: '230V', power_plug: 'C/F' },
+  'Turquia': { name_pt: 'Turquia', code: 'TR', currency_code: 'TRY', visa_required_br: false, visa_notes: 'e-Visa necessário (gratuito)', voltage: '230V', power_plug: 'C/F' },
+  'Indonésia': { name_pt: 'Indonésia', code: 'ID', currency_code: 'IDR', visa_required_br: false, visa_notes: 'Visa on arrival (30 dias)', voltage: '230V', power_plug: 'C/F' },
+  'Austrália': { name_pt: 'Austrália', code: 'AU', currency_code: 'AUD', visa_required_br: true, visa_notes: 'eVisitor ou ETA necessário', voltage: '230V', power_plug: 'I' },
+  'Argentina': { name_pt: 'Argentina', code: 'AR', currency_code: 'ARS', visa_required_br: false, visa_notes: 'Isento, RG aceito', voltage: '220V', power_plug: 'C/I' },
+  'México': { name_pt: 'México', code: 'MX', currency_code: 'MXN', visa_required_br: false, visa_notes: 'Isento até 180 dias', voltage: '127V', power_plug: 'A/B' },
+  'Coreia do Sul': { name_pt: 'Coreia do Sul', code: 'KR', currency_code: 'KRW', visa_required_br: false, visa_notes: 'K-ETA necessário', voltage: '220V', power_plug: 'C/F' },
+  'Singapura': { name_pt: 'Singapura', code: 'SG', currency_code: 'SGD', visa_required_br: false, visa_notes: 'Isento até 30 dias', voltage: '230V', power_plug: 'G' },
+  'Marrocos': { name_pt: 'Marrocos', code: 'MA', currency_code: 'MAD', visa_required_br: false, visa_notes: 'Isento até 90 dias', voltage: '220V', power_plug: 'C/E' },
+  'Egito': { name_pt: 'Egito', code: 'EG', currency_code: 'EGP', visa_required_br: true, visa_notes: 'Visa on arrival (USD 25)', voltage: '220V', power_plug: 'C' },
+  'África do Sul': { name_pt: 'África do Sul', code: 'ZA', currency_code: 'ZAR', visa_required_br: false, visa_notes: 'Isento até 90 dias', voltage: '230V', power_plug: 'C/M/N' },
+};
+
+// Map city names to country names for fallback lookup
+const CITY_TO_COUNTRY: Record<string, string> = {
+  'Paris': 'França', 'Lyon': 'França', 'Nice': 'França', 'Marselha': 'França',
+  'Roma': 'Itália', 'Milão': 'Itália', 'Florença': 'Itália', 'Veneza': 'Itália',
+  'Lisboa': 'Portugal', 'Porto': 'Portugal',
+  'Barcelona': 'Espanha', 'Madri': 'Espanha',
+  'Londres': 'Reino Unido', 'Edimburgo': 'Reino Unido',
+  'Nova York': 'Estados Unidos', 'Miami': 'Estados Unidos', 'Orlando': 'Estados Unidos', 'Los Angeles': 'Estados Unidos', 'San Francisco': 'Estados Unidos',
+  'Tóquio': 'Japão', 'Quioto': 'Japão', 'Osaka': 'Japão',
+  'Bangkok': 'Tailândia', 'Phuket': 'Tailândia', 'Chiang Mai': 'Tailândia',
+  'Dubai': 'Emirados Árabes', 'Abu Dhabi': 'Emirados Árabes',
+  'Atenas': 'Grécia', 'Santorini': 'Grécia',
+  'Istambul': 'Turquia',
+  'Bali': 'Indonésia',
+  'Sydney': 'Austrália', 'Melbourne': 'Austrália',
+  'Buenos Aires': 'Argentina', 'Bariloche': 'Argentina',
+  'Cancún': 'México', 'Cidade do México': 'México',
+  'Seul': 'Coreia do Sul',
+  'Singapura': 'Singapura',
+  'Marrakech': 'Marrocos',
+  'Cairo': 'Egito',
+  'Cidade do Cabo': 'África do Sul',
+};
+
 export const TripGuide = ({ destinationCity, countryId }: TripGuideProps) => {
   const [countryInfo, setCountryInfo] = useState<CountryInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,6 +116,17 @@ export const TripGuide = ({ destinationCity, countryId }: TripGuideProps) => {
 
     fetchCountryInfo();
   }, [destinationCity, countryId]);
+
+  // Fallback to local data if Supabase didn't return anything
+  useEffect(() => {
+    if (!loading && !countryInfo) {
+      const countryName = CITY_TO_COUNTRY[destinationCity] || destinationCity;
+      const fallback = COUNTRY_FALLBACK[countryName];
+      if (fallback) {
+        setCountryInfo({ id: 'fallback', ...fallback } as CountryInfo);
+      }
+    }
+  }, [loading, countryInfo, destinationCity]);
 
   if (loading) {
     return (

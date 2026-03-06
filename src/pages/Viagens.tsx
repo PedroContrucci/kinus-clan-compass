@@ -6,6 +6,7 @@ import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { exportTripPDF } from '@/lib/tripPdfExport';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import ReverseAuctionModal from '@/components/ReverseAuctionModal';
@@ -1074,8 +1075,34 @@ const Viagens = () => {
                     : selectedTrip.accommodation?.totalPrice || 0,
                 });
               }}
-              onNavigateTab={(tab) => setActiveTab(tab as any)}
+              onNavigateTab={(tab, categoryFilter) => {
+                setActiveTab(tab as any);
+                if (categoryFilter) {
+                  const filterMap: Record<string, string> = {
+                    'passeio': 'passeio',
+                    'comida': 'comida',
+                    'transporte': 'logistics',
+                    'hotel': 'logistics',
+                  };
+                  setRoteiroCategoryFilter(filterMap[categoryFilter] || null);
+                }
+              }}
             />
+
+              {/* Sticky PDF Export Bar */}
+              <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-card border border-border">
+                <span className="text-2xl">📄</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground font-['Outfit']">Exportar Roteiro em PDF</p>
+                  <p className="text-[10px] text-muted-foreground">PDF premium com fotos, mapa e dicas</p>
+                </div>
+                <button
+                  onClick={() => exportTripPDF(selectedTrip)}
+                  className="px-4 py-2 text-xs font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  Gerar PDF
+                </button>
+              </div>
             </div>
           )}
 
@@ -1091,8 +1118,8 @@ const Viagens = () => {
                   const categories = [
                     { id: null as string | null, label: '📅 Por Dia', count: null as number | null, confirmed: 0 },
                     { id: 'comida', label: '🍽️ Alimentação',
-                      count: allActivities.filter(a => a.category === 'comida').length,
-                      confirmed: allActivities.filter(a => a.category === 'comida' && a.status === 'confirmed').length },
+                      count: allActivities.filter(a => a.category === 'comida' && !a.name?.toLowerCase().includes('café da manhã') && !a.name?.toLowerCase().includes('room service')).length,
+                      confirmed: allActivities.filter(a => a.category === 'comida' && !a.name?.toLowerCase().includes('café da manhã') && !a.name?.toLowerCase().includes('room service') && a.status === 'confirmed').length },
                     { id: 'passeio', label: '🏛️ Passeios',
                       count: allActivities.filter(a => a.category === 'passeio').length,
                       confirmed: allActivities.filter(a => a.category === 'passeio' && a.status === 'confirmed').length },
@@ -1127,7 +1154,7 @@ const Viagens = () => {
                   {(selectedTrip.days || []).flatMap((day, dayIdx) =>
                     day.activities
                       .filter(act => {
-                        if (roteiroCategoryFilter === 'comida') return act.category === 'comida';
+                        if (roteiroCategoryFilter === 'comida') return act.category === 'comida' && !act.name?.toLowerCase().includes('café da manhã') && !act.name?.toLowerCase().includes('room service');
                         if (roteiroCategoryFilter === 'passeio') return act.category === 'passeio';
                         if (roteiroCategoryFilter === 'logistics') return ['voo', 'transporte', 'hotel'].includes(act.category);
                         return true;
@@ -1161,7 +1188,7 @@ const Viagens = () => {
                                 </span>
                               </div>
                             </div>
-                            {activity.status !== 'confirmed' && activity.cost > 0 && (
+                            {activity.status !== 'confirmed' && (
                               <button
                                 onClick={() => setConfirmModal({ isOpen: true, activity, dayIndex: dayIdx, actIndex: realActIdx })}
                                 className="self-center px-3 py-1.5 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-colors whitespace-nowrap"
@@ -1177,7 +1204,7 @@ const Viagens = () => {
                   {/* Category total */}
                   {(() => {
                     const filtered = (selectedTrip.days || []).flatMap(d => d.activities).filter(a => {
-                      if (roteiroCategoryFilter === 'comida') return a.category === 'comida';
+                    if (roteiroCategoryFilter === 'comida') return a.category === 'comida' && !a.name?.toLowerCase().includes('café da manhã') && !a.name?.toLowerCase().includes('room service');
                       if (roteiroCategoryFilter === 'passeio') return a.category === 'passeio';
                       if (roteiroCategoryFilter === 'logistics') return ['voo', 'transporte', 'hotel'].includes(a.category);
                       return true;
@@ -1390,7 +1417,7 @@ const Viagens = () => {
                             
 
                             {/* Actions — max 2 buttons: Confirmar + Ver Ofertas */}
-                            {activity.status !== 'confirmed' && activity.status !== 'cancelled' && activity.cost > 0 && (
+                            {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (
                               <div className="flex gap-2 mt-3 flex-wrap">
                                 <button
                                   onClick={() => setConfirmModal({ isOpen: true, activity, dayIndex, actIndex })}

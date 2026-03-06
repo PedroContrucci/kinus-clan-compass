@@ -93,7 +93,7 @@ interface TripPanelProps {
   trip: SavedTrip;
   onConfirm: (type: 'flight' | 'hotel', amount: number) => void;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
-  onNavigateTab: (tab: string) => void;
+  onNavigateTab: (tab: string, categoryFilter?: string) => void;
 }
 
 function fmt(n: number) {
@@ -534,7 +534,10 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             </h3>
             <div className="grid grid-cols-2 gap-2">
               {cats.map(cat => {
-                const items = allActivities.filter(a => a.category === cat);
+                const items = allActivities.filter(a => {
+                  if (cat === 'comida') return a.category === 'comida' && !a.name?.toLowerCase().includes('café da manhã') && !a.name?.toLowerCase().includes('room service');
+                  return a.category === cat;
+                });
                 const confirmed = items.filter(a => a.status === 'confirmed').length;
                 const total = items.length;
                 const totalCost = items.reduce((s, a) => s + (a.cost || 0), 0);
@@ -544,7 +547,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
                 return (
                   <button
                     key={cat}
-                    onClick={() => onNavigateTab('roteiro')}
+                    onClick={() => onNavigateTab('roteiro', cat)}
                     className={`rounded-xl border p-3 text-left transition-colors ${style.bg} ${style.border} ${style.hover}`}
                   >
                     <div className="flex items-center gap-1.5 mb-1.5">
