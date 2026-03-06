@@ -93,7 +93,7 @@ interface TripPanelProps {
   trip: SavedTrip;
   onConfirm: (type: 'flight' | 'hotel', amount: number) => void;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
-  onNavigateTab: (tab: string) => void;
+  onNavigateTab: (tab: string, categoryFilter?: string) => void;
 }
 
 function fmt(n: number) {
