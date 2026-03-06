@@ -369,6 +369,70 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         </div>
       </div>
 
+      {/* 1.5 — Hero Status: Voo + Hotel */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Flight Card */}
+        <div className={`rounded-xl border p-4 ${
+          flightConfirmed 
+            ? 'bg-emerald-500/10 border-emerald-500/30' 
+            : 'bg-sky-500/10 border-sky-500/30'
+        }`}>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl">✈️</span>
+            <div>
+              <p className="text-xs font-bold text-foreground font-['Outfit']">Voo</p>
+              <p className="text-[10px] text-muted-foreground">
+                {trip.flights?.outbound?.origin || 'GRU'} → {trip.flights?.outbound?.destination || dest}
+              </p>
+            </div>
+          </div>
+          <p className={`text-lg font-bold font-['Outfit'] ${flightConfirmed ? 'text-emerald-400' : 'text-sky-400'}`}>
+            {flightConfirmed ? '✅ Confirmado' : `R$ ${fmt(flightPrice)}`}
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {trip.flights?.outbound?.duration || '—'} · {trip.flights?.outbound?.stops === 0 ? 'Direto' : `${trip.flights?.outbound?.stops || 1} parada`}
+          </p>
+          {!flightConfirmed && (
+            <button 
+              onClick={() => onOpenAuction('flight')}
+              className="mt-3 w-full text-xs font-semibold py-2 rounded-lg bg-sky-500 text-white hover:bg-sky-600 transition-colors"
+            >
+              🎯 Buscar Ofertas
+            </button>
+          )}
+        </div>
+        {/* Hotel Card */}
+        <div className={`rounded-xl border p-4 ${
+          hotelConfirmed 
+            ? 'bg-emerald-500/10 border-emerald-500/30' 
+            : 'bg-amber-500/10 border-amber-500/30'
+        }`}>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl">🏨</span>
+            <div>
+              <p className="text-xs font-bold text-foreground font-['Outfit']">Hotel</p>
+              <p className="text-[10px] text-muted-foreground truncate max-w-[120px]">
+                {trip.accommodation?.neighborhood || dest}
+              </p>
+            </div>
+          </div>
+          <p className={`text-lg font-bold font-['Outfit'] ${hotelConfirmed ? 'text-emerald-400' : 'text-amber-400'}`}>
+            {hotelConfirmed ? '✅ Confirmado' : `R$ ${fmt(trip.accommodation?.nightlyRate || 0)}/noite`}
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {trip.accommodation?.totalNights || '—'} noites · {trip.accommodation?.stars || 3}★
+          </p>
+          {!hotelConfirmed && (
+            <button 
+              onClick={() => onOpenAuction('hotel')}
+              className="mt-3 w-full text-xs font-semibold py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+            >
+              🎯 Buscar Hotel
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* 2. Próximos Passos — Agentes orquestrando (prioritized, max 3 visible) */}
       <div className="space-y-2">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
