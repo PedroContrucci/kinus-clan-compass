@@ -391,6 +391,24 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
     }
   };
 
+  const handleShareTrip = async () => {
+    const days = trip.days || [];
+    const totalActs = days.reduce((s, d) => s + d.activities.length, 0);
+    const confirmed = days.reduce((s, d) => s + d.activities.filter(a => a.status === 'confirmed').length, 0);
+    const highlights = days
+      .flatMap(d => d.activities)
+      .filter(a => a.category === 'passeio' || (a.category === 'comida' && !a.name?.toLowerCase().includes('café da manhã')))
+      .slice(0, 5)
+      .map(a => a.name?.replace(/^(Jantar|Almoço):\s*/i, ''))
+      .join(', ');
+    const text = `✈️ Minha viagem para ${trip.destination}!\n📅 ${days.length} dias · ${totalActs} atividades\n🎯 ${confirmed} confirmadas · ${progressPct}% pronto\n📍 Destaques: ${highlights}\n\nPlanejado com KINU Travel OS 🧭`;
+    if (navigator.share) {
+      try { await navigator.share({ title: `Viagem: ${trip.destination}`, text }); } catch { /* cancelled */ }
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+  };
+
   const searchRealFlights = async () => {
     if (!trip.flights?.outbound) return;
     setSearchingFlights(true);
@@ -498,21 +516,29 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             {trip.flights?.outbound?.duration || '—'} · {trip.flights?.outbound?.stops === 0 ? 'Direto' : `${trip.flights?.outbound?.stops || 1} parada`}
           </p>
           {!flightConfirmed && (
-            <>
-              <button 
-                onClick={() => onOpenAuction('flight')}
-                className="mt-3 w-full text-xs font-semibold py-2 rounded-lg bg-sky-500 text-white hover:bg-sky-600 transition-colors"
-              >
-                🎯 Buscar Ofertas
-              </button>
+            <div className="mt-3 space-y-1.5">
+              <div className="grid grid-cols-2 gap-1.5">
+                <button 
+                  onClick={() => setConfirmModal({ type: 'flight', isOpen: true })}
+                  className="text-xs font-semibold py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                >
+                  ✅ Confirmar
+                </button>
+                <button 
+                  onClick={() => onOpenAuction('flight')}
+                  className="text-xs font-semibold py-2 rounded-lg bg-sky-500 text-white hover:bg-sky-600 transition-colors"
+                >
+                  🎯 Buscar Ofertas
+                </button>
+              </div>
               <button
                 onClick={searchRealFlights}
                 disabled={searchingFlights}
-                className="mt-1.5 w-full text-[10px] font-medium py-1.5 rounded-lg border border-sky-500/30 text-sky-400 hover:bg-sky-500/10 transition-colors disabled:opacity-50"
+                className="w-full text-[10px] font-medium py-1.5 rounded-lg border border-sky-500/30 text-sky-400 hover:bg-sky-500/10 transition-colors disabled:opacity-50"
               >
                 {searchingFlights ? '✈️ Buscando...' : '✈️ Voos Reais (Amadeus)'}
               </button>
-            </>
+            </div>
           )}
         </div>
         {/* Hotel Card */}
@@ -537,12 +563,20 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             {trip.accommodation?.totalNights || '—'} noites · {trip.accommodation?.stars || 3}★
           </p>
           {!hotelConfirmed && (
-            <button 
-              onClick={() => onOpenAuction('hotel')}
-              className="mt-3 w-full text-xs font-semibold py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
-            >
-              🎯 Buscar Hotel
-            </button>
+            <div className="mt-3 grid grid-cols-2 gap-1.5">
+              <button 
+                onClick={() => setConfirmModal({ type: 'hotel', isOpen: true })}
+                className="text-xs font-semibold py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+              >
+                ✅ Confirmar
+              </button>
+              <button 
+                onClick={() => onOpenAuction('hotel')}
+                className="text-xs font-semibold py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+              >
+                🎯 Buscar Hotel
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -777,15 +811,23 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         )}
       </div>
 
-      {/* 4. Export PDF */}
-      <button
-        onClick={handleExportPdf}
-        disabled={pdfLoading}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-500/10 to-sky-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 hover:text-emerald-300 hover:border-emerald-500/40 transition-colors text-sm font-medium disabled:opacity-50"
-      >
-        <FileText size={16} />
-        {pdfLoading ? 'Gerando PDF...' : 'Exportar PDF Premium'}
-      </button>
+      {/* 4. Actions Bar: Share + Export PDF */}
+      <div className="flex gap-2">
+        <button
+          onClick={handleShareTrip}
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 hover:text-emerald-300 hover:border-emerald-500/40 transition-colors text-sm font-medium"
+        >
+          📤 Compartilhar
+        </button>
+        <button
+          onClick={handleExportPdf}
+          disabled={pdfLoading}
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-sky-500/10 border border-sky-500/20 rounded-xl text-sky-400 hover:text-sky-300 hover:border-sky-500/40 transition-colors text-sm font-medium disabled:opacity-50"
+        >
+          <FileText size={16} />
+          {pdfLoading ? 'Gerando...' : 'Exportar PDF'}
+        </button>
+      </div>
 
       {/* 5. Curation Sources (collapsible) */}
       <CurationSources trip={trip} />
