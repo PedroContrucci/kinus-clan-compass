@@ -916,26 +916,37 @@ const Viagens = () => {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {[
-              { id: 'painel' as const, label: '📊 Painel' },
-              { id: 'roteiro' as const, label: '🗺️ Roteiro' },
-              { id: 'financeiro' as const, label: '💰 Financeiro' },
-              { id: 'preparacao' as const, label: '✅ Preparação' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-shrink-0 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-card text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          {(() => {
+            const tripInsights = selectedTrip ? analyzeTrip(selectedTrip) : [];
+            const criticalHighCount = tripInsights.filter(i => i.priority === 'critical' || i.priority === 'high').length;
+            return (
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {[
+                  { id: 'painel' as const, label: '📊 Painel' },
+                  { id: 'roteiro' as const, label: '🗺️ Roteiro' },
+                  { id: 'financeiro' as const, label: '💰 Financeiro' },
+                  { id: 'preparacao' as const, label: '✅ Preparação' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-shrink-0 py-2 px-3 rounded-lg text-sm font-medium transition-colors relative ${
+                      activeTab === tab.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-card text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {tab.label}
+                    {tab.id === 'painel' && criticalHighCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                        {criticalHighCount}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
         </header>
 
         <main className="px-4 py-6">
