@@ -23,6 +23,7 @@ import { getActivityPrice, determinePriceLevel, findBestPriceLevel, mapCategoryT
 import kinuLogo from '@/assets/KINU_logo.png';
 import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
 import { BottomNav } from '@/components/shared/BottomNav';
+import { TRAVEL_INTERESTS } from '@/components/wizard/types';
 
 import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
