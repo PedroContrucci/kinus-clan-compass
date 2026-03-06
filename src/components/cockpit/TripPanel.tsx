@@ -12,6 +12,7 @@ import { getIcarusRoteiroInsight, getIcarusHeroFlight, getIcarusHeroHotel, getHe
 import type { SavedTrip } from '@/types/trip';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { supabase } from '@/integrations/supabase/client';
 
 const TIER_DESCRIPTIONS: Record<string, string> = {
   backpacker: 'Hostels, street food, tours gratuitos',
