@@ -22,6 +22,7 @@ import type { SelectedFlight } from './FlightSelectionStage';
 import { 
   getRandomActivity, 
   getActivitiesByCategory,
+  getDestinationActivities,
   type SuggestedActivity 
 } from '@/data/destinationActivities';
 import { KinuAnalysisCard } from './KinuAnalysisCard';
@@ -159,6 +160,33 @@ function generateItinerary(
 
   const days: ItineraryDay[] = [];
   const usedActivityIds: string[] = [];
+
+  function pickActivity(category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner', themeName: string): SuggestedActivity | null {
+    const pool = getDestinationActivities(destination);
+    const themeStyleMap: Record<string, string[]> = {
+      'Cultura': ['culture', 'history', 'art'],
+      'Gastronomia': ['gastronomy'],
+      'Passeios': ['nature', 'romantic', 'shopping'],
+      'Aventura': ['adventure', 'nature'],
+      'Descobertas': ['culture', 'shopping', 'art'],
+    };
+    const targetTags = themeStyleMap[themeName] || [];
+    let candidates = pool.filter(a =>
+      a.category === category &&
+      !usedActivityIds.includes(a.id) &&
+      (targetTags.length === 0 || (a.styleTags && a.styleTags.some(t => targetTags.includes(t))))
+    );
+    if (candidates.length === 0) {
+      candidates = pool.filter(a => a.category === category && !usedActivityIds.includes(a.id));
+    }
+    if (candidates.length === 0) {
+      candidates = pool.filter(a => a.category === category);
+    }
+    if (candidates.length === 0) return null;
+    const picked = candidates[0];
+    usedActivityIds.push(picked.id);
+    return picked;
+  }
 
   // Style tags for filtering (convert interests to lowercase)
   const styleTags = travelInterests.map(i => i.toLowerCase().replace('🍜 ', '').replace('🏖️ ', '').replace('🌙 ', '').replace('👨‍👩‍👧 ', '').replace('🏛️ ', '').replace('🎨 ', '').replace('🎭 ', '').replace('🏔️ ', '').replace('💆 ', '').replace('🛍️ ', '').replace('🌿 ', ''));
