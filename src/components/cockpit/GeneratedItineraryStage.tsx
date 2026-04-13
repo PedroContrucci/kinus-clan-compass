@@ -343,54 +343,49 @@ function generateItinerary(
       theme = `${dayTheme.emoji} ${dayTheme.theme}`;
       
       // ☕ BREAKFAST (08:00)
-      const breakfastActivity = getRandomActivity(destination, 'breakfast', styleTags, usedActivityIds);
+      // ☕ BREAKFAST (08:00)
+      const breakfastActivity = pickActivity('breakfast', dayTheme.theme);
       if (breakfastActivity) {
-        usedActivityIds.push(breakfastActivity.id);
         const act = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers);
         activities.push(act);
         dayTotal += act.estimatedCost;
       }
       
       // 🏛️ MORNING ACTIVITY (10:00)
-      const morningActivity = getRandomActivity(destination, 'morning', styleTags, usedActivityIds);
+      const morningActivity = pickActivity('morning', dayTheme.theme);
       if (morningActivity) {
-        usedActivityIds.push(morningActivity.id);
         const act = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers);
         activities.push(act);
         dayTotal += act.estimatedCost;
       }
       
       // 🍽️ LUNCH (13:00)
-      const lunchActivity = getRandomActivity(destination, 'lunch', styleTags, usedActivityIds);
+      const lunchActivity = pickActivity('lunch', dayTheme.theme);
       if (lunchActivity) {
-        usedActivityIds.push(lunchActivity.id);
         const act = convertToItineraryActivity(lunchActivity, i, 'lunch', '13:00', travelers);
         activities.push(act);
         dayTotal += act.estimatedCost;
       }
       
       // 🚶 AFTERNOON ACTIVITY (15:00)
-      const afternoonActivity = getRandomActivity(destination, 'afternoon', styleTags, usedActivityIds);
+      const afternoonActivity = pickActivity('afternoon', dayTheme.theme);
       if (afternoonActivity) {
-        usedActivityIds.push(afternoonActivity.id);
         const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00', travelers);
         activities.push(act);
         dayTotal += act.estimatedCost;
       }
       
       // 🍷 DINNER (19:30)
-      const dinnerActivity = getRandomActivity(destination, 'dinner', styleTags, usedActivityIds);
+      const dinnerActivity = pickActivity('dinner', dayTheme.theme);
       if (dinnerActivity) {
-        usedActivityIds.push(dinnerActivity.id);
         const act = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30', travelers);
         activities.push(act);
         dayTotal += act.estimatedCost;
       }
       
       // 🌙 NIGHT ACTIVITY - Optional (21:30)
-      const nightActivity = getRandomActivity(destination, 'night', styleTags, usedActivityIds);
+      const nightActivity = pickActivity('night', dayTheme.theme);
       if (nightActivity) {
-        usedActivityIds.push(nightActivity.id);
         const act = convertToItineraryActivity(nightActivity, i, 'night', '21:30', travelers);
         act.tips = ['(Opcional)', ...(act.tips || [])];
         activities.push(act);
