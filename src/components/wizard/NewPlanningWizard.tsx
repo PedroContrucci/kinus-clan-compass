@@ -668,6 +668,26 @@ function generateDays(
       const explorationStart = needsTransitDay
         ? (jetLagSeverity === 'SEVERO' ? 5 : 4)
         : (jetLagSeverity === 'SEVERO' ? 4 : 3);
+
+      // First exploration day with significant jet lag = recovery day
+      const isArrivalRecoveryDay = (dayNum === explorationStart) &&
+        (jetLagSeverity === 'MODERADO' || jetLagSeverity === 'ALTO' || jetLagSeverity === 'SEVERO');
+
+      if (isArrivalRecoveryDay) {
+        days.push({
+          day: dayNum,
+          date: dateStr,
+          title: 'Chegada e Recuperação 🛬',
+          icon: '🛬',
+          activities: [
+            makeActivity(`act-${dayNum}-1`, '15:00', 'Check-in no hotel', 'Acomodação e descanso após o voo', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
+            makeActivity(`act-${dayNum}-2`, '17:00', 'Caminhada leve no bairro', 'Conheça os arredores do hotel sem pressa, ajuda a regular o relógio biológico', '1h30', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
+            makeActivity(`act-${dayNum}-3`, '19:30', 'Jantar leve perto do hotel', 'Refeição leve para não sobrecarregar o corpo. Evite álcool e comida pesada.', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier, true),
+            makeActivity(`act-${dayNum}-4`, '21:30', 'Descanso para regular o sono', 'Tente dormir no horário local mesmo se não estiver com sono. Resista o cochilo se for antes das 22h.', '0h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
+          ],
+        });
+        continue;
+      }
       
       // Focus day: first exploration day uses the theme matching user's #1 interest
       let themeIndex = (dayNum - explorationStart) % orderedThemes.length;
