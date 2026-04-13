@@ -31,6 +31,7 @@ import type { SuggestedActivity } from '@/data/destinationActivities';
 import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
+import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
 
 
 const DESTINATION_CURRENCY: Record<string, string> = {
