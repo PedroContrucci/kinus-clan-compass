@@ -76,6 +76,7 @@ interface GeneratedItineraryStageProps {
   outboundFlight: SelectedFlight;
   returnFlight: SelectedFlight;
   travelInterests?: string[];
+  jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO';
   onActivate: () => void;
   onSave: () => void;
   onBack: () => void;
@@ -141,7 +142,8 @@ function generateItinerary(
   returnFlight: SelectedFlight,
   budget: number,
   travelers: number = 1,
-  travelInterests: string[] = []
+  travelInterests: string[] = [],
+  jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO'
 ): { days: ItineraryDay[]; breakdown: BudgetBreakdown } {
   const totalDays = differenceInDays(returnDate, departureDate) + 1;
   const totalNights = totalDays - 1;
@@ -222,39 +224,94 @@ function generateItinerary(
     else if (i === 1) {
       label = `Chegada em ${destination}`;
       theme = '🛬 Dia de Chegada';
-      
-      // Check-in
-      activities.push({
-        id: `day-${i}-checkin`,
-        name: 'Check-in Hotel',
-        type: 'checkin',
-        timeSlot: 'hotel',
-        estimatedCost: hotelTotal,
-        time: '14:00',
-        location: `Hôtel Le Marais ⭐ 4.2 • Le Marais`,
-        status: 'suggestion',
-        tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
-        source: 'kinu',
-      });
-      dayTotal += hotelTotal;
-      
-      // Light afternoon walk (arrival day should be relaxed)
-      const afternoonActivity = getRandomActivity(destination, 'afternoon', styleTags, usedActivityIds);
-      if (afternoonActivity) {
-        usedActivityIds.push(afternoonActivity.id);
-        const activity = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '16:00', travelers);
-        activity.tips = ['Passeio leve para se ambientar', ...(activity.tips || [])];
-        activities.push(activity);
-        dayTotal += activity.estimatedCost;
-      }
-      
-      // Dinner
-      const dinnerActivity = getRandomActivity(destination, 'dinner', styleTags, usedActivityIds);
-      if (dinnerActivity) {
-        usedActivityIds.push(dinnerActivity.id);
-        const activity = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30', travelers);
-        activities.push(activity);
-        dayTotal += activity.estimatedCost;
+
+      const isRecoveryDay = jetLagSeverity === 'MODERADO' || jetLagSeverity === 'ALTO' || jetLagSeverity === 'SEVERO';
+
+      if (isRecoveryDay) {
+        // Recovery day — light activities only (Biology AI active)
+        activities.push({
+          id: `day-${i}-checkin`,
+          name: 'Check-in no hotel',
+          type: 'hotel',
+          timeSlot: 'morning',
+          estimatedCost: hotelTotal,
+          costPerPerson: 0,
+          time: '15:00',
+          duration: '1h',
+          location: destination,
+          status: 'defined',
+          source: 'kinu',
+          tips: ['Acomodação após o voo, sem pressa', `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
+        });
+        dayTotal += hotelTotal;
+
+        activities.push({
+          id: `day-${i}-walk`,
+          name: 'Caminhada leve no bairro',
+          type: 'experience',
+          timeSlot: 'afternoon',
+          estimatedCost: 0,
+          costPerPerson: 0,
+          time: '17:00',
+          duration: '1h30',
+          location: destination,
+          status: 'defined',
+          source: 'kinu',
+          tips: ['Conheça os arredores do hotel sem pressa', 'Ajuda a regular o relógio biológico'],
+        });
+
+        const lightDinner = pickActivity('dinner', 'Gastronomia');
+        if (lightDinner) {
+          const act = convertToItineraryActivity(lightDinner, i, 'dinner', '19:30', travelers);
+          act.tips = ['Refeição leve. Evite álcool e comida pesada.', ...(act.tips || [])];
+          activities.push(act);
+          dayTotal += act.estimatedCost;
+        }
+
+        activities.push({
+          id: `day-${i}-rest`,
+          name: 'Descanso para regular o sono',
+          type: 'night',
+          timeSlot: 'night',
+          estimatedCost: 0,
+          costPerPerson: 0,
+          time: '21:30',
+          duration: '0h',
+          location: destination,
+          status: 'defined',
+          source: 'kinu',
+          tips: ['Tente dormir no horário local', 'Resista o cochilo se for antes das 22h'],
+        });
+      } else {
+        // Normal arrival day — check-in + light exploration
+        activities.push({
+          id: `day-${i}-checkin`,
+          name: 'Check-in Hotel',
+          type: 'checkin',
+          timeSlot: 'hotel',
+          estimatedCost: hotelTotal,
+          time: '14:00',
+          location: `Hôtel Le Marais ⭐ 4.2 • Le Marais`,
+          status: 'suggestion',
+          tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
+          source: 'kinu',
+        });
+        dayTotal += hotelTotal;
+
+        const afternoonActivity = pickActivity('afternoon', 'Passeios');
+        if (afternoonActivity) {
+          const activity = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '16:00', travelers);
+          activity.tips = ['Passeio leve para se ambientar', ...(activity.tips || [])];
+          activities.push(activity);
+          dayTotal += activity.estimatedCost;
+        }
+
+        const dinnerActivity = pickActivity('dinner', 'Gastronomia');
+        if (dinnerActivity) {
+          const activity = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30', travelers);
+          activities.push(activity);
+          dayTotal += activity.estimatedCost;
+        }
       }
     }
     // Last day: Checkout + Morning activity + Flight
@@ -475,13 +532,14 @@ export const GeneratedItineraryStage = ({
   outboundFlight,
   returnFlight,
   travelInterests = [],
+  jetLagSeverity,
   onActivate,
   onSave,
   onBack,
 }: GeneratedItineraryStageProps) => {
   const { days: initialDays, breakdown: initialBreakdown } = useMemo(() => 
-    generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests),
-    [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests]
+    generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity),
+    [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity]
   );
 
   const [days, setDays] = useState(initialDays);
