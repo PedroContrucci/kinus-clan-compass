@@ -9,7 +9,8 @@ import { differenceInDays, addDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getActivityPrice, calculateTripEstimate } from '@/lib/activityPricing';
 import { getIdealHotelZone, getHotelRecommendation } from '@/lib/hotelZones';
-import { getDestinationThemes } from '@/data/destinationActivities';
+import { getDestinationThemes, getDestinationActivities } from '@/data/destinationActivities';
+import type { SuggestedActivity } from '@/data/destinationActivities';
 import { getTopMichelinForCity } from '@/lib/michelinData';
 import type { PriceLevel } from '@/lib/activityPricing';
 import { defaultChecklist, FLIGHT_DURATION, calculateArrivalTime, calculateJetLagImpact } from '@/types/trip';
@@ -650,17 +651,19 @@ function generateDays(
       
       let theme = orderedThemes[Math.max(0, themeIndex)];
       
+      // Pick curated activities from pool
+      const morningAct = pickActivity('morning', city, theme.title);
+      const afternoonAct = pickActivity('afternoon', city, theme.title);
+      const nightAct = pickActivity('night', city, theme.title);
+      const lunchAct = pickActivity('lunch', city, theme.title);
+      const dinnerAct = pickActivity('dinner', city, theme.title);
+      
       // Michelin injection for gastronomy lovers
+      let dinnerName = dinnerAct?.name || theme.restaurants.dinner;
       if (travelInterests.includes('gastronomy') && theme.title === 'Gastronomia') {
         const michelin = getTopMichelinForCity(city, 3);
         if (michelin.length > 0) {
-          theme = {
-            ...theme,
-            restaurants: {
-              lunch: theme.restaurants.lunch,
-              dinner: `${michelin[0].name} (⭐ Michelin)`,
-            },
-          };
+          dinnerName = `${michelin[0].name} (⭐ Michelin)`;
         }
       }
 
@@ -671,11 +674,11 @@ function generateDays(
         icon: theme.icon,
         activities: [
           makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-2`, '09:30', theme.activities[0], '', '2h30', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-3`, '12:30', `Almoço: ${theme.restaurants.lunch}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-4`, '14:30', theme.activities[1], '', '2h30', 'passeio', city, 'tour', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-5`, '17:30', theme.activities[2], '', '1h30', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-6`, '19:30', `Jantar: ${theme.restaurants.dinner}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-2`, '09:30', morningAct?.name || theme.activities[0], morningAct?.tips?.[0] || '', '2h30', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-3`, '12:30', `Almoço: ${lunchAct?.name || theme.restaurants.lunch}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, '14:30', afternoonAct?.name || theme.activities[1], afternoonAct?.tips?.[0] || '', '2h30', 'passeio', city, 'tour', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-5`, '17:30', nightAct?.name || theme.activities[2], nightAct?.tips?.[0] || '', '1h30', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-6`, '19:30', `Jantar: ${dinnerName}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         ],
       });
     }
