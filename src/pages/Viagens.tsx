@@ -695,6 +695,36 @@ const Viagens = () => {
           },
         ];
       } else {
+        // First exploration day with significant jet lag = recovery day
+        const isArrivalRecoveryDay = (i === 2) && trip.biologyAI &&
+          (trip.jetLagSeverity === 'MODERADO' || trip.jetLagSeverity === 'ALTO' || trip.jetLagSeverity === 'SEVERO');
+
+        if (isArrivalRecoveryDay) {
+          title = 'Chegada e Recuperação';
+          icon = '🛬';
+          activities = [
+            {
+              id: `day${dayNum}-1`, name: 'Check-in no hotel',
+              description: 'Acomodação e descanso após o voo', time: '15:00', duration: '1h',
+              type: 'relax', category: 'hotel', cost: 0, status: 'planned' as ActivityStatus, jetLagFriendly: true,
+            },
+            {
+              id: `day${dayNum}-2`, name: 'Caminhada leve no bairro',
+              description: 'Conheça os arredores do hotel sem pressa, ajuda a regular o relógio biológico', time: '17:00', duration: '1h30',
+              type: 'culture', category: 'passeio', cost: 0, status: 'planned' as ActivityStatus, jetLagFriendly: true,
+            },
+            {
+              id: `day${dayNum}-3`, name: 'Jantar leve perto do hotel',
+              description: 'Refeição leve para não sobrecarregar o corpo. Evite álcool e comida pesada.', time: '19:30', duration: '1h30',
+              type: 'food', category: 'comida', cost: lunchPrice, status: 'planned' as ActivityStatus, jetLagFriendly: true,
+            },
+            {
+              id: `day${dayNum}-4`, name: 'Descanso para regular o sono',
+              description: 'Tente dormir no horário local mesmo se não estiver com sono.', time: '21:30', duration: '0h',
+              type: 'relax', category: 'hotel', cost: 0, status: 'planned' as ActivityStatus, jetLagFriendly: true,
+            },
+          ];
+        } else {
         // EXPLORATION DAYS - Full day activities with curated pool
         const themes = [
           { title: 'Cultura', icon: '🏛️' },
