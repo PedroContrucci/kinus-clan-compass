@@ -492,6 +492,34 @@ function generateDays(
   travelInterests: string[] = [],
 ): TripDay[] {
   const days: TripDay[] = [];
+  const usedActivityIds = new Set<string>();
+
+  function pickActivity(category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner', destination: string, themeName: string): SuggestedActivity | null {
+    const pool = getDestinationActivities(destination);
+    const themeStyleMap: Record<string, string[]> = {
+      'Cultura': ['culture', 'history', 'art'],
+      'Gastronomia': ['gastronomy'],
+      'Passeios': ['nature', 'romantic', 'shopping'],
+      'Aventura': ['adventure', 'nature'],
+      'Descobertas': ['culture', 'shopping', 'art'],
+    };
+    const targetTags = themeStyleMap[themeName] || [];
+    let candidates = pool.filter(a =>
+      a.category === category &&
+      !usedActivityIds.has(a.id) &&
+      (targetTags.length === 0 || a.styleTags?.some(t => targetTags.includes(t)))
+    );
+    if (candidates.length === 0) {
+      candidates = pool.filter(a => a.category === category && !usedActivityIds.has(a.id));
+    }
+    if (candidates.length === 0) {
+      candidates = pool.filter(a => a.category === category);
+    }
+    if (candidates.length === 0) return null;
+    const picked = candidates[0];
+    usedActivityIds.add(picked.id);
+    return picked;
+  }
   
   // Calculate check-in time (2h before departure for short, 3h for long)
   const [depH] = smartDepartureTime.split(':').map(Number);
