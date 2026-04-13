@@ -25,6 +25,8 @@ import kinuLogo from '@/assets/KINU_logo.png';
 import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { TRAVEL_INTERESTS } from '@/components/wizard/types';
+import { getDestinationActivities } from '@/data/destinationActivities';
+import type { SuggestedActivity } from '@/data/destinationActivities';
 
 import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
@@ -543,6 +545,26 @@ const Viagens = () => {
     const museumPrice = museumPricePP * travelers;
     const tourPrice = tourPricePP * travelers;
     
+    const usedActivityIds = new Set<string>();
+    function pickActivity(category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner', destination: string, themeName: string): SuggestedActivity | null {
+      const pool = getDestinationActivities(destination);
+      const themeStyleMap: Record<string, string[]> = {
+        'Cultura': ['culture', 'history', 'art'],
+        'Gastronomia': ['gastronomy'],
+        'Passeios': ['nature', 'romantic', 'shopping'],
+        'Aventura': ['adventure', 'nature'],
+        'Descobertas': ['culture', 'shopping', 'art'],
+      };
+      const targetTags = themeStyleMap[themeName] || [];
+      let candidates = pool.filter(a => a.category === category && !usedActivityIds.has(a.id) && (targetTags.length === 0 || a.styleTags?.some(t => targetTags.includes(t))));
+      if (candidates.length === 0) candidates = pool.filter(a => a.category === category && !usedActivityIds.has(a.id));
+      if (candidates.length === 0) candidates = pool.filter(a => a.category === category);
+      if (candidates.length === 0) return null;
+      const picked = candidates[0];
+      usedActivityIds.add(picked.id);
+      return picked;
+    }
+
     for (let i = 0; i < duration; i++) {
       const dayNum = i + 1;
       const isFirstDay = i === 0;
@@ -673,7 +695,7 @@ const Viagens = () => {
           },
         ];
       } else {
-        // EXPLORATION DAYS - Full day activities with realistic prices
+        // EXPLORATION DAYS - Full day activities with curated pool
         const themes = [
           { title: 'Cultura', icon: '🏛️' },
           { title: 'Gastronomia', icon: '🍽️' },
@@ -684,6 +706,13 @@ const Viagens = () => {
         const theme = themes[(i - 2) % themes.length];
         title = theme.title;
         icon = theme.icon;
+
+        const morningAct = pickActivity('morning', trip.destination, theme.title);
+        const afternoonAct = pickActivity('afternoon', trip.destination, theme.title);
+        const nightAct = pickActivity('night', trip.destination, theme.title);
+        const lunchAct = pickActivity('lunch', trip.destination, theme.title);
+        const dinnerAct = pickActivity('dinner', trip.destination, theme.title);
+
         activities = [
           {
             id: `day${dayNum}-1`,
@@ -693,13 +722,13 @@ const Viagens = () => {
             duration: '1h',
             type: 'food',
             category: 'comida',
-            cost: 0, // Included in hotel
+            cost: 0,
             status: 'planned' as ActivityStatus,
           },
           {
             id: `day${dayNum}-2`,
-            name: 'Atividade da manhã',
-            description: travelers > 1 ? `Passeio cultural ou turístico (${travelers} pessoas)` : 'Passeio cultural ou turístico',
+            name: morningAct?.name || 'Atividade da manhã',
+            description: morningAct?.tips?.[0] || (travelers > 1 ? `Passeio cultural ou turístico (${travelers} pessoas)` : 'Passeio cultural ou turístico'),
             time: '10:00',
             duration: '2h30',
             type: 'culture',
@@ -709,8 +738,8 @@ const Viagens = () => {
           },
           {
             id: `day${dayNum}-3`,
-            name: 'Almoço',
-            description: travelers > 1 ? `Restaurante local (${travelers} pessoas)` : 'Restaurante local',
+            name: lunchAct ? `Almoço: ${lunchAct.name}` : 'Almoço',
+            description: lunchAct?.tips?.[0] || (travelers > 1 ? `Restaurante local (${travelers} pessoas)` : 'Restaurante local'),
             time: '13:00',
             duration: '1h30',
             type: 'food',
@@ -720,8 +749,8 @@ const Viagens = () => {
           },
           {
             id: `day${dayNum}-4`,
-            name: 'Atividade da tarde',
-            description: travelers > 1 ? `Exploração livre (${travelers} pessoas)` : 'Exploração livre',
+            name: afternoonAct?.name || 'Atividade da tarde',
+            description: afternoonAct?.tips?.[0] || (travelers > 1 ? `Exploração livre (${travelers} pessoas)` : 'Exploração livre'),
             time: '15:00',
             duration: '3h',
             type: 'culture',
@@ -731,8 +760,8 @@ const Viagens = () => {
           },
           {
             id: `day${dayNum}-5`,
-            name: 'Jantar',
-            description: travelers > 1 ? `Gastronomia local (${travelers} pessoas)` : 'Gastronomia local',
+            name: dinnerAct ? `Jantar: ${dinnerAct.name}` : 'Jantar',
+            description: dinnerAct?.tips?.[0] || (travelers > 1 ? `Gastronomia local (${travelers} pessoas)` : 'Gastronomia local'),
             time: '19:30',
             duration: '2h',
             type: 'food',
