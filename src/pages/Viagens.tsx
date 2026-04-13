@@ -1491,14 +1491,14 @@ const Viagens = () => {
                             {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (
                               <div className="flex gap-2 mt-3 flex-wrap">
                                 <button
-                                  onClick={() => setConfirmModal({ isOpen: true, activity, dayIndex, actIndex })}
+                                  onClick={(e) => { e.stopPropagation(); setConfirmModal({ isOpen: true, activity, dayIndex, actIndex }); }}
                                   className="flex items-center gap-1 px-3 py-1.5 bg-[#10b981] rounded-lg text-xs text-white hover:bg-[#10b981]/80 transition-colors"
                                 >
                                   <Check size={12} />
                                   Confirmar
                                 </button>
                                 <button
-                                  onClick={() => setAuctionModal({
+                                  onClick={(e) => { e.stopPropagation(); setAuctionModal({
                                     isOpen: true,
                                     activityName: activity.name,
                                     activityType: activity.type,
