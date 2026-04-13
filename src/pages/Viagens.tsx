@@ -1225,7 +1225,9 @@ const Viagens = () => {
                       .map((activity, actIdx) => {
                         const realActIdx = day.activities.indexOf(activity);
                         return (
-                          <div key={`${dayIdx}-${actIdx}`} className={`flex gap-3 p-3 rounded-xl border ${
+                          <div key={`${dayIdx}-${actIdx}`}
+                            onClick={() => setActivityDetailDrawer({ activity, open: true })}
+                            className={`flex gap-3 p-3 rounded-xl border cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all ${
                             activity.status === 'confirmed'
                               ? 'bg-emerald-500/10 border-emerald-500/30'
                               : 'bg-card border-border'
@@ -1255,7 +1257,7 @@ const Viagens = () => {
                             </div>
                             {activity.status !== 'confirmed' && (
                               <button
-                                onClick={() => setConfirmModal({ isOpen: true, activity, dayIndex: dayIdx, actIndex: realActIdx })}
+                                onClick={(e) => { e.stopPropagation(); setConfirmModal({ isOpen: true, activity, dayIndex: dayIdx, actIndex: realActIdx }); }}
                                 className="self-center px-3 py-1.5 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-colors whitespace-nowrap"
                               >
                                 Confirmar
