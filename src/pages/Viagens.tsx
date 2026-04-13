@@ -800,6 +800,7 @@ const Viagens = () => {
             status: 'planned' as ActivityStatus,
           },
         ];
+        }
       }
       
       days.push({
