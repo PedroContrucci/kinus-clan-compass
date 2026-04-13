@@ -520,7 +520,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             </div>
           </div>
           <p className={`text-lg font-bold font-['Outfit'] ${flightConfirmed ? 'text-emerald-400' : 'text-sky-400'}`}>
-            {flightConfirmed ? '✅ Confirmado' : `R$ ${fmt(flightPrice)}`}
+            {flightConfirmed ? '✅ Confirmado' : `R$ ${fmt(flightPrice)}${(trip.travelers || 1) > 1 ? ' / pessoa' : ' (total)'}`}
           </p>
           <p className="text-[10px] text-muted-foreground mt-1">
             {trip.flights?.outbound?.duration || '—'} · {trip.flights?.outbound?.stops === 0 ? 'Direto' : `${trip.flights?.outbound?.stops || 1} parada`}
@@ -567,7 +567,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             </div>
           </div>
           <p className={`text-lg font-bold font-['Outfit'] ${hotelConfirmed ? 'text-emerald-400' : 'text-amber-400'}`}>
-            {hotelConfirmed ? '✅ Confirmado' : `R$ ${fmt(trip.accommodation?.nightlyRate || 0)}/noite`}
+            {hotelConfirmed ? '✅ Confirmado' : `R$ ${fmt(trip.accommodation?.nightlyRate || 0)} / noite`}
           </p>
           <p className="text-[10px] text-muted-foreground mt-1">
             {trip.accommodation?.totalNights || '—'} noites · {trip.accommodation?.stars || 3}★

@@ -737,7 +737,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   const addFooter = () => {
     drawRect(14, ph - 14, pw - 28, 0.3, B.surface);
     setC(B.gray400, false);
-    doc.setFontSize(7);
+    doc.setFontSize(11.5);
     doc.setFont('helvetica', 'normal');
     const today = format(new Date(), "dd/MM/yyyy", { locale: ptBR });
     doc.text('KINU — Travel Intelligence', 14, ph - 8);
@@ -747,7 +747,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   const addPageHeader = () => {
     drawRect(0, 0, pw, 10, B.night);
     setC(B.gray400, false);
-    doc.setFontSize(7);
+    doc.setFontSize(11.5);
     doc.setFont('helvetica', 'bold');
     doc.text('KINU', 14, 6.5);
     doc.setFont('helvetica', 'normal');
@@ -804,7 +804,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   doc.text('KINU', pw / 2, titleY, { align: 'center' });
 
   setC(B.gray400, false);
-  doc.setFontSize(9);
+  doc.setFontSize(10.5);
   doc.setFont('helvetica', 'normal');
   doc.text('Travel Intelligence', pw / 2, titleY + 8, { align: 'center' });
 
@@ -829,7 +829,7 @@ export async function exportTripPDF(trip: SavedTrip) {
     ? `${format(new Date(trip.startDate), "dd MMM yyyy", { locale: ptBR })} – ${format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })}`
     : '';
   setC(B.gray400, false);
-  doc.setFontSize(10);
+  doc.setFontSize(11.5);
   doc.text(dateRange, pw / 2, y, { align: 'center' });
   y += 6;
   doc.text(`${totalDays} dias  |  ${trip.travelers} viajante(s)  |  Faixa ${tierLabel}`, pw / 2, y, { align: 'center' });
@@ -841,13 +841,13 @@ export async function exportTripPDF(trip: SavedTrip) {
     y += 10;
 
     setC(B.emerald, false);
-    doc.setFontSize(10);
+    doc.setFontSize(11.5);
     doc.setFont('helvetica', 'bold');
     doc.text('SOBRE O DESTINO', 14, y);
     y += 6;
 
     setC(B.gray400, false);
-    doc.setFontSize(9);
+    doc.setFontSize(10.5);
     doc.setFont('helvetica', 'normal');
     const desc = getDestDescription(trip.destination);
     const maxDescWidth = pw - 28;
@@ -867,7 +867,7 @@ export async function exportTripPDF(trip: SavedTrip) {
       y += 6;
       checkPage(12);
       setC(B.horizon, false);
-      doc.setFontSize(8.5);
+      doc.setFontSize(11.5);
       doc.setFont('helvetica', 'bold');
       const flightLine = `Voo: ${originCity} > ${cleanText(destCity)}  |  ~${flightDurNum || '?'}h  |  Fuso: ${tzDiff > 0 ? '+' : ''}${tzDiff}h`;
       doc.text(flightLine, 14, y);
@@ -876,7 +876,7 @@ export async function exportTripPDF(trip: SavedTrip) {
       const severity = trip.jetLagSeverity;
       if (severity === 'ALTO' || severity === 'SEVERO') {
         setC(severity === 'SEVERO' ? B.red : B.amber, false);
-        doc.setFontSize(7.5);
+        doc.setFontSize(10.5);
         doc.setFont('helvetica', 'bold');
         doc.text(`Impacto de fuso: ${severity}`, 14, y);
         y += 4;
@@ -891,7 +891,7 @@ export async function exportTripPDF(trip: SavedTrip) {
       try {
         doc.addImage(qrData, 'PNG', pw - 40, ph - 45, 25, 25);
         setC(B.gray500, false);
-        doc.setFontSize(6);
+        doc.setFontSize(10.5);
         doc.setFont('helvetica', 'normal');
         doc.text('Acesse seu roteiro digital', pw - 27.5, ph - 18, { align: 'center' });
       } catch {}
@@ -920,7 +920,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   // Resumo Financeiro
   checkPage(45);
   setC(B.emerald, false);
-  doc.setFontSize(10);
+  doc.setFontSize(11.5);
   doc.setFont('helvetica', 'bold');
   doc.text('RESUMO FINANCEIRO', 14, y);
   y += 6;
@@ -939,7 +939,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   let finY = y + 7;
   finData.forEach(({ label, value, color }) => {
     setC(B.gray400, false);
-    doc.setFontSize(8.5);
+    doc.setFontSize(11.5);
     doc.setFont('helvetica', 'normal');
     doc.text(label, 20, finY);
     setC(color, false);
@@ -966,7 +966,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   drawRect(14, y, pw - 28, 0.3, B.surface);
   y += 8;
   setC(B.emerald, false);
-  doc.setFontSize(10);
+  doc.setFontSize(11.5);
   doc.setFont('helvetica', 'bold');
   doc.text('VOO & HOSPEDAGEM', 14, y);
   y += 7;
@@ -978,7 +978,7 @@ export async function exportTripPDF(trip: SavedTrip) {
 
   drawStatusDot(16, y - 1, flightStatus === 'Confirmado' ? B.emerald : B.gold);
   setC(B.white, false);
-  doc.setFontSize(9);
+  doc.setFontSize(10.5);
   doc.setFont('helvetica', 'bold');
   doc.text(`VOO: ${originCode} > ${destCode} > ${originCode}`, 20, y);
   y += 5;
@@ -996,7 +996,7 @@ export async function exportTripPDF(trip: SavedTrip) {
     drawStatusDot(16, y - 1, hotelStatus === 'Confirmado' ? B.emerald : B.gold);
     setC(B.white, false);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
+    doc.setFontSize(10.5);
 
     const displayName = trip.accommodation.name || `Hotel em ${trip.destination}`;
     doc.text(displayName, 20, y);
@@ -1012,7 +1012,7 @@ export async function exportTripPDF(trip: SavedTrip) {
 
    if (hotelDescription) {
       setC(B.gray500, false);
-      doc.setFontSize(7.5);
+      doc.setFontSize(10.5);
       doc.setFont('helvetica', 'italic');
       const descLines = doc.splitTextToSize(hotelDescription, pw - 40);
       doc.text(descLines, 20, y);
@@ -1024,7 +1024,7 @@ export async function exportTripPDF(trip: SavedTrip) {
       const mapsQuery = encodeURIComponent((trip.accommodation.name || '') + ', ' + trip.destination);
       const mapsLink = `https://www.google.com/maps/search/${mapsQuery}`;
       setC(B.emerald, false);
-      doc.setFontSize(7);
+      doc.setFontSize(11.5);
       doc.setFont('helvetica', 'normal');
       doc.textWithLink('> Ver no Google Maps', 20, y, { url: mapsLink });
       y += 5;
@@ -1055,7 +1055,7 @@ export async function exportTripPDF(trip: SavedTrip) {
     const cleanTitle = cleanText(day.title || '');
 
     setC(B.white, false);
-    doc.setFontSize(10);
+    doc.setFontSize(11.5);
     doc.setFont('helvetica', 'bold');
     doc.text(`DIA ${day.day}  —  ${cleanTitle}`, 14, y);
 
@@ -1063,7 +1063,7 @@ export async function exportTripPDF(trip: SavedTrip) {
       const dayDate = new Date(trip.startDate);
       dayDate.setDate(dayDate.getDate() + day.day - 1);
       setC(B.gray500, false);
-      doc.setFontSize(7.5);
+      doc.setFontSize(10.5);
       doc.setFont('helvetica', 'normal');
       doc.text(format(dayDate, "dd MMM yyyy", { locale: ptBR }), pw - 14, y, { align: 'right' });
     }
@@ -1089,7 +1089,7 @@ export async function exportTripPDF(trip: SavedTrip) {
       if (routeStops.length >= 2) {
         checkPage(5);
         setC(B.gray500, false);
-        doc.setFontSize(7);
+        doc.setFontSize(11.5);
         doc.setFont('helvetica', 'italic');
         const routeText = `Rota: Hotel > ${routeStops.join(' > ')} > Hotel`;
         const truncated = routeText.length > 100 ? routeText.substring(0, 97) + '...' : routeText;
@@ -1102,7 +1102,7 @@ export async function exportTripPDF(trip: SavedTrip) {
     if (narrative) {
       checkPage(12);
       setC(B.gray400, false);
-      doc.setFontSize(8);
+      doc.setFontSize(9.5);
       doc.setFont('helvetica', 'italic');
       const narrativeLines = doc.splitTextToSize(narrative, pw - 32);
       doc.text(narrativeLines, 16, y);
@@ -1116,17 +1116,17 @@ export async function exportTripPDF(trip: SavedTrip) {
         act.name?.toLowerCase().includes('transfer');
 
       setC(isLogistics ? B.gray500 : B.white, false);
-      doc.setFontSize(8.5);
+      doc.setFontSize(11.5);
       doc.setFont('helvetica', isLogistics ? 'italic' : 'normal');
       
       // Category icon prefix
       const catIcon = getCategoryIcon(act.category || '', act.type);
       setC(B.emerald, false);
-      doc.setFontSize(6);
+      doc.setFontSize(10.5);
       doc.text(catIcon, 16, y);
       
       setC(isLogistics ? B.gray500 : B.white, false);
-      doc.setFontSize(8.5);
+      doc.setFontSize(11.5);
       doc.setFont('helvetica', isLogistics ? 'italic' : 'normal');
       const timeStr = act.time || '     ';
       doc.text(timeStr, 26, y);
@@ -1168,7 +1168,7 @@ export async function exportTripPDF(trip: SavedTrip) {
             !(nextAct.name || '').toLowerCase().includes('transfer')) {
           checkPage(3);
           setC(B.gray500, false);
-          doc.setFontSize(6);
+          doc.setFontSize(10.5);
           doc.setFont('helvetica', 'italic');
           // Alternate between walking and taxi estimates
           const distHint = actIdx % 2 === 0 ? '~10 min a pe' : '~20 min de taxi/transporte';
@@ -1181,7 +1181,7 @@ export async function exportTripPDF(trip: SavedTrip) {
       if (act.description && act.description !== act.name && !isLogistics && act.description.length > 5) {
         checkPage(4);
         setC(B.gray500, false);
-        doc.setFontSize(6.5);
+        doc.setFontSize(9.5);
         doc.setFont('helvetica', 'italic');
         const descText = act.description.length > 80 ? act.description.substring(0, 77) + '...' : act.description;
         doc.text(descText, 30, y);
@@ -1194,7 +1194,7 @@ export async function exportTripPDF(trip: SavedTrip) {
         const actMapsQuery = encodeURIComponent(cleanActName + ', ' + trip.destination);
         const actMapsUrl = 'https://www.google.com/maps/search/' + actMapsQuery;
         setC(B.horizon, false);
-        doc.setFontSize(5.5);
+        doc.setFontSize(11.5);
         doc.setFont('helvetica', 'normal');
         doc.textWithLink('Ver no Maps', 30, y, { url: actMapsUrl });
         y += 3;
@@ -1217,7 +1217,7 @@ export async function exportTripPDF(trip: SavedTrip) {
       doc.setFillColor(B.deep[0], B.deep[1], B.deep[2]);
       doc.roundedRect(16, y, pw - 32, 10, 2, 2, 'F');
       setC(B.emerald, false);
-      doc.setFontSize(8);
+      doc.setFontSize(9.5);
       doc.setFont('helvetica', 'bold');
       const waypoints = dayVisitables
         .map((a: any) => encodeURIComponent((a.name || '') + ', ' + trip.destination))
@@ -1246,7 +1246,7 @@ export async function exportTripPDF(trip: SavedTrip) {
     y += 4;
 
     setC(B.gray400, false);
-    doc.setFontSize(7);
+    doc.setFontSize(11.5);
     doc.setFont('helvetica', 'italic');
     doc.text('Restaurantes com estrela Michelin proximos ao seu roteiro', 14, y);
     y += 7;
@@ -1256,17 +1256,17 @@ export async function exportTripPDF(trip: SavedTrip) {
       const starsStr = Array(r.stars).fill('*').join('');
 
       setC(B.white, false);
-      doc.setFontSize(8.5);
+      doc.setFontSize(11.5);
       doc.setFont('helvetica', 'bold');
       doc.text(cleanText(r.name), 20, y);
 
       setC(B.gold, false);
-      doc.setFontSize(7);
+      doc.setFontSize(11.5);
       doc.text(starsStr, 20 + doc.getTextWidth(cleanText(r.name)) + 3, y);
 
       setC(B.gray400, false);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
+      doc.setFontSize(10.5);
       const details = `${r.cuisine}  |  ${r.priceRange}${r.neighborhood ? '  |  ' + r.neighborhood : ''}`;
       doc.text(details, 20, y + 3.5);
 
@@ -1303,7 +1303,7 @@ export async function exportTripPDF(trip: SavedTrip) {
 
     checkPage(10);
     setC(B.white, false);
-    doc.setFontSize(8.5);
+    doc.setFontSize(11.5);
     doc.setFont('helvetica', 'bold');
     doc.text(categoryLabels[cat] || cat, 16, y);
     y += 5;
@@ -1312,7 +1312,7 @@ export async function exportTripPDF(trip: SavedTrip) {
       checkPage(6);
       const box = item.checked ? '[x]' : '[ ]';
       setC(item.checked ? B.emerald : B.gray400, false);
-      doc.setFontSize(8.5);
+      doc.setFontSize(11.5);
       doc.setFont('helvetica', 'normal');
       doc.text(`${box}  ${cleanText(item.label)}`, 20, y);
       y += 5;
@@ -1347,7 +1347,7 @@ export async function exportTripPDF(trip: SavedTrip) {
     infoItems.forEach(({ label, value }) => {
       checkPage(7);
       setC(B.gray400, false);
-      doc.setFontSize(8);
+      doc.setFontSize(9.5);
       doc.setFont('helvetica', 'normal');
       doc.text(label, 16, y);
       setC(B.white, false);
@@ -1383,12 +1383,12 @@ export async function exportTripPDF(trip: SavedTrip) {
     drawRect(14, boxStartY + boxH2, pw - 28, 1, protocolColor);
 
     setC(protocolColor, false);
-    doc.setFontSize(9);
+    doc.setFontSize(10.5);
     doc.setFont('helvetica', 'bold');
     doc.text('Biology AI — Protocolo de Adaptacao', 20, boxStartY + 6);
 
     setC(B.gray400, false);
-    doc.setFontSize(8);
+    doc.setFontSize(9.5);
     doc.setFont('helvetica', 'normal');
     doc.text(protocolLines, 20, boxStartY + 12);
 
@@ -1403,7 +1403,7 @@ export async function exportTripPDF(trip: SavedTrip) {
     // Dica local
     checkPage(10);
     setC(B.white, false);
-    doc.setFontSize(8);
+    doc.setFontSize(9.5);
     doc.setFont('helvetica', 'bold');
     doc.text('Dica local:', 16, y);
     setC(B.gray400, false);
@@ -1440,7 +1440,7 @@ export async function exportTripPDF(trip: SavedTrip) {
       drawRect(14, y - 2, pw - 28, 0.3, B.surface);
       y += 6;
       setC(B.emerald, false);
-      doc.setFontSize(10);
+      doc.setFontSize(11.5);
       doc.setFont('helvetica', 'bold');
       doc.text('FRASES UTEIS', 14, y);
       y += 6;
@@ -1448,7 +1448,7 @@ export async function exportTripPDF(trip: SavedTrip) {
       tips.phrases.forEach(phrase => {
         checkPage(5);
         setC(B.white, false);
-        doc.setFontSize(8);
+        doc.setFontSize(9.5);
         doc.setFont('helvetica', 'normal');
         doc.text(`- ${phrase}`, 16, y);
         y += 4.5;
@@ -1462,13 +1462,13 @@ export async function exportTripPDF(trip: SavedTrip) {
       drawRect(14, y, pw - 28, 0.3, B.surface);
       y += 6;
       setC(B.emerald, false);
-      doc.setFontSize(10);
+      doc.setFontSize(11.5);
       doc.setFont('helvetica', 'bold');
       doc.text('EMERGENCIA', 14, y);
       y += 6;
 
       setC(B.white, false);
-      doc.setFontSize(8);
+      doc.setFontSize(9.5);
       doc.setFont('helvetica', 'bold');
       doc.text('Consulado/Embaixada do Brasil:', 16, y);
       y += 4;
@@ -1532,7 +1532,7 @@ export async function exportTripPDF(trip: SavedTrip) {
     checkPage(10 + items.length * 5);
 
     setC(B.white, false);
-    doc.setFontSize(9);
+    doc.setFontSize(10.5);
     doc.setFont('helvetica', 'bold');
     doc.text(title, 16, y);
     y += 6;
@@ -1540,7 +1540,7 @@ export async function exportTripPDF(trip: SavedTrip) {
     items.forEach(item => {
       checkPage(6);
       setC(B.gray400, false);
-      doc.setFontSize(8.5);
+      doc.setFontSize(11.5);
       doc.setFont('helvetica', 'normal');
       doc.text(`[ ]  ${item}`, 20, y);
       y += 5;
@@ -1566,7 +1566,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   const tipsData = getDestTips(trip.destination);
   if (tipsData?.embassy) {
     setC(B.white, false);
-    doc.setFontSize(9);
+    doc.setFontSize(10.5);
     doc.setFont('helvetica', 'bold');
     doc.text('Embaixada / Consulado do Brasil', 16, y);
     y += 5;
@@ -1574,7 +1574,7 @@ export async function exportTripPDF(trip: SavedTrip) {
     drawRect(14, y, pw - 28, 14, B.deep);
     drawRect(14, y, 2, 14, B.emerald);
     setC(B.gray400, false);
-    doc.setFontSize(8);
+    doc.setFontSize(9.5);
     doc.setFont('helvetica', 'normal');
     const embLines = doc.splitTextToSize(tipsData.embassy, pw - 40);
     doc.text(embLines, 20, y + 5);
@@ -1583,7 +1583,7 @@ export async function exportTripPDF(trip: SavedTrip) {
 
   // Emergency numbers
   setC(B.white, false);
-  doc.setFontSize(9);
+  doc.setFontSize(10.5);
   doc.setFont('helvetica', 'bold');
   doc.text('Numeros de Emergencia', 16, y);
   y += 5;
@@ -1592,14 +1592,14 @@ export async function exportTripPDF(trip: SavedTrip) {
   drawRect(14, y, pw - 28, 14, B.deep);
   drawRect(14, y, 2, 14, B.red);
   setC(B.white, false);
-  doc.setFontSize(10);
+  doc.setFontSize(11.5);
   doc.setFont('helvetica', 'bold');
   doc.text(emergencyNum, 20, y + 9);
   y += 18;
 
   // Insurance
   setC(B.white, false);
-  doc.setFontSize(9);
+  doc.setFontSize(10.5);
   doc.setFont('helvetica', 'bold');
   doc.text('Seguro Viagem', 16, y);
   y += 5;
@@ -1607,7 +1607,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   drawRect(14, y, pw - 28, 18, B.deep);
   drawRect(14, y, 2, 18, B.gold);
   setC(B.gray400, false);
-  doc.setFontSize(8);
+  doc.setFontSize(9.5);
   doc.setFont('helvetica', 'normal');
   doc.text('Operadora: ___________________________________________', 20, y + 6);
   doc.text('Telefone:    ___________________________________________', 20, y + 12);
@@ -1615,7 +1615,7 @@ export async function exportTripPDF(trip: SavedTrip) {
 
   // Emergency contacts
   setC(B.white, false);
-  doc.setFontSize(9);
+  doc.setFontSize(10.5);
   doc.setFont('helvetica', 'bold');
   doc.text('Contatos de Emergencia', 16, y);
   y += 5;
@@ -1623,7 +1623,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   drawRect(14, y, pw - 28, 30, B.deep);
   drawRect(14, y, 2, 30, B.horizon);
   setC(B.gray400, false);
-  doc.setFontSize(8);
+  doc.setFontSize(9.5);
   doc.setFont('helvetica', 'normal');
   doc.text('Nome 1:    ___________________________________________', 20, y + 6);
   doc.text('Telefone:   ___________________________________________', 20, y + 12);
@@ -1634,7 +1634,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   // Important notes
   y += 6;
   setC(B.gray500, false);
-  doc.setFontSize(7);
+  doc.setFontSize(11.5);
   doc.setFont('helvetica', 'italic');
   doc.text('Ligue para a central do seguro ANTES de ir ao hospital.', 16, y);
   y += 4;
@@ -1648,7 +1648,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   drawRect(14, y, pw - 28, 0.3, B.emerald);
   y += 6;
   setC(B.gray500, false);
-  doc.setFontSize(7.5);
+  doc.setFontSize(10.5);
   doc.setFont('helvetica', 'italic');
   doc.text('Este roteiro foi criado com inteligencia artificial e deve ser validado antes da viagem.', 14, y);
 

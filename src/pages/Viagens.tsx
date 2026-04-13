@@ -31,6 +31,7 @@ import type { SuggestedActivity } from '@/data/destinationActivities';
 import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
+import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
 
 
 const DESTINATION_CURRENCY: Record<string, string> = {
@@ -120,6 +121,7 @@ const Viagens = () => {
     dayIndex: number;
     actIndex: number;
   } | null>(null);
+  const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
   const { setTripContext } = useKinuAI();
 
   // Feed trip context to KINU AI when selected trip changes
@@ -1223,7 +1225,9 @@ const Viagens = () => {
                       .map((activity, actIdx) => {
                         const realActIdx = day.activities.indexOf(activity);
                         return (
-                          <div key={`${dayIdx}-${actIdx}`} className={`flex gap-3 p-3 rounded-xl border ${
+                          <div key={`${dayIdx}-${actIdx}`}
+                            onClick={() => setActivityDetailDrawer({ activity, open: true })}
+                            className={`flex gap-3 p-3 rounded-xl border cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all ${
                             activity.status === 'confirmed'
                               ? 'bg-emerald-500/10 border-emerald-500/30'
                               : 'bg-card border-border'
@@ -1253,7 +1257,7 @@ const Viagens = () => {
                             </div>
                             {activity.status !== 'confirmed' && (
                               <button
-                                onClick={() => setConfirmModal({ isOpen: true, activity, dayIndex: dayIdx, actIndex: realActIdx })}
+                                onClick={(e) => { e.stopPropagation(); setConfirmModal({ isOpen: true, activity, dayIndex: dayIdx, actIndex: realActIdx }); }}
                                 className="self-center px-3 py-1.5 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-colors whitespace-nowrap"
                               >
                                 Confirmar
@@ -1413,7 +1417,9 @@ const Viagens = () => {
                       }
 
                       return (
-                        <div key={activity.id} className={`flex gap-3 transition-all duration-500 ${
+                        <div key={activity.id}
+                          onClick={() => setActivityDetailDrawer({ activity, open: true })}
+                          className={`flex gap-3 transition-all duration-500 cursor-pointer hover:ring-1 hover:ring-primary/30 ${
                           activity.status === 'confirmed' ? 'bg-[#10b981]/10 -mx-2 px-2 py-2 rounded-xl border border-[#10b981]/30' :
                           activity.status === 'bidding' ? 'bg-[#eab308]/10 -mx-2 px-2 py-2 rounded-xl border border-[#eab308]/30' :
                           activity.status === 'cancelled' ? 'opacity-50' : ''
@@ -1485,19 +1491,19 @@ const Viagens = () => {
                             {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (
                               <div className="flex gap-2 mt-3 flex-wrap">
                                 <button
-                                  onClick={() => setConfirmModal({ isOpen: true, activity, dayIndex, actIndex })}
+                                  onClick={(e) => { e.stopPropagation(); setConfirmModal({ isOpen: true, activity, dayIndex, actIndex }); }}
                                   className="flex items-center gap-1 px-3 py-1.5 bg-[#10b981] rounded-lg text-xs text-white hover:bg-[#10b981]/80 transition-colors"
                                 >
                                   <Check size={12} />
                                   Confirmar
                                 </button>
                                 <button
-                                  onClick={() => setAuctionModal({
+                                  onClick={(e) => { e.stopPropagation(); setAuctionModal({
                                     isOpen: true,
                                     activityName: activity.name,
                                     activityType: activity.type,
                                     estimatedPrice: activity.cost,
-                                  })}
+                                  }); }}
                                   className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-primary/50 transition-colors"
                                 >
                                   <Tag size={12} />
@@ -1891,6 +1897,16 @@ const Viagens = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Activity Detail Drawer */}
+      {selectedTrip && (
+        <ActivityDetailDrawer
+          activity={activityDetailDrawer?.activity || null}
+          destination={selectedTrip.destination}
+          open={activityDetailDrawer?.open || false}
+          onClose={() => setActivityDetailDrawer(null)}
+        />
+      )}
 
       <BottomNav />
     </>
