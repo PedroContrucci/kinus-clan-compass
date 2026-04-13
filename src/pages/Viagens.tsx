@@ -696,7 +696,7 @@ const Viagens = () => {
         ];
       } else {
         // First exploration day with significant jet lag = recovery day
-        const isArrivalRecoveryDay = (i === 2) && trip.biologyAI &&
+        const isArrivalRecoveryDay = (i === 2) && trip.jetLagMode &&
           (trip.jetLagSeverity === 'MODERADO' || trip.jetLagSeverity === 'ALTO' || trip.jetLagSeverity === 'SEVERO');
 
         if (isArrivalRecoveryDay) {
