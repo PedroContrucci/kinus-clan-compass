@@ -1417,7 +1417,9 @@ const Viagens = () => {
                       }
 
                       return (
-                        <div key={activity.id} className={`flex gap-3 transition-all duration-500 ${
+                        <div key={activity.id}
+                          onClick={() => setActivityDetailDrawer({ activity, open: true })}
+                          className={`flex gap-3 transition-all duration-500 cursor-pointer hover:ring-1 hover:ring-primary/30 ${
                           activity.status === 'confirmed' ? 'bg-[#10b981]/10 -mx-2 px-2 py-2 rounded-xl border border-[#10b981]/30' :
                           activity.status === 'bidding' ? 'bg-[#eab308]/10 -mx-2 px-2 py-2 rounded-xl border border-[#eab308]/30' :
                           activity.status === 'cancelled' ? 'opacity-50' : ''
