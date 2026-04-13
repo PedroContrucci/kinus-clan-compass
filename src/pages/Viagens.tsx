@@ -695,7 +695,7 @@ const Viagens = () => {
           },
         ];
       } else {
-        // EXPLORATION DAYS - Full day activities with realistic prices
+        // EXPLORATION DAYS - Full day activities with curated pool
         const themes = [
           { title: 'Cultura', icon: '🏛️' },
           { title: 'Gastronomia', icon: '🍽️' },
@@ -706,6 +706,13 @@ const Viagens = () => {
         const theme = themes[(i - 2) % themes.length];
         title = theme.title;
         icon = theme.icon;
+
+        const morningAct = pickActivity('morning', trip.destination, theme.title);
+        const afternoonAct = pickActivity('afternoon', trip.destination, theme.title);
+        const nightAct = pickActivity('night', trip.destination, theme.title);
+        const lunchAct = pickActivity('lunch', trip.destination, theme.title);
+        const dinnerAct = pickActivity('dinner', trip.destination, theme.title);
+
         activities = [
           {
             id: `day${dayNum}-1`,
@@ -715,13 +722,13 @@ const Viagens = () => {
             duration: '1h',
             type: 'food',
             category: 'comida',
-            cost: 0, // Included in hotel
+            cost: 0,
             status: 'planned' as ActivityStatus,
           },
           {
             id: `day${dayNum}-2`,
-            name: 'Atividade da manhã',
-            description: travelers > 1 ? `Passeio cultural ou turístico (${travelers} pessoas)` : 'Passeio cultural ou turístico',
+            name: morningAct?.name || 'Atividade da manhã',
+            description: morningAct?.tips?.[0] || (travelers > 1 ? `Passeio cultural ou turístico (${travelers} pessoas)` : 'Passeio cultural ou turístico'),
             time: '10:00',
             duration: '2h30',
             type: 'culture',
@@ -731,8 +738,8 @@ const Viagens = () => {
           },
           {
             id: `day${dayNum}-3`,
-            name: 'Almoço',
-            description: travelers > 1 ? `Restaurante local (${travelers} pessoas)` : 'Restaurante local',
+            name: lunchAct ? `Almoço: ${lunchAct.name}` : 'Almoço',
+            description: lunchAct?.tips?.[0] || (travelers > 1 ? `Restaurante local (${travelers} pessoas)` : 'Restaurante local'),
             time: '13:00',
             duration: '1h30',
             type: 'food',
@@ -742,8 +749,8 @@ const Viagens = () => {
           },
           {
             id: `day${dayNum}-4`,
-            name: 'Atividade da tarde',
-            description: travelers > 1 ? `Exploração livre (${travelers} pessoas)` : 'Exploração livre',
+            name: afternoonAct?.name || 'Atividade da tarde',
+            description: afternoonAct?.tips?.[0] || (travelers > 1 ? `Exploração livre (${travelers} pessoas)` : 'Exploração livre'),
             time: '15:00',
             duration: '3h',
             type: 'culture',
@@ -753,8 +760,8 @@ const Viagens = () => {
           },
           {
             id: `day${dayNum}-5`,
-            name: 'Jantar',
-            description: travelers > 1 ? `Gastronomia local (${travelers} pessoas)` : 'Gastronomia local',
+            name: dinnerAct ? `Jantar: ${dinnerAct.name}` : 'Jantar',
+            description: dinnerAct?.tips?.[0] || (travelers > 1 ? `Gastronomia local (${travelers} pessoas)` : 'Gastronomia local'),
             time: '19:30',
             duration: '2h',
             type: 'food',
