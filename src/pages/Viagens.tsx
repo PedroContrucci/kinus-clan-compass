@@ -25,6 +25,8 @@ import kinuLogo from '@/assets/KINU_logo.png';
 import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { TRAVEL_INTERESTS } from '@/components/wizard/types';
+import { getDestinationActivities } from '@/data/destinationActivities';
+import type { SuggestedActivity } from '@/data/destinationActivities';
 
 import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
@@ -543,6 +545,26 @@ const Viagens = () => {
     const museumPrice = museumPricePP * travelers;
     const tourPrice = tourPricePP * travelers;
     
+    const usedActivityIds = new Set<string>();
+    function pickActivity(category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner', destination: string, themeName: string): SuggestedActivity | null {
+      const pool = getDestinationActivities(destination);
+      const themeStyleMap: Record<string, string[]> = {
+        'Cultura': ['culture', 'history', 'art'],
+        'Gastronomia': ['gastronomy'],
+        'Passeios': ['nature', 'romantic', 'shopping'],
+        'Aventura': ['adventure', 'nature'],
+        'Descobertas': ['culture', 'shopping', 'art'],
+      };
+      const targetTags = themeStyleMap[themeName] || [];
+      let candidates = pool.filter(a => a.category === category && !usedActivityIds.has(a.id) && (targetTags.length === 0 || a.styleTags?.some(t => targetTags.includes(t))));
+      if (candidates.length === 0) candidates = pool.filter(a => a.category === category && !usedActivityIds.has(a.id));
+      if (candidates.length === 0) candidates = pool.filter(a => a.category === category);
+      if (candidates.length === 0) return null;
+      const picked = candidates[0];
+      usedActivityIds.add(picked.id);
+      return picked;
+    }
+
     for (let i = 0; i < duration; i++) {
       const dayNum = i + 1;
       const isFirstDay = i === 0;
