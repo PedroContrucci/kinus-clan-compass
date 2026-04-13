@@ -248,7 +248,7 @@ function generateItinerary(
         activities.push({
           id: `day-${i}-walk`,
           name: 'Caminhada leve no bairro',
-          type: 'leisure',
+          type: 'experience',
           timeSlot: 'afternoon',
           estimatedCost: 0,
           costPerPerson: 0,
@@ -271,7 +271,7 @@ function generateItinerary(
         activities.push({
           id: `day-${i}-rest`,
           name: 'Descanso para regular o sono',
-          type: 'rest',
+          type: 'night',
           timeSlot: 'night',
           estimatedCost: 0,
           costPerPerson: 0,
