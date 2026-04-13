@@ -121,6 +121,7 @@ const Viagens = () => {
     dayIndex: number;
     actIndex: number;
   } | null>(null);
+  const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
   const { setTripContext } = useKinuAI();
 
   // Feed trip context to KINU AI when selected trip changes
