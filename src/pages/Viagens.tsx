@@ -1898,6 +1898,16 @@ const Viagens = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Activity Detail Drawer */}
+      {selectedTrip && (
+        <ActivityDetailDrawer
+          activity={activityDetailDrawer?.activity || null}
+          destination={selectedTrip.destination}
+          open={activityDetailDrawer?.open || false}
+          onClose={() => setActivityDetailDrawer(null)}
+        />
+      )}
+
       <BottomNav />
     </>
   );
