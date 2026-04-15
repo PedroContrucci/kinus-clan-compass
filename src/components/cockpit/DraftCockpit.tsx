@@ -27,6 +27,7 @@ interface DraftTrip {
   flightsSelected?: boolean;
   outboundFlight?: SelectedFlight;
   returnFlight?: SelectedFlight;
+  days?: any[];
 }
 
 interface DraftCockpitProps {
