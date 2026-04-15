@@ -96,6 +96,98 @@ function getDestinationCurrency(destination: string): string {
   return 'USD';
 }
 
+function inferDayIcon(label?: string): string {
+  const text = (label || '').toLowerCase();
+  if (text.includes('partida') || text.includes('embarque') || text.includes('viagem')) return '✈️';
+  if (text.includes('chegada')) return '🛬';
+  if (text.includes('retorno')) return '🏠';
+  if (text.includes('gastr')) return '🍽️';
+  if (text.includes('cultural')) return '🏛️';
+  if (text.includes('arte')) return '🎨';
+  if (text.includes('natureza')) return '🌿';
+  if (text.includes('aventura')) return '🚶';
+  return '🗺️';
+}
+
+function normalizeActivityCategory(activity: any): TripActivity['category'] {
+  const type = activity?.type;
+  const timeSlot = activity?.timeSlot;
+
+  if (type === 'flight' || timeSlot === 'flight') return 'voo';
+  if (type === 'hotel' || type === 'checkin' || type === 'checkout' || timeSlot === 'hotel') return 'hotel';
+  if (type === 'transport') return 'transporte';
+  if (type === 'restaurant' || ['breakfast', 'lunch', 'dinner'].includes(type) || ['breakfast', 'lunch', 'dinner'].includes(timeSlot)) return 'comida';
+
+  return 'passeio';
+}
+
+function normalizeActivityStatus(status: any): ActivityStatus {
+  if (status === 'confirmed' || status === 'bidding' || status === 'cancelled') return status;
+  return 'planned';
+}
+
+function isJetLagFriendlyActivity(activity: any): boolean {
+  const hints = [activity?.name, ...(Array.isArray(activity?.tips) ? activity.tips : [])]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  return Boolean(activity?.jetLagFriendly) || /sem pressa|refeição leve|relogio biológico|relógio biológico|descanso|dormir no horário local|caminhada leve/.test(hints);
+}
+
+function normalizeTripDays(days: any[] = []): SavedTrip['days'] {
+  return days.map((day: any, index: number) => {
+    const dayNumber = typeof day?.day === 'number'
+      ? day.day
+      : typeof day?.dayNumber === 'number'
+        ? day.dayNumber
+        : index + 1;
+
+    const title = day?.title || day?.label || day?.theme || `Dia ${dayNumber}`;
+    const icon = day?.icon || inferDayIcon(title);
+
+    const activities = Array.isArray(day?.activities)
+      ? day.activities.map((activity: any, activityIndex: number): TripActivity => {
+          const category = activity?.category || normalizeActivityCategory(activity);
+
+          return {
+            id: activity?.id || `day${dayNumber}-${activityIndex + 1}`,
+            time: activity?.time || '09:00',
+            name: activity?.name || 'Atividade',
+            description: activity?.description || (Array.isArray(activity?.tips) ? activity.tips.join(' • ') : activity?.location || ''),
+            duration: activity?.duration || '1h',
+            cost: typeof activity?.cost === 'number' ? activity.cost : Number(activity?.estimatedCost || 0),
+            type: activity?.type || category,
+            status: normalizeActivityStatus(activity?.status),
+            category,
+            jetLagFriendly: isJetLagFriendlyActivity(activity),
+          };
+        })
+      : [];
+
+    return {
+      day: dayNumber,
+      date: typeof day?.date === 'string'
+        ? day.date
+        : day?.date instanceof Date
+          ? day.date.toISOString()
+          : undefined,
+      title,
+      icon,
+      activities,
+    };
+  });
+}
+
+function normalizeSavedTrip(trip: any): SavedTrip {
+  if (!trip || !Array.isArray(trip.days)) return trip;
+
+  return {
+    ...trip,
+    days: normalizeTripDays(trip.days),
+  };
+}
+
 const Viagens = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -163,8 +255,10 @@ const Viagens = () => {
     setUser(JSON.parse(savedUser));
 
     // Load trips
-    const savedTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
-    setTrips(savedTrips);
+    const rawTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+    const normalizedTrips = rawTrips.map((trip: any) => normalizeSavedTrip(trip));
+    setTrips(normalizedTrips);
+    localStorage.setItem('kinu_trips', JSON.stringify(normalizedTrips));
   }, [navigate]);
 
   const handleDayChange = (day: number) => {
@@ -511,11 +605,13 @@ const Viagens = () => {
       const duration = getTripDuration(updatedTrip);
       updatedTrip.days = generateBasicDays(updatedTrip, duration);
     }
+
+    const normalizedTrip = normalizeSavedTrip(updatedTrip);
     
-    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
+    const updatedTrips = trips.map((t) => (t.id === normalizedTrip.id ? normalizedTrip : t));
     setTrips(updatedTrips);
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
-    setSelectedTrip(updatedTrip);
+    setSelectedTrip(normalizedTrip);
   };
   
   // Generate basic days for a trip - WITH CORRECT DAY LOGIC AND REALISTIC PRICES
