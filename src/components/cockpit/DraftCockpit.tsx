@@ -114,6 +114,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   
   const [selectedOutbound, setSelectedOutbound] = useState<SelectedFlight | undefined>(trip.outboundFlight);
   const [selectedReturn, setSelectedReturn] = useState<SelectedFlight | undefined>(trip.returnFlight);
+  const [generatedDays, setGeneratedDays] = useState<any[] | null>(null);
 
   // Infer airport codes
   const originCode = trip.originAirportCode || inferAirportCode(trip.origin || 'São Paulo');
@@ -168,6 +169,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
       flightsSelected: true,
       outboundFlight: selectedOutbound,
       returnFlight: selectedReturn,
+      days: generatedDays || trip.days,
     };
     
     onActivate(updatedTrip as any);
@@ -214,6 +216,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
         onActivate={handleActivate}
         onSave={handleSave}
         onBack={handleBackFromItinerary}
+        onDaysGenerated={setGeneratedDays}
       />
     );
   }
