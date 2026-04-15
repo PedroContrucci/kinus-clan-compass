@@ -400,13 +400,35 @@ function generateItinerary(
       label = 'Exploração';
       theme = `${dayTheme.emoji} ${dayTheme.theme}`;
       
-      // ☕ BREAKFAST (08:00)
-      // ☕ BREAKFAST (08:00)
-      const breakfastActivity = pickActivity('breakfast', dayTheme.theme);
-      if (breakfastActivity) {
-        const act = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers);
-        activities.push(act);
-        dayTotal += act.estimatedCost;
+      // ☕ BREAKFAST (08:00) — 80% hotel (free), ~20% external café for variety
+      const explorationDayIndex = i - 2; // 0-based index of exploration days
+      const totalExplorationDays = totalDays - 3; // exclude departure + arrival + return
+      const suggestExternalBreakfast = (explorationDayIndex === 1) || (explorationDayIndex === Math.floor(totalExplorationDays / 2));
+
+      if (suggestExternalBreakfast) {
+        const breakfastActivity = pickActivity('breakfast', dayTheme.theme);
+        if (breakfastActivity) {
+          const act = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers);
+          act.tips = ['Sugestão de café externo para variar', ...(act.tips || [])];
+          activities.push(act);
+          dayTotal += act.estimatedCost;
+        }
+      } else {
+        // Hotel breakfast — included in daily rate, cost is 0
+        activities.push({
+          id: `day-${i}-breakfast-hotel`,
+          name: 'Café da manhã no hotel',
+          type: 'breakfast',
+          timeSlot: 'breakfast',
+          estimatedCost: 0,
+          costPerPerson: 0,
+          time: '08:00',
+          duration: '1h',
+          location: 'Hotel',
+          status: 'defined',
+          source: 'kinu',
+          tips: ['Incluso na diária do hotel'],
+        });
       }
       
       // 🏛️ MORNING ACTIVITY (10:00)
