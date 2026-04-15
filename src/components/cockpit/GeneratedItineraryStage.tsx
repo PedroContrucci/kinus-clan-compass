@@ -25,6 +25,7 @@ import {
   getDestinationActivities,
   type SuggestedActivity 
 } from '@/data/destinationActivities';
+import { getTopMichelinForCity } from '@/lib/michelinData';
 import { KinuAnalysisCard } from './KinuAnalysisCard';
 import { ItineraryDayWeather } from './ItineraryDayWeather';
 import { ItineraryExchangeRate } from './ItineraryExchangeRate';
@@ -455,9 +456,39 @@ function generateItinerary(
         dayTotal += act.estimatedCost;
       }
       
-      // 🍷 DINNER (19:30)
-      const dinnerActivity = pickActivity('dinner', dayTheme.theme);
-      if (dinnerActivity) {
+      // 🍷 DINNER (19:30) — Michelin injection for gastronomy days
+      const isGastroDay = dayTheme.theme.toLowerCase().includes('gastron');
+      const wantsGastronomy = travelInterests.some(ti => ti.toLowerCase().includes('gastronom'));
+      
+      let dinnerActivity = pickActivity('dinner', dayTheme.theme);
+      
+      if (isGastroDay && wantsGastronomy) {
+        const michelin = getTopMichelinForCity(destination, 5);
+        const availableMichelin = michelin.find(m => !usedActivityIds.includes(`michelin-${m.name}`));
+        if (availableMichelin) {
+          const stars = '⭐'.repeat(availableMichelin.stars);
+          activities.push({
+            id: `day-${i}-dinner-michelin`,
+            name: `${availableMichelin.name} ${stars} Michelin`,
+            type: 'dinner',
+            timeSlot: 'dinner',
+            estimatedCost: getActivityPrice('restaurant_dinner', destination, priceLevel) * travelers * 1.5,
+            costPerPerson: getActivityPrice('restaurant_dinner', destination, priceLevel) * 1.5,
+            time: '20:00',
+            duration: '2h30',
+            location: availableMichelin.neighborhood || destination,
+            status: 'defined',
+            source: 'kinu',
+            tips: [`Cozinha ${availableMichelin.cuisine}`, 'Reserve com 2-3 semanas de antecedência'],
+          });
+          usedActivityIds.push(`michelin-${availableMichelin.name}`);
+          dayTotal += getActivityPrice('restaurant_dinner', destination, priceLevel) * travelers * 1.5;
+        } else if (dinnerActivity) {
+          const act = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30', travelers);
+          activities.push(act);
+          dayTotal += act.estimatedCost;
+        }
+      } else if (dinnerActivity) {
         const act = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30', travelers);
         activities.push(act);
         dayTotal += act.estimatedCost;
