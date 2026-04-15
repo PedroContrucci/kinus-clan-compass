@@ -3,7 +3,7 @@
 // afternoon activity, dinner, and optional night activity
 // Includes KINU Analysis, Weather, and Exchange Rate integrations
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Save, PlayCircle, Plus, Pencil, Trash2, RefreshCw,
@@ -80,6 +80,7 @@ interface GeneratedItineraryStageProps {
   onActivate: () => void;
   onSave: () => void;
   onBack: () => void;
+  onDaysGenerated?: (days: ItineraryDay[]) => void;
 }
 
 // Day themes based on exploration type
@@ -536,6 +537,7 @@ export const GeneratedItineraryStage = ({
   onActivate,
   onSave,
   onBack,
+  onDaysGenerated,
 }: GeneratedItineraryStageProps) => {
   const { days: initialDays, breakdown: initialBreakdown } = useMemo(() => 
     generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity),
@@ -544,6 +546,12 @@ export const GeneratedItineraryStage = ({
 
   const [days, setDays] = useState(initialDays);
   const [breakdown] = useState(initialBreakdown);
+
+  useEffect(() => {
+    if (onDaysGenerated && days.length > 0) {
+      onDaysGenerated(days);
+    }
+  }, [days, onDaysGenerated]);
   const [selectedDay, setSelectedDay] = useState(1);
   const [addActivityModal, setAddActivityModal] = useState(false);
 
