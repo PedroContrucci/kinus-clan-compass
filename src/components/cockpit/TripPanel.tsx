@@ -768,8 +768,9 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             );
             const confirmedCount = realActivities.filter(a => a.status === 'confirmed').length;
             const dayTotal = realActivities.reduce((sum, a) => sum + (a.cost || 0), 0);
-            const dayDate = trip.startDate
-              ? format(new Date(new Date(trip.startDate).getTime() + (day.day - 1) * 86400000), "dd/MM (EEE)", { locale: ptBR })
+            const startMs = trip.startDate ? new Date(trip.startDate).getTime() : NaN;
+            const dayDate = !isNaN(startMs)
+              ? format(new Date(startMs + (day.day - 1) * 86400000), "dd/MM (EEE)", { locale: ptBR })
               : '';
             const cleanTitle = (day.title || '').replace(/[^\w\sà-úÀ-Ú—·•\-,]/gi, '').trim();
 
