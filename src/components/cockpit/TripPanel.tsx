@@ -760,31 +760,34 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           </button>
         </div>
         <div className="divide-y divide-border">
-          {(trip.days || []).map((day) => {
-            const realActivities = (day.activities || []).filter(a =>
+          {(trip.days || []).map((day, index) => {
+            const dayData = day as any;
+            const dayIndex = dayData.day ?? dayData.dayNumber ?? index + 1;
+            const realActivities = (dayData.activities || []).filter((a: any) =>
               a.category !== 'voo' &&
               !(a.category === 'hotel' && (a.name?.toLowerCase().includes('check-in') || a.name?.toLowerCase().includes('check-out'))) &&
               !a.name?.toLowerCase().includes('transfer')
             );
-            const confirmedCount = realActivities.filter(a => a.status === 'confirmed').length;
-            const dayTotal = realActivities.reduce((sum, a) => sum + (a.cost || 0), 0);
+            const confirmedCount = realActivities.filter((a: any) => a.status === 'confirmed').length;
+            const dayTotal = realActivities.reduce((sum: number, a: any) => sum + (a.cost || a.estimatedCost || 0), 0);
             const startMs = trip.startDate ? new Date(trip.startDate).getTime() : NaN;
-            const dayDate = !isNaN(startMs)
-              ? format(new Date(startMs + (day.day - 1) * 86400000), "dd/MM (EEE)", { locale: ptBR })
+            const dayDate = !isNaN(startMs) && Number.isFinite(dayIndex)
+              ? format(new Date(startMs + (dayIndex - 1) * 86400000), "dd/MM (EEE)", { locale: ptBR })
               : '';
-            const cleanTitle = (day.title || '').replace(/[^\w\sà-úÀ-Ú—·•\-,]/gi, '').trim();
+            const dayTitle = dayData.title || dayData.label || dayData.theme || `Dia ${dayIndex}`;
+            const cleanTitle = dayTitle.replace(/[^\w\sà-úÀ-Ú—·•\-,]/gi, '').trim();
 
             return (
               <button
-                key={day.day}
+                key={dayIndex}
                 onClick={() => onNavigateTab('roteiro')}
                 className="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-muted/30 transition-colors text-left"
               >
                 <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground flex-shrink-0">
-                  {day.day}
+                  {dayIndex}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-foreground truncate">{cleanTitle || `Dia ${day.day}`}</p>
+                  <p className="text-xs font-medium text-foreground truncate">{cleanTitle || `Dia ${dayIndex}`}</p>
                   <p className="text-[10px] text-muted-foreground">
                     {dayDate} · {realActivities.length} atividades
                     {confirmedCount > 0 && ` · ${confirmedCount} confirmadas`}
