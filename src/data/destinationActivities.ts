@@ -1055,14 +1055,11 @@ export const destinationActivities: Record<string, DestinationData> = {
   },
 };
 
-// Get activities for a destination, with fallback to Paris
+// Get activities for a destination, with smart fallback synthesized from CURATED_THEMES
 export function getDestinationActivities(destination: string): SuggestedActivity[] {
   const data = destinationActivities[destination];
-  if (data) {
-    return data.activities;
-  }
-  // Fallback to generic activities based on Paris structure
-  return parisActivities;
+  if (data) return data.activities;
+  return buildActivitiesFromThemes(destination);
 }
 
 // Filter activities by category
@@ -1631,4 +1628,41 @@ export function getDestinationThemes(city: string): DestinationTheme[] {
     if (key === nk || key.includes(nk) || nk.includes(key)) return v;
   }
   return GENERIC_THEMES;
+}
+
+function buildActivitiesFromThemes(destination: string): SuggestedActivity[] {
+  const themes = getDestinationThemes(destination);
+  const tagMap: Record<string, string[]> = {
+    'Cultura': ['culture', 'history', 'art'],
+    'Gastronomia': ['gastronomy'],
+    'Passeios': ['nature', 'romantic', 'shopping'],
+    'Descobertas': ['culture', 'shopping', 'art'],
+    'Aventura': ['adventure', 'nature'],
+  };
+  const slots: Array<'morning' | 'afternoon' | 'night'> = ['morning', 'afternoon', 'night'];
+  const out: SuggestedActivity[] = [];
+  const slug = destination.toLowerCase().replace(/\s+/g, '-');
+  themes.forEach((theme, ti) => {
+    const tags = tagMap[theme.title] || ['culture'];
+    theme.activities.forEach((actName, ai) => {
+      out.push({
+        id: `${slug}-${theme.title.toLowerCase()}-${slots[ai] || 'afternoon'}-${ai}`,
+        name: actName, category: slots[ai] || 'afternoon', neighborhood: destination,
+        rating: 4.5, estimatedCostBRL: slots[ai] === 'night' ? 150 : 100,
+        durationHours: slots[ai] === 'night' ? 2 : 3, tips: [], styleTags: tags,
+      });
+    });
+    out.push({ id: `${slug}-${theme.title.toLowerCase()}-lunch-${ti}`, name: theme.restaurants.lunch,
+      category: 'lunch', neighborhood: destination, rating: 4.5, estimatedCostBRL: 120,
+      durationHours: 1.5, tips: [], styleTags: ['gastronomy', ...tags] });
+    out.push({ id: `${slug}-${theme.title.toLowerCase()}-dinner-${ti}`, name: theme.restaurants.dinner,
+      category: 'dinner', neighborhood: destination, rating: 4.6, estimatedCostBRL: 250,
+      durationHours: 2, tips: [], styleTags: ['gastronomy', ...tags] });
+  });
+  ['Café da manhã no hotel', 'Padaria local', 'Café tradicional'].forEach((name, i) => {
+    out.push({ id: `${slug}-breakfast-${i}`, name, category: 'breakfast',
+      neighborhood: destination, rating: 4.3, estimatedCostBRL: 50, durationHours: 1,
+      tips: [], styleTags: ['gastronomy'] });
+  });
+  return out;
 }
