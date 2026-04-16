@@ -23,7 +23,9 @@ import {
   getRandomActivity, 
   getActivitiesByCategory,
   getDestinationActivities,
-  type SuggestedActivity 
+  getDestinationThemes,
+  type SuggestedActivity,
+  type DestinationTheme
 } from '@/data/destinationActivities';
 import { getTopMichelinForCity } from '@/lib/michelinData';
 import { getHotelRecommendation } from '@/lib/hotelZones';
