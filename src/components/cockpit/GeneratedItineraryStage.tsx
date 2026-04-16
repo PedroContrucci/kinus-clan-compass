@@ -239,9 +239,36 @@ function generateItinerary(
         source: 'kinu',
       });
       dayTotal = outboundCost;
+
+      // Short flight + early arrival: complete the day with check-in + afternoon + dinner
+      if (sameDayArrival) {
+        activities.push({
+          id: `day-${i}-checkin`, name: 'Check-in Hotel', type: 'checkin', timeSlot: 'hotel',
+          estimatedCost: hotelTotal, time: '14:00',
+          location: (() => {
+            const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
+            if (rec) return `${rec.name} ⭐ ${rec.stars}.0 • ${rec.neighborhood}`;
+            return `Hotel em ${destination}`;
+          })(),
+          status: 'suggestion', source: 'kinu',
+          tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
+        });
+        dayTotal += hotelTotal;
+        const afternoonActivity = pickActivity('afternoon', 'Passeios');
+        if (afternoonActivity) {
+          const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '16:00', travelers);
+          act.tips = ['Passeio leve para se ambientar', ...(act.tips || [])];
+          activities.push(act); dayTotal += act.estimatedCost;
+        }
+        const dinnerActivity = pickActivity('dinner', 'Gastronomia');
+        if (dinnerActivity) {
+          const act = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30', travelers);
+          activities.push(act); dayTotal += act.estimatedCost;
+        }
+      }
     }
     // Day 2: Arrival + Check-in + Light activities
-    else if (i === 1) {
+    else if (i === 1 && !sameDayArrival) {
       label = `Chegada em ${destination}`;
       theme = '🛬 Dia de Chegada';
 
