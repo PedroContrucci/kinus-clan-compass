@@ -146,6 +146,14 @@ function generateItinerary(
   
   // Use getActivityPrice for flights instead of Amadeus sandbox prices
   const { level: priceLevel } = findBestPriceLevel(destination, totalDays, travelers, budget);
+
+  // Detect short flight arriving early — enables same-day arrival flow
+  const arrHourStr = outboundFlight.option.arrivalTime.split(':')[0];
+  const arrivalHour = parseInt(arrHourStr, 10) || 12;
+  const isShortFlight = outboundFlight.option.durationMinutes < 240;
+  const arrivesEarly = arrivalHour < 13;
+  const sameDayArrival = isShortFlight && arrivesEarly;
+  const explorationStart = sameDayArrival ? 1 : 2;
   const flightPerPerson = getActivityPrice('flight', destination, priceLevel);
   const flightsCost = flightPerPerson * travelers * 2; // Round trip × travelers
   
@@ -231,9 +239,36 @@ function generateItinerary(
         source: 'kinu',
       });
       dayTotal = outboundCost;
+
+      // Short flight + early arrival: complete the day with check-in + afternoon + dinner
+      if (sameDayArrival) {
+        activities.push({
+          id: `day-${i}-checkin`, name: 'Check-in Hotel', type: 'checkin', timeSlot: 'hotel',
+          estimatedCost: hotelTotal, time: '14:00',
+          location: (() => {
+            const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
+            if (rec) return `${rec.name} ⭐ ${rec.stars}.0 • ${rec.neighborhood}`;
+            return `Hotel em ${destination}`;
+          })(),
+          status: 'suggestion', source: 'kinu',
+          tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
+        });
+        dayTotal += hotelTotal;
+        const afternoonActivity = pickActivity('afternoon', 'Passeios');
+        if (afternoonActivity) {
+          const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '16:00', travelers);
+          act.tips = ['Passeio leve para se ambientar', ...(act.tips || [])];
+          activities.push(act); dayTotal += act.estimatedCost;
+        }
+        const dinnerActivity = pickActivity('dinner', 'Gastronomia');
+        if (dinnerActivity) {
+          const act = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30', travelers);
+          activities.push(act); dayTotal += act.estimatedCost;
+        }
+      }
     }
     // Day 2: Arrival + Check-in + Light activities
-    else if (i === 1) {
+    else if (i === 1 && !sameDayArrival) {
       label = `Chegada em ${destination}`;
       theme = '🛬 Dia de Chegada';
 
@@ -414,9 +449,10 @@ function generateItinerary(
     }
     // Middle days: Full exploration with 5-6 activities
     else {
-      let themeIndex = (i - 2) % orderedThemes.length;
+      const explorationDay = i - explorationStart;
+      let themeIndex = explorationDay % orderedThemes.length;
       // Focus day: first exploration day uses top-ranked theme
-      if ((i - 2) === 0 && rawInterests.length > 0) {
+      if (explorationDay === 0 && rawInterests.length > 0) {
         const focusThemeName = interestToTheme[rawInterests[0]];
         const focusIdx = orderedThemes.findIndex(t => t.title === focusThemeName);
         if (focusIdx >= 0) themeIndex = focusIdx;
