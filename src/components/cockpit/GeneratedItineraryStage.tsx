@@ -23,7 +23,9 @@ import {
   getRandomActivity, 
   getActivitiesByCategory,
   getDestinationActivities,
-  type SuggestedActivity 
+  getDestinationThemes,
+  type SuggestedActivity,
+  type DestinationTheme
 } from '@/data/destinationActivities';
 import { getTopMichelinForCity } from '@/lib/michelinData';
 import { getHotelRecommendation } from '@/lib/hotelZones';
@@ -85,15 +87,6 @@ interface GeneratedItineraryStageProps {
   onDaysGenerated?: (days: ItineraryDay[]) => void;
 }
 
-// Day themes based on exploration type
-const dayThemes = [
-  { theme: 'Exploração Cultural', emoji: '🏛️' },
-  { theme: 'Gastronomia & Bairros', emoji: '🍽️' },
-  { theme: 'Arte & Compras', emoji: '🎨' },
-  { theme: 'Natureza & Relax', emoji: '🌿' },
-  { theme: 'Aventura Local', emoji: '🚶' },
-  { theme: 'Descobertas Escondidas', emoji: '✨' },
-];
 
 // Convert SuggestedActivity to ItineraryActivity
 // Individual consumption items (meals, experiences) are multiplied by travelers
@@ -195,6 +188,22 @@ function generateItinerary(
 
   // Style tags for filtering (convert interests to lowercase)
   const styleTags = travelInterests.map(i => i.toLowerCase().replace('🍜 ', '').replace('🏖️ ', '').replace('🌙 ', '').replace('👨‍👩‍👧 ', '').replace('🏛️ ', '').replace('🎨 ', '').replace('🎭 ', '').replace('🏔️ ', '').replace('💆 ', '').replace('🛍️ ', '').replace('🌿 ', ''));
+
+  // Interest-aware theme ranking (mirrors NewPlanningWizard lines 655-666)
+  const interestToTheme: Record<string, string> = {
+    'gastronomy': 'Gastronomia', 'culture': 'Cultura', 'history': 'Cultura',
+    'art': 'Cultura', 'adventure': 'Aventura', 'nature': 'Aventura',
+    'beach': 'Passeios', 'relaxation': 'Passeios', 'shopping': 'Passeios',
+    'nightlife': 'Descobertas', 'family': 'Passeios', 'winter': 'Aventura',
+  };
+  const rawInterests = travelInterests.map(i => i.toLowerCase().replace(/[^\w]/g, '').trim());
+  const cityThemes = getDestinationThemes(destination);
+  const scoredThemes = cityThemes.map(theme => ({
+    theme,
+    score: rawInterests.filter(interest => interestToTheme[interest] === theme.title).length,
+  }));
+  scoredThemes.sort((a, b) => b.score - a.score);
+  const orderedThemes: DestinationTheme[] = scoredThemes.map(s => s.theme);
 
   for (let i = 0; i < totalDays; i++) {
     const date = addDays(departureDate, i);
@@ -401,10 +410,16 @@ function generateItinerary(
     }
     // Middle days: Full exploration with 5-6 activities
     else {
-      const themeIndex = (i - 2) % dayThemes.length;
-      const dayTheme = dayThemes[themeIndex];
+      let themeIndex = (i - 2) % orderedThemes.length;
+      // Focus day: first exploration day uses top-ranked theme
+      if ((i - 2) === 0 && rawInterests.length > 0) {
+        const focusThemeName = interestToTheme[rawInterests[0]];
+        const focusIdx = orderedThemes.findIndex(t => t.title === focusThemeName);
+        if (focusIdx >= 0) themeIndex = focusIdx;
+      }
+      const dayTheme = orderedThemes[themeIndex];
       label = 'Exploração';
-      theme = `${dayTheme.emoji} ${dayTheme.theme}`;
+      theme = `${dayTheme.icon} ${dayTheme.title}`;
       
       // ☕ BREAKFAST (08:00) — 80% hotel (free), ~20% external café for variety
       const explorationDayIndex = i - 2; // 0-based index of exploration days
@@ -412,7 +427,7 @@ function generateItinerary(
       const suggestExternalBreakfast = (explorationDayIndex === 1) || (explorationDayIndex === Math.floor(totalExplorationDays / 2));
 
       if (suggestExternalBreakfast) {
-        const breakfastActivity = pickActivity('breakfast', dayTheme.theme);
+        const breakfastActivity = pickActivity('breakfast', dayTheme.title);
         if (breakfastActivity) {
           const act = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers);
           act.tips = ['Sugestão de café externo para variar', ...(act.tips || [])];
@@ -438,7 +453,7 @@ function generateItinerary(
       }
       
       // 🏛️ MORNING ACTIVITY (10:00)
-      const morningActivity = pickActivity('morning', dayTheme.theme);
+      const morningActivity = pickActivity('morning', dayTheme.title);
       if (morningActivity) {
         const act = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers);
         activities.push(act);
@@ -446,7 +461,7 @@ function generateItinerary(
       }
       
       // 🍽️ LUNCH (13:00)
-      const lunchActivity = pickActivity('lunch', dayTheme.theme);
+      const lunchActivity = pickActivity('lunch', dayTheme.title);
       if (lunchActivity) {
         const act = convertToItineraryActivity(lunchActivity, i, 'lunch', '13:00', travelers);
         activities.push(act);
@@ -454,7 +469,7 @@ function generateItinerary(
       }
       
       // 🚶 AFTERNOON ACTIVITY (15:00)
-      const afternoonActivity = pickActivity('afternoon', dayTheme.theme);
+      const afternoonActivity = pickActivity('afternoon', dayTheme.title);
       if (afternoonActivity) {
         const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00', travelers);
         activities.push(act);
@@ -462,10 +477,10 @@ function generateItinerary(
       }
       
       // 🍷 DINNER (19:30) — Michelin injection for gastronomy days
-      const isGastroDay = dayTheme.theme.toLowerCase().includes('gastron');
+      const isGastroDay = dayTheme.title.toLowerCase().includes('gastron');
       const wantsGastronomy = travelInterests.some(ti => ti.toLowerCase().includes('gastronom'));
       
-      let dinnerActivity = pickActivity('dinner', dayTheme.theme);
+      let dinnerActivity = pickActivity('dinner', dayTheme.title);
       
       if (isGastroDay && wantsGastronomy) {
         const michelin = getTopMichelinForCity(destination, 5);
@@ -500,7 +515,7 @@ function generateItinerary(
       }
       
       // 🌙 NIGHT ACTIVITY - Optional (21:30)
-      const nightActivity = pickActivity('night', dayTheme.theme);
+      const nightActivity = pickActivity('night', dayTheme.title);
       if (nightActivity) {
         const act = convertToItineraryActivity(nightActivity, i, 'night', '21:30', travelers);
         act.tips = ['(Opcional)', ...(act.tips || [])];
