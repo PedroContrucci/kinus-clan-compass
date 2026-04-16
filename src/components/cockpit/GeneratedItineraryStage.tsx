@@ -87,15 +87,6 @@ interface GeneratedItineraryStageProps {
   onDaysGenerated?: (days: ItineraryDay[]) => void;
 }
 
-// Day themes based on exploration type
-const dayThemes = [
-  { theme: 'Exploração Cultural', emoji: '🏛️' },
-  { theme: 'Gastronomia & Bairros', emoji: '🍽️' },
-  { theme: 'Arte & Compras', emoji: '🎨' },
-  { theme: 'Natureza & Relax', emoji: '🌿' },
-  { theme: 'Aventura Local', emoji: '🚶' },
-  { theme: 'Descobertas Escondidas', emoji: '✨' },
-];
 
 // Convert SuggestedActivity to ItineraryActivity
 // Individual consumption items (meals, experiences) are multiplied by travelers
