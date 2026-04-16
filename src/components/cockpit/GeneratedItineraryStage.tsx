@@ -449,9 +449,10 @@ function generateItinerary(
     }
     // Middle days: Full exploration with 5-6 activities
     else {
-      let themeIndex = (i - 2) % orderedThemes.length;
+      const explorationDay = i - explorationStart;
+      let themeIndex = explorationDay % orderedThemes.length;
       // Focus day: first exploration day uses top-ranked theme
-      if ((i - 2) === 0 && rawInterests.length > 0) {
+      if (explorationDay === 0 && rawInterests.length > 0) {
         const focusThemeName = interestToTheme[rawInterests[0]];
         const focusIdx = orderedThemes.findIndex(t => t.title === focusThemeName);
         if (focusIdx >= 0) themeIndex = focusIdx;
