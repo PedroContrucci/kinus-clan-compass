@@ -250,7 +250,11 @@ function generateItinerary(
           costPerPerson: 0,
           time: '15:00',
           duration: '1h',
-          location: destination,
+          location: (() => {
+            const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
+            if (rec) return `${rec.name} ⭐ ${rec.stars}.0 • ${rec.neighborhood}`;
+            return `Hotel em ${destination}`;
+          })(),
           status: 'defined',
           source: 'kinu',
           tips: ['Acomodação após o voo, sem pressa', `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
