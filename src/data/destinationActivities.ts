@@ -1618,7 +1618,7 @@ const GENERIC_THEMES: DestinationTheme[] = [
 ];
 
 function normalizeCity(s: string): string {
-  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\s\-_]+/g, '').trim();
 }
 
 export function getDestinationThemes(city: string): DestinationTheme[] {
