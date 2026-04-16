@@ -146,6 +146,14 @@ function generateItinerary(
   
   // Use getActivityPrice for flights instead of Amadeus sandbox prices
   const { level: priceLevel } = findBestPriceLevel(destination, totalDays, travelers, budget);
+
+  // Detect short flight arriving early — enables same-day arrival flow
+  const arrHourStr = outboundFlight.option.arrivalTime.split(':')[0];
+  const arrivalHour = parseInt(arrHourStr, 10) || 12;
+  const isShortFlight = outboundFlight.option.durationMinutes < 240;
+  const arrivesEarly = arrivalHour < 13;
+  const sameDayArrival = isShortFlight && arrivesEarly;
+  const explorationStart = sameDayArrival ? 1 : 2;
   const flightPerPerson = getActivityPrice('flight', destination, priceLevel);
   const flightsCost = flightPerPerson * travelers * 2; // Round trip × travelers
   
