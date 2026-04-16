@@ -189,6 +189,22 @@ function generateItinerary(
   // Style tags for filtering (convert interests to lowercase)
   const styleTags = travelInterests.map(i => i.toLowerCase().replace('🍜 ', '').replace('🏖️ ', '').replace('🌙 ', '').replace('👨‍👩‍👧 ', '').replace('🏛️ ', '').replace('🎨 ', '').replace('🎭 ', '').replace('🏔️ ', '').replace('💆 ', '').replace('🛍️ ', '').replace('🌿 ', ''));
 
+  // Interest-aware theme ranking (mirrors NewPlanningWizard lines 655-666)
+  const interestToTheme: Record<string, string> = {
+    'gastronomy': 'Gastronomia', 'culture': 'Cultura', 'history': 'Cultura',
+    'art': 'Cultura', 'adventure': 'Aventura', 'nature': 'Aventura',
+    'beach': 'Passeios', 'relaxation': 'Passeios', 'shopping': 'Passeios',
+    'nightlife': 'Descobertas', 'family': 'Passeios', 'winter': 'Aventura',
+  };
+  const rawInterests = travelInterests.map(i => i.toLowerCase().replace(/[^\w]/g, '').trim());
+  const cityThemes = getDestinationThemes(destination);
+  const scoredThemes = cityThemes.map(theme => ({
+    theme,
+    score: rawInterests.filter(interest => interestToTheme[interest] === theme.title).length,
+  }));
+  scoredThemes.sort((a, b) => b.score - a.score);
+  const orderedThemes: DestinationTheme[] = scoredThemes.map(s => s.theme);
+
   for (let i = 0; i < totalDays; i++) {
     const date = addDays(departureDate, i);
     const activities: ItineraryActivity[] = [];
