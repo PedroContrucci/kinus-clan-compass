@@ -933,7 +933,17 @@ export async function exportTripPDF(trip: SavedTrip) {
     { label: 'Orcamento total', value: `R$ ${fmt(trip.finances?.total || trip.budget || 0)}`, color: B.white },
     { label: 'Confirmado', value: `R$ ${fmt(trip.finances?.confirmed || 0)}`, color: B.emerald },
     { label: 'Planejado', value: `R$ ${fmt(trip.finances?.planned || 0)}`, color: B.gold },
-    { label: 'Disponivel', value: `R$ ${fmt(Math.max(0, trip.finances?.available || 0))}`, color: B.gray400 },
+    (() => {
+      const available = trip.finances?.available || 0;
+      const isOverBudget = available < 0;
+      return {
+        label: 'Disponivel',
+        value: isOverBudget
+          ? `- R$ ${fmt(Math.abs(available))} (acima do orcamento)`
+          : `R$ ${fmt(available)}`,
+        color: isOverBudget ? B.red : B.gray400,
+      };
+    })(),
   ];
 
   let finY = y + 7;
