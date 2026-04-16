@@ -21,6 +21,7 @@ interface DraftTrip {
   biologyAIEnabled?: boolean;
   hasDirectFlight?: boolean;
   connections?: string[];
+  jetLagSeverity?: string;
   totalDays: number;
   originAirportCode?: string;
   destinationAirportCode?: string;
