@@ -410,10 +410,16 @@ function generateItinerary(
     }
     // Middle days: Full exploration with 5-6 activities
     else {
-      const themeIndex = (i - 2) % dayThemes.length;
-      const dayTheme = dayThemes[themeIndex];
+      let themeIndex = (i - 2) % orderedThemes.length;
+      // Focus day: first exploration day uses top-ranked theme
+      if ((i - 2) === 0 && rawInterests.length > 0) {
+        const focusThemeName = interestToTheme[rawInterests[0]];
+        const focusIdx = orderedThemes.findIndex(t => t.title === focusThemeName);
+        if (focusIdx >= 0) themeIndex = focusIdx;
+      }
+      const dayTheme = orderedThemes[themeIndex];
       label = 'Exploração';
-      theme = `${dayTheme.emoji} ${dayTheme.theme}`;
+      theme = `${dayTheme.icon} ${dayTheme.title}`;
       
       // ☕ BREAKFAST (08:00) — 80% hotel (free), ~20% external café for variety
       const explorationDayIndex = i - 2; // 0-based index of exploration days
