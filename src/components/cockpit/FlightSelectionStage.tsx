@@ -82,6 +82,30 @@ function generateFallbackFlightOptions(
   destinationCode: string,
   isReturn: boolean = false
 ): FlightOption[] {
+  const BR_AIRPORTS = ['GRU','CGH','VCP','GIG','SDU','BSB','CNF','SSA','REC','FOR',
+    'POA','CWB','FLN','MCZ','NAT','BEL','MAO','VIX','GYN','CGB','CGR','SLZ','THE',
+    'AJU','MCP','RBR','PMW','BVB','BPS','IOS','JPA'];
+  const isDomestic = BR_AIRPORTS.includes(originCode) && BR_AIRPORTS.includes(destinationCode);
+
+  if (isDomestic) {
+    return [
+      { id: `${isReturn?'return':'outbound'}-fallback-dom-1`, airline: 'LATAM',
+        route: isReturn?`${destinationCode} → ${originCode}`:`${originCode} → ${destinationCode}`,
+        isDirect: true, duration: '1h05', durationMinutes: 65, price: 850,
+        departureTime: isReturn?'18:30':'08:15', arrivalTime: isReturn?'19:35':'09:20',
+        isBestPrice: true },
+      { id: `${isReturn?'return':'outbound'}-fallback-dom-2`, airline: 'GOL',
+        route: isReturn?`${destinationCode} → ${originCode}`:`${originCode} → ${destinationCode}`,
+        isDirect: true, duration: '1h10', durationMinutes: 70, price: 920,
+        departureTime: isReturn?'20:00':'10:40', arrivalTime: isReturn?'21:10':'11:50',
+        isFastest: true },
+      { id: `${isReturn?'return':'outbound'}-fallback-dom-3`, airline: 'Azul',
+        route: isReturn?`${destinationCode} → ${originCode}`:`${originCode} → ${destinationCode}`,
+        isDirect: true, duration: '1h15', durationMinutes: 75, price: 1050,
+        departureTime: isReturn?'15:20':'13:30', arrivalTime: isReturn?'16:35':'14:45' },
+    ];
+  }
+
   const baseOptions: FlightOption[] = [
     {
       id: `${isReturn ? 'return' : 'outbound'}-fallback-1`,
