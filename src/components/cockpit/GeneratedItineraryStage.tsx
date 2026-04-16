@@ -390,9 +390,8 @@ function generateItinerary(
       theme = '✈️ Dia de Partida';
       
       // Breakfast
-      const breakfastActivity = getRandomActivity(destination, 'breakfast', styleTags, usedActivityIds);
+      const breakfastActivity = pickActivity('breakfast', 'Gastronomia');
       if (breakfastActivity) {
-        usedActivityIds.push(breakfastActivity.id);
         const activity = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers);
         activities.push(activity);
         dayTotal += activity.estimatedCost;
@@ -411,9 +410,8 @@ function generateItinerary(
       });
       
       // Light morning activity or last-minute shopping
-      const morningActivity = getRandomActivity(destination, 'afternoon', styleTags, usedActivityIds);
+      const morningActivity = pickActivity('afternoon', 'Descobertas');
       if (morningActivity) {
-        usedActivityIds.push(morningActivity.id);
         const activity = convertToItineraryActivity(morningActivity, i, 'morning', '10:30', travelers);
         activity.name = 'Última exploração';
         activity.tips = ['Aproveite as últimas horas!', ...(activity.tips || [])];
@@ -422,9 +420,8 @@ function generateItinerary(
       }
       
       // Lunch before heading to airport
-      const lunchActivity = getRandomActivity(destination, 'lunch', styleTags, usedActivityIds);
+      const lunchActivity = pickActivity('lunch', 'Gastronomia');
       if (lunchActivity) {
-        usedActivityIds.push(lunchActivity.id);
         const activity = convertToItineraryActivity(lunchActivity, i, 'lunch', '12:30', travelers);
         activities.push(activity);
         dayTotal += activity.estimatedCost;
