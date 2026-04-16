@@ -26,6 +26,7 @@ import {
   type SuggestedActivity 
 } from '@/data/destinationActivities';
 import { getTopMichelinForCity } from '@/lib/michelinData';
+import { getHotelRecommendation } from '@/lib/hotelZones';
 import { KinuAnalysisCard } from './KinuAnalysisCard';
 import { ItineraryDayWeather } from './ItineraryDayWeather';
 import { ItineraryExchangeRate } from './ItineraryExchangeRate';
@@ -293,7 +294,11 @@ function generateItinerary(
           timeSlot: 'hotel',
           estimatedCost: hotelTotal,
           time: '14:00',
-          location: `Hôtel Le Marais ⭐ 4.2 • Le Marais`,
+          location: (() => {
+            const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
+            if (rec) return `${rec.name} ⭐ ${rec.stars}.0 • ${rec.neighborhood}`;
+            return `Hotel em ${destination}`;
+          })(),
           status: 'suggestion',
           tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
           source: 'kinu',
