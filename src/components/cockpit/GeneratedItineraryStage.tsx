@@ -427,7 +427,7 @@ function generateItinerary(
       const suggestExternalBreakfast = (explorationDayIndex === 1) || (explorationDayIndex === Math.floor(totalExplorationDays / 2));
 
       if (suggestExternalBreakfast) {
-        const breakfastActivity = pickActivity('breakfast', dayTheme.theme);
+        const breakfastActivity = pickActivity('breakfast', dayTheme.title);
         if (breakfastActivity) {
           const act = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers);
           act.tips = ['Sugestão de café externo para variar', ...(act.tips || [])];
@@ -453,7 +453,7 @@ function generateItinerary(
       }
       
       // 🏛️ MORNING ACTIVITY (10:00)
-      const morningActivity = pickActivity('morning', dayTheme.theme);
+      const morningActivity = pickActivity('morning', dayTheme.title);
       if (morningActivity) {
         const act = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers);
         activities.push(act);
@@ -461,7 +461,7 @@ function generateItinerary(
       }
       
       // 🍽️ LUNCH (13:00)
-      const lunchActivity = pickActivity('lunch', dayTheme.theme);
+      const lunchActivity = pickActivity('lunch', dayTheme.title);
       if (lunchActivity) {
         const act = convertToItineraryActivity(lunchActivity, i, 'lunch', '13:00', travelers);
         activities.push(act);
@@ -469,7 +469,7 @@ function generateItinerary(
       }
       
       // 🚶 AFTERNOON ACTIVITY (15:00)
-      const afternoonActivity = pickActivity('afternoon', dayTheme.theme);
+      const afternoonActivity = pickActivity('afternoon', dayTheme.title);
       if (afternoonActivity) {
         const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00', travelers);
         activities.push(act);
@@ -477,10 +477,10 @@ function generateItinerary(
       }
       
       // 🍷 DINNER (19:30) — Michelin injection for gastronomy days
-      const isGastroDay = dayTheme.theme.toLowerCase().includes('gastron');
+      const isGastroDay = dayTheme.title.toLowerCase().includes('gastron');
       const wantsGastronomy = travelInterests.some(ti => ti.toLowerCase().includes('gastronom'));
       
-      let dinnerActivity = pickActivity('dinner', dayTheme.theme);
+      let dinnerActivity = pickActivity('dinner', dayTheme.title);
       
       if (isGastroDay && wantsGastronomy) {
         const michelin = getTopMichelinForCity(destination, 5);
@@ -515,7 +515,7 @@ function generateItinerary(
       }
       
       // 🌙 NIGHT ACTIVITY - Optional (21:30)
-      const nightActivity = pickActivity('night', dayTheme.theme);
+      const nightActivity = pickActivity('night', dayTheme.title);
       if (nightActivity) {
         const act = convertToItineraryActivity(nightActivity, i, 'night', '21:30', travelers);
         act.tips = ['(Opcional)', ...(act.tips || [])];
