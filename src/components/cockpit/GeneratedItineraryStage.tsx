@@ -254,12 +254,20 @@ function generateItinerary(
           tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
         });
         dayTotal += hotelTotal;
-        const afternoonActivity = pickActivity('afternoon', 'Passeios');
-        if (afternoonActivity) {
-          const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '16:00', travelers);
-          act.tips = ['Passeio leve para se ambientar', ...(act.tips || [])];
-          activities.push(act); dayTotal += act.estimatedCost;
-        }
+        activities.push({
+          id: `day-${i}-ambient-walk`,
+          name: 'Caminhada leve no bairro do hotel',
+          type: 'experience',
+          timeSlot: 'afternoon',
+          estimatedCost: 0,
+          costPerPerson: 0,
+          time: '16:00',
+          duration: '2h',
+          location: destination,
+          status: 'suggestion',
+          source: 'kinu',
+          tips: ['Conheça os arredores do hotel sem pressa', 'Ajuda a regular o relógio biológico'],
+        });
         const dinnerActivity = pickActivity('dinner', 'Gastronomia');
         if (dinnerActivity) {
           const act = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30', travelers);
