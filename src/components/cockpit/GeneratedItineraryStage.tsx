@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import type { SelectedFlight } from './FlightSelectionStage';
 import { 
-  getRandomActivity, 
+   
   getActivitiesByCategory,
   getDestinationActivities,
   getDestinationThemes,
