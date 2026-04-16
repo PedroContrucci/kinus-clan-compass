@@ -21,6 +21,7 @@ interface DraftTrip {
   biologyAIEnabled?: boolean;
   hasDirectFlight?: boolean;
   connections?: string[];
+  jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO';
   totalDays: number;
   originAirportCode?: string;
   destinationAirportCode?: string;
@@ -214,6 +215,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
         outboundFlight={selectedOutbound}
         returnFlight={selectedReturn}
         travelInterests={trip.travelInterests}
+        jetLagSeverity={trip.jetLagSeverity}
         onActivate={handleActivate}
         onSave={handleSave}
         onBack={handleBackFromItinerary}
