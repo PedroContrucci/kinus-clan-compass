@@ -196,11 +196,15 @@ function generateItinerary(
       candidates = pool.filter(a => a.category === category);
     }
     if (candidates.length === 0) return null;
-    // Sort by proximity to price target (smaller distance first)
+    // Sort by tier intent: budget=cheapest first, luxury=most expensive first,
+    // midrange=closest to median target
     candidates.sort((a, b) => {
-      const distA = Math.abs((a.estimatedCostBRL || 0) - target);
-      const distB = Math.abs((b.estimatedCostBRL || 0) - target);
-      return distA - distB;
+      const priceA = a.estimatedCostBRL || 0;
+      const priceB = b.estimatedCostBRL || 0;
+      if (priceLevel === 'budget') return priceA - priceB;
+      if (priceLevel === 'luxury') return priceB - priceA;
+      // midrange: proximity to target
+      return Math.abs(priceA - target) - Math.abs(priceB - target);
     });
     const picked = candidates[0];
     usedActivityIds.push(picked.id);
