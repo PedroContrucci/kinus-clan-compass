@@ -177,6 +177,13 @@ function generateItinerary(
       'Descobertas': ['culture', 'shopping', 'art'],
     };
     const targetTags = themeStyleMap[themeName] || [];
+    // Price targets by tier and category (in BRL)
+    const priceTargets: Record<string, Record<string, number>> = {
+      budget:   { breakfast: 50,  lunch: 120, dinner: 200, morning: 0,   afternoon: 0,   night: 50 },
+      midrange: { breakfast: 100, lunch: 250, dinner: 400, morning: 150, afternoon: 150, night: 150 },
+      luxury:   { breakfast: 200, lunch: 500, dinner: 900, morning: 300, afternoon: 300, night: 300 },
+    };
+    const target = priceTargets[priceLevel]?.[category] ?? 150;
     let candidates = pool.filter(a =>
       a.category === category &&
       !usedActivityIds.includes(a.id) &&
@@ -189,6 +196,12 @@ function generateItinerary(
       candidates = pool.filter(a => a.category === category);
     }
     if (candidates.length === 0) return null;
+    // Sort by proximity to price target (smaller distance first)
+    candidates.sort((a, b) => {
+      const distA = Math.abs((a.estimatedCostBRL || 0) - target);
+      const distB = Math.abs((b.estimatedCostBRL || 0) - target);
+      return distA - distB;
+    });
     const picked = candidates[0];
     usedActivityIds.push(picked.id);
     return picked;
