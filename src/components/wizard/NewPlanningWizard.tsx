@@ -209,6 +209,8 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
         status: 'draft',
         destination: destinationCity,
         origin: data.originCity,
+        originAirportCode: data.originAirportCode || 'GRU',
+        destinationAirportCode: data.destinationAirportCode || '',
         country: cityInfo?.country.country || data.selectedCountry || getCountryForCity(destinationCity),
         emoji: getDestinationEmoji(destinationCity),
         startDate: data.departureDate.toISOString(),
