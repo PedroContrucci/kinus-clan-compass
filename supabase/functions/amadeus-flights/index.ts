@@ -17,6 +17,8 @@ const TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
 // Amadeus API endpoints (test environment)
 const AMADEUS_BASE_URL = 'https://test.api.amadeus.com';
 
+const BR_AIRPORTS = new Set(['GRU','CGH','VCP','GIG','SDU','BSB','CNF','SSA','REC','FOR','POA','CWB','FLN','MCZ','NAT','BEL','MAO','VIX','GYN','CGB','CGR','SLZ','THE','AJU','MCP']);
+
 interface FlightOffer {
   id: string;
   airline: string;
@@ -242,7 +244,13 @@ async function searchFlights(
     });
   }
 
-  return offers;
+  const isDomesticBR = BR_AIRPORTS.has(origin) && BR_AIRPORTS.has(destination);
+
+  const filteredOffers = isDomesticBR
+    ? offers.filter(o => o.segments.every(s => BR_AIRPORTS.has(s.departure.iataCode) && BR_AIRPORTS.has(s.arrival.iataCode)))
+    : offers;
+
+  return filteredOffers;
 }
 
 // Search with flexible dates (±3 days)
