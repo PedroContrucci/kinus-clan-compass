@@ -21,6 +21,7 @@ import {
   ItineraryDetailModal 
 } from '@/components/community';
 import kinuLogo from '@/assets/KINU_logo.png';
+import { DestinationImage } from '@/components/shared/DestinationImage';
 import {
   Select,
   SelectContent,
@@ -436,11 +437,7 @@ const Cla = () => {
                   style={{ scrollSnapAlign: 'start' }}
                 >
                   <div className="relative h-28 overflow-hidden">
-                    <img
-                      src={`https://source.unsplash.com/400x300/?${dest.image}`}
-                      alt={dest.city}
-                      className="w-full h-full object-cover"
-                    />
+                    <DestinationImage query={dest.image} className="w-full h-full object-cover" alt={dest.name || dest.image} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     <div className="absolute bottom-2 left-2">
                       <p className="text-white font-semibold text-sm font-['Outfit']">{dest.emoji} {dest.city}</p>
