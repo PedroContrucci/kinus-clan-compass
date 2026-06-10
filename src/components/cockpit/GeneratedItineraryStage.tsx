@@ -11,7 +11,7 @@ import {
   Check, AlertCircle, Clock, Star, Lightbulb, Coffee, Utensils, Moon, Sun
 } from 'lucide-react';
 import { getActivityPrice, findBestPriceLevel } from '@/lib/activityPricing';
-import { format, addDays, differenceInDays } from 'date-fns';
+import { format, addDays, differenceInDays, differenceInCalendarDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -153,7 +153,17 @@ function generateItinerary(
   const isShortFlight = outboundFlight.option.durationMinutes < 240;
   const arrivesEarly = arrivalHour < 13;
   const sameDayArrival = isShortFlight && arrivesEarly;
-  const explorationStart = sameDayArrival ? 1 : 2;
+
+  // Compute real arrival day offset (supports multi-day flights)
+  const lastSeg = (outboundFlight.option as any).segments?.[(outboundFlight.option as any).segments.length - 1];
+  let arrivalDayIndex = sameDayArrival ? 0 : 1;
+  if (lastSeg?.arrival?.at) {
+    const arrivalDate = new Date(lastSeg.arrival.at);
+    const diff = differenceInCalendarDays(arrivalDate, departureDate);
+    if (diff >= 1) arrivalDayIndex = diff;
+  }
+
+  const explorationStart = arrivalDayIndex > 1 ? arrivalDayIndex + 1 : (sameDayArrival ? 1 : 2);
   const flightPerPerson = getActivityPrice('flight', destination, priceLevel);
   const flightsCost = flightPerPerson * travelers * 2; // Round trip × travelers
   
@@ -292,8 +302,24 @@ function generateItinerary(
         }
       }
     }
-    // Day 2: Arrival + Check-in + Light activities
-    else if (i === 1 && !sameDayArrival) {
+    // Transit day(s): for multi-day flights, fill the gap between departure and arrival
+    else if (i > 0 && i < arrivalDayIndex) {
+      label = 'Em trânsito';
+      theme = 'Em trânsito ✈️';
+      activities.push({
+        id: `day-${i}-transit`,
+        name: `Voo em andamento — descanse, hidrate-se e ajuste o relógio para o fuso de ${destination}`,
+        type: 'flight',
+        timeSlot: 'flight',
+        estimatedCost: 0,
+        costPerPerson: 0,
+        status: 'defined',
+        source: 'kinu',
+      });
+      dayTotal = 0;
+    }
+    // Arrival day: Check-in + Light activities
+    else if (i === arrivalDayIndex && !sameDayArrival) {
       label = `Chegada em ${destination}`;
       theme = '🛬 Dia de Chegada';
 
