@@ -1610,9 +1610,10 @@ const Viagens = () => {
 
                   {/* Subtotal do dia */}
                   {(() => {
-                    const dayTotal = currentDay.activities.reduce((sum, a) => sum + (a.cost || 0), 0);
+                    const isLogistics = (a: any) => a.category === 'voo' || a.category === 'hotel';
+                    const dayTotal = currentDay.activities.filter(a => !isLogistics(a)).reduce((sum, a) => sum + (a.cost || 0), 0);
                     const confirmedTotal = currentDay.activities
-                      .filter(a => a.status === 'confirmed')
+                      .filter(a => !isLogistics(a) && a.status === 'confirmed')
                       .reduce((sum, a) => sum + (a.paidAmount || 0), 0);
                     
                     if (dayTotal === 0 && confirmedTotal === 0) return null;
