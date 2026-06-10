@@ -16,6 +16,7 @@ import SmartPacking from '@/components/SmartPacking';
 import { DraftCockpit, TripGuide, ExchangeRates, AuctionList, EnhancedDayTimeline, SmartPackingWithLuggage, EnhancedExchangeRates, AuctionConfigModal } from '@/components/cockpit';
 import { TripPanel } from '@/components/cockpit/TripPanel';
 import { AgentTip } from '@/components/shared/AgentTip';
+import { DestinationImage } from '@/components/shared/DestinationImage';
 import { getIcarusRoteiro, getIcarusGuia, getIcarusLeilao, getHestiaFinOps, getHestiaCambio, getHestiaLeilao, getHermesChecklist, getHermesPacking } from '@/lib/agentMessages';
 import { analyzeTrip, AgentInsight } from '@/engines/agentIntelligence';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
@@ -1430,13 +1431,7 @@ const Viagens = () => {
                   {/* Day banner image */}
                   {!isSkipPhoto && (
                     <div className="relative h-[80px] overflow-hidden">
-                      <img
-                        src={`https://source.unsplash.com/600x150/?${encodeURIComponent(photoQuery)}`}
-                        alt={currentDay.title}
-                        loading="lazy"
-                        className="absolute inset-0 w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
+                      <DestinationImage query={photoQuery} className="absolute inset-0 w-full h-full object-cover" alt={photoQuery} />
                       <div className="absolute inset-0 bg-gradient-to-t from-card via-card/70 to-transparent" />
                       <div className="absolute bottom-2 left-4 right-4">
                         <h3 className="font-semibold text-lg text-foreground font-['Outfit'] flex items-center gap-2 drop-shadow-lg">
