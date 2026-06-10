@@ -136,7 +136,7 @@ export function useUnsplash(query: string, options: UseUnsplashOptions = {}) {
 
 // Get a single photo for a destination/category
 // Destination-specific photo keywords for better Unsplash results
-const DESTINATION_PHOTO_HINTS: Record<string, string> = {
+export const DESTINATION_PHOTO_HINTS: Record<string, string> = {
   'paris': 'Paris Eiffel Tower skyline',
   'roma': 'Rome Colosseum historic',
   'londres': 'London Big Ben Thames',
