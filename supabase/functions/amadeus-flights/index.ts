@@ -244,7 +244,13 @@ async function searchFlights(
     });
   }
 
-  return offers;
+  const isDomesticBR = BR_AIRPORTS.has(origin) && BR_AIRPORTS.has(destination);
+
+  const filteredOffers = isDomesticBR
+    ? offers.filter(o => o.segments.every(s => BR_AIRPORTS.has(s.departure.iataCode) && BR_AIRPORTS.has(s.arrival.iataCode)))
+    : offers;
+
+  return filteredOffers;
 }
 
 // Search with flexible dates (±3 days)
