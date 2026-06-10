@@ -155,7 +155,7 @@ function generateItinerary(
   const sameDayArrival = isShortFlight && arrivesEarly;
 
   // Compute real arrival day offset (supports multi-day flights)
-  const lastSeg = outboundFlight.option.segments?.[outboundFlight.option.segments.length - 1];
+  const lastSeg = (outboundFlight.option as any).segments?.[(outboundFlight.option as any).segments.length - 1];
   let arrivalDayIndex = sameDayArrival ? 0 : 1;
   if (lastSeg?.arrival?.at) {
     const arrivalDate = new Date(lastSeg.arrival.at);
