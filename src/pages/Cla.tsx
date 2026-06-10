@@ -437,7 +437,7 @@ const Cla = () => {
                   style={{ scrollSnapAlign: 'start' }}
                 >
                   <div className="relative h-28 overflow-hidden">
-                    <DestinationImage query={dest.image} className="w-full h-full object-cover" alt={dest.name || dest.image} />
+                    <DestinationImage query={dest.image} className="w-full h-full object-cover" alt={dest.city || dest.image} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     <div className="absolute bottom-2 left-2">
                       <p className="text-white font-semibold text-sm font-['Outfit']">{dest.emoji} {dest.city}</p>
