@@ -17,6 +17,8 @@ const TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
 // Amadeus API endpoints (test environment)
 const AMADEUS_BASE_URL = 'https://test.api.amadeus.com';
 
+const BR_AIRPORTS = new Set(['GRU','CGH','VCP','GIG','SDU','BSB','CNF','SSA','REC','FOR','POA','CWB','FLN','MCZ','NAT','BEL','MAO','VIX','GYN','CGB','CGR','SLZ','THE','AJU','MCP']);
+
 interface FlightOffer {
   id: string;
   airline: string;
