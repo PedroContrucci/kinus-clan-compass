@@ -112,6 +112,19 @@ export const FeedbackButton = () => {
             </div>
           ) : (
             <div className="space-y-5">
+              {!localStorage.getItem('kinu_tester_name') && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Seu nome <span className="text-destructive">*</span></p>
+                  <input
+                    type="text"
+                    value={testerName}
+                    onChange={(e) => setTesterName(e.target.value)}
+                    placeholder="Como podemos te chamar?"
+                    className="w-full px-3 py-2 bg-background border border-border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
+                  />
+                </div>
+              )}
+
               {/* Star Rating */}
               <div className="space-y-2">
                 <p className="text-sm font-medium text-foreground">Como está a experiência?</p>
