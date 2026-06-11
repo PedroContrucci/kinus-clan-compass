@@ -17,9 +17,10 @@ Deno.serve(async (req) => {
     const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
 
     if (!anthropicKey) {
+      console.error('[feedback-digest] ANTHROPIC_API_KEY não configurada');
       return new Response(
         JSON.stringify({ error: 'ANTHROPIC_API_KEY não configurada' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -31,7 +32,13 @@ Deno.serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(100);
 
-    if (error) throw error;
+    if (error) {
+      console.error('[feedback-digest] supabase select error', error);
+      return new Response(
+        JSON.stringify({ error: error.message || 'Erro ao buscar feedbacks' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!feedbacks || feedbacks.length === 0) {
       return new Response(
@@ -61,9 +68,10 @@ ${JSON.stringify(feedbacks, null, 2)}`;
 
     if (!anthropicRes.ok) {
       const errText = await anthropicRes.text();
+      console.error('[feedback-digest] Anthropic API error', anthropicRes.status, errText);
       return new Response(
         JSON.stringify({ error: 'Anthropic API error', details: errText }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -76,10 +84,26 @@ ${JSON.stringify(feedbacks, null, 2)}`;
     try {
       digest = JSON.parse(rawText);
     } catch (_e) {
-      return new Response(
-        JSON.stringify({ error: 'Resposta do modelo não é JSON válido', raw: rawText, count: feedbacks.length }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      const first = rawText.indexOf('{');
+      const last = rawText.lastIndexOf('}');
+      if (first !== -1 && last !== -1 && last > first) {
+        const candidate = rawText.slice(first, last + 1);
+        try {
+          digest = JSON.parse(candidate);
+        } catch (_e2) {
+          console.error('[feedback-digest] JSON parse fallback failed', candidate.slice(0, 500));
+          return new Response(
+            JSON.stringify({ error: 'Resposta do modelo não é JSON válido', raw: rawText, count: feedbacks.length }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } else {
+        console.error('[feedback-digest] no JSON braces found in model output', rawText.slice(0, 500));
+        return new Response(
+          JSON.stringify({ error: 'Resposta do modelo não é JSON válido', raw: rawText, count: feedbacks.length }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     return new Response(
@@ -87,9 +111,10 @@ ${JSON.stringify(feedbacks, null, 2)}`;
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (e) {
+    console.error('[feedback-digest] unhandled error', e);
     return new Response(
       JSON.stringify({ error: (e as Error).message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
