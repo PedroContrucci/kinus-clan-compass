@@ -22,6 +22,10 @@ export interface FlightOffer {
   arrivalTime: string;
   departureAirport: string;
   arrivalAirport: string;
+  segments?: Array<{
+    departure: { iataCode: string; at: string };
+    arrival: { iataCode: string; at: string };
+  }>;
   isBestPrice?: boolean;
   isFastest?: boolean;
 }

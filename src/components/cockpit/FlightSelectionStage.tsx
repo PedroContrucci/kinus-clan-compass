@@ -35,6 +35,10 @@ export interface FlightOption {
   price: number;
   departureTime: string;
   arrivalTime: string;
+  segments?: Array<{
+    departure: { iataCode: string; at: string };
+    arrival: { iataCode: string; at: string };
+  }>;
   isBestPrice?: boolean;
   isFastest?: boolean;
 }
@@ -71,6 +75,7 @@ function convertToFlightOption(offer: AmadeusFlightOffer): FlightOption {
     price: offer.price,
     departureTime: offer.departureTime,
     arrivalTime: offer.arrivalTime,
+    segments: offer.segments,
     isBestPrice: offer.isBestPrice,
     isFastest: offer.isFastest,
   };
