@@ -477,10 +477,19 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           adults: trip.travelers || 1,
         },
       });
+      let results: any[] = [];
       if (data?.data && Array.isArray(data.data)) {
-        setFlightResults(data.data.slice(0, 3));
+        results = data.data.slice(0, 3);
+        setFlightResults(results);
       } else if (data?.offers) {
-        setFlightResults(data.offers.slice(0, 3));
+        results = data.offers.slice(0, 3);
+        setFlightResults(results);
+      }
+      if (results.length > 0) {
+        const bestPrice = Math.min(...results.map((r: any) => r.price || Infinity));
+        if (bestPrice !== Infinity) {
+          savePriceSnapshot(trip.id, bestPrice);
+        }
       }
     } catch (err) {
       console.error('Amadeus search failed:', err);
