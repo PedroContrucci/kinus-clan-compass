@@ -11,6 +11,27 @@ const Conta = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [stats, setStats] = useState({ trips: 0, countries: 0, activities: 0 });
+  const [digest, setDigest] = useState<any>(null);
+  const [digestLoading, setDigestLoading] = useState(false);
+
+  const handleGenerateDigest = async () => {
+    setDigestLoading(true);
+    setDigest(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('feedback-digest');
+      if (error) throw error;
+      if (data.digest === null) {
+        setDigest(null);
+        toast({ title: data.message || 'Sem feedbacks ainda' });
+      } else {
+        setDigest(data.digest);
+      }
+    } catch (err: any) {
+      toast({ title: 'Erro ao gerar análise', description: err.message || 'Tente novamente.' });
+    } finally {
+      setDigestLoading(false);
+    }
+  };
 
   useEffect(() => {
     const savedUser = localStorage.getItem('kinu_user');
