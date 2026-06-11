@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { MessageSquare, Send, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export const FeedbackButton = () => {
+  const [testerName, setTesterName] = useState(() => localStorage.getItem('kinu_tester_name') || '');
   const [isOpen, setIsOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [category, setCategory] = useState('');
