@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, HelpCircle, Star, Info } from 'lucide-react';
+import { LogOut, User, HelpCircle, Star, Info, Sparkles, Loader2 } from 'lucide-react';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { toast } from '@/hooks/use-toast';
 import kinuLogo from '@/assets/KINU_logo.png';
 import { SavedTrip } from '@/types/trip';
+import { supabase } from '@/integrations/supabase/client';
 
 const Conta = () => {
   const navigate = useNavigate();
