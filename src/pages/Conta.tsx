@@ -151,43 +151,136 @@ const Conta = () => {
         {/* Beta Feedback Viewer */}
         {(() => {
           const feedbacks: any[] = JSON.parse(localStorage.getItem('kinu_feedback') || '[]');
-          if (feedbacks.length === 0) return null;
           return (
             <div className="mt-6">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <h2 className="text-lg font-bold font-['Outfit'] text-foreground">
-                  📝 Feedbacks Recebidos ({feedbacks.length})
+                  📝 Feedbacks Recebidos {feedbacks.length > 0 ? `(${feedbacks.length})` : ''}
                 </h2>
-                <button
-                  onClick={() => {
-                    const data = JSON.stringify(feedbacks, null, 2);
-                    const blob = new Blob([data], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `kinu-feedback-${new Date().toISOString().split('T')[0]}.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="text-xs text-primary hover:text-primary/80 transition-colors"
-                >
-                  📥 Exportar JSON
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleGenerateDigest}
+                    disabled={digestLoading}
+                    className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+                  >
+                    {digestLoading ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        Analisando feedbacks...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} />
+                        🤖 Gerar análise inteligente
+                      </>
+                    )}
+                  </button>
+                  {feedbacks.length > 0 && (
+                    <button
+                      onClick={() => {
+                        const data = JSON.stringify(feedbacks, null, 2);
+                        const blob = new Blob([data], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `kinu-feedback-${new Date().toISOString().split('T')[0]}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                      className="text-xs text-primary hover:text-primary/80 transition-colors"
+                    >
+                      📥 Exportar JSON
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                {[...feedbacks].reverse().map((fb: any, i: number) => (
-                  <div key={i} className="bg-card border border-border rounded-xl p-3">
-                    <div className="flex items-center gap-2 text-sm mb-1">
-                      <span>{fb.category === 'bug' ? '🐛' : fb.category === 'confusing' ? '😕' : fb.category === 'suggestion' ? '💡' : '❤️'}</span>
-                      <span className="font-medium text-foreground">{fb.category}</span>
-                      <span className="text-muted-foreground">· {fb.page || '?'}</span>
-                      <span className="text-amber-400 ml-auto">{'★'.repeat(fb.rating || 0)}</span>
-                    </div>
-                    <p className="text-sm text-foreground">{fb.message}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{new Date(fb.timestamp).toLocaleString('pt-BR')}</p>
+
+              {/* Digest Cards */}
+              {digest && (
+                <div className="space-y-3 mb-4">
+                  {/* Resumo */}
+                  <div className="bg-card border border-border rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-foreground mb-2">📋 Resumo</h3>
+                    <ul className="space-y-1">
+                      {digest.resumo?.map((item: string, i: number) => (
+                        <li key={i} className="text-sm text-muted-foreground list-disc list-inside">{item}</li>
+                      ))}
+                    </ul>
                   </div>
-                ))}
-              </div>
+
+                  {/* Prioridade 1 */}
+                  <div className="bg-card rounded-xl p-4 border-2" style={{ borderColor: '#eab308' }}>
+                    <h3 className="text-sm font-semibold text-foreground mb-2">🎯 Prioridade #1</h3>
+                    <p className="text-sm text-muted-foreground">{digest.prioridade_1}</p>
+                  </div>
+
+                  {/* Críticos */}
+                  {digest.criticos?.length > 0 && (
+                    <div className="bg-card border border-red-500/30 rounded-xl p-4">
+                      <h3 className="text-sm font-semibold text-red-400 mb-2">🔴 Críticos</h3>
+                      <ul className="space-y-1">
+                        {digest.criticos.map((item: string, i: number) => (
+                          <li key={i} className="text-sm text-red-300/80 list-disc list-inside">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Padrões */}
+                  {digest.padroes?.length > 0 && (
+                    <div className="bg-card border border-amber-500/30 rounded-xl p-4">
+                      <h3 className="text-sm font-semibold text-amber-400 mb-2">🟡 Padrões</h3>
+                      <ul className="space-y-1">
+                        {digest.padroes.map((item: string, i: number) => (
+                          <li key={i} className="text-sm text-amber-300/80 list-disc list-inside">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Sugestões dos usuários */}
+                  {digest.sugestoes_dos_usuarios?.length > 0 && (
+                    <div className="bg-card border border-emerald-500/30 rounded-xl p-4">
+                      <h3 className="text-sm font-semibold text-emerald-400 mb-2">💡 Sugestões dos Usuários</h3>
+                      <ul className="space-y-1">
+                        {digest.sugestoes_dos_usuarios.map((item: string, i: number) => (
+                          <li key={i} className="text-sm text-emerald-300/80 list-disc list-inside">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Destaques positivos */}
+                  {digest.destaques_positivos?.length > 0 && (
+                    <div className="bg-card border border-emerald-500/30 rounded-xl p-4">
+                      <h3 className="text-sm font-semibold text-emerald-400 mb-2">✅ Destaques Positivos</h3>
+                      <ul className="space-y-1">
+                        {digest.destaques_positivos.map((item: string, i: number) => (
+                          <li key={i} className="text-sm text-emerald-300/80 list-disc list-inside">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Local feedback list */}
+              {feedbacks.length > 0 && (
+                <div className="space-y-2">
+                  {[...feedbacks].reverse().map((fb: any, i: number) => (
+                    <div key={i} className="bg-card border border-border rounded-xl p-3">
+                      <div className="flex items-center gap-2 text-sm mb-1">
+                        <span>{fb.category === 'bug' ? '🐛' : fb.category === 'confusing' ? '😕' : fb.category === 'suggestion' ? '💡' : '❤️'}</span>
+                        <span className="font-medium text-foreground">{fb.category}</span>
+                        <span className="text-muted-foreground">· {fb.page || '?'}</span>
+                        <span className="text-amber-400 ml-auto">{'★'.repeat(fb.rating || 0)}</span>
+                      </div>
+                      <p className="text-sm text-foreground">{fb.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{new Date(fb.timestamp).toLocaleString('pt-BR')}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })()}
