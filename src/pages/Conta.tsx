@@ -13,21 +13,27 @@ const Conta = () => {
   const [stats, setStats] = useState({ trips: 0, countries: 0, activities: 0 });
   const [digest, setDigest] = useState<any>(null);
   const [digestLoading, setDigestLoading] = useState(false);
+  const [digestError, setDigestError] = useState<{ message: string; raw?: string } | null>(null);
 
   const handleGenerateDigest = async () => {
     setDigestLoading(true);
     setDigest(null);
+    setDigestError(null);
     try {
       const { data, error } = await supabase.functions.invoke('feedback-digest');
-      if (error) throw error;
-      if (data.digest === null) {
-        setDigest(null);
+      if (error) {
+        setDigestError({ message: error.message || 'Falha ao chamar a função' });
+      } else if (!data) {
+        setDigestError({ message: 'Resposta vazia da função' });
+      } else if (data.error) {
+        setDigestError({ message: String(data.error), raw: data.raw });
+      } else if (data.digest === null || data.digest === undefined) {
         toast({ title: data.message || 'Sem feedbacks ainda' });
       } else {
         setDigest(data.digest);
       }
     } catch (err: any) {
-      toast({ title: 'Erro ao gerar análise', description: err.message || 'Tente novamente.' });
+      setDigestError({ message: err?.message || 'Erro inesperado ao gerar análise' });
     } finally {
       setDigestLoading(false);
     }
