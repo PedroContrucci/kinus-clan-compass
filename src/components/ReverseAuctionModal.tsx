@@ -82,10 +82,13 @@ const ReverseAuctionModal = ({
   const [isVisible, setIsVisible] = useState(false);
 
   const auctionItem: AuctionItem = item || {
-    type: 'activity' as AuctionItemType,
+    type: (activityType as AuctionItemType) || 'activity',
     id: 'legacy',
     name: activityName || 'Atividade',
     cost: estimatedPrice,
+    originCode,
+    destinationCode,
+    travelers,
   };
 
   const currentCost = auctionItem.cost;
