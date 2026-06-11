@@ -75,6 +75,7 @@ function convertToFlightOption(offer: AmadeusFlightOffer): FlightOption {
     price: offer.price,
     departureTime: offer.departureTime,
     arrivalTime: offer.arrivalTime,
+    segments: offer.segments,
     isBestPrice: offer.isBestPrice,
     isFastest: offer.isFastest,
   };
