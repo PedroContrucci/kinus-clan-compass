@@ -356,6 +356,12 @@ export const FlightSelectionStage = ({
       ? selectedOutbound?.option.id === option.id 
       : selectedReturn?.option.id === option.id;
 
+    const firstAt = option.segments?.[0]?.departure?.at;
+    const lastAt = option.segments?.[option.segments.length - 1]?.arrival?.at;
+    const dayOffset = firstAt && lastAt
+      ? differenceInCalendarDays(new Date(lastAt), new Date(firstAt))
+      : 0;
+
     return (
       <motion.div
         key={option.id}
