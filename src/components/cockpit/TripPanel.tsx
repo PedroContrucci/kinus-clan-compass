@@ -387,6 +387,11 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
   const flightPrice = trip.flights?.outbound?.price || trip.finances.planned * 0.4 || 0;
+
+  const priceChange = useMemo(() => {
+    if (flightConfirmed) return null;
+    return getPriceChangeInfo(trip.id);
+  }, [trip.id, flightConfirmed]);
   const dest = trip.destination || 'o destino';
 
   const allActions = getOrchestratedActions(trip);
