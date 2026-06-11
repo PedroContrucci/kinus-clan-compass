@@ -7,6 +7,8 @@ import kinuLogo from '@/assets/KINU_logo.png';
 import { SavedTrip } from '@/types/trip';
 import { supabase } from '@/integrations/supabase/client';
 
+const asArray = (v: unknown): any[] => Array.isArray(v) ? v : (v ? [v] : []);
+
 const Conta = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
