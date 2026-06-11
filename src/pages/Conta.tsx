@@ -224,8 +224,10 @@ const Conta = () => {
                     <h3 className="text-sm font-semibold text-foreground mb-2">📋 Resumo</h3>
                     {Array.isArray(digest?.resumo) ? (
                       <ul className="space-y-1">
-                        {(digest?.resumo ?? []).map((item: string, i: number) => (
-                          <li key={i} className="text-sm text-muted-foreground list-disc list-inside">{item}</li>
+                        {asArray(digest?.resumo).map((item: any, i: number) => (
+                          <li key={i} className="text-sm text-muted-foreground list-disc list-inside">
+                            {typeof item === 'string' ? item : JSON.stringify(item)}
+                          </li>
                         ))}
                       </ul>
                     ) : (
@@ -242,11 +244,11 @@ const Conta = () => {
                   )}
 
                   {/* Críticos */}
-                  {(digest?.criticos ?? []).length > 0 && (
+                  {asArray(digest?.criticos).length > 0 && (
                     <div className="bg-card border border-red-500/30 rounded-xl p-4">
                       <h3 className="text-sm font-semibold text-red-400 mb-2">🔴 Críticos</h3>
                       <ul className="space-y-1">
-                        {(digest?.criticos ?? []).map((item: any, i: number) => (
+                        {asArray(digest?.criticos).map((item: any, i: number) => (
                           <li key={i} className="text-sm text-red-300/80 list-disc list-inside">
                             {typeof item === 'string' ? item : JSON.stringify(item)}
                           </li>
@@ -256,11 +258,11 @@ const Conta = () => {
                   )}
 
                   {/* Padrões */}
-                  {(digest?.padroes ?? []).length > 0 && (
+                  {asArray(digest?.padroes).length > 0 && (
                     <div className="bg-card border border-amber-500/30 rounded-xl p-4">
                       <h3 className="text-sm font-semibold text-amber-400 mb-2">🟡 Padrões</h3>
                       <ul className="space-y-1">
-                        {(digest?.padroes ?? []).map((item: any, i: number) => (
+                        {asArray(digest?.padroes).map((item: any, i: number) => (
                           <li key={i} className="text-sm text-amber-300/80 list-disc list-inside">
                             {typeof item === 'string' ? item : JSON.stringify(item)}
                           </li>
@@ -270,11 +272,11 @@ const Conta = () => {
                   )}
 
                   {/* Sugestões dos usuários */}
-                  {(digest?.sugestoes_dos_usuarios ?? []).length > 0 && (
+                  {asArray(digest?.sugestoes_dos_usuarios).length > 0 && (
                     <div className="bg-card border border-emerald-500/30 rounded-xl p-4">
                       <h3 className="text-sm font-semibold text-emerald-400 mb-2">💡 Sugestões dos Usuários</h3>
                       <ul className="space-y-1">
-                        {(digest?.sugestoes_dos_usuarios ?? []).map((item: any, i: number) => (
+                        {asArray(digest?.sugestoes_dos_usuarios).map((item: any, i: number) => (
                           <li key={i} className="text-sm text-emerald-300/80 list-disc list-inside">
                             {typeof item === 'string' ? item : JSON.stringify(item)}
                           </li>
@@ -284,11 +286,11 @@ const Conta = () => {
                   )}
 
                   {/* Destaques positivos */}
-                  {(digest?.destaques_positivos ?? []).length > 0 && (
+                  {asArray(digest?.destaques_positivos).length > 0 && (
                     <div className="bg-card border border-emerald-500/30 rounded-xl p-4">
                       <h3 className="text-sm font-semibold text-emerald-400 mb-2">✅ Destaques Positivos</h3>
                       <ul className="space-y-1">
-                        {(digest?.destaques_positivos ?? []).map((item: any, i: number) => (
+                        {asArray(digest?.destaques_positivos).map((item: any, i: number) => (
                           <li key={i} className="text-sm text-emerald-300/80 list-disc list-inside">
                             {typeof item === 'string' ? item : JSON.stringify(item)}
                           </li>
