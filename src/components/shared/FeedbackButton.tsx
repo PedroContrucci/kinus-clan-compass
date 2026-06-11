@@ -67,6 +67,20 @@ export const FeedbackButton = () => {
       success = false;
     }
 
+    if (success) {
+      // Fire-and-forget instant email notification
+      supabase.functions.invoke('feedback-notify', {
+        body: {
+          tester_name: trimmedName,
+          rating,
+          category,
+          message: message.trim(),
+          page: pagePath,
+        },
+      }).catch((err) => console.error('feedback-notify invoke failed', err));
+    }
+
+
     const existing = JSON.parse(localStorage.getItem('kinu_feedback') || '[]');
     existing.push(feedback);
     localStorage.setItem('kinu_feedback', JSON.stringify(existing));

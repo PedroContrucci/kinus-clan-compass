@@ -261,12 +261,36 @@ const Conta = () => {
                   {asArray(digest?.padroes).length > 0 && (
                     <div className="bg-card border border-amber-500/30 rounded-xl p-4">
                       <h3 className="text-sm font-semibold text-amber-400 mb-2">🟡 Padrões</h3>
-                      <ul className="space-y-1">
-                        {asArray(digest?.padroes).map((item: any, i: number) => (
-                          <li key={i} className="text-sm text-amber-300/80 list-disc list-inside">
-                            {typeof item === 'string' ? item : JSON.stringify(item)}
-                          </li>
-                        ))}
+                      <ul className="space-y-2">
+                        {asArray(digest?.padroes).map((item: any, i: number) => {
+                          let obj: any = item;
+                          if (typeof item === 'string') {
+                            try {
+                              const parsed = JSON.parse(item);
+                              if (parsed && typeof parsed === 'object') obj = parsed;
+                            } catch {
+                              // keep as string
+                            }
+                          }
+                          if (obj && typeof obj === 'object') {
+                            return (
+                              <li key={i} className="text-sm text-amber-300/80 list-disc list-inside">
+                                <span className="font-medium">{obj.padrao ?? obj.pattern ?? '—'}</span>
+                                {obj.quantas_pessoas !== undefined && (
+                                  <span className="text-amber-300/60"> · {obj.quantas_pessoas} {typeof obj.quantas_pessoas === 'number' ? 'pessoas' : ''}</span>
+                                )}
+                                {obj.sugestao_de_correcao && (
+                                  <div className="ml-5 text-xs text-amber-300/70 mt-1">→ {obj.sugestao_de_correcao}</div>
+                                )}
+                              </li>
+                            );
+                          }
+                          return (
+                            <li key={i} className="text-sm text-amber-300/80 list-disc list-inside">
+                              {String(item)}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   )}
