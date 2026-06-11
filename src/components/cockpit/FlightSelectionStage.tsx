@@ -408,7 +408,12 @@ export const FlightSelectionStage = ({
                 <Clock size={12} />
                 {option.duration}
               </span>
-              <span>{option.departureTime} → {option.arrivalTime}</span>
+              <span>
+                {option.departureTime} → {option.arrivalTime}
+                {dayOffset >= 1 && (
+                  <span className="ml-1 text-xs" style={{ color: '#eab308' }}>+{dayOffset}</span>
+                )}
+              </span>
             </div>
           </div>
           
