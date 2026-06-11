@@ -171,6 +171,45 @@ export type Database = {
           },
         ]
       }
+      beta_feedback: {
+        Row: {
+          app_version: string | null
+          category: string | null
+          created_at: string
+          id: string
+          message: string | null
+          page: string | null
+          rating: number | null
+          screen_size: string | null
+          tester_name: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          app_version?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          page?: string | null
+          rating?: number | null
+          screen_size?: string | null
+          tester_name?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          app_version?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          page?: string | null
+          rating?: number | null
+          screen_size?: string | null
+          tester_name?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       cities: {
         Row: {
           average_daily_cost_brl: number | null
