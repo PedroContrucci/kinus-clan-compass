@@ -201,68 +201,95 @@ const Conta = () => {
                 </div>
               </div>
 
+              {/* Error card */}
+              {digestError && (
+                <div className="bg-card border-2 border-red-500/50 rounded-xl p-4 mb-4">
+                  <h3 className="text-sm font-semibold text-red-400 mb-2">⚠️ Erro ao gerar análise</h3>
+                  <p className="text-sm text-red-300/80">{digestError.message}</p>
+                  {digestError.raw && (
+                    <pre className="text-xs text-red-300/60 mt-2 whitespace-pre-wrap break-all max-h-40 overflow-auto">
+                      {digestError.raw}
+                    </pre>
+                  )}
+                </div>
+              )}
+
               {/* Digest Cards */}
               {digest && (
                 <div className="space-y-3 mb-4">
                   {/* Resumo */}
                   <div className="bg-card border border-border rounded-xl p-4">
                     <h3 className="text-sm font-semibold text-foreground mb-2">📋 Resumo</h3>
-                    <ul className="space-y-1">
-                      {digest.resumo?.map((item: string, i: number) => (
-                        <li key={i} className="text-sm text-muted-foreground list-disc list-inside">{item}</li>
-                      ))}
-                    </ul>
+                    {Array.isArray(digest?.resumo) ? (
+                      <ul className="space-y-1">
+                        {(digest?.resumo ?? []).map((item: string, i: number) => (
+                          <li key={i} className="text-sm text-muted-foreground list-disc list-inside">{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">{digest?.resumo ?? ''}</p>
+                    )}
                   </div>
 
                   {/* Prioridade 1 */}
-                  <div className="bg-card rounded-xl p-4 border-2" style={{ borderColor: '#eab308' }}>
-                    <h3 className="text-sm font-semibold text-foreground mb-2">🎯 Prioridade #1</h3>
-                    <p className="text-sm text-muted-foreground">{digest.prioridade_1}</p>
-                  </div>
+                  {digest?.prioridade_1 && (
+                    <div className="bg-card rounded-xl p-4 border-2" style={{ borderColor: '#eab308' }}>
+                      <h3 className="text-sm font-semibold text-foreground mb-2">🎯 Prioridade #1</h3>
+                      <p className="text-sm text-muted-foreground">{digest?.prioridade_1 ?? ''}</p>
+                    </div>
+                  )}
 
                   {/* Críticos */}
-                  {digest.criticos?.length > 0 && (
+                  {(digest?.criticos ?? []).length > 0 && (
                     <div className="bg-card border border-red-500/30 rounded-xl p-4">
                       <h3 className="text-sm font-semibold text-red-400 mb-2">🔴 Críticos</h3>
                       <ul className="space-y-1">
-                        {digest.criticos.map((item: string, i: number) => (
-                          <li key={i} className="text-sm text-red-300/80 list-disc list-inside">{item}</li>
+                        {(digest?.criticos ?? []).map((item: any, i: number) => (
+                          <li key={i} className="text-sm text-red-300/80 list-disc list-inside">
+                            {typeof item === 'string' ? item : JSON.stringify(item)}
+                          </li>
                         ))}
                       </ul>
                     </div>
                   )}
 
                   {/* Padrões */}
-                  {digest.padroes?.length > 0 && (
+                  {(digest?.padroes ?? []).length > 0 && (
                     <div className="bg-card border border-amber-500/30 rounded-xl p-4">
                       <h3 className="text-sm font-semibold text-amber-400 mb-2">🟡 Padrões</h3>
                       <ul className="space-y-1">
-                        {digest.padroes.map((item: string, i: number) => (
-                          <li key={i} className="text-sm text-amber-300/80 list-disc list-inside">{item}</li>
+                        {(digest?.padroes ?? []).map((item: any, i: number) => (
+                          <li key={i} className="text-sm text-amber-300/80 list-disc list-inside">
+                            {typeof item === 'string' ? item : JSON.stringify(item)}
+                          </li>
                         ))}
                       </ul>
                     </div>
                   )}
 
                   {/* Sugestões dos usuários */}
-                  {digest.sugestoes_dos_usuarios?.length > 0 && (
+                  {(digest?.sugestoes_dos_usuarios ?? []).length > 0 && (
                     <div className="bg-card border border-emerald-500/30 rounded-xl p-4">
                       <h3 className="text-sm font-semibold text-emerald-400 mb-2">💡 Sugestões dos Usuários</h3>
                       <ul className="space-y-1">
-                        {digest.sugestoes_dos_usuarios.map((item: string, i: number) => (
-                          <li key={i} className="text-sm text-emerald-300/80 list-disc list-inside">{item}</li>
+                        {(digest?.sugestoes_dos_usuarios ?? []).map((item: any, i: number) => (
+                          <li key={i} className="text-sm text-emerald-300/80 list-disc list-inside">
+                            {typeof item === 'string' ? item : JSON.stringify(item)}
+                          </li>
                         ))}
                       </ul>
                     </div>
                   )}
 
                   {/* Destaques positivos */}
-                  {digest.destaques_positivos?.length > 0 && (
+                  {(digest?.destaques_positivos ?? []).length > 0 && (
                     <div className="bg-card border border-emerald-500/30 rounded-xl p-4">
                       <h3 className="text-sm font-semibold text-emerald-400 mb-2">✅ Destaques Positivos</h3>
                       <ul className="space-y-1">
-                        {digest.destaques_positivos.map((item: string, i: number) => (
-                          <li key={i} className="text-sm text-emerald-300/80 list-disc list-inside">{item}</li>
+                        {(digest?.destaques_positivos ?? []).map((item: any, i: number) => (
+                          <li key={i} className="text-sm text-emerald-300/80 list-disc list-inside">
+                            {typeof item === 'string' ? item : JSON.stringify(item)}
+                          </li>
                         ))}
                       </ul>
                     </div>
