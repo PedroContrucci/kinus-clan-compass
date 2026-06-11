@@ -20,29 +20,63 @@ export const FeedbackButton = () => {
     { id: 'love', label: '❤️ Adorei', desc: 'Algo que gostei' },
   ];
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!category || !message.trim()) {
       toast.error('Selecione uma categoria e escreva seu feedback');
       return;
     }
+    if (!testerName.trim()) {
+      toast.error('Informe seu nome');
+      return;
+    }
+
+    const trimmedName = testerName.trim();
+    localStorage.setItem('kinu_tester_name', trimmedName);
+
+    const pagePath = page || window.location.pathname;
+    const screenSize = `${window.innerWidth}x${window.innerHeight}`;
+    const appVersion = 'v0.1.0';
 
     const feedback = {
       id: `fb-${Date.now()}`,
       timestamp: new Date().toISOString(),
+      tester_name: trimmedName,
       rating,
       category,
       message: message.trim(),
-      page: page || window.location.pathname,
+      page: pagePath,
       userAgent: navigator.userAgent,
-      screenSize: `${window.innerWidth}x${window.innerHeight}`,
+      screenSize,
+      appVersion,
     };
+
+    let success = false;
+    try {
+      const { error } = await supabase.from('beta_feedback').insert({
+        tester_name: trimmedName,
+        rating,
+        category,
+        message: message.trim(),
+        page: pagePath,
+        user_agent: navigator.userAgent,
+        screen_size: screenSize,
+        app_version: appVersion,
+      });
+      success = !error;
+    } catch {
+      success = false;
+    }
 
     const existing = JSON.parse(localStorage.getItem('kinu_feedback') || '[]');
     existing.push(feedback);
     localStorage.setItem('kinu_feedback', JSON.stringify(existing));
 
     setSubmitted(true);
-    toast.success('Feedback enviado! Obrigado 🙏');
+    if (success) {
+      toast.success('Feedback enviado!');
+    } else {
+      toast.error('Sem conexão — feedback salvo no aparelho');
+    }
 
     setTimeout(() => {
       setIsOpen(false);
