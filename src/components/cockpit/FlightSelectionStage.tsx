@@ -247,17 +247,37 @@ export const FlightSelectionStage = ({
     return generateFallbackFlightOptions(destinationCode, originCode, true);
   }, [returnData, originCode, destinationCode]);
 
-  // Sort options
+  // Sort options and assign best-price / fastest badges to first occurrence only
   const sortedOutboundOptions = useMemo(() => {
-    return [...outboundOptions].sort((a, b) => 
+    const sorted = [...outboundOptions].sort((a, b) =>
       sortBy === 'price' ? a.price - b.price : a.durationMinutes - b.durationMinutes
     );
+    if (sorted.length === 0) return sorted;
+    const minPrice = Math.min(...sorted.map(o => o.price));
+    const minDuration = Math.min(...sorted.map(o => o.durationMinutes));
+    const bestPriceIndex = sorted.findIndex(o => o.price === minPrice);
+    const fastestIndex = sorted.findIndex(o => o.durationMinutes === minDuration);
+    return sorted.map((o, i) => ({
+      ...o,
+      isBestPrice: i === bestPriceIndex,
+      isFastest: i === fastestIndex,
+    }));
   }, [outboundOptions, sortBy]);
 
   const sortedReturnOptions = useMemo(() => {
-    return [...returnOptions].sort((a, b) => 
+    const sorted = [...returnOptions].sort((a, b) =>
       sortBy === 'price' ? a.price - b.price : a.durationMinutes - b.durationMinutes
     );
+    if (sorted.length === 0) return sorted;
+    const minPrice = Math.min(...sorted.map(o => o.price));
+    const minDuration = Math.min(...sorted.map(o => o.durationMinutes));
+    const bestPriceIndex = sorted.findIndex(o => o.price === minPrice);
+    const fastestIndex = sorted.findIndex(o => o.durationMinutes === minDuration);
+    return sorted.map((o, i) => ({
+      ...o,
+      isBestPrice: i === bestPriceIndex,
+      isFastest: i === fastestIndex,
+    }));
   }, [returnOptions, sortBy]);
 
   // Flexible prices from API
