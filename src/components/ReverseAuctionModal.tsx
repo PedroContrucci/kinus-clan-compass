@@ -59,6 +59,9 @@ interface ReverseAuctionModalProps {
   tripStartDate?: Date;
   tripEndDate?: Date;
   cityName?: string;
+  originCode?: string;
+  destinationCode?: string;
+  travelers?: number;
 }
 
 const ReverseAuctionModal = ({
@@ -66,11 +69,15 @@ const ReverseAuctionModal = ({
   onClose,
   item,
   activityName,
+  activityType,
   destination,
   estimatedPrice = 280,
   tripStartDate,
   tripEndDate,
   cityName,
+  originCode,
+  destinationCode,
+  travelers,
 }: ReverseAuctionModalProps) => {
   const [isVisible, setIsVisible] = useState(false);
 

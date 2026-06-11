@@ -1789,6 +1789,12 @@ const Viagens = () => {
             activityType={auctionModal.activityType}
             destination={selectedTrip.destination}
             estimatedPrice={auctionModal.estimatedPrice}
+            tripStartDate={new Date(selectedTrip.startDate)}
+            tripEndDate={new Date(selectedTrip.endDate)}
+            cityName={selectedTrip.destination}
+            originCode={selectedTrip.originAirportCode || 'GRU'}
+            destinationCode={selectedTrip.destinationAirportCode || ''}
+            travelers={selectedTrip.travelers}
             onAcceptOffer={handleAcceptOffer}
             onStartMonitoring={(data) => {
               setAuctionModal(null);
