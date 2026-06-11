@@ -102,6 +102,45 @@ function fmt(n: number) {
   return n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
 }
 
+interface PriceSnapshot {
+  price: number;
+  timestamp: string;
+}
+
+function getPriceHistory(tripId: string): PriceSnapshot[] {
+  try {
+    const raw = localStorage.getItem(`kinu_price_history_${tripId}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return [];
+}
+
+function savePriceSnapshot(tripId: string, price: number) {
+  const history = getPriceHistory(tripId);
+  history.push({ price, timestamp: new Date().toISOString() });
+  if (history.length > 10) {
+    history.shift();
+  }
+  localStorage.setItem(`kinu_price_history_${tripId}`, JSON.stringify(history));
+}
+
+function getPriceChangeInfo(tripId: string): { diff: number; dateStr: string; dropped: boolean } | null {
+  const history = getPriceHistory(tripId);
+  if (history.length < 2) return null;
+  const latest = history[history.length - 1];
+  const previous = history[history.length - 2];
+  if (latest.price === previous.price) return null;
+  const diff = Math.abs(latest.price - previous.price);
+  const dropped = latest.price < previous.price;
+  const dateStr = format(new Date(previous.timestamp), 'dd/MM');
+  return { diff, dateStr, dropped };
+}
+
 const TIER_LABELS: Record<string, string> = {
   backpacker: 'Mochileiro', economic: 'Econômico', comfort: 'Conforto', luxury: 'Luxo',
 };
