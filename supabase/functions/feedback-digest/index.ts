@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const prompt = `Você é o analista de QA do app de viagens KINU. Analise os feedbacks de testadores beta e responda APENAS com JSON válido, sem markdown, no formato: { resumo: string (2 frases), criticos: [{quem, problema, onde}], padroes: [{padrao, quantas_pessoas, sugestao_de_correcao}], sugestoes_dos_usuarios: [string], destaques_positivos: [string], prioridade_1: string (a única coisa a corrigir primeiro e por quê) }. Agrupe feedbacks parecidos como padrão. Mensagens iniciadas com 🔴 são críticas, 🟡 confusão, 🟢 sugestão/elogio.
+    const prompt = `Você é o analista de QA do app de viagens KINU. Analise os feedbacks de testadores beta e responda APENAS com JSON válido, sem markdown, no formato: { resumo: string (2 frases), criticos: [{quem, problema, onde}], padroes: [{padrao, quantas_pessoas, sugestao_de_correcao}], sugestoes_dos_usuarios: [string], destaques_positivos: [string], prioridade_1: string (a única coisa a corrigir primeiro e por quê) }. Agrupe feedbacks parecidos como padrão. Mensagens iniciadas com 🔴 são críticas, 🟡 confusão, 🟢 sugestão/elogio. Todos os campos de lista (criticos, padroes, sugestoes_dos_usuarios, destaques_positivos) devem SEMPRE ser arrays JSON, mesmo vazios []. Nunca use texto no lugar de um array.
 
 Feedbacks:
 ${JSON.stringify(feedbacks, null, 2)}`;
