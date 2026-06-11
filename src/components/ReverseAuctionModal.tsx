@@ -66,6 +66,7 @@ const ReverseAuctionModal = ({
   onClose,
   item,
   activityName,
+  destination,
   estimatedPrice = 280,
   tripStartDate,
   tripEndDate,
