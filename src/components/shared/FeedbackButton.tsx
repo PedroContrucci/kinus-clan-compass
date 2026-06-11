@@ -106,7 +106,7 @@ export const FeedbackButton = () => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-4 z-40 w-12 h-12 rounded-full bg-amber-500 text-white shadow-lg shadow-amber-500/30 flex items-center justify-center hover:bg-amber-600 transition-colors lg:bottom-6 lg:right-20"
+        className="fixed bottom-44 right-4 z-40 w-12 h-12 rounded-full bg-amber-500 text-white shadow-lg shadow-amber-500/30 flex items-center justify-center hover:bg-amber-600 transition-colors lg:bottom-24 lg:right-6"
         aria-label="Enviar feedback"
       >
         <MessageSquare size={20} />
