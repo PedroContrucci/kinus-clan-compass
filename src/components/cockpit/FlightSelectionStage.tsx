@@ -8,7 +8,7 @@ import {
   Calendar, Sparkles, ChevronDown, ChevronUp, Check, Lightbulb,
   Loader2, AlertCircle, Zap, RefreshCw
 } from 'lucide-react';
-import { format, addDays, subDays } from 'date-fns';
+import { format, addDays, subDays, differenceInCalendarDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
