@@ -8,7 +8,7 @@ import {
   Calendar, Sparkles, ChevronDown, ChevronUp, Check, Lightbulb,
   Loader2, AlertCircle, Zap, RefreshCw
 } from 'lucide-react';
-import { format, addDays, subDays } from 'date-fns';
+import { format, addDays, subDays, differenceInCalendarDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -356,6 +356,12 @@ export const FlightSelectionStage = ({
       ? selectedOutbound?.option.id === option.id 
       : selectedReturn?.option.id === option.id;
 
+    const firstAt = option.segments?.[0]?.departure?.at;
+    const lastAt = option.segments?.[option.segments.length - 1]?.arrival?.at;
+    const dayOffset = firstAt && lastAt
+      ? differenceInCalendarDays(new Date(lastAt), new Date(firstAt))
+      : 0;
+
     return (
       <motion.div
         key={option.id}
@@ -402,7 +408,12 @@ export const FlightSelectionStage = ({
                 <Clock size={12} />
                 {option.duration}
               </span>
-              <span>{option.departureTime} → {option.arrivalTime}</span>
+              <span>
+                {option.departureTime} → {option.arrivalTime}
+                {dayOffset >= 1 && (
+                  <span className="ml-1 text-xs" style={{ color: '#eab308' }}>+{dayOffset}</span>
+                )}
+              </span>
             </div>
           </div>
           
