@@ -515,7 +515,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             </div>
           </div>
           <p className={`text-lg font-bold font-['Outfit'] ${flightConfirmed ? 'text-emerald-400' : 'text-sky-400'}`}>
-            {flightConfirmed ? '✅ Confirmado' : `R$ ${fmt(flightPrice)}${(trip.travelers || 1) > 1 ? ' / pessoa' : ' (total)'}`}
+            {flightConfirmed ? '✅ Confirmado' : `R$ ${fmt(flightPrice)}${(trip.travelers || 1) > 1 ? ' /pessoa · ida e volta (estimado)' : ' total · ida e volta (estimado)'}`}
           </p>
           <p className="text-[10px] text-muted-foreground mt-1">
             {trip.flights?.outbound?.duration || '—'} · {trip.flights?.outbound?.stops === 0 ? 'Direto' : `${trip.flights?.outbound?.stops || 1} parada`}
