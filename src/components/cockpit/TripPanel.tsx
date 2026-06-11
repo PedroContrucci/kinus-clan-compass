@@ -11,7 +11,7 @@ import { exportTripPDF } from '@/lib/tripPdfExport';
 import { getIcarusRoteiroInsight, getIcarusHeroFlight, getIcarusHeroHotel, getHermesHotelInsight } from '@/lib/agentMessages';
 import { DestinationImage } from '@/components/shared/DestinationImage';
 import type { SavedTrip } from '@/types/trip';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -100,6 +100,45 @@ interface TripPanelProps {
 
 function fmt(n: number) {
   return n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+}
+
+interface PriceSnapshot {
+  price: number;
+  timestamp: string;
+}
+
+function getPriceHistory(tripId: string): PriceSnapshot[] {
+  try {
+    const raw = localStorage.getItem(`kinu_price_history_${tripId}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return [];
+}
+
+function savePriceSnapshot(tripId: string, price: number) {
+  const history = getPriceHistory(tripId);
+  history.push({ price, timestamp: new Date().toISOString() });
+  if (history.length > 10) {
+    history.shift();
+  }
+  localStorage.setItem(`kinu_price_history_${tripId}`, JSON.stringify(history));
+}
+
+function getPriceChangeInfo(tripId: string): { diff: number; dateStr: string; dropped: boolean } | null {
+  const history = getPriceHistory(tripId);
+  if (history.length < 2) return null;
+  const latest = history[history.length - 1];
+  const previous = history[history.length - 2];
+  if (latest.price === previous.price) return null;
+  const diff = Math.abs(latest.price - previous.price);
+  const dropped = latest.price < previous.price;
+  const dateStr = format(new Date(previous.timestamp), 'dd/MM');
+  return { diff, dateStr, dropped };
 }
 
 const TIER_LABELS: Record<string, string> = {
@@ -348,6 +387,11 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
   const flightPrice = trip.flights?.outbound?.price || trip.finances.planned * 0.4 || 0;
+
+  const priceChange = useMemo(() => {
+    if (flightConfirmed) return null;
+    return getPriceChangeInfo(trip.id);
+  }, [trip.id, flightConfirmed]);
   const dest = trip.destination || 'o destino';
 
   const allActions = getOrchestratedActions(trip);
@@ -433,10 +477,19 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           adults: trip.travelers || 1,
         },
       });
+      let results: any[] = [];
       if (data?.data && Array.isArray(data.data)) {
-        setFlightResults(data.data.slice(0, 3));
+        results = data.data.slice(0, 3);
+        setFlightResults(results);
       } else if (data?.offers) {
-        setFlightResults(data.offers.slice(0, 3));
+        results = data.offers.slice(0, 3);
+        setFlightResults(results);
+      }
+      if (results.length > 0) {
+        const bestPrice = Math.min(...results.map((r: any) => r.price || Infinity));
+        if (bestPrice !== Infinity) {
+          savePriceSnapshot(trip.id, bestPrice);
+        }
       }
     } catch (err) {
       console.error('Amadeus search failed:', err);
@@ -517,6 +570,14 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           <p className={`text-lg font-bold font-['Outfit'] ${flightConfirmed ? 'text-emerald-400' : 'text-sky-400'}`}>
             {flightConfirmed ? '✅ Confirmado' : `R$ ${fmt(flightPrice)}${(trip.travelers || 1) > 1 ? ' /pessoa · ida e volta (estimado)' : ' total · ida e volta (estimado)'}`}
           </p>
+          {!flightConfirmed && priceChange && (
+            <div className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full mt-1 ${priceChange.dropped ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'}`}>
+              {priceChange.dropped ? '↓' : '↑'} R$ {fmt(priceChange.diff)} desde {priceChange.dateStr}
+            </div>
+          )}
+          {!flightConfirmed && priceChange?.dropped && (
+            <p className="text-[10px] text-amber-400 mt-1">💡 Héstia: preço caiu — bom momento para confirmar o voo.</p>
+          )}
           <p className="text-[10px] text-muted-foreground mt-1">
             {trip.flights?.outbound?.duration || '—'} · {trip.flights?.outbound?.stops === 0 ? 'Direto' : `${trip.flights?.outbound?.stops || 1} parada`}
           </p>
