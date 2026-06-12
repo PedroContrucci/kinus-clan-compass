@@ -104,12 +104,23 @@ export const FeedbackButton = () => {
 
   return (
     <>
+      {/* Mobile floating button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-44 right-4 z-40 w-12 h-12 rounded-full bg-amber-500 text-white shadow-lg shadow-amber-500/30 flex items-center justify-center hover:bg-amber-600 transition-colors lg:bottom-28 lg:right-6"
+        className="lg:hidden fixed bottom-44 right-4 z-40 w-12 h-12 rounded-full bg-amber-500 text-white shadow-lg shadow-amber-500/30 flex items-center justify-center hover:bg-amber-600 transition-colors"
         aria-label="Enviar feedback"
       >
         <MessageSquare size={20} />
+      </button>
+
+      {/* Desktop edge tab */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-amber-500 text-white shadow-lg shadow-amber-500/30 hover:bg-amber-600 transition-colors rounded-l-lg items-center justify-center font-semibold text-sm tracking-wide"
+        style={{ writingMode: 'vertical-rl', padding: '10px 6px' }}
+        aria-label="Enviar feedback"
+      >
+        Feedback
       </button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
