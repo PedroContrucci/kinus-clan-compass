@@ -315,4 +315,23 @@ export const ATTRACTION_COORDS: Record<string, { lat: number; lng: number }> = {
   'marius degustare, rio de janeiro': { lat: -22.9650, lng: -43.1730 },
   'copacabana hotel, rio de janeiro': { lat: -22.9711, lng: -43.1822 },
   'ipanema hotel, rio de janeiro': { lat: -22.9847, lng: -43.2018 },
+
+  // ─── Tóquio (additional) ───
+  'bills, tóquio': { lat: 35.6650, lng: 139.7000 },
+  'ichiran ramen, tóquio': { lat: 35.6618, lng: 139.7041 },
+  'sushi dai, tóquio': { lat: 35.6492, lng: 139.7900 },
+  'tempura kondo, tóquio': { lat: 35.6717, lng: 139.7649 },
+  'gonpachi, tóquio': { lat: 35.6595, lng: 139.7220 },
+  'izakaya em yurakucho, tóquio': { lat: 35.6749, lng: 139.7630 },
+  'robot restaurant, tóquio': { lat: 35.6942, lng: 139.7026 },
+  'templo senso-ji, tóquio': { lat: 35.7148, lng: 139.7967 },
+  'teamlab borderless, tóquio': { lat: 35.6256, lng: 139.7756 },
+  'takeshita street, tóquio': { lat: 35.6716, lng: 139.7050 },
+  'golden gai, tóquio': { lat: 35.6938, lng: 139.7044 },
+  'shibuya sky, tóquio': { lat: 35.6580, lng: 139.7016 },
+  'karaoke em shibuya, tóquio': { lat: 35.6590, lng: 139.6982 },
+  'shinjuku, tóquio': { lat: 35.6938, lng: 139.7034 },
+  'shibuya, tóquio': { lat: 35.6580, lng: 139.7016 },
+  'asakusa, tóquio': { lat: 35.7119, lng: 139.7967 },
+  'ginza, tóquio': { lat: 35.6717, lng: 139.7650 },
 };
