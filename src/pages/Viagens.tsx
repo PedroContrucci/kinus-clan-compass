@@ -522,6 +522,83 @@ const Viagens = () => {
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
   };
 
+  const handleSwapActivity = (dayIndex: number, actIndex: number) => {
+    if (!selectedTrip) return;
+    const day = selectedTrip.days[dayIndex];
+    const activity = day?.activities?.[actIndex];
+    if (!activity) return;
+
+    // Collect all activity ids currently used across every day
+    const usedIds = new Set<string>();
+    selectedTrip.days.forEach((d) => d.activities.forEach((a) => usedIds.add(a.id)));
+
+    // Infer curated-pool category from current activity (time + type)
+    const inferPoolCategory = (a: any): 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner' | null => {
+      const hour = parseInt((a.time || '').split(':')[0], 10);
+      const isFood = a.type === 'food' || a.category === 'comida';
+      if (isFood) {
+        if (!isNaN(hour)) {
+          if (hour < 11) return 'breakfast';
+          if (hour < 16) return 'lunch';
+          return 'dinner';
+        }
+        return 'lunch';
+      }
+      if (a.category === 'voo' || a.category === 'hotel' || a.category === 'transporte') return null;
+      if (!isNaN(hour)) {
+        if (hour < 12) return 'morning';
+        if (hour < 18) return 'afternoon';
+        return 'night';
+      }
+      return 'afternoon';
+    };
+
+    const poolCategory = inferPoolCategory(activity);
+    if (!poolCategory) {
+      toast({ title: 'Sem outra opção curada para este horário' });
+      return;
+    }
+
+    const pool = getDestinationActivities(selectedTrip.destination);
+    const candidates = pool.filter((p: any) => p.category === poolCategory && !usedIds.has(p.id));
+    if (candidates.length === 0) {
+      toast({ title: 'Sem outra opção curada para este horário' });
+      return;
+    }
+    const picked: any = candidates[Math.floor(Math.random() * candidates.length)];
+
+    const isFoodSlot = poolCategory === 'breakfast' || poolCategory === 'lunch' || poolCategory === 'dinner';
+    const newName = isFoodSlot
+      ? `${poolCategory === 'breakfast' ? 'Café' : poolCategory === 'lunch' ? 'Almoço' : 'Jantar'}: ${picked.name}`
+      : picked.name;
+
+    const updatedTrip: SavedTrip = {
+      ...selectedTrip,
+      days: selectedTrip.days.map((d, di) => {
+        if (di !== dayIndex) return d;
+        return {
+          ...d,
+          activities: d.activities.map((a, ai) => {
+            if (ai !== actIndex) return a;
+            return {
+              ...a,
+              id: picked.id,
+              name: newName,
+              description: picked.tips?.[0] || a.description,
+              status: 'suggestion' as ActivityStatus,
+            };
+          }),
+        };
+      }),
+    };
+
+    setSelectedTrip(updatedTrip);
+    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
+    setTrips(updatedTrips);
+    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+    toast({ title: 'Atividade trocada' });
+  };
+
   const getTripDuration = (trip: SavedTrip): number => {
     if (!trip.startDate || !trip.endDate) return 7;
     return differenceInDays(new Date(trip.endDate), new Date(trip.startDate)) + 1;
