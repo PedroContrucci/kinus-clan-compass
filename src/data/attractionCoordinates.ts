@@ -382,4 +382,9 @@ export const ATTRACTION_COORDS: Record<string, { lat: number; lng: number }> = {
   'la cabrera, buenos aires': { lat: -34.5870, lng: -58.4360 },
   'el federal, buenos aires': { lat: -34.6190, lng: -58.3710 },
   'elena, buenos aires': { lat: -34.5905, lng: -58.3760 },
+
+  // ─── Nova York (additional round 2) ───
+  'los tacos no. 1, nova york': { lat: 40.7421, lng: -74.0060 },
+  'los tacos, nova york': { lat: 40.7421, lng: -74.0060 },
+  'eleven madison park, nova york': { lat: 40.7416, lng: -73.9872 },
 };
