@@ -1605,50 +1605,22 @@ const Viagens = () => {
                                 <Clock size={14} className="inline mr-1" />
                                 {activity.time}
                               </span>
-                              {(() => {
-                                const c = activity.category;
-                                const t = activity.type;
-                                if (c === 'breakfast' || c === 'café') return 'Café';
-                                if (c === 'lunch') return 'Almoço';
-                                if (c === 'dinner') return 'Jantar';
-                                if (c === 'morning') return 'Manhã';
-                                if (c === 'afternoon') return 'Tarde';
-                                if (c === 'night') return 'Noite';
-                                if (c === 'comida' || t === 'food') return 'Gastronomia';
-                                if (c === 'cultura' || t === 'culture') return 'Cultura';
-                                if (c === 'voo' || c === 'hotel' || c === 'transporte' || t === 'transport' || t === 'logistics') return 'Logística';
-                                return 'Passeio';
-                              })() && (() => {
-                                const c = activity.category;
-                                const t = activity.type;
-                                if (c === 'breakfast' || c === 'café') return 'Café';
-                                if (c === 'lunch') return 'Almoço';
-                                if (c === 'dinner') return 'Jantar';
-                                if (c === 'morning') return 'Manhã';
-                                if (c === 'afternoon') return 'Tarde';
-                                if (c === 'night') return 'Noite';
-                                if (c === 'comida' || t === 'food') return 'Gastronomia';
-                                if (c === 'cultura' || t === 'culture') return 'Cultura';
-                                if (c === 'voo' || c === 'hotel' || c === 'transporte' || t === 'transport' || t === 'logistics') return 'Logística';
-                                return 'Passeio';
-                              })() ? (
-                                <span className="text-[10px] text-muted-foreground">
-                                  {(() => {
-                                    const c = activity.category;
-                                    const t = activity.type;
-                                    if (c === 'breakfast' || c === 'café') return 'Café';
-                                    if (c === 'lunch') return 'Almoço';
-                                    if (c === 'dinner') return 'Jantar';
-                                    if (c === 'morning') return 'Manhã';
-                                    if (c === 'afternoon') return 'Tarde';
-                                    if (c === 'night') return 'Noite';
-                                    if (c === 'comida' || t === 'food') return 'Gastronomia';
-                                    if (c === 'cultura' || t === 'culture') return 'Cultura';
-                                    if (c === 'voo' || c === 'hotel' || c === 'transporte' || t === 'transport' || t === 'logistics') return 'Logística';
-                                    return 'Passeio';
-                                  })()}
-                                </span>
-                              ) : null}
+                              <span className="text-[10px] text-muted-foreground">
+                                {(() => {
+                                  const c = activity.category as string;
+                                  const t = activity.type as string;
+                                  if (c === 'breakfast' || c === 'café') return 'Café';
+                                  if (c === 'lunch') return 'Almoço';
+                                  if (c === 'dinner') return 'Jantar';
+                                  if (c === 'morning') return 'Manhã';
+                                  if (c === 'afternoon') return 'Tarde';
+                                  if (c === 'night') return 'Noite';
+                                  if (c === 'comida' || t === 'food') return 'Gastronomia';
+                                  if (c === 'cultura' || t === 'culture') return 'Cultura';
+                                  if (c === 'voo' || c === 'hotel' || c === 'transporte' || t === 'transport' || t === 'logistics') return 'Logística';
+                                  return 'Passeio';
+                                })()}
+                              </span>
                               {/* Preço estimado */}
                               {activity.cost > 0 && (
                                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${activity.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#334155] text-[#94a3b8]'}`}>
