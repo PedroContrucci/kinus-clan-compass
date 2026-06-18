@@ -22,6 +22,7 @@ class MapErrorBoundary extends Component<
 interface DailyRouteMapProps {
   destination: string;
   activities: { name: string; time?: string; category?: string }[];
+  hotelNeighborhood?: string;
 }
 
 interface GeoPoint {
@@ -29,6 +30,7 @@ interface GeoPoint {
   time?: string;
   lat: number;
   lng: number;
+  isHotel?: boolean;
 }
 
 const LOGISTICS_KEYWORDS = [
