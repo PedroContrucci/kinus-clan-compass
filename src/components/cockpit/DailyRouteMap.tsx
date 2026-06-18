@@ -22,6 +22,7 @@ class MapErrorBoundary extends Component<
 interface DailyRouteMapProps {
   destination: string;
   activities: { name: string; time?: string; category?: string }[];
+  hotelNeighborhood?: string;
 }
 
 interface GeoPoint {
@@ -29,6 +30,7 @@ interface GeoPoint {
   time?: string;
   lat: number;
   lng: number;
+  isHotel?: boolean;
 }
 
 const LOGISTICS_KEYWORDS = [
@@ -69,6 +71,28 @@ function createNumberedIcon(num: number): L.DivIcon {
   });
 }
 
+function createHotelIcon(): L.DivIcon {
+  return L.divIcon({
+    className: 'custom-marker-hotel',
+    html: `<div style="
+      background: linear-gradient(135deg, hsl(43, 96%, 56%), hsl(38, 92%, 50%));
+      color: #0f172a;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      border: 2px solid hsl(210, 40%, 98%);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    ">🏨</div>`,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+    popupAnchor: [0, -18],
+  });
+}
+
 function FitBounds({ points }: { points: GeoPoint[] }) {
   const map = useMap();
   useEffect(() => {
@@ -87,7 +111,7 @@ interface RouteSegment {
   distanceKm: string;
 }
 
-export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapProps) => {
+export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood }: DailyRouteMapProps) => {
   const [points, setPoints] = useState<GeoPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [segments, setSegments] = useState<RouteSegment[]>([]);
@@ -175,6 +199,12 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
 
     (async () => {
       const results: GeoPoint[] = [];
+      if (hotelNeighborhood) {
+        const hotelCoords = await geocode(hotelNeighborhood, destination);
+        if (hotelCoords) {
+          results.push({ name: `Hotel (${hotelNeighborhood})`, ...hotelCoords, isHotel: true });
+        }
+      }
       for (const act of filteredActivities) {
         if (abortRef.current) return;
         const coords = await geocode(act.name, destination);
@@ -190,7 +220,7 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
 
     return () => { abortRef.current = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destination, JSON.stringify(filteredActivities.map(a => a.name)), geocode]);
+  }, [destination, hotelNeighborhood, JSON.stringify(filteredActivities.map(a => a.name)), geocode]);
 
   // Fetch real walking routes from OSRM between consecutive points
   useEffect(() => {
@@ -274,16 +304,24 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             />
             <FitBounds points={points} />
-            {points.map((point, idx) => (
-              <Marker key={idx} position={[point.lat, point.lng]} icon={createNumberedIcon(idx + 1)}>
-                <Popup>
-                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#1e293b' }}>
-                    <strong>{idx + 1}. {point.name}</strong>
-                    {point.time && <div style={{ fontSize: '12px', color: '#64748b' }}>🕐 {point.time}</div>}
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+            {points.map((point, idx) => {
+              const hotelOffset = points[0]?.isHotel ? 1 : 0;
+              const activityNum = point.isHotel ? null : idx + 1 - hotelOffset;
+              return (
+                <Marker
+                  key={idx}
+                  position={[point.lat, point.lng]}
+                  icon={point.isHotel ? createHotelIcon() : createNumberedIcon(activityNum!)}
+                >
+                  <Popup>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#1e293b' }}>
+                      <strong>{point.isHotel ? '🏨 ' : `${activityNum}. `}{point.name}</strong>
+                      {point.time && <div style={{ fontSize: '12px', color: '#64748b' }}>🕐 {point.time}</div>}
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
             {segments.length > 0 ? (
               <>
                 {segments.map((seg, i) => (

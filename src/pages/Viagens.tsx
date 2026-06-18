@@ -1544,6 +1544,7 @@ const Viagens = () => {
                     <DailyRouteMap
                       destination={selectedTrip.destination}
                       activities={currentDay.activities}
+                      hotelNeighborhood={selectedTrip.accommodation?.neighborhood}
                     />
                   )}
                   <div className="space-y-4">
