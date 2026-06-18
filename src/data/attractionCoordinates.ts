@@ -334,4 +334,13 @@ export const ATTRACTION_COORDS: Record<string, { lat: number; lng: number }> = {
   'shibuya, tóquio': { lat: 35.6580, lng: 139.7016 },
   'asakusa, tóquio': { lat: 35.7119, lng: 139.7967 },
   'ginza, tóquio': { lat: 35.6717, lng: 139.7650 },
+  'a brasileira, lisboa': { lat: 38.7107, lng: -9.1426 },
+  'cervejaria ramiro, lisboa': { lat: 38.7223, lng: -9.1356 },
+  'belcanto, lisboa': { lat: 38.7099, lng: -9.1424 },
+  'tasca do chico, lisboa': { lat: 38.7106, lng: -9.1447 },
+  'caminhada por alfama, lisboa': { lat: 38.7118, lng: -9.1300 },
+  'elétrico 28, lisboa': { lat: 38.7110, lng: -9.1330 },
+  'show de fado, lisboa': { lat: 38.7115, lng: -9.1300 },
+  'chiado, lisboa': { lat: 38.7107, lng: -9.1426 },
+  'belem, lisboa': { lat: 38.6979, lng: -9.2065 },
 };
