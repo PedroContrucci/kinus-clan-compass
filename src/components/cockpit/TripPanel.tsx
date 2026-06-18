@@ -570,6 +570,9 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           <p className={`text-lg font-bold font-['Outfit'] ${flightConfirmed ? 'text-emerald-400' : 'text-sky-400'}`}>
             {flightConfirmed ? '✅ Confirmado' : `R$ ${fmt(flightPrice)}${(trip.travelers || 1) > 1 ? ' /pessoa · ida e volta (estimado)' : ' total · ida e volta (estimado)'}`}
           </p>
+          {!flightConfirmed && (
+            <p className="text-xs text-muted-foreground mt-1">Fonte: Amadeus (referência)</p>
+          )}
           {!flightConfirmed && priceChange && (
             <div className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full mt-1 ${priceChange.dropped ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'}`}>
               {priceChange.dropped ? '↓' : '↑'} R$ {fmt(priceChange.diff)} desde {priceChange.dateStr}
