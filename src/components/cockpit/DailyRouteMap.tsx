@@ -92,25 +92,43 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
     const key = `${name}|${dest}`;
     if (geocodeCache.has(key)) return geocodeCache.get(key)!;
 
-    // Try pre-computed coordinates first (instant, no API call)
-    const coordKey = `${name.toLowerCase()}, ${dest.toLowerCase()}`;
-    const preComputed = ATTRACTION_COORDS[coordKey];
-    if (preComputed) {
-      geocodeCache.set(key, preComputed);
-      return preComputed;
-    }
+    const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
-    // Partial match: strip meal prefixes, parentheticals, extras and check both directions
-    const partialMatch = Object.entries(ATTRACTION_COORDS).find(([k]) => {
-      const actNameClean = name.toLowerCase()
-        .replace(/^(almoço|jantar|café):\s*/i, '')
+    // Clean activity name: strip leading emojis, meal prefixes, parentheticals, " & ..." / " e ..." trailing
+    const cleanName = (raw: string) => {
+      let n = raw
+        // strip leading emoji/symbols (non-letters/digits at start)
+        .replace(/^[^\p{L}\p{N}]+/u, '')
+        .replace(/^(almoço|almoco|jantar|café|cafe)\s*:\s*/i, '')
         .replace(/\s*\(.*?\)/g, '')
+        .replace(/\s+[&e]\s+.*$/i, '')
         .replace(/\s*\+\s*.*/g, '')
         .trim();
-      const keyAttractionPart = k.split(',')[0].trim();
-      const keyCity = k.split(',')[1]?.trim() || '';
-      if (!keyCity.includes(dest.toLowerCase())) return false;
-      return actNameClean.includes(keyAttractionPart) || keyAttractionPart.includes(actNameClean);
+      return n;
+    };
+
+    const actClean = cleanName(name);
+    const actNorm = norm(actClean);
+    const destNorm = norm(dest);
+
+    // Exact match (normalized)
+    const exactEntry = Object.entries(ATTRACTION_COORDS).find(([k]) => {
+      const kNorm = norm(k);
+      return kNorm === `${actNorm}, ${destNorm}`;
+    });
+    if (exactEntry) {
+      geocodeCache.set(key, exactEntry[1]);
+      return exactEntry[1];
+    }
+
+    // Partial / reverse-partial match (normalized)
+    const partialMatch = Object.entries(ATTRACTION_COORDS).find(([k]) => {
+      const parts = k.split(',');
+      const keyAttractionPart = norm(parts[0] || '');
+      const keyCity = norm(parts[1] || '');
+      if (!keyCity.includes(destNorm) && !destNorm.includes(keyCity)) return false;
+      if (!actNorm || !keyAttractionPart) return false;
+      return actNorm.includes(keyAttractionPart) || keyAttractionPart.includes(actNorm);
     });
     if (partialMatch) {
       geocodeCache.set(key, partialMatch[1]);
@@ -119,10 +137,10 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
 
     // Fallback to Nominatim (rate-limited)
     try {
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 400));
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name + ', ' + dest)}&format=json&limit=1`,
-        { headers: { 'User-Agent': 'KINU-TravelOS/1.0' }, signal: AbortSignal.timeout(5000) }
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(actClean + ', ' + dest)}&format=json&limit=1`,
+        { headers: { 'User-Agent': 'KINU-TravelOS/1.0' }, signal: AbortSignal.timeout(8000) }
       );
       if (!res.ok) { geocodeCache.set(key, null); return null; }
       const data = await res.json();
