@@ -979,16 +979,13 @@ export const GeneratedItineraryStage = ({
                       {activity.status !== 'defined' && (
                         <div className="flex items-center gap-1">
                           <button className="p-1.5 hover:bg-muted rounded-lg transition-colors">
-                            <Pencil size={14} className="text-muted-foreground" />
-                          </button>
-                          <button className="p-1.5 hover:bg-muted rounded-lg transition-colors">
                             <RefreshCw size={14} className="text-muted-foreground" />
                           </button>
                           <button 
                             onClick={() => handleRemoveActivity(activity.id)}
                             className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors"
                           >
-                            <Trash2 size={14} className="text-red-400" />
+                            <Trash2 size={14} className="text-red-0" />
                           </button>
                         </div>
                       )}
