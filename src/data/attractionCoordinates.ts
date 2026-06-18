@@ -343,4 +343,14 @@ export const ATTRACTION_COORDS: Record<string, { lat: number; lng: number }> = {
   'show de fado, lisboa': { lat: 38.7115, lng: -9.1300 },
   'chiado, lisboa': { lat: 38.7107, lng: -9.1426 },
   'belem, lisboa': { lat: 38.6979, lng: -9.2065 },
+
+  // ─── Roma (additional) ───
+  'roscioli caffè, roma': { lat: 41.8946, lng: 12.4747 },
+  'armando al pantheon, roma': { lat: 41.8987, lng: 12.4768 },
+  'roscioli salumeria, roma': { lat: 41.8939, lng: 12.4736 },
+  'jantar em trastevere, roma': { lat: 41.8895, lng: 12.4690 },
+  'capela sistina, roma': { lat: 41.9029, lng: 12.4545 },
+  'noite em trastevere, roma': { lat: 41.8895, lng: 12.4690 },
+  'monti, roma': { lat: 41.8946, lng: 12.4915 },
+  'prati, roma': { lat: 41.9087, lng: 12.4583 },
 };
