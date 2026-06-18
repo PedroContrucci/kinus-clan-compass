@@ -71,6 +71,28 @@ function createNumberedIcon(num: number): L.DivIcon {
   });
 }
 
+function createHotelIcon(): L.DivIcon {
+  return L.divIcon({
+    className: 'custom-marker-hotel',
+    html: `<div style="
+      background: linear-gradient(135deg, hsl(43, 96%, 56%), hsl(38, 92%, 50%));
+      color: #0f172a;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      border: 2px solid hsl(210, 40%, 98%);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    ">🏨</div>`,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+    popupAnchor: [0, -18],
+  });
+}
+
 function FitBounds({ points }: { points: GeoPoint[] }) {
   const map = useMap();
   useEffect(() => {
