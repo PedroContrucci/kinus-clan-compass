@@ -81,9 +81,16 @@ function FitBounds({ points }: { points: GeoPoint[] }) {
 
 const geocodeCache = new Map<string, { lat: number; lng: number } | null>();
 
+interface RouteSegment {
+  path: [number, number][];
+  durationMin: number;
+  distanceKm: string;
+}
+
 export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapProps) => {
   const [points, setPoints] = useState<GeoPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [segments, setSegments] = useState<RouteSegment[]>([]);
   const abortRef = useRef(false);
 
   const filteredActivities = activities.filter(a => !isLogistics(a));
@@ -185,6 +192,41 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [destination, JSON.stringify(filteredActivities.map(a => a.name)), geocode]);
 
+  // Fetch real walking routes from OSRM between consecutive points
+  useEffect(() => {
+    if (points.length < 2) {
+      setSegments([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const results: RouteSegment[] = [];
+      for (let i = 0; i < points.length - 1; i++) {
+        const a = points[i], b = points[i + 1];
+        try {
+          const url = `https://router.project-osrm.org/route/v1/foot/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
+          const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+          if (!res.ok) continue;
+          const data = await res.json();
+          const route = data?.routes?.[0];
+          if (!route?.geometry?.coordinates) continue;
+          const path = (route.geometry.coordinates as [number, number][]).map(
+            ([lng, lat]) => [lat, lng] as [number, number]
+          );
+          results.push({
+            path,
+            durationMin: Math.round(route.duration / 60),
+            distanceKm: (route.distance / 1000).toFixed(1),
+          });
+        } catch {
+          // skip segment
+        }
+      }
+      if (!cancelled) setSegments(results);
+    })();
+    return () => { cancelled = true; };
+  }, [points]);
+
   if (filteredActivities.length === 0) return null;
 
   if (loading) {
@@ -242,19 +284,51 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
                 </Popup>
               </Marker>
             ))}
-            {polylinePositions.length > 1 && (
-              <Polyline
-                positions={polylinePositions}
-                pathOptions={{
-                  color: 'hsl(199, 89%, 48%)',
-                  weight: 3,
-                  dashArray: '8, 6',
-                  opacity: 0.8,
-                }}
-              />
+            {segments.length > 0 ? (
+              <>
+                {segments.map((seg, i) => (
+                  <Polyline
+                    key={`seg-${i}`}
+                    positions={seg.path}
+                    pathOptions={{
+                      color: 'hsl(199, 89%, 48%)',
+                      weight: 3,
+                      opacity: 0.8,
+                    }}
+                  />
+                ))}
+                {segments.map((seg, i) => {
+                  if (seg.path.length === 0) return null;
+                  const mid = seg.path[Math.floor(seg.path.length / 2)];
+                  const icon = L.divIcon({
+                    className: 'route-time-pill',
+                    html: `<div style="background:#0f172a;color:#fff;border-radius:9999px;padding:2px 6px;font-size:10px;font-family:'Outfit',sans-serif;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.4);">${seg.durationMin} min</div>`,
+                    iconSize: [40, 16],
+                    iconAnchor: [20, 8],
+                  });
+                  return <Marker key={`pill-${i}`} position={mid} icon={icon} interactive={false} />;
+                })}
+              </>
+            ) : (
+              polylinePositions.length > 1 && (
+                <Polyline
+                  positions={polylinePositions}
+                  pathOptions={{
+                    color: 'hsl(199, 89%, 48%)',
+                    weight: 3,
+                    dashArray: '8, 6',
+                    opacity: 0.8,
+                  }}
+                />
+              )
             )}
           </MapContainer>
         </div>
+        {segments.length > 0 && (
+          <p className="text-xs text-muted-foreground mt-2 font-['Outfit']">
+            🚶 Tempo total de deslocamento: ~{segments.reduce((s, x) => s + x.durationMin, 0)} min
+          </p>
+        )}
       </MapErrorBoundary>
     </div>
   );
