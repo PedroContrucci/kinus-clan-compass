@@ -1677,6 +1677,12 @@ const Viagens = () => {
                                   <Tag size={12} />
                                   Ver Ofertas
                                 </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleSwapActivity(dayIndex, actIndex); }}
+                                  className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-primary/50 transition-colors"
+                                >
+                                  🔄 Trocar
+                                </button>
                               </div>
                             )}
                           </div>
