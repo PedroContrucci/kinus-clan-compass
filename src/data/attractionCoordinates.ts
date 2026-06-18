@@ -291,4 +291,8 @@ export const ATTRACTION_COORDS: Record<string, { lat: number; lng: number }> = {
   'caveau de la huchette, paris': { lat: 48.8530, lng: 2.3460 },
   'jazz no caveau de la huchette, paris': { lat: 48.8530, lng: 2.3460 },
   'pôr do sol no trocadéro, paris': { lat: 48.8627, lng: 2.2887 },
+
+  'saint-germain, paris': { lat: 48.8539, lng: 2.3338 },
+  'montmartre hotel, paris': { lat: 48.8867, lng: 2.3431 },
+  'opera, paris': { lat: 48.8709, lng: 2.3317 },
 };
