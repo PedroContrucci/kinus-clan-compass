@@ -203,6 +203,7 @@ const Viagens = () => {
   const [recentlyConfirmed, setRecentlyConfirmed] = useState<string | null>(null);
   const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; activityName: string; activityType: string; estimatedPrice?: number } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; activity: TripActivity; dayIndex: number; actIndex: number } | null>(null);
+  const [swapModal, setSwapModal] = useState<{ dayIndex: number; actIndex: number; activity: any } | null>(null);
   const [confirmAmount, setConfirmAmount] = useState('');
   const [confirmLink, setConfirmLink] = useState('');
   const [manualExpenseModal, setManualExpenseModal] = useState(false);
