@@ -1037,7 +1037,10 @@ export const GeneratedItineraryStage = ({
                       
                       {activity.status !== 'defined' && (
                         <div className="flex items-center gap-1">
-                          <button className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+                          <button
+                            onClick={() => handleSwapActivity(currentDay.dayNumber, activity.id)}
+                            className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+                          >
                             <RefreshCw size={14} className="text-muted-foreground" />
                           </button>
                           <button 
