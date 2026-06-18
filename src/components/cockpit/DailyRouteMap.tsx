@@ -81,9 +81,16 @@ function FitBounds({ points }: { points: GeoPoint[] }) {
 
 const geocodeCache = new Map<string, { lat: number; lng: number } | null>();
 
+interface RouteSegment {
+  path: [number, number][];
+  durationMin: number;
+  distanceKm: string;
+}
+
 export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapProps) => {
   const [points, setPoints] = useState<GeoPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [segments, setSegments] = useState<RouteSegment[]>([]);
   const abortRef = useRef(false);
 
   const filteredActivities = activities.filter(a => !isLogistics(a));
