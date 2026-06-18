@@ -1974,6 +1974,110 @@ const Viagens = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Swap Activity Modal */}
+        <Dialog open={!!swapModal} onOpenChange={(o) => { if (!o) setSwapModal(null); }}>
+          <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc] max-w-md mx-auto max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-['Outfit']">🔄 Trocar atividade — escolha uma opção</DialogTitle>
+            </DialogHeader>
+            {(() => {
+              if (!swapModal || !selectedTrip) return null;
+              const current = swapModal.activity;
+              const inferPoolCategory = (a: any): 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner' | null => {
+                const hour = parseInt((a.time || '').split(':')[0], 10);
+                const isFood = a.type === 'food' || a.category === 'comida';
+                if (isFood) {
+                  if (!isNaN(hour)) {
+                    if (hour < 11) return 'breakfast';
+                    if (hour < 16) return 'lunch';
+                    return 'dinner';
+                  }
+                  return 'lunch';
+                }
+                if (a.category === 'voo' || a.category === 'hotel' || a.category === 'transporte') return null;
+                if (!isNaN(hour)) {
+                  if (hour < 12) return 'morning';
+                  if (hour < 18) return 'afternoon';
+                  return 'night';
+                }
+                return 'afternoon';
+              };
+              const poolCategory = inferPoolCategory(current);
+              const usedIds = new Set<string>();
+              selectedTrip.days.forEach((d) => d.activities.forEach((a) => usedIds.add(a.id)));
+              const pool = poolCategory ? getDestinationActivities(selectedTrip.destination) : [];
+              const candidates = poolCategory
+                ? pool.filter((p: any) => p.category === poolCategory && !usedIds.has(p.id))
+                : [];
+
+              if (candidates.length === 0) {
+                return (
+                  <p className="text-sm text-[#94a3b8] py-4">Sem outras opções curadas para este horário.</p>
+                );
+              }
+
+              const isFoodSlot = poolCategory === 'breakfast' || poolCategory === 'lunch' || poolCategory === 'dinner';
+
+              const pick = (picked: any) => {
+                const newName = isFoodSlot
+                  ? `${poolCategory === 'breakfast' ? 'Café' : poolCategory === 'lunch' ? 'Almoço' : 'Jantar'}: ${picked.name}`
+                  : picked.name;
+                const updatedTrip: SavedTrip = {
+                  ...selectedTrip,
+                  days: selectedTrip.days.map((d, di) => {
+                    if (di !== swapModal.dayIndex) return d;
+                    return {
+                      ...d,
+                      activities: d.activities.map((a, ai) => {
+                        if (ai !== swapModal.actIndex) return a;
+                        return {
+                          ...a,
+                          id: picked.id,
+                          name: newName,
+                          description: picked.tips?.[0] || a.description,
+                          cost: typeof picked.estimatedCostBRL === 'number' ? picked.estimatedCostBRL : a.cost,
+                          status: 'suggestion' as ActivityStatus,
+                        };
+                      }),
+                    };
+                  }),
+                };
+                setSelectedTrip(updatedTrip);
+                const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
+                setTrips(updatedTrips);
+                localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+                setSwapModal(null);
+                toast({ title: 'Atividade trocada' });
+              };
+
+              return (
+                <div className="space-y-2">
+                  {candidates.map((c: any) => (
+                    <button
+                      key={c.id}
+                      onClick={() => pick(c)}
+                      className="w-full text-left p-3 bg-[#0f172a] border border-[#334155] rounded-xl hover:border-[#10b981]/60 transition-colors"
+                    >
+                      <div className="font-semibold text-[#f8fafc]">{c.name}</div>
+                      <div className="text-xs text-[#94a3b8] mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                        {c.neighborhood && <span>📍 {c.neighborhood}</span>}
+                        {typeof c.rating === 'number' && <span>⭐ {c.rating}</span>}
+                        <span className="text-emerald-400">
+                          {c.estimatedCostBRL === 0 ? 'Grátis' : `~R$ ${c.estimatedCostBRL}`}
+                        </span>
+                      </div>
+                      {c.tips?.[0] && (
+                        <div className="text-xs text-[#94a3b8] mt-2 italic">💡 {c.tips[0]}</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
+
+
         {/* Manual Expense Modal */}
         <Dialog open={manualExpenseModal} onOpenChange={setManualExpenseModal}>
           <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc] max-w-sm mx-auto">
