@@ -985,7 +985,7 @@ export const GeneratedItineraryStage = ({
                             onClick={() => handleRemoveActivity(activity.id)}
                             className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors"
                           >
-                            <Trash2 size={14} className="text-red-0" />
+                            <Trash2 size={14} className="text-red-400" />
                           </button>
                         </div>
                       )}
