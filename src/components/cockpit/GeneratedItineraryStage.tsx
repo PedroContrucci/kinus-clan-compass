@@ -684,6 +684,17 @@ const timeSlotEmojis: Record<string, string> = {
   hotel: '🏨',
 };
 
+const categoryLabels: Record<string, string> = {
+  breakfast: 'Café',
+  morning: 'Manhã',
+  lunch: 'Almoço',
+  afternoon: 'Tarde',
+  dinner: 'Jantar',
+  night: 'Noite',
+  flight: 'Logística',
+  hotel: 'Logística',
+};
+
 const statusBadges: Record<string, { label: string; className: string }> = {
   defined: { label: '✓ Definido', className: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
   suggestion: { label: '~ Sugestão', className: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
