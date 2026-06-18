@@ -371,4 +371,15 @@ export const ATTRACTION_COORDS: Record<string, { lat: number; lng: number }> = {
   'midtown, nova york': { lat: 40.7549, lng: -73.9840 },
   'les, nova york': { lat: 40.7180, lng: -73.9880 },
   'uws, nova york': { lat: 40.7870, lng: -73.9754 },
+
+  // ─── Buenos Aires (additional) ───
+  'malba, buenos aires': { lat: -34.5772, lng: -58.4035 },
+  'cemitério da recoleta, buenos aires': { lat: -34.5875, lng: -58.3927 },
+  'mercado de san telmo, buenos aires': { lat: -34.6202, lng: -58.3717 },
+  'palermo, buenos aires': { lat: -34.5780, lng: -58.4300 },
+  'tigre, buenos aires': { lat: -34.4264, lng: -58.5796 },
+  'don julio, buenos aires': { lat: -34.5856, lng: -58.4290 },
+  'la cabrera, buenos aires': { lat: -34.5870, lng: -58.4360 },
+  'el federal, buenos aires': { lat: -34.6190, lng: -58.3710 },
+  'elena, buenos aires': { lat: -34.5905, lng: -58.3760 },
 };
