@@ -284,19 +284,51 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
                 </Popup>
               </Marker>
             ))}
-            {polylinePositions.length > 1 && (
-              <Polyline
-                positions={polylinePositions}
-                pathOptions={{
-                  color: 'hsl(199, 89%, 48%)',
-                  weight: 3,
-                  dashArray: '8, 6',
-                  opacity: 0.8,
-                }}
-              />
+            {segments.length > 0 ? (
+              <>
+                {segments.map((seg, i) => (
+                  <Polyline
+                    key={`seg-${i}`}
+                    positions={seg.path}
+                    pathOptions={{
+                      color: 'hsl(199, 89%, 48%)',
+                      weight: 3,
+                      opacity: 0.8,
+                    }}
+                  />
+                ))}
+                {segments.map((seg, i) => {
+                  if (seg.path.length === 0) return null;
+                  const mid = seg.path[Math.floor(seg.path.length / 2)];
+                  const icon = L.divIcon({
+                    className: 'route-time-pill',
+                    html: `<div style="background:#0f172a;color:#fff;border-radius:9999px;padding:2px 6px;font-size:10px;font-family:'Outfit',sans-serif;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.4);">${seg.durationMin} min</div>`,
+                    iconSize: [40, 16],
+                    iconAnchor: [20, 8],
+                  });
+                  return <Marker key={`pill-${i}`} position={mid} icon={icon} interactive={false} />;
+                })}
+              </>
+            ) : (
+              polylinePositions.length > 1 && (
+                <Polyline
+                  positions={polylinePositions}
+                  pathOptions={{
+                    color: 'hsl(199, 89%, 48%)',
+                    weight: 3,
+                    dashArray: '8, 6',
+                    opacity: 0.8,
+                  }}
+                />
+              )
             )}
           </MapContainer>
         </div>
+        {segments.length > 0 && (
+          <p className="text-xs text-muted-foreground mt-2 font-['Outfit']">
+            🚶 Tempo total de deslocamento: ~{segments.reduce((s, x) => s + x.durationMin, 0)} min
+          </p>
+        )}
       </MapErrorBoundary>
     </div>
   );
