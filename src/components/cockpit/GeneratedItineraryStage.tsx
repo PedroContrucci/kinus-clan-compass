@@ -736,6 +736,65 @@ export const GeneratedItineraryStage = ({
     toast({ title: "Atividade removida", description: "A atividade foi removida do roteiro." });
   };
 
+  const handleSwapActivity = (dayNum: number, activityId: string) => {
+    const day = days.find(d => d.dayNumber === dayNum);
+    const activity = day?.activities.find(a => a.id === activityId);
+    if (!day || !activity) return;
+
+    // Collect all base activity ids currently in use across all days
+    const stripPrefix = (id: string) => id.replace(/^day-\d+-/, '');
+    const usedIds = new Set<string>();
+    days.forEach(d => d.activities.forEach(a => usedIds.add(stripPrefix(a.id))));
+
+    const category = activity.timeSlot;
+    if (category === 'flight' || category === 'hotel') return;
+
+    const themeName = day.theme || 'Descobertas';
+    const themeStyleMap: Record<string, string[]> = {
+      'Cultura': ['culture', 'history', 'art'],
+      'Gastronomia': ['gastronomy'],
+      'Passeios': ['nature', 'romantic', 'shopping'],
+      'Aventura': ['adventure', 'nature'],
+      'Descobertas': ['culture', 'shopping', 'art'],
+    };
+    const targetTags = themeStyleMap[themeName] || [];
+
+    const pool = getDestinationActivities(destination);
+    let candidates = pool.filter(a =>
+      a.category === category &&
+      !usedIds.has(a.id) &&
+      (targetTags.length === 0 || (a.styleTags && a.styleTags.some(t => targetTags.includes(t))))
+    );
+    if (candidates.length === 0) {
+      candidates = pool.filter(a => a.category === category && !usedIds.has(a.id));
+    }
+    if (candidates.length === 0) {
+      toast({ title: "Sem outra opção curada para este horário" });
+      return;
+    }
+
+    const picked = candidates[0];
+    const dayIndex = day.dayNumber - 1;
+    const newActivity: ItineraryActivity = {
+      ...activity,
+      id: `day-${dayIndex}-${picked.id}`,
+      name: picked.name,
+      estimatedCost: picked.estimatedCostBRL * travelers,
+      costPerPerson: picked.estimatedCostBRL,
+      status: 'suggestion',
+    };
+
+    const updatedDays = days.map(d => {
+      if (d.dayNumber !== dayNum) return d;
+      return {
+        ...d,
+        activities: d.activities.map(a => (a.id === activityId ? newActivity : a)),
+      };
+    });
+    setDays(updatedDays);
+    toast({ title: "Atividade trocada" });
+  };
+
   const getDayLabel = (dayNum: number) => {
     const date = addDays(startDate, dayNum - 1);
     return format(date, 'EEE', { locale: ptBR });
