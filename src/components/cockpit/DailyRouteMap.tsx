@@ -90,7 +90,8 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
 
   const geocode = useCallback(async (name: string, dest: string): Promise<{ lat: number; lng: number } | null> => {
     const key = `${name}|${dest}`;
-    if (geocodeCache.has(key)) return geocodeCache.get(key)!;
+    const cached = geocodeCache.get(key);
+    if (cached) return cached;
 
     const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
@@ -142,17 +143,15 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(actClean + ', ' + dest)}&format=json&limit=1`,
         { headers: { 'User-Agent': 'KINU-TravelOS/1.0' }, signal: AbortSignal.timeout(8000) }
       );
-      if (!res.ok) { geocodeCache.set(key, null); return null; }
+      if (!res.ok) return null;
       const data = await res.json();
       if (data.length > 0) {
         const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
         geocodeCache.set(key, result);
         return result;
       }
-      geocodeCache.set(key, null);
       return null;
     } catch {
-      geocodeCache.set(key, null);
       return null;
     }
   }, []);
