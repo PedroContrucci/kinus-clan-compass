@@ -177,6 +177,12 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood 
 
     (async () => {
       const results: GeoPoint[] = [];
+      if (hotelNeighborhood) {
+        const hotelCoords = await geocode(hotelNeighborhood, destination);
+        if (hotelCoords) {
+          results.push({ name: `Hotel (${hotelNeighborhood})`, ...hotelCoords, isHotel: true });
+        }
+      }
       for (const act of filteredActivities) {
         if (abortRef.current) return;
         const coords = await geocode(act.name, destination);
@@ -192,7 +198,7 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood 
 
     return () => { abortRef.current = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destination, JSON.stringify(filteredActivities.map(a => a.name)), geocode]);
+  }, [destination, hotelNeighborhood, JSON.stringify(filteredActivities.map(a => a.name)), geocode]);
 
   // Fetch real walking routes from OSRM between consecutive points
   useEffect(() => {
