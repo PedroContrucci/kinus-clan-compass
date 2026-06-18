@@ -353,4 +353,22 @@ export const ATTRACTION_COORDS: Record<string, { lat: number; lng: number }> = {
   'noite em trastevere, roma': { lat: 41.8895, lng: 12.4690 },
   'monti, roma': { lat: 41.8946, lng: 12.4915 },
   'prati, roma': { lat: 41.9087, lng: 12.4583 },
+
+  // ─── Nova York (additional) ───
+  'met museum, nova york': { lat: 40.7794, lng: -73.9632 },
+  'moma, nova york': { lat: 40.7614, lng: -73.9776 },
+  'hudson yards, nova york': { lat: 40.7538, lng: -74.0021 },
+  'dumbo, nova york': { lat: 40.7033, lng: -73.9881 },
+  'top of the rock, nova york': { lat: 40.7593, lng: -73.9794 },
+  'soho, nova york': { lat: 40.7233, lng: -74.0030 },
+  'greenwich village, nova york': { lat: 40.7336, lng: -74.0027 },
+  'little italy, nova york': { lat: 40.7191, lng: -73.9973 },
+  'chinatown, nova york': { lat: 40.7158, lng: -73.9970 },
+  'estátua da liberdade, nova york': { lat: 40.6892, lng: -74.0445 },
+  'katz, nova york': { lat: 40.7223, lng: -73.9874 },
+  'balthazar, nova york': { lat: 40.7224, lng: -73.9980 },
+  'peter luger, nova york': { lat: 40.7099, lng: -73.9626 },
+  'midtown, nova york': { lat: 40.7549, lng: -73.9840 },
+  'les, nova york': { lat: 40.7180, lng: -73.9880 },
+  'uws, nova york': { lat: 40.7870, lng: -73.9754 },
 };
