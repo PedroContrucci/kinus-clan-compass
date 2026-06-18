@@ -304,16 +304,24 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood 
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             />
             <FitBounds points={points} />
-            {points.map((point, idx) => (
-              <Marker key={idx} position={[point.lat, point.lng]} icon={createNumberedIcon(idx + 1)}>
-                <Popup>
-                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#1e293b' }}>
-                    <strong>{idx + 1}. {point.name}</strong>
-                    {point.time && <div style={{ fontSize: '12px', color: '#64748b' }}>🕐 {point.time}</div>}
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+            {points.map((point, idx) => {
+              const hotelOffset = points[0]?.isHotel ? 1 : 0;
+              const activityNum = point.isHotel ? null : idx + 1 - hotelOffset;
+              return (
+                <Marker
+                  key={idx}
+                  position={[point.lat, point.lng]}
+                  icon={point.isHotel ? createHotelIcon() : createNumberedIcon(activityNum!)}
+                >
+                  <Popup>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#1e293b' }}>
+                      <strong>{point.isHotel ? '🏨 ' : `${activityNum}. `}{point.name}</strong>
+                      {point.time && <div style={{ fontSize: '12px', color: '#64748b' }}>🕐 {point.time}</div>}
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
             {segments.length > 0 ? (
               <>
                 {segments.map((seg, i) => (
