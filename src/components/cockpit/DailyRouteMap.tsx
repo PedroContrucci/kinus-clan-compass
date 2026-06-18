@@ -192,6 +192,41 @@ export const DailyRouteMap = memo(({ destination, activities }: DailyRouteMapPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [destination, JSON.stringify(filteredActivities.map(a => a.name)), geocode]);
 
+  // Fetch real walking routes from OSRM between consecutive points
+  useEffect(() => {
+    if (points.length < 2) {
+      setSegments([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const results: RouteSegment[] = [];
+      for (let i = 0; i < points.length - 1; i++) {
+        const a = points[i], b = points[i + 1];
+        try {
+          const url = `https://router.project-osrm.org/route/v1/foot/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
+          const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+          if (!res.ok) continue;
+          const data = await res.json();
+          const route = data?.routes?.[0];
+          if (!route?.geometry?.coordinates) continue;
+          const path = (route.geometry.coordinates as [number, number][]).map(
+            ([lng, lat]) => [lat, lng] as [number, number]
+          );
+          results.push({
+            path,
+            durationMin: Math.round(route.duration / 60),
+            distanceKm: (route.distance / 1000).toFixed(1),
+          });
+        } catch {
+          // skip segment
+        }
+      }
+      if (!cancelled) setSegments(results);
+    })();
+    return () => { cancelled = true; };
+  }, [points]);
+
   if (filteredActivities.length === 0) return null;
 
   if (loading) {
