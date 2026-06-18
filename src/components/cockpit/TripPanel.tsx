@@ -628,6 +628,9 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           <p className={`text-lg font-bold font-['Outfit'] ${hotelConfirmed ? 'text-emerald-400' : 'text-amber-400'}`}>
             {hotelConfirmed ? '✅ Confirmado' : `R$ ${fmt(trip.accommodation?.nightlyRate || 0)} / noite`}
           </p>
+          {!hotelConfirmed && (
+            <p className="text-xs text-muted-foreground mt-1">Fonte: estimativa por cidade</p>
+          )}
           <p className="text-[10px] text-muted-foreground mt-1">
             {trip.accommodation?.totalNights || '—'} noites · {trip.accommodation?.stars || 3}★
           </p>
