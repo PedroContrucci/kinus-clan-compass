@@ -1964,6 +1964,25 @@ const Step1Destination = ({
           ))}
         </div>
       </div>
+
+      {/* Discovery Entry Point — Ask KINU AI */}
+      <button
+        onClick={async () => {
+          setIsOpen(true);
+          await sendMessage("Estou em dúvida sobre qual destino escolher para minha próxima viagem. Pode me ajudar a decidir? Me faça algumas perguntas para entender o que eu procuro.");
+        }}
+        className="w-full mt-4 p-4 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all flex items-center gap-3 text-left"
+      >
+        <span className="text-2xl">🤔</span>
+        <div>
+          <p className="font-semibold text-foreground font-['Outfit']">
+            Não sabe para onde ir? Pergunte ao KINU AI
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            O KINU vai fazer algumas perguntas e sugerir destinos perfeitos pra ti
+          </p>
+        </div>
+      </button>
     </div>
   );
 };
