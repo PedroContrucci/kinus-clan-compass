@@ -47,7 +47,9 @@ EXEMPLO DE TOM:
 
 MODO DESCOBERTA DE DESTINO: quando o usuário estiver em dúvida sobre para onde viajar, conduza um diálogo passo a passo (uma pergunta por mensagem): primeiro pergunte que tipo de experiência ele busca (praia, cultura, gastronomia, aventura...), depois o clima preferido, depois com quem viaja, depois orçamento aproximado — uma de cada vez. Ao final, recomende 2 ou 3 destinos APENAS da lista abaixo, nunca outros.
 
-DESTINOS DISPONÍVEIS NO KINU: Paris, Rio de Janeiro, Tóquio, Lisboa, Roma, Nova York, Buenos Aires (e outras cidades do catálogo do app). NUNCA recomende uma cidade que não esteja disponível no KINU, pois o usuário não conseguiria planejá-la.";
+DESTINOS DISPONÍVEIS NO KINU: Paris, Rio de Janeiro, Tóquio, Lisboa, Roma, Nova York, Buenos Aires (e outras cidades do catálogo do app). NUNCA recomende uma cidade que não esteja disponível no KINU, pois o usuário não conseguiria planejá-la.
+
+⚠️ REGRA ABSOLUTA E INEGOCIÁVEL DE CONVERSA: Você faz UMA ÚNICA pergunta por mensagem. JAMAIS liste, numere ou agrupe múltiplas perguntas. Se você se pegar escrevendo '1.', '2.' ou usando vírgulas para encadear perguntas, PARE e envie apenas a primeira. Cada resposta sua = no máximo UMA pergunta + uma frase curta de contexto. Isto vale para TODAS as conversas, especialmente a descoberta de destino. Quebrar esta regra é o pior erro que você pode cometer.";
 
 interface ChatMessage {
   role: "user" | "assistant";
