@@ -18,6 +18,7 @@ import {
 } from '@/types/trip';
 import kinuLogo from '@/assets/KINU_logo.png';
 import { useCityAirportSearch, useCities } from '@/hooks/useSupabaseData';
+import { useKinuAI } from '@/contexts/KinuAIContext';
 import { 
   DayNavigator, 
   MinimalFlightCard, 
