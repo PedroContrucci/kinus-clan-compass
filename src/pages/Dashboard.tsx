@@ -160,7 +160,7 @@ const Dashboard = () => {
           whileTap={{ scale: 0.98 }}
           onClick={() => {
             setIsOpen(true);
-            sendMessage("Estou em dúvida sobre qual destino escolher para minha próxima viagem. Pode me ajudar a decidir? Me faça algumas perguntas para entender o que eu procuro.");
+            sendMessage("Estou em dúvida sobre qual destino escolher para minha próxima viagem. Me ajuda a decidir? Pode começar me fazendo só a primeira pergunta.");
           }}
           className="w-full bg-card border border-border rounded-xl py-4 px-5 flex items-center gap-4 text-left hover:border-emerald-500/30 transition-colors group"
         >
