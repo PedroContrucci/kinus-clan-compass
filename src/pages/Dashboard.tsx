@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { AgentCards } from '@/components/dashboard/AgentCards';
+import { useKinuAI } from '@/contexts/KinuAIContext';
 import { TripCardWithPhoto } from '@/components/dashboard/TripCardWithPhoto';
 import { CountdownCard } from '@/components/dashboard/CountdownCard';
 import { exportTripPDF } from '@/lib/tripPdfExport';
@@ -27,6 +28,7 @@ const Dashboard = () => {
 
   // Fetch trips from Supabase
   const { data: supabaseTrips, isLoading: tripsLoading } = useUserTrips(user?.id);
+  const { setIsOpen, sendMessage } = useKinuAI();
 
   // Also check localStorage for backwards compatibility
   const [localTrips, setLocalTrips] = useState<any[]>([]);
@@ -150,6 +152,26 @@ const Dashboard = () => {
             </div>
           </div>
           <ArrowRight size={24} className="text-white/80 group-hover:translate-x-1 transition-transform" />
+        </motion.button>
+
+        {/* Discovery Entry Point */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            setIsOpen(true);
+            sendMessage("Estou em dúvida sobre qual destino escolher para minha próxima viagem. Pode me ajudar a decidir? Me faça algumas perguntas para entender o que eu procuro.");
+          }}
+          className="w-full bg-card border border-border rounded-xl py-4 px-5 flex items-center gap-4 text-left hover:border-emerald-500/30 transition-colors group"
+        >
+          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+            <span className="text-lg">🧭</span>
+          </div>
+          <div className="flex-1">
+            <p className="font-medium text-foreground font-['Outfit']">Não sabe para onde ir?</p>
+            <p className="text-sm text-emerald-400">Deixe o KINU AI te ajudar a escolher</p>
+          </div>
+          <ArrowRight size={20} className="text-muted-foreground group-hover:text-emerald-400 transition-colors" />
         </motion.button>
 
         {/* Agent Cards */}
