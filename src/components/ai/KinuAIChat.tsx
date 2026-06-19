@@ -21,7 +21,7 @@ export function KinuAIChat() {
 
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -146,14 +146,25 @@ export function KinuAIChat() {
               className="p-4 border-t border-[#334155] bg-[#1E293B]"
             >
               <div className="flex gap-2">
-                <input
+                <textarea
                   ref={inputRef}
-                  type="text"
+                  rows={1}
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    e.target.style.height = "auto";
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit(e as unknown as React.FormEvent);
+                    }
+                  }}
                   placeholder={isEmergencyMode ? "Descreva o que aconteceu..." : "Pergunte qualquer coisa..."}
                   disabled={isLoading}
-                  className={`flex-1 bg-[#0f172a] border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 disabled:opacity-50 ${
+                  style={{ maxHeight: "120px", overflowY: "auto" }}
+                  className={`flex-1 bg-[#0f172a] border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 disabled:opacity-50 resize-none ${
                     isEmergencyMode
                       ? "border-red-500/30 focus:ring-red-500/50"
                       : "border-[#334155] focus:ring-emerald-500/50"
