@@ -1802,6 +1802,7 @@ const Step1Destination = ({
   setTripData,
   handleSelectDestination 
 }: Step1Props) => {
+  const { setIsOpen, sendMessage } = useKinuAI();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   // Fetch cities from Supabase for autocomplete
