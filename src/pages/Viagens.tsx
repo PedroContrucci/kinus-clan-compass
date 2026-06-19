@@ -28,6 +28,7 @@ import { BottomNav } from '@/components/shared/BottomNav';
 import { TRAVEL_INTERESTS } from '@/components/wizard/types';
 import { getDestinationActivities } from '@/data/destinationActivities';
 import type { SuggestedActivity } from '@/data/destinationActivities';
+import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
 
 import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
@@ -187,6 +188,55 @@ function normalizeSavedTrip(trip: any): SavedTrip {
     ...trip,
     days: normalizeTripDays(trip.days),
   };
+}
+
+const LOGISTICS_KEYWORDS = [
+  'café da manhã', 'transfer', 'check-in', 'check-out', 'voo',
+  'embarque', 'desembarque', 'imigração', 'aeroporto', 'bagagem',
+  'retorno', 'volta'
+];
+const LOGISTICS_CATEGORIES = ['voo', 'transporte', 'hotel'];
+
+function isLogistics(activity: { name: string; category?: string }): boolean {
+  const nameLower = activity.name.toLowerCase();
+  if (LOGISTICS_CATEGORIES.includes(activity.category || '')) return true;
+  return LOGISTICS_KEYWORDS.some(kw => nameLower.includes(kw));
+}
+
+function hasMapCoordinates(activityName: string, destination: string): boolean {
+  const cleanName = (raw: string) => {
+    let n = raw
+      .replace(/^[^\p{L}\p{N}]+/u, '')
+      .replace(/^(almoço|almoco|jantar|café|cafe)\s*:\s*/i, '')
+      .replace(/\s*\(.*?\)/g, '')
+      .replace(/\s+[&e]\s+.*$/i, '')
+      .replace(/\s*\+\s*.*/g, '')
+      .trim();
+    return n;
+  };
+
+  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+  const actClean = cleanName(activityName);
+  const actNorm = norm(actClean);
+  const destNorm = norm(destination);
+
+  const exactEntry = Object.entries(ATTRACTION_COORDS).find(([k]) => {
+    const kNorm = norm(k);
+    return kNorm === `${actNorm}, ${destNorm}`;
+  });
+  if (exactEntry) return true;
+
+  const partialMatch = Object.entries(ATTRACTION_COORDS).find(([k]) => {
+    const parts = k.split(',');
+    const keyAttractionPart = norm(parts[0] || '');
+    const keyCity = norm(parts[1] || '');
+    if (!keyCity.includes(destNorm) && !destNorm.includes(keyCity)) return false;
+    if (!actNorm || !keyAttractionPart) return false;
+    return actNorm.includes(keyAttractionPart) || keyAttractionPart.includes(actNorm);
+  });
+
+  return !!partialMatch;
 }
 
 const Viagens = () => {
@@ -1497,6 +1547,16 @@ const Viagens = () => {
                   a.category !== 'voo' && a.category !== 'hotel' && !a.name?.toLowerCase().includes('transfer') && !a.name?.toLowerCase().includes('check-')
                 );
                 const photoQuery = mainActivity?.name || currentDay.title || selectedTrip.destination;
+
+                // Compute map pin numbers for the day (same filter + coordinate resolution as DailyRouteMap)
+                const dayMapNumbers = new Map<string, number>();
+                let pinCounter = 0;
+                for (const act of currentDay.activities) {
+                  if (!isLogistics(act) && hasMapCoordinates(act.name, selectedTrip.destination)) {
+                    pinCounter++;
+                    dayMapNumbers.set(act.id, pinCounter);
+                  }
+                }
                 
                 return (
                 <div
@@ -1551,6 +1611,7 @@ const Viagens = () => {
                   <div className="space-y-4">
                     {currentDay.activities.map((activity, actIndex) => {
                       const dayIndex = selectedTrip.days.findIndex((d) => d.day === currentDay.day);
+                      const pinNumber = dayMapNumbers.get(activity.id);
                       
                       // Auto-detect logistics activities (flight/check-in/check-out/transfer)
                       const isLogisticsActivity = activity.isHeroItem ||
@@ -1650,6 +1711,11 @@ const Viagens = () => {
                               )}
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
+                              {pinNumber && (
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold text-white border-2 border-white/90 shadow-md flex-shrink-0" style={{ background: 'linear-gradient(135deg, hsl(160, 84%, 39%), hsl(199, 89%, 48%))', fontFamily: "'Outfit', sans-serif" }}>
+                                  {pinNumber}
+                                </span>
+                              )}
                               <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
                               {activity.status === 'confirmed' && (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-medium border border-emerald-500/20 animate-scale-in">
