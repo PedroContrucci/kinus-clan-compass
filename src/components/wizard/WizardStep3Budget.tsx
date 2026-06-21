@@ -1,6 +1,6 @@
 // WizardStep3Budget — Budget Tier Cards, Priorities, Travel Interests
 
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, Reorder } from 'framer-motion';
 import { Wallet, GripVertical, Info, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,8 @@ interface WizardStep3Props {
 }
 
 export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
+
+  const [manualBudgetInput, setManualBudgetInput] = useState('');
 
   const handleTierSelect = (tierId: WizardData['budgetTier']) => {
     const tier = BUDGET_TIERS.find(t => t.id === tierId)!;
@@ -31,13 +33,18 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
     const min = Math.round(adjustedTotal * 0.85);
     const max = Math.round(adjustedTotal * 1.20);
     
-    onChange({
+    const updates: Partial<WizardData> = {
       budgetTier: tierId,
       budgetEstimateMin: min,
       budgetEstimateMax: max,
-      budgetAmount: adjustedTotal,
       travelStyle: tierId === 'backpacker' ? 'backpacker' : tierId === 'economic' ? 'economic' : tierId === 'comfort' ? 'comfort' : 'luxury',
-    });
+    };
+    
+    if (!manualBudgetInput.trim()) {
+      updates.budgetAmount = adjustedTotal;
+    }
+    
+    onChange(updates);
   };
 
   const handlePriorityReorder = (newOrder: string[]) => {
@@ -50,6 +57,14 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
       onChange({ travelInterests: current.filter(i => i !== interest) });
     } else if (current.length < 3) {
       onChange({ travelInterests: [...current, interest] });
+    }
+  };
+
+  const handleManualBudgetChange = (value: string) => {
+    setManualBudgetInput(value);
+    const num = parseInt(value.replace(/\D/g, ''));
+    if (!isNaN(num) && value.trim() !== '') {
+      onChange({ budgetAmount: num });
     }
   };
 
@@ -181,6 +196,69 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
             </div>
           </div>
         </motion.div>
+      )}
+
+      {/* Manual Budget Input */}
+      {data.budgetTier && (
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-foreground">
+            Quanto você quer gastar? (opcional)
+          </label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
+            <input
+              type="text"
+              value={manualBudgetInput}
+              onChange={(e) => handleManualBudgetChange(e.target.value)}
+              className="w-full bg-card border border-border rounded-xl pl-12 pr-4 py-3 text-lg font-bold text-foreground font-['Outfit'] focus:outline-none focus:border-primary transition-colors"
+              placeholder={data.budgetEstimateMin > 0 ? formatBRL(Math.round((data.budgetEstimateMin + data.budgetEstimateMax) / 2)) : '0'}
+            />
+          </div>
+
+          {/* Reconciliation Message */}
+          {manualBudgetInput.trim() !== '' && data.budgetEstimateMin > 0 && data.budgetEstimateMax > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 rounded-xl border border-border"
+            >
+              {(() => {
+                const midpoint = Math.round((data.budgetEstimateMin + data.budgetEstimateMax) / 2);
+                const typed = data.budgetAmount || 0;
+                const diff = typed - midpoint;
+                const percent = midpoint > 0 ? Math.round((typed / midpoint) * 100) : 0;
+
+                if (typed >= midpoint) {
+                  return (
+                    <div className="flex items-center gap-2 text-emerald-400 text-sm">
+                      <span>✅</span>
+                      <span>Seu orçamento cobre este roteiro (sobra ~R$ {formatBRL(Math.abs(diff))}).</span>
+                    </div>
+                  );
+                } else if (percent >= 90) {
+                  return (
+                    <div className="flex items-center gap-2 text-amber-400 text-sm">
+                      <span>⚠️</span>
+                      <span>Está justo — seu orçamento cobre ~{percent}% da estimativa.</span>
+                    </div>
+                  );
+                } else {
+                  const currentTierIndex = BUDGET_TIERS.findIndex(t => t.id === data.budgetTier);
+                  const nextLowerTier = currentTierIndex > 0 ? BUDGET_TIERS[currentTierIndex - 1] : null;
+                  const belowPercent = midpoint > 0 ? Math.round(((midpoint - typed) / midpoint) * 100) : 0;
+                  return (
+                    <div className="flex items-start gap-2 text-red-400 text-sm">
+                      <span>💡</span>
+                      <span>
+                        Sua estimativa para esta faixa é ~R$ {formatBRL(midpoint)}. Com R$ {formatBRL(typed)} você ficaria ~{belowPercent}% abaixo. Considere a faixa {nextLowerTier?.label || 'inferior'} ou ajustar as atividades.
+                      </span>
+                    </div>
+                  );
+                }
+              })()}
+            </motion.div>
+          )}
+        </div>
       )}
 
       {/* Priority Ordering */}
