@@ -1831,8 +1831,62 @@ const Viagens = () => {
                 <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
                   <p className="text-xs text-[#94a3b8]">Disponível</p>
                   <p className="text-lg font-bold text-[#0ea5e9] font-['Outfit']">R$ {((selectedTrip.finances?.available || 0) / 1000).toFixed(1)}k</p>
-                </div>
               </div>
+
+              {/* Cumulative Spending Chart */}
+              {(() => {
+                const days = selectedTrip.days || [];
+                if (days.length === 0) return null;
+                const isLogistics = (a: any) => a.category === 'voo' || a.category === 'hotel';
+                let cumulative = 0;
+                const increments: number[] = [];
+                const chartData = days.map((d, i) => {
+                  const dayTotal = (d.activities || [])
+                    .filter(a => !isLogistics(a))
+                    .reduce((sum, a) => sum + (a.cost || 0), 0);
+                  increments.push(dayTotal);
+                  cumulative += dayTotal;
+                  return { day: `Dia ${i + 1}`, total: Math.round(cumulative), incremento: Math.round(dayTotal) };
+                });
+                if (cumulative === 0) return null;
+
+                const maxInc = Math.max(...increments);
+                const avgInc = cumulative / days.length;
+                const concentrated = maxInc > avgInc * 1.5;
+                const peakIdx = increments.indexOf(maxInc);
+                const insight = concentrated
+                  ? `📉 Seu gasto se concentra no Dia ${peakIdx + 1}`
+                  : '📊 Gasto distribuído ao longo da viagem';
+
+                return (
+                  <div>
+                    <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-2">📈 Gasto acumulado</h3>
+                    <p className="text-xs text-[#94a3b8] mb-3 font-['Outfit']">{insight}</p>
+                    <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3">
+                      <ResponsiveContainer width="100%" height={200}>
+                        <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="cumColor" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
+                              <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid stroke="#334155" strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="day" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={{ stroke: '#334155' }} />
+                          <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v >= 1000 ? (v/1000).toFixed(1)+'k' : v}`} width={50} />
+                          <RechartsTooltip
+                            contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 8, fontSize: 12 }}
+                            labelStyle={{ color: '#f8fafc' }}
+                            formatter={(value: number, name: string) => [`R$ ${value.toLocaleString('pt-BR')}`, name === 'total' ? 'Acumulado' : 'Incremento']}
+                          />
+                          <Area type="monotone" dataKey="total" stroke="#10b981" strokeWidth={2} fill="url(#cumColor)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                );
+              })()}
+
 
               {/* Exchange Rates */}
               <div>
