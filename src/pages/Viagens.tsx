@@ -1862,7 +1862,8 @@ const Viagens = () => {
 
                 return (
                   <div>
-                    <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-2">📈 Gasto acumulado</h3>
+                    <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-1">📈 Gastos no destino (atividades e refeições)</h3>
+                    <p className="text-xs text-[#64748b] mb-2 font-['Outfit']">Voo e hotel não entram neste gráfico — veja o total no resumo acima.</p>
                     <p className="text-xs text-[#94a3b8] mb-3 font-['Outfit']">{insight}</p>
                     <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3">
                       <ResponsiveContainer width="100%" height={200}>
