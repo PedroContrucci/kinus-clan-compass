@@ -1831,7 +1831,9 @@ const Viagens = () => {
                 <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
                   <p className="text-xs text-[#94a3b8]">Disponível</p>
                   <p className="text-lg font-bold text-[#0ea5e9] font-['Outfit']">R$ {((selectedTrip.finances?.available || 0) / 1000).toFixed(1)}k</p>
+                </div>
               </div>
+
 
               {/* Cumulative Spending Chart */}
               {(() => {
