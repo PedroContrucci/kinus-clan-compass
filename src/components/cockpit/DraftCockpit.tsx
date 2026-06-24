@@ -28,6 +28,7 @@ interface DraftTrip {
   flightsSelected?: boolean;
   outboundFlight?: SelectedFlight;
   returnFlight?: SelectedFlight;
+  budgetType?: 'backpacker' | 'economic' | 'comfort' | 'luxury';
   days?: any[];
 }
 
@@ -182,6 +183,9 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
     setStage('flights');
   }, []);
 
+  const tierToPriceLevel = { backpacker: 'budget', economic: 'budget', comfort: 'midrange', luxury: 'luxury' } as const;
+  const chosenPriceLevel = trip.budgetType ? tierToPriceLevel[trip.budgetType] : undefined;
+
   // Stage 1: Flight Selection
   if (stage === 'flights') {
     return (
@@ -216,6 +220,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
         returnFlight={selectedReturn}
         travelInterests={trip.travelInterests}
         jetLagSeverity={trip.jetLagSeverity}
+        priceLevel={chosenPriceLevel}
         onActivate={handleActivate}
         onSave={handleSave}
         onBack={handleBackFromItinerary}
