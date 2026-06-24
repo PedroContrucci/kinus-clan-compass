@@ -1413,8 +1413,11 @@ const Viagens = () => {
                       count: allActivities.filter(a => a.category === 'passeio').length,
                       confirmed: allActivities.filter(a => a.category === 'passeio' && a.status === 'confirmed').length },
                     { id: 'logistics', label: '✈️ Logística',
-                      count: allActivities.filter(a => ['voo', 'transporte', 'hotel'].includes(a.category)).length,
-                      confirmed: allActivities.filter(a => ['voo', 'transporte', 'hotel'].includes(a.category) && a.status === 'confirmed').length },
+                      count: allActivities.filter(a => a.category === 'transporte').length,
+                      confirmed: allActivities.filter(a => a.category === 'transporte' && a.status === 'confirmed').length },
+                    { id: 'anchor', label: '⚓ Custos-âncora',
+                      count: allActivities.filter(a => ['voo', 'hotel'].includes(a.category)).length,
+                      confirmed: allActivities.filter(a => ['voo', 'hotel'].includes(a.category) && a.status === 'confirmed').length },
                   ];
                   return categories.map(cat => (
                     <button
