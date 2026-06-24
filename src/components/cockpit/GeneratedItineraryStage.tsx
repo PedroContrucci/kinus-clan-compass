@@ -929,9 +929,16 @@ export const GeneratedItineraryStage = ({
                   R$ {breakdown.total.toLocaleString('pt-BR')} ({breakdown.trustZonePercent}%)
                 </span>
               </div>
-              <div className="flex items-center justify-between text-emerald-400">
-                <span>Disponível:</span>
-                <span className="font-medium">R$ {breakdown.available.toLocaleString('pt-BR')} para upgrades</span>
+              <div className={cn(
+                'flex items-center justify-between',
+                breakdown.available >= 0 ? 'text-emerald-400' : 'text-red-500'
+              )}>
+                <span>{breakdown.available >= 0 ? 'Disponível:' : 'Acima do orçamento:'}</span>
+                <span className="font-medium">
+                  {breakdown.available >= 0
+                    ? `R$ ${breakdown.available.toLocaleString('pt-BR')} para upgrades`
+                    : `R$ ${Math.abs(breakdown.available).toLocaleString('pt-BR')} acima do limite`}
+                </span>
               </div>
             </div>
             
