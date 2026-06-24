@@ -220,6 +220,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
         returnFlight={selectedReturn}
         travelInterests={trip.travelInterests}
         jetLagSeverity={trip.jetLagSeverity}
+        priceLevel={chosenPriceLevel}
         onActivate={handleActivate}
         onSave={handleSave}
         onBack={handleBackFromItinerary}
