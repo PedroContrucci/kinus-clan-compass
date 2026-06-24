@@ -140,13 +140,14 @@ function generateItinerary(
   budget: number,
   travelers: number = 1,
   travelInterests: string[] = [],
-  jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO'
+  jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO',
+  priceLevelProp?: PriceLevel
 ): { days: ItineraryDay[]; breakdown: BudgetBreakdown } {
   const totalDays = differenceInDays(returnDate, departureDate) + 1;
   const totalNights = totalDays - 1;
   
-  // Use getActivityPrice for flights instead of Amadeus sandbox prices
-  const { level: priceLevel } = findBestPriceLevel(destination, totalDays, travelers, budget);
+  // Prefer the user-chosen budget tier; only recalculate when none was provided
+  const priceLevel: PriceLevel = priceLevelProp ?? findBestPriceLevel(destination, totalDays, travelers, budget).level;
 
   // Detect short flight arriving early — enables same-day arrival flow
   const arrHourStr = outboundFlight.option.arrivalTime.split(':')[0];
