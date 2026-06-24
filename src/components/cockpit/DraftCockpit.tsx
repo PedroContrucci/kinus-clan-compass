@@ -28,6 +28,7 @@ interface DraftTrip {
   flightsSelected?: boolean;
   outboundFlight?: SelectedFlight;
   returnFlight?: SelectedFlight;
+  budgetType?: 'backpacker' | 'economic' | 'comfort' | 'luxury';
   days?: any[];
 }
 
