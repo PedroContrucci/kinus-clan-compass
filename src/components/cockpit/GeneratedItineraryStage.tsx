@@ -10,7 +10,7 @@ import {
   Plane, Hotel, MapPin, Sparkles, ChevronLeft, ChevronRight,
   Check, AlertCircle, Clock, Star, Lightbulb, Coffee, Utensils, Moon, Sun
 } from 'lucide-react';
-import { getActivityPrice, findBestPriceLevel } from '@/lib/activityPricing';
+import { getActivityPrice, findBestPriceLevel, type PriceLevel } from '@/lib/activityPricing';
 import { format, addDays, differenceInDays, differenceInCalendarDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
@@ -85,6 +85,7 @@ interface GeneratedItineraryStageProps {
   onSave: () => void;
   onBack: () => void;
   onDaysGenerated?: (days: ItineraryDay[]) => void;
+  priceLevel?: PriceLevel;
 }
 
 
@@ -139,13 +140,14 @@ function generateItinerary(
   budget: number,
   travelers: number = 1,
   travelInterests: string[] = [],
-  jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO'
+  jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO',
+  priceLevelProp?: PriceLevel
 ): { days: ItineraryDay[]; breakdown: BudgetBreakdown } {
   const totalDays = differenceInDays(returnDate, departureDate) + 1;
   const totalNights = totalDays - 1;
   
-  // Use getActivityPrice for flights instead of Amadeus sandbox prices
-  const { level: priceLevel } = findBestPriceLevel(destination, totalDays, travelers, budget);
+  // Prefer the user-chosen budget tier; only recalculate when none was provided
+  const priceLevel: PriceLevel = priceLevelProp ?? findBestPriceLevel(destination, totalDays, travelers, budget).level;
 
   // Detect short flight arriving early — enables same-day arrival flow
   const arrHourStr = outboundFlight.option.arrivalTime.split(':')[0];
@@ -726,10 +728,11 @@ export const GeneratedItineraryStage = ({
   onSave,
   onBack,
   onDaysGenerated,
+  priceLevel: priceLevelProp,
 }: GeneratedItineraryStageProps) => {
   const { days: initialDays, breakdown: initialBreakdown } = useMemo(() => 
-    generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity),
-    [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity]
+    generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp),
+    [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]
   );
 
   const [days, setDays] = useState(initialDays);
