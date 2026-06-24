@@ -183,6 +183,9 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
     setStage('flights');
   }, []);
 
+  const tierToPriceLevel = { backpacker: 'budget', economic: 'budget', comfort: 'midrange', luxury: 'luxury' } as const;
+  const chosenPriceLevel = trip.budgetType ? tierToPriceLevel[trip.budgetType] : undefined;
+
   // Stage 1: Flight Selection
   if (stage === 'flights') {
     return (
