@@ -1448,8 +1448,8 @@ const Viagens = () => {
                       .filter(act => {
                         if (roteiroCategoryFilter === 'comida') return act.category === 'comida' && !act.name?.toLowerCase().includes('café da manhã') && !act.name?.toLowerCase().includes('room service');
                         if (roteiroCategoryFilter === 'passeio') return act.category === 'passeio';
-                        if (roteiroCategoryFilter === 'logistics') return ['voo', 'transporte', 'hotel'].includes(act.category);
-                        return true;
+                        if (roteiroCategoryFilter === 'logistics') return act.category === 'transporte';
+                        if (roteiroCategoryFilter === 'anchor') return ['voo', 'hotel'].includes(act.category);
                       })
                       .map((activity, actIdx) => {
                         const realActIdx = day.activities.indexOf(activity);
@@ -1502,7 +1502,8 @@ const Viagens = () => {
                     const filtered = (selectedTrip.days || []).flatMap(d => d.activities).filter(a => {
                     if (roteiroCategoryFilter === 'comida') return a.category === 'comida' && !a.name?.toLowerCase().includes('café da manhã') && !a.name?.toLowerCase().includes('room service');
                       if (roteiroCategoryFilter === 'passeio') return a.category === 'passeio';
-                      if (roteiroCategoryFilter === 'logistics') return ['voo', 'transporte', 'hotel'].includes(a.category);
+                      if (roteiroCategoryFilter === 'logistics') return a.category === 'transporte';
+                      if (roteiroCategoryFilter === 'anchor') return ['voo', 'hotel'].includes(a.category);
                       return true;
                     });
                     const total = filtered.reduce((s, a) => s + (a.cost || 0), 0);
@@ -1510,13 +1511,16 @@ const Viagens = () => {
                     return (
                       <div className="p-3 rounded-xl bg-card border border-border mt-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Total da categoria</span>
+                          <span className="text-muted-foreground">{roteiroCategoryFilter === 'anchor' ? 'Total custos-âncora' : 'Total da categoria'}</span>
                           <span className="font-bold text-foreground">R$ {total.toLocaleString('pt-BR')}</span>
                         </div>
                         <div className="flex justify-between text-xs mt-1">
                           <span className="text-emerald-400">Confirmado: R$ {confirmed.toLocaleString('pt-BR')}</span>
                           <span className="text-amber-400">Pendente: R$ {(total - confirmed).toLocaleString('pt-BR')}</span>
                         </div>
+                        {roteiroCategoryFilter === 'anchor' && (
+                          <p className="text-[10px] text-muted-foreground mt-1.5">Custos fixos contratados antes da viagem — não contam no gasto diário</p>
+                        )}
                       </div>
                     );
                   })()}
