@@ -386,7 +386,12 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
 
   const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
-  const flightPrice = trip.flights?.outbound?.price || trip.finances.planned * 0.4 || 0;
+  const outboundPrice = trip.outboundFlight?.option?.price;
+  const returnPrice = trip.returnFlight?.option?.price;
+  const hasRealFlights = outboundPrice != null && returnPrice != null;
+  const flightPrice = hasRealFlights
+    ? outboundPrice + returnPrice
+    : (trip.finances?.planned ? trip.finances.planned * 0.4 : 0);
 
   const priceChange = useMemo(() => {
     if (flightConfirmed) return null;
@@ -568,7 +573,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             </div>
           </div>
           <p className={`text-lg font-bold font-['Outfit'] ${flightConfirmed ? 'text-emerald-400' : 'text-sky-400'}`}>
-            {flightConfirmed ? '✅ Confirmado' : `R$ ${fmt(flightPrice)}${(trip.travelers || 1) > 1 ? ' /pessoa · ida e volta (estimado)' : ' total · ida e volta (estimado)'}`}
+            {flightConfirmed ? '✅ Confirmado' : `R$ ${fmt(flightPrice)} /pessoa · ida e volta ${hasRealFlights ? '' : '(estimado)'}`}
           </p>
           {!flightConfirmed && (
             <p className="text-xs text-muted-foreground mt-1">Fonte: Amadeus (referência)</p>
