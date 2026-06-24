@@ -956,7 +956,13 @@ export const GeneratedItineraryStage = ({
                   {breakdown.trustZonePercent}% {breakdown.trustZonePercent <= 98 ? '✅' : '⚠️'}
                 </span>
               </div>
-              <Progress value={Math.min(breakdown.trustZonePercent, 100)} className="h-2" />
+              <Progress
+                value={Math.min(breakdown.trustZonePercent, 100)}
+                className={cn(
+                  'h-2',
+                  breakdown.trustZonePercent > 100 && '[&>div]:bg-red-500'
+                )}
+              />
             </div>
           </div>
         </div>
