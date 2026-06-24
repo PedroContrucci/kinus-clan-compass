@@ -386,8 +386,8 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
 
   const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
-  const outboundPrice = trip.outboundFlight?.option?.price;
-  const returnPrice = trip.returnFlight?.option?.price;
+  const outboundPrice = (trip as any).outboundFlight?.option?.price;
+  const returnPrice = (trip as any).returnFlight?.option?.price;
   const hasRealFlights = outboundPrice != null && returnPrice != null;
   const flightPrice = hasRealFlights
     ? outboundPrice + returnPrice
