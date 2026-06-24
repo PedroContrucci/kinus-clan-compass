@@ -728,10 +728,11 @@ export const GeneratedItineraryStage = ({
   onSave,
   onBack,
   onDaysGenerated,
+  priceLevel: priceLevelProp,
 }: GeneratedItineraryStageProps) => {
   const { days: initialDays, breakdown: initialBreakdown } = useMemo(() => 
-    generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity),
-    [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity]
+    generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp),
+    [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]
   );
 
   const [days, setDays] = useState(initialDays);
