@@ -85,6 +85,7 @@ interface GeneratedItineraryStageProps {
   onSave: () => void;
   onBack: () => void;
   onDaysGenerated?: (days: ItineraryDay[]) => void;
+  priceLevel?: PriceLevel;
 }
 
 
