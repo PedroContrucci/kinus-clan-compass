@@ -385,6 +385,7 @@ export const FLIGHT_DURATION: Record<string, number> = {
   'Brasil-São Francisco': 13.5,
   'Brasil-Las Vegas': 14,
   'Brasil-Cusco': 6,
+  'Brasil-Fortaleza': 3.2,
   'Brasil-Dubai': 14,
   'Brasil-Londres': 11,
   'Brasil-Barcelona': 11,
