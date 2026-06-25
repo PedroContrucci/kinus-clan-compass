@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Check, FileText, ChevronDown, ChevronUp, MapPin, ExternalLink } from 'lucide-react';
 import { WeatherBadge } from './WeatherBadge';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
