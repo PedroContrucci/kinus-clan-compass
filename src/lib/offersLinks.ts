@@ -159,6 +159,9 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
 
       const booking = buildBookingLink(city, start, end, travelers);
       if (booking) links.push(booking);
+
+      const googleHotels = buildGoogleHotelsLink(city, start, end);
+      if (googleHotels) links.push(googleHotels);
       break;
     }
 
