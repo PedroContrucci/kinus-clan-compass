@@ -150,8 +150,6 @@ function generateItinerary(
   const priceLevel: PriceLevel = priceLevelProp ?? findBestPriceLevel(destination, totalDays, travelers, budget).level;
 
   // Detect short flight that cannot cross midnight — enables same-day arrival flow
-  const arrHourStr = outboundFlight.option.arrivalTime.split(':')[0];
-  const arrivalHour = parseInt(arrHourStr, 10) || 12;
   const isShortFlight = outboundFlight.option.durationMinutes < 240;
   const depHourStr = outboundFlight.option.departureTime?.split(':')[0];
   const departureHour = parseInt(depHourStr, 10) || 0;
