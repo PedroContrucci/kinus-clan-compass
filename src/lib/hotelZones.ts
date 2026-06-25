@@ -527,6 +527,21 @@ export const HOTEL_RECOMMENDATIONS: Record<string, Record<string, HotelRecommend
     'premium': [{ name: 'Fairmont Copacabana', stars: 5, neighborhood: 'Copacabana', whyGood: 'O antigo Sofitel. Piscina com vista do Pao de Acucar.', perNight: 900 }],
     'luxury': [{ name: 'Belmond Copacabana Palace', stars: 5, neighborhood: 'Copacabana', whyGood: 'O hotel mais iconico do Brasil desde 1923.', perNight: 3000 }],
   },
+  'fortaleza': {
+    'economic': [
+      { name: 'Ibis Fortaleza Praia de Iracema', stars: 3, neighborhood: 'Iracema', whyGood: 'Bom custo-beneficio perto da orla e do Dragao do Mar.', perNight: 280 },
+    ],
+    'comfort': [
+      { name: 'Hotel Gran Marquise', stars: 4, neighborhood: 'Meireles', whyGood: 'Tradicional na Beira-Mar. Otima localizacao e estrutura.', perNight: 550 },
+      { name: 'Sonata de Iracema', stars: 4, neighborhood: 'Iracema', whyGood: 'Frente para o mar, perto da vida noturna de Iracema.', perNight: 480 },
+    ],
+    'premium': [
+      { name: 'Gran Mareiro Hotel', stars: 4, neighborhood: 'Praia do Futuro', whyGood: 'Resort urbano frente-mar na Praia do Futuro. Estrutura completa.', perNight: 750 },
+    ],
+    'luxury': [
+      { name: 'Vila Galé Fortaleza', stars: 5, neighborhood: 'Praia do Futuro', whyGood: 'Resort 5 estrelas frente-mar com spa, piscinas e gastronomia.', perNight: 1200 },
+    ],
+  },
 };
 
 function getTierKey(budgetTier: string): string {
