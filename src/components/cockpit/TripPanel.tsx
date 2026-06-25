@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Check, FileText, ChevronDown, ChevronUp, MapPin, ExternalLink } from 'lucide-react';
 import { WeatherBadge } from './WeatherBadge';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -359,6 +360,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const [flightResults, setFlightResults] = useState<any[] | null>(null);
   const [searchingFlights, setSearchingFlights] = useState(false);
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
+  const [showFlexDates, setShowFlexDates] = useState(false);
 
   // Fetch maps embed URL
   useEffect(() => {
@@ -368,6 +370,18 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
       if (data?.embedUrl) setMapEmbedUrl(data.embedUrl);
     }).catch(() => {});
   }, [trip.destination]);
+
+  const flexOrigin = trip.flights?.outbound?.origin || 'GRU';
+  const flexDest = trip.flights?.outbound?.destination || trip.destinationAirportCode;
+  const flexDate = trip.startDate ? format(new Date(trip.startDate), 'yyyy-MM-dd') : '';
+  const { data: flexDates, isLoading: flexDatesLoading } = useFlexibleFlightSearch(
+    flexOrigin,
+    flexDest,
+    flexDate,
+    trip.travelers || 1,
+    3,
+    showFlexDates
+  );
 
   const destCurrency = (trip as any).destinationCurrency || getTripCurrency(trip.destination);
   const { rates, loading: ratesLoading, updatedAgo } = useExchangeRates(destCurrency);
@@ -697,6 +711,14 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
 
         const renderGroup = (title: string, links: ReturnType<typeof buildOfferLinks>) => {
           if (links.length === 0) return null;
+          const isFlights = title === '✈️ Voos';
+          const sortedFlex = isFlights && flexDates?.length
+            ? [...flexDates].sort((a, b) => a.date.localeCompare(b.date))
+            : [];
+          const minPrice = sortedFlex.length > 0
+            ? Math.min(...sortedFlex.map(d => d.bestPrice))
+            : null;
+
           return (
             <div key={title} className="space-y-2">
               <p className="text-xs font-semibold text-foreground font-['Outfit']">{title}</p>
@@ -724,6 +746,49 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
                   </a>
                 ))}
               </div>
+              {isFlights && (
+                <div className="space-y-2 pt-1">
+                  {!showFlexDates ? (
+                    <button
+                      onClick={() => setShowFlexDates(true)}
+                      className="w-full text-left px-3 py-2 rounded-lg border border-dashed border-border bg-background/50 hover:bg-muted/60 transition-colors text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      🔍 Ver melhores datas (±3 dias)
+                    </button>
+                  ) : flexDatesLoading ? (
+                    <p className="text-xs text-muted-foreground px-1">Buscando melhores datas...</p>
+                  ) : sortedFlex.length > 0 ? (
+                    <div className="border border-emerald-500/20 bg-emerald-500/5 rounded-lg p-2.5 space-y-1.5">
+                      <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">Melhores datas encontradas</p>
+                      {sortedFlex.map((entry) => {
+                        const isLowest = entry.bestPrice === minPrice;
+                        return (
+                          <div
+                            key={entry.date}
+                            className={`flex items-center justify-between py-1 px-2 rounded-md text-xs ${
+                              isLowest ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-background/50'
+                            }`}
+                          >
+                            <span className={isLowest ? 'text-emerald-400 font-medium' : 'text-muted-foreground'}>
+                              {format(new Date(entry.date), 'dd/MMM', { locale: ptBR })}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              {isLowest && (
+                                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">menor preço</span>
+                              )}
+                              <span className={`font-bold font-['Outfit'] ${isLowest ? 'text-emerald-400' : 'text-foreground'}`}>
+                                R$ {entry.bestPrice.toLocaleString('pt-BR')}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground px-1">Não encontramos datas alternativas agora.</p>
+                  )}
+                </div>
+              )}
             </div>
           );
         };
