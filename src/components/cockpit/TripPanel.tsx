@@ -11,6 +11,7 @@ import { exportTripPDF } from '@/lib/tripPdfExport';
 import { getIcarusRoteiroInsight, getIcarusHeroFlight, getIcarusHeroHotel, getHermesHotelInsight } from '@/lib/agentMessages';
 import { DestinationImage } from '@/components/shared/DestinationImage';
 import type { SavedTrip } from '@/types/trip';
+import { buildOfferLinks } from '@/lib/offersLinks';
 import { useState, useEffect, useMemo } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
