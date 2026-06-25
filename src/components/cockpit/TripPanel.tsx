@@ -712,16 +712,41 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         const renderGroup = (title: string, links: ReturnType<typeof buildOfferLinks>) => {
           if (links.length === 0) return null;
           const isFlights = title === '✈️ Voos';
+          const isHotels = title === '🏨 Hotéis';
           const sortedFlex = isFlights && flexDates?.length
             ? [...flexDates].sort((a, b) => a.date.localeCompare(b.date))
             : [];
           const minPrice = sortedFlex.length > 0
             ? Math.min(...sortedFlex.map(d => d.bestPrice))
             : null;
+          const acc = trip.accommodation;
+          const hasCuratedHotel = isHotels && acc?.name;
 
           return (
             <div key={title} className="space-y-2">
               <p className="text-xs font-semibold text-foreground font-['Outfit']">{title}</p>
+              {hasCuratedHotel && (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs">⭐</span>
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Recomendado pelo KINU</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground font-['Outfit']">{acc.name}</p>
+                    <p className="text-xs text-muted-foreground">{acc.stars || 3}★ · {acc.neighborhood || trip.destination}</p>
+                    <p className="text-xs text-muted-foreground">R$ {fmt(acc.nightlyRate || 0)} / noite · {acc.totalNights || 1} noites</p>
+                  </div>
+                  <a
+                    href={`https://www.booking.com/searchresults.pt-br.html?ss=${encodeURIComponent(`${acc.name} ${trip.destination}`)}&checkin=${trip.startDate ? format(new Date(trip.startDate), 'yyyy-MM-dd') : ''}&checkout=${trip.endDate ? format(new Date(trip.endDate), 'yyyy-MM-dd') : ''}&group_adults=${trip.travelers || 1}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center w-full px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                  >
+                    Ver no Booking
+                  </a>
+                </div>
+              )}
+              {hasCuratedHotel && <p className="text-[10px] text-muted-foreground pt-1">Outras ofertas:</p>}
               <div className="space-y-1.5">
                 {links.map((link) => (
                   <a
