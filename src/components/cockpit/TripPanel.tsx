@@ -360,6 +360,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const [flightResults, setFlightResults] = useState<any[] | null>(null);
   const [searchingFlights, setSearchingFlights] = useState(false);
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
+  const [showFlexDates, setShowFlexDates] = useState(false);
 
   // Fetch maps embed URL
   useEffect(() => {
