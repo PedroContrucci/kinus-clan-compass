@@ -1,7 +1,7 @@
 // TripPanel — Orchestrated Executive Dashboard
 
 import { motion } from 'framer-motion';
-import { Check, FileText, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
+import { Check, FileText, ChevronDown, ChevronUp, MapPin, ExternalLink } from 'lucide-react';
 import { WeatherBadge } from './WeatherBadge';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { differenceInDays, format } from 'date-fns';
@@ -11,6 +11,7 @@ import { exportTripPDF } from '@/lib/tripPdfExport';
 import { getIcarusRoteiroInsight, getIcarusHeroFlight, getIcarusHeroHotel, getHermesHotelInsight } from '@/lib/agentMessages';
 import { DestinationImage } from '@/components/shared/DestinationImage';
 import type { SavedTrip } from '@/types/trip';
+import { buildOfferLinks } from '@/lib/offersLinks';
 import { useState, useEffect, useMemo } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
@@ -676,6 +677,69 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           <p className="text-[9px] text-muted-foreground text-center">Preços via Amadeus (referência)</p>
         </div>
       )}
+
+      {/* Central de Ofertas */}
+      {(() => {
+        const offerParams = {
+          originCode: trip.flights?.outbound?.origin || 'GRU',
+          destinationCode: trip.flights?.outbound?.destination || trip.destinationAirportCode,
+          city: trip.destination,
+          startDate: trip.startDate ? new Date(trip.startDate) : undefined,
+          endDate: trip.endDate ? new Date(trip.endDate) : undefined,
+          travelers: trip.travelers || 1,
+        };
+
+        const flightLinks = buildOfferLinks({ ...offerParams, category: 'flight' });
+        const hotelLinks = buildOfferLinks({ ...offerParams, category: 'hotel' });
+        const activityLinks = buildOfferLinks({ ...offerParams, category: 'activity' });
+        const hasAnyLinks = flightLinks.length > 0 || hotelLinks.length > 0 || activityLinks.length > 0;
+        if (!hasAnyLinks) return null;
+
+        const renderGroup = (title: string, links: ReturnType<typeof buildOfferLinks>) => {
+          if (links.length === 0) return null;
+          return (
+            <div key={title} className="space-y-2">
+              <p className="text-xs font-semibold text-foreground font-['Outfit']">{title}</p>
+              <div className="space-y-1.5">
+                {links.map((link) => (
+                  <a
+                    key={link.url}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/60 transition-colors group"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground font-['Outfit']">{link.partner}</span>
+                        {link.isAffiliate && (
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500">
+                            Parceiro KINU
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{link.description}</p>
+                    </div>
+                    <ExternalLink size={14} className="text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          );
+        };
+
+        return (
+          <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+            <div>
+              <p className="text-sm font-bold text-foreground font-['Outfit']">🎯 Central de Ofertas</p>
+              <p className="text-xs text-muted-foreground">Compare e reserve com nossos parceiros</p>
+            </div>
+            {renderGroup('✈️ Voos', flightLinks)}
+            {renderGroup('🏨 Hotéis', hotelLinks)}
+            {renderGroup('🎟️ Atividades', activityLinks)}
+          </div>
+        );
+      })()}
 
       {/* Destination Map Embed */}
       {mapEmbedUrl && (
