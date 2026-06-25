@@ -1279,6 +1279,11 @@ export const destinationActivities: Record<string, DestinationData> = {
     cityCode: 'FCO',
     activities: romeActivities,
   },
+  'Fortaleza': {
+    cityName: 'Fortaleza',
+    cityCode: 'FOR',
+    activities: fortalezaActivities,
+  },
 };
 
 // Get activities for a destination, with smart fallback synthesized from CURATED_THEMES
