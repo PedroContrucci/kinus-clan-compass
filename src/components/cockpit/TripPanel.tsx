@@ -1,7 +1,7 @@
 // TripPanel — Orchestrated Executive Dashboard
 
 import { motion } from 'framer-motion';
-import { Check, FileText, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
+import { Check, FileText, ChevronDown, ChevronUp, MapPin, ExternalLink } from 'lucide-react';
 import { WeatherBadge } from './WeatherBadge';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { differenceInDays, format } from 'date-fns';
