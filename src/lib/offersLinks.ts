@@ -92,6 +92,22 @@ function buildBookingLink(
   };
 }
 
+function buildGoogleHotelsLink(
+  city: string,
+  startDate: Date,
+  endDate: Date
+): OfferLink | null {
+  const checkin = format(startDate, 'yyyy-MM-dd');
+  const checkout = format(endDate, 'yyyy-MM-dd');
+
+  return {
+    partner: 'Google Hotels',
+    description: 'Comparar hotéis · busca pronta',
+    url: `https://www.google.com/travel/hotels/${encodeURIComponent(city)}?q=${encodeURIComponent(city)}&checkin=${checkin}&checkout=${checkout}`,
+    isAffiliate: false,
+  };
+}
+
 function buildKlookLink(): OfferLink | null {
   return {
     partner: 'Klook',
