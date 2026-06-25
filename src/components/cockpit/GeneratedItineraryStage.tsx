@@ -149,12 +149,13 @@ function generateItinerary(
   // Prefer the user-chosen budget tier; only recalculate when none was provided
   const priceLevel: PriceLevel = priceLevelProp ?? findBestPriceLevel(destination, totalDays, travelers, budget).level;
 
-  // Detect short flight arriving early — enables same-day arrival flow
-  const arrHourStr = outboundFlight.option.arrivalTime.split(':')[0];
-  const arrivalHour = parseInt(arrHourStr, 10) || 12;
+  // Detect short flight that cannot cross midnight — enables same-day arrival flow
   const isShortFlight = outboundFlight.option.durationMinutes < 240;
-  const arrivesEarly = arrivalHour < 13;
-  const sameDayArrival = isShortFlight && arrivesEarly;
+  const depHourStr = outboundFlight.option.departureTime?.split(':')[0];
+  const departureHour = parseInt(depHourStr, 10) || 0;
+  const flightHours = outboundFlight.option.durationMinutes / 60;
+  const crossesMidnight = (departureHour + flightHours) >= 24;
+  const sameDayArrival = isShortFlight && !crossesMidnight;
 
   // Compute real arrival day offset (supports multi-day flights)
   const lastSeg = (outboundFlight.option as any).segments?.[(outboundFlight.option as any).segments.length - 1];
