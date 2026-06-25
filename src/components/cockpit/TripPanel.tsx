@@ -371,6 +371,18 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
     }).catch(() => {});
   }, [trip.destination]);
 
+  const flexOrigin = trip.flights?.outbound?.origin || 'GRU';
+  const flexDest = trip.flights?.outbound?.destination || trip.destinationAirportCode;
+  const flexDate = trip.startDate ? format(new Date(trip.startDate), 'yyyy-MM-dd') : '';
+  const { data: flexDates, isLoading: flexDatesLoading } = useFlexibleFlightSearch(
+    flexOrigin,
+    flexDest,
+    flexDate,
+    trip.travelers || 1,
+    3,
+    showFlexDates
+  );
+
   const destCurrency = (trip as any).destinationCurrency || getTripCurrency(trip.destination);
   const { rates, loading: ratesLoading, updatedAgo } = useExchangeRates(destCurrency);
 
