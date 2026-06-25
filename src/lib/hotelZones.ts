@@ -246,6 +246,12 @@ export const HOTEL_ZONES: Record<string, HotelZone[]> = {
     { name: 'Jurere/Canasvieiras', neighborhood: 'Jurere', whyGood: 'Praias calmas, beach clubs, familia.', interests: ['relaxation', 'nature', 'family'] },
     { name: 'Campeche/Morro das Pedras', neighborhood: 'Campeche', whyGood: 'Praias selvagens, surfe, tranquilidade.', interests: ['nature', 'relaxation'] },
   ],
+  'fortaleza': [
+    { name: 'Beira-Mar (Meireles)', neighborhood: 'Meireles', whyGood: 'Principal zona hoteleira. Calcadao a beira-mar, restaurantes, feirinha de artesanato. Base ideal e segura para a maioria.', interests: ['relaxation', 'family', 'shopping', 'gastronomy'] },
+    { name: 'Praia de Iracema', neighborhood: 'Iracema', whyGood: 'Boemio e cultural. Ponte dos Ingleses, Dragao do Mar e vida noturna a pe. Por do sol iconico.', interests: ['nightlife', 'culture', 'art'] },
+    { name: 'Praia do Futuro', neighborhood: 'Praia do Futuro', whyGood: 'Para quem quer praia urbana de verdade com mar bom para banho. Mais tranquila, foge do agito do centro.', interests: ['beach', 'relaxation', 'family'] },
+    { name: 'Aldeota', neighborhood: 'Aldeota', whyGood: 'Bairro nobre e central, perto da Beira-Mar e do CEART. Bons restaurantes e comercio.', interests: ['shopping', 'gastronomy', 'culture'] },
+  ],
 };
 
 // ── Hotel Recommendations — Real hotel names by destination × budget tier ──
