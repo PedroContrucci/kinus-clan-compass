@@ -193,6 +193,7 @@ export const DESTINATION_CATALOG: Record<RegionName, CountryEntry[]> = {
       { name: 'Salvador', airports: ['SSA'], currency: 'BRL', timezone: 'America/Bahia' },
       { name: 'Florianópolis', airports: ['FLN'], currency: 'BRL', timezone: 'America/Sao_Paulo' },
       { name: 'Recife', airports: ['REC'], currency: 'BRL', timezone: 'America/Recife' },
+      { name: 'Fortaleza', airports: ['FOR'], currency: 'BRL', timezone: 'America/Fortaleza' },
       { name: 'Foz do Iguaçu', airports: ['IGU'], currency: 'BRL', timezone: 'America/Sao_Paulo' },
       { name: 'Natal', airports: ['NAT'], currency: 'BRL', timezone: 'America/Fortaleza' },
       { name: 'Manaus', airports: ['MAO'], currency: 'BRL', timezone: 'America/Manaus' },
