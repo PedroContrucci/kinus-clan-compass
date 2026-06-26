@@ -2006,6 +2006,16 @@ const Viagens = () => {
         </main>
 
 
+        {/* Offers Modal — Partner Links */}
+        {offersModal && (
+          <OffersModal
+            isOpen={offersModal.isOpen}
+            onClose={() => setOffersModal(null)}
+            activityName={offersModal.activityName}
+            city={selectedTrip?.destination || ''}
+          />
+        )}
+
         {/* Reverse Auction Modal */}
         {auctionModal && (
           <ReverseAuctionModal
