@@ -715,7 +715,11 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             <p className="text-[10px] text-amber-400 mt-1">💡 Héstia: preço caiu — bom momento para confirmar o voo.</p>
           )}
           <p className="text-[10px] text-muted-foreground mt-1">
-            {trip.flights?.outbound?.duration || '—'} · {trip.flights?.outbound?.stops === 0 ? 'Direto' : `${trip.flights?.outbound?.stops || 1} parada`}
+            {trip.flights?.outbound?.duration || '—'} · {(() => {
+              const s = trip.flights?.outbound?.stops;
+              if (!s || s === 0) return 'Direto';
+              return s === 1 ? '1 parada' : `${s} paradas`;
+            })()}
           </p>
           {!flightConfirmed && (
             <div className="mt-3 space-y-1.5">
