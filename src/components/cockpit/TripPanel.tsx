@@ -338,6 +338,27 @@ const MiniKPI = ({ label, value, urgent }: { label: string; value: string; urgen
   </div>
 );
 
+const DualProgressKPI = ({ financePct, roteiroPct }: { financePct: number; roteiroPct: number }) => (
+  <div className="flex-1 flex flex-col justify-center py-2 px-2 rounded-xl bg-white/5 border border-white/5 text-center">
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-[10px] leading-tight">
+        <span className="text-muted-foreground">💰 Financeiro</span>
+        <span className="font-bold text-foreground font-['Outfit']">{financePct}%</span>
+      </div>
+      <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
+        <div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: `${financePct}%` }} />
+      </div>
+      <div className="flex items-center justify-between text-[10px] leading-tight">
+        <span className="text-muted-foreground">📋 Roteiro</span>
+        <span className="font-bold text-foreground font-['Outfit']">{roteiroPct}%</span>
+      </div>
+      <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
+        <div className="h-full rounded-full bg-sky-400 transition-all" style={{ width: `${roteiroPct}%` }} />
+      </div>
+    </div>
+  </div>
+);
+
 // Helper to get destination currency
 const DEST_CURRENCY_MAP: Record<string, string> = {
   'paris': 'EUR', 'roma': 'EUR', 'amsterdam': 'EUR', 'barcelona': 'EUR',
@@ -398,9 +419,30 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const daysLeft = trip.startDate ? Math.max(0, differenceInDays(new Date(trip.startDate), new Date())) : 0;
   const isPast = trip.startDate ? differenceInDays(new Date(trip.startDate), new Date()) < 0 : false;
 
-  const totalActivities = trip.days?.reduce((sum, d) => sum + (d.activities?.length || 0), 0) || 0;
-  const confirmedActivities = trip.days?.reduce((sum, d) => sum + (d.activities?.filter(a => a.status === 'confirmed').length || 0), 0) || 0;
-  const progressPct = totalActivities > 0 ? Math.round((confirmedActivities / totalActivities) * 100) : 0;
+  // Weighted quantitative progress — anchors (flight/hotel) weigh 5, activities weigh 1
+  let weightedTotal = 0;
+  let weightedConfirmed = 0;
+
+  // Flight anchor
+  if (trip.flights?.outbound) {
+    weightedTotal += 5;
+    if (trip.flights.outbound.status === 'confirmed') weightedConfirmed += 5;
+  }
+
+  // Hotel anchor
+  if (trip.accommodation) {
+    weightedTotal += 5;
+    if (trip.accommodation.status === 'confirmed') weightedConfirmed += 5;
+  }
+
+  // Activities (skip in-itinerary logistics markers to avoid double-count)
+  trip.days?.forEach(d => d.activities?.forEach(a => {
+    if (a.category === 'voo' || a.category === 'hotel') return;
+    weightedTotal += 1;
+    if (a.status === 'confirmed') weightedConfirmed += 1;
+  }));
+
+  const progressPct = weightedTotal > 0 ? Math.round((weightedConfirmed / weightedTotal) * 100) : 0;
 
   const checklistPct = getChecklistPct(trip);
   const tierLabel = TIER_LABELS[(trip as any).budgetTier || trip.budgetType || 'comfort'] || 'Conforto';
@@ -572,7 +614,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           )}
           <div className="flex gap-2 mt-4">
             <MiniKPI label={isPast ? 'em viagem' : 'dias'} value={isPast ? 'Em viagem' : String(daysLeft)} urgent={!isPast && daysLeft <= 7} />
-            <MiniKPI label="progresso" value={`${progressPct}%`} />
+            <DualProgressKPI financePct={confirmedPct} roteiroPct={progressPct} />
             <MiniKPI label="gasto" value={`R$${fmt(trip.finances.confirmed / 1000)}k`} />
             <MiniKPI label="checklist" value={`${checklistPct}%`} />
           </div>
