@@ -717,7 +717,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           <p className="text-[10px] text-muted-foreground mt-1">
             {trip.flights?.outbound?.duration || '—'} · {(() => {
               const s = trip.flights?.outbound?.stops;
-              if (!s || s === 0) return 'Direto';
+              if (s == null || s === 0) return 'Direto';
               return s === 1 ? '1 parada' : `${s} paradas`;
             })()}
           </p>
