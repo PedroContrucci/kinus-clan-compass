@@ -188,6 +188,8 @@ function generateItinerary(
 
   const days: ItineraryDay[] = [];
   const usedActivityIds: string[] = [];
+  const lastUsedDay: Map<string, number> = new Map();
+  let currentPickDayIndex = 0;
 
   function pickActivity(category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner', themeName: string): SuggestedActivity | null {
     const pool = getDestinationActivities(destination);
@@ -214,24 +216,44 @@ function generateItinerary(
     if (candidates.length === 0) {
       candidates = pool.filter(a => a.category === category && !usedActivityIds.includes(a.id));
     }
+    let forcedReuse = false;
     if (candidates.length === 0) {
-      candidates = pool.filter(a => a.category === category);
+      // Forced reuse: prefer activities used longest ago, and avoid any used on the immediately previous day if alternatives exist.
+      const reusable = pool.filter(a => a.category === category);
+      if (reusable.length === 0) return null;
+      const prevDay = currentPickDayIndex - 1;
+      const notFromPrevDay = reusable.filter(a => lastUsedDay.get(a.id) !== prevDay);
+      const eligible = notFromPrevDay.length > 0 ? notFromPrevDay : reusable;
+      // Sort by position in usedActivityIds (earliest = used longest ago first); unseen first
+      eligible.sort((a, b) => {
+        const ia = usedActivityIds.indexOf(a.id);
+        const ib = usedActivityIds.indexOf(b.id);
+        const va = ia === -1 ? -1 : ia;
+        const vb = ib === -1 ? -1 : ib;
+        return va - vb;
+      });
+      candidates = eligible;
+      forcedReuse = true;
     }
     if (candidates.length === 0) return null;
-    // Sort by tier intent: budget=cheapest first, luxury=most expensive first,
-    // midrange=closest to median target
-    candidates.sort((a, b) => {
-      const priceA = a.estimatedCostBRL || 0;
-      const priceB = b.estimatedCostBRL || 0;
-      if (priceLevel === 'budget') return priceA - priceB;
-      if (priceLevel === 'luxury') return priceB - priceA;
-      // midrange: proximity to target
-      return Math.abs(priceA - target) - Math.abs(priceB - target);
-    });
+    if (!forcedReuse) {
+      // Sort by tier intent: budget=cheapest first, luxury=most expensive first,
+      // midrange=closest to median target
+      candidates.sort((a, b) => {
+        const priceA = a.estimatedCostBRL || 0;
+        const priceB = b.estimatedCostBRL || 0;
+        if (priceLevel === 'budget') return priceA - priceB;
+        if (priceLevel === 'luxury') return priceB - priceA;
+        // midrange: proximity to target
+        return Math.abs(priceA - target) - Math.abs(priceB - target);
+      });
+    }
     const picked = candidates[0];
     usedActivityIds.push(picked.id);
+    lastUsedDay.set(picked.id, currentPickDayIndex);
     return picked;
   }
+
 
   // Style tags for filtering (convert interests to lowercase)
   const styleTags = travelInterests.map(i => i.toLowerCase().replace('🍜 ', '').replace('🏖️ ', '').replace('🌙 ', '').replace('👨‍👩‍👧 ', '').replace('🏛️ ', '').replace('🎨 ', '').replace('🎭 ', '').replace('🏔️ ', '').replace('💆 ', '').replace('🛍️ ', '').replace('🌿 ', ''));
