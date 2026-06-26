@@ -781,8 +781,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
                             Parceiro KINU
                           </span>
                         )}
-              </div>
-              {(isFlights || isHotels) && null}
+                      </div>
                       <p className="text-xs text-muted-foreground truncate">{link.description}</p>
                     </div>
                     <ExternalLink size={14} className="text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
