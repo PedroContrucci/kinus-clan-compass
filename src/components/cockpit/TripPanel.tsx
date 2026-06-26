@@ -782,45 +782,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
                           </span>
                         )}
               </div>
-              {(isFlights || isHotels) && (() => {
-                const type: 'flight' | 'hotel' = isFlights ? 'flight' : 'hotel';
-                const confirmed = isFlights
-                  ? trip.flights?.outbound?.status === 'confirmed'
-                  : trip.accommodation?.status === 'confirmed';
-                const paidValue = isFlights
-                  ? ((trip.flights?.outbound?.price || 0) + (trip.flights?.return?.price || 0))
-                  : (trip.accommodation?.totalPrice || 0);
-                const openModal = () =>
-                  setConfirmReservation({
-                    type,
-                    amount: confirmed && paidValue ? String(Math.round(paidValue)) : '',
-                    link: '',
-                  });
-                if (confirmed) {
-                  return (
-                    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
-                      <span className="text-xs font-semibold text-emerald-400 font-['Outfit']">
-                        {isFlights ? '✈️ Voo confirmado' : '🏨 Hotel confirmado'}
-                        {paidValue ? ` · R$ ${fmt(Math.round(paidValue))}` : ''}
-                      </span>
-                      <button
-                        onClick={openModal}
-                        className="text-[11px] font-medium text-emerald-400/80 hover:text-emerald-300 underline underline-offset-2"
-                      >
-                        Editar
-                      </button>
-                    </div>
-                  );
-                }
-                return (
-                  <button
-                    onClick={openModal}
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                  >
-                    ✓ Já reservei
-                  </button>
-                );
-              })()}
+              {(isFlights || isHotels) && null}
                       <p className="text-xs text-muted-foreground truncate">{link.description}</p>
                     </div>
                     <ExternalLink size={14} className="text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
