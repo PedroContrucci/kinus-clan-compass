@@ -363,6 +363,13 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
   const [showFlexDates, setShowFlexDates] = useState(false);
   const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
+  const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string } | null>(null);
+
+  const handleReservationConfirm = () => {
+    if (!confirmReservation) return;
+    onConfirm(confirmReservation.type, parseFloat(confirmReservation.amount) || 0);
+    setConfirmReservation(null);
+  };
 
   // Fetch maps embed URL
   useEffect(() => {
@@ -781,6 +788,45 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
                   </a>
                 ))}
               </div>
+              {(isFlights || isHotels) && (() => {
+                const type: 'flight' | 'hotel' = isFlights ? 'flight' : 'hotel';
+                const confirmed = isFlights
+                  ? trip.flights?.outbound?.status === 'confirmed'
+                  : trip.accommodation?.status === 'confirmed';
+                const paidValue = isFlights
+                  ? ((trip.flights?.outbound?.price || 0) + (trip.flights?.return?.price || 0))
+                  : (trip.accommodation?.totalPrice || 0);
+                const openModal = () =>
+                  setConfirmReservation({
+                    type,
+                    amount: confirmed && paidValue ? String(Math.round(paidValue)) : '',
+                    link: '',
+                  });
+                if (confirmed) {
+                  return (
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                      <span className="text-xs font-semibold text-emerald-400 font-['Outfit']">
+                        {isFlights ? '✈️ Voo confirmado' : '🏨 Hotel confirmado'}
+                        {paidValue ? ` · R$ ${fmt(Math.round(paidValue))}` : ''}
+                      </span>
+                      <button
+                        onClick={openModal}
+                        className="text-[11px] font-medium text-emerald-400/80 hover:text-emerald-300 underline underline-offset-2"
+                      >
+                        Editar
+                      </button>
+                    </div>
+                  );
+                }
+                return (
+                  <button
+                    onClick={openModal}
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                  >
+                    ✓ Já reservei
+                  </button>
+                );
+              })()}
               {isFlights && (
                 <div className="space-y-2 pt-1">
                   {!showFlexDates ? (
@@ -868,6 +914,49 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           </div>
         );
       })()}
+
+      {/* Reservation Confirm Modal */}
+      <Dialog
+        open={!!confirmReservation}
+        onOpenChange={(open) => { if (!open) setConfirmReservation(null); }}
+      >
+        <DialogContent className="bg-[#1e293b] border-border max-w-sm mx-auto">
+          <DialogHeader>
+            <DialogTitle className="font-['Outfit'] text-foreground">
+              {confirmReservation?.type === 'flight' ? '✈️ Confirmar Voo Reservado' : '🏨 Confirmar Hotel Reservado'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Valor pago (R$)</label>
+              <input
+                type="number"
+                value={confirmReservation?.amount ?? ''}
+                onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, amount: e.target.value } : prev)}
+                placeholder="0"
+                className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Link/Confirmação (opcional)</label>
+              <input
+                type="text"
+                value={confirmReservation?.link ?? ''}
+                onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, link: e.target.value } : prev)}
+                placeholder="https://..."
+                className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              />
+            </div>
+            <button
+              onClick={handleReservationConfirm}
+              className="w-full py-2.5 bg-emerald-500 text-emerald-950 rounded-lg font-semibold text-sm hover:bg-emerald-400 transition-colors"
+            >
+              Confirmar
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Destination Map Embed */}
       {mapEmbedUrl && (
