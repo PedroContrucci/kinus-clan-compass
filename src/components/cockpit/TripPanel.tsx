@@ -826,7 +826,44 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             </div>
             {renderGroup('✈️ Voos', flightLinks)}
             {renderGroup('🏨 Hotéis', hotelLinks)}
-            {renderGroup('🎟️ Atividades', activityLinks)}
+            {(() => {
+              const paidActivities = (trip.days?.flatMap(d => d.activities) || []).filter(a => a.category === 'passeio' && (a.cost || 0) > 0);
+              const uniqueByName = new Map<string, typeof paidActivities[0]>();
+              paidActivities.forEach(a => {
+                if (a.name && !uniqueByName.has(a.name)) uniqueByName.set(a.name, a);
+              });
+              const uniquePaidActivities = Array.from(uniqueByName.values());
+              if (uniquePaidActivities.length === 0) return null;
+
+              return (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-foreground font-['Outfit']">🎟️ Atividades do seu roteiro</p>
+                  <p className="text-[10px] text-muted-foreground">Reserve as atividades pagas do seu roteiro</p>
+                  <div className="space-y-1.5">
+                    {uniquePaidActivities.map((activity) => {
+                      const links = buildOfferLinks({ category: 'activity', city: trip.destination, activityName: activity.name });
+                      const link = links[0];
+                      if (!link) return null;
+                      return (
+                        <a
+                          key={activity.name}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/60 transition-colors group"
+                        >
+                          <div className="min-w-0">
+                            <span className="text-sm font-semibold text-foreground font-['Outfit']">{activity.name}</span>
+                            <p className="text-xs text-muted-foreground truncate">Ver ofertas</p>
+                          </div>
+                          <ExternalLink size={14} className="text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         );
       })()}
