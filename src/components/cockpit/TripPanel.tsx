@@ -639,9 +639,16 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const handleReservationAction = (item: typeof reservationItems[0]) => {
     if (item.confirmed) return;
     if (item.type === 'flight') {
-      setConfirmReservation({ type: 'flight', amount: '', link: '' });
+      setConfirmReservation({
+        type: 'flight',
+        amount: '',
+        link: '',
+        airline: ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '',
+        departureTime: (trip as any).outboundFlight?.option?.departureTime || '',
+        returnTime: (trip as any).returnFlight?.option?.departureTime || '',
+      });
     } else if (item.type === 'hotel') {
-      setConfirmReservation({ type: 'hotel', amount: '', link: '' });
+      setConfirmReservation({ type: 'hotel', amount: '', link: '', airline: '', departureTime: '', returnTime: '' });
     } else if (item.type === 'activity' && item.activityName) {
       setOffersModal({ isOpen: true, activityName: item.activityName });
     }
