@@ -707,8 +707,16 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
 
         const flightLinks = buildOfferLinks({ ...offerParams, category: 'flight' });
         const hotelLinks = buildOfferLinks({ ...offerParams, category: 'hotel' });
-        const activityLinks = buildOfferLinks({ ...offerParams, category: 'activity' });
-        const hasAnyLinks = flightLinks.length > 0 || hotelLinks.length > 0 || activityLinks.length > 0;
+
+        const paidActivities = (trip.days?.flatMap(d => d.activities) || [])
+          .filter(a => a.category === 'passeio' && (a.cost || 0) >= 80);
+        const uniqueByName = new Map<string, typeof paidActivities[0]>();
+        paidActivities.forEach(a => {
+          if (a.name && !uniqueByName.has(a.name)) uniqueByName.set(a.name, a);
+        });
+        const uniquePaidActivities = Array.from(uniqueByName.values());
+
+        const hasAnyLinks = flightLinks.length > 0 || hotelLinks.length > 0 || uniquePaidActivities.length > 0;
         if (!hasAnyLinks) return null;
 
         const renderGroup = (title: string, links: ReturnType<typeof buildOfferLinks>) => {
