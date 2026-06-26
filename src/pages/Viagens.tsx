@@ -432,11 +432,9 @@ const Viagens = () => {
     setTrips(updatedTrips);
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
 
-    setAuctionModal({
+    setOffersModal({
       isOpen: true,
       activityName: activity.name,
-      activityType: activity.type,
-      estimatedPrice: activity.cost,
     });
   };
 
