@@ -96,7 +96,7 @@ function CurationSources({ trip }: { trip: SavedTrip }) {
 
 interface TripPanelProps {
   trip: SavedTrip;
-  onConfirm: (type: 'flight' | 'hotel', amount: number) => void;
+  onConfirm: (type: 'flight' | 'hotel', amount: number, flightDetails?: { airline?: string; departureTime?: string; returnTime?: string }) => void;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
   onNavigateTab: (tab: string, categoryFilter?: string) => void;
 }
@@ -384,11 +384,17 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
   const [showFlexDates, setShowFlexDates] = useState(false);
   const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
-  const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string } | null>(null);
+  const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string; airline: string; departureTime: string; returnTime: string } | null>(null);
 
   const handleReservationConfirm = () => {
     if (!confirmReservation) return;
-    onConfirm(confirmReservation.type, parseFloat(confirmReservation.amount) || 0);
+    onConfirm(
+      confirmReservation.type,
+      parseFloat(confirmReservation.amount) || 0,
+      confirmReservation.type === 'flight'
+        ? { airline: confirmReservation.airline, departureTime: confirmReservation.departureTime, returnTime: confirmReservation.returnTime }
+        : undefined
+    );
     setConfirmReservation(null);
   };
 
@@ -957,6 +963,9 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
                     type,
                     amount: confirmed && paidValue ? String(Math.round(paidValue)) : '',
                     link: '',
+                    airline: type === 'flight' ? ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '' : '',
+                    departureTime: type === 'flight' ? (trip as any).outboundFlight?.option?.departureTime || '' : '',
+                    returnTime: type === 'flight' ? (trip as any).returnFlight?.option?.departureTime || '' : '',
                   });
                 if (confirmed) {
                   return (
@@ -1083,6 +1092,40 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {confirmReservation?.type === 'flight' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1.5">Companhia aérea</label>
+                  <input
+                    type="text"
+                    value={confirmReservation?.airline ?? ''}
+                    onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, airline: e.target.value } : prev)}
+                    placeholder="Azul"
+                    className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1.5">Horário de ida</label>
+                  <input
+                    type="text"
+                    value={confirmReservation?.departureTime ?? ''}
+                    onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, departureTime: e.target.value } : prev)}
+                    placeholder="14:00"
+                    className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1.5">Horário de volta</label>
+                  <input
+                    type="text"
+                    value={confirmReservation?.returnTime ?? ''}
+                    onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, returnTime: e.target.value } : prev)}
+                    placeholder="16:00"
+                    className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  />
+                </div>
+              </div>
+            )}
             <div>
               <label className="block text-xs text-muted-foreground mb-1.5">Valor pago (R$)</label>
               <input
