@@ -14,6 +14,7 @@ import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
 import { DraftCockpit, TripGuide, ExchangeRates, AuctionList, EnhancedDayTimeline, SmartPackingWithLuggage, EnhancedExchangeRates, AuctionConfigModal } from '@/components/cockpit';
+import OffersModal from '@/components/cockpit/OffersModal';
 import { TripPanel } from '@/components/cockpit/TripPanel';
 import { AgentTip } from '@/components/shared/AgentTip';
 import { DestinationImage } from '@/components/shared/DestinationImage';
@@ -253,6 +254,7 @@ const Viagens = () => {
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
   const [recentlyConfirmed, setRecentlyConfirmed] = useState<string | null>(null);
   const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; activityName: string; activityType: string; estimatedPrice?: number } | null>(null);
+  const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; activity: TripActivity; dayIndex: number; actIndex: number } | null>(null);
   const [swapModal, setSwapModal] = useState<{ dayIndex: number; actIndex: number; activity: any } | null>(null);
   const [confirmAmount, setConfirmAmount] = useState('');
@@ -430,11 +432,9 @@ const Viagens = () => {
     setTrips(updatedTrips);
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
 
-    setAuctionModal({
+    setOffersModal({
       isOpen: true,
       activityName: activity.name,
-      activityType: activity.type,
-      estimatedPrice: activity.cost,
     });
   };
 
@@ -1355,13 +1355,9 @@ const Viagens = () => {
               trip={selectedTrip}
               onConfirm={handleHeroConfirm}
               onOpenAuction={(type) => {
-                setAuctionModal({
+                setOffersModal({
                   isOpen: true,
                   activityName: type === 'flight' ? 'Voo de Ida e Volta' : 'Hospedagem',
-                  activityType: type,
-                  estimatedPrice: type === 'flight'
-                    ? (selectedTrip.flights?.outbound?.price || 0) + (selectedTrip.flights?.return?.price || 0)
-                    : selectedTrip.accommodation?.totalPrice || 0,
                 });
               }}
               onNavigateTab={(tab, categoryFilter) => {
@@ -1758,11 +1754,9 @@ const Viagens = () => {
                                   Confirmar
                                 </button>
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); setAuctionModal({
+                                  onClick={(e) => { e.stopPropagation(); setOffersModal({
                                     isOpen: true,
                                     activityName: activity.name,
-                                    activityType: activity.type,
-                                    estimatedPrice: activity.cost,
                                   }); }}
                                   className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-primary/50 transition-colors"
                                 >
@@ -2011,6 +2005,16 @@ const Viagens = () => {
           })()}
         </main>
 
+
+        {/* Offers Modal — Partner Links */}
+        {offersModal && (
+          <OffersModal
+            isOpen={offersModal.isOpen}
+            onClose={() => setOffersModal(null)}
+            activityName={offersModal.activityName}
+            city={selectedTrip?.destination || ''}
+          />
+        )}
 
         {/* Reverse Auction Modal */}
         {auctionModal && (
