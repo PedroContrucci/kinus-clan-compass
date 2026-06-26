@@ -322,12 +322,24 @@ const Viagens = () => {
 
   const calculateProgress = (trip: SavedTrip) => {
     if (!trip?.days || !Array.isArray(trip.days)) return 0;
-    
+
     let total = 0;
     let confirmed = 0;
+
+    if (trip.flights?.outbound) {
+      total++;
+      if (trip.flights.outbound.status === 'confirmed') confirmed++;
+    }
+
+    if (trip.accommodation) {
+      total++;
+      if (trip.accommodation.status === 'confirmed') confirmed++;
+    }
+
     trip.days.forEach((day) => {
       if (day?.activities && Array.isArray(day.activities)) {
         day.activities.forEach((act) => {
+          if (act.category === 'voo' || act.category === 'hotel') return;
           total++;
           if (act.status === 'confirmed') confirmed++;
         });
