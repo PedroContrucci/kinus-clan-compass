@@ -18,8 +18,8 @@ interface OffersModalProps {
 
 export const OffersModal = ({ isOpen, onClose, activityName, city }: OffersModalProps) => {
   const links = useMemo<OfferLink[]>(
-    () => buildOfferLinks({ category: 'activity', city }),
-    [city]
+    () => buildOfferLinks({ category: 'activity', city, activityName }),
+    [city, activityName]
   );
 
   return (
