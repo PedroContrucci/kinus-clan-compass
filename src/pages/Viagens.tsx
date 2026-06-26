@@ -1355,13 +1355,9 @@ const Viagens = () => {
               trip={selectedTrip}
               onConfirm={handleHeroConfirm}
               onOpenAuction={(type) => {
-                setAuctionModal({
+                setOffersModal({
                   isOpen: true,
                   activityName: type === 'flight' ? 'Voo de Ida e Volta' : 'Hospedagem',
-                  activityType: type,
-                  estimatedPrice: type === 'flight'
-                    ? (selectedTrip.flights?.outbound?.price || 0) + (selectedTrip.flights?.return?.price || 0)
-                    : selectedTrip.accommodation?.totalPrice || 0,
                 });
               }}
               onNavigateTab={(tab, categoryFilter) => {
