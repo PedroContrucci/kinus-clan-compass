@@ -839,25 +839,35 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-foreground font-['Outfit']">🎟️ Atividades do seu roteiro</p>
                   <p className="text-[10px] text-muted-foreground">Reserve as atividades pagas do seu roteiro</p>
-                  <div className="space-y-1.5">
+                  <div className="space-y-3">
                     {uniquePaidActivities.map((activity) => {
                       const links = buildOfferLinks({ category: 'activity', city: trip.destination, activityName: activity.name });
-                      const link = links[0];
-                      if (!link) return null;
                       return (
-                        <a
-                          key={activity.name}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/60 transition-colors group"
-                        >
-                          <div className="min-w-0">
-                            <span className="text-sm font-semibold text-foreground font-['Outfit']">{activity.name}</span>
-                            <p className="text-xs text-muted-foreground truncate">Ver ofertas</p>
-                          </div>
-                          <ExternalLink size={14} className="text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
-                        </a>
+                        <div key={activity.name} className="space-y-1.5">
+                          <p className="text-xs font-semibold text-foreground font-['Outfit']">{activity.name}</p>
+                          {links.map((link) => (
+                            <a
+                              key={link.url}
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/60 transition-colors group"
+                            >
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-semibold text-foreground font-['Outfit']">{link.partner}</span>
+                                  {link.isAffiliate && (
+                                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500">
+                                      Parceiro KINU
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground truncate">{link.description}</p>
+                              </div>
+                              <ExternalLink size={14} className="text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
+                            </a>
+                          ))}
+                        </div>
                       );
                     })}
                   </div>
