@@ -546,14 +546,25 @@ function generateItinerary(
     // Middle days: Full exploration with 5-6 activities
     else {
       const explorationDay = i - explorationStart;
-      let themeIndex = explorationDay % orderedThemes.length;
+      // Weighted theme sequence: cycle preferred themes; fall back to otherThemes only if we run out.
+      let dayTheme: DestinationTheme;
+      if (preferredThemes.length > 0 && explorationDay >= preferredThemes.length && otherThemes.length > 0) {
+        // After every preferred theme has appeared once, optionally interleave other themes
+        const overflow = explorationDay - preferredThemes.length;
+        // Alternate: preferred (cycled) most of the time, otherThemes occasionally
+        dayTheme = overflow % 3 === 2
+          ? otherThemes[Math.floor(overflow / 3) % otherThemes.length]
+          : baseThemes[explorationDay % baseThemes.length];
+      } else {
+        dayTheme = baseThemes[explorationDay % baseThemes.length];
+      }
       // Focus day: first exploration day uses top-ranked theme
       if (explorationDay === 0 && rawInterests.length > 0) {
         const focusThemeName = interestToTheme[rawInterests[0]];
-        const focusIdx = orderedThemes.findIndex(t => t.title === focusThemeName);
-        if (focusIdx >= 0) themeIndex = focusIdx;
+        const focusMatch = baseThemes.find(t => t.title === focusThemeName) || orderedThemes.find(t => t.title === focusThemeName);
+        if (focusMatch) dayTheme = focusMatch;
       }
-      const dayTheme = orderedThemes[themeIndex];
+
       label = 'Exploração';
       theme = `${dayTheme.icon} ${dayTheme.title}`;
       
