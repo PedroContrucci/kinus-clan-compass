@@ -459,6 +459,13 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
     ? outboundPrice + returnPrice
     : (trip.finances?.planned ? trip.finances.planned * 0.4 : 0);
 
+  // Resolve real selected flight for display
+  const realFlight = (trip as any).outboundFlight?.option;
+  const flightDuration = realFlight?.duration || trip.flights?.outbound?.duration || '—';
+  const flightDirect = realFlight ? realFlight.isDirect : (trip.flights?.outbound?.stops === 0);
+  const flightAirline = realFlight?.airline && realFlight.airline !== 'A confirmar' ? realFlight.airline : null;
+  const flightDepTime = realFlight?.departureTime || trip.flights?.outbound?.departureTime;
+
   const priceChange = useMemo(() => {
     if (flightConfirmed) return null;
     return getPriceChangeInfo(trip.id);
@@ -715,11 +722,12 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             <p className="text-[10px] text-amber-400 mt-1">💡 Héstia: preço caiu — bom momento para confirmar o voo.</p>
           )}
           <p className="text-[10px] text-muted-foreground mt-1">
-            {trip.flights?.outbound?.duration || '—'} · {(() => {
-              const s = trip.flights?.outbound?.stops;
-              if (s == null || s === 0) return 'Direto';
-              return s === 1 ? '1 parada' : `${s} paradas`;
-            })()}
+            {flightDuration} · {flightDirect ? 'Direto' : 'Com conexão'}
+            {flightAirline && (
+              <span className="block text-[10px] text-muted-foreground">
+                {flightAirline} · Saída {flightDepTime}
+              </span>
+            )}
           </p>
           {!flightConfirmed && (
             <div className="mt-3 space-y-1.5">
