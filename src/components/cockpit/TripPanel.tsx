@@ -398,9 +398,30 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const daysLeft = trip.startDate ? Math.max(0, differenceInDays(new Date(trip.startDate), new Date())) : 0;
   const isPast = trip.startDate ? differenceInDays(new Date(trip.startDate), new Date()) < 0 : false;
 
-  const totalActivities = trip.days?.reduce((sum, d) => sum + (d.activities?.length || 0), 0) || 0;
-  const confirmedActivities = trip.days?.reduce((sum, d) => sum + (d.activities?.filter(a => a.status === 'confirmed').length || 0), 0) || 0;
-  const progressPct = totalActivities > 0 ? Math.round((confirmedActivities / totalActivities) * 100) : 0;
+  // Weighted quantitative progress — anchors (flight/hotel) weigh 5, activities weigh 1
+  let weightedTotal = 0;
+  let weightedConfirmed = 0;
+
+  // Flight anchor
+  if (trip.flights?.outbound) {
+    weightedTotal += 5;
+    if (trip.flights.outbound.status === 'confirmed') weightedConfirmed += 5;
+  }
+
+  // Hotel anchor
+  if (trip.accommodation) {
+    weightedTotal += 5;
+    if (trip.accommodation.status === 'confirmed') weightedConfirmed += 5;
+  }
+
+  // Activities (skip in-itinerary logistics markers to avoid double-count)
+  trip.days?.forEach(d => d.activities?.forEach(a => {
+    if (a.category === 'voo' || a.category === 'hotel') return;
+    weightedTotal += 1;
+    if (a.status === 'confirmed') weightedConfirmed += 1;
+  }));
+
+  const progressPct = weightedTotal > 0 ? Math.round((weightedConfirmed / weightedTotal) * 100) : 0;
 
   const checklistPct = getChecklistPct(trip);
   const tierLabel = TIER_LABELS[(trip as any).budgetTier || trip.budgetType || 'comfort'] || 'Conforto';
