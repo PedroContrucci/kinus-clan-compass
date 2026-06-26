@@ -459,6 +459,13 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
     ? outboundPrice + returnPrice
     : (trip.finances?.planned ? trip.finances.planned * 0.4 : 0);
 
+  // Resolve real selected flight for display
+  const realFlight = (trip as any).outboundFlight?.option;
+  const flightDuration = realFlight?.duration || trip.flights?.outbound?.duration || '—';
+  const flightDirect = realFlight ? realFlight.isDirect : (trip.flights?.outbound?.stops === 0);
+  const flightAirline = realFlight?.airline && realFlight.airline !== 'A confirmar' ? realFlight.airline : null;
+  const flightDepTime = realFlight?.departureTime || trip.flights?.outbound?.departureTime;
+
   const priceChange = useMemo(() => {
     if (flightConfirmed) return null;
     return getPriceChangeInfo(trip.id);
