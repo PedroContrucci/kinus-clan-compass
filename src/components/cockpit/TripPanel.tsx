@@ -13,6 +13,7 @@ import { getIcarusRoteiroInsight, getIcarusHeroFlight, getIcarusHeroHotel, getHe
 import { DestinationImage } from '@/components/shared/DestinationImage';
 import type { SavedTrip } from '@/types/trip';
 import { buildOfferLinks } from '@/lib/offersLinks';
+import { OffersModal } from '@/components/cockpit/OffersModal';
 import { useState, useEffect, useMemo } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
@@ -361,6 +362,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const [searchingFlights, setSearchingFlights] = useState(false);
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
   const [showFlexDates, setShowFlexDates] = useState(false);
+  const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
 
   // Fetch maps embed URL
   useEffect(() => {
@@ -705,8 +707,16 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
 
         const flightLinks = buildOfferLinks({ ...offerParams, category: 'flight' });
         const hotelLinks = buildOfferLinks({ ...offerParams, category: 'hotel' });
-        const activityLinks = buildOfferLinks({ ...offerParams, category: 'activity' });
-        const hasAnyLinks = flightLinks.length > 0 || hotelLinks.length > 0 || activityLinks.length > 0;
+
+        const paidActivities = (trip.days?.flatMap(d => d.activities) || [])
+          .filter(a => a.category === 'passeio' && (a.cost || 0) >= 80);
+        const uniqueByName = new Map<string, typeof paidActivities[0]>();
+        paidActivities.forEach(a => {
+          if (a.name && !uniqueByName.has(a.name)) uniqueByName.set(a.name, a);
+        });
+        const uniquePaidActivities = Array.from(uniqueByName.values());
+
+        const hasAnyLinks = flightLinks.length > 0 || hotelLinks.length > 0 || uniquePaidActivities.length > 0;
         if (!hasAnyLinks) return null;
 
         const renderGroup = (title: string, links: ReturnType<typeof buildOfferLinks>) => {
@@ -826,54 +836,35 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
             </div>
             {renderGroup('✈️ Voos', flightLinks)}
             {renderGroup('🏨 Hotéis', hotelLinks)}
-            {(() => {
-              const paidActivities = (trip.days?.flatMap(d => d.activities) || []).filter(a => a.category === 'passeio' && (a.cost || 0) > 0);
-              const uniqueByName = new Map<string, typeof paidActivities[0]>();
-              paidActivities.forEach(a => {
-                if (a.name && !uniqueByName.has(a.name)) uniqueByName.set(a.name, a);
-              });
-              const uniquePaidActivities = Array.from(uniqueByName.values());
-              if (uniquePaidActivities.length === 0) return null;
-
-              return (
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-foreground font-['Outfit']">🎟️ Atividades do seu roteiro</p>
-                  <p className="text-[10px] text-muted-foreground">Reserve as atividades pagas do seu roteiro</p>
-                  <div className="space-y-3">
-                    {uniquePaidActivities.map((activity) => {
-                      const links = buildOfferLinks({ category: 'activity', city: trip.destination, activityName: activity.name });
-                      return (
-                        <div key={activity.name} className="space-y-1.5">
-                          <p className="text-xs font-semibold text-foreground font-['Outfit']">{activity.name}</p>
-                          {links.map((link) => (
-                            <a
-                              key={link.url}
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/60 transition-colors group"
-                            >
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-semibold text-foreground font-['Outfit']">{link.partner}</span>
-                                  {link.isAffiliate && (
-                                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500">
-                                      Parceiro KINU
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-muted-foreground truncate">{link.description}</p>
-                              </div>
-                              <ExternalLink size={14} className="text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
-                            </a>
-                          ))}
-                        </div>
-                      );
-                    })}
-                  </div>
+            {uniquePaidActivities.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-foreground font-['Outfit']">🎟️ Atividades do seu roteiro</p>
+                <p className="text-[10px] text-muted-foreground">Reserve as atividades pagas do seu roteiro</p>
+                <div className="space-y-1.5">
+                  {uniquePaidActivities.map((activity) => (
+                    <button
+                      key={activity.name}
+                      onClick={() => setOffersModal({ isOpen: true, activityName: activity.name })}
+                      className="w-full flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/60 transition-colors group text-left"
+                    >
+                      <span className="text-sm font-semibold text-foreground font-['Outfit']">{activity.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Ver ofertas</span>
+                        <ExternalLink size={14} className="text-muted-foreground group-hover:text-foreground shrink-0" />
+                      </div>
+                    </button>
+                  ))}
                 </div>
-              );
-            })()}
+                {offersModal && (
+                  <OffersModal
+                    isOpen={offersModal.isOpen}
+                    onClose={() => setOffersModal(null)}
+                    activityName={offersModal.activityName}
+                    city={trip.destination}
+                  />
+                )}
+              </div>
+            )}
           </div>
         );
       })()}
