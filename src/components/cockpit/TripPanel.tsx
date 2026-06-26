@@ -614,7 +614,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           )}
           <div className="flex gap-2 mt-4">
             <MiniKPI label={isPast ? 'em viagem' : 'dias'} value={isPast ? 'Em viagem' : String(daysLeft)} urgent={!isPast && daysLeft <= 7} />
-            <MiniKPI label="progresso" value={`${progressPct}%`} />
+            <DualProgressKPI financePct={confirmedPct} roteiroPct={progressPct} />
             <MiniKPI label="gasto" value={`R$${fmt(trip.finances.confirmed / 1000)}k`} />
             <MiniKPI label="checklist" value={`${checklistPct}%`} />
           </div>
