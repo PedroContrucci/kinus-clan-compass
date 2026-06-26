@@ -274,12 +274,19 @@ function generateItinerary(
   scoredThemes.sort((a, b) => b.score - a.score);
   const orderedThemes: DestinationTheme[] = scoredThemes.map(s => s.theme);
 
+  // Build weighted theme sequence for exploration days, prioritizing user-selected interests.
+  const preferredThemes: DestinationTheme[] = scoredThemes.filter(s => s.score > 0).map(s => s.theme);
+  const otherThemes: DestinationTheme[] = scoredThemes.filter(s => s.score === 0).map(s => s.theme);
+  const baseThemes = preferredThemes.length > 0 ? preferredThemes : orderedThemes;
+
   for (let i = 0; i < totalDays; i++) {
+    currentPickDayIndex = i;
     const date = addDays(departureDate, i);
     const activities: ItineraryActivity[] = [];
     let label = '';
     let theme = '';
     let dayTotal = 0;
+
 
     // Day 1: Departure (flight only)
     if (i === 0) {
