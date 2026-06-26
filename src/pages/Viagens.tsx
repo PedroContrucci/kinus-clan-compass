@@ -1754,11 +1754,9 @@ const Viagens = () => {
                                   Confirmar
                                 </button>
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); setAuctionModal({
+                                  onClick={(e) => { e.stopPropagation(); setOffersModal({
                                     isOpen: true,
                                     activityName: activity.name,
-                                    activityType: activity.type,
-                                    estimatedPrice: activity.cost,
                                   }); }}
                                   className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-primary/50 transition-colors"
                                 >
