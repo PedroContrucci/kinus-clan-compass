@@ -362,6 +362,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const [searchingFlights, setSearchingFlights] = useState(false);
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
   const [showFlexDates, setShowFlexDates] = useState(false);
+  const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
 
   // Fetch maps embed URL
   useEffect(() => {
