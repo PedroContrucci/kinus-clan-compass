@@ -915,6 +915,49 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         );
       })()}
 
+      {/* Reservation Confirm Modal */}
+      <Dialog
+        open={!!confirmReservation}
+        onOpenChange={(open) => { if (!open) setConfirmReservation(null); }}
+      >
+        <DialogContent className="bg-[#1e293b] border-border max-w-sm mx-auto">
+          <DialogHeader>
+            <DialogTitle className="font-['Outfit'] text-foreground">
+              {confirmReservation?.type === 'flight' ? '✈️ Confirmar Voo Reservado' : '🏨 Confirmar Hotel Reservado'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Valor pago (R$)</label>
+              <input
+                type="number"
+                value={confirmReservation?.amount ?? ''}
+                onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, amount: e.target.value } : prev)}
+                placeholder="0"
+                className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Link/Confirmação (opcional)</label>
+              <input
+                type="text"
+                value={confirmReservation?.link ?? ''}
+                onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, link: e.target.value } : prev)}
+                placeholder="https://..."
+                className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              />
+            </div>
+            <button
+              onClick={handleReservationConfirm}
+              className="w-full py-2.5 bg-emerald-500 text-emerald-950 rounded-lg font-semibold text-sm hover:bg-emerald-400 transition-colors"
+            >
+              Confirmar
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
       {/* Destination Map Embed */}
       {mapEmbedUrl && (
         <div className="rounded-xl overflow-hidden border border-border">
