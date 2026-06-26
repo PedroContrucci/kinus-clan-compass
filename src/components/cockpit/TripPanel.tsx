@@ -572,6 +572,68 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   // Find first non-completed action index
   const firstActiveIdx = filteredActions.findIndex(a => !a.completed);
 
+  // Reservation status items (flight, hotel, paid activities only)
+  const reservationItems = useMemo(() => {
+    const items: {
+      id: string;
+      type: 'flight' | 'hotel' | 'activity';
+      name: string;
+      confirmed: boolean;
+      activityName?: string;
+    }[] = [];
+
+    if (trip.flights?.outbound) {
+      items.push({
+        id: 'flight',
+        type: 'flight',
+        name: `✈️ Voo ${trip.flights.outbound.origin || 'GRU'}→${trip.flights.outbound.destination || dest}`,
+        confirmed: trip.flights.outbound.status === 'confirmed',
+      });
+    }
+
+    if (trip.accommodation) {
+      items.push({
+        id: 'hotel',
+        type: 'hotel',
+        name: `🏨 Hotel ${trip.accommodation.name || trip.accommodation.neighborhood || dest}`,
+        confirmed: trip.accommodation.status === 'confirmed',
+      });
+    }
+
+    const paidActivities = (trip.days?.flatMap(d => d.activities) || [])
+      .filter(a => a.category === 'passeio' && (a.cost || 0) >= 80);
+    const uniqueByName = new Map<string, typeof paidActivities[0]>();
+    paidActivities.forEach(a => {
+      if (a.name && !uniqueByName.has(a.name)) uniqueByName.set(a.name, a);
+    });
+    Array.from(uniqueByName.values()).forEach(a => {
+      items.push({
+        id: `activity-${a.name}`,
+        type: 'activity',
+        name: a.name || '',
+        activityName: a.name || '',
+        confirmed: a.status === 'confirmed',
+      });
+    });
+
+    return items;
+  }, [trip, dest]);
+
+  const totalReservations = reservationItems.length;
+  const confirmedReservations = reservationItems.filter(i => i.confirmed).length;
+  const allReservationsConfirmed = totalReservations > 0 && confirmedReservations === totalReservations;
+
+  const handleReservationAction = (item: typeof reservationItems[0]) => {
+    if (item.confirmed) return;
+    if (item.type === 'flight') {
+      setConfirmReservation({ type: 'flight', amount: '', link: '' });
+    } else if (item.type === 'hotel') {
+      setConfirmReservation({ type: 'hotel', amount: '', link: '' });
+    } else if (item.type === 'activity' && item.activityName) {
+      setOffersModal({ isOpen: true, activityName: item.activityName });
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
