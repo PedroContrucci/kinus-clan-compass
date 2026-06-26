@@ -14,6 +14,7 @@ export interface OfferParams {
   originCode?: string;
   destinationCode?: string;
   city?: string;
+  activityName?: string;
   startDate?: Date;
   endDate?: Date;
   travelers?: number;
@@ -117,11 +118,18 @@ function buildKlookLink(): OfferLink | null {
   };
 }
 
-function buildViatorLink(city: string): OfferLink | null {
+function buildViatorLink(city: string, activityName?: string): OfferLink | null {
+  const text = activityName
+    ? `${activityName} ${city || ''}`.trim()
+    : city;
+  const description = activityName
+    ? 'Reservar esta atividade · busca pronta'
+    : 'Passeios e atividades · busca pronta';
+
   return {
     partner: 'Viator',
-    description: 'Passeios e atividades · busca pronta',
-    url: `https://www.viator.com/searchResults/all?text=${encodeURIComponent(city)}`,
+    description,
+    url: `https://www.viator.com/searchResults/all?text=${encodeURIComponent(text)}`,
     isAffiliate: false,
   };
 }
@@ -167,12 +175,13 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
 
     case 'activity': {
       const city = params.city?.trim();
+      const activityName = params.activityName?.trim();
       if (!city) return [];
 
       const klook = buildKlookLink();
       if (klook) links.push(klook);
 
-      const viator = buildViatorLink(city);
+      const viator = buildViatorLink(city, activityName);
       if (viator) links.push(viator);
       break;
     }
