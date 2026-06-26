@@ -338,6 +338,27 @@ const MiniKPI = ({ label, value, urgent }: { label: string; value: string; urgen
   </div>
 );
 
+const DualProgressKPI = ({ financePct, roteiroPct }: { financePct: number; roteiroPct: number }) => (
+  <div className="flex-1 flex flex-col justify-center py-2 px-2 rounded-xl bg-white/5 border border-white/5 text-center">
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-[10px] leading-tight">
+        <span className="text-muted-foreground">💰 Financeiro</span>
+        <span className="font-bold text-foreground font-['Outfit']">{financePct}%</span>
+      </div>
+      <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
+        <div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: `${financePct}%` }} />
+      </div>
+      <div className="flex items-center justify-between text-[10px] leading-tight">
+        <span className="text-muted-foreground">📋 Roteiro</span>
+        <span className="font-bold text-foreground font-['Outfit']">{roteiroPct}%</span>
+      </div>
+      <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
+        <div className="h-full rounded-full bg-sky-400 transition-all" style={{ width: `${roteiroPct}%` }} />
+      </div>
+    </div>
+  </div>
+);
+
 // Helper to get destination currency
 const DEST_CURRENCY_MAP: Record<string, string> = {
   'paris': 'EUR', 'roma': 'EUR', 'amsterdam': 'EUR', 'barcelona': 'EUR',
