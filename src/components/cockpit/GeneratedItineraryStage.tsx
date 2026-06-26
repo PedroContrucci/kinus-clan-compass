@@ -188,6 +188,8 @@ function generateItinerary(
 
   const days: ItineraryDay[] = [];
   const usedActivityIds: string[] = [];
+  const lastUsedDay: Map<string, number> = new Map();
+  let currentPickDayIndex = 0;
 
   function pickActivity(category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner', themeName: string): SuggestedActivity | null {
     const pool = getDestinationActivities(destination);
@@ -214,24 +216,44 @@ function generateItinerary(
     if (candidates.length === 0) {
       candidates = pool.filter(a => a.category === category && !usedActivityIds.includes(a.id));
     }
+    let forcedReuse = false;
     if (candidates.length === 0) {
-      candidates = pool.filter(a => a.category === category);
+      // Forced reuse: prefer activities used longest ago, and avoid any used on the immediately previous day if alternatives exist.
+      const reusable = pool.filter(a => a.category === category);
+      if (reusable.length === 0) return null;
+      const prevDay = currentPickDayIndex - 1;
+      const notFromPrevDay = reusable.filter(a => lastUsedDay.get(a.id) !== prevDay);
+      const eligible = notFromPrevDay.length > 0 ? notFromPrevDay : reusable;
+      // Sort by position in usedActivityIds (earliest = used longest ago first); unseen first
+      eligible.sort((a, b) => {
+        const ia = usedActivityIds.indexOf(a.id);
+        const ib = usedActivityIds.indexOf(b.id);
+        const va = ia === -1 ? -1 : ia;
+        const vb = ib === -1 ? -1 : ib;
+        return va - vb;
+      });
+      candidates = eligible;
+      forcedReuse = true;
     }
     if (candidates.length === 0) return null;
-    // Sort by tier intent: budget=cheapest first, luxury=most expensive first,
-    // midrange=closest to median target
-    candidates.sort((a, b) => {
-      const priceA = a.estimatedCostBRL || 0;
-      const priceB = b.estimatedCostBRL || 0;
-      if (priceLevel === 'budget') return priceA - priceB;
-      if (priceLevel === 'luxury') return priceB - priceA;
-      // midrange: proximity to target
-      return Math.abs(priceA - target) - Math.abs(priceB - target);
-    });
+    if (!forcedReuse) {
+      // Sort by tier intent: budget=cheapest first, luxury=most expensive first,
+      // midrange=closest to median target
+      candidates.sort((a, b) => {
+        const priceA = a.estimatedCostBRL || 0;
+        const priceB = b.estimatedCostBRL || 0;
+        if (priceLevel === 'budget') return priceA - priceB;
+        if (priceLevel === 'luxury') return priceB - priceA;
+        // midrange: proximity to target
+        return Math.abs(priceA - target) - Math.abs(priceB - target);
+      });
+    }
     const picked = candidates[0];
     usedActivityIds.push(picked.id);
+    lastUsedDay.set(picked.id, currentPickDayIndex);
     return picked;
   }
+
 
   // Style tags for filtering (convert interests to lowercase)
   const styleTags = travelInterests.map(i => i.toLowerCase().replace('🍜 ', '').replace('🏖️ ', '').replace('🌙 ', '').replace('👨‍👩‍👧 ', '').replace('🏛️ ', '').replace('🎨 ', '').replace('🎭 ', '').replace('🏔️ ', '').replace('💆 ', '').replace('🛍️ ', '').replace('🌿 ', ''));
@@ -252,12 +274,19 @@ function generateItinerary(
   scoredThemes.sort((a, b) => b.score - a.score);
   const orderedThemes: DestinationTheme[] = scoredThemes.map(s => s.theme);
 
+  // Build weighted theme sequence for exploration days, prioritizing user-selected interests.
+  const preferredThemes: DestinationTheme[] = scoredThemes.filter(s => s.score > 0).map(s => s.theme);
+  const otherThemes: DestinationTheme[] = scoredThemes.filter(s => s.score === 0).map(s => s.theme);
+  const baseThemes = preferredThemes.length > 0 ? preferredThemes : orderedThemes;
+
   for (let i = 0; i < totalDays; i++) {
+    currentPickDayIndex = i;
     const date = addDays(departureDate, i);
     const activities: ItineraryActivity[] = [];
     let label = '';
     let theme = '';
     let dayTotal = 0;
+
 
     // Day 1: Departure (flight only)
     if (i === 0) {
@@ -517,14 +546,25 @@ function generateItinerary(
     // Middle days: Full exploration with 5-6 activities
     else {
       const explorationDay = i - explorationStart;
-      let themeIndex = explorationDay % orderedThemes.length;
+      // Weighted theme sequence: cycle preferred themes; fall back to otherThemes only if we run out.
+      let dayTheme: DestinationTheme;
+      if (preferredThemes.length > 0 && explorationDay >= preferredThemes.length && otherThemes.length > 0) {
+        // After every preferred theme has appeared once, optionally interleave other themes
+        const overflow = explorationDay - preferredThemes.length;
+        // Alternate: preferred (cycled) most of the time, otherThemes occasionally
+        dayTheme = overflow % 3 === 2
+          ? otherThemes[Math.floor(overflow / 3) % otherThemes.length]
+          : baseThemes[explorationDay % baseThemes.length];
+      } else {
+        dayTheme = baseThemes[explorationDay % baseThemes.length];
+      }
       // Focus day: first exploration day uses top-ranked theme
       if (explorationDay === 0 && rawInterests.length > 0) {
         const focusThemeName = interestToTheme[rawInterests[0]];
-        const focusIdx = orderedThemes.findIndex(t => t.title === focusThemeName);
-        if (focusIdx >= 0) themeIndex = focusIdx;
+        const focusMatch = baseThemes.find(t => t.title === focusThemeName) || orderedThemes.find(t => t.title === focusThemeName);
+        if (focusMatch) dayTheme = focusMatch;
       }
-      const dayTheme = orderedThemes[themeIndex];
+
       label = 'Exploração';
       theme = `${dayTheme.icon} ${dayTheme.title}`;
       
