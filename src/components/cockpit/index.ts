@@ -7,9 +7,9 @@ export { FlightSelectionStage } from './FlightSelectionStage';
 export { GeneratedItineraryStage } from './GeneratedItineraryStage';
 export { TripGuide } from './TripGuide';
 export { ExchangeRates } from './ExchangeRates';
-export { AuctionList } from './AuctionList';
+
 export { EnhancedDayTimeline } from './EnhancedDayTimeline';
-export { AuctionConfigModal } from './AuctionConfigModal';
+
 export { EnhancedSmartPacking } from './EnhancedSmartPacking';
 export { EnhancedExchangeRates } from './EnhancedExchangeRates';
 export { LuggageVisualization } from './LuggageVisualization';
@@ -21,6 +21,6 @@ export { EmptyAuctionState } from './EmptyAuctionState';
 export { EmptyPackingState } from './EmptyPackingState';
 export { AddLuggageModal } from './AddLuggageModal';
 export { SmartPackingWithLuggage } from './SmartPackingWithLuggage';
-export { AuctionActivationModal } from './AuctionActivationModal';
+
 export { TripPanel } from './TripPanel';
 export { DailyRouteMap } from './DailyRouteMap';

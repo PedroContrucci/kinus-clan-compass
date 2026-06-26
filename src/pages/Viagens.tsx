@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useKinuAI } from "@/contexts/KinuAIContext";
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Target } from 'lucide-react';
+import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -9,18 +9,18 @@ import { Progress } from '@/components/ui/progress';
 import { exportTripPDF } from '@/lib/tripPdfExport';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
-import ReverseAuctionModal from '@/components/ReverseAuctionModal';
+
 import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
-import { DraftCockpit, TripGuide, ExchangeRates, AuctionList, EnhancedDayTimeline, SmartPackingWithLuggage, EnhancedExchangeRates, AuctionConfigModal } from '@/components/cockpit';
+import { DraftCockpit, TripGuide, ExchangeRates, EnhancedDayTimeline, SmartPackingWithLuggage, EnhancedExchangeRates } from '@/components/cockpit';
 import OffersModal from '@/components/cockpit/OffersModal';
 import { TripPanel } from '@/components/cockpit/TripPanel';
 import { AgentTip } from '@/components/shared/AgentTip';
 import { DestinationImage } from '@/components/shared/DestinationImage';
 import { getIcarusRoteiro, getIcarusGuia, getIcarusLeilao, getHestiaFinOps, getHestiaCambio, getHestiaLeilao, getHermesChecklist, getHermesPacking } from '@/lib/agentMessages';
 import { analyzeTrip, AgentInsight } from '@/engines/agentIntelligence';
-import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, Offer, contextualTips } from '@/types/trip';
+import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, contextualTips } from '@/types/trip';
 import { PackingData } from '@/types/packing';
 import { getActivityPrice, determinePriceLevel, findBestPriceLevel, mapCategoryToPricingType, CITY_PRICES } from '@/lib/activityPricing';
 import kinuLogo from '@/assets/KINU_logo.png';
@@ -253,7 +253,7 @@ const Viagens = () => {
   const [roteiroCategoryFilter, setRoteiroCategoryFilter] = useState<string | null>(null);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
   const [recentlyConfirmed, setRecentlyConfirmed] = useState<string | null>(null);
-  const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; activityName: string; activityType: string; estimatedPrice?: number } | null>(null);
+  
   const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; activity: TripActivity; dayIndex: number; actIndex: number } | null>(null);
   const [swapModal, setSwapModal] = useState<{ dayIndex: number; actIndex: number; activity: any } | null>(null);
@@ -262,12 +262,6 @@ const Viagens = () => {
   const [manualExpenseModal, setManualExpenseModal] = useState(false);
   const [manualExpense, setManualExpense] = useState({ name: '', amount: 0, category: 'shopping' as keyof SavedTrip['finances']['categories'] });
   const [resetModal, setResetModal] = useState(false);
-  const [auctionConfigModal, setAuctionConfigModal] = useState<{
-    isOpen: boolean;
-    activity: { id: string; name: string; type: string; cost: number };
-    dayIndex: number;
-    actIndex: number;
-  } | null>(null);
   const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
   const { setTripContext } = useKinuAI();
 
@@ -438,61 +432,6 @@ const Viagens = () => {
     });
   };
 
-  const handleAcceptOffer = (offer: Offer) => {
-    toast({
-      title: "Oferta selecionada! 🎉",
-      description: `Fechou a reserva? Confirme para atualizar o FinOps.`,
-    });
-  };
-
-  const handleActivateAuction = (config: { targetPrice: number; waitDays: number }) => {
-    if (!selectedTrip || !auctionConfigModal) return;
-    const { activity, dayIndex, actIndex } = auctionConfigModal;
-
-    const newAuction = {
-      id: `auction-${Date.now()}`,
-      activityId: activity.id,
-      name: activity.name,
-      type: activity.type as 'flight' | 'hotel' | 'experience' | 'transport',
-      targetPrice: config.targetPrice,
-      currentBestPrice: null,
-      bestPriceDate: null,
-      bestPriceUrl: null,
-      kinutEstimate: activity.cost,
-      startedAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + config.waitDays * 24 * 60 * 60 * 1000).toISOString(),
-      maxWaitDays: config.waitDays,
-      status: 'watching' as const,
-      savings: 0,
-    };
-
-    const updatedTrip = { ...selectedTrip };
-    if (!(updatedTrip as any).auctions) {
-      (updatedTrip as any).auctions = [];
-    }
-    const auctions = (updatedTrip as any).auctions as any[];
-    const existingIndex = auctions.findIndex((a: any) => a.activityId === activity.id);
-    if (existingIndex >= 0) {
-      auctions[existingIndex] = newAuction;
-    } else {
-      auctions.push(newAuction);
-    }
-
-    if (updatedTrip.days[dayIndex]?.activities[actIndex]) {
-      updatedTrip.days[dayIndex].activities[actIndex].status = 'bidding';
-    }
-
-    setSelectedTrip(updatedTrip);
-    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
-
-    toast({
-      title: "Leilão ativado! 🎯",
-      description: `Monitorando "${activity.name}" por ${config.waitDays} dias. Preço alvo: R$ ${config.targetPrice.toLocaleString('pt-BR')}`,
-    });
-    setAuctionConfigModal(null);
-  };
 
   const handleAddManualExpense = () => {
     if (!selectedTrip || !manualExpense.name || manualExpense.amount <= 0) return;
@@ -1902,16 +1841,6 @@ const Viagens = () => {
                 />
               </div>
 
-              {/* Auctions / Offers */}
-              <div>
-                <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">🎯 Ofertas & Leilões</h3>
-                <AuctionList
-                  tripId={selectedTrip.id}
-                  activities={selectedTrip.days?.flatMap(d => d.activities) || []}
-                  auctions={(selectedTrip as any).auctions || []}
-                  onNavigateToItinerary={() => setActiveTab('roteiro')}
-                />
-              </div>
             </div>
           )}
 
@@ -2016,55 +1945,6 @@ const Viagens = () => {
           />
         )}
 
-        {/* Reverse Auction Modal */}
-        {auctionModal && (
-          <ReverseAuctionModal
-            isOpen={auctionModal.isOpen}
-            onClose={() => setAuctionModal(null)}
-            activityName={auctionModal.activityName}
-            activityType={auctionModal.activityType}
-            destination={selectedTrip.destination}
-            estimatedPrice={auctionModal.estimatedPrice}
-            tripStartDate={new Date(selectedTrip.startDate)}
-            tripEndDate={new Date(selectedTrip.endDate)}
-            cityName={selectedTrip.destination}
-            originCode={selectedTrip.originAirportCode || 'GRU'}
-            destinationCode={selectedTrip.destinationAirportCode || ''}
-            travelers={selectedTrip.travelers}
-            onAcceptOffer={handleAcceptOffer}
-            onStartMonitoring={(data) => {
-              setAuctionModal(null);
-              let foundDayIndex = 0;
-              let foundActIndex = 0;
-              selectedTrip?.days?.forEach((day, di) => {
-                day.activities?.forEach((act, ai) => {
-                  if (act.name === auctionModal?.activityName) {
-                    foundDayIndex = di;
-                    foundActIndex = ai;
-                  }
-                });
-              });
-              setAuctionConfigModal({
-                isOpen: true,
-                activity: selectedTrip?.days?.[foundDayIndex]?.activities?.[foundActIndex]
-                  ? { id: selectedTrip.days[foundDayIndex].activities[foundActIndex].id, name: auctionModal?.activityName || '', type: auctionModal?.activityType || 'activity', cost: data.targetPrice }
-                  : { id: 'tmp', name: auctionModal?.activityName || '', type: auctionModal?.activityType || 'activity', cost: data.targetPrice },
-                dayIndex: foundDayIndex,
-                actIndex: foundActIndex,
-              });
-            }}
-          />
-        )}
-
-        {/* Auction Config Modal — Leilão Reverso */}
-        {auctionConfigModal && (
-          <AuctionConfigModal
-            isOpen={auctionConfigModal.isOpen}
-            onClose={() => setAuctionConfigModal(null)}
-            activity={auctionConfigModal.activity}
-            onActivate={handleActivateAuction}
-          />
-        )}
 
         {/* Confirm Activity Modal */}
         <Dialog open={confirmModal?.isOpen || false} onOpenChange={() => setConfirmModal(null)}>
