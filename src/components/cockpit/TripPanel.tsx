@@ -96,7 +96,12 @@ function CurationSources({ trip }: { trip: SavedTrip }) {
 
 interface TripPanelProps {
   trip: SavedTrip;
-  onConfirm: (type: 'flight' | 'hotel', amount: number, flightDetails?: { outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } }) => void;
+  onConfirm: (
+    type: 'flight' | 'hotel',
+    amount: number,
+    flightDetails?: { outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } },
+    hotelDetails?: { name?: string }
+  ) => void;
   onUpdateTrip?: (updater: (t: any) => any) => void;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
   onNavigateTab: (tab: string, categoryFilter?: string) => void;
@@ -386,7 +391,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
   const [showFlexDates, setShowFlexDates] = useState(false);
   const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
-  const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string; outboundAirline: string; outboundFlightNumber: string; outboundTime: string; returnAirline: string; returnFlightNumber: string; returnTime: string } | null>(null);
+  const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string; hotelName: string; outboundAirline: string; outboundFlightNumber: string; outboundTime: string; returnAirline: string; returnFlightNumber: string; returnTime: string } | null>(null);
   const [editingBaggage, setEditingBaggage] = useState(false);
   const [editingSeat, setEditingSeat] = useState(false);
   const [baggageInput, setBaggageInput] = useState('');
@@ -402,6 +407,9 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
             outbound: { airline: confirmReservation.outboundAirline, flightNumber: confirmReservation.outboundFlightNumber, departureTime: confirmReservation.outboundTime },
             return: { airline: confirmReservation.returnAirline, flightNumber: confirmReservation.returnFlightNumber, departureTime: confirmReservation.returnTime },
           }
+        : undefined,
+      confirmReservation.type === 'hotel'
+        ? { name: confirmReservation.hotelName }
         : undefined
     );
     setConfirmReservation(null);
