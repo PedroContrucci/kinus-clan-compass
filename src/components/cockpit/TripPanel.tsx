@@ -829,7 +829,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
                 <span className="text-sm">💺</span>
                 <div className="flex-1 min-w-0">
                   {editingSeat ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <input
                         type="text"
                         value={seatInput}
@@ -846,6 +846,17 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
                       >
                         Salvar
                       </button>
+                      {seatDone && (
+                        <button
+                          onClick={() => {
+                            onUpdateTrip?.((t) => ({ ...t, flightExtras: { ...(t.flightExtras || {}), seatDone: false } }));
+                            setEditingSeat(false);
+                          }}
+                          className="px-2 py-1 rounded bg-transparent text-[10px] text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          Desmarcar
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-center justify-between gap-2">
