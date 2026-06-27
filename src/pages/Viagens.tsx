@@ -673,6 +673,9 @@ const Viagens = () => {
       if (hotelDetails?.name && updatedTrip.accommodation) {
         updatedTrip.accommodation.name = hotelDetails.name;
       }
+      if (hotelDetails?.mealPlan && updatedTrip.accommodation) {
+        updatedTrip.accommodation.mealPlan = hotelDetails.mealPlan;
+      }
       updatedTrip.finances.confirmed += amount;
       updatedTrip.finances.categories.accommodation.confirmed += amount;
     }
