@@ -932,6 +932,9 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
           <p className={`text-lg font-bold font-['Outfit'] ${hotelConfirmed ? 'text-emerald-400' : 'text-amber-400'}`}>
             {hotelConfirmed ? '✅ Confirmado' : `R$ ${fmt(trip.accommodation?.nightlyRate || 0)} / noite`}
           </p>
+          {trip.accommodation?.name && (
+            <p className="text-[11px] font-medium text-foreground mt-1">🏨 {trip.accommodation.name}</p>
+          )}
           {!hotelConfirmed && (
             <p className="text-xs text-muted-foreground mt-1">Fonte: estimativa por cidade</p>
           )}
