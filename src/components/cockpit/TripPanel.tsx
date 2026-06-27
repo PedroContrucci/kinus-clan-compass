@@ -100,7 +100,7 @@ interface TripPanelProps {
     type: 'flight' | 'hotel',
     amount: number,
     flightDetails?: { outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } },
-    hotelDetails?: { name?: string }
+    hotelDetails?: { name?: string; mealPlan?: string }
   ) => void;
   onUpdateTrip?: (updater: (t: any) => any) => void;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
