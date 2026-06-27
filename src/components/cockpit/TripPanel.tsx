@@ -1319,6 +1319,18 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
                 </div>
               </div>
             )}
+            {confirmReservation?.type === 'hotel' && (
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5">Hotel</label>
+                <input
+                  type="text"
+                  value={confirmReservation?.hotelName ?? ''}
+                  onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, hotelName: e.target.value } : prev)}
+                  placeholder="Nome do hotel"
+                  className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                />
+              </div>
+            )}
             <div>
               <label className="block text-xs text-muted-foreground mb-1.5">Valor pago (R$)</label>
               <input
