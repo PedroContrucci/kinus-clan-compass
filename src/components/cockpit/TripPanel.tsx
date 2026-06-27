@@ -671,6 +671,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
         type: 'flight',
         amount: '',
         link: '',
+        hotelName: '',
         outboundAirline: ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '',
         outboundFlightNumber: ((trip as any).outboundFlight?.option?.flightNumber !== '---' ? (trip as any).outboundFlight?.option?.flightNumber : '') || '',
         outboundTime: (trip as any).outboundFlight?.option?.departureTime || '',
@@ -679,7 +680,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
         returnTime: (trip as any).returnFlight?.option?.departureTime || '',
       });
     } else if (item.type === 'hotel') {
-      setConfirmReservation({ type: 'hotel', amount: '', link: '', outboundAirline: '', outboundFlightNumber: '', outboundTime: '', returnAirline: '', returnFlightNumber: '', returnTime: '' });
+      setConfirmReservation({ type: 'hotel', amount: '', link: '', hotelName: trip.accommodation?.name || '', outboundAirline: '', outboundFlightNumber: '', outboundTime: '', returnAirline: '', returnFlightNumber: '', returnTime: '' });
     } else if (item.type === 'activity' && item.activityName) {
       setOffersModal({ isOpen: true, activityName: item.activityName });
     }
@@ -1115,6 +1116,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
                     type,
                     amount: confirmed && paidValue ? String(Math.round(paidValue)) : '',
                     link: '',
+                    hotelName: type === 'hotel' ? trip.accommodation?.name || '' : '',
                     outboundAirline: type === 'flight' ? ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '' : '',
                     outboundFlightNumber: type === 'flight' ? ((trip as any).outboundFlight?.option?.flightNumber !== '---' ? (trip as any).outboundFlight?.option?.flightNumber : '') || '' : '',
                     outboundTime: type === 'flight' ? (trip as any).outboundFlight?.option?.departureTime || '' : '',
