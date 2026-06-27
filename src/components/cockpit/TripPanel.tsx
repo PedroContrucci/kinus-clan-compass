@@ -96,7 +96,7 @@ function CurationSources({ trip }: { trip: SavedTrip }) {
 
 interface TripPanelProps {
   trip: SavedTrip;
-  onConfirm: (type: 'flight' | 'hotel', amount: number, flightDetails?: { airline?: string; departureTime?: string; returnTime?: string }) => void;
+  onConfirm: (type: 'flight' | 'hotel', amount: number, flightDetails?: { outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } }) => void;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
   onNavigateTab: (tab: string, categoryFilter?: string) => void;
 }
@@ -384,7 +384,7 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
   const [showFlexDates, setShowFlexDates] = useState(false);
   const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
-  const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string; airline: string; departureTime: string; returnTime: string } | null>(null);
+  const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string; outboundAirline: string; outboundFlightNumber: string; outboundTime: string; returnAirline: string; returnFlightNumber: string; returnTime: string } | null>(null);
 
   const handleReservationConfirm = () => {
     if (!confirmReservation) return;
@@ -392,7 +392,10 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
       confirmReservation.type,
       parseFloat(confirmReservation.amount) || 0,
       confirmReservation.type === 'flight'
-        ? { airline: confirmReservation.airline, departureTime: confirmReservation.departureTime, returnTime: confirmReservation.returnTime }
+        ? {
+            outbound: { airline: confirmReservation.outboundAirline, flightNumber: confirmReservation.outboundFlightNumber, departureTime: confirmReservation.outboundTime },
+            return: { airline: confirmReservation.returnAirline, flightNumber: confirmReservation.returnFlightNumber, departureTime: confirmReservation.returnTime },
+          }
         : undefined
     );
     setConfirmReservation(null);
@@ -643,12 +646,15 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
         type: 'flight',
         amount: '',
         link: '',
-        airline: ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '',
-        departureTime: (trip as any).outboundFlight?.option?.departureTime || '',
+        outboundAirline: ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '',
+        outboundFlightNumber: ((trip as any).outboundFlight?.option?.flightNumber !== '---' ? (trip as any).outboundFlight?.option?.flightNumber : '') || '',
+        outboundTime: (trip as any).outboundFlight?.option?.departureTime || '',
+        returnAirline: ((trip as any).returnFlight?.option?.airline !== 'A confirmar' ? (trip as any).returnFlight?.option?.airline : '') || '',
+        returnFlightNumber: ((trip as any).returnFlight?.option?.flightNumber !== '---' ? (trip as any).returnFlight?.option?.flightNumber : '') || '',
         returnTime: (trip as any).returnFlight?.option?.departureTime || '',
       });
     } else if (item.type === 'hotel') {
-      setConfirmReservation({ type: 'hotel', amount: '', link: '', airline: '', departureTime: '', returnTime: '' });
+      setConfirmReservation({ type: 'hotel', amount: '', link: '', outboundAirline: '', outboundFlightNumber: '', outboundTime: '', returnAirline: '', returnFlightNumber: '', returnTime: '' });
     } else if (item.type === 'activity' && item.activityName) {
       setOffersModal({ isOpen: true, activityName: item.activityName });
     }
@@ -970,8 +976,11 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
                     type,
                     amount: confirmed && paidValue ? String(Math.round(paidValue)) : '',
                     link: '',
-                    airline: type === 'flight' ? ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '' : '',
-                    departureTime: type === 'flight' ? (trip as any).outboundFlight?.option?.departureTime || '' : '',
+                    outboundAirline: type === 'flight' ? ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '' : '',
+                    outboundFlightNumber: type === 'flight' ? ((trip as any).outboundFlight?.option?.flightNumber !== '---' ? (trip as any).outboundFlight?.option?.flightNumber : '') || '' : '',
+                    outboundTime: type === 'flight' ? (trip as any).outboundFlight?.option?.departureTime || '' : '',
+                    returnAirline: type === 'flight' ? ((trip as any).returnFlight?.option?.airline !== 'A confirmar' ? (trip as any).returnFlight?.option?.airline : '') || '' : '',
+                    returnFlightNumber: type === 'flight' ? ((trip as any).returnFlight?.option?.flightNumber !== '---' ? (trip as any).returnFlight?.option?.flightNumber : '') || '' : '',
                     returnTime: type === 'flight' ? (trip as any).returnFlight?.option?.departureTime || '' : '',
                   });
                 if (confirmed) {
