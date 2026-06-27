@@ -681,7 +681,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
         returnTime: (trip as any).returnFlight?.option?.departureTime || '',
       });
     } else if (item.type === 'hotel') {
-      setConfirmReservation({ type: 'hotel', amount: '', link: '', hotelName: trip.accommodation?.name || '', mealPlan: trip.accommodation?.mealPlan || 'Café da manhã', outboundAirline: '', outboundFlightNumber: '', outboundTime: '', returnAirline: '', returnFlightNumber: '', returnTime: '' });
+      setConfirmReservation({ type: 'hotel', amount: '', link: '', hotelName: trip.accommodation?.name || '', mealPlan: (trip.accommodation as any)?.mealPlan || 'Café da manhã', outboundAirline: '', outboundFlightNumber: '', outboundTime: '', returnAirline: '', returnFlightNumber: '', returnTime: '' });
     } else if (item.type === 'activity' && item.activityName) {
       setOffersModal({ isOpen: true, activityName: item.activityName });
     }
