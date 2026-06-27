@@ -96,7 +96,12 @@ function CurationSources({ trip }: { trip: SavedTrip }) {
 
 interface TripPanelProps {
   trip: SavedTrip;
-  onConfirm: (type: 'flight' | 'hotel', amount: number, flightDetails?: { outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } }) => void;
+  onConfirm: (
+    type: 'flight' | 'hotel',
+    amount: number,
+    flightDetails?: { outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } },
+    hotelDetails?: { name?: string }
+  ) => void;
   onUpdateTrip?: (updater: (t: any) => any) => void;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
   onNavigateTab: (tab: string, categoryFilter?: string) => void;
@@ -386,7 +391,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
   const [showFlexDates, setShowFlexDates] = useState(false);
   const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
-  const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string; outboundAirline: string; outboundFlightNumber: string; outboundTime: string; returnAirline: string; returnFlightNumber: string; returnTime: string } | null>(null);
+  const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string; hotelName: string; outboundAirline: string; outboundFlightNumber: string; outboundTime: string; returnAirline: string; returnFlightNumber: string; returnTime: string } | null>(null);
   const [editingBaggage, setEditingBaggage] = useState(false);
   const [editingSeat, setEditingSeat] = useState(false);
   const [baggageInput, setBaggageInput] = useState('');
@@ -402,6 +407,9 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
             outbound: { airline: confirmReservation.outboundAirline, flightNumber: confirmReservation.outboundFlightNumber, departureTime: confirmReservation.outboundTime },
             return: { airline: confirmReservation.returnAirline, flightNumber: confirmReservation.returnFlightNumber, departureTime: confirmReservation.returnTime },
           }
+        : undefined,
+      confirmReservation.type === 'hotel'
+        ? { name: confirmReservation.hotelName }
         : undefined
     );
     setConfirmReservation(null);
@@ -663,6 +671,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
         type: 'flight',
         amount: '',
         link: '',
+        hotelName: '',
         outboundAirline: ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '',
         outboundFlightNumber: ((trip as any).outboundFlight?.option?.flightNumber !== '---' ? (trip as any).outboundFlight?.option?.flightNumber : '') || '',
         outboundTime: (trip as any).outboundFlight?.option?.departureTime || '',
@@ -671,7 +680,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
         returnTime: (trip as any).returnFlight?.option?.departureTime || '',
       });
     } else if (item.type === 'hotel') {
-      setConfirmReservation({ type: 'hotel', amount: '', link: '', outboundAirline: '', outboundFlightNumber: '', outboundTime: '', returnAirline: '', returnFlightNumber: '', returnTime: '' });
+      setConfirmReservation({ type: 'hotel', amount: '', link: '', hotelName: trip.accommodation?.name || '', outboundAirline: '', outboundFlightNumber: '', outboundTime: '', returnAirline: '', returnFlightNumber: '', returnTime: '' });
     } else if (item.type === 'activity' && item.activityName) {
       setOffersModal({ isOpen: true, activityName: item.activityName });
     }
@@ -1107,6 +1116,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
                     type,
                     amount: confirmed && paidValue ? String(Math.round(paidValue)) : '',
                     link: '',
+                    hotelName: type === 'hotel' ? trip.accommodation?.name || '' : '',
                     outboundAirline: type === 'flight' ? ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '' : '',
                     outboundFlightNumber: type === 'flight' ? ((trip as any).outboundFlight?.option?.flightNumber !== '---' ? (trip as any).outboundFlight?.option?.flightNumber : '') || '' : '',
                     outboundTime: type === 'flight' ? (trip as any).outboundFlight?.option?.departureTime || '' : '',
@@ -1307,6 +1317,18 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
                     />
                   </div>
                 </div>
+              </div>
+            )}
+            {confirmReservation?.type === 'hotel' && (
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5">Hotel</label>
+                <input
+                  type="text"
+                  value={confirmReservation?.hotelName ?? ''}
+                  onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, hotelName: e.target.value } : prev)}
+                  placeholder="Nome do hotel"
+                  className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                />
               </div>
             )}
             <div>
