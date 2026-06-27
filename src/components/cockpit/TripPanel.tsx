@@ -942,6 +942,9 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
           <p className="text-[10px] text-muted-foreground mt-1">
             {trip.accommodation?.totalNights || '—'} noites · {trip.accommodation?.stars || 3}★
           </p>
+          {trip.accommodation?.mealPlan && (
+            <p className="text-[10px] text-emerald-400/90 mt-0.5">🍽️ {trip.accommodation.mealPlan}</p>
+          )}
           {!hotelConfirmed && (
             <div className="mt-3 grid grid-cols-2 gap-1.5">
               <button 
@@ -1325,15 +1328,36 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
               </div>
             )}
             {confirmReservation?.type === 'hotel' && (
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1.5">Hotel</label>
-                <input
-                  type="text"
-                  value={confirmReservation?.hotelName ?? ''}
-                  onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, hotelName: e.target.value } : prev)}
-                  placeholder="Nome do hotel"
-                  className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-                />
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1.5">Hotel</label>
+                  <input
+                    type="text"
+                    value={confirmReservation?.hotelName ?? ''}
+                    onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, hotelName: e.target.value } : prev)}
+                    placeholder="Nome do hotel"
+                    className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1.5">Regime</label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Sem refeições', 'Café da manhã', 'Meia pensão', 'Pensão completa'].map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setConfirmReservation((prev) => prev ? { ...prev, mealPlan: option } : prev)}
+                        className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors border ${
+                          confirmReservation?.mealPlan === option
+                            ? 'bg-emerald-500 text-emerald-950 border-emerald-500'
+                            : 'bg-background text-muted-foreground border-border hover:text-foreground hover:border-emerald-500/40'
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
             <div>
