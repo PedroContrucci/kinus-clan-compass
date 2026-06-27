@@ -747,12 +747,17 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           )}
           <p className="text-[10px] text-muted-foreground mt-1">
             {flightDuration} · {flightDirect ? 'Direto' : 'Com conexão'}
-            {flightAirline && (
-              <span className="block text-[10px] text-muted-foreground">
-                {flightAirline} · Saída {flightDepTime}
-              </span>
-            )}
           </p>
+          {(outboundAirlineDisp || outboundTimeDisp) && (
+            <p className="text-[10px] text-muted-foreground">
+              ✈️ Ida: {outboundAirlineDisp || ''}{outboundNumberDisp ? ` ${outboundNumberDisp}` : ''}{outboundTimeDisp ? ` · ${outboundTimeDisp}` : ''}
+            </p>
+          )}
+          {(returnAirlineDisp || returnTimeDisp) && (
+            <p className="text-[10px] text-muted-foreground">
+              🛬 Volta: {returnAirlineDisp || ''}{returnNumberDisp ? ` ${returnNumberDisp}` : ''}{returnTimeDisp ? ` · ${returnTimeDisp}` : ''}
+            </p>
+          )}
           {!flightConfirmed && (
             <div className="mt-3 space-y-1.5">
               <div className="grid grid-cols-2 gap-1.5">
