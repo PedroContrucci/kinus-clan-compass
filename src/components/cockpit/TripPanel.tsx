@@ -387,6 +387,10 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
   const [showFlexDates, setShowFlexDates] = useState(false);
   const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
   const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string; outboundAirline: string; outboundFlightNumber: string; outboundTime: string; returnAirline: string; returnFlightNumber: string; returnTime: string } | null>(null);
+  const [editingBaggage, setEditingBaggage] = useState(false);
+  const [editingSeat, setEditingSeat] = useState(false);
+  const [baggageInput, setBaggageInput] = useState('');
+  const [seatInput, setSeatInput] = useState('');
 
   const handleReservationConfirm = () => {
     if (!confirmReservation) return;
