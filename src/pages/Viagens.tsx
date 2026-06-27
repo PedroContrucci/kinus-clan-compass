@@ -692,6 +692,19 @@ const Viagens = () => {
     });
   };
 
+  const handleUpdateTrip = (updater: (t: any) => any) => {
+    if (!selectedTrip) return;
+
+    const updatedTrip = updater({ ...selectedTrip });
+
+    setSelectedTrip(updatedTrip);
+
+    const updatedTrips = trips.map(t => t.id === updatedTrip.id ? updatedTrip : t);
+    setTrips(updatedTrips);
+
+    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+  };
+
   // Handle draft cockpit actions
   const handleSaveDraft = (updatedTrip: any) => {
     const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
