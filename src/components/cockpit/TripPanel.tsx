@@ -1109,36 +1109,72 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           </DialogHeader>
           <div className="space-y-4">
             {confirmReservation?.type === 'flight' && (
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs text-muted-foreground mb-1.5">Companhia aérea</label>
-                  <input
-                    type="text"
-                    value={confirmReservation?.airline ?? ''}
-                    onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, airline: e.target.value } : prev)}
-                    placeholder="Azul"
-                    className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-                  />
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-foreground font-['Outfit']">✈️ Ida</p>
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1.5">Companhia</label>
+                    <input
+                      type="text"
+                      value={confirmReservation?.outboundAirline ?? ''}
+                      onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, outboundAirline: e.target.value } : prev)}
+                      placeholder="Azul"
+                      className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1.5">Número do voo</label>
+                    <input
+                      type="text"
+                      value={confirmReservation?.outboundFlightNumber ?? ''}
+                      onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, outboundFlightNumber: e.target.value } : prev)}
+                      placeholder="ex: LA3090"
+                      className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1.5">Horário</label>
+                    <input
+                      type="text"
+                      value={confirmReservation?.outboundTime ?? ''}
+                      onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, outboundTime: e.target.value } : prev)}
+                      placeholder="14:00"
+                      className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs text-muted-foreground mb-1.5">Horário de ida</label>
-                  <input
-                    type="text"
-                    value={confirmReservation?.departureTime ?? ''}
-                    onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, departureTime: e.target.value } : prev)}
-                    placeholder="14:00"
-                    className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-muted-foreground mb-1.5">Horário de volta</label>
-                  <input
-                    type="text"
-                    value={confirmReservation?.returnTime ?? ''}
-                    onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, returnTime: e.target.value } : prev)}
-                    placeholder="16:00"
-                    className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-                  />
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-foreground font-['Outfit']">🛬 Volta</p>
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1.5">Companhia</label>
+                    <input
+                      type="text"
+                      value={confirmReservation?.returnAirline ?? ''}
+                      onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, returnAirline: e.target.value } : prev)}
+                      placeholder="Azul"
+                      className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1.5">Número do voo</label>
+                    <input
+                      type="text"
+                      value={confirmReservation?.returnFlightNumber ?? ''}
+                      onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, returnFlightNumber: e.target.value } : prev)}
+                      placeholder="ex: LA3090"
+                      className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1.5">Horário</label>
+                    <input
+                      type="text"
+                      value={confirmReservation?.returnTime ?? ''}
+                      onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, returnTime: e.target.value } : prev)}
+                      placeholder="16:00"
+                      className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    />
+                  </div>
                 </div>
               </div>
             )}
