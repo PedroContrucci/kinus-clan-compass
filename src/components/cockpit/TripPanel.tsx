@@ -1121,6 +1121,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
                     amount: confirmed && paidValue ? String(Math.round(paidValue)) : '',
                     link: '',
                     hotelName: type === 'hotel' ? trip.accommodation?.name || '' : '',
+                    mealPlan: type === 'hotel' ? (trip.accommodation as any)?.mealPlan || 'Café da manhã' : '',
                     outboundAirline: type === 'flight' ? ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '' : '',
                     outboundFlightNumber: type === 'flight' ? ((trip as any).outboundFlight?.option?.flightNumber !== '---' ? (trip as any).outboundFlight?.option?.flightNumber : '') || '' : '',
                     outboundTime: type === 'flight' ? (trip as any).outboundFlight?.option?.departureTime || '' : '',
