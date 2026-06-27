@@ -672,6 +672,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
         amount: '',
         link: '',
         hotelName: '',
+        mealPlan: '',
         outboundAirline: ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '',
         outboundFlightNumber: ((trip as any).outboundFlight?.option?.flightNumber !== '---' ? (trip as any).outboundFlight?.option?.flightNumber : '') || '',
         outboundTime: (trip as any).outboundFlight?.option?.departureTime || '',
