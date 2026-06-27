@@ -97,9 +97,11 @@ function CurationSources({ trip }: { trip: SavedTrip }) {
 interface TripPanelProps {
   trip: SavedTrip;
   onConfirm: (type: 'flight' | 'hotel', amount: number, flightDetails?: { outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } }) => void;
+  onUpdateTrip?: (updater: (t: any) => any) => void;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
   onNavigateTab: (tab: string, categoryFilter?: string) => void;
 }
+
 
 function fmt(n: number) {
   return n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
@@ -374,7 +376,7 @@ function getTripCurrency(dest: string): string {
   return DEST_CURRENCY_MAP[n] || 'USD';
 }
 
-export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: TripPanelProps) => {
+export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavigateTab }: TripPanelProps) => {
   const [confirmModal, setConfirmModal] = useState<{ type: 'flight' | 'hotel'; isOpen: boolean } | null>(null);
   const [confirmAmount, setConfirmAmount] = useState('');
   const [showAllActions, setShowAllActions] = useState(false);
