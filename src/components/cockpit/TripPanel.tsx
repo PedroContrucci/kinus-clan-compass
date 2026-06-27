@@ -777,7 +777,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
                 <span className="text-sm">🧳</span>
                 <div className="flex-1 min-w-0">
                   {editingBaggage ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <input
                         type="text"
                         value={baggageInput}
@@ -794,6 +794,17 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
                       >
                         Salvar
                       </button>
+                      {baggageDone && (
+                        <button
+                          onClick={() => {
+                            onUpdateTrip?.((t) => ({ ...t, flightExtras: { ...(t.flightExtras || {}), baggageDone: false } }));
+                            setEditingBaggage(false);
+                          }}
+                          className="px-2 py-1 rounded bg-transparent text-[10px] text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          Desmarcar
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-center justify-between gap-2">
