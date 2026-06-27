@@ -629,7 +629,7 @@ const Viagens = () => {
   };
 
   // handleHeroConfirm — saves flight/hotel confirmation to localStorage
-  const handleHeroConfirm = (type: 'flight' | 'hotel', amount: number, flightDetails?: { airline?: string; departureTime?: string; returnTime?: string; outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } }) => {
+  const handleHeroConfirm = (type: 'flight' | 'hotel', amount: number, flightDetails?: { airline?: string; departureTime?: string; returnTime?: string; outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } }, hotelDetails?: { name?: string }) => {
     if (!selectedTrip) return;
     const updatedTrip = { ...selectedTrip };
 
@@ -670,9 +670,13 @@ const Viagens = () => {
         updatedTrip.accommodation.status = 'confirmed';
         updatedTrip.accommodation.totalPrice = amount;
       }
+      if (hotelDetails?.name && updatedTrip.accommodation) {
+        updatedTrip.accommodation.name = hotelDetails.name;
+      }
       updatedTrip.finances.confirmed += amount;
       updatedTrip.finances.categories.accommodation.confirmed += amount;
     }
+
 
     updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - amount);
     updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
