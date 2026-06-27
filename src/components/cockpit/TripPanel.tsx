@@ -97,9 +97,11 @@ function CurationSources({ trip }: { trip: SavedTrip }) {
 interface TripPanelProps {
   trip: SavedTrip;
   onConfirm: (type: 'flight' | 'hotel', amount: number, flightDetails?: { outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } }) => void;
+  onUpdateTrip?: (updater: (t: any) => any) => void;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
   onNavigateTab: (tab: string, categoryFilter?: string) => void;
 }
+
 
 function fmt(n: number) {
   return n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
