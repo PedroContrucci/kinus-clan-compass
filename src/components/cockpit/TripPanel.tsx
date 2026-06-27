@@ -409,7 +409,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
           }
         : undefined,
       confirmReservation.type === 'hotel'
-        ? { name: confirmReservation.hotelName }
+        ? { name: confirmReservation.hotelName, mealPlan: confirmReservation.mealPlan }
         : undefined
     );
     setConfirmReservation(null);
