@@ -467,6 +467,12 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
 
   const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
+
+  const baggageDone = (trip as any).flightExtras?.baggageDone || false;
+  const baggageDetail = (trip as any).flightExtras?.baggageDetail || '';
+  const seatDone = (trip as any).flightExtras?.seatDone || false;
+  const seatDetail = (trip as any).flightExtras?.seatDetail || '';
+
   const outboundPrice = (trip as any).outboundFlight?.option?.price;
   const returnPrice = (trip as any).returnFlight?.option?.price;
   const hasRealFlights = outboundPrice != null && returnPrice != null;
