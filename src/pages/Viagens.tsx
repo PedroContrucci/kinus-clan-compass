@@ -629,7 +629,7 @@ const Viagens = () => {
   };
 
   // handleHeroConfirm — saves flight/hotel confirmation to localStorage
-  const handleHeroConfirm = (type: 'flight' | 'hotel', amount: number, flightDetails?: { airline?: string; departureTime?: string; returnTime?: string }) => {
+  const handleHeroConfirm = (type: 'flight' | 'hotel', amount: number, flightDetails?: { airline?: string; departureTime?: string; returnTime?: string; outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } }) => {
     if (!selectedTrip) return;
     const updatedTrip = { ...selectedTrip };
 
@@ -644,13 +644,26 @@ const Viagens = () => {
       updatedTrip.finances.confirmed += amount;
       updatedTrip.finances.categories.flights.confirmed += amount;
 
-      if (flightDetails && (updatedTrip as any).outboundFlight?.option) {
-        const opt = (updatedTrip as any).outboundFlight.option;
-        if (flightDetails.airline) opt.airline = flightDetails.airline;
-        if (flightDetails.departureTime) opt.departureTime = flightDetails.departureTime;
+      const ob = (updatedTrip as any).outboundFlight?.option;
+      if (flightDetails?.outbound && ob) {
+        if (flightDetails.outbound.airline) ob.airline = flightDetails.outbound.airline;
+        if (flightDetails.outbound.flightNumber) (ob as any).flightNumber = flightDetails.outbound.flightNumber;
+        if (flightDetails.outbound.departureTime) ob.departureTime = flightDetails.outbound.departureTime;
       }
-      if (flightDetails?.returnTime && (updatedTrip as any).returnFlight?.option) {
-        (updatedTrip as any).returnFlight.option.departureTime = flightDetails.returnTime;
+      const rb = (updatedTrip as any).returnFlight?.option;
+      if (flightDetails?.return && rb) {
+        if (flightDetails.return.airline) rb.airline = flightDetails.return.airline;
+        if (flightDetails.return.flightNumber) (rb as any).flightNumber = flightDetails.return.flightNumber;
+        if (flightDetails.return.departureTime) rb.departureTime = flightDetails.return.departureTime;
+      }
+
+      // Backwards-compatible flat format from older TripPanel UI
+      if (flightDetails && ob && !flightDetails.outbound && !flightDetails.return) {
+        if (flightDetails.airline) ob.airline = flightDetails.airline;
+        if (flightDetails.departureTime) ob.departureTime = flightDetails.departureTime;
+      }
+      if (flightDetails?.returnTime && rb && !flightDetails.return) {
+        rb.departureTime = flightDetails.returnTime;
       }
     } else {
       if (updatedTrip.accommodation) {
