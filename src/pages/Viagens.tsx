@@ -629,7 +629,7 @@ const Viagens = () => {
   };
 
   // handleHeroConfirm — saves flight/hotel confirmation to localStorage
-  const handleHeroConfirm = (type: 'flight' | 'hotel', amount: number, flightDetails?: { outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } }) => {
+  const handleHeroConfirm = (type: 'flight' | 'hotel', amount: number, flightDetails?: { airline?: string; departureTime?: string; returnTime?: string; outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } }) => {
     if (!selectedTrip) return;
     const updatedTrip = { ...selectedTrip };
 
@@ -655,6 +655,15 @@ const Viagens = () => {
         if (flightDetails.return.airline) rb.airline = flightDetails.return.airline;
         if (flightDetails.return.flightNumber) (rb as any).flightNumber = flightDetails.return.flightNumber;
         if (flightDetails.return.departureTime) rb.departureTime = flightDetails.return.departureTime;
+      }
+
+      // Backwards-compatible flat format from older TripPanel UI
+      if (flightDetails && ob && !flightDetails.outbound && !flightDetails.return) {
+        if (flightDetails.airline) ob.airline = flightDetails.airline;
+        if (flightDetails.departureTime) ob.departureTime = flightDetails.departureTime;
+      }
+      if (flightDetails?.returnTime && rb && !flightDetails.return) {
+        rb.departureTime = flightDetails.returnTime;
       }
     } else {
       if (updatedTrip.accommodation) {
