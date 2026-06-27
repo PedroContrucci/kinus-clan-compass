@@ -376,7 +376,7 @@ function getTripCurrency(dest: string): string {
   return DEST_CURRENCY_MAP[n] || 'USD';
 }
 
-export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: TripPanelProps) => {
+export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavigateTab }: TripPanelProps) => {
   const [confirmModal, setConfirmModal] = useState<{ type: 'flight' | 'hotel'; isOpen: boolean } | null>(null);
   const [confirmAmount, setConfirmAmount] = useState('');
   const [showAllActions, setShowAllActions] = useState(false);
