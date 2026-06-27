@@ -470,10 +470,15 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
 
   // Resolve real selected flight for display
   const realFlight = (trip as any).outboundFlight?.option;
+  const returnFlightOpt = (trip as any).returnFlight?.option;
   const flightDuration = realFlight?.duration || trip.flights?.outbound?.duration || '—';
   const flightDirect = realFlight ? realFlight.isDirect : (trip.flights?.outbound?.stops === 0);
-  const flightAirline = realFlight?.airline && realFlight.airline !== 'A confirmar' ? realFlight.airline : null;
-  const flightDepTime = realFlight?.departureTime || trip.flights?.outbound?.departureTime;
+  const outboundAirlineDisp = realFlight?.airline && realFlight.airline !== 'A confirmar' ? realFlight.airline : null;
+  const outboundNumberDisp = realFlight?.flightNumber && realFlight.flightNumber !== '---' ? realFlight.flightNumber : null;
+  const outboundTimeDisp = realFlight?.departureTime || null;
+  const returnAirlineDisp = returnFlightOpt?.airline && returnFlightOpt.airline !== 'A confirmar' ? returnFlightOpt.airline : null;
+  const returnNumberDisp = returnFlightOpt?.flightNumber && returnFlightOpt.flightNumber !== '---' ? returnFlightOpt.flightNumber : null;
+  const returnTimeDisp = returnFlightOpt?.departureTime || null;
 
   const priceChange = useMemo(() => {
     if (flightConfirmed) return null;
@@ -742,12 +747,17 @@ export const TripPanel = ({ trip, onConfirm, onOpenAuction, onNavigateTab }: Tri
           )}
           <p className="text-[10px] text-muted-foreground mt-1">
             {flightDuration} · {flightDirect ? 'Direto' : 'Com conexão'}
-            {flightAirline && (
-              <span className="block text-[10px] text-muted-foreground">
-                {flightAirline} · Saída {flightDepTime}
-              </span>
-            )}
           </p>
+          {(outboundAirlineDisp || outboundTimeDisp) && (
+            <p className="text-[10px] text-muted-foreground">
+              ✈️ Ida: {outboundAirlineDisp || ''}{outboundNumberDisp ? ` ${outboundNumberDisp}` : ''}{outboundTimeDisp ? ` · ${outboundTimeDisp}` : ''}
+            </p>
+          )}
+          {(returnAirlineDisp || returnTimeDisp) && (
+            <p className="text-[10px] text-muted-foreground">
+              🛬 Volta: {returnAirlineDisp || ''}{returnNumberDisp ? ` ${returnNumberDisp}` : ''}{returnTimeDisp ? ` · ${returnTimeDisp}` : ''}
+            </p>
+          )}
           {!flightConfirmed && (
             <div className="mt-3 space-y-1.5">
               <div className="grid grid-cols-2 gap-1.5">
