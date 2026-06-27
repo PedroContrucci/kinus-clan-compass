@@ -387,6 +387,10 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
   const [showFlexDates, setShowFlexDates] = useState(false);
   const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
   const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string; outboundAirline: string; outboundFlightNumber: string; outboundTime: string; returnAirline: string; returnFlightNumber: string; returnTime: string } | null>(null);
+  const [editingBaggage, setEditingBaggage] = useState(false);
+  const [editingSeat, setEditingSeat] = useState(false);
+  const [baggageInput, setBaggageInput] = useState('');
+  const [seatInput, setSeatInput] = useState('');
 
   const handleReservationConfirm = () => {
     if (!confirmReservation) return;
@@ -463,6 +467,12 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
 
   const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
+
+  const baggageDone = (trip as any).flightExtras?.baggageDone || false;
+  const baggageDetail = (trip as any).flightExtras?.baggageDetail || '';
+  const seatDone = (trip as any).flightExtras?.seatDone || false;
+  const seatDetail = (trip as any).flightExtras?.seatDetail || '';
+
   const outboundPrice = (trip as any).outboundFlight?.option?.price;
   const returnPrice = (trip as any).returnFlight?.option?.price;
   const hasRealFlights = outboundPrice != null && returnPrice != null;
@@ -760,6 +770,115 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
               🛬 Volta: {returnAirlineDisp || ''}{returnNumberDisp ? ` ${returnNumberDisp}` : ''}{returnTimeDisp ? ` · ${returnTimeDisp}` : ''}
             </p>
           )}
+          {flightConfirmed && (
+            <div className="mt-3 space-y-2 border-t border-border/50 pt-3">
+              {/* Bagagem */}
+              <div className="flex items-start gap-2">
+                <span className="text-sm">🧳</span>
+                <div className="flex-1 min-w-0">
+                  {editingBaggage ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        type="text"
+                        value={baggageInput}
+                        onChange={(e) => setBaggageInput(e.target.value)}
+                        placeholder="ex: 2 despachadas"
+                        className="flex-1 min-w-0 px-2 py-1 bg-background border border-border rounded text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                      <button
+                        onClick={() => {
+                          onUpdateTrip?.((t) => ({ ...t, flightExtras: { ...(t.flightExtras || {}), baggageDone: true, baggageDetail: baggageInput } }));
+                          setEditingBaggage(false);
+                        }}
+                        className="px-2 py-1 rounded bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors"
+                      >
+                        Salvar
+                      </button>
+                      {baggageDone && (
+                        <button
+                          onClick={() => {
+                            onUpdateTrip?.((t) => ({ ...t, flightExtras: { ...(t.flightExtras || {}), baggageDone: false } }));
+                            setEditingBaggage(false);
+                          }}
+                          className="px-2 py-1 rounded bg-transparent text-[10px] text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          Desmarcar
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-muted-foreground">
+                        {baggageDone ? `✅ Bagagem: ${baggageDetail || 'ok'}` : '🧳 Bagagem pendente'}
+                      </p>
+                      <button
+                        onClick={() => {
+                          setBaggageInput(baggageDone ? baggageDetail : '');
+                          setEditingBaggage(true);
+                        }}
+                        className="text-[10px] text-emerald-400 hover:text-emerald-300 font-medium"
+                      >
+                        {baggageDone ? 'editar' : 'Marcar'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* Assento */}
+              <div className="flex items-start gap-2">
+                <span className="text-sm">💺</span>
+                <div className="flex-1 min-w-0">
+                  {editingSeat ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        type="text"
+                        value={seatInput}
+                        onChange={(e) => setSeatInput(e.target.value)}
+                        placeholder="ex: 12A, 12B"
+                        className="flex-1 min-w-0 px-2 py-1 bg-background border border-border rounded text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                      <button
+                        onClick={() => {
+                          onUpdateTrip?.((t) => ({ ...t, flightExtras: { ...(t.flightExtras || {}), seatDone: true, seatDetail: seatInput } }));
+                          setEditingSeat(false);
+                        }}
+                        className="px-2 py-1 rounded bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors"
+                      >
+                        Salvar
+                      </button>
+                      {seatDone && (
+                        <button
+                          onClick={() => {
+                            onUpdateTrip?.((t) => ({ ...t, flightExtras: { ...(t.flightExtras || {}), seatDone: false } }));
+                            setEditingSeat(false);
+                          }}
+                          className="px-2 py-1 rounded bg-transparent text-[10px] text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          Desmarcar
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-muted-foreground">
+                        {seatDone ? `✅ Assento: ${seatDetail || 'ok'}` : '💺 Assento pendente'}
+                      </p>
+                      <button
+                        onClick={() => {
+                          setSeatInput(seatDone ? seatDetail : '');
+                          setEditingSeat(true);
+                        }}
+                        className="text-[10px] text-emerald-400 hover:text-emerald-300 font-medium"
+                      >
+                        {seatDone ? 'editar' : 'Marcar'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {!flightConfirmed && (
             <div className="mt-3 space-y-1.5">
               <div className="grid grid-cols-2 gap-1.5">
