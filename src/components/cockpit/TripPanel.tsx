@@ -942,8 +942,8 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
           <p className="text-[10px] text-muted-foreground mt-1">
             {trip.accommodation?.totalNights || '—'} noites · {trip.accommodation?.stars || 3}★
           </p>
-          {trip.accommodation?.mealPlan && (
-            <p className="text-[10px] text-emerald-400/90 mt-0.5">🍽️ {trip.accommodation.mealPlan}</p>
+          {((trip.accommodation as any)?.mealPlan) && (
+            <p className="text-[10px] text-emerald-400/90 mt-0.5">🍽️ {(trip.accommodation as any).mealPlan}</p>
           )}
           {!hotelConfirmed && (
             <div className="mt-3 grid grid-cols-2 gap-1.5">
