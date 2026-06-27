@@ -601,28 +601,37 @@ function generateItinerary(
       
       // 🏛️ MORNING ACTIVITY (10:00)
       const morningActivity = pickActivity('morning', dayTheme.title);
+      const morningIsFullDay = !!morningActivity && (morningActivity.durationHours ?? 0) >= 5;
+      let afternoonIsFullDay = false;
+
       if (morningActivity) {
         const act = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers);
         activities.push(act);
         dayTotal += act.estimatedCost;
       }
-      
-      // 🍽️ LUNCH (13:00)
-      const lunchActivity = pickActivity('lunch', dayTheme.title);
-      if (lunchActivity) {
-        const act = convertToItineraryActivity(lunchActivity, i, 'lunch', '13:00', travelers);
-        activities.push(act);
-        dayTotal += act.estimatedCost;
+
+      // 🍽️ LUNCH (13:00) — skip if morning is full-day
+      if (!morningIsFullDay) {
+        const lunchActivity = pickActivity('lunch', dayTheme.title);
+        if (lunchActivity) {
+          const act = convertToItineraryActivity(lunchActivity, i, 'lunch', '13:00', travelers);
+          activities.push(act);
+          dayTotal += act.estimatedCost;
+        }
       }
-      
-      // 🚶 AFTERNOON ACTIVITY (15:00)
-      const afternoonActivity = pickActivity('afternoon', dayTheme.title);
-      if (afternoonActivity) {
-        const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00', travelers);
-        activities.push(act);
-        dayTotal += act.estimatedCost;
+
+      // 🚶 AFTERNOON ACTIVITY (15:00) — skip if morning is full-day
+      if (!morningIsFullDay) {
+        const afternoonActivity = pickActivity('afternoon', dayTheme.title);
+        if (afternoonActivity) {
+          afternoonIsFullDay = (afternoonActivity.durationHours ?? 0) >= 5;
+          const startTime = afternoonIsFullDay ? '14:00' : '15:00';
+          const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', startTime, travelers);
+          activities.push(act);
+          dayTotal += act.estimatedCost;
+        }
       }
-      
+
       // 🍷 DINNER (19:30) — Michelin injection for gastronomy days
       const isGastroDay = dayTheme.title.toLowerCase().includes('gastron');
       const wantsGastronomy = travelInterests.some(ti => ti.toLowerCase().includes('gastronom'));
@@ -661,13 +670,15 @@ function generateItinerary(
         dayTotal += act.estimatedCost;
       }
       
-      // 🌙 NIGHT ACTIVITY - Optional (21:30)
-      const nightActivity = pickActivity('night', dayTheme.title);
-      if (nightActivity) {
-        const act = convertToItineraryActivity(nightActivity, i, 'night', '21:30', travelers);
-        act.tips = ['(Opcional)', ...(act.tips || [])];
-        activities.push(act);
-        dayTotal += act.estimatedCost;
+      // 🌙 NIGHT ACTIVITY - Optional (21:30) — skip if any full-day activity consumed the day
+      if (!morningIsFullDay && !afternoonIsFullDay) {
+        const nightActivity = pickActivity('night', dayTheme.title);
+        if (nightActivity) {
+          const act = convertToItineraryActivity(nightActivity, i, 'night', '21:30', travelers);
+          act.tips = ['(Opcional)', ...(act.tips || [])];
+          activities.push(act);
+          dayTotal += act.estimatedCost;
+        }
       }
     }
 
