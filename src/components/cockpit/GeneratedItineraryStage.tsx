@@ -599,10 +599,10 @@ function generateItinerary(
         });
       }
       
-      // 🏛️ MORNING ACTIVITY (10:00)
+      // 🏛️ MORNING ACTIVITY (10:00) — decide day shape based on occupancy
       const morningActivity = pickActivity('morning', dayTheme.title);
-      const morningIsFullDay = !!morningActivity && (morningActivity.durationHours ?? 0) >= 5;
-      let afternoonIsFullDay = false;
+      const morningOccupancy = morningActivity?.dayOccupancy;
+      let afternoonOccupancy: 'full' | 'half' | undefined;
 
       if (morningActivity) {
         const act = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers);
@@ -610,22 +610,30 @@ function generateItinerary(
         dayTotal += act.estimatedCost;
       }
 
-      // 🍽️ LUNCH (13:00) — skip if morning is full-day
-      if (!morningIsFullDay) {
+      if (morningOccupancy === 'full') {
+        // CASE A: full-day morning activity consumes the day
+        // breakfast + full-day activity + dinner (no lunch, no afternoon, no night)
+      } else if (morningOccupancy === 'half') {
+        // CASE B: half-day morning activity + lunch + dinner (no afternoon, no night)
         const lunchActivity = pickActivity('lunch', dayTheme.title);
         if (lunchActivity) {
           const act = convertToItineraryActivity(lunchActivity, i, 'lunch', '13:00', travelers);
           activities.push(act);
           dayTotal += act.estimatedCost;
         }
-      }
+      } else {
+        // CASE C: normal morning activity + lunch + afternoon + dinner + optional night
+        const lunchActivity = pickActivity('lunch', dayTheme.title);
+        if (lunchActivity) {
+          const act = convertToItineraryActivity(lunchActivity, i, 'lunch', '13:00', travelers);
+          activities.push(act);
+          dayTotal += act.estimatedCost;
+        }
 
-      // 🚶 AFTERNOON ACTIVITY (15:00) — skip if morning is full-day
-      if (!morningIsFullDay) {
         const afternoonActivity = pickActivity('afternoon', dayTheme.title);
         if (afternoonActivity) {
-          afternoonIsFullDay = (afternoonActivity.durationHours ?? 0) >= 5;
-          const startTime = afternoonIsFullDay ? '14:00' : '15:00';
+          afternoonOccupancy = afternoonActivity.dayOccupancy;
+          const startTime = afternoonOccupancy === 'full' ? '14:00' : '15:00';
           const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', startTime, travelers);
           activities.push(act);
           dayTotal += act.estimatedCost;
@@ -670,8 +678,8 @@ function generateItinerary(
         dayTotal += act.estimatedCost;
       }
       
-      // 🌙 NIGHT ACTIVITY - Optional (21:30) — skip if any full-day activity consumed the day
-      if (!morningIsFullDay && !afternoonIsFullDay) {
+      // 🌙 NIGHT ACTIVITY - Optional (21:30) — skip if any full/half-day activity consumed the day
+      if (morningOccupancy !== 'full' && morningOccupancy !== 'half' && afternoonOccupancy !== 'full' && afternoonOccupancy !== 'half') {
         const nightActivity = pickActivity('night', dayTheme.title);
         if (nightActivity) {
           const act = convertToItineraryActivity(nightActivity, i, 'night', '21:30', travelers);
