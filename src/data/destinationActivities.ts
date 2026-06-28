@@ -1056,6 +1056,7 @@ const fortalezaActivities: SuggestedActivity[] = [
     tips: ['Melhor praia urbana para entrar no mar', 'Barracas estruturadas com piscina para o dia todo', 'Quinta à noite é a tradicional caranguejada'],
     styleTags: ['beach', 'relaxation', 'family'],
     bestTime: 'Manhã para pegar mar calmo',
+    dayOccupancy: 'half',
   },
   {
     id: 'for-parque-coco',
@@ -1089,6 +1090,7 @@ const fortalezaActivities: SuggestedActivity[] = [
     durationHours: 4,
     tips: ['Dunas, lagoas e kitesurf', 'Passeio de buggy pelas dunas até a Lagoa do Banana', 'Bate-volta clássico de Fortaleza'],
     styleTags: ['beach', 'adventure', 'family'],
+    dayOccupancy: 'full',
   },
   {
     id: 'for-mercado-peixes',
@@ -1166,6 +1168,7 @@ const fortalezaActivities: SuggestedActivity[] = [
     durationHours: 5,
     tips: ['Maior parque aquático da América Latina', 'Obrigatório se for com crianças', 'Compre ingresso antecipado para evitar fila'],
     styleTags: ['family', 'adventure'],
+    dayOccupancy: 'full',
   },
   {
     id: 'for-taiba',
@@ -1177,6 +1180,7 @@ const fortalezaActivities: SuggestedActivity[] = [
     durationHours: 5,
     tips: ['Vila pacata com trechos quase desertos', 'Encontro do rio com o mar formando lagoa (Barramar)', 'Sossego de verdade, fora do circuito turístico'],
     styleTags: ['beach', 'relaxation', 'nature'],
+    dayOccupancy: 'full',
   },
   {
     id: 'for-aguas-belas',
@@ -1188,6 +1192,7 @@ const fortalezaActivities: SuggestedActivity[] = [
     durationHours: 4,
     tips: ['Encontro do Rio Mal Cozinhado com o mar', 'Dá para escolher banho de água doce ou salgada', 'Menos badalada que Morro Branco e Canoa'],
     styleTags: ['beach', 'nature'],
+    dayOccupancy: 'full',
   },
   {
     id: 'for-carneiro-ordones',
