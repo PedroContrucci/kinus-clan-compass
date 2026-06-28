@@ -12,6 +12,7 @@ export interface SuggestedActivity {
   tips: string[];
   styleTags: string[];
   bestTime?: string;
+  dayOccupancy?: 'full' | 'half';
 }
 
 export interface DestinationData {
