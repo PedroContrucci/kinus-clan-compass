@@ -736,7 +736,90 @@ const Viagens = () => {
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
     setSelectedTrip(normalizedTrip);
   };
-  
+
+  // DEBUG: temporary export of selected trip itinerary as a .txt file
+  const handleExportDebug = () => {
+    if (!selectedTrip) return;
+
+    const lines: string[] = [];
+    lines.push('KINU — DEBUG ROTEIRO');
+    lines.push('====================');
+    lines.push('');
+    lines.push(`Destino: ${selectedTrip.emoji} ${selectedTrip.destination}, ${selectedTrip.country}`);
+    lines.push(`Datas: ${selectedTrip.startDate ? format(new Date(selectedTrip.startDate), 'dd/MM/yyyy', { locale: ptBR }) : '?'} - ${selectedTrip.endDate ? format(new Date(selectedTrip.endDate), 'dd/MM/yyyy', { locale: ptBR }) : '?'}`);
+    lines.push(`Viajantes: ${selectedTrip.travelers}`);
+    lines.push(`Orçamento: R$ ${selectedTrip.budget.toLocaleString('pt-BR')}`);
+    lines.push(`Nível de preço: ${selectedTrip.budgetType}`);
+    lines.push(`Interesses: ${((selectedTrip as any).travelInterests || []).join(', ') || '-'}`);
+    lines.push('');
+
+    lines.push('VOO');
+    lines.push('---');
+    const obFlight = (selectedTrip as any).outboundFlight?.option || selectedTrip.flights?.outbound;
+    if (obFlight) {
+      lines.push(`Rota: ${selectedTrip.origin || 'Brasil'} → ${selectedTrip.destination}`);
+      lines.push(`Companhia: ${obFlight.airline || '-'}`);
+      lines.push(`Voo: ${obFlight.flightNumber || '-'}`);
+      lines.push(`Direto: ${obFlight.isDirect ? 'Sim' : 'Não'}`);
+      lines.push(`Duração: ${obFlight.duration || '-'}`);
+      lines.push(`Horário: ${obFlight.departureTime || '-'}`);
+      lines.push(`Status: ${selectedTrip.flights?.outbound?.status || '-'}`);
+    } else {
+      lines.push('Nenhum voo selecionado.');
+    }
+    lines.push('');
+
+    lines.push('HOTEL');
+    lines.push('-----');
+    const hotel = selectedTrip.accommodation;
+    if (hotel) {
+      lines.push(`Nome: ${hotel.name || '-'}`);
+      lines.push(`Bairro: ${hotel.neighborhood || '-'}`);
+      lines.push(`Noites: ${hotel.totalNights || 0}`);
+      lines.push(`Regime: ${(hotel as any).mealPlan || '-'}`);
+      lines.push(`Status: ${hotel.status || '-'}`);
+    } else {
+      lines.push('Nenhum hotel selecionado.');
+    }
+    lines.push('');
+
+    const pool = getDestinationActivities(selectedTrip.destination);
+    lines.push(`DIAS (${selectedTrip.days?.length || 0})`);
+    lines.push('==================');
+
+    selectedTrip.days?.forEach((day) => {
+      const dayTotal = day.activities.reduce((sum, a) => sum + (a.cost || 0), 0);
+      lines.push('');
+      lines.push(`DIA ${day.day} — ${day.date ? format(new Date(day.date), 'dd/MM/yyyy', { locale: ptBR }) : 'sem data'} — ${day.title} ${day.icon || ''}`);
+      lines.push(`Custo total do dia: R$ ${dayTotal.toLocaleString('pt-BR')}`);
+      lines.push('Atividades:');
+
+      if (day.activities.length === 0) {
+        lines.push('  (sem atividades)');
+      } else {
+        day.activities.forEach((activity) => {
+          const poolActivity = pool.find((p: any) => p.id === activity.id);
+          const dayOccupancy = (activity as any).dayOccupancy || (poolActivity as any)?.dayOccupancy;
+          const occupancyPart = dayOccupancy ? ` | dayOccupancy: ${dayOccupancy}` : '';
+          const cost = typeof activity.cost === 'number' ? activity.cost : 0;
+          lines.push(`  ${activity.time} — ${activity.name} (${activity.type || activity.category || 'passeio'})${occupancyPart} | R$ ${cost.toLocaleString('pt-BR')} | ${activity.status}`);
+        });
+      }
+    });
+
+    lines.push('');
+    lines.push('FIM DO ROTEIRO');
+
+    const text = lines.join('\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `roteiro-${selectedTrip.destination}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Generate basic days for a trip - WITH CORRECT DAY LOGIC AND REALISTIC PRICES
   // Day 1 = DEPARTURE (user is in transit, NO local activities)
   // Day 2 = ARRIVAL (user arrives, check-in, light activities)
@@ -1207,6 +1290,13 @@ const Viagens = () => {
                 {selectedTrip.startDate && format(new Date(selectedTrip.startDate), "dd MMM", { locale: ptBR })} - {selectedTrip.endDate && format(new Date(selectedTrip.endDate), "dd MMM yyyy", { locale: ptBR })} • R$ {selectedTrip.budget.toLocaleString()}
               </p>
             </div>
+            <button
+              onClick={handleExportDebug}
+              className="flex-shrink-0 text-[11px] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1e293b] border border-[#334155] text-[#94a3b8] hover:text-[#f8fafc] hover:border-[#10b981]/50 transition-colors"
+              title="Exportar roteiro para debug"
+            >
+              📄 Exportar Roteiro (debug)
+            </button>
           </div>
 
           {/* Tabs */}
