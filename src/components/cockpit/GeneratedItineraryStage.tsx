@@ -630,11 +630,16 @@ function generateItinerary(
           dayTotal += act.estimatedCost;
         }
 
-        const afternoonActivity = pickActivity('afternoon', dayTheme.title);
-        if (afternoonActivity) {
+        let afternoonActivity = pickActivity('afternoon', dayTheme.title);
+        if (afternoonActivity && (afternoonActivity.dayOccupancy === 'full' || afternoonActivity.dayOccupancy === 'half')) {
+          // Full/half-day activities must anchor the day from the morning, not the afternoon.
+          // Draw one more time for a normal afternoon activity; the original drawn id is already
+          // marked as used so it won't be repeated this day.
+          afternoonActivity = pickActivity('afternoon', dayTheme.title);
+        }
+        if (afternoonActivity && afternoonActivity.dayOccupancy !== 'full' && afternoonActivity.dayOccupancy !== 'half') {
           afternoonOccupancy = afternoonActivity.dayOccupancy;
-          const startTime = afternoonOccupancy === 'full' ? '14:00' : '15:00';
-          const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', startTime, travelers);
+          const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00', travelers);
           activities.push(act);
           dayTotal += act.estimatedCost;
         }
