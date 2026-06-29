@@ -1290,6 +1290,13 @@ const Viagens = () => {
                 {selectedTrip.startDate && format(new Date(selectedTrip.startDate), "dd MMM", { locale: ptBR })} - {selectedTrip.endDate && format(new Date(selectedTrip.endDate), "dd MMM yyyy", { locale: ptBR })} • R$ {selectedTrip.budget.toLocaleString()}
               </p>
             </div>
+            <button
+              onClick={handleExportDebug}
+              className="flex-shrink-0 text-[11px] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1e293b] border border-[#334155] text-[#94a3b8] hover:text-[#f8fafc] hover:border-[#10b981]/50 transition-colors"
+              title="Exportar roteiro para debug"
+            >
+              📄 Exportar Roteiro (debug)
+            </button>
           </div>
 
           {/* Tabs */}
