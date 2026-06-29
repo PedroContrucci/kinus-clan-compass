@@ -683,8 +683,13 @@ function generateItinerary(
         dayTotal += act.estimatedCost;
       }
       
-      // 🌙 NIGHT ACTIVITY - Optional (21:30) — skip if any full/half-day activity consumed the day
-      if (morningOccupancy !== 'full' && morningOccupancy !== 'half' && afternoonOccupancy !== 'full' && afternoonOccupancy !== 'half') {
+      // 🌙 NIGHT ACTIVITY - Optional (21:30) — only on nightlife-themed days, when the user
+      // explicitly likes nightlife, or roughly every 3rd exploration day to keep daily density realistic
+      const isNightlifeDay = /noturna|noite|nightlife/i.test(dayTheme.title);
+      const wantsNightlife = travelInterests.some(ti => /noturna|noite|nightlife/i.test(ti));
+      const shouldAddNightActivity = isNightlifeDay || wantsNightlife || explorationDay % 3 === 0;
+      
+      if (shouldAddNightActivity && morningOccupancy !== 'full' && morningOccupancy !== 'half' && afternoonOccupancy !== 'full' && afternoonOccupancy !== 'half') {
         const nightActivity = pickActivity('night', dayTheme.title);
         if (nightActivity) {
           const act = convertToItineraryActivity(nightActivity, i, 'night', '21:30', travelers);
