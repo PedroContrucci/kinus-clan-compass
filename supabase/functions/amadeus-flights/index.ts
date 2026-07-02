@@ -195,7 +195,7 @@ async function searchFlights(
     const firstSegment = segments[0];
     const lastSegment = segments[segments.length - 1];
     
-    const carrierCode = firstSegment.carrierCode;
+    const carrierCode = firstSegment.operating?.carrierCode || firstSegment.carrierCode;
     const isDirect = segments.length === 1;
     
     // Get connection cities for multi-segment flights
