@@ -238,7 +238,7 @@ async function searchFlights(
       segments: segments.map((seg: any) => ({
         departure: { iataCode: seg.departure.iataCode, at: seg.departure.at },
         arrival: { iataCode: seg.arrival.iataCode, at: seg.arrival.at },
-        carrierCode: seg.carrierCode,
+        carrierCode: seg.operating?.carrierCode || seg.carrierCode,
         duration: seg.duration,
       })),
     });
