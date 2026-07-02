@@ -195,7 +195,7 @@ async function searchFlights(
     const firstSegment = segments[0];
     const lastSegment = segments[segments.length - 1];
     
-    const carrierCode = firstSegment.carrierCode;
+    const carrierCode = firstSegment.operating?.carrierCode || firstSegment.carrierCode;
     const isDirect = segments.length === 1;
     
     // Get connection cities for multi-segment flights
@@ -238,7 +238,7 @@ async function searchFlights(
       segments: segments.map((seg: any) => ({
         departure: { iataCode: seg.departure.iataCode, at: seg.departure.at },
         arrival: { iataCode: seg.arrival.iataCode, at: seg.arrival.at },
-        carrierCode: seg.carrierCode,
+        carrierCode: seg.operating?.carrierCode || seg.carrierCode,
         duration: seg.duration,
       })),
     });
