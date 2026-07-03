@@ -570,7 +570,17 @@ function generateItinerary(
         source: 'kinu',
       });
       dayTotal += returnCost;
+
+      // Sort this day's activities by time
+      activities.sort((a, b) => {
+        const [ha, ma] = (a.time || '').split(':').map(Number);
+        const [hb, mb] = (b.time || '').split(':').map(Number);
+        const minA = (ha || 0) * 60 + (ma || 0);
+        const minB = (hb || 0) * 60 + (mb || 0);
+        return minA - minB;
+      });
     }
+
     // Middle days: Full exploration with 5-6 activities
     else {
       const explorationDay = i - explorationStart;
