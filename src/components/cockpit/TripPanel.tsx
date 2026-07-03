@@ -472,6 +472,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
 
   const confirmedPct = trip.finances.total > 0 ? Math.round((trip.finances.confirmed / trip.finances.total) * 100) : 0;
   const plannedPct = trip.finances.total > 0 ? Math.min(100 - confirmedPct, Math.round((trip.finances.planned / trip.finances.total) * 100)) : 0;
+  const overflow = (trip.finances.planned + trip.finances.confirmed) - trip.finances.total;
 
   const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
@@ -1621,6 +1622,21 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
           </div>
         )}
       </div>
+
+      {/* Budget overflow warning */}
+      {overflow > 0 && (
+        <div className="bg-[#eab308]/10 border border-[#eab308]/30 rounded-xl p-3 flex items-start gap-2.5">
+          <span className="text-[#eab308] text-sm leading-5">⚠️</span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-[#eab308]">
+              Plano excede o orçamento em R$ {fmt(overflow)}
+            </p>
+            <p className="text-xs text-[#eab308]/80 mt-0.5">
+              Revise os custos na aba Financeiro ou ajuste o orçamento da viagem.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 4. Actions Bar: Share + Export PDF */}
       <div className="flex gap-2">
