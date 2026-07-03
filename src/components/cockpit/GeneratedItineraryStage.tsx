@@ -705,7 +705,7 @@ function generateItinerary(
       // explicitly likes nightlife, or roughly every 3rd exploration day to keep daily density realistic
       const isNightlifeDay = /noturna|noite|nightlife/i.test(dayTheme.title);
       const wantsNightlife = travelInterests.some(ti => /noturna|noite|nightlife/i.test(ti));
-      const shouldAddNightActivity = isNightlifeDay || wantsNightlife || explorationDay % 3 === 0;
+      const shouldAddNightActivity = isNightlifeDay || wantsNightlife;
       
       if (shouldAddNightActivity && morningOccupancy !== 'full' && morningOccupancy !== 'half' && afternoonOccupancy !== 'full' && afternoonOccupancy !== 'half') {
         const nightActivity = pickActivity('night', dayTheme.title);
