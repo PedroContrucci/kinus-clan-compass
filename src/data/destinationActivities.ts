@@ -1270,6 +1270,17 @@ const fortalezaActivities: SuggestedActivity[] = [
     styleTags: ['beach', 'romantic', 'family'],
   },
   {
+    id: 'for-feirinha-beira-mar',
+    name: 'Feirinha da Beira-Mar',
+    category: 'afternoon',
+    neighborhood: 'Meireles',
+    rating: 4.6,
+    estimatedCostBRL: 0,
+    durationHours: 2,
+    tips: ['Feira de artesanato tradicional no calçadão, todos os dias a partir do fim da tarde', 'Rendas, redes e castanha — melhor lugar para lembranças', 'Combine com o pôr do sol na Beira-Mar'],
+    styleTags: ['shopping', 'culture', 'family'],
+  },
+  {
     id: 'for-beira-mar',
     name: 'Calçadão da Beira-Mar',
     category: 'afternoon',
