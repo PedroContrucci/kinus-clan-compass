@@ -473,42 +473,59 @@ function generateItinerary(
       label = 'Volta';
       theme = '✈️ Dia de Partida';
       
-      // Breakfast
-      const breakfastActivity = pickActivity('breakfast', 'Gastronomia');
-      if (breakfastActivity) {
-        const activity = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers);
-        activities.push(activity);
-        dayTotal += activity.estimatedCost;
+      // Derive schedule backward from real return flight time
+      const [depH, depM] = returnFlight.option.departureTime.split(':').map(Number);
+      const depMinutes = depH * 60 + depM;
+      const transferMinutes = depMinutes - 4 * 60; // 1h transfer + 3h antecedência
+      const fmt = (mins: number) => {
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      };
+      const transferTime = fmt(transferMinutes);
+      
+      // Breakfast — only if there's time before transfer
+      if (transferMinutes >= 9 * 60) {
+        const breakfastActivity = pickActivity('breakfast', 'Gastronomia');
+        if (breakfastActivity) {
+          const activity = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers);
+          activities.push(activity);
+          dayTotal += activity.estimatedCost;
+        }
       }
       
-      // Checkout
+      // Checkout — 30 min before transfer, clamped to [07:30, 11:00]
+      const checkoutMinutes = Math.max(7 * 60 + 30, Math.min(11 * 60, transferMinutes - 30));
       activities.push({
         id: `day-${i}-checkout`,
         name: 'Check-out Hotel',
         type: 'checkout',
         timeSlot: 'hotel',
         estimatedCost: 0,
-        time: '10:00',
+        time: fmt(checkoutMinutes),
         status: 'suggestion',
         source: 'kinu',
       });
       
-      // Light morning activity or last-minute shopping
-      const morningActivity = pickActivity('afternoon', 'Descobertas');
-      if (morningActivity) {
-        const activity = convertToItineraryActivity(morningActivity, i, 'morning', '10:30', travelers);
-        activity.name = 'Última exploração';
-        activity.tips = ['Aproveite as últimas horas!', ...(activity.tips || [])];
-        activities.push(activity);
-        dayTotal += activity.estimatedCost;
+      // Light morning activity — only if transfer is 12:15 or later
+      if (transferMinutes >= 12 * 60 + 15) {
+        const morningActivity = pickActivity('afternoon', 'Descobertas');
+        if (morningActivity) {
+          const activity = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers);
+          activity.tips = ['Aproveite as últimas horas!', ...(activity.tips || [])];
+          activities.push(activity);
+          dayTotal += activity.estimatedCost;
+        }
       }
       
-      // Lunch before heading to airport
-      const lunchActivity = pickActivity('lunch', 'Gastronomia');
-      if (lunchActivity) {
-        const activity = convertToItineraryActivity(lunchActivity, i, 'lunch', '12:30', travelers);
-        activities.push(activity);
-        dayTotal += activity.estimatedCost;
+      // Lunch — only if transfer is 14:00 or later
+      if (transferMinutes >= 14 * 60) {
+        const lunchActivity = pickActivity('lunch', 'Gastronomia');
+        if (lunchActivity) {
+          const activity = convertToItineraryActivity(lunchActivity, i, 'lunch', '12:30', travelers);
+          activities.push(activity);
+          dayTotal += activity.estimatedCost;
+        }
       }
       
       // Transfer to airport (SHARED — not multiplied)
@@ -518,13 +535,14 @@ function generateItinerary(
         type: 'experience',
         timeSlot: 'afternoon',
         estimatedCost: transferCost,
-        time: '15:00',
+        time: transferTime,
         duration: '1h',
         status: 'suggestion',
         tips: ['Chegue com 3h de antecedência para voos internacionais'],
         source: 'kinu',
       });
       dayTotal += transferCost;
+
       
       // Return flight
       const returnCost = flightsCost / 2;
