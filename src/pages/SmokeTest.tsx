@@ -83,7 +83,7 @@ const TESTS: TestConfig[] = [
     outboundDuration: '16h45',
     returnDeparture: '10:45',
     returnDuration: '12h30',
-    priceLevel: 'comfort',
+    priceLevel: 'midrange',
   },
   {
     label: 'Fortaleza doméstico',
