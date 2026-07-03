@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MessageSquare, Send, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+
+const FEEDBACK_WHATSAPP = '5511981362866';
 
 export const FeedbackButton = () => {
   const [testerName, setTesterName] = useState(() => localStorage.getItem('kinu_tester_name') || '');
@@ -12,6 +14,16 @@ export const FeedbackButton = () => {
   const [message, setMessage] = useState('');
   const [page, setPage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [activeTrip, setActiveTrip] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const trips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+      const upcoming = trips.filter((t: any) => t.status === 'active' && t.startDate && new Date(t.startDate) > new Date());
+      if (upcoming.length > 0) setActiveTrip(upcoming[0]);
+      else if (trips.length > 0) setActiveTrip(trips[trips.length - 1]);
+    } catch { /* ignore */ }
+  }, []);
 
   const categories = [
     { id: 'bug', label: '🐛 Bug', desc: 'Algo quebrou' },
@@ -37,7 +49,7 @@ export const FeedbackButton = () => {
     const screenSize = `${window.innerWidth}x${window.innerHeight}`;
     const appVersion = 'v0.1.0';
 
-    const feedback = {
+    const feedbackRecord = {
       id: `fb-${Date.now()}`,
       timestamp: new Date().toISOString(),
       tester_name: trimmedName,
@@ -80,10 +92,16 @@ export const FeedbackButton = () => {
       }).catch((err) => console.error('feedback-notify invoke failed', err));
     }
 
-
     const existing = JSON.parse(localStorage.getItem('kinu_feedback') || '[]');
-    existing.push(feedback);
+    existing.push(feedbackRecord);
     localStorage.setItem('kinu_feedback', JSON.stringify(existing));
+
+    // Open WhatsApp with prefilled feedback
+    const feedbackText = `${categories.find(c => c.id === category)?.label || category}: ${message.trim()}\nNota: ${rating}/5\nPágina: ${pagePath}\nBeta tester: ${trimmedName}`;
+    window.open(
+      `https://wa.me/${FEEDBACK_WHATSAPP}?text=${encodeURIComponent(`[KINU beta] ${feedbackText} — viagem: ${activeTrip?.destination || 'sem viagem ativa'}`)}`,
+      '_blank'
+    );
 
     setSubmitted(true);
     if (success) {
