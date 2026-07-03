@@ -532,7 +532,7 @@ function generateItinerary(
       activities.push({
         id: `day-${i}-transfer`,
         name: 'Transfer para Aeroporto',
-        type: 'transport',
+        type: 'experience',
         timeSlot: 'afternoon',
         estimatedCost: transferCost,
         time: transferTime,
