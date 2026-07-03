@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { addDays } from 'date-fns';
+import { addDays, format } from 'date-fns';
 import { generateItinerary } from '@/components/cockpit/GeneratedItineraryStage';
 import type { SelectedFlight, FlightOption } from '@/components/cockpit/FlightSelectionStage';
-import { validateItinerary, formatReport, type ValidationResult } from '@/lib/itineraryValidator';
+import { validateItinerary, validateOfferLinks, formatReport, type ValidationResult } from '@/lib/itineraryValidator';
+import { buildOfferLinks } from '@/lib/offersLinks';
 import type { PriceLevel } from '@/lib/activityPricing';
 import { toast } from '@/hooks/use-toast';
 
@@ -10,6 +11,8 @@ interface TestConfig {
   label: string;
   origin: string;
   destination: string;
+  originIata: string;
+  destIata: string;
   days: number;
   travelers: number;
   budget: number;
@@ -74,6 +77,8 @@ const TESTS: TestConfig[] = [
     label: 'Paris internacional',
     origin: 'São Paulo',
     destination: 'Paris',
+    originIata: 'GRU',
+    destIata: 'CDG',
     days: 8,
     travelers: 2,
     budget: 35000,
@@ -89,6 +94,8 @@ const TESTS: TestConfig[] = [
     label: 'Fortaleza doméstico',
     origin: 'São Paulo',
     destination: 'Fortaleza',
+    originIata: 'GRU',
+    destIata: 'FOR',
     days: 8,
     travelers: 1,
     budget: 10000,
@@ -103,6 +110,8 @@ const TESTS: TestConfig[] = [
     label: 'Rio simples',
     origin: 'São Paulo',
     destination: 'Rio de Janeiro',
+    originIata: 'GRU',
+    destIata: 'GIG',
     days: 5,
     travelers: 2,
     budget: 8000,
@@ -166,10 +175,30 @@ export default function SmokeTest() {
           travelInterests: cfg.interests,
           destination: cfg.destination,
         });
+
+        // R10 AFFILIATE LINKS
+        const offerLinks = buildOfferLinks({
+          category: 'flight',
+          originCode: cfg.originIata,
+          destinationCode: cfg.destIata,
+          startDate: depDate,
+          endDate: retDate,
+          travelers: cfg.travelers,
+        });
+        const linkValidation = validateOfferLinks(
+          offerLinks.map((l) => ({ label: l.partner, url: l.url })),
+          {
+            departure: format(depDate, 'yyyy-MM-dd'),
+            returnDate: format(retDate, 'yyyy-MM-dd'),
+            originIata: cfg.originIata,
+            destIata: cfg.destIata,
+          }
+        );
+        const merged = [...validation, ...linkValidation];
         return {
           config: cfg,
-          results: validation,
-          report: formatReport(cfg.label, validation),
+          results: merged,
+          report: formatReport(cfg.label, merged),
         };
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
