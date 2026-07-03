@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MessageSquare, Send, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+
+const FEEDBACK_WHATSAPP = '5511981362866';
 
 export const FeedbackButton = () => {
   const [testerName, setTesterName] = useState(() => localStorage.getItem('kinu_tester_name') || '');
@@ -12,6 +14,16 @@ export const FeedbackButton = () => {
   const [message, setMessage] = useState('');
   const [page, setPage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [activeTrip, setActiveTrip] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const trips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+      const upcoming = trips.filter((t: any) => t.status === 'active' && t.startDate && new Date(t.startDate) > new Date());
+      if (upcoming.length > 0) setActiveTrip(upcoming[0]);
+      else if (trips.length > 0) setActiveTrip(trips[trips.length - 1]);
+    } catch { /* ignore */ }
+  }, []);
 
   const categories = [
     { id: 'bug', label: '🐛 Bug', desc: 'Algo quebrou' },
