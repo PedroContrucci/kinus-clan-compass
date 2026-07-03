@@ -494,8 +494,8 @@ function generateItinerary(
         }
       }
       
-      // Checkout — 30 min before transfer, clamped to [07:30, 11:00]
-      const checkoutMinutes = Math.max(7 * 60 + 30, Math.min(11 * 60, transferMinutes - 30));
+      // Checkout — 30 min before transfer, capped so it is never later than 11:00
+      const checkoutMinutes = Math.min(11 * 60, transferMinutes - 30);
       activities.push({
         id: `day-${i}-checkout`,
         name: 'Check-out Hotel',
@@ -506,6 +506,7 @@ function generateItinerary(
         status: 'suggestion',
         source: 'kinu',
       });
+
       
       // Light morning activity — only if transfer is 12:15 or later
       if (transferMinutes >= 12 * 60 + 15) {
