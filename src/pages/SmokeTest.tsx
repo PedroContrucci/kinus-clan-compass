@@ -11,6 +11,8 @@ interface TestConfig {
   label: string;
   origin: string;
   destination: string;
+  originIata: string;
+  destIata: string;
   days: number;
   travelers: number;
   budget: number;
