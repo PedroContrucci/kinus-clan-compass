@@ -130,7 +130,7 @@ function convertToItineraryActivity(
 }
 
 // Generate complete itinerary with multiple activities per day
-function generateItinerary(
+export function generateItinerary(
   departureDate: Date,
   returnDate: Date,
   destination: string,

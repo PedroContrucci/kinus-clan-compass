@@ -15,6 +15,7 @@ import Viagens from "./pages/Viagens";
 import Conta from "./pages/Conta";
 import DestinationDetail from "./pages/DestinationDetail";
 import NotFound from "./pages/NotFound";
+import SmokeTest from "./pages/SmokeTest";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/viagens" element={<Viagens />} />
               <Route path="/conta" element={<Conta />} />
               <Route path="/destino/:id" element={<DestinationDetail />} />
+              <Route path="/smoke" element={<SmokeTest />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             </div>
