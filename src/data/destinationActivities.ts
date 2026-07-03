@@ -1662,7 +1662,7 @@ const CURATED_THEMES: Record<string, DestinationTheme[]> = {
     { title: 'Aventura', icon: '⭐', activities: ['Bate-volta Potsdam (Sanssouci)', 'Palácio de Sans-Souci', 'Bairro Holandês (Potsdam)'], restaurants: { lunch: 'Drachenhaus (Potsdam)', dinner: 'Facil' } },
   ],
   'bogota': [
-    { title: 'Cultura', icon: '🏛️', activities: ['Museo del Oro', 'Museo Botero', 'La Candelaria (bairro histórico)'], restaurants: { lunch: 'La Puerta Falsa (tamales)', dinner: 'Leo (Michelin)' } },
+    { title: 'Cultura', icon: '🏛️', activities: ['Museo del Oro', 'Museo Botero', 'La Candelaria (bairro histórico)'], restaurants: { lunch: 'La Puerta Falsa (tamales)', dinner: 'Leo' } },
     { title: 'Gastronomia', icon: '🍽️', activities: ['Paloquemao Market', 'Tour de arepas + chocolate', 'Usaquén (feira gastronômica)'], restaurants: { lunch: 'Andrés Carne de Res', dinner: 'Criterion' } },
     { title: 'Passeios', icon: '🚶', activities: ['Cerro Monserrate (teleférico)', 'Usaquén (domingos)', 'Parque Simón Bolívar'], restaurants: { lunch: 'Mini-mal', dinner: 'El Cielo' } },
     { title: 'Aventura', icon: '⭐', activities: ['Bate-volta Zipaquirá (Catedral de Sal)', 'Laguna de Guatavita', 'Suesca (escalada)'], restaurants: { lunch: 'Restaurante em Zipaquirá', dinner: 'Harry Sasson' } },
@@ -1911,7 +1911,7 @@ const CURATED_THEMES: Record<string, DestinationTheme[]> = {
   ],
   'riodejaneiro': [
     { title: 'Cultura', icon: '🏛️', activities: ['Cristo Redentor', 'Museu do Amanhã', 'Escadaria Selarón'], restaurants: { lunch: 'Confeitaria Colombo', dinner: 'Lasai' } },
-    { title: 'Gastronomia', icon: '🍽️', activities: ['Feira de São Cristóvão', 'Bar do Mineiro (Santa Teresa)', 'Tour gastronômico no Centro'], restaurants: { lunch: 'Zaza Bistrô', dinner: 'Oro (Michelin)' } },
+    { title: 'Gastronomia', icon: '🍽️', activities: ['Feira de São Cristóvão', 'Bar do Mineiro (Santa Teresa)', 'Tour gastronômico no Centro'], restaurants: { lunch: 'Zaza Bistrô', dinner: 'Oro' } },
     { title: 'Passeios', icon: '🚶', activities: ['Pão de Açúcar (bondinho)', 'Copacabana + Ipanema', 'Santa Teresa (bonde)'], restaurants: { lunch: 'Azul Marinho', dinner: 'Aprazível' } },
     { title: 'Aventura', icon: '⭐', activities: ['Trilha Pedra Bonita', 'Floresta da Tijuca', 'Asa-delta em São Conrado'], restaurants: { lunch: 'Bar Urca', dinner: 'Marius Degustare' } },
   ],
