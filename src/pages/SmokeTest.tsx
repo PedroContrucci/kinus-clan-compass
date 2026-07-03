@@ -175,10 +175,30 @@ export default function SmokeTest() {
           travelInterests: cfg.interests,
           destination: cfg.destination,
         });
+
+        // R10 AFFILIATE LINKS
+        const offerLinks = buildOfferLinks({
+          category: 'flight',
+          originCode: cfg.originIata,
+          destinationCode: cfg.destIata,
+          startDate: depDate,
+          endDate: retDate,
+          travelers: cfg.travelers,
+        });
+        const linkValidation = validateOfferLinks(
+          offerLinks.map((l) => ({ label: l.partner, url: l.url })),
+          {
+            departure: format(depDate, 'yyyy-MM-dd'),
+            returnDate: format(retDate, 'yyyy-MM-dd'),
+            originIata: cfg.originIata,
+            destIata: cfg.destIata,
+          }
+        );
+        const merged = [...validation, ...linkValidation];
         return {
           config: cfg,
-          results: validation,
-          report: formatReport(cfg.label, validation),
+          results: merged,
+          report: formatReport(cfg.label, merged),
         };
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
