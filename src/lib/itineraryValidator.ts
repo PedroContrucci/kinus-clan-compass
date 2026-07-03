@@ -253,6 +253,79 @@ export function validateItinerary(
   return results;
 }
 
+export function validateOfferLinks(
+  links: { label: string; url: string }[],
+  config: { departure: string; returnDate: string; originIata: string; destIata: string }
+): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  const RULE = 'R10 AFFILIATE LINKS';
+  const BAD_TOKENS = ['undefined', 'null', 'NaN'];
+
+  for (const link of links) {
+    const { label, url } = link;
+
+    // Check 1: no bad tokens
+    const bad = BAD_TOKENS.filter((t) => url.includes(t));
+    results.push(
+      bad.length === 0
+        ? { rule: RULE, status: 'PASS', detail: `${label}: no bad tokens` }
+        : { rule: RULE, status: 'FAIL', detail: `${label}: contains ${bad.join(', ')}` }
+    );
+
+    const isTravelpayouts = /travelpayouts\.com/i.test(url);
+    const isKiwi = /kiwi\.com/i.test(url) || (isTravelpayouts && /custom_url=/i.test(url));
+
+    // Check 2: Travelpayouts shmarker present with non-empty value
+    if (isTravelpayouts) {
+      const m = url.match(/[?&]shmarker=([^&]*)/);
+      const val = m ? decodeURIComponent(m[1]) : '';
+      results.push(
+        val.length > 0
+          ? { rule: RULE, status: 'PASS', detail: `${label}: shmarker=${val}` }
+          : { rule: RULE, status: 'FAIL', detail: `${label}: shmarker missing/empty` }
+      );
+    }
+
+    // Check 3 & 4: Kiwi deep link inside custom_url
+    if (isTravelpayouts && /custom_url=/i.test(url)) {
+      const cm = url.match(/[?&]custom_url=([^&]+)/);
+      const rawCustom = cm ? cm[1] : '';
+      let decoded = '';
+      let decodeOk = false;
+      try {
+        decoded = decodeURIComponent(rawCustom);
+        decodeOk = decoded.startsWith('https://');
+      } catch {
+        decodeOk = false;
+      }
+      results.push(
+        decodeOk
+          ? { rule: RULE, status: 'PASS', detail: `${label}: custom_url decodes to https` }
+          : { rule: RULE, status: 'FAIL', detail: `${label}: custom_url not properly URL-encoded` }
+      );
+
+      if (decodeOk && isKiwi) {
+        const okOrigin = decoded.toUpperCase().includes(config.originIata.toUpperCase());
+        const okDest = decoded.toUpperCase().includes(config.destIata.toUpperCase());
+        const okDep = decoded.includes(config.departure);
+        const okRet = decoded.includes(config.returnDate);
+        const missing: string[] = [];
+        if (!okOrigin) missing.push(`origin ${config.originIata}`);
+        if (!okDest) missing.push(`dest ${config.destIata}`);
+        if (!okDep) missing.push(`departure ${config.departure}`);
+        if (!okRet) missing.push(`return ${config.returnDate}`);
+        results.push(
+          missing.length === 0
+            ? { rule: RULE, status: 'PASS', detail: `${label}: Kiwi deep link has IATA + dates` }
+            : { rule: RULE, status: 'FAIL', detail: `${label}: Kiwi deep link missing ${missing.join(', ')}` }
+        );
+      }
+    }
+  }
+
+  return results;
+}
+
 export function formatReport(tripLabel: string, results: ValidationResult[]): string {
   const pass = results.filter((r) => r.status === 'PASS').length;
   const lines: string[] = [`SMOKE — ${tripLabel}: ${pass}/${results.length} PASS`];
