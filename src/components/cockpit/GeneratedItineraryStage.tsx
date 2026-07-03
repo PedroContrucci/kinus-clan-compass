@@ -510,7 +510,15 @@ function generateItinerary(
       
       // Light morning activity — only if transfer is 12:15 or later
       if (transferMinutes >= 12 * 60 + 15) {
-        const morningActivity = pickActivity('afternoon', 'Descobertas');
+        let morningActivity: SuggestedActivity | null = null;
+        for (let attempt = 0; attempt < 10; attempt++) {
+          const candidate = pickActivity('afternoon', 'Descobertas');
+          if (!candidate) break;
+          if (candidate.dayOccupancy !== 'full' && candidate.dayOccupancy !== 'half') {
+            morningActivity = candidate;
+            break;
+          }
+        }
         if (morningActivity) {
           const activity = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers);
           activity.tips = ['Aproveite as últimas horas!', ...(activity.tips || [])];
@@ -518,6 +526,7 @@ function generateItinerary(
           dayTotal += activity.estimatedCost;
         }
       }
+
       
       // Lunch — only if transfer is 14:00 or later
       if (transferMinutes >= 14 * 60) {
