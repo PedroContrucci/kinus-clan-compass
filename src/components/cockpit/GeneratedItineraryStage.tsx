@@ -279,6 +279,7 @@ function generateItinerary(
   const otherThemes: DestinationTheme[] = scoredThemes.filter(s => s.score === 0).map(s => s.theme);
   const baseThemes = preferredThemes.length > 0 ? preferredThemes : orderedThemes;
 
+  let michelinCount = 0;
   for (let i = 0; i < totalDays; i++) {
     currentPickDayIndex = i;
     const date = addDays(departureDate, i);
@@ -689,27 +690,42 @@ function generateItinerary(
       
       let dinnerActivity = pickActivity('dinner', dayTheme.title);
       
-      if (isGastroDay && wantsGastronomy) {
-        const michelin = getTopMichelinForCity(destination, 5);
-        const availableMichelin = michelin.find(m => !usedActivityIds.includes(`michelin-${m.name}`));
+      if (isGastroDay && wantsGastronomy && priceLevel !== 'budget' && michelinCount < 2) {
+        const michelin = getTopMichelinForCity(destination, 10);
+        const available = michelin.filter(m => !usedActivityIds.includes(`michelin-${m.name}`));
+        let preferred: typeof available;
+        if (priceLevel === 'luxury') {
+          preferred = available.filter(m => m.stars >= 2);
+          if (preferred.length === 0) preferred = available;
+        } else {
+          // midrange → prefer 1 star, fall back to higher
+          preferred = available.filter(m => m.stars === 1);
+          if (preferred.length === 0) preferred = available;
+        }
+        const availableMichelin = preferred[0];
         if (availableMichelin) {
+          const MICHELIN_MULTIPLIER: Record<number, number> = { 1: 2.5, 2: 4.5, 3: 7 };
+          const michelinFactor = MICHELIN_MULTIPLIER[availableMichelin.stars] || 2.5;
+          const perPerson = getActivityPrice('restaurant_dinner', destination, priceLevel) * michelinFactor;
+          const total = perPerson * travelers;
           const stars = '⭐'.repeat(availableMichelin.stars);
           activities.push({
             id: `day-${i}-dinner-michelin`,
             name: `${availableMichelin.name} ${stars} Michelin`,
             type: 'dinner',
             timeSlot: 'dinner',
-            estimatedCost: getActivityPrice('restaurant_dinner', destination, priceLevel) * travelers * 1.5,
-            costPerPerson: getActivityPrice('restaurant_dinner', destination, priceLevel) * 1.5,
+            estimatedCost: total,
+            costPerPerson: perPerson,
             time: '20:00',
             duration: '2h30',
             location: availableMichelin.neighborhood || destination,
             status: 'defined',
             source: 'kinu',
-            tips: [`Cozinha ${availableMichelin.cuisine}`, 'Reserve com 2-3 semanas de antecedência'],
+            tips: [`Cozinha ${availableMichelin.cuisine}`, 'Reserve com 2-3 semanas de antecedência', 'Menu degustação — valor estimado por pessoa'],
           });
           usedActivityIds.push(`michelin-${availableMichelin.name}`);
-          dayTotal += getActivityPrice('restaurant_dinner', destination, priceLevel) * travelers * 1.5;
+          dayTotal += total;
+          michelinCount++;
         } else if (dinnerActivity) {
           const act = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30', travelers);
           activities.push(act);
