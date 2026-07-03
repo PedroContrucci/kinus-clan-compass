@@ -279,6 +279,7 @@ function generateItinerary(
   const otherThemes: DestinationTheme[] = scoredThemes.filter(s => s.score === 0).map(s => s.theme);
   const baseThemes = preferredThemes.length > 0 ? preferredThemes : orderedThemes;
 
+  let michelinCount = 0;
   for (let i = 0; i < totalDays; i++) {
     currentPickDayIndex = i;
     const date = addDays(departureDate, i);
