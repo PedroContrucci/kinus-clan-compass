@@ -15,6 +15,7 @@ import Viagens from "./pages/Viagens";
 import Conta from "./pages/Conta";
 import DestinationDetail from "./pages/DestinationDetail";
 import NotFound from "./pages/NotFound";
+import SmokeTest from "./pages/SmokeTest";
 
 const queryClient = new QueryClient();
 
