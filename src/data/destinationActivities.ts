@@ -236,6 +236,7 @@ const parisActivities: SuggestedActivity[] = [
     rating: 4.8,
     estimatedCostBRL: 120,
     durationHours: 6,
+    dayOccupancy: 'full',
     tips: ['Reserve um dia inteiro', 'Jardins são gratuitos fora da alta temporada'],
     styleTags: ['culture', 'history', 'art'],
   },
