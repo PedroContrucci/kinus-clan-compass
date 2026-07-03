@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { addDays } from 'date-fns';
+import { addDays, format } from 'date-fns';
 import { generateItinerary } from '@/components/cockpit/GeneratedItineraryStage';
 import type { SelectedFlight, FlightOption } from '@/components/cockpit/FlightSelectionStage';
-import { validateItinerary, formatReport, type ValidationResult } from '@/lib/itineraryValidator';
+import { validateItinerary, validateOfferLinks, formatReport, type ValidationResult } from '@/lib/itineraryValidator';
+import { buildOfferLinks } from '@/lib/offersLinks';
 import type { PriceLevel } from '@/lib/activityPricing';
 import { toast } from '@/hooks/use-toast';
 
