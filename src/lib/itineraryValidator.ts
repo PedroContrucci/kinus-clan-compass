@@ -204,9 +204,12 @@ export function validateItinerary(
 
   // R7 NIGHT DISCIPLINE
   const wantsNight = config.travelInterests.some((i) => NIGHTLIFE_RE.test(i));
+  const LOGISTIC_TYPES = new Set(['flight', 'checkin', 'checkout', 'hotel', 'transfer']);
   const nightViolations: string[] = [];
   for (const day of days) {
     for (const a of day.activities) {
+      if (LOGISTIC_TYPES.has(a.type) || isTransfer(a)) continue;
+      if (a.name.startsWith('Descanso') || a.name.startsWith('Caminhada leve')) continue;
       const m = toMinutes(a.time);
       const isNight = a.type === 'night' || (m >= 0 && m >= 21 * 60);
       if (isNight && !wantsNight) {
