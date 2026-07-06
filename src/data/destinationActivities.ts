@@ -1638,6 +1638,11 @@ export const destinationActivities: Record<string, DestinationData> = {
     cityCode: 'FOR',
     activities: fortalezaActivities,
   },
+  'Rio de Janeiro': {
+    cityName: 'Rio de Janeiro',
+    cityCode: 'GIG',
+    activities: rioActivities,
+  },
 };
 
 // Get activities for a destination, with smart fallback synthesized from CURATED_THEMES
