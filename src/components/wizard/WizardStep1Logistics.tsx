@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { UnsplashThumbnail } from '@/components/shared/UnsplashImage';
 import { REGIONS, DESTINATION_CATALOG, type RegionName, type CountryEntry, type CityEntry } from '@/data/destinationCatalog';
 import { cn } from '@/lib/utils';
+import { isCityCurated } from '@/lib/curatedCities';
 import type { WizardData } from './types';
 
 interface WizardStep1Props {
@@ -335,29 +336,41 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
               exit={{ opacity: 0, y: -10 }}
               className="grid grid-cols-2 gap-3"
             >
-              {selectedCountry.cities.map((city) => (
-                <motion.button
-                  key={city.name}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleCitySelect(city)}
-                  className="relative overflow-hidden bg-card border border-border rounded-xl text-left hover:border-primary/50 transition-all"
-                >
-                  <div className="h-20 w-full">
-                    <UnsplashThumbnail
-                      query={`${city.name} ${selectedCountry.country} landmark`}
-                      alt={city.name}
-                      className="w-full h-full"
-                    />
-                  </div>
-                  <div className="p-2.5">
-                    <p className="font-medium text-foreground text-sm">{city.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {city.airports.join(' • ')}
-                    </p>
-                  </div>
-                </motion.button>
-              ))}
+              {selectedCountry.cities.map((city) => {
+                const curated = isCityCurated(city.name);
+                return (
+                  <motion.button
+                    key={city.name}
+                    whileHover={curated ? { scale: 1.02 } : undefined}
+                    whileTap={curated ? { scale: 0.98 } : undefined}
+                    onClick={() => curated && handleCitySelect(city)}
+                    className={cn(
+                      'relative overflow-hidden bg-card border border-border rounded-xl text-left transition-all',
+                      curated && 'hover:border-primary/50',
+                      !curated && 'opacity-60 cursor-not-allowed'
+                    )}
+                  >
+                    <div className="h-20 w-full">
+                      <UnsplashThumbnail
+                        query={`${city.name} ${selectedCountry.country} landmark`}
+                        alt={city.name}
+                        className="w-full h-full"
+                      />
+                    </div>
+                    <div className="p-2.5">
+                      <p className="font-medium text-foreground text-sm">{city.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {city.airports.join(' • ')}
+                      </p>
+                    </div>
+                    {!curated && (
+                      <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide bg-black/60 text-[#eab308]">
+                        Em breve
+                      </span>
+                    )}
+                  </motion.button>
+                );
+              })}
             </motion.div>
           )}
 
