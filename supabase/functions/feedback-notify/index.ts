@@ -23,6 +23,8 @@ Deno.serve(async (req) => {
     const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     const FEEDBACK_EMAIL = Deno.env.get('FEEDBACK_EMAIL');
+    const CALLMEBOT_PHONE = Deno.env.get('CALLMEBOT_PHONE');
+    const CALLMEBOT_APIKEY = Deno.env.get('CALLMEBOT_APIKEY');
 
     let analise = 'Análise indisponível';
     let acao_sugerida = '—';
@@ -114,6 +116,15 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ ok: false, error: 'resend-failed', detail: errText }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    if (CALLMEBOT_PHONE && CALLMEBOT_APIKEY) {
+      try {
+        const msgText = `${emoji} KINU Feedback — ${tester_name} (${rating}/5)\n\n📍 ${page}\n\n💬 "${message}"\n\n🤖 ${analise}\n\n▶️ ${acao_sugerida}`;
+        await fetch(`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(CALLMEBOT_PHONE)}&text=${encodeURIComponent(msgText)}&apikey=${CALLMEBOT_APIKEY}`);
+      } catch (e) {
+        console.error('feedback-notify: WhatsApp call failed', e);
+      }
     }
 
     return new Response(JSON.stringify({ ok: true, gravidade }), {
