@@ -112,7 +112,7 @@ const TESTS: TestConfig[] = [
     destination: 'Rio de Janeiro',
     originIata: 'GRU',
     destIata: 'GIG',
-    days: 5,
+    days: 8,
     travelers: 2,
     budget: 8000,
     interests: ['beach'],
