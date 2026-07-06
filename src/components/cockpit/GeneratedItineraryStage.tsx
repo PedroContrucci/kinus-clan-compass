@@ -705,8 +705,10 @@ export function generateItinerary(
         const availableMichelin = preferred[0];
         if (availableMichelin) {
           const MICHELIN_MULTIPLIER: Record<number, number> = { 1: 2.5, 2: 4.5, 3: 7 };
+          const MICHELIN_FLOOR: Record<number, number> = { 1: 850, 2: 1400, 3: 2200 };
           const michelinFactor = MICHELIN_MULTIPLIER[availableMichelin.stars] || 2.5;
-          const perPerson = getActivityPrice('restaurant_dinner', destination, priceLevel) * michelinFactor;
+          const basePerPerson = getActivityPrice('restaurant_dinner', destination, priceLevel);
+          const perPerson = Math.max(basePerPerson * michelinFactor, MICHELIN_FLOOR[availableMichelin.stars] || 850);
           const total = perPerson * travelers;
           const stars = '⭐'.repeat(availableMichelin.stars);
           activities.push({
