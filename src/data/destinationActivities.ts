@@ -1753,6 +1753,28 @@ const rioActivities: SuggestedActivity[] = [
     tips: ['Confeitaria mais antiga do Rio, fundada em 1860', 'Sonho e mate gelado no piso de ladrilhos originais', 'Perto da Confeitaria Colombo — escolha uma por dia'],
     styleTags: ['gastronomy', 'history'],
   },
+  {
+    id: 'rio-bar-do-mineiro',
+    name: 'Bar do Mineiro',
+    category: 'dinner',
+    neighborhood: 'Santa Teresa',
+    rating: 4.5,
+    estimatedCostBRL: 90,
+    durationHours: 2,
+    tips: ['Comida mineira no coração boêmio de Santa Teresa', 'A feijoadinha e o pastel de feijão são os clássicos', 'Paredes cobertas de arte popular — ambiente único'],
+    styleTags: ['gastronomy', 'culture'],
+  },
+  {
+    id: 'rio-cafe-do-alto',
+    name: 'Café do Alto',
+    category: 'breakfast',
+    neighborhood: 'Santa Teresa',
+    rating: 4.5,
+    estimatedCostBRL: 45,
+    durationHours: 1,
+    tips: ['Café da manhã nordestino no alto de Santa Teresa', 'Tapioca, cuscuz e bolo de rolo', 'Combine com um passeio pelo bairro depois'],
+    styleTags: ['gastronomy'],
+  },
 ];
 
 // Export all destination data
