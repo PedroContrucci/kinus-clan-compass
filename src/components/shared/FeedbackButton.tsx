@@ -96,13 +96,6 @@ export const FeedbackButton = () => {
     existing.push(feedbackRecord);
     localStorage.setItem('kinu_feedback', JSON.stringify(existing));
 
-    // Open WhatsApp with prefilled feedback
-    const feedbackText = `${categories.find(c => c.id === category)?.label || category}: ${message.trim()}\nNota: ${rating}/5\nPágina: ${pagePath}\nBeta tester: ${trimmedName}`;
-    window.open(
-      `https://wa.me/${FEEDBACK_WHATSAPP}?text=${encodeURIComponent(`[KINU beta] ${feedbackText} — viagem: ${activeTrip?.destination || 'sem viagem ativa'}`)}`,
-      '_blank'
-    );
-
     setSubmitted(true);
     if (success) {
       toast.success('Feedback enviado!');
