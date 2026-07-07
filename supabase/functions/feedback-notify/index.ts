@@ -118,10 +118,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    console.log('CallMeBot config:', { phoneSet: !!Deno.env.get('CALLMEBOT_PHONE'), apikeySet: !!Deno.env.get('CALLMEBOT_APIKEY') });
+
     if (CALLMEBOT_PHONE && CALLMEBOT_APIKEY) {
       try {
         const msgText = `${emoji} KINU Feedback — ${tester_name} (${rating}/5)\n\n📍 ${page}\n\n💬 "${message}"\n\n🤖 ${analise}\n\n▶️ ${acao_sugerida}`;
-        await fetch(`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(CALLMEBOT_PHONE)}&text=${encodeURIComponent(msgText)}&apikey=${CALLMEBOT_APIKEY}`);
+        const waRes = await fetch(`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(CALLMEBOT_PHONE)}&text=${encodeURIComponent(msgText)}&apikey=${CALLMEBOT_APIKEY}`);
+        const waBody = await waRes.text();
+        console.log('feedback-notify: CallMeBot response', waRes.status, waBody.slice(0, 100));
       } catch (e) {
         console.error('feedback-notify: WhatsApp call failed', e);
       }
