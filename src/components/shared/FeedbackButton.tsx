@@ -79,18 +79,16 @@ export const FeedbackButton = () => {
       success = false;
     }
 
-    if (success) {
-      // Fire-and-forget instant email notification
-      supabase.functions.invoke('feedback-notify', {
-        body: {
-          tester_name: trimmedName,
-          rating,
-          category,
-          message: message.trim(),
-          page: pagePath,
-        },
-      }).catch((err) => console.error('feedback-notify invoke failed', err));
-    }
+    // Fire-and-forget instant notification (always send, even if table insert fails)
+    supabase.functions.invoke('feedback-notify', {
+      body: {
+        tester_name: trimmedName,
+        rating,
+        category,
+        message: message.trim(),
+        page: pagePath,
+      },
+    }).catch((err) => console.error('feedback-notify invoke failed', err));
 
     const existing = JSON.parse(localStorage.getItem('kinu_feedback') || '[]');
     existing.push(feedbackRecord);
