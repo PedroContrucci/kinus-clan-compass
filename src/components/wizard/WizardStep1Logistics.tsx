@@ -23,6 +23,7 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
     (data.selectedRegion as RegionName) || null
   );
   const [selectedCountry, setSelectedCountry] = useState<CountryEntry | null>(null);
+  const [showUpcoming, setShowUpcoming] = useState(false);
 
   // Restore country from data
   useEffect(() => {
@@ -334,43 +335,84 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="grid grid-cols-2 gap-3"
+              className="space-y-3"
             >
-              {selectedCountry.cities.map((city) => {
-                const curated = isCityCurated(city.name);
-                return (
-                  <motion.button
-                    key={city.name}
-                    whileHover={curated ? { scale: 1.02 } : undefined}
-                    whileTap={curated ? { scale: 0.98 } : undefined}
-                    onClick={() => curated && handleCitySelect(city)}
-                    className={cn(
-                      'relative overflow-hidden bg-card border border-border rounded-xl text-left transition-all',
-                      curated && 'hover:border-primary/50',
-                      !curated && 'opacity-60 cursor-not-allowed'
-                    )}
+              {/* Curated cities */}
+              <div className="grid grid-cols-2 gap-3">
+                {selectedCountry.cities
+                  .filter((city) => isCityCurated(city.name))
+                  .map((city) => (
+                    <motion.button
+                      key={city.name}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleCitySelect(city)}
+                      className="relative overflow-hidden bg-card border border-border rounded-xl text-left transition-all hover:border-primary/50"
+                    >
+                      <div className="h-20 w-full">
+                        <UnsplashThumbnail
+                          query={`${city.name} ${selectedCountry.country} landmark`}
+                          alt={city.name}
+                          className="w-full h-full"
+                        />
+                      </div>
+                      <div className="p-2.5">
+                        <p className="font-medium text-foreground text-sm">{city.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {city.airports.join(' • ')}
+                        </p>
+                      </div>
+                    </motion.button>
+                  ))}
+              </div>
+
+              {/* Upcoming cities */}
+              {selectedCountry.cities.some((city) => !isCityCurated(city.name)) && (
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowUpcoming((prev) => !prev)}
+                    className="w-full py-3 px-4 rounded-xl border border-border/60 bg-card/50 hover:bg-card text-sm font-medium transition-colors flex items-center justify-center gap-2 text-[#eab308]"
                   >
-                    <div className="h-20 w-full">
-                      <UnsplashThumbnail
-                        query={`${city.name} ${selectedCountry.country} landmark`}
-                        alt={city.name}
-                        className="w-full h-full"
-                      />
+                    <span>{showUpcoming ? '−' : '+'}</span>
+                    <span>
+                      {selectedCountry.cities.filter((city) => !isCityCurated(city.name)).length} destinos em breve
+                    </span>
+                  </button>
+
+                  {showUpcoming && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {selectedCountry.cities
+                        .filter((city) => !isCityCurated(city.name))
+                        .map((city) => (
+                          <motion.div
+                            key={city.name}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="relative overflow-hidden bg-card border border-border rounded-xl text-left opacity-60 cursor-not-allowed"
+                          >
+                            <div className="h-20 w-full">
+                              <UnsplashThumbnail
+                                query={`${city.name} ${selectedCountry.country} landmark`}
+                                alt={city.name}
+                                className="w-full h-full"
+                              />
+                            </div>
+                            <div className="p-2.5">
+                              <p className="font-medium text-foreground text-sm">{city.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {city.airports.join(' • ')}
+                              </p>
+                            </div>
+                            <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide bg-black/60 text-[#eab308]">
+                              Em breve
+                            </span>
+                          </motion.div>
+                        ))}
                     </div>
-                    <div className="p-2.5">
-                      <p className="font-medium text-foreground text-sm">{city.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {city.airports.join(' • ')}
-                      </p>
-                    </div>
-                    {!curated && (
-                      <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide bg-black/60 text-[#eab308]">
-                        Em breve
-                      </span>
-                    )}
-                  </motion.button>
-                );
-              })}
+                  )}
+                </div>
+              )}
             </motion.div>
           )}
 
