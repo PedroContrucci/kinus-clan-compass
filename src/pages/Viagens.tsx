@@ -1933,20 +1933,80 @@ const Viagens = () => {
               <AgentTip agent="hestia" variant="compact" message={getHestiaCambio(selectedTrip)} />
               
               {/* Budget Summary */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
-                  <p className="text-xs text-[#94a3b8]">Orçamento</p>
-                  <p className="text-lg font-bold text-[#f8fafc] font-['Outfit']">R$ {(selectedTrip.budget / 1000).toFixed(0)}k</p>
-                </div>
-                <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
-                  <p className="text-xs text-[#94a3b8]">Confirmado</p>
-                  <p className="text-lg font-bold text-[#10b981] font-['Outfit']">R$ {((selectedTrip.finances?.confirmed || 0) / 1000).toFixed(1)}k</p>
-                </div>
-                <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
-                  <p className="text-xs text-[#94a3b8]">Disponível</p>
-                  <p className="text-lg font-bold text-[#0ea5e9] font-['Outfit']">R$ {((selectedTrip.finances?.available || 0) / 1000).toFixed(1)}k</p>
-                </div>
-              </div>
+              {(() => {
+                const confirmed = selectedTrip.finances?.confirmed || 0;
+                const pending = (selectedTrip.finances?.planned || 0) + (selectedTrip.finances?.bidding || 0);
+                const available = selectedTrip.budget - pending - confirmed;
+                return (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center relative">
+                        <button
+                          onClick={() => {
+                            setBudgetEditValue(selectedTrip.budget.toString());
+                            setBudgetEditOpen(true);
+                          }}
+                          className="absolute top-2 right-2 p-1 text-[#94a3b8] hover:text-[#f8fafc] transition-colors"
+                          aria-label="Editar orçamento"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <p className="text-xs text-[#94a3b8]">Orçamento</p>
+                        <p className="text-lg font-bold text-[#f8fafc] font-['Outfit']">R$ {(selectedTrip.budget / 1000).toFixed(0)}k</p>
+                      </div>
+                      <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
+                        <p className="text-xs text-[#94a3b8]">Planejado (a confirmar)</p>
+                        <p className="text-lg font-bold text-[#eab308] font-['Outfit']">R$ {(pending / 1000).toFixed(1)}k</p>
+                      </div>
+                      <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
+                        <p className="text-xs text-[#94a3b8]">Confirmado</p>
+                        <p className="text-lg font-bold text-[#10b981] font-['Outfit']">R$ {(confirmed / 1000).toFixed(1)}k</p>
+                      </div>
+                      <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
+                        <p className="text-xs text-[#94a3b8]">Disponível</p>
+                        <p className={`text-lg font-bold font-['Outfit'] ${available >= 0 ? 'text-[#0ea5e9]' : 'text-red-500'}`}>
+                          R$ {(available / 1000).toFixed(1)}k
+                        </p>
+                      </div>
+                    </div>
+
+                    <Dialog open={budgetEditOpen} onOpenChange={setBudgetEditOpen}>
+                      <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc]">
+                        <DialogHeader>
+                          <DialogTitle className="font-['Outfit']">Editar orçamento</DialogTitle>
+                          <DialogDescription className="text-[#94a3b8]">
+                            Atualize o valor total disponível para a viagem.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <Input
+                            type="number"
+                            value={budgetEditValue}
+                            onChange={(e) => setBudgetEditValue(e.target.value)}
+                            className="bg-[#0f172a] border-[#334155] text-[#f8fafc] placeholder:text-[#64748b]"
+                            placeholder="Valor em R$"
+                            autoFocus
+                          />
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => setBudgetEditOpen(false)}
+                              className="px-4 py-2 rounded-lg text-sm text-[#94a3b8] hover:bg-[#334155] transition-colors"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              onClick={handleUpdateBudget}
+                              className="px-4 py-2 rounded-lg text-sm bg-[#0ea5e9] text-white hover:bg-[#0284c7] transition-colors"
+                            >
+                              Salvar
+                            </button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </>
+                );
+              })()}
 
 
               {/* Cumulative Spending Chart */}
