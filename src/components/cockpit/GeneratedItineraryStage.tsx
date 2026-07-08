@@ -37,7 +37,7 @@ import { ItineraryExchangeRate } from './ItineraryExchangeRate';
 interface ItineraryActivity {
   id: string;
   name: string;
-  type: 'flight' | 'hotel' | 'experience' | 'restaurant' | 'checkin' | 'checkout' | 'breakfast' | 'lunch' | 'dinner' | 'morning' | 'afternoon' | 'night';
+  type: 'flight' | 'hotel' | 'experience' | 'restaurant' | 'checkin' | 'checkout' | 'breakfast' | 'lunch' | 'dinner' | 'morning' | 'afternoon' | 'night' | 'transport';
   timeSlot: 'breakfast' | 'morning' | 'lunch' | 'afternoon' | 'dinner' | 'night' | 'flight' | 'hotel';
   estimatedCost: number;
   costPerPerson?: number;
@@ -543,7 +543,7 @@ export function generateItinerary(
       activities.push({
         id: `day-${i}-transfer`,
         name: 'Transfer para Aeroporto',
-        type: 'experience',
+    type: 'transport',
         timeSlot: 'afternoon',
         estimatedCost: transferCost,
         time: transferTime,
