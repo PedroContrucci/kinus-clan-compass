@@ -23,6 +23,7 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
     (data.selectedRegion as RegionName) || null
   );
   const [selectedCountry, setSelectedCountry] = useState<CountryEntry | null>(null);
+  const [showUpcoming, setShowUpcoming] = useState(false);
 
   // Restore country from data
   useEffect(() => {
