@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useKinuAI } from "@/contexts/KinuAIContext";
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings } from 'lucide-react';
+import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Pencil } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { exportTripPDF } from '@/lib/tripPdfExport';
 import { toast } from '@/hooks/use-toast';
@@ -263,6 +264,8 @@ const Viagens = () => {
   const [manualExpense, setManualExpense] = useState({ name: '', amount: 0, category: 'shopping' as keyof SavedTrip['finances']['categories'] });
   const [resetModal, setResetModal] = useState(false);
   const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
+  const [budgetEditOpen, setBudgetEditOpen] = useState(false);
+  const [budgetEditValue, setBudgetEditValue] = useState('');
   const { setTripContext } = useKinuAI();
 
   // Feed trip context to KINU AI when selected trip changes
@@ -483,6 +486,32 @@ const Viagens = () => {
     setTrips(updatedTrips);
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
   };
+
+  const handleUpdateBudget = () => {
+    if (!selectedTrip) return;
+    const newBudget = parseFloat(budgetEditValue) || selectedTrip.budget;
+    if (newBudget <= 0) return;
+
+    const updatedTrip = { ...selectedTrip };
+    updatedTrip.budget = newBudget;
+    updatedTrip.finances = {
+      ...updatedTrip.finances,
+      total: newBudget,
+      available: Math.max(0, newBudget - updatedTrip.finances.planned - updatedTrip.finances.bidding - updatedTrip.finances.confirmed),
+    };
+
+    setSelectedTrip(updatedTrip);
+    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
+    setTrips(updatedTrips);
+    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+
+    toast({
+      title: 'Orçamento atualizado 💰',
+      description: `Novo orçamento: R$ ${newBudget.toLocaleString('pt-BR')}`,
+    });
+    setBudgetEditOpen(false);
+  };
+
 
   const handleResetJourney = () => {
     localStorage.removeItem('kinu_trips');
@@ -1904,20 +1933,45 @@ const Viagens = () => {
               <AgentTip agent="hestia" variant="compact" message={getHestiaCambio(selectedTrip)} />
               
               {/* Budget Summary */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
-                  <p className="text-xs text-[#94a3b8]">Orçamento</p>
-                  <p className="text-lg font-bold text-[#f8fafc] font-['Outfit']">R$ {(selectedTrip.budget / 1000).toFixed(0)}k</p>
-                </div>
-                <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
-                  <p className="text-xs text-[#94a3b8]">Confirmado</p>
-                  <p className="text-lg font-bold text-[#10b981] font-['Outfit']">R$ {((selectedTrip.finances?.confirmed || 0) / 1000).toFixed(1)}k</p>
-                </div>
-                <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
-                  <p className="text-xs text-[#94a3b8]">Disponível</p>
-                  <p className="text-lg font-bold text-[#0ea5e9] font-['Outfit']">R$ {((selectedTrip.finances?.available || 0) / 1000).toFixed(1)}k</p>
-                </div>
-              </div>
+              {(() => {
+                const confirmed = selectedTrip.finances?.confirmed || 0;
+                const pending = (selectedTrip.finances?.planned || 0) + (selectedTrip.finances?.bidding || 0);
+                const available = selectedTrip.budget - pending - confirmed;
+                return (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center relative">
+                        <button
+                          onClick={() => {
+                            setBudgetEditValue(selectedTrip.budget.toString());
+                            setBudgetEditOpen(true);
+                          }}
+                          className="absolute top-2 right-2 p-1 text-[#94a3b8] hover:text-[#f8fafc] transition-colors"
+                          aria-label="Editar orçamento"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <p className="text-xs text-[#94a3b8]">Orçamento</p>
+                        <p className="text-lg font-bold text-[#f8fafc] font-['Outfit']">R$ {(selectedTrip.budget / 1000).toFixed(0)}k</p>
+                      </div>
+                      <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
+                        <p className="text-xs text-[#94a3b8]">Planejado (a confirmar)</p>
+                        <p className="text-lg font-bold text-[#eab308] font-['Outfit']">R$ {(pending / 1000).toFixed(1)}k</p>
+                      </div>
+                      <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
+                        <p className="text-xs text-[#94a3b8]">Confirmado</p>
+                        <p className="text-lg font-bold text-[#10b981] font-['Outfit']">R$ {(confirmed / 1000).toFixed(1)}k</p>
+                      </div>
+                      <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
+                        <p className="text-xs text-[#94a3b8]">Disponível</p>
+                        <p className={`text-lg font-bold font-['Outfit'] ${available >= 0 ? 'text-[#0ea5e9]' : 'text-red-500'}`}>
+                          R$ {(available / 1000).toFixed(1)}k
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
 
 
               {/* Cumulative Spending Chart */}
@@ -2355,6 +2409,42 @@ const Viagens = () => {
                 className="flex-1 py-3 bg-[#ef4444] rounded-xl text-white font-semibold"
               >
                 Confirmar Reset
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Budget Edit Dialog */}
+      <Dialog open={budgetEditOpen} onOpenChange={setBudgetEditOpen}>
+        <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc]">
+          <DialogHeader>
+            <DialogTitle className="font-['Outfit']">Editar orçamento</DialogTitle>
+            <DialogDescription className="text-[#94a3b8]">
+              Atualize o valor total disponível para a viagem.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Input
+              type="number"
+              value={budgetEditValue}
+              onChange={(e) => setBudgetEditValue(e.target.value)}
+              className="bg-[#0f172a] border-[#334155] text-[#f8fafc] placeholder:text-[#64748b]"
+              placeholder="Valor em R$"
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setBudgetEditOpen(false)}
+                className="px-4 py-2 rounded-lg text-sm text-[#94a3b8] hover:bg-[#334155] transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleUpdateBudget}
+                className="px-4 py-2 rounded-lg text-sm bg-[#0ea5e9] text-white hover:bg-[#0284c7] transition-colors"
+              >
+                Salvar
               </button>
             </div>
           </div>
