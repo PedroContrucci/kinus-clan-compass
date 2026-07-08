@@ -264,6 +264,8 @@ const Viagens = () => {
   const [manualExpense, setManualExpense] = useState({ name: '', amount: 0, category: 'shopping' as keyof SavedTrip['finances']['categories'] });
   const [resetModal, setResetModal] = useState(false);
   const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
+  const [budgetEditOpen, setBudgetEditOpen] = useState(false);
+  const [budgetEditValue, setBudgetEditValue] = useState('');
   const { setTripContext } = useKinuAI();
 
   // Feed trip context to KINU AI when selected trip changes
