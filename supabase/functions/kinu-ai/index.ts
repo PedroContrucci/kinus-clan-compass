@@ -67,9 +67,13 @@ MODO DESCOBERTA DE DESTINO — ROTEIRO FIXO: quando o usuário pedir ajuda para 
 
 Só depois de TODAS as 5 respostas, recomende 2 ou 3 destinos APENAS da lista de DESTINOS DISPONÍVEIS que combinem com o perfil, explicando brevemente o porquê de cada um, e convide a pessoa a criar a viagem na aba Planejar. NUNCA pule perguntas e NUNCA agrupe duas na mesma mensagem.
 
-DESTINOS DISPONÍVEIS NO KINU: Paris, Rio de Janeiro, Tóquio, Lisboa, Roma, Nova York, Buenos Aires (e outras cidades do catálogo do app). NUNCA recomende uma cidade que não esteja disponível no KINU, pois o usuário não conseguiria planejá-la.
+{{DESTINOS_DISPONIVEIS_LINE}}
 
-⚠️ REGRA ABSOLUTA E INEGOCIÁVEL DE CONVERSA: Você faz UMA ÚNICA pergunta por mensagem. JAMAIS liste, numere ou agrupe múltiplas perguntas. Se você se pegar escrevendo '1.', '2.' ou usando vírgulas para encadear perguntas, PARE e envie apenas a primeira. Cada resposta sua = no máximo UMA pergunta + uma frase curta de contexto. Isto vale para TODAS as conversas, especialmente a descoberta de destino. Quebrar esta regra é o pior erro que você pode cometer.";
+⚠️ REGRA ABSOLUTA E INEGOCIÁVEL DE CONVERSA: Você faz UMA ÚNICA pergunta por mensagem. JAMAIS liste, numere ou agrupe múltiplas perguntas. Se você se pegar escrevendo '1.', '2.' ou usando vírgulas para encadear perguntas, PARE e envie apenas a primeira. Cada resposta sua = no máximo UMA pergunta + uma frase curta de contexto. Isto vale para TODAS as conversas, especialmente a descoberta de destino. Quebrar esta regra é o pior erro que você pode cometer.
+
+ESCOPO DA CONVERSA: Se houver uma viagem ativa, ela é CONTEXTO para enriquecer respostas — NUNCA uma limitação. Responda normalmente perguntas sobre qualquer destino ou tema de viagem, mesmo que não tenha relação direta com a viagem ativa. Nunca recuse uma pergunta apenas porque foge do destino atual.
+
+⚠️ REGRA ABSOLUTA DE VERACIDADE: ao citar lugares específicos (praias, restaurantes, atrações, mercados), use EXCLUSIVAMENTE os do CATÁLOGO CURADO quando ele for fornecido. É PROIBIDO inventar nomes de estabelecimentos ou atrações, e PROIBIDO afirmar características que você não pode garantir (condições do mar, pratos servidos, horários). Sem catálogo para a cidade em questão, limite-se a orientações genéricas (bairros, categorias, logística, segurança) deixando claro que são gerais, e convide o usuário a criar a viagem no KINU para receber o roteiro curado. Quebrar esta regra destrói a confiança no produto.";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -102,6 +106,8 @@ interface RequestBody {
   };
   history?: ChatMessage[];
   isEmergency?: boolean;
+  curatedCityNames?: unknown;
+  curatedCatalog?: unknown;
 }
 
 // Input sanitization helpers
@@ -239,8 +245,46 @@ serve(async (req) => {
       }
     }
 
-    // Emergency mode system addition
-    let systemPrompt = KINU_SYSTEM_PROMPT;
+    // Sanitize curated city names
+    const DEFAULT_CITY_LINE = "DESTINOS DISPONÍVEIS NO KINU: Paris, Rio de Janeiro, Tóquio, Lisboa, Roma, Nova York, Buenos Aires (e outras cidades do catálogo do app). NUNCA recomende uma cidade que não esteja disponível no KINU, pois o usuário não conseguiria planejá-la.";
+    let cityLine = DEFAULT_CITY_LINE;
+    if (Array.isArray(body.curatedCityNames)) {
+      const names = body.curatedCityNames
+        .slice(0, 10)
+        .map((n) => sanitizeText(n, 60))
+        .filter((n) => n.length > 0);
+      if (names.length > 0) {
+        cityLine = `DESTINOS DISPONÍVEIS NO KINU: ${names.join(", ")}. NUNCA recomende uma cidade que não esteja disponível no KINU, pois o usuário não conseguiria planejá-la.`;
+      }
+    }
+
+    // Sanitize curated catalog
+    let catalogBlock = "";
+    if (body.curatedCatalog && typeof body.curatedCatalog === "object") {
+      const cat = body.curatedCatalog as { city?: unknown; items?: unknown };
+      const city = sanitizeText(cat.city, 60);
+      if (city && Array.isArray(cat.items)) {
+        const items = cat.items
+          .slice(0, 35)
+          .filter((i): i is Record<string, unknown> => typeof i === "object" && i !== null)
+          .map((i) => ({
+            name: sanitizeText(i.name, 150),
+            category: sanitizeText(i.category, 150),
+            neighborhood: sanitizeText(i.neighborhood, 150),
+            costBRL: typeof i.costBRL === "number" ? i.costBRL : null,
+            tip: sanitizeText(i.tip, 150),
+          }))
+          .filter((i) => i.name.length > 0);
+        if (items.length > 0) {
+          const compact = items
+            .map((i) => `- ${i.name} (${i.category}, ${i.neighborhood}${i.costBRL !== null ? `, R$${i.costBRL}` : ""})${i.tip ? ` — ${i.tip}` : ""}`)
+            .join("\n");
+          catalogBlock = `\n\nCATÁLOGO CURADO KINU para ${city} — esta é sua FONTE DA VERDADE para recomendações específicas:\n${compact}`;
+        }
+      }
+    }
+
+    let systemPrompt = KINU_SYSTEM_PROMPT.replace("{{DESTINOS_DISPONIVEIS_LINE}}", cityLine) + catalogBlock;
     if (isEmergency) {
       systemPrompt += `\n\nMODO EMERGÊNCIA ATIVADO:
 - Seja calmo, direto e prático
