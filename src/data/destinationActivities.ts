@@ -3136,6 +3136,11 @@ export const destinationActivities: Record<string, DestinationData> = {
     cityCode: 'SSA',
     activities: salvadorActivities,
   },
+  'Buenos Aires': {
+    cityName: 'Buenos Aires',
+    cityCode: 'EZE',
+    activities: buenosAiresActivities,
+  },
   'Roma': {
     cityName: 'Roma',
     cityCode: 'FCO',
