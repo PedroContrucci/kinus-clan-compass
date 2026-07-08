@@ -106,6 +106,8 @@ interface RequestBody {
   };
   history?: ChatMessage[];
   isEmergency?: boolean;
+  curatedCityNames?: unknown;
+  curatedCatalog?: unknown;
 }
 
 // Input sanitization helpers
