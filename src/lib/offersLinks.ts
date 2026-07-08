@@ -81,15 +81,23 @@ function buildBookingLink(
   city: string,
   startDate: Date,
   endDate: Date,
-  travelers: number
+  travelers: number,
+  hotelName?: string,
+  isSecondary = false
 ): OfferLink | null {
   const checkin = format(startDate, 'yyyy-MM-dd');
   const checkout = format(endDate, 'yyyy-MM-dd');
+  const query = hotelName ? `${hotelName} ${city}` : city;
+  const description = isSecondary
+    ? `Ver outros hotéis em ${city}`
+    : hotelName
+      ? 'Ver este hotel · busca pronta'
+      : 'Reservar hospedagem · busca pronta';
 
   return {
     partner: 'Booking',
-    description: 'Reservar hospedagem · busca pronta',
-    url: `https://www.booking.com/searchresults.pt-br.html?ss=${encodeURIComponent(city)}&checkin=${checkin}&checkout=${checkout}&group_adults=${travelers}`,
+    description,
+    url: `https://www.booking.com/searchresults.pt-br.html?ss=${encodeURIComponent(query)}&checkin=${checkin}&checkout=${checkout}&group_adults=${travelers}`,
     isAffiliate: false,
   };
 }
@@ -97,15 +105,17 @@ function buildBookingLink(
 function buildGoogleHotelsLink(
   city: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
+  hotelName?: string
 ): OfferLink | null {
   const checkin = format(startDate, 'yyyy-MM-dd');
   const checkout = format(endDate, 'yyyy-MM-dd');
+  const query = hotelName ? `${hotelName} ${city}` : city;
 
   return {
     partner: 'Google Hotels',
-    description: 'Comparar hotéis · busca pronta',
-    url: `https://www.google.com/travel/hotels/${encodeURIComponent(city)}?q=${encodeURIComponent(city)}&checkin=${checkin}&checkout=${checkout}`,
+    description: hotelName ? 'Ver este hotel · busca pronta' : 'Comparar hotéis · busca pronta',
+    url: `https://www.google.com/travel/hotels/${encodeURIComponent(city)}?q=${encodeURIComponent(query)}&checkin=${checkin}&checkout=${checkout}`,
     isAffiliate: false,
   };
 }
