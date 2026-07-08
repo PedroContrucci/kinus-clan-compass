@@ -5424,6 +5424,11 @@ export const destinationActivities: Record<string, DestinationData> = {
     cityCode: 'DXB',
     activities: dubaiActivities,
   },
+  'Cidade do Cabo': {
+    cityName: 'Cidade do Cabo',
+    cityCode: 'CPT',
+    activities: cidadeDoCaboActivities,
+  },
   'Roma': {
     cityName: 'Roma',
     cityCode: 'FCO',
