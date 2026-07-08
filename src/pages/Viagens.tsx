@@ -2415,6 +2415,42 @@ const Viagens = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Budget Edit Dialog */}
+      <Dialog open={budgetEditOpen} onOpenChange={setBudgetEditOpen}>
+        <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc]">
+          <DialogHeader>
+            <DialogTitle className="font-['Outfit']">Editar orçamento</DialogTitle>
+            <DialogDescription className="text-[#94a3b8]">
+              Atualize o valor total disponível para a viagem.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Input
+              type="number"
+              value={budgetEditValue}
+              onChange={(e) => setBudgetEditValue(e.target.value)}
+              className="bg-[#0f172a] border-[#334155] text-[#f8fafc] placeholder:text-[#64748b]"
+              placeholder="Valor em R$"
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setBudgetEditOpen(false)}
+                className="px-4 py-2 rounded-lg text-sm text-[#94a3b8] hover:bg-[#334155] transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleUpdateBudget}
+                className="px-4 py-2 rounded-lg text-sm bg-[#0ea5e9] text-white hover:bg-[#0284c7] transition-colors"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Activity Detail Drawer */}
       {selectedTrip && (
         <ActivityDetailDrawer
