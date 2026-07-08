@@ -171,16 +171,22 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
 
     case 'hotel': {
       const city = params.city?.trim();
+      const hotelName = params.hotelName?.trim();
       const start = params.startDate;
       const end = params.endDate;
 
       if (!city || !start || !end) return [];
 
-      const booking = buildBookingLink(city, start, end, travelers);
+      const booking = buildBookingLink(city, start, end, travelers, hotelName);
       if (booking) links.push(booking);
 
-      const googleHotels = buildGoogleHotelsLink(city, start, end);
+      const googleHotels = buildGoogleHotelsLink(city, start, end, hotelName);
       if (googleHotels) links.push(googleHotels);
+
+      if (hotelName) {
+        const generic = buildBookingLink(city, start, end, travelers, undefined, true);
+        if (generic) links.push(generic);
+      }
       break;
     }
 
