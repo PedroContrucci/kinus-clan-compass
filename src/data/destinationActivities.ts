@@ -1709,6 +1709,7 @@ const romeActivities: SuggestedActivity[] = [
     durationHours: 1,
     tips: ['Giolitti ou Frigidarium são excelentes', 'Evite gelaterias muito coloridas'],
     styleTags: ['gastronomy', 'romantic'],
+  },
   {
     id: 'rome-pantheon-centro',
     name: 'Panteão e centro histórico',
