@@ -2,6 +2,29 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 import { KinuMessage, KinuTripContext, KinuInsight, EMERGENCY_KEYWORDS } from "@/types/kinuAI";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { CURATED_CITIES } from "@/lib/curatedCities";
+import { destinationActivities } from "@/data/destinationActivities";
+
+function buildCuratedCatalog(city: string) {
+  const data = destinationActivities[city];
+  if (!data) return null;
+  return data.activities.slice(0, 35).map((a) => ({
+    name: a.name,
+    category: a.category,
+    neighborhood: a.neighborhood,
+    costBRL: a.estimatedCostBRL,
+    tip: a.tips?.[0] ?? "",
+  }));
+}
+
+function detectCuratedCity(message: string, activeDestination?: string): string | null {
+  if (activeDestination && CURATED_CITIES.some((c) => c.toLowerCase() === activeDestination.toLowerCase())) {
+    const match = CURATED_CITIES.find((c) => c.toLowerCase() === activeDestination.toLowerCase());
+    if (match) return match;
+  }
+  const lower = message.toLowerCase();
+  return CURATED_CITIES.find((c) => lower.includes(c.toLowerCase())) ?? null;
+}
 
 interface KinuAIContextType {
   isOpen: boolean;
