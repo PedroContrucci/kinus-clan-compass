@@ -487,6 +487,32 @@ const Viagens = () => {
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
   };
 
+  const handleUpdateBudget = () => {
+    if (!selectedTrip) return;
+    const newBudget = parseFloat(budgetEditValue) || selectedTrip.budget;
+    if (newBudget <= 0) return;
+
+    const updatedTrip = { ...selectedTrip };
+    updatedTrip.budget = newBudget;
+    updatedTrip.finances = {
+      ...updatedTrip.finances,
+      total: newBudget,
+      available: Math.max(0, newBudget - updatedTrip.finances.planned - updatedTrip.finances.bidding - updatedTrip.finances.confirmed),
+    };
+
+    setSelectedTrip(updatedTrip);
+    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
+    setTrips(updatedTrips);
+    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+
+    toast({
+      title: 'Orçamento atualizado 💰',
+      description: `Novo orçamento: R$ ${newBudget.toLocaleString('pt-BR')}`,
+    });
+    setBudgetEditOpen(false);
+  };
+
+
   const handleResetJourney = () => {
     localStorage.removeItem('kinu_trips');
     setTrips([]);
