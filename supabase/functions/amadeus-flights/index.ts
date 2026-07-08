@@ -250,7 +250,14 @@ async function searchFlights(
     ? offers.filter(o => o.segments.every(s => BR_AIRPORTS.has(s.departure.iataCode) && BR_AIRPORTS.has(s.arrival.iataCode)))
     : offers;
 
-  return filteredOffers;
+  // Sanity filter: exclude offers >2x fastest duration, keep at least 3
+  if (filteredOffers.length === 0) return filteredOffers;
+  const fastest = Math.min(...filteredOffers.map(o => o.durationMinutes));
+  const threshold = fastest * 2;
+  const withinThreshold = filteredOffers.filter(o => o.durationMinutes <= threshold);
+  if (withinThreshold.length >= 3) return withinThreshold;
+  const sortedByDuration = [...filteredOffers].sort((a, b) => a.durationMinutes - b.durationMinutes);
+  return sortedByDuration.slice(0, Math.min(3, sortedByDuration.length));
 }
 
 // Search with flexible dates (±3 days)
