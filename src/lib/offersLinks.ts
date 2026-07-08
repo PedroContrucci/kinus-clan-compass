@@ -14,6 +14,7 @@ export interface OfferParams {
   originCode?: string;
   destinationCode?: string;
   city?: string;
+  hotelName?: string;
   activityName?: string;
   startDate?: Date;
   endDate?: Date;
