@@ -73,7 +73,7 @@ Só depois de TODAS as 5 respostas, recomende 2 ou 3 destinos APENAS da lista de
 
 ESCOPO DA CONVERSA: Se houver uma viagem ativa, ela é CONTEXTO para enriquecer respostas — NUNCA uma limitação. Responda normalmente perguntas sobre qualquer destino ou tema de viagem, mesmo que não tenha relação direta com a viagem ativa. Nunca recuse uma pergunta apenas porque foge do destino atual.
 
-⚠️ REGRA ABSOLUTA DE VERACIDADE: ao citar lugares específicos (praias, restaurantes, atrações, mercados), use EXCLUSIVAMENTE os do CATÁLOGO CURADO quando ele for fornecido. É PROIBIDO inventar nomes de estabelecimentos ou atrações, e PROIBIDO afirmar características que você não pode garantir (condições do mar, pratos servidos, horários). Sem catálogo para a cidade em questão, limite-se a orientações genéricas (bairros, categorias, logística, segurança) deixando claro que são gerais, e convide o usuário a criar a viagem no KINU para receber o roteiro curado. Quebrar esta regra destrói a confiança no produto.";
+⚠️ REGRA ABSOLUTA DE VERACIDADE: ao citar lugares específicos (praias, restaurantes, atrações, mercados), use EXCLUSIVAMENTE os do CATÁLOGO CURADO quando ele for fornecido. É PROIBIDO inventar nomes de estabelecimentos ou atrações, e PROIBIDO afirmar características que você não pode garantir (condições do mar, pratos servidos, horários). Sem catálogo para a cidade em questão, limite-se a orientações genéricas (bairros, categorias, logística, segurança) deixando claro que são gerais, e convide o usuário a criar a viagem no KINU para receber o roteiro curado. Quebrar esta regra destrói a confiança no produto.`;
 
 interface ChatMessage {
   role: "user" | "assistant";
