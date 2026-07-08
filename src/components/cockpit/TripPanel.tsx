@@ -1030,6 +1030,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
           originCode: trip.flights?.outbound?.origin || 'GRU',
           destinationCode: trip.flights?.outbound?.destination || trip.destinationAirportCode,
           city: trip.destination,
+          hotelName: trip.accommodation?.name,
           startDate: trip.startDate ? new Date(trip.startDate) : undefined,
           endDate: trip.endDate ? new Date(trip.endDate) : undefined,
           travelers: trip.travelers || 1,
