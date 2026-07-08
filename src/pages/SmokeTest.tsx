@@ -244,7 +244,7 @@ const TESTS: TestConfig[] = [
     destIata: 'CXJ',
     days: 8,
     travelers: 2,
-    budget: 12000,
+    budget: 15000,
     interests: ['gastronomy', 'family'],
     jetLagSeverity: 'BAIXO',
     outboundDeparture: '10:20',
