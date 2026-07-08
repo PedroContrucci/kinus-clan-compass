@@ -162,12 +162,47 @@ export function getHestiaFinOps(trip: SavedTrip): string {
 }
 
 export function getHestiaCambio(trip: SavedTrip): string {
-  const currency = (trip as any).destinationCurrency || 'USD';
+  const currency = getDestinationCurrencyForTip(trip);
+
+  // Domestic Brazil trips: no currency-pacing advice, show a budget-pacing tip instead
+  if (currency === 'BRL') {
+    return 'Viagem nacional! Separe um valor fixo por mês e use cartão sem IOF para acumular milhas.';
+  }
+
   const volatile = ['ARS', 'TRY', 'EGP', 'COP'];
   const strong = ['USD', 'EUR', 'GBP', 'CHF', 'JPY'];
-  if (volatile.includes(currency)) return `${currency} e volatil. Considere levar USD como backup e comprar moeda local gradualmente.`;
+  if (volatile.includes(currency)) return `${currency} é volátil. Considere levar USD como backup e comprar moeda local gradualmente.`;
   if (strong.includes(currency)) return `Compre ${currency} aos poucos ao longo das semanas para diluir o risco cambial.`;
-  return `Cambio atualizado. Fique de olho nas tendencias do ${currency}.`;
+  return `Câmbio atualizado. Fique de olho nas tendências do ${currency}.`;
+}
+
+function getDestinationCurrencyForTip(trip: SavedTrip): string {
+  const explicit = (trip as any).destinationCurrency as string | undefined;
+  const destination = (trip.destination || '').toLowerCase().trim();
+  const country = (trip.country || '').toLowerCase().trim();
+
+  if (country.includes('brasil')) return 'BRL';
+
+  const cityCurrency: Record<string, string> = {
+    'paris': 'EUR', 'roma': 'EUR', 'amsterdam': 'EUR', 'barcelona': 'EUR',
+    'madri': 'EUR', 'berlim': 'EUR', 'viena': 'EUR', 'atenas': 'EUR',
+    'lisboa': 'EUR', 'londres': 'GBP', 'tóquio': 'JPY', 'tokyo': 'JPY',
+    'nova york': 'USD', 'miami': 'USD', 'orlando': 'USD', 'los angeles': 'USD',
+    'bangkok': 'THB', 'buenos aires': 'ARS', 'santiago': 'CLP',
+    'toronto': 'CAD', 'sydney': 'AUD', 'dubai': 'AED', 'seul': 'KRW',
+  };
+
+  if (cityCurrency[destination]) return cityCurrency[destination];
+
+  const normalized = destination.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  for (const [city, currency] of Object.entries(cityCurrency)) {
+    const cityNA = city.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (normalized === cityNA || normalized.includes(cityNA) || cityNA.includes(normalized)) {
+      return currency;
+    }
+  }
+
+  return explicit || 'USD';
 }
 
 export function getHestiaLeilao(): string { return 'Cada oferta aceita atualiza seu FinOps automaticamente.'; }
