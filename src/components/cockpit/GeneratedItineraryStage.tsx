@@ -37,7 +37,7 @@ import { ItineraryExchangeRate } from './ItineraryExchangeRate';
 interface ItineraryActivity {
   id: string;
   name: string;
-  type: 'flight' | 'hotel' | 'experience' | 'restaurant' | 'checkin' | 'checkout' | 'breakfast' | 'lunch' | 'dinner' | 'morning' | 'afternoon' | 'night';
+  type: 'flight' | 'hotel' | 'experience' | 'restaurant' | 'checkin' | 'checkout' | 'breakfast' | 'lunch' | 'dinner' | 'morning' | 'afternoon' | 'night' | 'transport';
   timeSlot: 'breakfast' | 'morning' | 'lunch' | 'afternoon' | 'dinner' | 'night' | 'flight' | 'hotel';
   estimatedCost: number;
   costPerPerson?: number;
