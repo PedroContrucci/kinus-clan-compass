@@ -4136,6 +4136,11 @@ export const destinationActivities: Record<string, DestinationData> = {
     cityCode: 'CXJ',
     activities: gramadoActivities,
   },
+  'Londres': {
+    cityName: 'Londres',
+    cityCode: 'LHR',
+    activities: londresActivities,
+  },
   'Roma': {
     cityName: 'Roma',
     cityCode: 'FCO',
