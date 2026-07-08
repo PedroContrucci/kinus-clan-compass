@@ -759,6 +759,7 @@ const tokyoActivities: SuggestedActivity[] = [
     durationHours: 2,
     tips: ['Big Echo ou Karaoke Kan', 'Salas privativas - sem vergonha!'],
     styleTags: ['nightlife', 'family'],
+  },
   {
     id: 'tokyo-ueno-park',
     name: 'Parque Ueno e Museu Nacional',
