@@ -80,12 +80,19 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         content: m.content,
       }));
 
+      const curatedCity = detectCuratedCity(content, tripContext?.destination);
+      const curatedCatalog = curatedCity ? buildCuratedCatalog(curatedCity) : null;
+
       const { data, error } = await supabase.functions.invoke("kinu-ai", {
         body: {
           message: content,
           context: tripContext,
           history,
           isEmergency,
+          curatedCityNames: CURATED_CITIES,
+          curatedCatalog: curatedCatalog
+            ? { city: curatedCity, items: curatedCatalog }
+            : undefined,
         },
       });
 
