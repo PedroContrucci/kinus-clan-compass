@@ -5,6 +5,7 @@ import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, M
 import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { exportTripPDF } from '@/lib/tripPdfExport';
 import { toast } from '@/hooks/use-toast';
