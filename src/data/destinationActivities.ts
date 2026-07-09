@@ -6735,6 +6735,11 @@ export const destinationActivities: Record<string, DestinationData> = {
     cityCode: 'RAK',
     activities: marrakechActivities,
   },
+  'Singapura': {
+    cityName: 'Singapura',
+    cityCode: 'SIN',
+    activities: singapuraActivities,
+  },
   'Roma': {
     cityName: 'Roma',
     cityCode: 'FCO',
