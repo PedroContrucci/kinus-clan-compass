@@ -757,11 +757,11 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
             </div>
           </div>
           <p className={`text-lg font-bold font-['Outfit'] ${flightConfirmed ? 'text-emerald-400' : 'text-sky-400'}`}>
-            {flightConfirmed ? '✅ Confirmado' : `R$ ${fmt(flightPrice)} /pessoa · ida e volta ${hasRealFlights ? '' : '(estimado)'}`}
+            R$ {fmt(flightTotal)}
           </p>
-          {!flightConfirmed && (
-            <p className="text-xs text-muted-foreground mt-1">Fonte: Amadeus (referência)</p>
-          )}
+          <p className="text-xs text-muted-foreground mt-1">
+            total · R$ {fmt(flightPrice)} por pessoa
+          </p>
           {!flightConfirmed && priceChange && (
             <div className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full mt-1 ${priceChange.dropped ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'}`}>
               {priceChange.dropped ? '↓' : '↑'} R$ {fmt(priceChange.diff)} desde {priceChange.dateStr}
