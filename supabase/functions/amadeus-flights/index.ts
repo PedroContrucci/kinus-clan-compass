@@ -175,12 +175,14 @@ async function searchFlights(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`Amadeus flight search error (${response.status}):`, errorText);
-    
-    // Graceful degradation: return empty for any API error (400, 500, etc.)
-    console.log(`No flights available for ${origin} → ${destination} on ${date} (API status: ${response.status})`);
-    return [];
+    console.error(`Amadeus flight search upstream error (status ${response.status}) for ${origin} → ${destination} on ${date}. Body:`, errorText);
+    // Signal upstream failure to the handler so it can return a friendly retry message.
+    const err = new Error(`AmadeusUpstreamError:${response.status}`);
+    (err as any).isUpstream = true;
+    (err as any).status = response.status;
+    throw err;
   }
+
 
   const data = await response.json();
   const offers: FlightOffer[] = [];
