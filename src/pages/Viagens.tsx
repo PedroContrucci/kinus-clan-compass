@@ -2055,7 +2055,8 @@ const Viagens = () => {
           )}
 
           {/* Preparação Tab = Packing + Checklist + Guia combined */}
-          {activeTab === 'preparacao' && (() => {
+          {activeTab === 'preparacao' && (
+            <TabErrorBoundary tabName="Preparação">{(() => {
             const checklist = selectedTrip.checklist || [];
             const totalItems = checklist.length;
             const checkedItems = checklist.filter(i => i.checked).length;
