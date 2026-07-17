@@ -1514,7 +1514,7 @@ const Viagens = () => {
 
           {/* Roteiro Tab */}
           {activeTab === 'roteiro' && (
-            <div className="animate-fade-in">
+            <TabErrorBoundary tabName="Roteiro"><div className="animate-fade-in">
               <AgentTip agent="icarus" variant="compact" message={getIcarusRoteiro(selectedTrip, selectedDay)} />
 
               {/* Category Quick Filters */}
