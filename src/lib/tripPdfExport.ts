@@ -964,21 +964,23 @@ export async function exportTripPDF(trip: SavedTrip) {
   drawRect(14, y, pw - 28, boxH, B.deep);
   drawRect(14, y, 2, boxH, B.emerald);
 
+  const budgetTotal = trip.finances?.total || trip.budget || 0;
+  const confirmedVal = trip.finances?.confirmed || 0;
+  const plannedVal = trip.finances?.planned || 0;
+  // Canonical app formula: Disponível = orçamento − planejado − confirmado
+  const availableCalc = budgetTotal - plannedVal - confirmedVal;
+  const isOverBudget = availableCalc < 0;
   const finData = [
-    { label: 'Orcamento total', value: `R$ ${fmt(trip.finances?.total || trip.budget || 0)}`, color: B.white },
-    { label: 'Confirmado', value: `R$ ${fmt(trip.finances?.confirmed || 0)}`, color: B.emerald },
-    { label: 'Planejado', value: `R$ ${fmt(trip.finances?.planned || 0)}`, color: B.gold },
-    (() => {
-      const available = trip.finances?.available || 0;
-      const isOverBudget = available < 0;
-      return {
-        label: 'Disponivel',
-        value: isOverBudget
-          ? `- R$ ${fmt(Math.abs(available))} (acima do orcamento)`
-          : `R$ ${fmt(available)}`,
-        color: isOverBudget ? B.red : B.gray400,
-      };
-    })(),
+    { label: 'Orcamento total', value: `R$ ${fmt(budgetTotal)}`, color: B.white },
+    { label: 'Confirmado', value: `R$ ${fmt(confirmedVal)}`, color: B.emerald },
+    { label: 'Planejado', value: `R$ ${fmt(plannedVal)}`, color: B.gold },
+    {
+      label: isOverBudget ? 'Acima do orcamento' : 'Disponivel',
+      value: isOverBudget
+        ? `R$ ${fmt(Math.abs(availableCalc))}`
+        : `R$ ${fmt(availableCalc)}`,
+      color: isOverBudget ? B.amber : B.gray400,
+    },
   ];
 
   let finY = y + 7;
