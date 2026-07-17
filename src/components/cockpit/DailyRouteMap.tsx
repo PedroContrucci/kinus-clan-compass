@@ -295,6 +295,17 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
 
   const polylinePositions = points.map(p => [p.lat, p.lng] as [number, number]);
 
+  const focusPoint = useMemo(() => {
+    if (!focusActivityName) return null;
+    const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const target = norm(focusActivityName);
+    return (
+      points.find(p => !p.isHotel && norm(p.name) === target) ||
+      points.find(p => !p.isHotel && (norm(p.name).includes(target) || target.includes(norm(p.name)))) ||
+      null
+    );
+  }, [focusActivityName, points]);
+
   return (
     <div className="mb-4">
       <p className="text-xs font-medium text-muted-foreground mb-2 font-['Outfit']">🗺️ Rota do Dia</p>
@@ -314,6 +325,7 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             />
             <FitBounds points={points} />
+            <FocusPoint point={focusPoint} />
             {points.map((point, idx) => {
               const hotelOffset = points[0]?.isHotel ? 1 : 0;
               const activityNum = point.isHotel ? null : idx + 1 - hotelOffset;
