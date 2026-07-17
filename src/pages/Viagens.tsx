@@ -1940,7 +1940,7 @@ const Viagens = () => {
 
           {/* Financeiro Tab = Ofertas + Câmbio combined */}
           {activeTab === 'financeiro' && (
-            <div className="animate-fade-in space-y-6">
+            <TabErrorBoundary tabName="Financeiro"><div className="animate-fade-in space-y-6">
               <AgentTip agent="hestia" variant="compact" message={getHestiaCambio(selectedTrip)} />
               
               {/* Budget Summary */}
