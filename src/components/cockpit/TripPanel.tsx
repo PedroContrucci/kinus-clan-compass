@@ -570,8 +570,8 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
     switch (action.actionType) {
       case 'open-auction-flight': onOpenAuction('flight'); break;
       case 'open-auction-hotel': onOpenAuction('hotel'); break;
-      case 'confirm-flight': setConfirmModal({ type: 'flight', isOpen: true }); break;
-      case 'confirm-hotel': setConfirmModal({ type: 'hotel', isOpen: true }); break;
+      case 'confirm-flight': openReservationConfirm('flight'); break;
+      case 'confirm-hotel': openReservationConfirm('hotel'); break;
       case 'navigate-checklist': onNavigateTab('preparacao'); break;
       case 'navigate-cambio': onNavigateTab('financeiro'); break;
       case 'navigate-packing': onNavigateTab('preparacao'); break;
