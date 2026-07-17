@@ -670,6 +670,34 @@ function getDestCoverPhotos(destination: string): string[] {
   ];
 }
 
+// Try to fetch destination-specific photos from the unsplash edge function.
+// Returns [] on any failure — caller falls back to getDestCoverPhotos.
+async function fetchUnsplashCoverUrls(destination: string): Promise<string[]> {
+  try {
+    const destKey = destination?.trim().toLowerCase() || '';
+    const hint = DESTINATION_PHOTO_HINTS[destKey];
+    const query = hint || (destination?.trim() ? `${destination} landmark travel` : '');
+    if (!query) return [];
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/unsplash?query=${encodeURIComponent(query)}&per_page=2&orientation=landscape`;
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(t);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const photos = Array.isArray(data?.photos) ? data.photos : [];
+    return photos.map((p: any) => p?.urls?.regular).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 async function fetchImageAsBase64(url: string): Promise<string | null> {
   const tryFetch = (attemptUrl: string, timeout: number): Promise<string | null> => {
     return new Promise((resolve) => {
