@@ -298,8 +298,17 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
                 <motion.div
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
+                  onClick={() => handlePromotePriority(priorityId)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handlePromotePriority(priorityId);
+                    }
+                  }}
                   className={cn(
-                    'flex items-center gap-3 p-4 bg-card border rounded-xl transition-colors',
+                    'flex items-center gap-3 p-4 bg-card border rounded-xl transition-colors cursor-pointer hover:border-primary/50',
                     index === 0 ? 'border-primary bg-primary/5' : 'border-border'
                   )}
                 >
