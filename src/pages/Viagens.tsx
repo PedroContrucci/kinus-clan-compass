@@ -1935,7 +1935,7 @@ const Viagens = () => {
               })()}
                 </>
               )}
-            </div>
+            </div></TabErrorBoundary>
           )}
 
           {/* Financeiro Tab = Ofertas + Câmbio combined */}
