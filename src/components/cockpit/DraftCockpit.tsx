@@ -193,7 +193,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
       return;
     }
     
-    const updatedTrip = {
+    const updatedTrip: any = {
       ...trip,
       status: 'active',
       flightsSelected: true,
@@ -201,7 +201,8 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
       returnFlight: selectedReturn,
       days: generatedDays || trip.days,
     };
-    
+    syncFlightPlannedFinances(updatedTrip, selectedOutbound, selectedReturn);
+
     onActivate(updatedTrip as any);
     toast({ title: "Viagem ativada! 🚀", description: "Sua viagem está pronta para acompanhamento." });
   }, [trip, selectedOutbound, selectedReturn, onActivate]);
