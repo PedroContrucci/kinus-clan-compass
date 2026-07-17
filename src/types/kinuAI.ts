@@ -27,6 +27,7 @@ export interface KinuTripContext {
   hotelConfirmed?: boolean;
   interests?: string[];
   flightDuration?: string;
+  itineraryDays?: Array<{ day: number; date: string; items: string[] }>;
 }
 
 export interface KinuInsight {
