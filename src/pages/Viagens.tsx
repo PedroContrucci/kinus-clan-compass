@@ -2466,8 +2466,15 @@ const Viagens = () => {
         <ActivityDetailDrawer
           activity={activityDetailDrawer?.activity || null}
           destination={selectedTrip.destination}
+          travelers={selectedTrip.travelers}
           open={activityDetailDrawer?.open || false}
           onClose={() => setActivityDetailDrawer(null)}
+          onFocusOnMap={(name) => {
+            setFocusMapActivity(name);
+            setTimeout(() => {
+              mapAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+          }}
         />
       )}
 
