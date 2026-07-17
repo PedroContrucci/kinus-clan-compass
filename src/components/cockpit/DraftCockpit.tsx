@@ -127,15 +127,17 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   const handleFlightsSelected = useCallback((outbound: SelectedFlight, returnFlight: SelectedFlight) => {
     setSelectedOutbound(outbound);
     setSelectedReturn(returnFlight);
-    
-    // Update trip with selected flights
-    const updatedTrip = {
+
+    // Update trip with selected flights + sync finances.planned so the flight
+    // anchor matches the actual Amadeus price shown in the hero card.
+    const updatedTrip: any = {
       ...trip,
       flightsSelected: true,
       outboundFlight: outbound,
       returnFlight: returnFlight,
     };
-    
+    syncFlightPlannedFinances(updatedTrip, outbound, returnFlight);
+
     onSave(updatedTrip);
     setStage('itinerary');
     
