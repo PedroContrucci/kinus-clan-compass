@@ -415,6 +415,34 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
     setConfirmReservation(null);
   };
 
+  const openReservationConfirm = (type: 'flight' | 'hotel') => {
+    if (type === 'flight') {
+      setConfirmReservation({
+        type: 'flight',
+        amount: '',
+        link: '',
+        hotelName: '',
+        mealPlan: '',
+        outboundAirline: ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '',
+        outboundFlightNumber: ((trip as any).outboundFlight?.option?.flightNumber !== '---' ? (trip as any).outboundFlight?.option?.flightNumber : '') || '',
+        outboundTime: (trip as any).outboundFlight?.option?.departureTime || '',
+        returnAirline: ((trip as any).returnFlight?.option?.airline !== 'A confirmar' ? (trip as any).returnFlight?.option?.airline : '') || '',
+        returnFlightNumber: ((trip as any).returnFlight?.option?.flightNumber !== '---' ? (trip as any).returnFlight?.option?.flightNumber : '') || '',
+        returnTime: (trip as any).returnFlight?.option?.departureTime || '',
+      });
+    } else {
+      setConfirmReservation({
+        type: 'hotel',
+        amount: '',
+        link: '',
+        hotelName: trip.accommodation?.name || '',
+        mealPlan: (trip.accommodation as any)?.mealPlan || 'Café da manhã',
+        outboundAirline: '', outboundFlightNumber: '', outboundTime: '',
+        returnAirline: '', returnFlightNumber: '', returnTime: '',
+      });
+    }
+  };
+
   // Fetch maps embed URL
   useEffect(() => {
     supabase.functions.invoke('maps-embed', { 
