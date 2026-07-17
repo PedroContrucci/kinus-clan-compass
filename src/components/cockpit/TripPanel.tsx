@@ -764,7 +764,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
             R$ {fmt(flightTotal)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            total · R$ {fmt(flightPrice)} por pessoa
+            total · R$ {fmt(flightPerPerson)} por pessoa
           </p>
           {!flightConfirmed && priceChange && (
             <div className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full mt-1 ${priceChange.dropped ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'}`}>
