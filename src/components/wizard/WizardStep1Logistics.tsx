@@ -376,16 +376,22 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
               {/* Upcoming cities */}
               {selectedCountry.cities.some((city) => !isCityCurated(city.name)) && (
                 <div className="space-y-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowUpcoming((prev) => !prev)}
-                    className="w-full py-3 px-4 rounded-xl border border-border/60 bg-card/50 hover:bg-card text-sm font-medium transition-colors flex items-center justify-center gap-2 text-[#eab308]"
-                  >
-                    <span>{showUpcoming ? '−' : '+'}</span>
-                    <span>
-                      {selectedCountry.cities.filter((city) => !isCityCurated(city.name)).length} destinos em breve
-                    </span>
-                  </button>
+                  {selectedCountry.cities.some((city) => isCityCurated(city.name)) ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowUpcoming((prev) => !prev)}
+                      className="w-full py-3 px-4 rounded-xl border border-border/60 bg-card/50 hover:bg-card text-sm font-medium transition-colors flex items-center justify-center gap-2 text-[#eab308]"
+                    >
+                      <span>{showUpcoming ? '−' : '+'}</span>
+                      <span>
+                        {selectedCountry.cities.filter((city) => !isCityCurated(city.name)).length} destinos em breve
+                      </span>
+                    </button>
+                  ) : (
+                    <p className="text-center text-sm font-medium text-foreground">
+                      Os destinos de {selectedCountry.country} chegam em breve ao KINU 🌍
+                    </p>
+                  )}
 
                   {showUpcoming && (
                     <div className="grid grid-cols-2 gap-3">
