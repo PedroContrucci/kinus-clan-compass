@@ -83,6 +83,34 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       const curatedCity = detectCuratedCity(content, tripContext?.destination);
       const curatedCatalog = curatedCity ? buildCuratedCatalog(curatedCity) : null;
 
+      // Build compact itineraryDays, cap total payload ~4000 chars
+      let itineraryDays: Array<{ day: number; date: string; items: string[] }> | undefined;
+      const rawDays = tripContext?.itineraryDays;
+      if (rawDays && rawDays.length > 0) {
+        const capped = rawDays.slice(0, 12).map((d) => ({
+          day: d.day,
+          date: d.date || '',
+          items: (d.items || []).slice(0, 8).map((s) => String(s).slice(0, 80)),
+        }));
+        let total = 0;
+        const MAX = 4000;
+        const out: typeof capped = [];
+        let truncated = false;
+        for (const d of capped) {
+          const kept: string[] = [];
+          for (const it of d.items) {
+            const cost = it.length + 2;
+            if (total + cost > MAX) { truncated = true; break; }
+            kept.push(it);
+            total += cost;
+          }
+          if (truncated && kept.length < d.items.length) kept.push('…');
+          out.push({ day: d.day, date: d.date, items: kept });
+          if (truncated) break;
+        }
+        itineraryDays = out;
+      }
+
       const { data, error } = await supabase.functions.invoke("kinu-ai", {
         body: {
           message: content,
@@ -93,6 +121,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
           curatedCatalog: curatedCatalog
             ? { city: curatedCity, items: curatedCatalog }
             : undefined,
+          itineraryDays,
         },
       });
 
