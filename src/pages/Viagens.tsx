@@ -2051,7 +2051,7 @@ const Viagens = () => {
                 />
               </div>
 
-            </div>
+            </div></TabErrorBoundary>
           )}
 
           {/* Preparação Tab = Packing + Checklist + Guia combined */}
