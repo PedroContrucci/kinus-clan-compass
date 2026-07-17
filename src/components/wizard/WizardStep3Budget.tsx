@@ -273,8 +273,9 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
           🎯 Onde você quer investir mais?
         </label>
         <p className="text-xs text-muted-foreground mb-3">
-          Arraste para ordenar por prioridade (1º = 45%, 2º = 35%, 3º = 20%)
+          Arraste para ordenar ou toque em uma opção para promovê-la ao topo (1º = 45%, 2º = 35%, 3º = 20%)
         </p>
+
         
         <Reorder.Group
           axis="y"
