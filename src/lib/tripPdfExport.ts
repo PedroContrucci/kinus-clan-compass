@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getTopMichelinForCity } from '@/lib/michelinData';
 import { getExpandedCityData } from '@/data/destinationPdfData';
+import { DESTINATION_PHOTO_HINTS } from '@/hooks/useUnsplash';
 
 // ── Branding colors (RGB) ──
 const B = {
@@ -449,13 +450,14 @@ function normalizeForMatch(s: string): string {
 }
 
 function getDestDescription(destination: string): string {
+  // Priority 1: real curated description from destinationPdfData
+  const expanded = getExpandedCityData(destination);
+  if (expanded?.description) return expanded.description;
+  // Priority 2: legacy in-file map
   const key = normalizeForMatch(destination);
   for (const [k, v] of Object.entries(DESTINATION_DESCRIPTIONS)) {
     if (normalizeForMatch(k) === key || key.includes(normalizeForMatch(k)) || normalizeForMatch(k).includes(key)) return v;
   }
-  // Fallback: check expanded data
-  const expanded = getExpandedCityData(destination);
-  if (expanded?.description) return expanded.description;
   return `${destination} e um destino fascinante que oferece cultura rica, gastronomia autentica e experiencias inesqueciveis. Prepare-se para descobrir monumentos historicos, mercados vibrantes e a hospitalidade local que torna cada viagem unica e especial.`;
 }
 
@@ -668,6 +670,34 @@ function getDestCoverPhotos(destination: string): string[] {
   ];
 }
 
+// Try to fetch destination-specific photos from the unsplash edge function.
+// Returns [] on any failure — caller falls back to getDestCoverPhotos.
+async function fetchUnsplashCoverUrls(destination: string): Promise<string[]> {
+  try {
+    const destKey = destination?.trim().toLowerCase() || '';
+    const hint = DESTINATION_PHOTO_HINTS[destKey];
+    const query = hint || (destination?.trim() ? `${destination} landmark travel` : '');
+    if (!query) return [];
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/unsplash?query=${encodeURIComponent(query)}&per_page=2&orientation=landscape`;
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(t);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const photos = Array.isArray(data?.photos) ? data.photos : [];
+    return photos.map((p: any) => p?.urls?.regular).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 async function fetchImageAsBase64(url: string): Promise<string | null> {
   const tryFetch = (attemptUrl: string, timeout: number): Promise<string | null> => {
     return new Promise((resolve) => {
@@ -712,8 +742,13 @@ export async function exportTripPDF(trip: SavedTrip) {
   const ph = doc.internal.pageSize.getHeight(); // 297
   let y = 0;
 
-  // Fetch cover photos in parallel
-  const coverUrls = getDestCoverPhotos(trip.destination);
+  // Fetch cover photos in parallel — try destination-specific unsplash first,
+  // fall back to curated hardcoded arrays if the edge function fails.
+  const fallbackUrls = getDestCoverPhotos(trip.destination);
+  const unsplashUrls = await fetchUnsplashCoverUrls(trip.destination);
+  const coverUrls = unsplashUrls.length > 0
+    ? [...unsplashUrls, ...fallbackUrls]
+    : fallbackUrls;
   const [coverBase64, secondBase64] = await Promise.all([
     fetchImageAsBase64(coverUrls[0]),
     coverUrls.length > 1 ? fetchImageAsBase64(coverUrls[1]) : Promise.resolve(null),
@@ -929,21 +964,23 @@ export async function exportTripPDF(trip: SavedTrip) {
   drawRect(14, y, pw - 28, boxH, B.deep);
   drawRect(14, y, 2, boxH, B.emerald);
 
+  const budgetTotal = trip.finances?.total || trip.budget || 0;
+  const confirmedVal = trip.finances?.confirmed || 0;
+  const plannedVal = trip.finances?.planned || 0;
+  // Canonical app formula: Disponível = orçamento − planejado − confirmado
+  const availableCalc = budgetTotal - plannedVal - confirmedVal;
+  const isOverBudget = availableCalc < 0;
   const finData = [
-    { label: 'Orcamento total', value: `R$ ${fmt(trip.finances?.total || trip.budget || 0)}`, color: B.white },
-    { label: 'Confirmado', value: `R$ ${fmt(trip.finances?.confirmed || 0)}`, color: B.emerald },
-    { label: 'Planejado', value: `R$ ${fmt(trip.finances?.planned || 0)}`, color: B.gold },
-    (() => {
-      const available = trip.finances?.available || 0;
-      const isOverBudget = available < 0;
-      return {
-        label: 'Disponivel',
-        value: isOverBudget
-          ? `- R$ ${fmt(Math.abs(available))} (acima do orcamento)`
-          : `R$ ${fmt(available)}`,
-        color: isOverBudget ? B.red : B.gray400,
-      };
-    })(),
+    { label: 'Orcamento total', value: `R$ ${fmt(budgetTotal)}`, color: B.white },
+    { label: 'Confirmado', value: `R$ ${fmt(confirmedVal)}`, color: B.emerald },
+    { label: 'Planejado', value: `R$ ${fmt(plannedVal)}`, color: B.gold },
+    {
+      label: isOverBudget ? 'Acima do orcamento' : 'Disponivel',
+      value: isOverBudget
+        ? `R$ ${fmt(Math.abs(availableCalc))}`
+        : `R$ ${fmt(availableCalc)}`,
+      color: isOverBudget ? B.amber : B.gray400,
+    },
   ];
 
   let finY = y + 7;
