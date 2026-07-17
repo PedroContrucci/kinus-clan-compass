@@ -488,6 +488,12 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
   const flightPrice = hasRealFlights
     ? outboundPrice + returnPrice
     : (trip.finances?.planned ? trip.finances.planned * 0.4 : 0);
+  const flightTotal = flightConfirmed
+    ? (trip.flights?.outbound?.price || 0)
+    : Math.round(flightPrice * (trip.travelers || 1));
+  const flightPerPerson = Math.round(flightTotal / (trip.travelers || 1));
+
+
 
   // Resolve real selected flight for display
   const realFlight = (trip as any).outboundFlight?.option;
@@ -755,11 +761,11 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
             </div>
           </div>
           <p className={`text-lg font-bold font-['Outfit'] ${flightConfirmed ? 'text-emerald-400' : 'text-sky-400'}`}>
-            {flightConfirmed ? '✅ Confirmado' : `R$ ${fmt(flightPrice)} /pessoa · ida e volta ${hasRealFlights ? '' : '(estimado)'}`}
+            R$ {fmt(flightTotal)}
           </p>
-          {!flightConfirmed && (
-            <p className="text-xs text-muted-foreground mt-1">Fonte: Amadeus (referência)</p>
-          )}
+          <p className="text-xs text-muted-foreground mt-1">
+            total · R$ {fmt(flightPerPerson)} por pessoa
+          </p>
           {!flightConfirmed && priceChange && (
             <div className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full mt-1 ${priceChange.dropped ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'}`}>
               {priceChange.dropped ? '↓' : '↑'} R$ {fmt(priceChange.diff)} desde {priceChange.dateStr}
@@ -932,13 +938,13 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
             </div>
           </div>
           <p className={`text-lg font-bold font-['Outfit'] ${hotelConfirmed ? 'text-emerald-400' : 'text-amber-400'}`}>
-            {hotelConfirmed ? '✅ Confirmado' : `R$ ${fmt(trip.accommodation?.nightlyRate || 0)} / noite`}
+            R$ {fmt(trip.accommodation?.totalPrice || 0)}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            total da estadia · R$ {fmt(trip.accommodation?.nightlyRate || 0)} por noite
           </p>
           {trip.accommodation?.name && (
             <p className="text-[11px] font-medium text-foreground mt-1">🏨 {trip.accommodation.name}</p>
-          )}
-          {!hotelConfirmed && (
-            <p className="text-xs text-muted-foreground mt-1">Fonte: estimativa por cidade</p>
           )}
           <p className="text-[10px] text-muted-foreground mt-1">
             {trip.accommodation?.totalNights || '—'} noites · {trip.accommodation?.stars || 3}★
