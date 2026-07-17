@@ -104,6 +104,15 @@ function FitBounds({ points }: { points: GeoPoint[] }) {
   return null;
 }
 
+function FocusPoint({ point }: { point: GeoPoint | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!point) return;
+    map.flyTo([point.lat, point.lng], 16, { duration: 0.8 });
+  }, [point, map]);
+  return null;
+}
+
 const geocodeCache = new Map<string, { lat: number; lng: number } | null>();
 
 interface RouteSegment {
