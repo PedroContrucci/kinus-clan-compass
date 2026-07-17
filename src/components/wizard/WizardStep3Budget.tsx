@@ -51,6 +51,12 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
     onChange({ priorities: newOrder as WizardData['priorities'] });
   };
 
+  const handlePromotePriority = (priorityId: WizardData['priorities'][number]) => {
+    const rest = data.priorities.filter((p) => p !== priorityId);
+    onChange({ priorities: [priorityId, ...rest] as WizardData['priorities'] });
+  };
+
+
   const handleInterestToggle = (interest: TravelInterest) => {
     const current = data.travelInterests || [];
     if (current.includes(interest)) {
