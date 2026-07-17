@@ -556,13 +556,6 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
     ? `${format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} – ${format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })}`
     : '';
 
-  const handleConfirm = () => {
-    if (confirmModal) {
-      onConfirm(confirmModal.type, parseFloat(confirmAmount) || 0);
-    }
-    setConfirmModal(null);
-    setConfirmAmount('');
-  };
 
   const handleAction = (action: OrchestratedAction) => {
     switch (action.actionType) {
