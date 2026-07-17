@@ -121,7 +121,7 @@ interface RouteSegment {
   distanceKm: string;
 }
 
-export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood }: DailyRouteMapProps) => {
+export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood, focusActivityName }: DailyRouteMapProps) => {
   const [points, setPoints] = useState<GeoPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [segments, setSegments] = useState<RouteSegment[]>([]);
