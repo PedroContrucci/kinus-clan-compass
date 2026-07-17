@@ -488,7 +488,11 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
   const flightPrice = hasRealFlights
     ? outboundPrice + returnPrice
     : (trip.finances?.planned ? trip.finances.planned * 0.4 : 0);
-  const flightTotal = Math.round(flightPrice * (trip.travelers || 1));
+  const flightTotal = flightConfirmed
+    ? (trip.flights?.outbound?.price || 0)
+    : Math.round(flightPrice * (trip.travelers || 1));
+  const flightPerPerson = Math.round(flightTotal / (trip.travelers || 1));
+
 
 
   // Resolve real selected flight for display
