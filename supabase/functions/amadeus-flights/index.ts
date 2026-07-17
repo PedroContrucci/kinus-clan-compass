@@ -175,12 +175,14 @@ async function searchFlights(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`Amadeus flight search error (${response.status}):`, errorText);
-    
-    // Graceful degradation: return empty for any API error (400, 500, etc.)
-    console.log(`No flights available for ${origin} → ${destination} on ${date} (API status: ${response.status})`);
-    return [];
+    console.error(`Amadeus flight search upstream error (status ${response.status}) for ${origin} → ${destination} on ${date}. Body:`, errorText);
+    // Signal upstream failure to the handler so it can return a friendly retry message.
+    const err = new Error(`AmadeusUpstreamError:${response.status}`);
+    (err as any).isUpstream = true;
+    (err as any).status = response.status;
+    throw err;
   }
+
 
   const data = await response.json();
   const offers: FlightOffer[] = [];
@@ -250,14 +252,25 @@ async function searchFlights(
     ? offers.filter(o => o.segments.every(s => BR_AIRPORTS.has(s.departure.iataCode) && BR_AIRPORTS.has(s.arrival.iataCode)))
     : offers;
 
-  // Sanity filter: exclude offers >2x fastest duration, keep at least 3
-  if (filteredOffers.length === 0) return filteredOffers;
-  const fastest = Math.min(...filteredOffers.map(o => o.durationMinutes));
-  const threshold = fastest * 2;
-  const withinThreshold = filteredOffers.filter(o => o.durationMinutes <= threshold);
-  if (withinThreshold.length >= 3) return withinThreshold;
-  const sortedByDuration = [...filteredOffers].sort((a, b) => a.durationMinutes - b.durationMinutes);
-  return sortedByDuration.slice(0, Math.min(3, sortedByDuration.length));
+  // Sanity filter: exclude offers >2x fastest duration.
+  // Only apply when we have enough data to reason about (>=3 offers);
+  // never fail the whole search because of an enhancement filter.
+  if (filteredOffers.length < 3) {
+    return filteredOffers;
+  }
+  try {
+    const durations = filteredOffers.map(o => o.durationMinutes);
+    const fastest = Math.min(...durations);
+    const threshold = fastest * 2;
+    const withinThreshold = filteredOffers.filter(o => o.durationMinutes <= threshold);
+    if (withinThreshold.length >= 3) return withinThreshold;
+    const sortedByDuration = [...filteredOffers].sort((a, b) => a.durationMinutes - b.durationMinutes);
+    return sortedByDuration.slice(0, 3);
+  } catch (filterError) {
+    console.error('Sanity filter failed, falling back to unfiltered offers:', filterError);
+    return filteredOffers;
+  }
+
 }
 
 // Search with flexible dates (±3 days)
@@ -333,8 +346,26 @@ serve(async (req) => {
         );
       }
 
-      const offers = await searchFlights(origin, destination, date, adults || 1, 5);
-      
+      let offers: FlightOffer[] = [];
+      let emptyMessage: string | null = null;
+      try {
+        offers = await searchFlights(origin, destination, date, adults || 1, 5);
+      } catch (searchError: any) {
+        if (searchError?.isUpstream) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              data: [],
+              offers: [],
+              message: 'Busca temporariamente indisponível — tente novamente em instantes',
+              timestamp: new Date().toISOString(),
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        throw searchError;
+      }
+
       // Tag best price and fastest
       if (offers.length > 0) {
         const lowestPrice = Math.min(...offers.map(o => o.price));
@@ -347,6 +378,20 @@ serve(async (req) => {
         }));
       } else {
         result = [];
+        emptyMessage = 'Nenhum voo encontrado para esta data';
+      }
+
+      if (emptyMessage) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: [],
+            offers: [],
+            message: emptyMessage,
+            timestamp: new Date().toISOString(),
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
     }
 
@@ -358,6 +403,7 @@ serve(async (req) => {
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
 
   } catch (error) {
     console.error('Amadeus flights error:', error);
