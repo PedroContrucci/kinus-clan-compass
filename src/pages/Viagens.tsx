@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useKinuAI } from "@/contexts/KinuAIContext";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Pencil } from 'lucide-react';
@@ -264,6 +264,8 @@ const Viagens = () => {
   const [manualExpense, setManualExpense] = useState({ name: '', amount: 0, category: 'shopping' as keyof SavedTrip['finances']['categories'] });
   const [resetModal, setResetModal] = useState(false);
   const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
+  const [focusMapActivity, setFocusMapActivity] = useState<string | null>(null);
+  const mapAnchorRef = useRef<HTMLDivElement | null>(null);
   const [budgetEditOpen, setBudgetEditOpen] = useState(false);
   const [budgetEditValue, setBudgetEditValue] = useState('');
   const { setTripContext } = useKinuAI();
@@ -1724,11 +1726,14 @@ const Viagens = () => {
                   )}
                   {/* Daily route map — skip Embarque and Retorno days */}
                   {!currentDay.title.includes('Embarque') && !currentDay.title.includes('Retorno') && (
-                    <DailyRouteMap
-                      destination={selectedTrip.destination}
-                      activities={currentDay.activities}
-                      hotelNeighborhood={selectedTrip.accommodation?.neighborhood}
-                    />
+                    <div ref={mapAnchorRef}>
+                      <DailyRouteMap
+                        destination={selectedTrip.destination}
+                        activities={currentDay.activities}
+                        hotelNeighborhood={selectedTrip.accommodation?.neighborhood}
+                        focusActivityName={focusMapActivity}
+                      />
+                    </div>
                   )}
                   <div className="space-y-4">
                     {currentDay.activities.map((activity, actIndex) => {
@@ -2461,8 +2466,15 @@ const Viagens = () => {
         <ActivityDetailDrawer
           activity={activityDetailDrawer?.activity || null}
           destination={selectedTrip.destination}
+          travelers={selectedTrip.travelers}
           open={activityDetailDrawer?.open || false}
           onClose={() => setActivityDetailDrawer(null)}
+          onFocusOnMap={(name) => {
+            setFocusMapActivity(name);
+            setTimeout(() => {
+              mapAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+          }}
         />
       )}
 

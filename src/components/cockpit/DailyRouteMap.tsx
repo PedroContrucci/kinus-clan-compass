@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, useRef, useCallback, Component, ErrorInfo, ReactNode } from 'react';
+import { memo, useEffect, useState, useRef, useCallback, useMemo, Component, ErrorInfo, ReactNode } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
@@ -23,6 +23,7 @@ interface DailyRouteMapProps {
   destination: string;
   activities: { name: string; time?: string; category?: string }[];
   hotelNeighborhood?: string;
+  focusActivityName?: string | null;
 }
 
 interface GeoPoint {
@@ -103,6 +104,15 @@ function FitBounds({ points }: { points: GeoPoint[] }) {
   return null;
 }
 
+function FocusPoint({ point }: { point: GeoPoint | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!point) return;
+    map.flyTo([point.lat, point.lng], 16, { duration: 0.8 });
+  }, [point, map]);
+  return null;
+}
+
 const geocodeCache = new Map<string, { lat: number; lng: number } | null>();
 
 interface RouteSegment {
@@ -111,7 +121,7 @@ interface RouteSegment {
   distanceKm: string;
 }
 
-export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood }: DailyRouteMapProps) => {
+export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood, focusActivityName }: DailyRouteMapProps) => {
   const [points, setPoints] = useState<GeoPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [segments, setSegments] = useState<RouteSegment[]>([]);
@@ -285,6 +295,17 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood 
 
   const polylinePositions = points.map(p => [p.lat, p.lng] as [number, number]);
 
+  const focusPoint = useMemo(() => {
+    if (!focusActivityName) return null;
+    const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const target = norm(focusActivityName);
+    return (
+      points.find(p => !p.isHotel && norm(p.name) === target) ||
+      points.find(p => !p.isHotel && (norm(p.name).includes(target) || target.includes(norm(p.name)))) ||
+      null
+    );
+  }, [focusActivityName, points]);
+
   return (
     <div className="mb-4">
       <p className="text-xs font-medium text-muted-foreground mb-2 font-['Outfit']">🗺️ Rota do Dia</p>
@@ -304,6 +325,7 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood 
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             />
             <FitBounds points={points} />
+            <FocusPoint point={focusPoint} />
             {points.map((point, idx) => {
               const hotelOffset = points[0]?.isHotel ? 1 : 0;
               const activityNum = point.isHotel ? null : idx + 1 - hotelOffset;
