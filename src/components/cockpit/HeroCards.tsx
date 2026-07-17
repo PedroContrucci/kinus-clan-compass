@@ -76,11 +76,11 @@ export const HeroCards = ({ trip, onOpenAuction, onConfirm }: HeroCardsProps) =>
             {originCode} → {destCode} → {originCode}
           </p>
           
-          <p className="text-xs text-muted-foreground mb-1">
-            💰 Estimativa: R$ {fmt(flightMin)} – R$ {fmt(flightMax)}
+          <p className="text-base font-semibold text-foreground mb-1">
+            R$ {fmt(flightTotal)}
           </p>
           <p className="text-xs text-muted-foreground mb-3">
-            👥 {travelers} viajante{travelers > 1 ? 's' : ''}
+            total · R$ {fmt(Math.round(flightTotal / travelers))} por pessoa
           </p>
 
           {!flightConfirmed && (
@@ -125,11 +125,11 @@ export const HeroCards = ({ trip, onOpenAuction, onConfirm }: HeroCardsProps) =>
             {trip.destination} • {totalNights} noites • Faixa {tierLabel}
           </p>
           
-          <p className="text-xs text-muted-foreground mb-1">
-            💰 Estimativa: R$ {fmt(hotelMin)} – R$ {fmt(hotelMax)}
+          <p className="text-base font-semibold text-foreground mb-1">
+            R$ {fmt(hotelTotal)}
           </p>
           <p className="text-xs text-muted-foreground mb-3">
-            (R$ {fmt(Math.round(hotelPerNight * 0.85))} – R$ {fmt(Math.round(hotelPerNight * 1.15))} / noite)
+            total da estadia · R$ {fmt(Math.round(hotelTotal / totalNights))} por noite
           </p>
 
           {!hotelConfirmed && (
