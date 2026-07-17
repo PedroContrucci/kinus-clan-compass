@@ -382,8 +382,6 @@ function getTripCurrency(dest: string): string {
 }
 
 export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavigateTab }: TripPanelProps) => {
-  const [confirmModal, setConfirmModal] = useState<{ type: 'flight' | 'hotel'; isOpen: boolean } | null>(null);
-  const [confirmAmount, setConfirmAmount] = useState('');
   const [showAllActions, setShowAllActions] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [flightResults, setFlightResults] = useState<any[] | null>(null);
@@ -413,6 +411,34 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
         : undefined
     );
     setConfirmReservation(null);
+  };
+
+  const openReservationConfirm = (type: 'flight' | 'hotel') => {
+    if (type === 'flight') {
+      setConfirmReservation({
+        type: 'flight',
+        amount: '',
+        link: '',
+        hotelName: '',
+        mealPlan: '',
+        outboundAirline: ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '',
+        outboundFlightNumber: ((trip as any).outboundFlight?.option?.flightNumber !== '---' ? (trip as any).outboundFlight?.option?.flightNumber : '') || '',
+        outboundTime: (trip as any).outboundFlight?.option?.departureTime || '',
+        returnAirline: ((trip as any).returnFlight?.option?.airline !== 'A confirmar' ? (trip as any).returnFlight?.option?.airline : '') || '',
+        returnFlightNumber: ((trip as any).returnFlight?.option?.flightNumber !== '---' ? (trip as any).returnFlight?.option?.flightNumber : '') || '',
+        returnTime: (trip as any).returnFlight?.option?.departureTime || '',
+      });
+    } else {
+      setConfirmReservation({
+        type: 'hotel',
+        amount: '',
+        link: '',
+        hotelName: trip.accommodation?.name || '',
+        mealPlan: (trip.accommodation as any)?.mealPlan || 'Café da manhã',
+        outboundAirline: '', outboundFlightNumber: '', outboundTime: '',
+        returnAirline: '', returnFlightNumber: '', returnTime: '',
+      });
+    }
   };
 
   // Fetch maps embed URL
@@ -530,20 +556,13 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
     ? `${format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} – ${format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })}`
     : '';
 
-  const handleConfirm = () => {
-    if (confirmModal) {
-      onConfirm(confirmModal.type, parseFloat(confirmAmount) || 0);
-    }
-    setConfirmModal(null);
-    setConfirmAmount('');
-  };
 
   const handleAction = (action: OrchestratedAction) => {
     switch (action.actionType) {
       case 'open-auction-flight': onOpenAuction('flight'); break;
       case 'open-auction-hotel': onOpenAuction('hotel'); break;
-      case 'confirm-flight': setConfirmModal({ type: 'flight', isOpen: true }); break;
-      case 'confirm-hotel': setConfirmModal({ type: 'hotel', isOpen: true }); break;
+      case 'confirm-flight': openReservationConfirm('flight'); break;
+      case 'confirm-hotel': openReservationConfirm('hotel'); break;
       case 'navigate-checklist': onNavigateTab('preparacao'); break;
       case 'navigate-cambio': onNavigateTab('financeiro'); break;
       case 'navigate-packing': onNavigateTab('preparacao'); break;
@@ -900,7 +919,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
             <div className="mt-3 space-y-1.5">
               <div className="grid grid-cols-2 gap-1.5">
                 <button 
-                  onClick={() => setConfirmModal({ type: 'flight', isOpen: true })}
+                  onClick={() => openReservationConfirm('flight')}
                   className="text-xs font-semibold py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
                 >
                   ✅ Confirmar
@@ -955,7 +974,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
           {!hotelConfirmed && (
             <div className="mt-3 grid grid-cols-2 gap-1.5">
               <button 
-                onClick={() => setConfirmModal({ type: 'hotel', isOpen: true })}
+                onClick={() => openReservationConfirm('hotel')}
                 className="text-xs font-semibold py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
               >
                 ✅ Confirmar
@@ -1666,34 +1685,6 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
       {/* 5. Curation Sources (collapsible) */}
       <CurationSources trip={trip} />
 
-      {/* Confirm Modal */}
-      <Dialog open={confirmModal?.isOpen || false} onOpenChange={() => setConfirmModal(null)}>
-        <DialogContent className="bg-card border-border max-w-sm mx-auto">
-          <DialogHeader>
-            <DialogTitle className="font-['Outfit']">
-              {confirmModal?.type === 'flight' ? 'Confirmar Voo' : 'Confirmar Hospedagem'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-muted-foreground mb-2">Valor pago (R$)</label>
-              <input
-                type="number"
-                value={confirmAmount}
-                onChange={(e) => setConfirmAmount(e.target.value)}
-                placeholder="0"
-                className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <button
-              onClick={handleConfirm}
-              className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold"
-            >
-              Confirmar
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </motion.div>
   );
 };
