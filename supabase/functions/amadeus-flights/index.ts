@@ -252,14 +252,25 @@ async function searchFlights(
     ? offers.filter(o => o.segments.every(s => BR_AIRPORTS.has(s.departure.iataCode) && BR_AIRPORTS.has(s.arrival.iataCode)))
     : offers;
 
-  // Sanity filter: exclude offers >2x fastest duration, keep at least 3
-  if (filteredOffers.length === 0) return filteredOffers;
-  const fastest = Math.min(...filteredOffers.map(o => o.durationMinutes));
-  const threshold = fastest * 2;
-  const withinThreshold = filteredOffers.filter(o => o.durationMinutes <= threshold);
-  if (withinThreshold.length >= 3) return withinThreshold;
-  const sortedByDuration = [...filteredOffers].sort((a, b) => a.durationMinutes - b.durationMinutes);
-  return sortedByDuration.slice(0, Math.min(3, sortedByDuration.length));
+  // Sanity filter: exclude offers >2x fastest duration.
+  // Only apply when we have enough data to reason about (>=3 offers);
+  // never fail the whole search because of an enhancement filter.
+  if (filteredOffers.length < 3) {
+    return filteredOffers;
+  }
+  try {
+    const durations = filteredOffers.map(o => o.durationMinutes);
+    const fastest = Math.min(...durations);
+    const threshold = fastest * 2;
+    const withinThreshold = filteredOffers.filter(o => o.durationMinutes <= threshold);
+    if (withinThreshold.length >= 3) return withinThreshold;
+    const sortedByDuration = [...filteredOffers].sort((a, b) => a.durationMinutes - b.durationMinutes);
+    return sortedByDuration.slice(0, 3);
+  } catch (filterError) {
+    console.error('Sanity filter failed, falling back to unfiltered offers:', filterError);
+    return filteredOffers;
+  }
+
 }
 
 // Search with flexible dates (±3 days)
