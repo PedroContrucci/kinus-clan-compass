@@ -983,7 +983,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
           {!hotelConfirmed && (
             <div className="mt-3 grid grid-cols-2 gap-1.5">
               <button 
-                onClick={() => setConfirmModal({ type: 'hotel', isOpen: true })}
+                onClick={() => openReservationConfirm('hotel')}
                 className="text-xs font-semibold py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
               >
                 ✅ Confirmar
