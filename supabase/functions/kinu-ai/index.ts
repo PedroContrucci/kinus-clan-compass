@@ -108,6 +108,7 @@ interface RequestBody {
   isEmergency?: boolean;
   curatedCityNames?: unknown;
   curatedCatalog?: unknown;
+  itineraryDays?: unknown;
 }
 
 // Input sanitization helpers
