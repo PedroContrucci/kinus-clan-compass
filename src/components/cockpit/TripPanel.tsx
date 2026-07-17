@@ -511,13 +511,17 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
   const outboundPrice = (trip as any).outboundFlight?.option?.price;
   const returnPrice = (trip as any).returnFlight?.option?.price;
   const hasRealFlights = outboundPrice != null && returnPrice != null;
-  const flightPrice = hasRealFlights
-    ? outboundPrice + returnPrice
-    : (trip.finances?.planned ? trip.finances.planned * 0.4 : 0);
+  // Single source of truth for the pre-confirmation flight estimate:
+  // — real Amadeus selection: sum per-person prices × travelers
+  // — otherwise: the flight category planned total from the wizard anchor
+  const flightPlannedTotal = trip.finances?.categories?.flights?.planned || 0;
   const flightTotal = flightConfirmed
     ? (trip.flights?.outbound?.price || 0)
-    : Math.round(flightPrice * (trip.travelers || 1));
+    : hasRealFlights
+      ? Math.round((outboundPrice + returnPrice) * (trip.travelers || 1))
+      : flightPlannedTotal;
   const flightPerPerson = Math.round(flightTotal / (trip.travelers || 1));
+  const flightPrice = flightPerPerson;
 
 
 
