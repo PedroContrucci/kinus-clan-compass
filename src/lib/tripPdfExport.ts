@@ -742,8 +742,13 @@ export async function exportTripPDF(trip: SavedTrip) {
   const ph = doc.internal.pageSize.getHeight(); // 297
   let y = 0;
 
-  // Fetch cover photos in parallel
-  const coverUrls = getDestCoverPhotos(trip.destination);
+  // Fetch cover photos in parallel — try destination-specific unsplash first,
+  // fall back to curated hardcoded arrays if the edge function fails.
+  const fallbackUrls = getDestCoverPhotos(trip.destination);
+  const unsplashUrls = await fetchUnsplashCoverUrls(trip.destination);
+  const coverUrls = unsplashUrls.length > 0
+    ? [...unsplashUrls, ...fallbackUrls]
+    : fallbackUrls;
   const [coverBase64, secondBase64] = await Promise.all([
     fetchImageAsBase64(coverUrls[0]),
     coverUrls.length > 1 ? fetchImageAsBase64(coverUrls[1]) : Promise.resolve(null),
