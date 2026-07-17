@@ -346,8 +346,26 @@ serve(async (req) => {
         );
       }
 
-      const offers = await searchFlights(origin, destination, date, adults || 1, 5);
-      
+      let offers: FlightOffer[] = [];
+      let emptyMessage: string | null = null;
+      try {
+        offers = await searchFlights(origin, destination, date, adults || 1, 5);
+      } catch (searchError: any) {
+        if (searchError?.isUpstream) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              data: [],
+              offers: [],
+              message: 'Busca temporariamente indisponível — tente novamente em instantes',
+              timestamp: new Date().toISOString(),
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        throw searchError;
+      }
+
       // Tag best price and fastest
       if (offers.length > 0) {
         const lowestPrice = Math.min(...offers.map(o => o.price));
@@ -360,6 +378,20 @@ serve(async (req) => {
         }));
       } else {
         result = [];
+        emptyMessage = 'Nenhum voo encontrado para esta data';
+      }
+
+      if (emptyMessage) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: [],
+            offers: [],
+            message: emptyMessage,
+            timestamp: new Date().toISOString(),
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
     }
 
@@ -371,6 +403,7 @@ serve(async (req) => {
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
 
   } catch (error) {
     console.error('Amadeus flights error:', error);
