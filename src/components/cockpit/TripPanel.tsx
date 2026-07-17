@@ -1685,34 +1685,6 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
       {/* 5. Curation Sources (collapsible) */}
       <CurationSources trip={trip} />
 
-      {/* Confirm Modal */}
-      <Dialog open={confirmModal?.isOpen || false} onOpenChange={() => setConfirmModal(null)}>
-        <DialogContent className="bg-card border-border max-w-sm mx-auto">
-          <DialogHeader>
-            <DialogTitle className="font-['Outfit']">
-              {confirmModal?.type === 'flight' ? 'Confirmar Voo' : 'Confirmar Hospedagem'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-muted-foreground mb-2">Valor pago (R$)</label>
-              <input
-                type="number"
-                value={confirmAmount}
-                onChange={(e) => setConfirmAmount(e.target.value)}
-                placeholder="0"
-                className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <button
-              onClick={handleConfirm}
-              className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold"
-            >
-              Confirmar
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </motion.div>
   );
 };
