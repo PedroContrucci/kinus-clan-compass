@@ -52,6 +52,13 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
     }
   }, [data.departureDate, data.returnDate]);
 
+  // Auto-expand upcoming list when a country has no curated cities
+  useEffect(() => {
+    if (selectedCountry && !selectedCountry.cities.some((city) => isCityCurated(city.name))) {
+      setShowUpcoming(true);
+    }
+  }, [selectedCountry]);
+
   const handleRegionSelect = (region: RegionName) => {
     setSelectedRegion(region);
     setSelectedCountry(null);
