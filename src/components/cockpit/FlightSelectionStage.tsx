@@ -567,8 +567,9 @@ export const FlightSelectionStage = ({
                 {/* Loading state */}
                 {outboundLoading && renderLoadingSkeleton()}
                 
-                {/* Error state */}
-                {outboundError && renderError(outboundError as Error, refetchOutbound)}
+                {/* Error state — only when no offers loaded and not currently fetching */}
+                {outboundError && !outboundLoading && sortedOutboundOptions.length === 0 &&
+                  renderError(outboundError as Error, refetchOutbound)}
                 
                 {/* Flight options */}
                 {!outboundLoading && sortedOutboundOptions.map(option => 
@@ -679,8 +680,9 @@ export const FlightSelectionStage = ({
                 {/* Loading state */}
                 {returnLoading && renderLoadingSkeleton()}
                 
-                {/* Error state */}
-                {returnError && renderError(returnError as Error, refetchReturn)}
+                {/* Error state — only when no offers loaded and not currently fetching */}
+                {returnError && !returnLoading && sortedReturnOptions.length === 0 &&
+                  renderError(returnError as Error, refetchReturn)}
                 
                 {/* Flight options */}
                 {!returnLoading && sortedReturnOptions.map(option => 
