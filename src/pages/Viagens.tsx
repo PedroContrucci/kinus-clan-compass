@@ -1373,7 +1373,7 @@ const Viagens = () => {
         <main className="px-4 py-6">
           {/* Painel Tab */}
           {activeTab === 'painel' && (
-            <div className="animate-fade-in">
+            <TabErrorBoundary tabName="Painel"><div className="animate-fade-in">
               {/* Agent Proactive Insights */}
               {(() => {
                 const insights = analyzeTrip(selectedTrip);
