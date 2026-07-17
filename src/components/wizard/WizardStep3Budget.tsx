@@ -51,6 +51,12 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
     onChange({ priorities: newOrder as WizardData['priorities'] });
   };
 
+  const handlePromotePriority = (priorityId: WizardData['priorities'][number]) => {
+    const rest = data.priorities.filter((p) => p !== priorityId);
+    onChange({ priorities: [priorityId, ...rest] as WizardData['priorities'] });
+  };
+
+
   const handleInterestToggle = (interest: TravelInterest) => {
     const current = data.travelInterests || [];
     if (current.includes(interest)) {
@@ -267,8 +273,9 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
           🎯 Onde você quer investir mais?
         </label>
         <p className="text-xs text-muted-foreground mb-3">
-          Arraste para ordenar por prioridade (1º = 45%, 2º = 35%, 3º = 20%)
+          Arraste para ordenar ou toque em uma opção para promovê-la ao topo (1º = 45%, 2º = 35%, 3º = 20%)
         </p>
+
         
         <Reorder.Group
           axis="y"
@@ -291,8 +298,17 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
                 <motion.div
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
+                  onClick={() => handlePromotePriority(priorityId)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handlePromotePriority(priorityId);
+                    }
+                  }}
                   className={cn(
-                    'flex items-center gap-3 p-4 bg-card border rounded-xl transition-colors',
+                    'flex items-center gap-3 p-4 bg-card border rounded-xl transition-colors cursor-pointer hover:border-primary/50',
                     index === 0 ? 'border-primary bg-primary/5' : 'border-border'
                   )}
                 >

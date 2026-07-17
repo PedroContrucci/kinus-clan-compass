@@ -1,7 +1,7 @@
 // WizardStep1Logistics — Cascading Region → Country → City Selection + Dates
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Calendar, Info, ChevronRight, ChevronDown } from 'lucide-react';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -279,98 +279,117 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
           </motion.div>
         )}
 
-        <AnimatePresence mode="wait">
-          {/* Level 1: Region */}
-          {!selectedRegion && (
-            <motion.div
-              key="regions"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="grid grid-cols-2 gap-3"
-            >
-              {REGIONS.map((region) => (
+        <div className="space-y-4">
+          {/* Level 1: Region — always visible, selected highlighted, click switches */}
+          <div className="grid grid-cols-2 gap-3">
+            {REGIONS.map((region) => {
+              const isSelected = selectedRegion === region.id;
+              return (
                 <motion.button
                   key={region.id}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleRegionSelect(region.id)}
-                  className="p-4 bg-card border border-border rounded-2xl text-left hover:border-primary/50 hover:bg-primary/5 transition-all"
+                  className={cn(
+                    'p-4 rounded-2xl text-left transition-all border',
+                    isSelected
+                      ? 'bg-primary/10 border-primary shadow-lg shadow-primary/10'
+                      : 'bg-card border-border hover:border-primary/50 hover:bg-primary/5'
+                  )}
                 >
                   <span className="text-2xl block mb-1">{region.emoji}</span>
-                  <span className="font-medium text-foreground text-sm">{region.id}</span>
+                  <span className={cn('font-medium text-sm', isSelected ? 'text-primary' : 'text-foreground')}>
+                    {region.id}
+                  </span>
                 </motion.button>
-              ))}
-            </motion.div>
-          )}
+              );
+            })}
+          </div>
 
-          {/* Level 2: Country */}
-          {selectedRegion && !selectedCountry && (
+          {/* Level 2: Country — stays visible once a region is picked */}
+          {selectedRegion && (
             <motion.div
               key="countries"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
               className="grid grid-cols-2 gap-3"
             >
-              {countries.map((country) => (
-                <motion.button
-                  key={country.country}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleCountrySelect(country)}
-                  className="p-3 bg-card border border-border rounded-xl text-left hover:border-primary/50 hover:bg-primary/5 transition-all"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{country.flag}</span>
-                    <div>
-                      <p className="font-medium text-foreground text-sm">{country.country}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {country.cities.length} cidade{country.cities.length > 1 ? 's' : ''}
-                      </p>
+              {countries.map((country) => {
+                const isSelected = selectedCountry?.country === country.country;
+                return (
+                  <motion.button
+                    key={country.country}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleCountrySelect(country)}
+                    className={cn(
+                      'p-3 rounded-xl text-left transition-all border',
+                      isSelected
+                        ? 'bg-primary/10 border-primary shadow-lg shadow-primary/10'
+                        : 'bg-card border-border hover:border-primary/50 hover:bg-primary/5'
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{country.flag}</span>
+                      <div>
+                        <p className={cn('font-medium text-sm', isSelected ? 'text-primary' : 'text-foreground')}>
+                          {country.country}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {country.cities.length} cidade{country.cities.length > 1 ? 's' : ''}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </motion.button>
-              ))}
+                  </motion.button>
+                );
+              })}
             </motion.div>
           )}
 
-          {/* Level 3: City */}
-          {selectedCountry && !data.destinationCity && (
+          {/* Level 3: City — stays visible once a country is picked; clicking switches */}
+          {selectedCountry && (
             <motion.div
               key="cities"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
               className="space-y-3"
             >
-              {/* Curated cities */}
               <div className="grid grid-cols-2 gap-3">
                 {selectedCountry.cities
                   .filter((city) => isCityCurated(city.name))
-                  .map((city) => (
-                    <motion.button
-                      key={city.name}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleCitySelect(city)}
-                      className="relative overflow-hidden bg-card border border-border rounded-xl text-left transition-all hover:border-primary/50"
-                    >
-                      <div className="h-20 w-full">
-                        <UnsplashThumbnail
-                          query={`${city.name} ${selectedCountry.country} landmark`}
-                          alt={city.name}
-                          className="w-full h-full"
-                        />
-                      </div>
-                      <div className="p-2.5">
-                        <p className="font-medium text-foreground text-sm">{city.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {city.airports.join(' • ')}
-                        </p>
-                      </div>
-                    </motion.button>
-                  ))}
+                  .map((city) => {
+                    const isSelected = data.destinationCity === city.name;
+                    return (
+                      <motion.button
+                        key={city.name}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleCitySelect(city)}
+                        className={cn(
+                          'relative overflow-hidden rounded-xl text-left transition-all border',
+                          isSelected
+                            ? 'border-primary shadow-lg shadow-primary/20 ring-2 ring-primary/40'
+                            : 'bg-card border-border hover:border-primary/50'
+                        )}
+                      >
+                        <div className="h-20 w-full">
+                          <UnsplashThumbnail
+                            query={`${city.name} ${selectedCountry.country} landmark`}
+                            alt={city.name}
+                            className="w-full h-full"
+                          />
+                        </div>
+                        <div className={cn('p-2.5', isSelected && 'bg-primary/10')}>
+                          <p className={cn('font-medium text-sm', isSelected ? 'text-primary' : 'text-foreground')}>
+                            {city.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {city.airports.join(' • ')}
+                          </p>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
               </div>
 
               {/* Upcoming cities */}
@@ -457,29 +476,7 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
               </div>
             </motion.div>
           )}
-
-          {/* City Selected Confirmation */}
-          {data.destinationCity && (
-            <motion.div
-              key="selected-city"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 bg-primary/10 border border-primary/30 rounded-2xl mt-3"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{data.selectedCountryFlag}</span>
-                <div>
-                  <p className="font-bold text-foreground">
-                    {data.destinationCity}, {data.selectedCountry}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Aeroporto: {data.destinationAirportCode} • Moeda: {data.destinationCurrency}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        </div>
       </div>
 
       {/* Date Pickers */}
