@@ -6,6 +6,30 @@ import { toast } from '@/hooks/use-toast';
 import { FlightSelectionStage, SelectedFlight } from './FlightSelectionStage';
 import { GeneratedItineraryStage } from './GeneratedItineraryStage';
 
+// Keep finances.planned aligned with the real Amadeus flight anchor shown in
+// the hero card. Adjusts the flights category planned + rebalances totals.
+function syncFlightPlannedFinances(
+  trip: any,
+  outbound: SelectedFlight | null,
+  returnFlight: SelectedFlight | null,
+) {
+  if (!trip?.finances?.categories?.flights) return;
+  const travelers = trip.travelers || 1;
+  const obPrice = outbound?.option?.price;
+  const rbPrice = returnFlight?.option?.price;
+  if (obPrice == null || rbPrice == null) return;
+  const newFlightsPlanned = Math.round((obPrice + rbPrice) * travelers);
+  const prevFlightsPlanned = trip.finances.categories.flights.planned || 0;
+  const delta = newFlightsPlanned - prevFlightsPlanned;
+  trip.finances.categories.flights.planned = newFlightsPlanned;
+  trip.finances.planned = Math.max(0, (trip.finances.planned || 0) + delta);
+  trip.finances.available = Math.max(
+    0,
+    (trip.finances.total || 0) - (trip.finances.planned || 0)
+      - (trip.finances.bidding || 0) - (trip.finances.confirmed || 0),
+  );
+}
+
 // Types
 interface DraftTrip {
   id: string;
