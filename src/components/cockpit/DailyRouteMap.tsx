@@ -267,6 +267,17 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
     return () => { cancelled = true; };
   }, [points]);
 
+  const focusPoint = useMemo(() => {
+    if (!focusActivityName || points.length === 0) return null;
+    const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const target = norm(focusActivityName);
+    return (
+      points.find(p => !p.isHotel && norm(p.name) === target) ||
+      points.find(p => !p.isHotel && (norm(p.name).includes(target) || target.includes(norm(p.name)))) ||
+      null
+    );
+  }, [focusActivityName, points]);
+
   if (filteredActivities.length === 0) return null;
 
   if (loading) {
@@ -294,17 +305,6 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
   }
 
   const polylinePositions = points.map(p => [p.lat, p.lng] as [number, number]);
-
-  const focusPoint = useMemo(() => {
-    if (!focusActivityName) return null;
-    const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-    const target = norm(focusActivityName);
-    return (
-      points.find(p => !p.isHotel && norm(p.name) === target) ||
-      points.find(p => !p.isHotel && (norm(p.name).includes(target) || target.includes(norm(p.name)))) ||
-      null
-    );
-  }, [focusActivityName, points]);
 
   return (
     <div className="mb-4">

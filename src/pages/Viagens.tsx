@@ -36,6 +36,7 @@ import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
+import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 
@@ -1372,7 +1373,7 @@ const Viagens = () => {
         <main className="px-4 py-6">
           {/* Painel Tab */}
           {activeTab === 'painel' && (
-            <div className="animate-fade-in">
+            <TabErrorBoundary tabName="Painel"><div className="animate-fade-in">
               {/* Agent Proactive Insights */}
               {(() => {
                 const insights = analyzeTrip(selectedTrip);
@@ -1508,12 +1509,12 @@ const Viagens = () => {
                   Gerar PDF
                 </button>
               </div>
-            </div>
+            </div></TabErrorBoundary>
           )}
 
           {/* Roteiro Tab */}
           {activeTab === 'roteiro' && (
-            <div className="animate-fade-in">
+            <TabErrorBoundary tabName="Roteiro"><div className="animate-fade-in">
               <AgentTip agent="icarus" variant="compact" message={getIcarusRoteiro(selectedTrip, selectedDay)} />
 
               {/* Category Quick Filters */}
@@ -1934,12 +1935,12 @@ const Viagens = () => {
               })()}
                 </>
               )}
-            </div>
+            </div></TabErrorBoundary>
           )}
 
           {/* Financeiro Tab = Ofertas + Câmbio combined */}
           {activeTab === 'financeiro' && (
-            <div className="animate-fade-in space-y-6">
+            <TabErrorBoundary tabName="Financeiro"><div className="animate-fade-in space-y-6">
               <AgentTip agent="hestia" variant="compact" message={getHestiaCambio(selectedTrip)} />
               
               {/* Budget Summary */}
@@ -2050,11 +2051,12 @@ const Viagens = () => {
                 />
               </div>
 
-            </div>
+            </div></TabErrorBoundary>
           )}
 
           {/* Preparação Tab = Packing + Checklist + Guia combined */}
-          {activeTab === 'preparacao' && (() => {
+          {activeTab === 'preparacao' && (
+            <TabErrorBoundary tabName="Preparação">{(() => {
             const checklist = selectedTrip.checklist || [];
             const totalItems = checklist.length;
             const checkedItems = checklist.filter(i => i.checked).length;
@@ -2140,7 +2142,8 @@ const Viagens = () => {
                 </div>
               </div>
             );
-          })()}
+          })()}</TabErrorBoundary>
+          )}
         </main>
 
 
