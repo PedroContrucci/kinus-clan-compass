@@ -1726,11 +1726,14 @@ const Viagens = () => {
                   )}
                   {/* Daily route map — skip Embarque and Retorno days */}
                   {!currentDay.title.includes('Embarque') && !currentDay.title.includes('Retorno') && (
-                    <DailyRouteMap
-                      destination={selectedTrip.destination}
-                      activities={currentDay.activities}
-                      hotelNeighborhood={selectedTrip.accommodation?.neighborhood}
-                    />
+                    <div ref={mapAnchorRef}>
+                      <DailyRouteMap
+                        destination={selectedTrip.destination}
+                        activities={currentDay.activities}
+                        hotelNeighborhood={selectedTrip.accommodation?.neighborhood}
+                        focusActivityName={focusMapActivity}
+                      />
+                    </div>
                   )}
                   <div className="space-y-4">
                     {currentDay.activities.map((activity, actIndex) => {
