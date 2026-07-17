@@ -172,12 +172,13 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   }, [trip, onSave]);
 
   const handleSave = useCallback(() => {
-    const updatedTrip = {
+    const updatedTrip: any = {
       ...trip,
       flightsSelected: stage === 'itinerary',
       outboundFlight: selectedOutbound,
       returnFlight: selectedReturn,
     };
+    syncFlightPlannedFinances(updatedTrip, selectedOutbound, selectedReturn);
     onSave(updatedTrip);
     toast({ title: "Rascunho salvo! 📝" });
   }, [trip, stage, selectedOutbound, selectedReturn, onSave]);
