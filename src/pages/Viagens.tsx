@@ -292,6 +292,11 @@ const Viagens = () => {
         hotelConfirmed: selectedTrip.accommodation?.status === 'confirmed',
         interests: (selectedTrip as any).travelInterests,
         flightDuration: selectedTrip.flights?.outbound?.duration,
+        itineraryDays: (selectedTrip.days || []).slice(0, 12).map((d) => ({
+          day: d.day,
+          date: d.date || '',
+          items: (d.activities || []).slice(0, 8).map((a) => `${a.time || ''} ${a.name || ''}`.trim()),
+        })),
       });
     } else {
       setTripContext(null);

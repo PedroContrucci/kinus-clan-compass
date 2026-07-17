@@ -108,6 +108,7 @@ interface RequestBody {
   isEmergency?: boolean;
   curatedCityNames?: unknown;
   curatedCatalog?: unknown;
+  itineraryDays?: unknown;
 }
 
 // Input sanitization helpers
@@ -284,7 +285,33 @@ serve(async (req) => {
       }
     }
 
-    let systemPrompt = KINU_SYSTEM_PROMPT.replace("{{DESTINOS_DISPONIVEIS_LINE}}", cityLine) + catalogBlock;
+    // Sanitize itineraryDays
+    let itineraryBlock = "";
+    if (Array.isArray(body.itineraryDays)) {
+      const days = (body.itineraryDays as unknown[])
+        .slice(0, 12)
+        .filter((d): d is Record<string, unknown> => typeof d === "object" && d !== null)
+        .map((d) => {
+          const dayNum = typeof d.day === "number" ? d.day : null;
+          const date = sanitizeText(d.date, 20);
+          const items = Array.isArray(d.items)
+            ? (d.items as unknown[])
+                .slice(0, 8)
+                .map((it) => sanitizeText(it, 80))
+                .filter((s) => s.length > 0)
+            : [];
+          return { day: dayNum, date, items };
+        })
+        .filter((d) => d.day !== null && d.items.length > 0);
+      if (days.length > 0) {
+        const lines = days
+          .map((d) => `Dia ${d.day}${d.date ? ` (${d.date})` : ""}: ${d.items.join(" | ")}`)
+          .join("\n");
+        itineraryBlock = `\n\nROTEIRO DIA A DIA DA VIAGEM ATIVA:\n${lines}\n\nUse este roteiro para responder perguntas sobre dias, horários e atividades da viagem. Ao sugerir mudanças, deixe claro que o usuário pode ajustar na aba Roteiro.`;
+      }
+    }
+
+    let systemPrompt = KINU_SYSTEM_PROMPT.replace("{{DESTINOS_DISPONIVEIS_LINE}}", cityLine) + catalogBlock + itineraryBlock;
     if (isEmergency) {
       systemPrompt += `\n\nMODO EMERGÊNCIA ATIVADO:
 - Seja calmo, direto e prático
