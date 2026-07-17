@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, useRef, useCallback, Component, ErrorInfo, ReactNode } from 'react';
+import { memo, useEffect, useState, useRef, useCallback, useMemo, Component, ErrorInfo, ReactNode } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
