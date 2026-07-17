@@ -450,13 +450,14 @@ function normalizeForMatch(s: string): string {
 }
 
 function getDestDescription(destination: string): string {
+  // Priority 1: real curated description from destinationPdfData
+  const expanded = getExpandedCityData(destination);
+  if (expanded?.description) return expanded.description;
+  // Priority 2: legacy in-file map
   const key = normalizeForMatch(destination);
   for (const [k, v] of Object.entries(DESTINATION_DESCRIPTIONS)) {
     if (normalizeForMatch(k) === key || key.includes(normalizeForMatch(k)) || normalizeForMatch(k).includes(key)) return v;
   }
-  // Fallback: check expanded data
-  const expanded = getExpandedCityData(destination);
-  if (expanded?.description) return expanded.description;
   return `${destination} e um destino fascinante que oferece cultura rica, gastronomia autentica e experiencias inesqueciveis. Prepare-se para descobrir monumentos historicos, mercados vibrantes e a hospitalidade local que torna cada viagem unica e especial.`;
 }
 
