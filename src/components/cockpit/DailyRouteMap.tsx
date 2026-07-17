@@ -23,6 +23,7 @@ interface DailyRouteMapProps {
   destination: string;
   activities: { name: string; time?: string; category?: string }[];
   hotelNeighborhood?: string;
+  focusActivityName?: string | null;
 }
 
 interface GeoPoint {
