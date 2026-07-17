@@ -6123,9 +6123,9 @@ const fortalezaActivities: SuggestedActivity[] = [
     rating: 4.6,
     estimatedCostBRL: 0,
     durationHours: 3,
-    tips: ['Melhor praia urbana para entrar no mar', 'Barracas estruturadas com piscina para o dia todo', 'Quinta à noite é a tradicional caranguejada', 'Almoce na Barraca Marulho — estrutura ótima e Peixe à Delícia como destaque'],
-    styleTags: ['beach', 'relaxation', 'family'],
-    bestTime: 'Manhã para pegar mar calmo',
+    tips: ['A praia das barracas gigantes — estrutura completa para o dia todo', '⚠️ Mar forte com correntes: banho com muita cautela; com crianças, fique nas piscinas das barracas ou nas piscinas naturais da maré baixa', 'Quinta à noite é a tradicional caranguejada', 'Almoce na Barraca Marulho — estrutura ótima e Peixe à Delícia como destaque'],
+    styleTags: ['beach', 'relaxation'],
+    bestTime: 'Manhã, antes do sol forte',
     dayOccupancy: 'half',
   },
   {
