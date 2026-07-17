@@ -382,8 +382,6 @@ function getTripCurrency(dest: string): string {
 }
 
 export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavigateTab }: TripPanelProps) => {
-  const [confirmModal, setConfirmModal] = useState<{ type: 'flight' | 'hotel'; isOpen: boolean } | null>(null);
-  const [confirmAmount, setConfirmAmount] = useState('');
   const [showAllActions, setShowAllActions] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [flightResults, setFlightResults] = useState<any[] | null>(null);
