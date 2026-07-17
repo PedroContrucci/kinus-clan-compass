@@ -2142,7 +2142,8 @@ const Viagens = () => {
                 </div>
               </div>
             );
-          })()}
+          })()}</TabErrorBoundary>
+          )}
         </main>
 
 
