@@ -1509,7 +1509,7 @@ const Viagens = () => {
                   Gerar PDF
                 </button>
               </div>
-            </div>
+            </div></TabErrorBoundary>
           )}
 
           {/* Roteiro Tab */}
