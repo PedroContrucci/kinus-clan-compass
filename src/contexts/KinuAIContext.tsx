@@ -141,11 +141,21 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         throw new Error(data.error);
       }
 
+      const rawActions: any[] = Array.isArray(data.proposedActions) ? data.proposedActions : [];
+      const proposedActions: ProposedAction[] = rawActions
+        .filter((a) => a && typeof a.type === 'string')
+        .map((a) => ({
+          type: a.type as ProposedActionType,
+          params: (a.params && typeof a.params === 'object') ? a.params : {},
+          status: 'pending' as const,
+        }));
+
       const assistantMessage: KinuMessage = {
         id: `msg-${Date.now()}-response`,
         role: "assistant",
         content: data.message,
         timestamp: new Date(),
+        proposedActions: proposedActions.length > 0 ? proposedActions : undefined,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
