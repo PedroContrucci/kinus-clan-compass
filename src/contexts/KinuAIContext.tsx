@@ -65,6 +65,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
   const [insights, setInsights] = useState<KinuInsight[]>([]);
   const [tripContext, setTripContext] = useState<KinuTripContext | null>(null);
   const [isEmergencyMode, setIsEmergencyMode] = useState(false);
+  const [suggestedDestinations, setSuggestedDestinations] = useState<string[]>([]);
+
 
   const checkForEmergency = useCallback((text: string): boolean => {
     const lowerText = text.toLowerCase();
