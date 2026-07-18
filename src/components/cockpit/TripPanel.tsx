@@ -1002,6 +1002,20 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
               </button>
             </div>
           )}
+          {hotelConfirmed && onUnconfirm && (
+            <div className="mt-3 pt-2 border-t border-border/50 flex justify-end">
+              <button
+                onClick={() => {
+                  if (window.confirm('Desfazer a confirmação? Os valores voltam para o planejado.')) {
+                    onUnconfirm('hotel');
+                  }
+                }}
+                className="text-[10px] font-medium text-muted-foreground hover:text-foreground underline underline-offset-2"
+              >
+                Desfazer confirmação
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
