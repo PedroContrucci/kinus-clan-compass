@@ -28,7 +28,9 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
   const [selectedCountry, setSelectedCountry] = useState<CountryEntry | null>(null);
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [showCardsGrid, setShowCardsGrid] = useState(false);
+  const [kinuHighlights, setKinuHighlights] = useState<string[]>([]);
   const { toast } = useToast();
+  const { setIsOpen, sendMessage, registerActionHandlers } = useKinuAI();
 
   const handleMapCitySelect = (cityName: string) => {
     for (const [region, countries] of Object.entries(DESTINATION_CATALOG)) {
