@@ -1569,6 +1569,53 @@ export async function exportTripPDF(trip: SavedTrip) {
     });
   }
 
+  // ── DOCUMENTACAO (visto, vacina, passaporte, moeda, tomada) ──
+  const docs = getDocsForDestination(trip.destination);
+  if (docs) {
+    y += 4;
+    checkPage(46);
+    drawRect(14, y - 2, pw - 28, 0.3, B.surface);
+    y += 8;
+    setC(B.emerald, false);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DOCUMENTACAO', 14, y);
+    y += 4;
+    setC(B.gray400, false);
+    doc.setFontSize(9.5);
+    doc.setFont('helvetica', 'italic');
+    doc.text(`Regras para brasileiros · ${docs.country}`, 14, y);
+    y += 6;
+
+    const docRows: Array<{ label: string; value: string; accent: readonly number[] }> = [
+      { label: 'Visto', value: docs.visto, accent: docs.vistoIsento ? B.emerald : B.amber },
+      { label: 'Vacina', value: docs.vacina, accent: docs.vacinaObrigatoria ? B.red : B.emerald },
+      { label: 'Passaporte', value: docs.passaporte, accent: B.horizon },
+      { label: 'Moeda', value: docs.moeda, accent: B.gold },
+      { label: 'Tomada', value: docs.tomada, accent: B.gray400 },
+    ];
+
+    docRows.forEach(({ label, value, accent }) => {
+      const wrapped = doc.splitTextToSize(cleanText(value), pw - 50);
+      const rowH = Math.max(9, 5 + wrapped.length * 3.6);
+      checkPage(rowH + 2);
+      drawRect(14, y, pw - 28, rowH, B.deep);
+      drawRect(14, y, 1.5, rowH, accent);
+      setC(accent, false);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(label.toUpperCase(), 18, y + 5);
+      setC(B.white, false);
+      doc.setFontSize(9.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(wrapped, 46, y + 5);
+      y += rowH + 2;
+    });
+    y += 2;
+  }
+
+
+
   // ── Biology AI — Protocolo de Adaptacao ──
   const jetLagSev = trip.jetLagSeverity as string | undefined;
   if (trip.jetLagMode && jetLagSev && jetLagSev !== 'BAIXO') {
