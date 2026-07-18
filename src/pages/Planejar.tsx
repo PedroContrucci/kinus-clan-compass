@@ -1796,9 +1796,10 @@ interface Step1Props {
   tripData: TripData;
   setTripData: React.Dispatch<React.SetStateAction<TripData>>;
   handleSelectDestination: (dest: string) => void;
+  onNext: () => void;
 }
 
-const Step1Destination = ({ 
+const Step1Destination = ({
   searchQuery, 
   setSearchQuery, 
   tripData, 
