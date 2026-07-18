@@ -2614,6 +2614,11 @@ const Viagens = () => {
               mapAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 100);
           }}
+          onReplaceActivity={handleReplaceActivity}
+          onAdjustTime={handleAdjustTime}
+          onRemoveActivity={handleRemoveActivity}
+          usedActivityIds={(selectedTrip.days || []).flatMap(d => d.activities.map(a => a.id))}
+          usedActivityNames={(selectedTrip.days || []).flatMap(d => d.activities.map(a => a.name))}
         />
       )}
 
