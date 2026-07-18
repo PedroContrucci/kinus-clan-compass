@@ -512,6 +512,60 @@ function fmt(n: number) {
   return n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
 }
 
+// ── Compose an evocative day narrative from that day's own activities + tips ──
+function composeDayNarrative(day: any): string {
+  const acts = (day?.activities || []).filter((a: any) => {
+    const n = (a?.name || '').toLowerCase();
+    if (a?.category === 'voo' || a?.category === 'hotel' || a?.category === 'transporte') return false;
+    if (n.includes('transfer') || n.includes('check-in') || n.includes('check-out')) return false;
+    if (n.includes('cafe da manha') || n.includes('café da manhã')) return false;
+    return Boolean(a?.name);
+  });
+  if (acts.length === 0) return '';
+
+  const cleanName = (a: any) => cleanText((a.name || '').replace(/^(Almoco|Jantar|Cafe|Almoço|Café):\s*/i, ''));
+  const essence = (a: any): string => {
+    const raw = Array.isArray(a?.tips) && a.tips.length ? a.tips[0] : '';
+    if (!raw) return '';
+    const stripped = String(raw).replace(/[⚠️✨🌟🔴🟡🟢📍•\-–—]+/g, '').trim();
+    const firstSentence = stripped.split(/[.!?]/)[0].trim();
+    if (!firstSentence) return '';
+    const lower = firstSentence.charAt(0).toLowerCase() + firstSentence.slice(1);
+    return cleanText(lower);
+  };
+  const slotOf = (a: any): 'manha' | 'tarde' | 'noite' => {
+    const h = parseInt(String(a?.time || '12:00').split(':')[0], 10);
+    if (Number.isNaN(h) || h < 12) return 'manha';
+    if (h < 18) return 'tarde';
+    return 'noite';
+  };
+
+  const morning = acts.find((a: any) => slotOf(a) === 'manha');
+  const afternoon = acts.find((a: any) => slotOf(a) === 'tarde');
+  const evening = acts.find((a: any) => slotOf(a) === 'noite');
+
+  const chosen: Array<{ label: string; act: any }> = [];
+  if (morning) chosen.push({ label: 'A manha comeca em', act: morning });
+  if (afternoon) chosen.push({ label: 'A tarde segue em', act: afternoon });
+  if (evening) chosen.push({ label: 'A noite fecha com', act: evening });
+
+  if (chosen.length === 0) {
+    acts.slice(0, 3).forEach((a: any, i: number) => {
+      const label = i === 0 ? 'O dia comeca em' : i === 1 ? 'Depois, passe por' : 'Para fechar,';
+      chosen.push({ label, act: a });
+    });
+  }
+
+  return chosen
+    .map(({ label, act }) => {
+      const name = cleanName(act);
+      const ess = essence(act);
+      return ess ? `${label} ${name} — ${ess}.` : `${label} ${name}.`;
+    })
+    .join(' ');
+}
+
+
 // ── Category icon text for PDF (no emoji — use text symbols) ──
 function getCategoryIcon(category: string, type?: string): string {
   const cat = (category || type || '').toLowerCase();
