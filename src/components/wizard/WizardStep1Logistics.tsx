@@ -338,7 +338,17 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
         <div className="space-y-4">
           {!data.destinationCity && (
             <>
-              <DestinationWorldMap onSelectCity={handleMapCitySelect} />
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsOpen(true);
+                  await sendMessage("Quero ajuda para escolher um destino para minha viagem");
+                }}
+                className="w-full px-4 py-3 rounded-xl border border-[#eab308]/40 bg-card/50 hover:bg-card text-sm font-medium transition-colors flex items-center justify-center gap-2 text-[#eab308]"
+              >
+                🌿 Não sei pra onde ir — me ajuda, KINU
+              </button>
+              <DestinationWorldMap onSelectCity={handleMapCitySelect} highlightedCities={kinuHighlights} />
               <button
                 type="button"
                 onClick={() => setShowCardsGrid((prev) => !prev)}
