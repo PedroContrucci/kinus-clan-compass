@@ -2,7 +2,8 @@ export type ProposedActionType =
   | 'trocar_atividade'
   | 'ajustar_horario'
   | 'remover_atividade'
-  | 'confirmar_item';
+  | 'confirmar_item'
+  | 'adicionar_atividade';
 
 export interface ProposedAction {
   type: ProposedActionType;
