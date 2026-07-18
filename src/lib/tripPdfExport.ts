@@ -8,6 +8,7 @@ import { ptBR } from 'date-fns/locale';
 import { getTopMichelinForCity } from '@/lib/michelinData';
 import { getExpandedCityData } from '@/data/destinationPdfData';
 import { DESTINATION_PHOTO_HINTS } from '@/hooks/useUnsplash';
+import { findCityInfo } from '@/data/destinationCatalog';
 
 // ── Branding colors (RGB) ──
 const B = {
