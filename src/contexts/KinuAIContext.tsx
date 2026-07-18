@@ -11,8 +11,8 @@ export interface KinuActionHandlers {
   remover_atividade?: (params: { dia: number; atividade: string }) => string | null;
   confirmar_item?: (params: { tipo: 'voo' | 'hotel' }) => string | null;
   adicionar_atividade?: (params: { dia: number; atividade: string; horario: string }) => string | null;
-  sugerir_destinos?: (params: { cidades: string[]; justificativa?: string }) => string | null;
 }
+
 
 function buildCuratedCatalog(city: string) {
   const data = destinationActivities[city];
@@ -51,7 +51,10 @@ interface KinuAIContextType {
   applyProposedAction: (messageId: string, actionIndex: number) => void;
   dismissProposedAction: (messageId: string, actionIndex: number) => void;
   registerActionHandlers: (handlers: KinuActionHandlers | null) => void;
+  suggestedDestinations: string[];
+  clearSuggestedDestinations: () => void;
 }
+
 
 const KinuAIContext = createContext<KinuAIContextType | undefined>(undefined);
 
@@ -62,6 +65,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
   const [insights, setInsights] = useState<KinuInsight[]>([]);
   const [tripContext, setTripContext] = useState<KinuTripContext | null>(null);
   const [isEmergencyMode, setIsEmergencyMode] = useState(false);
+  const [suggestedDestinations, setSuggestedDestinations] = useState<string[]>([]);
+
 
   const checkForEmergency = useCallback((text: string): boolean => {
     const lowerText = text.toLowerCase();
@@ -196,6 +201,11 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     setIsEmergencyMode(false);
   }, []);
 
+  const clearSuggestedDestinations = useCallback(() => {
+    setSuggestedDestinations([]);
+  }, []);
+
+
   const dismissInsight = useCallback((id: string) => {
     setInsights(prev => prev.filter(insight => insight.id !== id));
   }, []);
@@ -227,6 +237,26 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     const action = target?.proposedActions?.[actionIndex];
     if (!action || action.status && action.status !== 'pending') return;
 
+    if (action.type === 'sugerir_destinos') {
+      const cidades: string[] = Array.isArray((action.params as any)?.cidades)
+        ? (action.params as any).cidades
+        : [];
+      const valid = cidades.filter((c) =>
+        CURATED_CITIES.some((cc) => cc.toLowerCase() === String(c).toLowerCase())
+      );
+      if (valid.length === 0) { toast.error('Não reconheci esses destinos.'); return; }
+      setSuggestedDestinations(valid);
+      setActionStatus(messageId, actionIndex, 'applied');
+      setMessages(prev => [...prev, {
+        id: `msg-${Date.now()}-ack`,
+        role: 'assistant',
+        content: `🗺️ Acendi ${valid.join(', ')} no mapa em dourado — vai na aba Planejar e toca na sua escolhida!`,
+        timestamp: new Date(),
+      }]);
+      setIsOpen(false);
+      return;
+    }
+
     const handlers = actionHandlersRef.current;
     if (!handlers) {
       toast.error('Abre uma viagem para eu aplicar essa ação.');
@@ -251,9 +281,6 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         case 'adicionar_atividade':
           confirmationText = handlers.adicionar_atividade?.(action.params as any) ?? null;
           break;
-        case 'sugerir_destinos':
-          confirmationText = handlers.sugerir_destinos?.(action.params as any) ?? null;
-          break;
       }
     } catch (err) {
       console.error('Erro ao aplicar ação KINU:', err);
@@ -275,7 +302,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     };
     setMessages(prev => [...prev, confirmation]);
     setIsOpen(false);
-  }, [messages, setActionStatus, setIsOpen]);
+  }, [messages, setActionStatus, setIsOpen, setSuggestedDestinations]);
+
 
   const dismissProposedAction = useCallback((messageId: string, actionIndex: number) => {
     setActionStatus(messageId, actionIndex, 'dismissed');
@@ -306,12 +334,15 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         applyProposedAction,
         dismissProposedAction,
         registerActionHandlers,
+        suggestedDestinations,
+        clearSuggestedDestinations,
       }}
     >
       {children}
     </KinuAIContext.Provider>
   );
 }
+
 
 export function useKinuAI() {
   const context = useContext(KinuAIContext);
