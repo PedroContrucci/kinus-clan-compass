@@ -19,6 +19,8 @@ import {
 import kinuLogo from '@/assets/KINU_logo.png';
 import { useCityAirportSearch, useCities } from '@/hooks/useSupabaseData';
 import { useKinuAI } from '@/contexts/KinuAIContext';
+import { DestinationWorldMap } from '@/components/planejar/DestinationWorldMap';
+import { isCityCurated } from '@/lib/curatedCities';
 import { 
   DayNavigator, 
   MinimalFlightCard, 
@@ -1271,12 +1273,13 @@ const Planejar = () => {
       <main className="px-4 py-6">
         {/* Step 1: Destination with Supabase Autocomplete */}
         {currentStep === 1 && (
-          <Step1Destination 
+          <Step1Destination
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             tripData={tripData}
             setTripData={setTripData}
             handleSelectDestination={handleSelectDestination}
+            onNext={handleNext}
           />
         )}
 
@@ -1793,14 +1796,16 @@ interface Step1Props {
   tripData: TripData;
   setTripData: React.Dispatch<React.SetStateAction<TripData>>;
   handleSelectDestination: (dest: string) => void;
+  onNext: () => void;
 }
 
-const Step1Destination = ({ 
-  searchQuery, 
-  setSearchQuery, 
-  tripData, 
+const Step1Destination = ({
+  searchQuery,
+  setSearchQuery,
+  tripData,
   setTripData,
-  handleSelectDestination 
+  handleSelectDestination,
+  onNext
 }: Step1Props) => {
   const { setIsOpen, sendMessage } = useKinuAI();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -1865,7 +1870,20 @@ const Step1Destination = ({
 
   return (
     <div className="animate-fade-in">
-      <h2 className="text-2xl font-bold mb-6 font-['Outfit'] text-foreground">
+      {/* Visual entry point: world map of curated destinations */}
+      <DestinationWorldMap
+        onSelectCity={(cityName) => {
+          if (isCityCurated(cityName)) {
+            handleSelectFromSearch(cityName);
+            onNext();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            toast({ title: `✨ ${cityName} chega em breve ao KINU!` });
+          }
+        }}
+      />
+
+      <h2 className="text-2xl font-bold mb-6 mt-6 font-['Outfit'] text-foreground">
         Pra onde o coração quer ir?
       </h2>
       
