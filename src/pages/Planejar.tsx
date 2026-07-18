@@ -19,8 +19,6 @@ import {
 import kinuLogo from '@/assets/KINU_logo.png';
 import { useCityAirportSearch, useCities } from '@/hooks/useSupabaseData';
 import { useKinuAI } from '@/contexts/KinuAIContext';
-import { DestinationWorldMap } from '@/components/planejar/DestinationWorldMap';
-import { isCityCurated } from '@/lib/curatedCities';
 import { 
   DayNavigator, 
   MinimalFlightCard, 
