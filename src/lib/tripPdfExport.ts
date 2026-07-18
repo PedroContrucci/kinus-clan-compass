@@ -738,14 +738,12 @@ async function fetchUnsplashCoverUrls(destination: string): Promise<string[]> {
     if (!city) return [];
     const info = findCityInfo(city);
     const country = info?.country?.country || '';
-    const destKey = city.toLowerCase();
-    const hint = DESTINATION_PHOTO_HINTS[destKey];
-    // Match wizard's useDestinationPhoto query exactly
-    const query = hint
-      ? hint
-      : country
-        ? `${city} ${country} landmark`
-        : `${city} landmark travel`;
+    // PRIMARY: use EXACTLY the wizard destination card query pattern
+    // (WizardStep1Logistics uses `${city} ${country} landmark`). This is the
+    // verified-correct image source for the 20 curated cities. We deliberately
+    // do NOT use DESTINATION_PHOTO_HINTS here because some hints ("Beira Mar
+    // beach", etc.) return generic tropical stock (e.g. Maldives for Fortaleza).
+    const query = country ? `${city} ${country} landmark` : `${city} landmark travel`;
     const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/unsplash?query=${encodeURIComponent(query)}&per_page=2&orientation=landscape`;
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), 6000);
