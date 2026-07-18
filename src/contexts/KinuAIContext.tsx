@@ -6,11 +6,11 @@ import { CURATED_CITIES } from "@/lib/curatedCities";
 import { destinationActivities } from "@/data/destinationActivities";
 
 export interface KinuActionHandlers {
-  trocar_atividade: (params: { dia: number; atividade_atual: string; nova_atividade: string }) => string | null;
-  ajustar_horario: (params: { dia: number; atividade: string; novo_horario: string }) => string | null;
-  remover_atividade: (params: { dia: number; atividade: string }) => string | null;
-  confirmar_item: (params: { tipo: 'voo' | 'hotel' }) => string | null;
-  adicionar_atividade: (params: { dia: number; atividade: string; horario: string }) => string | null;
+  trocar_atividade?: (params: { dia: number; atividade_atual: string; nova_atividade: string }) => string | null;
+  ajustar_horario?: (params: { dia: number; atividade: string; novo_horario: string }) => string | null;
+  remover_atividade?: (params: { dia: number; atividade: string }) => string | null;
+  confirmar_item?: (params: { tipo: 'voo' | 'hotel' }) => string | null;
+  adicionar_atividade?: (params: { dia: number; atividade: string; horario: string }) => string | null;
   sugerir_destinos?: (params: { cidades: string[]; justificativa?: string }) => string | null;
 }
 
@@ -237,19 +237,19 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     try {
       switch (action.type) {
         case 'trocar_atividade':
-          confirmationText = handlers.trocar_atividade(action.params as any);
+          confirmationText = handlers.trocar_atividade?.(action.params as any) ?? null;
           break;
         case 'ajustar_horario':
-          confirmationText = handlers.ajustar_horario(action.params as any);
+          confirmationText = handlers.ajustar_horario?.(action.params as any) ?? null;
           break;
         case 'remover_atividade':
-          confirmationText = handlers.remover_atividade(action.params as any);
+          confirmationText = handlers.remover_atividade?.(action.params as any) ?? null;
           break;
         case 'confirmar_item':
-          confirmationText = handlers.confirmar_item(action.params as any);
+          confirmationText = handlers.confirmar_item?.(action.params as any) ?? null;
           break;
         case 'adicionar_atividade':
-          confirmationText = handlers.adicionar_atividade(action.params as any);
+          confirmationText = handlers.adicionar_atividade?.(action.params as any) ?? null;
           break;
         case 'sugerir_destinos':
           confirmationText = handlers.sugerir_destinos?.(action.params as any) ?? null;
