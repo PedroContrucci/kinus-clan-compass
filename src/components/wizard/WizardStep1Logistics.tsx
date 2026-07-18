@@ -26,6 +26,35 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
   );
   const [selectedCountry, setSelectedCountry] = useState<CountryEntry | null>(null);
   const [showUpcoming, setShowUpcoming] = useState(false);
+  const { toast } = useToast();
+
+  const handleMapCitySelect = (cityName: string) => {
+    for (const [region, countries] of Object.entries(DESTINATION_CATALOG)) {
+      for (const country of countries) {
+        const city = country.cities.find((c) => c.name === cityName);
+        if (city) {
+          setSelectedRegion(region as RegionName);
+          setSelectedCountry(country);
+          onChange({
+            selectedRegion: region,
+            selectedCountry: country.country,
+            selectedCountryFlag: country.flag,
+            destinationCity: city.name,
+            destinationAirportCode: city.airports[0],
+            destinationCurrency: city.currency,
+            destinationTimezoneId: city.timezone,
+            destinationTimezone: city.timezone,
+            destinationAirports: city.airports,
+          });
+          return;
+        }
+      }
+    }
+    toast({
+      title: `✨ ${cityName} chega em breve ao KINU!`,
+      duration: 3000,
+    });
+  };
 
   // Restore country from data
   useEffect(() => {
