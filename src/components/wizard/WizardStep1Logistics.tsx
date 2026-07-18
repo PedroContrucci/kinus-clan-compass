@@ -126,6 +126,7 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
   };
 
   const handleCitySelect = (city: CityEntry) => {
+    setKinuHighlights([]);
     onChange({
       destinationCity: city.name,
       destinationAirportCode: city.airports[0],
