@@ -52,23 +52,22 @@ function createNumberedIcon(num: number): L.DivIcon {
   return L.divIcon({
     className: 'custom-marker',
     html: `<div style="
-      background: linear-gradient(135deg, hsl(160, 84%, 39%), hsl(199, 89%, 48%));
-      color: white;
-      width: 28px;
-      height: 28px;
+      background: #10b981;
+      color: #ffffff;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 13px;
+      font-size: 12px;
       font-family: 'Outfit', sans-serif;
-      border: 2px solid hsl(210, 40%, 98%);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      box-shadow: 0 0 8px rgba(16,185,129,0.7), 0 0 2px rgba(16,185,129,0.9);
     ">${num}</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -16],
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -13],
   });
 }
 
