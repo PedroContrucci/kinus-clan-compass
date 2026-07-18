@@ -126,7 +126,10 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
   const [segments, setSegments] = useState<RouteSegment[]>([]);
   const abortRef = useRef(false);
 
-  const filteredActivities = activities.filter(a => !isLogistics(a));
+  const filteredActivities = activities
+    .filter(a => !isLogistics(a))
+    .slice()
+    .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 
   const geocode = useCallback(async (name: string, dest: string): Promise<{ lat: number; lng: number } | null> => {
     const key = `${name}|${dest}`;
