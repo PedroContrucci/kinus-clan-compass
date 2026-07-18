@@ -13,7 +13,7 @@ import { REGIONS, DESTINATION_CATALOG, type RegionName, type CountryEntry, type 
 import { cn } from '@/lib/utils';
 import { isCityCurated, CURATED_CITIES } from '@/lib/curatedCities';
 import { useToast } from '@/hooks/use-toast';
-import { useKinuAI, type KinuActionHandlers } from '@/contexts/KinuAIContext';
+import { useKinuAI } from '@/contexts/KinuAIContext';
 import type { WizardData } from './types';
 
 interface WizardStep1Props {
@@ -28,12 +28,12 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
   const [selectedCountry, setSelectedCountry] = useState<CountryEntry | null>(null);
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [showCardsGrid, setShowCardsGrid] = useState(false);
-  const [kinuHighlights, setKinuHighlights] = useState<string[]>([]);
   const { toast } = useToast();
-  const { setIsOpen, sendMessage, registerActionHandlers } = useKinuAI();
+  const { setIsOpen, sendMessage, suggestedDestinations, clearSuggestedDestinations } = useKinuAI();
 
   const handleMapCitySelect = (cityName: string) => {
-    setKinuHighlights([]);
+    clearSuggestedDestinations();
+
     for (const [region, countries] of Object.entries(DESTINATION_CATALOG)) {
       for (const country of countries) {
         const city = country.cities.find((c) => c.name === cityName);
