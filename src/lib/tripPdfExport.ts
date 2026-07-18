@@ -1308,7 +1308,9 @@ export async function exportTripPDF(trip: SavedTrip) {
       }
     }
 
-    const narrative = getDayNarrative(trip.destination, day.title || '');
+    // Prose first, schedule below: prefer a narrative composed from the day's own activities+tips.
+    const composed = composeDayNarrative(day);
+    const narrative = composed || getDayNarrative(trip.destination, day.title || '');
     if (narrative) {
       checkPage(12);
       setC(B.gray400, false);
