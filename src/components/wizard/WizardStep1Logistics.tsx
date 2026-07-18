@@ -106,7 +106,7 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
         setKinuHighlights(valid);
         return `🗺️ Acendi ${valid.join(', ')} no mapa em dourado — toca na sua escolhida!`;
       },
-    } as KinuActionHandlers);
+    });
 
     return () => {
       registerActionHandlers(null);
