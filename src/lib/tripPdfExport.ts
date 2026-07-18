@@ -1272,14 +1272,14 @@ export async function exportTripPDF(trip: SavedTrip) {
           return n.replace(/^(Almoco|Jantar|Cafe|Almoço|Café):\s*/i, '').substring(0, 20);
         });
       if (routeStops.length >= 2) {
-        checkPage(5);
+        checkPage(5.5);
         setC(B.gray500, false);
         doc.setFontSize(11.5);
         doc.setFont('helvetica', 'italic');
         const routeText = `Rota: Hotel > ${routeStops.join(' > ')} > Hotel`;
         const truncated = routeText.length > 100 ? routeText.substring(0, 97) + '...' : routeText;
         doc.text(truncated, 16, y);
-        y += 4;
+        y += 5.5;
       }
     }
 
