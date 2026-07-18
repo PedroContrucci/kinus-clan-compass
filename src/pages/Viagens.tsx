@@ -798,6 +798,92 @@ const Viagens = () => {
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
   };
 
+  // ---- Itinerary edit helpers (drawer actions) ----
+  const persistTrip = (updatedTrip: SavedTrip) => {
+    setSelectedTrip(updatedTrip);
+    const updatedTrips = trips.map(t => t.id === updatedTrip.id ? updatedTrip : t);
+    setTrips(updatedTrips);
+    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+  };
+
+  const applyPlannedCostDelta = (trip: SavedTrip, activity: TripActivity, delta: number) => {
+    // Only planned (not confirmed/bidding) contributes to finances.planned
+    if (activity.status === 'confirmed' || activity.status === 'bidding') return;
+    if (!delta) return;
+    const cat = (activity.category as string) || '';
+    const bucket: 'food' | 'tours' =
+      ['comida', 'breakfast', 'lunch', 'dinner', 'café', 'cafe'].includes(cat.toLowerCase())
+        ? 'food'
+        : 'tours';
+    trip.finances.planned = Math.max(0, trip.finances.planned + delta);
+    trip.finances.categories[bucket].planned = Math.max(0, (trip.finances.categories[bucket].planned || 0) + delta);
+    trip.finances.available = trip.finances.total - trip.finances.planned - trip.finances.confirmed - trip.finances.bidding;
+  };
+
+  const findActivityLocation = (trip: SavedTrip, activityId: string): { dayIdx: number; actIdx: number } | null => {
+    for (let d = 0; d < (trip.days || []).length; d++) {
+      const idx = trip.days[d].activities.findIndex(a => a.id === activityId);
+      if (idx >= 0) return { dayIdx: d, actIdx: idx };
+    }
+    return null;
+  };
+
+  const handleReplaceActivity = (activityId: string, suggested: import('@/data/destinationActivities').SuggestedActivity) => {
+    if (!selectedTrip) return;
+    const trip: SavedTrip = JSON.parse(JSON.stringify(selectedTrip));
+    const loc = findActivityLocation(trip, activityId);
+    if (!loc) return;
+    const current = trip.days[loc.dayIdx].activities[loc.actIdx];
+    const travelers = Math.max(1, trip.travelers || 1);
+    const newCost = suggested.estimatedCostBRL || 0;
+    const delta = (newCost - (current.cost || 0)) * travelers;
+    const replaced: TripActivity = {
+      ...current,
+      id: suggested.id,
+      name: suggested.name,
+      description: current.description || '',
+      cost: newCost,
+      duration: suggested.durationHours ? `${suggested.durationHours}h` : current.duration,
+      status: 'planned',
+      edited: true,
+    };
+    trip.days[loc.dayIdx].activities[loc.actIdx] = replaced;
+    applyPlannedCostDelta(trip, current, delta);
+    trip.progress = calculateProgress(trip);
+    persistTrip(trip);
+    setActivityDetailDrawer({ activity: replaced, open: true });
+    toast({ title: '🔄 Sugestão trocada', description: suggested.name });
+  };
+
+  const handleAdjustTime = (activityId: string, newTime: string) => {
+    if (!selectedTrip || !newTime) return;
+    const trip: SavedTrip = JSON.parse(JSON.stringify(selectedTrip));
+    const loc = findActivityLocation(trip, activityId);
+    if (!loc) return;
+    const day = trip.days[loc.dayIdx];
+    day.activities[loc.actIdx] = { ...day.activities[loc.actIdx], time: newTime, edited: true };
+    day.activities.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    persistTrip(trip);
+    const moved = day.activities.find(a => a.id === activityId) || null;
+    if (moved) setActivityDetailDrawer({ activity: moved, open: true });
+    toast({ title: '🕐 Horário atualizado', description: newTime });
+  };
+
+  const handleRemoveActivity = (activityId: string) => {
+    if (!selectedTrip) return;
+    const trip: SavedTrip = JSON.parse(JSON.stringify(selectedTrip));
+    const loc = findActivityLocation(trip, activityId);
+    if (!loc) return;
+    const current = trip.days[loc.dayIdx].activities[loc.actIdx];
+    const travelers = Math.max(1, trip.travelers || 1);
+    applyPlannedCostDelta(trip, current, -(current.cost || 0) * travelers);
+    trip.days[loc.dayIdx].activities.splice(loc.actIdx, 1);
+    trip.progress = calculateProgress(trip);
+    persistTrip(trip);
+    setActivityDetailDrawer(null);
+    toast({ title: '🗑️ Atividade removida', description: current.name });
+  };
+
   // Handle draft cockpit actions
   const handleSaveDraft = (updatedTrip: any) => {
     const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
