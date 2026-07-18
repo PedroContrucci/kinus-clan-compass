@@ -839,14 +839,20 @@ const Viagens = () => {
     const delta = (newCost - (current.cost || 0)) * travelers;
     const replaced: TripActivity = {
       ...current,
+      // Preserve only the slot's time (and structural fields from spread that get overwritten below)
       id: suggested.id,
       name: suggested.name,
-      description: current.description || '',
+      description: suggested.tips?.[0] || '',
       cost: newCost,
-      duration: suggested.durationHours ? `${suggested.durationHours}h` : current.duration,
+      duration: suggested.durationHours ? `${suggested.durationHours}h` : '',
       status: 'planned',
       edited: true,
+      // Reset stale confirmation/auction data from the previous activity
+      paidAmount: undefined,
+      confirmationLink: undefined,
+      auction: undefined,
     };
+
     trip.days[loc.dayIdx].activities[loc.actIdx] = replaced;
     applyPlannedCostDelta(trip, current, delta);
     trip.progress = calculateProgress(trip);
