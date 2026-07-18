@@ -85,7 +85,13 @@ AÇÕES ESTRUTURADAS (FERRAMENTAS): Quando o usuário PEDIR uma mudança na viag
 
 3. NOMES LITERAIS: os parâmetros atividade, atividade_atual e nova_atividade devem ser copiados LITERALMENTE do bloco ROTEIRO DIA A DIA ou do CATÁLOGO CURADO. NUNCA use termos genéricos como "jantar" ou "almoço" — use o nome do estabelecimento como está no roteiro. O parâmetro dia deve ser o número do dia conforme o bloco ROTEIRO (se o usuário disser "sexta", localize a data no roteiro e use o número do dia correspondente).
 
-4. ESTADO REAL: o bloco ROTEIRO DIA A DIA é a ÚNICA fonte da verdade sobre o estado atual da viagem. Você NUNCA executa mudanças — apenas propõe; quem aplica é o usuário no app. NUNCA afirme que uma mudança foi feita, e NUNCA afirme que algo "sempre esteve" ou "nunca esteve" no roteiro. Se questionado sobre mudanças passadas, responda apenas com base no bloco ROTEIRO atual e nas mensagens "✅ Feito" ou "(Proposta recusada)" do histórico. Se não houver registro, diga que não tem esse registro.`;
+4. ESTADO REAL: o bloco ROTEIRO DIA A DIA é a ÚNICA fonte da verdade sobre o estado atual da viagem. Você NUNCA executa mudanças — apenas propõe; quem aplica é o usuário no app. NUNCA afirme que uma mudança foi feita, e NUNCA afirme que algo "sempre esteve" ou "nunca esteve" no roteiro. Se questionado sobre mudanças passadas, responda apenas com base no bloco ROTEIRO atual e nas mensagens "✅ Feito" ou "(Proposta recusada)" do histórico. Se não houver registro, diga que não tem esse registro.
+
+5. ADICIONAR vs TROCAR: se o usuário quer INCLUIR uma atividade sem remover nenhuma existente, use adicionar_atividade. É PROIBIDO usar trocar_atividade sobre uma atividade que o usuário quer manter só para "encaixar" uma nova — isso destruiria algo que ele escolheu.
+
+6. AÇÕES SÓ SOBRE O QUE EXISTE: ajustar_horario, remover_atividade e trocar_atividade só podem referenciar atividades que aparecem LITERALMENTE no bloco ROTEIRO DIA A DIA. Se a atividade não está lá, ela não existe — use adicionar_atividade se a intenção for incluí-la.
+
+7. DIA DA SEMANA: o bloco ROTEIRO informa o dia da semana entre parênteses em cada data. Use EXCLUSIVAMENTE essa informação — NUNCA calcule dia da semana por conta própria.`;
 
 const KINU_TOOLS = [
   {
@@ -137,7 +143,21 @@ const KINU_TOOLS = [
       required: ["tipo"],
     },
   },
+  {
+    name: "adicionar_atividade",
+    description: "Propõe adicionar uma atividade do catálogo curado a um dia do roteiro, em um horário específico. O app confirmará com o usuário antes de aplicar.",
+    input_schema: {
+      type: "object",
+      properties: {
+        dia: { type: "number", description: "Número do dia da viagem" },
+        atividade: { type: "string", description: "Nome exato de uma atividade do CATÁLOGO CURADO" },
+        horario: { type: "string", description: "Horário no formato HH:MM (24h)" }
+      },
+      required: ["dia", "atividade", "horario"]
+    }
+  },
 ];
+
 
 interface ChatMessage {
   role: "user" | "assistant";
