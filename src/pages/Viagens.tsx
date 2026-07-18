@@ -1954,6 +1954,11 @@ const Viagens = () => {
                                   {activity.status === 'confirmed' ? '✓' : '~'}R$ {activity.cost.toLocaleString('pt-BR')}
                                 </span>
                               )}
+                              {activity.edited && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-400 font-medium">
+                                  ✏️ ajustado
+                                </span>
+                              )}
                               {/* Preço pago */}
                               {activity.status === 'confirmed' && activity.paidAmount && (
                                 <span className="text-xs bg-[#10b981] text-white px-2 py-0.5 rounded-full font-medium">
