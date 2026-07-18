@@ -672,10 +672,11 @@ function getDestCoverPhotos(destination: string): string[] {
   ];
 }
 
-// Try to fetch destination-specific photos from the unsplash edge function.
+// Fetch destination-specific photos using the EXACT same query the wizard's
+// destination cards use (useDestinationPhoto → UnsplashThumbnail). The wizard
+// query `"${city} ${country} landmark"` (or DESTINATION_PHOTO_HINTS[city])
+// produces correct city photos; "cidade turismo" did not.
 // Returns [] on any failure — caller falls back to getDestCoverPhotos.
-// Query is built as "{city} {country} cidade turismo" to avoid ambiguous
-// matches (e.g. "Fortaleza" alone returns military fortress photos).
 async function fetchUnsplashCoverUrls(destination: string): Promise<string[]> {
   try {
     const city = destination?.trim();
@@ -684,11 +685,12 @@ async function fetchUnsplashCoverUrls(destination: string): Promise<string[]> {
     const country = info?.country?.country || '';
     const destKey = city.toLowerCase();
     const hint = DESTINATION_PHOTO_HINTS[destKey];
+    // Match wizard's useDestinationPhoto query exactly
     const query = hint
-      ? `${hint} ${country}`.trim()
+      ? hint
       : country
-        ? `${city} ${country} cidade turismo`
-        : `${city} cidade turismo`;
+        ? `${city} ${country} landmark`
+        : `${city} landmark travel`;
     const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/unsplash?query=${encodeURIComponent(query)}&per_page=2&orientation=landscape`;
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), 6000);
@@ -708,6 +710,7 @@ async function fetchUnsplashCoverUrls(destination: string): Promise<string[]> {
     return [];
   }
 }
+
 
 async function fetchImageAsBase64(url: string): Promise<string | null> {
   const tryFetch = (attemptUrl: string, timeout: number): Promise<string | null> => {

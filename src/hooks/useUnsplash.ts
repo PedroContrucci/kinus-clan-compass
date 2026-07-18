@@ -172,6 +172,8 @@ export const DESTINATION_PHOTO_HINTS: Record<string, string> = {
   'salvador': 'Salvador Bahia Pelourinho colorful',
   'são paulo': 'São Paulo Paulista Avenue urban',
   'florianópolis': 'Florianopolis Brazil beach island',
+  'fortaleza': 'Fortaleza Ceara Beira Mar beach',
+
   'cartagena': 'Cartagena Colombia walled city colorful',
   'montevidéu': 'Montevideo Uruguay Rambla coast',
   'lima': 'Lima Peru Miraflores coast',

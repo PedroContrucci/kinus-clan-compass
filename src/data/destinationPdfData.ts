@@ -866,7 +866,25 @@ const EXPANDED_CITY_DATA: Record<string, CityPdfData> = {
     },
     narratives: {},
   },
+
+  'fortaleza': {
+    photos: [
+      'https://images.unsplash.com/photo-1591373032221-3f6bf7f9d9d5?w=1200&h=800&fit=crop&fm=jpg&q=80',
+      'https://images.unsplash.com/photo-1516815231560-8f41ec531527?w=1200&h=800&fit=crop&fm=jpg&q=80',
+    ],
+    description: 'Fortaleza e a capital do Ceara e um dos maiores polos turisticos do Nordeste — sol o ano inteiro, orla urbana com a Beira Mar, artesanato no Mercado Central e a gastronomia da tapioca, do caranguejo e da agua de coco. Serve de porta de entrada para praias famosas como Jericoacoara, Canoa Quebrada e Cumbuco.',
+    info: { timezone: 'UTC-3 (fuso de Brasilia)', voltage: '220V - Tomada tipo N', language: 'Portugues', currency: 'Real (BRL)', visa: 'N/A (domestico)' },
+    tips: {
+      tips: 'Feirinha da Beira Mar todas as noites. Passeios de buggy para Cumbuco e Morro Branco saem cedo. Cuidado com correntes de retorno em algumas praias urbanas.',
+      water: 'Prefira agua mineral',
+      tipping: '10% em restaurantes.',
+      phrases: ['Massa demais! (muito bom)', 'Ei, cabra! (expressao local)'],
+      embassy: 'N/A (destino domestico)',
+    },
+    narratives: {},
+  },
 };
+
 
 // ── Export functions ──
 
