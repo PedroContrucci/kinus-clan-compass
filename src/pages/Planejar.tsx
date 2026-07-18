@@ -1273,12 +1273,13 @@ const Planejar = () => {
       <main className="px-4 py-6">
         {/* Step 1: Destination with Supabase Autocomplete */}
         {currentStep === 1 && (
-          <Step1Destination 
+          <Step1Destination
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             tripData={tripData}
             setTripData={setTripData}
             handleSelectDestination={handleSelectDestination}
+            onNext={handleNext}
           />
         )}
 
