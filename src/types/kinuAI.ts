@@ -3,7 +3,8 @@ export type ProposedActionType =
   | 'ajustar_horario'
   | 'remover_atividade'
   | 'confirmar_item'
-  | 'adicionar_atividade';
+  | 'adicionar_atividade'
+  | 'sugerir_destinos';
 
 export interface ProposedAction {
   type: ProposedActionType;

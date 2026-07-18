@@ -21,6 +21,8 @@ function describeAction(action: ProposedAction): string {
       return `Confirmar ${p.tipo === 'hotel' ? 'o hotel' : 'o voo'} da viagem`;
     case 'adicionar_atividade':
       return `Adicionar ${p.atividade ?? '—'} às ${p.horario ?? '--:--'} no dia ${p.dia ?? '?'}`;
+    case 'sugerir_destinos':
+      return `🗺️ Acender ${(p.cidades ?? []).join(', ')} no mapa`;
     default:
       return 'Ação proposta';
   }
@@ -76,7 +78,7 @@ export function KinuAIMessage({ message }: KinuAIMessageProps) {
                         onClick={() => applyProposedAction(message.id, idx)}
                         className="px-3 py-1 text-[11px] font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
                       >
-                        ✓ Aplicar
+                        {action.type === 'sugerir_destinos' ? '✓ Ver no mapa' : '✓ Aplicar'}
                       </button>
                       <button
                         type="button"
