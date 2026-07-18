@@ -516,6 +516,35 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
 
+  const nowOnKinu = useMemo(() => {
+    if (!flightConfirmed && daysLeft <= 30) {
+      return {
+        message: '✈️ Seu voo ainda não está confirmado',
+        actionLabel: 'Confirmar voo',
+        onClick: () => openReservationConfirm('flight'),
+      };
+    }
+    if (!hotelConfirmed) {
+      return {
+        message: '🏨 Sua hospedagem ainda não está confirmada',
+        actionLabel: 'Confirmar hotel',
+        onClick: () => openReservationConfirm('hotel'),
+      };
+    }
+    if (daysLeft <= 7) {
+      return {
+        message: `🎒 Faltam ${daysLeft} dias — checklist em ${checklistPct}%`,
+        actionLabel: 'Ver checklist',
+        onClick: () => onNavigateTab('preparacao'),
+      };
+    }
+    return {
+      message: '🌿 Tudo em dia — bora sonhar com o roteiro',
+      actionLabel: 'Ver roteiro',
+      onClick: () => onNavigateTab('roteiro'),
+    };
+  }, [flightConfirmed, hotelConfirmed, daysLeft, checklistPct, trip]);
+
   const baggageDone = (trip as any).flightExtras?.baggageDone || false;
   const baggageDetail = (trip as any).flightExtras?.baggageDetail || '';
   const seatDone = (trip as any).flightExtras?.seatDone || false;
