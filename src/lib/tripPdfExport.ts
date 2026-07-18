@@ -938,16 +938,31 @@ export async function exportTripPDF(trip: SavedTrip) {
   y += 6;
   doc.text(`${totalDays} dias  |  ${trip.travelers} viajante(s)  |  Faixa ${tierLabel}`, pw / 2, y, { align: 'center' });
 
-  // Personalizacao — nome do usuario logado
+  // Personalizacao — nome do usuario logado (display name formatado, slug como fallback)
   try {
     const savedUser = typeof localStorage !== 'undefined' ? localStorage.getItem('kinu_user') : null;
-    const userName = savedUser ? (JSON.parse(savedUser)?.name || '') : '';
-    if (userName) {
+    const parsed = savedUser ? JSON.parse(savedUser) : null;
+    const rawName: string = String(parsed?.name || '').trim();
+    const rawEmail: string = String(parsed?.email || '').trim();
+    const titleCase = (s: string) => s
+      .split(/[\s._\-]+/)
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+    let displayName = '';
+    if (rawName && /[\s._\-]/.test(rawName)) {
+      displayName = titleCase(rawName);
+    } else if (rawEmail.includes('@')) {
+      const local = rawEmail.split('@')[0];
+      if (/[._\-]/.test(local)) displayName = titleCase(local);
+    }
+    if (!displayName && rawName) displayName = titleCase(rawName); // slug fallback
+    if (displayName) {
       y += 7;
       setC(B.emeraldL, false);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'italic');
-      doc.text(`Preparado para ${cleanText(String(userName))}`, pw / 2, y, { align: 'center' });
+      doc.text(`Preparado para ${cleanText(displayName)}`, pw / 2, y, { align: 'center' });
     }
   } catch {}
 
@@ -1095,24 +1110,33 @@ export async function exportTripPDF(trip: SavedTrip) {
     const confirmedItems: string[] = [];
     const pendingItems: string[] = [];
 
-    // Voo
+    // Voo — priorizar dados reais do Amadeus (mesma fonte do hero card)
     const outb = trip.flights?.outbound;
     const ret = trip.flights?.return;
-    if (outb) {
+    const realOutb = (trip as any).outboundFlight?.option;
+    const realRet = (trip as any).returnFlight?.option;
+    if (outb || realOutb) {
       const parts = ['Voo ida e volta'];
-      const airlines = [outb.airline, ret?.airline].filter(Boolean);
+      const outAirline = (realOutb?.airline && realOutb.airline !== 'A confirmar') ? realOutb.airline : outb?.airline;
+      const retAirline = (realRet?.airline && realRet.airline !== 'A confirmar') ? realRet.airline : ret?.airline;
+      const airlines = [outAirline, retAirline].filter(Boolean);
       if (airlines.length) parts.push(Array.from(new Set(airlines)).join(' / '));
-      if (outb.departureTime) parts.push(`saida ${outb.departureTime}`);
-      if (ret?.departureTime) parts.push(`retorno ${ret.departureTime}`);
+      const outTime = realOutb?.departureTime || outb?.departureTime;
+      const retTime = realRet?.departureTime || ret?.departureTime;
+      if (outTime) parts.push(`saida ${outTime}`);
+      if (retTime) parts.push(`retorno ${retTime}`);
       const line = cleanText(parts.join(' · '));
-      (outb.status === 'confirmed' ? confirmedItems : pendingItems).push(line);
+      ((outb?.status === 'confirmed') ? confirmedItems : pendingItems).push(line);
     }
 
-    // Hotel
+    // Hotel — evitar duplicar a palavra 'Hotel' quando o nome ja comeca com ela
     if (trip.accommodation) {
       const acc: any = trip.accommodation;
       const meal = acc.mealPlan || acc.regime || '';
-      const line = cleanText(`Hotel ${acc.name || trip.destination}${meal ? ' · ' + meal : ''}${acc.totalNights ? ' · ' + acc.totalNights + ' noites' : ''}`);
+      const rawName = String(acc.name || trip.destination || '').trim();
+      const hasHotelPrefix = /^hotel\b/i.test(rawName);
+      const namePart = hasHotelPrefix ? rawName : `Hotel ${rawName}`;
+      const line = cleanText(`${namePart}${meal ? ' · ' + meal : ''}${acc.totalNights ? ' · ' + acc.totalNights + ' noites' : ''}`);
       (acc.status === 'confirmed' ? confirmedItems : pendingItems).push(line);
     }
 
