@@ -2,6 +2,7 @@
 // CRITICAL: NO emoji in PDF text — jsPDF Helvetica does not support Unicode emoji
 
 import jsPDF from 'jspdf';
+import QRCode from 'qrcode';
 import type { SavedTrip } from '@/types/trip';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -577,77 +578,17 @@ function getCategoryIcon(category: string, type?: string): string {
   return '[EXP]';
 }
 
-// ── QR Code generator (canvas-based, no external dependency) ──
-function generateQRBase64(url: string): string | null {
+// QR code generation uses the `qrcode` npm library — produces a real,
+// scanner-readable QR. Do NOT overlay a logo on the modules (corrupts data
+// beyond the built-in error correction).
+async function generateQRBase64(url: string): Promise<string | null> {
   try {
-    const canvas = document.createElement('canvas');
-    const size = 200;
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
-
-    // Simple visual QR-like pattern (not a real QR scanner-readable code)
-    // For a proper QR we'd need a library — this creates a branded placeholder
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, size, size);
-
-    // Border
-    ctx.strokeStyle = '#10b981';
-    ctx.lineWidth = 6;
-    ctx.strokeRect(3, 3, size - 6, size - 6);
-
-    // Inner pattern - deterministic from URL hash
-    ctx.fillStyle = '#f8fafc';
-    const cellSize = 8;
-    const margin = 20;
-    const gridSize = Math.floor((size - margin * 2) / cellSize);
-
-    // Generate pseudo-random pattern from URL
-    let hash = 0;
-    for (let i = 0; i < url.length; i++) {
-      hash = ((hash << 5) - hash) + url.charCodeAt(i);
-      hash |= 0;
-    }
-
-    // Finder patterns (3 corners)
-    const drawFinder = (x: number, y: number) => {
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(margin + x * cellSize, margin + y * cellSize, cellSize * 7, cellSize * 7);
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(margin + (x + 1) * cellSize, margin + (y + 1) * cellSize, cellSize * 5, cellSize * 5);
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(margin + (x + 2) * cellSize, margin + (y + 2) * cellSize, cellSize * 3, cellSize * 3);
-    };
-
-    drawFinder(0, 0);
-    drawFinder(gridSize - 7, 0);
-    drawFinder(0, gridSize - 7);
-
-    // Data cells
-    ctx.fillStyle = '#f8fafc';
-    for (let row = 0; row < gridSize; row++) {
-      for (let col = 0; col < gridSize; col++) {
-        // Skip finder areas
-        if ((row < 8 && col < 8) || (row < 8 && col >= gridSize - 8) || (row >= gridSize - 8 && col < 8)) continue;
-        const seed = (hash + row * 31 + col * 17) & 0x7fffffff;
-        if (seed % 3 === 0) {
-          ctx.fillRect(margin + col * cellSize, margin + row * cellSize, cellSize - 1, cellSize - 1);
-        }
-      }
-    }
-
-    // Center logo text
-    ctx.fillStyle = '#10b981';
-    ctx.font = 'bold 24px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('KINU', size / 2, size / 2 + 8);
-
-    return canvas.toDataURL('image/png');
+    return await QRCode.toDataURL(url, { margin: 1, width: 220 });
   } catch {
     return null;
   }
 }
+
 
 // ── Emergency numbers by country/region ──
 const EMERGENCY_NUMBERS: Record<string, string> = {
@@ -1020,9 +961,12 @@ export async function exportTripPDF(trip: SavedTrip) {
 
   // ── QR code in bottom-right ──
   if (y + 40 < ph - 30) {
-    const qrData = generateQRBase64('https://kinu-travel.app');
+    const qrData = await generateQRBase64('https://kinu-travel.app');
     if (qrData) {
       try {
+        // Emerald frame around the QR (2mm padding, 25mm QR)
+        drawRect(pw - 41, ph - 46, 27, 27, B.emerald);
+        drawRect(pw - 40.5, ph - 45.5, 26, 26, B.white);
         doc.addImage(qrData, 'PNG', pw - 40, ph - 45, 25, 25);
         setC(B.gray500, false);
         doc.setFontSize(10.5);
