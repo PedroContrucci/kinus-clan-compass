@@ -1,9 +1,16 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
-import { KinuMessage, KinuTripContext, KinuInsight, EMERGENCY_KEYWORDS } from "@/types/kinuAI";
+import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from "react";
+import { KinuMessage, KinuTripContext, KinuInsight, EMERGENCY_KEYWORDS, ProposedAction, ProposedActionType } from "@/types/kinuAI";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CURATED_CITIES } from "@/lib/curatedCities";
 import { destinationActivities } from "@/data/destinationActivities";
+
+export interface KinuActionHandlers {
+  trocar_atividade: (params: { dia: number; atividade_atual: string; nova_atividade: string }) => string | null;
+  ajustar_horario: (params: { dia: number; atividade: string; novo_horario: string }) => string | null;
+  remover_atividade: (params: { dia: number; atividade: string }) => string | null;
+  confirmar_item: (params: { tipo: 'voo' | 'hotel' }) => string | null;
+}
 
 function buildCuratedCatalog(city: string) {
   const data = destinationActivities[city];
