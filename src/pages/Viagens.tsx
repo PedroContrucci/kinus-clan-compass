@@ -964,7 +964,7 @@ const Viagens = () => {
           cost,
           type: suggested.category || 'activity',
           status: 'planned',
-          category: suggested.category as ActivityCategory | undefined,
+          category: suggested.category as TripActivity['category'],
           edited: true,
         };
         day.activities.push(newAct);
