@@ -206,6 +206,72 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const actionHandlersRef = useRef<KinuActionHandlers | null>(null);
+
+  const registerActionHandlers = useCallback((handlers: KinuActionHandlers | null) => {
+    actionHandlersRef.current = handlers;
+  }, []);
+
+  const setActionStatus = useCallback((messageId: string, actionIndex: number, status: 'applied' | 'dismissed') => {
+    setMessages(prev => prev.map(m => {
+      if (m.id !== messageId || !m.proposedActions) return m;
+      const next = m.proposedActions.map((a, i) => i === actionIndex ? { ...a, status } : a);
+      return { ...m, proposedActions: next };
+    }));
+  }, []);
+
+  const applyProposedAction = useCallback((messageId: string, actionIndex: number) => {
+    const target = messages.find(m => m.id === messageId);
+    const action = target?.proposedActions?.[actionIndex];
+    if (!action || action.status && action.status !== 'pending') return;
+
+    const handlers = actionHandlersRef.current;
+    if (!handlers) {
+      toast.error('Abre uma viagem para eu aplicar essa ação.');
+      return;
+    }
+
+    let confirmationText: string | null = null;
+    try {
+      switch (action.type) {
+        case 'trocar_atividade':
+          confirmationText = handlers.trocar_atividade(action.params as any);
+          break;
+        case 'ajustar_horario':
+          confirmationText = handlers.ajustar_horario(action.params as any);
+          break;
+        case 'remover_atividade':
+          confirmationText = handlers.remover_atividade(action.params as any);
+          break;
+        case 'confirmar_item':
+          confirmationText = handlers.confirmar_item(action.params as any);
+          break;
+      }
+    } catch (err) {
+      console.error('Erro ao aplicar ação KINU:', err);
+      toast.error('Não consegui aplicar essa ação.');
+      return;
+    }
+
+    if (!confirmationText) {
+      toast.error('Não achei o item pra aplicar essa mudança.');
+      return;
+    }
+
+    setActionStatus(messageId, actionIndex, 'applied');
+    const confirmation: KinuMessage = {
+      id: `msg-${Date.now()}-ack`,
+      role: 'assistant',
+      content: confirmationText,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, confirmation]);
+  }, [messages, setActionStatus]);
+
+  const dismissProposedAction = useCallback((messageId: string, actionIndex: number) => {
+    setActionStatus(messageId, actionIndex, 'dismissed');
+  }, [setActionStatus]);
+
   return (
     <KinuAIContext.Provider
       value={{
@@ -221,6 +287,9 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         dismissInsight,
         addInsight,
         isEmergencyMode,
+        applyProposedAction,
+        dismissProposedAction,
+        registerActionHandlers,
       }}
     >
       {children}
