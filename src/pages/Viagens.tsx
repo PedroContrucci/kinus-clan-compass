@@ -1733,6 +1733,11 @@ const Viagens = () => {
                                 }`}>
                                   {activity.status === 'confirmed' ? '✅ Confirmado' : '⏳ Pendente'}
                                 </span>
+                                {activity.edited && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-400 font-medium">
+                                    ✏️ ajustado
+                                  </span>
+                                )}
                               </div>
                               {/* Google Places Info */}
                               <PlaceInfoCard activityName={activity.name} destination={selectedTrip.destination} />
