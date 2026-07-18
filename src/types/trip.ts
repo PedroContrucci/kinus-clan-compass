@@ -75,6 +75,7 @@ export interface TripActivity {
   jetLagFriendly?: boolean;
   auction?: AuctionData;
   isHeroItem?: boolean;
+  edited?: boolean;
 }
 
 export interface TripDay {
