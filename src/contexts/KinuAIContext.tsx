@@ -266,11 +266,19 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, confirmation]);
-  }, [messages, setActionStatus]);
+    setIsOpen(false);
+  }, [messages, setActionStatus, setIsOpen]);
 
   const dismissProposedAction = useCallback((messageId: string, actionIndex: number) => {
     setActionStatus(messageId, actionIndex, 'dismissed');
-  }, [setActionStatus]);
+    const rejection: KinuMessage = {
+      id: `msg-${Date.now()}-rejected`,
+      role: 'assistant',
+      content: '(Proposta recusada pelo usuário — nada foi alterado no roteiro.)',
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, rejection]);
+  }, [setActionStatus, setMessages]);
 
   return (
     <KinuAIContext.Provider
