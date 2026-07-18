@@ -237,19 +237,19 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     try {
       switch (action.type) {
         case 'trocar_atividade':
-          confirmationText = handlers.trocar_atividade(action.params as any);
+          confirmationText = handlers.trocar_atividade?.(action.params as any) ?? null;
           break;
         case 'ajustar_horario':
-          confirmationText = handlers.ajustar_horario(action.params as any);
+          confirmationText = handlers.ajustar_horario?.(action.params as any) ?? null;
           break;
         case 'remover_atividade':
-          confirmationText = handlers.remover_atividade(action.params as any);
+          confirmationText = handlers.remover_atividade?.(action.params as any) ?? null;
           break;
         case 'confirmar_item':
-          confirmationText = handlers.confirmar_item(action.params as any);
+          confirmationText = handlers.confirmar_item?.(action.params as any) ?? null;
           break;
         case 'adicionar_atividade':
-          confirmationText = handlers.adicionar_atividade(action.params as any);
+          confirmationText = handlers.adicionar_atividade?.(action.params as any) ?? null;
           break;
         case 'sugerir_destinos':
           confirmationText = handlers.sugerir_destinos?.(action.params as any) ?? null;
