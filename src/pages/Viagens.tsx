@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useKinuAI } from "@/contexts/KinuAIContext";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Pencil } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -302,7 +302,9 @@ const Viagens = () => {
         flightDuration: selectedTrip.flights?.outbound?.duration,
         itineraryDays: (selectedTrip.days || []).slice(0, 12).map((d) => ({
           day: d.day,
-          date: d.date || '',
+          date: selectedTrip.startDate
+            ? format(addDays(new Date(selectedTrip.startDate), d.day - 1), "dd/MM (EEEE)", { locale: ptBR }).replace("-feira", "")
+            : d.date || '',
           items: (d.activities || []).slice(0, 8).map((a) => `${a.time || ''} ${a.name || ''}`.trim()),
         })),
       });
