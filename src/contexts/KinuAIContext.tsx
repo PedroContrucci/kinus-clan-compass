@@ -201,6 +201,11 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     setIsEmergencyMode(false);
   }, []);
 
+  const clearSuggestedDestinations = useCallback(() => {
+    setSuggestedDestinations([]);
+  }, []);
+
+
   const dismissInsight = useCallback((id: string) => {
     setInsights(prev => prev.filter(insight => insight.id !== id));
   }, []);
