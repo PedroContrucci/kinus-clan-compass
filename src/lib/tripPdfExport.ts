@@ -9,6 +9,7 @@ import { getTopMichelinForCity } from '@/lib/michelinData';
 import { getExpandedCityData } from '@/data/destinationPdfData';
 import { DESTINATION_PHOTO_HINTS } from '@/hooks/useUnsplash';
 import { findCityInfo } from '@/data/destinationCatalog';
+import { getFlightPlannedTotal } from '@/lib/flightFinance';
 
 // ── Branding colors (RGB) ──
 const B = {
@@ -1031,7 +1032,9 @@ export async function exportTripPDF(trip: SavedTrip) {
   const originCode = trip.flights?.outbound?.origin || 'GRU';
   const destCode = trip.flights?.outbound?.destination || trip.destination;
   const flightStatus = trip.flights?.outbound?.status === 'confirmed' ? 'Confirmado' : 'Planejado';
-  const flightPrice = (trip.flights?.outbound?.price || 0) + (trip.flights?.return?.price || 0);
+  const flightPrice = flightStatus === 'Confirmado'
+    ? (trip.finances?.categories?.flights?.confirmed || (trip.flights?.outbound?.price || 0) + (trip.flights?.return?.price || 0))
+    : getFlightPlannedTotal(trip);
 
   drawStatusDot(16, y - 1, flightStatus === 'Confirmado' ? B.emerald : B.gold);
   setC(B.white, false);

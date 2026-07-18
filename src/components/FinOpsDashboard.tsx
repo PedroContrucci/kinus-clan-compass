@@ -40,7 +40,7 @@ const FinOpsDashboard = ({ finances, destination }: FinOpsDashboardProps) => {
   const confirmed = finances?.confirmed ?? 0;
   const bidding = finances?.bidding ?? 0;
   const planned = finances?.planned ?? 0;
-  const available = finances?.available ?? 0;
+  const available = total - planned - confirmed - bidding;
   const categories = finances?.categories ?? {} as TripFinances['categories'];
 
   // Calculate allocated budgets (example allocation based on typical trip)
