@@ -19,6 +19,8 @@ function describeAction(action: ProposedAction): string {
       return `Remover ${p.atividade ?? 'atividade'} do dia ${p.dia ?? '?'}`;
     case 'confirmar_item':
       return `Confirmar ${p.tipo === 'hotel' ? 'o hotel' : 'o voo'} da viagem`;
+    case 'adicionar_atividade':
+      return `Adicionar ${p.atividade ?? '—'} às ${p.horario ?? '--:--'} no dia ${p.dia ?? '?'}`;
     default:
       return 'Ação proposta';
   }

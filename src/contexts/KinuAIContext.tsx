@@ -10,6 +10,7 @@ export interface KinuActionHandlers {
   ajustar_horario: (params: { dia: number; atividade: string; novo_horario: string }) => string | null;
   remover_atividade: (params: { dia: number; atividade: string }) => string | null;
   confirmar_item: (params: { tipo: 'voo' | 'hotel' }) => string | null;
+  adicionar_atividade: (params: { dia: number; atividade: string; horario: string }) => string | null;
 }
 
 function buildCuratedCatalog(city: string) {
@@ -245,6 +246,9 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
           break;
         case 'confirmar_item':
           confirmationText = handlers.confirmar_item(action.params as any);
+          break;
+        case 'adicionar_atividade':
+          confirmationText = handlers.adicionar_atividade(action.params as any);
           break;
       }
     } catch (err) {
