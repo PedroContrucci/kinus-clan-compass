@@ -1800,11 +1800,12 @@ interface Step1Props {
 }
 
 const Step1Destination = ({
-  searchQuery, 
-  setSearchQuery, 
-  tripData, 
+  searchQuery,
+  setSearchQuery,
+  tripData,
   setTripData,
-  handleSelectDestination 
+  handleSelectDestination,
+  onNext
 }: Step1Props) => {
   const { setIsOpen, sendMessage } = useKinuAI();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
