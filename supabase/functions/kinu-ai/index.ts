@@ -156,6 +156,18 @@ const KINU_TOOLS = [
       required: ["dia", "atividade", "horario"]
     }
   },
+  {
+    name: "sugerir_destinos",
+    description: "Ao final do modo descoberta, propõe 2 a 3 destinos da lista de DESTINOS DISPONÍVEIS para destacar no mapa do app. O app mostrará as cidades acesas em dourado.",
+    input_schema: {
+      type: "object",
+      properties: {
+        cidades: { type: "array", items: { type: "string" }, description: "2 a 3 nomes de cidades, copiados LITERALMENTE da lista de DESTINOS DISPONÍVEIS" },
+        justificativa: { type: "string", description: "Uma frase curta por cidade explicando o match com o perfil" }
+      },
+      required: ["cidades"]
+    }
+  },
 ];
 
 
