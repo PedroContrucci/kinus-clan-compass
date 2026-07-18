@@ -938,16 +938,31 @@ export async function exportTripPDF(trip: SavedTrip) {
   y += 6;
   doc.text(`${totalDays} dias  |  ${trip.travelers} viajante(s)  |  Faixa ${tierLabel}`, pw / 2, y, { align: 'center' });
 
-  // Personalizacao — nome do usuario logado
+  // Personalizacao — nome do usuario logado (display name formatado, slug como fallback)
   try {
     const savedUser = typeof localStorage !== 'undefined' ? localStorage.getItem('kinu_user') : null;
-    const userName = savedUser ? (JSON.parse(savedUser)?.name || '') : '';
-    if (userName) {
+    const parsed = savedUser ? JSON.parse(savedUser) : null;
+    const rawName: string = String(parsed?.name || '').trim();
+    const rawEmail: string = String(parsed?.email || '').trim();
+    const titleCase = (s: string) => s
+      .split(/[\s._\-]+/)
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+    let displayName = '';
+    if (rawName && /[\s._\-]/.test(rawName)) {
+      displayName = titleCase(rawName);
+    } else if (rawEmail.includes('@')) {
+      const local = rawEmail.split('@')[0];
+      if (/[._\-]/.test(local)) displayName = titleCase(local);
+    }
+    if (!displayName && rawName) displayName = titleCase(rawName); // slug fallback
+    if (displayName) {
       y += 7;
       setC(B.emeraldL, false);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'italic');
-      doc.text(`Preparado para ${cleanText(String(userName))}`, pw / 2, y, { align: 'center' });
+      doc.text(`Preparado para ${cleanText(displayName)}`, pw / 2, y, { align: 'center' });
     }
   } catch {}
 
