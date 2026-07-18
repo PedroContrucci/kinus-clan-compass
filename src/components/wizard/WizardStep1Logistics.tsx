@@ -95,26 +95,8 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
     }
   }, [selectedCountry]);
 
-  // Register KINU AI map-highlight handler
-  useEffect(() => {
-    registerActionHandlers({
-      sugerir_destinos: ({ cidades }: { cidades: string[]; justificativa?: string }) => {
-        const valid = (cidades || []).filter((c) =>
-          CURATED_CITIES.some((cc) => cc.toLowerCase() === c.toLowerCase())
-        );
-        if (valid.length === 0) return null;
-        setKinuHighlights(valid);
-        return `🗺️ Acendi ${valid.join(', ')} no mapa em dourado — toca na sua escolhida!`;
-      },
-    });
-
-    return () => {
-      registerActionHandlers(null);
-    };
-  }, [registerActionHandlers]);
-
-
   const handleRegionSelect = (region: RegionName) => {
+
     setSelectedRegion(region);
     setSelectedCountry(null);
     onChange({
@@ -145,8 +127,9 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
   };
 
   const handleCitySelect = (city: CityEntry) => {
-    setKinuHighlights([]);
+    clearSuggestedDestinations();
     onChange({
+
       destinationCity: city.name,
       destinationAirportCode: city.airports[0],
       destinationCurrency: city.currency,
@@ -348,7 +331,8 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
               >
                 🌿 Não sei pra onde ir — me ajuda, KINU
               </button>
-              <DestinationWorldMap onSelectCity={handleMapCitySelect} highlightedCities={kinuHighlights} />
+              <DestinationWorldMap onSelectCity={handleMapCitySelect} highlightedCities={suggestedDestinations} />
+
               <button
                 type="button"
                 onClick={() => setShowCardsGrid((prev) => !prev)}
