@@ -2210,9 +2210,34 @@ const Viagens = () => {
           {/* Preparação Tab = Packing + Checklist + Guia combined */}
           {activeTab === 'preparacao' && (
             <TabErrorBoundary tabName="Preparação">{(() => {
-            const checklist = selectedTrip.checklist || [];
-            const totalItems = checklist.length;
-            const checkedItems = checklist.filter(i => i.checked).length;
+            const rawChecklist = selectedTrip.checklist || [];
+            const docs = getDocsForDestination(selectedTrip.destination);
+
+            // Context-aware transform: enrich Visto (doc-2) and Vacinas (pre-1);
+            // auto-check + hide when there's no obligation for brasileiros.
+            const hiddenIds = new Set<string>();
+            const checklist: ChecklistItem[] = rawChecklist.map((item) => {
+              if (!docs) return item;
+              if (item.id === 'doc-2') {
+                if (docs.vistoIsento) {
+                  hiddenIds.add(item.id);
+                  return { ...item, checked: true, label: `Visto — ${docs.visto}` };
+                }
+                return { ...item, label: `Visto — ${docs.visto}` };
+              }
+              if (item.id === 'pre-1') {
+                if (!docs.vacinaObrigatoria) {
+                  hiddenIds.add(item.id);
+                  return { ...item, checked: true, label: `Vacina — ${docs.vacina}` };
+                }
+                return { ...item, label: `Vacina — ${docs.vacina}` };
+              }
+              return item;
+            });
+
+            const visibleChecklist = checklist.filter((i) => !hiddenIds.has(i.id));
+            const totalItems = visibleChecklist.length;
+            const checkedItems = visibleChecklist.filter(i => i.checked).length;
             const readiness = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
 
             return (
