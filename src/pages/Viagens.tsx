@@ -935,7 +935,7 @@ const Viagens = () => {
       },
       confirmar_item: ({ tipo }) => {
         if (tipo !== 'voo' && tipo !== 'hotel') return null;
-        setActiveTab('panel');
+        setActiveTab('painel');
         setPendingConfirmRequest({ tipo, ts: Date.now() });
         return `🔔 Abri a confirmação do ${tipo === 'voo' ? 'voo' : 'hotel'}. Confere os detalhes e confirma pra mim.`;
       },
