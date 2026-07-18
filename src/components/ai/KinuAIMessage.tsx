@@ -21,6 +21,8 @@ function describeAction(action: ProposedAction): string {
       return `Confirmar ${p.tipo === 'hotel' ? 'o hotel' : 'o voo'} da viagem`;
     case 'adicionar_atividade':
       return `Adicionar ${p.atividade ?? '—'} às ${p.horario ?? '--:--'} no dia ${p.dia ?? '?'}`;
+    case 'sugerir_destinos':
+      return `🗺️ Acender ${(p.cidades ?? []).join(', ')} no mapa`;
     default:
       return 'Ação proposta';
   }
