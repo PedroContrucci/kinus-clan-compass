@@ -743,6 +743,48 @@ const Viagens = () => {
     });
   };
 
+  // handleHeroUnconfirm — reverse a flight/hotel confirmation, moving amounts back to planned
+  const handleHeroUnconfirm = (type: 'flight' | 'hotel') => {
+    if (!selectedTrip) return;
+    const updatedTrip = { ...selectedTrip };
+
+    if (type === 'flight') {
+      const previousConfirmed = updatedTrip.finances.categories.flights.confirmed || 0;
+      if (updatedTrip.flights?.outbound) {
+        updatedTrip.flights.outbound.status = 'planned';
+      }
+      if (updatedTrip.flights?.return) {
+        updatedTrip.flights.return.status = 'planned';
+      }
+      updatedTrip.finances.confirmed = Math.max(0, updatedTrip.finances.confirmed - previousConfirmed);
+      updatedTrip.finances.categories.flights.confirmed = 0;
+      updatedTrip.finances.categories.flights.planned = previousConfirmed;
+      updatedTrip.finances.planned += previousConfirmed;
+    } else {
+      const previousConfirmed = updatedTrip.finances.categories.accommodation.confirmed || (updatedTrip.accommodation?.totalPrice || 0);
+      if (updatedTrip.accommodation) {
+        updatedTrip.accommodation.status = 'planned';
+      }
+      updatedTrip.finances.confirmed = Math.max(0, updatedTrip.finances.confirmed - previousConfirmed);
+      updatedTrip.finances.categories.accommodation.confirmed = Math.max(0, (updatedTrip.finances.categories.accommodation.confirmed || 0) - previousConfirmed);
+      updatedTrip.finances.categories.accommodation.planned = (updatedTrip.finances.categories.accommodation.planned || 0) + previousConfirmed;
+      updatedTrip.finances.planned += previousConfirmed;
+    }
+
+    updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.planned - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
+    updatedTrip.progress = calculateProgress(updatedTrip);
+
+    setSelectedTrip(updatedTrip);
+    const updatedTrips = trips.map(t => t.id === updatedTrip.id ? updatedTrip : t);
+    setTrips(updatedTrips);
+    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+
+    toast({
+      title: type === 'flight' ? '✈️ Confirmação desfeita' : '🏨 Confirmação desfeita',
+      description: 'Valores voltaram para o planejado.',
+    });
+  };
+
   const handleUpdateTrip = (updater: (t: any) => any) => {
     if (!selectedTrip) return;
 
