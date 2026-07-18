@@ -19,8 +19,6 @@ import {
 import kinuLogo from '@/assets/KINU_logo.png';
 import { useCityAirportSearch, useCities } from '@/hooks/useSupabaseData';
 import { useKinuAI } from '@/contexts/KinuAIContext';
-import { DestinationWorldMap } from '@/components/planejar/DestinationWorldMap';
-import { isCityCurated } from '@/lib/curatedCities';
 import { 
   DayNavigator, 
   MinimalFlightCard, 
@@ -1870,19 +1868,6 @@ const Step1Destination = ({
 
   return (
     <div className="animate-fade-in">
-      {/* Visual entry point: world map of curated destinations */}
-      <DestinationWorldMap
-        onSelectCity={(cityName) => {
-          if (isCityCurated(cityName)) {
-            handleSelectFromSearch(cityName);
-            onNext();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          } else {
-            toast({ title: `✨ ${cityName} chega em breve ao KINU!` });
-          }
-        }}
-      />
-
       <h2 className="text-2xl font-bold mb-6 mt-6 font-['Outfit'] text-foreground">
         Pra onde o coração quer ir?
       </h2>
