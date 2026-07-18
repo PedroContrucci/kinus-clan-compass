@@ -2273,7 +2273,7 @@ const Viagens = () => {
                   <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">✅ Checklist</h3>
                   <div className="space-y-4">
                     {['documentos', 'reservas', 'packing', 'pre-viagem'].map((category) => {
-                      const items = checklist.filter((i) => i.category === category);
+                      const items = visibleChecklist.filter((i) => i.category === category);
                       if (items.length === 0) return null;
                       const categoryLabels: Record<string, string> = {
                         documentos: '📄 Documentos',
