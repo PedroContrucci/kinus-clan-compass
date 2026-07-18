@@ -26,6 +26,7 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
   );
   const [selectedCountry, setSelectedCountry] = useState<CountryEntry | null>(null);
   const [showUpcoming, setShowUpcoming] = useState(false);
+  const [showCardsGrid, setShowCardsGrid] = useState(false);
   const { toast } = useToast();
 
   const handleMapCitySelect = (cityName: string) => {
