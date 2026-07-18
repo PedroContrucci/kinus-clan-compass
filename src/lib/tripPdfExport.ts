@@ -2,6 +2,7 @@
 // CRITICAL: NO emoji in PDF text — jsPDF Helvetica does not support Unicode emoji
 
 import jsPDF from 'jspdf';
+import QRCode from 'qrcode';
 import type { SavedTrip } from '@/types/trip';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
