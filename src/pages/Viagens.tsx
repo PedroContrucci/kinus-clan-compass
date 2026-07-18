@@ -389,7 +389,7 @@ const Viagens = () => {
     // Update finances with new structure
     updatedTrip.finances.confirmed += amount;
     updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - amount);
-    updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
+    updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.planned - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
 
     // Update category
     const category = activity.category || 'passeio';
@@ -466,7 +466,7 @@ const Viagens = () => {
     const amount = manualExpense.amount;
     
     updatedTrip.finances.confirmed += amount;
-    updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
+    updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.planned - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
     
     // Update category
     updatedTrip.finances.categories[manualExpense.category].confirmed += amount;
@@ -726,7 +726,7 @@ const Viagens = () => {
     }
 
 
-    updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
+    updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.planned - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
     updatedTrip.progress = calculateProgress(updatedTrip);
 
     setSelectedTrip(updatedTrip);
