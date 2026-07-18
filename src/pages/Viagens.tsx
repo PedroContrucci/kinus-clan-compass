@@ -1523,6 +1523,7 @@ const Viagens = () => {
               <TripPanel
               trip={selectedTrip}
               onConfirm={handleHeroConfirm}
+              onUnconfirm={handleHeroUnconfirm}
               onUpdateTrip={handleUpdateTrip}
               onOpenAuction={(type) => {
                 setOffersModal({
