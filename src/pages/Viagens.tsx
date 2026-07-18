@@ -894,6 +894,35 @@ const Viagens = () => {
     toast({ title: '🗑️ Atividade removida', description: current.name });
   };
 
+  const handleAddActivity = (dia: number, suggested: SuggestedActivity, horario: string) => {
+    if (!selectedTrip) return;
+    const trip: SavedTrip = JSON.parse(JSON.stringify(selectedTrip));
+    const dayIdx = trip.days.findIndex(d => d.day === dia);
+    const day = dayIdx >= 0 ? trip.days[dayIdx] : trip.days[dia - 1];
+    if (!day) return;
+    const travelers = Math.max(1, trip.travelers || 1);
+    const cost = suggested.estimatedCostBRL || 0;
+    const newAct: TripActivity = {
+      id: `${suggested.id}-${Date.now()}`,
+      time: horario,
+      name: suggested.name,
+      description: suggested.tips?.[0] || '',
+      duration: suggested.durationHours ? `${suggested.durationHours}h` : '',
+      cost,
+      type: suggested.category || 'activity',
+      status: 'planned',
+      category: suggested.category as TripActivity['category'],
+      edited: true,
+    };
+    day.activities.push(newAct);
+    day.activities.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    applyPlannedCostDelta(trip, newAct, cost * travelers);
+    trip.progress = calculateProgress(trip);
+    persistTrip(trip);
+    toast({ title: '➕ Atividade adicionada', description: suggested.name });
+  };
+
+
   // Wire KINU AI proposedActions to the same handlers used by the drawer
   useEffect(() => {
     if (!selectedTrip) {
