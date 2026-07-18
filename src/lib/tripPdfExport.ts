@@ -10,6 +10,7 @@ import { getExpandedCityData } from '@/data/destinationPdfData';
 import { DESTINATION_PHOTO_HINTS } from '@/hooks/useUnsplash';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
+import { getDocsForDestination } from '@/data/destinationDocs';
 
 // ── Branding colors (RGB) ──
 const B = {
@@ -511,6 +512,60 @@ function fmt(n: number) {
   return n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
 }
 
+// ── Compose an evocative day narrative from that day's own activities + tips ──
+function composeDayNarrative(day: any): string {
+  const acts = (day?.activities || []).filter((a: any) => {
+    const n = (a?.name || '').toLowerCase();
+    if (a?.category === 'voo' || a?.category === 'hotel' || a?.category === 'transporte') return false;
+    if (n.includes('transfer') || n.includes('check-in') || n.includes('check-out')) return false;
+    if (n.includes('cafe da manha') || n.includes('café da manhã')) return false;
+    return Boolean(a?.name);
+  });
+  if (acts.length === 0) return '';
+
+  const cleanName = (a: any) => cleanText((a.name || '').replace(/^(Almoco|Jantar|Cafe|Almoço|Café):\s*/i, ''));
+  const essence = (a: any): string => {
+    const raw = Array.isArray(a?.tips) && a.tips.length ? a.tips[0] : '';
+    if (!raw) return '';
+    const stripped = String(raw).replace(/[⚠️✨🌟🔴🟡🟢📍•\-–—]+/g, '').trim();
+    const firstSentence = stripped.split(/[.!?]/)[0].trim();
+    if (!firstSentence) return '';
+    const lower = firstSentence.charAt(0).toLowerCase() + firstSentence.slice(1);
+    return cleanText(lower);
+  };
+  const slotOf = (a: any): 'manha' | 'tarde' | 'noite' => {
+    const h = parseInt(String(a?.time || '12:00').split(':')[0], 10);
+    if (Number.isNaN(h) || h < 12) return 'manha';
+    if (h < 18) return 'tarde';
+    return 'noite';
+  };
+
+  const morning = acts.find((a: any) => slotOf(a) === 'manha');
+  const afternoon = acts.find((a: any) => slotOf(a) === 'tarde');
+  const evening = acts.find((a: any) => slotOf(a) === 'noite');
+
+  const chosen: Array<{ label: string; act: any }> = [];
+  if (morning) chosen.push({ label: 'A manha comeca em', act: morning });
+  if (afternoon) chosen.push({ label: 'A tarde segue em', act: afternoon });
+  if (evening) chosen.push({ label: 'A noite fecha com', act: evening });
+
+  if (chosen.length === 0) {
+    acts.slice(0, 3).forEach((a: any, i: number) => {
+      const label = i === 0 ? 'O dia comeca em' : i === 1 ? 'Depois, passe por' : 'Para fechar,';
+      chosen.push({ label, act: a });
+    });
+  }
+
+  return chosen
+    .map(({ label, act }) => {
+      const name = cleanName(act);
+      const ess = essence(act);
+      return ess ? `${label} ${name} — ${ess}.` : `${label} ${name}.`;
+    })
+    .join(' ');
+}
+
+
 // ── Category icon text for PDF (no emoji — use text symbols) ──
 function getCategoryIcon(category: string, type?: string): string {
   const cat = (category || type || '').toLowerCase();
@@ -883,6 +938,19 @@ export async function exportTripPDF(trip: SavedTrip) {
   y += 6;
   doc.text(`${totalDays} dias  |  ${trip.travelers} viajante(s)  |  Faixa ${tierLabel}`, pw / 2, y, { align: 'center' });
 
+  // Personalizacao — nome do usuario logado
+  try {
+    const savedUser = typeof localStorage !== 'undefined' ? localStorage.getItem('kinu_user') : null;
+    const userName = savedUser ? (JSON.parse(savedUser)?.name || '') : '';
+    if (userName) {
+      y += 7;
+      setC(B.emeraldL, false);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'italic');
+      doc.text(`Preparado para ${cleanText(String(userName))}`, pw / 2, y, { align: 'center' });
+    }
+  } catch {}
+
   // About destination section (only if space, i.e. no photo pushed it down too much)
   if (y + 40 < ph - 22) {
     y += 14;
@@ -1021,6 +1089,85 @@ export async function exportTripPDF(trip: SavedTrip) {
   if (plannedPct > 0) drawRect(14 + barW * confirmedPct / 100, barY, barW * plannedPct / 100, 2.5, B.gold);
 
   y = barY + 10;
+
+  // ── SUA VIAGEM INCLUI (confirmados vs a confirmar) ──
+  {
+    const confirmedItems: string[] = [];
+    const pendingItems: string[] = [];
+
+    // Voo
+    const outb = trip.flights?.outbound;
+    const ret = trip.flights?.return;
+    if (outb) {
+      const parts = ['Voo ida e volta'];
+      const airlines = [outb.airline, ret?.airline].filter(Boolean);
+      if (airlines.length) parts.push(Array.from(new Set(airlines)).join(' / '));
+      if (outb.departureTime) parts.push(`saida ${outb.departureTime}`);
+      if (ret?.departureTime) parts.push(`retorno ${ret.departureTime}`);
+      const line = cleanText(parts.join(' · '));
+      (outb.status === 'confirmed' ? confirmedItems : pendingItems).push(line);
+    }
+
+    // Hotel
+    if (trip.accommodation) {
+      const acc: any = trip.accommodation;
+      const meal = acc.mealPlan || acc.regime || '';
+      const line = cleanText(`Hotel ${acc.name || trip.destination}${meal ? ' · ' + meal : ''}${acc.totalNights ? ' · ' + acc.totalNights + ' noites' : ''}`);
+      (acc.status === 'confirmed' ? confirmedItems : pendingItems).push(line);
+    }
+
+    // Atividades confirmadas (limitadas a 8 para caber)
+    const confirmedActs: string[] = [];
+    (trip.days || []).forEach((d: any) => {
+      (d.activities || []).forEach((a: any) => {
+        if (a.status !== 'confirmed') return;
+        if (a.category === 'voo' || a.category === 'hotel' || a.category === 'transporte') return;
+        const n = (a.name || '').toLowerCase();
+        if (n.includes('transfer') || n.includes('check-in') || n.includes('check-out')) return;
+        confirmedActs.push(cleanText(`Dia ${d.day}: ${a.name}`));
+      });
+    });
+    const shownActs = confirmedActs.slice(0, 8);
+    const extraActs = confirmedActs.length - shownActs.length;
+    shownActs.forEach((s) => confirmedItems.push(s));
+    if (extraActs > 0) confirmedItems.push(`+ ${extraActs} outras atividades confirmadas`);
+
+    if (confirmedItems.length > 0 || pendingItems.length > 0) {
+      checkPage(20);
+      drawRect(14, y, pw - 28, 0.3, B.surface);
+      y += 8;
+      setC(B.emerald, false);
+      doc.setFontSize(11.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SUA VIAGEM INCLUI', 14, y);
+      y += 7;
+
+      const renderBlock = (title: string, items: string[], dotColor: readonly number[]) => {
+        if (items.length === 0) return;
+        checkPage(6 + items.length * 5);
+        setC(dotColor, false);
+        doc.setFontSize(10.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title, 16, y);
+        y += 5;
+        items.forEach((it) => {
+          checkPage(5);
+          drawStatusDot(18, y - 1, dotColor);
+          setC(B.white, false);
+          doc.setFontSize(9.8);
+          doc.setFont('helvetica', 'normal');
+          const wrapped = doc.splitTextToSize(it, pw - 44);
+          doc.text(wrapped, 22, y);
+          y += wrapped.length * 4 + 1;
+        });
+        y += 3;
+      };
+
+      renderBlock('Confirmado', confirmedItems, B.emerald);
+      renderBlock('A confirmar', pendingItems, B.gold);
+    }
+  }
+
 
   // Voo & Hospedagem
   checkPage(30);
@@ -1161,7 +1308,9 @@ export async function exportTripPDF(trip: SavedTrip) {
       }
     }
 
-    const narrative = getDayNarrative(trip.destination, day.title || '');
+    // Prose first, schedule below: prefer a narrative composed from the day's own activities+tips.
+    const composed = composeDayNarrative(day);
+    const narrative = composed || getDayNarrative(trip.destination, day.title || '');
     if (narrative) {
       checkPage(12);
       setC(B.gray400, false);
@@ -1419,6 +1568,53 @@ export async function exportTripPDF(trip: SavedTrip) {
       y += 6;
     });
   }
+
+  // ── DOCUMENTACAO (visto, vacina, passaporte, moeda, tomada) ──
+  const docs = getDocsForDestination(trip.destination);
+  if (docs) {
+    y += 4;
+    checkPage(46);
+    drawRect(14, y - 2, pw - 28, 0.3, B.surface);
+    y += 8;
+    setC(B.emerald, false);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DOCUMENTACAO', 14, y);
+    y += 4;
+    setC(B.gray400, false);
+    doc.setFontSize(9.5);
+    doc.setFont('helvetica', 'italic');
+    doc.text(`Regras para brasileiros · ${docs.country}`, 14, y);
+    y += 6;
+
+    const docRows: Array<{ label: string; value: string; accent: readonly number[] }> = [
+      { label: 'Visto', value: docs.visto, accent: docs.vistoIsento ? B.emerald : B.amber },
+      { label: 'Vacina', value: docs.vacina, accent: docs.vacinaObrigatoria ? B.red : B.emerald },
+      { label: 'Passaporte', value: docs.passaporte, accent: B.horizon },
+      { label: 'Moeda', value: docs.moeda, accent: B.gold },
+      { label: 'Tomada', value: docs.tomada, accent: B.gray400 },
+    ];
+
+    docRows.forEach(({ label, value, accent }) => {
+      const wrapped = doc.splitTextToSize(cleanText(value), pw - 50);
+      const rowH = Math.max(9, 5 + wrapped.length * 3.6);
+      checkPage(rowH + 2);
+      drawRect(14, y, pw - 28, rowH, B.deep);
+      drawRect(14, y, 1.5, rowH, accent);
+      setC(accent, false);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(label.toUpperCase(), 18, y + 5);
+      setC(B.white, false);
+      doc.setFontSize(9.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(wrapped, 46, y + 5);
+      y += rowH + 2;
+    });
+    y += 2;
+  }
+
+
 
   // ── Biology AI — Protocolo de Adaptacao ──
   const jetLagSev = trip.jetLagSeverity as string | undefined;
