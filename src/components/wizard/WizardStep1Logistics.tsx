@@ -95,6 +95,25 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
     }
   }, [selectedCountry]);
 
+  // Register KINU AI map-highlight handler
+  useEffect(() => {
+    registerActionHandlers({
+      sugerir_destinos: ({ cidades }: { cidades: string[]; justificativa?: string }) => {
+        const valid = (cidades || []).filter((c) =>
+          CURATED_CITIES.some((cc) => cc.toLowerCase() === c.toLowerCase())
+        );
+        if (valid.length === 0) return null;
+        setKinuHighlights(valid);
+        return `🗺️ Acendi ${valid.join(', ')} no mapa em dourado — toca na sua escolhida!`;
+      },
+    } as KinuActionHandlers);
+
+    return () => {
+      registerActionHandlers(null);
+    };
+  }, [registerActionHandlers]);
+
+
   const handleRegionSelect = (region: RegionName) => {
     setSelectedRegion(region);
     setSelectedCountry(null);
