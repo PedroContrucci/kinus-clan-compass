@@ -9,6 +9,14 @@ export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
 
   const actions: { id: string; icon: string; label: string; prompt: string }[] = [];
 
+  if (tripContext?.activeTab === 'roteiro') {
+    actions.push({ id: 'tab-reorganize', icon: '🗓️', label: 'Reorganizar um dia', prompt: 'Analisa meu roteiro e me diz qual dia está mais pesado e como reorganizar.' });
+  } else if (tripContext?.activeTab === 'financeiro') {
+    actions.push({ id: 'tab-save', icon: '💰', label: 'Onde economizar?', prompt: 'Analisa meu orçamento atual e me diz onde estou gastando mais e onde dá pra economizar sem perder qualidade.' });
+  } else if (tripContext?.activeTab === 'preparacao') {
+    actions.push({ id: 'tab-ready', icon: '✅', label: 'O que falta?', prompt: 'O que ainda falta pra eu estar 100% pronto pra essa viagem?' });
+  }
+
   const now = new Date();
   const tripStart = tripContext?.startDate ? new Date(tripContext.startDate) : null;
   const tripEnd = tripContext?.endDate ? new Date(tripContext.endDate) : null;

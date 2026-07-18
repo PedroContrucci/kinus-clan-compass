@@ -43,6 +43,7 @@ export interface KinuTripContext {
   interests?: string[];
   flightDuration?: string;
   itineraryDays?: Array<{ day: number; date: string; items: string[] }>;
+  activeTab?: string;
 }
 
 export interface KinuInsight {
