@@ -107,6 +107,8 @@ interface TripPanelProps {
   onUnconfirm?: (type: 'flight' | 'hotel') => void;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
   onNavigateTab: (tab: string, categoryFilter?: string) => void;
+  pendingConfirmRequest?: { tipo: 'voo' | 'hotel'; ts: number } | null;
+  onPendingConfirmHandled?: () => void;
 }
 
 
