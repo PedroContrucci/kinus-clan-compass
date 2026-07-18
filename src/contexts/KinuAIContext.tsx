@@ -11,8 +11,8 @@ export interface KinuActionHandlers {
   remover_atividade?: (params: { dia: number; atividade: string }) => string | null;
   confirmar_item?: (params: { tipo: 'voo' | 'hotel' }) => string | null;
   adicionar_atividade?: (params: { dia: number; atividade: string; horario: string }) => string | null;
-  sugerir_destinos?: (params: { cidades: string[]; justificativa?: string }) => string | null;
 }
+
 
 function buildCuratedCatalog(city: string) {
   const data = destinationActivities[city];
@@ -51,7 +51,10 @@ interface KinuAIContextType {
   applyProposedAction: (messageId: string, actionIndex: number) => void;
   dismissProposedAction: (messageId: string, actionIndex: number) => void;
   registerActionHandlers: (handlers: KinuActionHandlers | null) => void;
+  suggestedDestinations: string[];
+  clearSuggestedDestinations: () => void;
 }
+
 
 const KinuAIContext = createContext<KinuAIContextType | undefined>(undefined);
 
