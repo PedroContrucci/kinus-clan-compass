@@ -6,11 +6,11 @@ import { CURATED_CITIES } from "@/lib/curatedCities";
 import { destinationActivities } from "@/data/destinationActivities";
 
 export interface KinuActionHandlers {
-  trocar_atividade: (params: { dia: number; atividade_atual: string; nova_atividade: string }) => string | null;
-  ajustar_horario: (params: { dia: number; atividade: string; novo_horario: string }) => string | null;
-  remover_atividade: (params: { dia: number; atividade: string }) => string | null;
-  confirmar_item: (params: { tipo: 'voo' | 'hotel' }) => string | null;
-  adicionar_atividade: (params: { dia: number; atividade: string; horario: string }) => string | null;
+  trocar_atividade?: (params: { dia: number; atividade_atual: string; nova_atividade: string }) => string | null;
+  ajustar_horario?: (params: { dia: number; atividade: string; novo_horario: string }) => string | null;
+  remover_atividade?: (params: { dia: number; atividade: string }) => string | null;
+  confirmar_item?: (params: { tipo: 'voo' | 'hotel' }) => string | null;
+  adicionar_atividade?: (params: { dia: number; atividade: string; horario: string }) => string | null;
   sugerir_destinos?: (params: { cidades: string[]; justificativa?: string }) => string | null;
 }
 
