@@ -892,6 +892,57 @@ const Viagens = () => {
     toast({ title: '🗑️ Atividade removida', description: current.name });
   };
 
+  // Wire KINU AI proposedActions to the same handlers used by the drawer
+  useEffect(() => {
+    if (!selectedTrip) {
+      registerActionHandlers(null);
+      return;
+    }
+    const findDayActivity = (dia: number, name: string) => {
+      const day = (selectedTrip.days || []).find(d => d.day === dia)
+        || (selectedTrip.days || [])[dia - 1];
+      if (!day) return null;
+      const needle = name.toLowerCase().trim();
+      const act = day.activities.find(a => a.name?.toLowerCase().includes(needle))
+        || day.activities.find(a => needle.includes(a.name?.toLowerCase() || ''));
+      return act || null;
+    };
+
+    registerActionHandlers({
+      trocar_atividade: ({ dia, atividade_atual, nova_atividade }) => {
+        const act = findDayActivity(dia, atividade_atual);
+        if (!act) return null;
+        const catalog = getDestinationActivities(selectedTrip.destination);
+        const needle = (nova_atividade || '').toLowerCase().trim();
+        const suggested = catalog.find(s => s.name.toLowerCase() === needle)
+          || catalog.find(s => s.name.toLowerCase().includes(needle))
+          || catalog.find(s => needle.includes(s.name.toLowerCase()));
+        if (!suggested) return null;
+        handleReplaceActivity(act.id, suggested);
+        return `✅ Feito — ${act.name} → ${suggested.name} no dia ${dia}`;
+      },
+      ajustar_horario: ({ dia, atividade, novo_horario }) => {
+        const act = findDayActivity(dia, atividade);
+        if (!act || !novo_horario) return null;
+        handleAdjustTime(act.id, novo_horario);
+        return `✅ Feito — ${act.name} agora às ${novo_horario} no dia ${dia}`;
+      },
+      remover_atividade: ({ dia, atividade }) => {
+        const act = findDayActivity(dia, atividade);
+        if (!act) return null;
+        handleRemoveActivity(act.id);
+        return `✅ Feito — ${act.name} removida do dia ${dia}`;
+      },
+      confirmar_item: ({ tipo }) => {
+        if (tipo !== 'voo' && tipo !== 'hotel') return null;
+        setActiveTab('panel');
+        setPendingConfirmRequest({ tipo, ts: Date.now() });
+        return `🔔 Abri a confirmação do ${tipo === 'voo' ? 'voo' : 'hotel'}. Confere os detalhes e confirma pra mim.`;
+      },
+    });
+    return () => registerActionHandlers(null);
+  }, [selectedTrip, registerActionHandlers]);
+
   // Handle draft cockpit actions
   const handleSaveDraft = (updatedTrip: any) => {
     const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
