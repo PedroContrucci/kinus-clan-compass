@@ -31,6 +31,7 @@ import { TRAVEL_INTERESTS } from '@/components/wizard/types';
 import { getDestinationActivities } from '@/data/destinationActivities';
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
+import { getFlightPlannedTotal, syncTripFlightPlannedFinances } from '@/lib/flightFinance';
 
 import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
@@ -186,12 +187,14 @@ function normalizeTripDays(days: any[] = []): SavedTrip['days'] {
 }
 
 function normalizeSavedTrip(trip: any): SavedTrip {
-  if (!trip || !Array.isArray(trip.days)) return trip;
+  if (!trip) return trip;
 
-  return {
+  const normalizedTrip = {
     ...trip,
-    days: normalizeTripDays(trip.days),
+    days: Array.isArray(trip.days) ? normalizeTripDays(trip.days) : trip.days,
   };
+
+  return syncTripFlightPlannedFinances(normalizedTrip);
 }
 
 const LOGISTICS_KEYWORDS = [
@@ -671,6 +674,8 @@ const Viagens = () => {
     const updatedTrip = { ...selectedTrip };
 
     if (type === 'flight') {
+      const previousFlightPlanned = getFlightPlannedTotal(updatedTrip);
+      const previousFlightConfirmed = updatedTrip.finances.categories.flights.confirmed || 0;
       if (updatedTrip.flights?.outbound) {
         updatedTrip.flights.outbound.status = 'confirmed';
         updatedTrip.flights.outbound.price = amount;
@@ -678,8 +683,10 @@ const Viagens = () => {
       if (updatedTrip.flights?.return) {
         updatedTrip.flights.return.status = 'confirmed';
       }
-      updatedTrip.finances.confirmed += amount;
-      updatedTrip.finances.categories.flights.confirmed += amount;
+      updatedTrip.finances.confirmed = Math.max(0, updatedTrip.finances.confirmed - previousFlightConfirmed) + amount;
+      updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - previousFlightPlanned);
+      updatedTrip.finances.categories.flights.planned = 0;
+      updatedTrip.finances.categories.flights.confirmed = amount;
 
       const ob = (updatedTrip as any).outboundFlight?.option;
       if (flightDetails?.outbound && ob) {
@@ -715,10 +722,10 @@ const Viagens = () => {
       }
       updatedTrip.finances.confirmed += amount;
       updatedTrip.finances.categories.accommodation.confirmed += amount;
+      updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - amount);
     }
 
 
-    updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - amount);
     updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
     updatedTrip.progress = calculateProgress(updatedTrip);
 

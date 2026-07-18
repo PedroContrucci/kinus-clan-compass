@@ -17,6 +17,7 @@ import { OffersModal } from '@/components/cockpit/OffersModal';
 import { useState, useEffect, useMemo } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
+import { getFlightPlannedTotal, getSelectedFlightPlannedTotal } from '@/lib/flightFinance';
 
 const TIER_DESCRIPTIONS: Record<string, string> = {
   backpacker: 'Hostels, street food, tours gratuitos',
@@ -417,7 +418,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
     if (type === 'flight') {
       setConfirmReservation({
         type: 'flight',
-        amount: '',
+        amount: String(Math.round(getFlightPlannedTotal(trip))),
         link: '',
         hotelName: '',
         mealPlan: '',
@@ -508,18 +509,13 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
   const seatDone = (trip as any).flightExtras?.seatDone || false;
   const seatDetail = (trip as any).flightExtras?.seatDetail || '';
 
-  const outboundPrice = (trip as any).outboundFlight?.option?.price;
-  const returnPrice = (trip as any).returnFlight?.option?.price;
-  const hasRealFlights = outboundPrice != null && returnPrice != null;
-  // Single source of truth for the pre-confirmation flight estimate:
-  // — real Amadeus selection: sum per-person prices × travelers
-  // — otherwise: the flight category planned total from the wizard anchor
-  const flightPlannedTotal = trip.finances?.categories?.flights?.planned || 0;
+  const selectedFlightTotal = getSelectedFlightPlannedTotal(trip);
+  const hasRealFlights = selectedFlightTotal != null;
+  const flightPlannedTotal = getFlightPlannedTotal(trip);
+  const flightConfirmedTotal = trip.finances?.categories?.flights?.confirmed || trip.flights?.outbound?.price || 0;
   const flightTotal = flightConfirmed
-    ? (trip.flights?.outbound?.price || 0)
-    : hasRealFlights
-      ? Math.round((outboundPrice + returnPrice) * (trip.travelers || 1))
-      : flightPlannedTotal;
+    ? flightConfirmedTotal
+    : flightPlannedTotal;
   const flightPerPerson = Math.round(flightTotal / (trip.travelers || 1));
   const flightPrice = flightPerPerson;
 
@@ -1152,7 +1148,7 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
                 const openModal = () =>
                   setConfirmReservation({
                     type,
-                    amount: confirmed && paidValue ? String(Math.round(paidValue)) : '',
+                    amount: confirmed && paidValue ? String(Math.round(paidValue)) : type === 'flight' ? String(Math.round(flightPlannedTotal)) : '',
                     link: '',
                     hotelName: type === 'hotel' ? trip.accommodation?.name || '' : '',
                     mealPlan: type === 'hotel' ? (trip.accommodation as any)?.mealPlan || 'Café da manhã' : '',

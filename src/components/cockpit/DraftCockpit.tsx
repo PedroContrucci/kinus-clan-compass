@@ -5,30 +5,7 @@ import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { FlightSelectionStage, SelectedFlight } from './FlightSelectionStage';
 import { GeneratedItineraryStage } from './GeneratedItineraryStage';
-
-// Keep finances.planned aligned with the real Amadeus flight anchor shown in
-// the hero card. Adjusts the flights category planned + rebalances totals.
-function syncFlightPlannedFinances(
-  trip: any,
-  outbound: SelectedFlight | null,
-  returnFlight: SelectedFlight | null,
-) {
-  if (!trip?.finances?.categories?.flights) return;
-  const travelers = trip.travelers || 1;
-  const obPrice = outbound?.option?.price;
-  const rbPrice = returnFlight?.option?.price;
-  if (obPrice == null || rbPrice == null) return;
-  const newFlightsPlanned = Math.round((obPrice + rbPrice) * travelers);
-  const prevFlightsPlanned = trip.finances.categories.flights.planned || 0;
-  const delta = newFlightsPlanned - prevFlightsPlanned;
-  trip.finances.categories.flights.planned = newFlightsPlanned;
-  trip.finances.planned = Math.max(0, (trip.finances.planned || 0) + delta);
-  trip.finances.available = Math.max(
-    0,
-    (trip.finances.total || 0) - (trip.finances.planned || 0)
-      - (trip.finances.bidding || 0) - (trip.finances.confirmed || 0),
-  );
-}
+import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
 
 // Types
 interface DraftTrip {
@@ -160,7 +137,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
       outboundFlight: outbound,
       returnFlight: returnFlight,
     };
-    syncFlightPlannedFinances(updatedTrip, outbound, returnFlight);
+    syncTripFlightPlannedFinances(updatedTrip);
 
     onSave(updatedTrip);
     setStage('itinerary');
@@ -178,7 +155,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
       outboundFlight: selectedOutbound,
       returnFlight: selectedReturn,
     };
-    syncFlightPlannedFinances(updatedTrip, selectedOutbound, selectedReturn);
+    syncTripFlightPlannedFinances(updatedTrip);
     onSave(updatedTrip);
     toast({ title: "Rascunho salvo! 📝" });
   }, [trip, stage, selectedOutbound, selectedReturn, onSave]);
@@ -201,7 +178,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
       returnFlight: selectedReturn,
       days: generatedDays || trip.days,
     };
-    syncFlightPlannedFinances(updatedTrip, selectedOutbound, selectedReturn);
+    syncTripFlightPlannedFinances(updatedTrip);
 
     onActivate(updatedTrip as any);
     toast({ title: "Viagem ativada! 🚀", description: "Sua viagem está pronta para acompanhamento." });
