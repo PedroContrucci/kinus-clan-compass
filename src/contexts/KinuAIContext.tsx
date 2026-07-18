@@ -1,9 +1,16 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
-import { KinuMessage, KinuTripContext, KinuInsight, EMERGENCY_KEYWORDS } from "@/types/kinuAI";
+import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from "react";
+import { KinuMessage, KinuTripContext, KinuInsight, EMERGENCY_KEYWORDS, ProposedAction, ProposedActionType } from "@/types/kinuAI";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CURATED_CITIES } from "@/lib/curatedCities";
 import { destinationActivities } from "@/data/destinationActivities";
+
+export interface KinuActionHandlers {
+  trocar_atividade: (params: { dia: number; atividade_atual: string; nova_atividade: string }) => string | null;
+  ajustar_horario: (params: { dia: number; atividade: string; novo_horario: string }) => string | null;
+  remover_atividade: (params: { dia: number; atividade: string }) => string | null;
+  confirmar_item: (params: { tipo: 'voo' | 'hotel' }) => string | null;
+}
 
 function buildCuratedCatalog(city: string) {
   const data = destinationActivities[city];
@@ -39,6 +46,9 @@ interface KinuAIContextType {
   dismissInsight: (id: string) => void;
   addInsight: (insight: KinuInsight) => void;
   isEmergencyMode: boolean;
+  applyProposedAction: (messageId: string, actionIndex: number) => void;
+  dismissProposedAction: (messageId: string, actionIndex: number) => void;
+  registerActionHandlers: (handlers: KinuActionHandlers | null) => void;
 }
 
 const KinuAIContext = createContext<KinuAIContextType | undefined>(undefined);
@@ -131,11 +141,21 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         throw new Error(data.error);
       }
 
+      const rawActions: any[] = Array.isArray(data.proposedActions) ? data.proposedActions : [];
+      const proposedActions: ProposedAction[] = rawActions
+        .filter((a) => a && typeof a.type === 'string')
+        .map((a) => ({
+          type: a.type as ProposedActionType,
+          params: (a.params && typeof a.params === 'object') ? a.params : {},
+          status: 'pending' as const,
+        }));
+
       const assistantMessage: KinuMessage = {
         id: `msg-${Date.now()}-response`,
         role: "assistant",
         content: data.message,
         timestamp: new Date(),
+        proposedActions: proposedActions.length > 0 ? proposedActions : undefined,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -186,6 +206,72 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const actionHandlersRef = useRef<KinuActionHandlers | null>(null);
+
+  const registerActionHandlers = useCallback((handlers: KinuActionHandlers | null) => {
+    actionHandlersRef.current = handlers;
+  }, []);
+
+  const setActionStatus = useCallback((messageId: string, actionIndex: number, status: 'applied' | 'dismissed') => {
+    setMessages(prev => prev.map(m => {
+      if (m.id !== messageId || !m.proposedActions) return m;
+      const next = m.proposedActions.map((a, i) => i === actionIndex ? { ...a, status } : a);
+      return { ...m, proposedActions: next };
+    }));
+  }, []);
+
+  const applyProposedAction = useCallback((messageId: string, actionIndex: number) => {
+    const target = messages.find(m => m.id === messageId);
+    const action = target?.proposedActions?.[actionIndex];
+    if (!action || action.status && action.status !== 'pending') return;
+
+    const handlers = actionHandlersRef.current;
+    if (!handlers) {
+      toast.error('Abre uma viagem para eu aplicar essa ação.');
+      return;
+    }
+
+    let confirmationText: string | null = null;
+    try {
+      switch (action.type) {
+        case 'trocar_atividade':
+          confirmationText = handlers.trocar_atividade(action.params as any);
+          break;
+        case 'ajustar_horario':
+          confirmationText = handlers.ajustar_horario(action.params as any);
+          break;
+        case 'remover_atividade':
+          confirmationText = handlers.remover_atividade(action.params as any);
+          break;
+        case 'confirmar_item':
+          confirmationText = handlers.confirmar_item(action.params as any);
+          break;
+      }
+    } catch (err) {
+      console.error('Erro ao aplicar ação KINU:', err);
+      toast.error('Não consegui aplicar essa ação.');
+      return;
+    }
+
+    if (!confirmationText) {
+      toast.error('Não achei o item pra aplicar essa mudança.');
+      return;
+    }
+
+    setActionStatus(messageId, actionIndex, 'applied');
+    const confirmation: KinuMessage = {
+      id: `msg-${Date.now()}-ack`,
+      role: 'assistant',
+      content: confirmationText,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, confirmation]);
+  }, [messages, setActionStatus]);
+
+  const dismissProposedAction = useCallback((messageId: string, actionIndex: number) => {
+    setActionStatus(messageId, actionIndex, 'dismissed');
+  }, [setActionStatus]);
+
   return (
     <KinuAIContext.Provider
       value={{
@@ -201,6 +287,9 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         dismissInsight,
         addInsight,
         isEmergencyMode,
+        applyProposedAction,
+        dismissProposedAction,
+        registerActionHandlers,
       }}
     >
       {children}

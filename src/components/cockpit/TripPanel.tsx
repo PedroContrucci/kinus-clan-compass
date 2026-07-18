@@ -107,6 +107,8 @@ interface TripPanelProps {
   onUnconfirm?: (type: 'flight' | 'hotel') => void;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
   onNavigateTab: (tab: string, categoryFilter?: string) => void;
+  pendingConfirmRequest?: { tipo: 'voo' | 'hotel'; ts: number } | null;
+  onPendingConfirmHandled?: () => void;
 }
 
 
@@ -383,7 +385,7 @@ function getTripCurrency(dest: string): string {
   return DEST_CURRENCY_MAP[n] || 'USD';
 }
 
-export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAuction, onNavigateTab }: TripPanelProps) => {
+export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAuction, onNavigateTab, pendingConfirmRequest, onPendingConfirmHandled }: TripPanelProps) => {
   const [showAllActions, setShowAllActions] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [flightResults, setFlightResults] = useState<any[] | null>(null);
@@ -442,6 +444,14 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       });
     }
   };
+
+  // React to KINU AI's confirmar_item proposed action
+  useEffect(() => {
+    if (!pendingConfirmRequest) return;
+    openReservationConfirm(pendingConfirmRequest.tipo === 'voo' ? 'flight' : 'hotel');
+    onPendingConfirmHandled?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingConfirmRequest?.ts]);
 
   // Fetch maps embed URL
   useEffect(() => {

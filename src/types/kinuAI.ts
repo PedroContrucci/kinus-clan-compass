@@ -1,9 +1,22 @@
+export type ProposedActionType =
+  | 'trocar_atividade'
+  | 'ajustar_horario'
+  | 'remover_atividade'
+  | 'confirmar_item';
+
+export interface ProposedAction {
+  type: ProposedActionType;
+  params: Record<string, any>;
+  status?: 'pending' | 'applied' | 'dismissed';
+}
+
 export interface KinuMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
   isEmergency?: boolean;
+  proposedActions?: ProposedAction[];
 }
 
 export interface KinuTripContext {
