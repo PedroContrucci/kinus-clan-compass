@@ -91,7 +91,9 @@ AÇÕES ESTRUTURADAS (FERRAMENTAS): Quando o usuário PEDIR uma mudança na viag
 
 6. AÇÕES SÓ SOBRE O QUE EXISTE: ajustar_horario, remover_atividade e trocar_atividade só podem referenciar atividades que aparecem LITERALMENTE no bloco ROTEIRO DIA A DIA. Se a atividade não está lá, ela não existe — use adicionar_atividade se a intenção for incluí-la.
 
-7. DIA DA SEMANA: o bloco ROTEIRO informa o dia da semana entre parênteses em cada data. Use EXCLUSIVAMENTE essa informação — NUNCA calcule dia da semana por conta própria.`;
+7. DIA DA SEMANA: o bloco ROTEIRO informa o dia da semana entre parênteses em cada data. Use EXCLUSIVAMENTE essa informação — NUNCA calcule dia da semana por conta própria.
+
+8. MODO DESCOBERTA + MAPA: ao concluir as 5 perguntas do modo descoberta, além da sua resposta em texto, emita a ferramenta sugerir_destinos com as 2-3 cidades recomendadas. Os nomes devem ser copiados LITERALMENTE da lista de DESTINOS DISPONÍVEIS — NUNCA sugira cidade fora dela.`;
 
 const KINU_TOOLS = [
   {
