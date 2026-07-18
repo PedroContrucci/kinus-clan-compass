@@ -73,7 +73,61 @@ Só depois de TODAS as 5 respostas, recomende 2 ou 3 destinos APENAS da lista de
 
 ESCOPO DA CONVERSA: Se houver uma viagem ativa, ela é CONTEXTO para enriquecer respostas — NUNCA uma limitação. Responda normalmente perguntas sobre qualquer destino ou tema de viagem, mesmo que não tenha relação direta com a viagem ativa. Nunca recuse uma pergunta apenas porque foge do destino atual.
 
-⚠️ REGRA ABSOLUTA DE VERACIDADE: ao citar lugares específicos (praias, restaurantes, atrações, mercados), use EXCLUSIVAMENTE os do CATÁLOGO CURADO quando ele for fornecido. É PROIBIDO inventar nomes de estabelecimentos ou atrações, e PROIBIDO afirmar características que você não pode garantir (condições do mar, pratos servidos, horários). Se o catálogo curado não cobrir a cidade perguntada, limite-se a orientações genéricas (bairros, categorias, logística, segurança) e deixe claro que são informações gerais. Nesse caso, diga que esse destino ainda 'chega em breve ao KINU' e, quando fizer sentido, sugira uma cidade do catálogo curado como alternativa disponível. NUNCA convide a criar uma viagem no KINU para uma cidade que não esteja na lista de DESTINOS DISPONÍVEIS. SEGURANÇA: NUNCA afirme que um mar/praia é calmo, seguro ou apropriado para crianças por conta própria — condições de segurança só podem ser mencionadas se estiverem LITERALMENTE escritas nas tips do catálogo, e devem ser reproduzidas fielmente (incluindo avisos ⚠️). Na dúvida, recomende verificar condições locais. Quebrar esta regra destrói a confiança no produto.`;
+⚠️ REGRA ABSOLUTA DE VERACIDADE: ao citar lugares específicos (praias, restaurantes, atrações, mercados), use EXCLUSIVAMENTE os do CATÁLOGO CURADO quando ele for fornecido. É PROIBIDO inventar nomes de estabelecimentos ou atrações, e PROIBIDO afirmar características que você não pode garantir (condições do mar, pratos servidos, horários). Se o catálogo curado não cobrir a cidade perguntada, limite-se a orientações genéricas (bairros, categorias, logística, segurança) e deixe claro que são informações gerais. Nesse caso, diga que esse destino ainda 'chega em breve ao KINU' e, quando fizer sentido, sugira uma cidade do catálogo curado como alternativa disponível. NUNCA convide a criar uma viagem no KINU para uma cidade que não esteja na lista de DESTINOS DISPONÍVEIS. SEGURANÇA: NUNCA afirme que um mar/praia é calmo, seguro ou apropriado para crianças por conta própria — condições de segurança só podem ser mencionadas se estiverem LITERALMENTE escritas nas tips do catálogo, e devem ser reproduzidas fielmente (incluindo avisos ⚠️). Na dúvida, recomende verificar condições locais. Quebrar esta regra destrói a confiança no produto.
+
+AÇÕES ESTRUTURADAS (FERRAMENTAS): Quando o usuário PEDIR uma mudança na viagem (trocar atividade, ajustar horário, remover algo do dia, confirmar voo ou hotel), use as ferramentas disponíveis para PROPOR a ação — nunca afirme que executou; o app pedirá confirmação ao usuário antes de aplicar. Para o parâmetro nova_atividade em trocar_atividade, use SOMENTE nomes que aparecem LITERALMENTE no CATÁLOGO CURADO fornecido. Sua resposta em texto deve explicar brevemente a proposta em tom de irmão mais velho; a ferramenta cuida da execução. Se o usuário apenas conversar (sem pedir mudança), NÃO chame nenhuma ferramenta.`;
+
+const KINU_TOOLS = [
+  {
+    name: "trocar_atividade",
+    description: "Propõe trocar uma atividade do roteiro por outra do catálogo curado. O app confirmará com o usuário antes de aplicar.",
+    input_schema: {
+      type: "object",
+      properties: {
+        dia: { type: "number", description: "Número do dia da viagem (1, 2, 3...)" },
+        atividade_atual: { type: "string", description: "Nome da atividade que será substituída, como aparece no roteiro" },
+        nova_atividade: { type: "string", description: "Nome exato de uma atividade do CATÁLOGO CURADO" },
+      },
+      required: ["dia", "atividade_atual", "nova_atividade"],
+    },
+  },
+  {
+    name: "ajustar_horario",
+    description: "Propõe ajustar o horário de uma atividade do roteiro. O app confirmará com o usuário antes de aplicar.",
+    input_schema: {
+      type: "object",
+      properties: {
+        dia: { type: "number", description: "Número do dia da viagem" },
+        atividade: { type: "string", description: "Nome da atividade" },
+        novo_horario: { type: "string", description: "Novo horário no formato HH:MM (24h)" },
+      },
+      required: ["dia", "atividade", "novo_horario"],
+    },
+  },
+  {
+    name: "remover_atividade",
+    description: "Propõe remover uma atividade de um dia do roteiro. O app confirmará com o usuário antes de aplicar.",
+    input_schema: {
+      type: "object",
+      properties: {
+        dia: { type: "number", description: "Número do dia da viagem" },
+        atividade: { type: "string", description: "Nome da atividade a remover" },
+      },
+      required: ["dia", "atividade"],
+    },
+  },
+  {
+    name: "confirmar_item",
+    description: "Propõe confirmar o voo ou o hotel da viagem. O app confirmará com o usuário antes de aplicar.",
+    input_schema: {
+      type: "object",
+      properties: {
+        tipo: { type: "string", enum: ["voo", "hotel"], description: "Tipo de item a confirmar" },
+      },
+      required: ["tipo"],
+    },
+  },
+];
 
 interface ChatMessage {
   role: "user" | "assistant";
