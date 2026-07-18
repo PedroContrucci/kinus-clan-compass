@@ -273,7 +273,8 @@ const Viagens = () => {
   const mapAnchorRef = useRef<HTMLDivElement | null>(null);
   const [budgetEditOpen, setBudgetEditOpen] = useState(false);
   const [budgetEditValue, setBudgetEditValue] = useState('');
-  const { setTripContext } = useKinuAI();
+  const { setTripContext, registerActionHandlers } = useKinuAI();
+  const [pendingConfirmRequest, setPendingConfirmRequest] = useState<{ tipo: 'voo' | 'hotel'; ts: number } | null>(null);
 
   // Feed trip context to KINU AI when selected trip changes
   useEffect(() => {
