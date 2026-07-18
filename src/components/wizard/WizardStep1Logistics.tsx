@@ -313,9 +313,19 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
 
         <div className="space-y-4">
           {!data.destinationCity && (
-            <DestinationWorldMap onSelectCity={handleMapCitySelect} />
+            <>
+              <DestinationWorldMap onSelectCity={handleMapCitySelect} />
+              <button
+                type="button"
+                onClick={() => setShowCardsGrid((prev) => !prev)}
+                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+              >
+                {showCardsGrid ? 'Ocultar lista de destinos' : 'Prefere escolher por lista? Ver todos os destinos'}
+              </button>
+            </>
           )}
 
+          <div className={cn(!data.destinationCity && showCardsGrid ? 'space-y-4' : 'hidden')}>
           {/* Level 1: Region — always visible, selected highlighted, click switches */}
           <div className="grid grid-cols-2 gap-3">
             {REGIONS.map((region) => {
