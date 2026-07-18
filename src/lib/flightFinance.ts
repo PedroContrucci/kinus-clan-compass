@@ -15,7 +15,7 @@ export function getFlightPlannedTotal(trip: any): number {
   return Math.round(Number(trip?.finances?.categories?.flights?.planned || 0));
 }
 
-export function syncTripFlightPlannedFinances<T extends any>(trip: T): T {
+export function syncTripFlightPlannedFinances<T extends { finances?: any; budget?: number; [key: string]: any }>(trip: T): T {
   if (!trip?.finances?.categories?.flights) return trip;
 
   const selectedFlightTotal = getSelectedFlightPlannedTotal(trip);
