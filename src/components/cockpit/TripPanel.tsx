@@ -104,6 +104,7 @@ interface TripPanelProps {
     hotelDetails?: { name?: string; mealPlan?: string }
   ) => void;
   onUpdateTrip?: (updater: (t: any) => any) => void;
+  onUnconfirm?: (type: 'flight' | 'hotel') => void;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
   onNavigateTab: (tab: string, categoryFilter?: string) => void;
 }
@@ -382,7 +383,7 @@ function getTripCurrency(dest: string): string {
   return DEST_CURRENCY_MAP[n] || 'USD';
 }
 
-export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavigateTab }: TripPanelProps) => {
+export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAuction, onNavigateTab }: TripPanelProps) => {
   const [showAllActions, setShowAllActions] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [flightResults, setFlightResults] = useState<any[] | null>(null);
@@ -1166,12 +1167,26 @@ export const TripPanel = ({ trip, onConfirm, onUpdateTrip, onOpenAuction, onNavi
                         {isFlights ? '✈️ Voo confirmado' : '🏨 Hotel confirmado'}
                         {paidValue ? ` · R$ ${fmt(Math.round(paidValue))}` : ''}
                       </span>
-                      <button
-                        onClick={openModal}
-                        className="text-[11px] font-medium text-emerald-400/80 hover:text-emerald-300 underline underline-offset-2"
-                      >
-                        Editar
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={openModal}
+                          className="text-[11px] font-medium text-emerald-400/80 hover:text-emerald-300 underline underline-offset-2"
+                        >
+                          Editar
+                        </button>
+                        {onUnconfirm && (
+                          <button
+                            onClick={() => {
+                              if (window.confirm('Desfazer a confirmação? Os valores voltam para o planejado.')) {
+                                onUnconfirm(type);
+                              }
+                            }}
+                            className="text-[11px] font-medium text-muted-foreground hover:text-foreground underline underline-offset-2"
+                          >
+                            Desfazer confirmação
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 }
