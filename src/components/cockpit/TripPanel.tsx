@@ -543,7 +543,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       actionLabel: 'Ver roteiro',
       onClick: () => onNavigateTab('roteiro'),
     };
-  }, [flightConfirmed, hotelConfirmed, daysLeft, checklistPct, trip]);
+  }, [flightConfirmed, hotelConfirmed, daysLeft, checklistPct, openReservationConfirm, onNavigateTab]);
 
   const baggageDone = (trip as any).flightExtras?.baggageDone || false;
   const baggageDetail = (trip as any).flightExtras?.baggageDetail || '';
