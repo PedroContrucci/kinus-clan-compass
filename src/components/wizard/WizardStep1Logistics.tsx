@@ -33,6 +33,7 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
   const { setIsOpen, sendMessage, registerActionHandlers } = useKinuAI();
 
   const handleMapCitySelect = (cityName: string) => {
+    setKinuHighlights([]);
     for (const [region, countries] of Object.entries(DESTINATION_CATALOG)) {
       for (const country of countries) {
         const city = country.cities.find((c) => c.name === cityName);
