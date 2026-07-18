@@ -334,12 +334,15 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         applyProposedAction,
         dismissProposedAction,
         registerActionHandlers,
+        suggestedDestinations,
+        clearSuggestedDestinations,
       }}
     >
       {children}
     </KinuAIContext.Provider>
   );
 }
+
 
 export function useKinuAI() {
   const context = useContext(KinuAIContext);
