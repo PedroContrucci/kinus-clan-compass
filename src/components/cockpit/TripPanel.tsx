@@ -445,6 +445,14 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     }
   };
 
+  // React to KINU AI's confirmar_item proposed action
+  useEffect(() => {
+    if (!pendingConfirmRequest) return;
+    openReservationConfirm(pendingConfirmRequest.tipo === 'voo' ? 'flight' : 'hotel');
+    onPendingConfirmHandled?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingConfirmRequest?.ts]);
+
   // Fetch maps embed URL
   useEffect(() => {
     supabase.functions.invoke('maps-embed', { 
