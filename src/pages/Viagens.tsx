@@ -307,11 +307,12 @@ const Viagens = () => {
             : d.date || '',
           items: (d.activities || []).slice(0, 8).map((a) => `${a.time || ''} ${a.name || ''}`.trim()),
         })),
+        activeTab,
       });
     } else {
       setTripContext(null);
     }
-  }, [selectedTrip, setTripContext]);
+  }, [selectedTrip, activeTab, setTripContext]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('kinu_user');
