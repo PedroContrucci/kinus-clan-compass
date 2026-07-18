@@ -104,6 +104,7 @@ interface TripPanelProps {
     hotelDetails?: { name?: string; mealPlan?: string }
   ) => void;
   onUpdateTrip?: (updater: (t: any) => any) => void;
+  onUnconfirm?: (type: 'flight' | 'hotel') => void;
   onOpenAuction: (type: 'flight' | 'hotel') => void;
   onNavigateTab: (tab: string, categoryFilter?: string) => void;
 }
