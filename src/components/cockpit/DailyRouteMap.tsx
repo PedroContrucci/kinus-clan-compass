@@ -314,7 +314,7 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
       <MapErrorBoundary fallback={
         <DayMapLink destination={destination} dayActivities={filteredActivities} />
       }>
-        <div className="h-[250px] rounded-xl border border-border/50 overflow-hidden">
+        <div className="relative z-0 isolate h-[250px] rounded-xl border border-border/50 overflow-hidden">
           <MapContainer
             center={[points[0].lat, points[0].lng]}
             zoom={13}
@@ -353,9 +353,10 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
                     key={`seg-${i}`}
                     positions={seg.path}
                     pathOptions={{
-                      color: 'hsl(199, 89%, 48%)',
+                      color: '#10b981',
                       weight: 3,
-                      opacity: 0.8,
+                      opacity: 0.7,
+                      dashArray: '6 8',
                     }}
                   />
                 ))}
@@ -376,10 +377,10 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
                 <Polyline
                   positions={polylinePositions}
                   pathOptions={{
-                    color: 'hsl(199, 89%, 48%)',
+                    color: '#10b981',
                     weight: 3,
-                    dashArray: '8, 6',
-                    opacity: 0.8,
+                    opacity: 0.7,
+                    dashArray: '6 8',
                   }}
                 />
               )
