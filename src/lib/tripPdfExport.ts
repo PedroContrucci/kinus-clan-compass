@@ -881,7 +881,9 @@ export async function exportTripPDF(trip: SavedTrip) {
   y += 6;
   doc.text(`${totalDays} dias  |  ${trip.travelers} viajante(s)  |  Faixa ${tierLabel}`, pw / 2, y, { align: 'center' });
 
-  // Personalizacao — nome do usuario logado (display name formatado, slug como fallback)
+  // Personalizacao — nome do usuario logado
+  // Hierarquia: (1) display name salvo no perfil, (2) heuristico do email,
+  // (3) omitir linha se nenhum dos dois for um nome proprio (evita imprimir slug).
   try {
     const savedUser = typeof localStorage !== 'undefined' ? localStorage.getItem('kinu_user') : null;
     const parsed = savedUser ? JSON.parse(savedUser) : null;
@@ -892,14 +894,16 @@ export async function exportTripPDF(trip: SavedTrip) {
       .filter(Boolean)
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
       .join(' ');
+    const isProperName = (s: string) => /[\s._\-]/.test(s);
+
     let displayName = '';
-    if (rawName && /[\s._\-]/.test(rawName)) {
-      displayName = titleCase(rawName);
+    if (rawName && isProperName(rawName)) {
+      displayName = titleCase(rawName);           // nome do perfil
     } else if (rawEmail.includes('@')) {
       const local = rawEmail.split('@')[0];
-      if (/[._\-]/.test(local)) displayName = titleCase(local);
+      if (isProperName(local)) displayName = titleCase(local); // fallback email
     }
-    if (!displayName && rawName) displayName = titleCase(rawName); // slug fallback
+
     if (displayName) {
       y += 7;
       setC(B.emeraldL, false);
@@ -908,6 +912,7 @@ export async function exportTripPDF(trip: SavedTrip) {
       doc.text(`Preparado para ${cleanText(displayName)}`, pw / 2, y, { align: 'center' });
     }
   } catch {}
+
 
   // About destination section (only if space, i.e. no photo pushed it down too much)
   if (y + 40 < ph - 22) {
