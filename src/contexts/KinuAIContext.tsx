@@ -230,6 +230,26 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     const action = target?.proposedActions?.[actionIndex];
     if (!action || action.status && action.status !== 'pending') return;
 
+    if (action.type === 'sugerir_destinos') {
+      const cidades: string[] = Array.isArray((action.params as any)?.cidades)
+        ? (action.params as any).cidades
+        : [];
+      const valid = cidades.filter((c) =>
+        CURATED_CITIES.some((cc) => cc.toLowerCase() === String(c).toLowerCase())
+      );
+      if (valid.length === 0) { toast.error('Não reconheci esses destinos.'); return; }
+      setSuggestedDestinations(valid);
+      setActionStatus(messageId, actionIndex, 'applied');
+      setMessages(prev => [...prev, {
+        id: `msg-${Date.now()}-ack`,
+        role: 'assistant',
+        content: `🗺️ Acendi ${valid.join(', ')} no mapa em dourado — vai na aba Planejar e toca na sua escolhida!`,
+        timestamp: new Date(),
+      }]);
+      setIsOpen(false);
+      return;
+    }
+
     const handlers = actionHandlersRef.current;
     if (!handlers) {
       toast.error('Abre uma viagem para eu aplicar essa ação.');
@@ -254,9 +274,6 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         case 'adicionar_atividade':
           confirmationText = handlers.adicionar_atividade?.(action.params as any) ?? null;
           break;
-        case 'sugerir_destinos':
-          confirmationText = handlers.sugerir_destinos?.(action.params as any) ?? null;
-          break;
       }
     } catch (err) {
       console.error('Erro ao aplicar ação KINU:', err);
@@ -278,7 +295,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     };
     setMessages(prev => [...prev, confirmation]);
     setIsOpen(false);
-  }, [messages, setActionStatus, setIsOpen]);
+  }, [messages, setActionStatus, setIsOpen, setSuggestedDestinations]);
+
 
   const dismissProposedAction = useCallback((messageId: string, actionIndex: number) => {
     setActionStatus(messageId, actionIndex, 'dismissed');
