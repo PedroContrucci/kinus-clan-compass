@@ -11,6 +11,7 @@ export interface KinuActionHandlers {
   remover_atividade: (params: { dia: number; atividade: string }) => string | null;
   confirmar_item: (params: { tipo: 'voo' | 'hotel' }) => string | null;
   adicionar_atividade: (params: { dia: number; atividade: string; horario: string }) => string | null;
+  sugerir_destinos: (params: { cidades: string[]; justificativa?: string }) => string | null;
 }
 
 function buildCuratedCatalog(city: string) {
