@@ -13,7 +13,7 @@ import { REGIONS, DESTINATION_CATALOG, type RegionName, type CountryEntry, type 
 import { cn } from '@/lib/utils';
 import { isCityCurated, CURATED_CITIES } from '@/lib/curatedCities';
 import { useToast } from '@/hooks/use-toast';
-import { useKinuAI } from '@/contexts/KinuAIContext';
+import { useKinuAI, type KinuActionHandlers } from '@/contexts/KinuAIContext';
 import type { WizardData } from './types';
 
 interface WizardStep1Props {
