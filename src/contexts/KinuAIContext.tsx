@@ -251,6 +251,9 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         case 'adicionar_atividade':
           confirmationText = handlers.adicionar_atividade(action.params as any);
           break;
+        case 'sugerir_destinos':
+          confirmationText = handlers.sugerir_destinos?.(action.params as any) ?? null;
+          break;
       }
     } catch (err) {
       console.error('Erro ao aplicar ação KINU:', err);
