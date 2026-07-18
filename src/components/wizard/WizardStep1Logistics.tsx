@@ -8,9 +8,11 @@ import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { UnsplashThumbnail } from '@/components/shared/UnsplashImage';
+import { DestinationWorldMap } from '@/components/planejar/DestinationWorldMap';
 import { REGIONS, DESTINATION_CATALOG, type RegionName, type CountryEntry, type CityEntry } from '@/data/destinationCatalog';
 import { cn } from '@/lib/utils';
 import { isCityCurated } from '@/lib/curatedCities';
+import { useToast } from '@/hooks/use-toast';
 import type { WizardData } from './types';
 
 interface WizardStep1Props {
