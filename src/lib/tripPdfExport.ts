@@ -1090,6 +1090,85 @@ export async function exportTripPDF(trip: SavedTrip) {
 
   y = barY + 10;
 
+  // ── SUA VIAGEM INCLUI (confirmados vs a confirmar) ──
+  {
+    const confirmedItems: string[] = [];
+    const pendingItems: string[] = [];
+
+    // Voo
+    const outb = trip.flights?.outbound;
+    const ret = trip.flights?.return;
+    if (outb) {
+      const parts = ['Voo ida e volta'];
+      const airlines = [outb.airline, ret?.airline].filter(Boolean);
+      if (airlines.length) parts.push(Array.from(new Set(airlines)).join(' / '));
+      if (outb.departureTime) parts.push(`saida ${outb.departureTime}`);
+      if (ret?.departureTime) parts.push(`retorno ${ret.departureTime}`);
+      const line = cleanText(parts.join(' · '));
+      (outb.status === 'confirmed' ? confirmedItems : pendingItems).push(line);
+    }
+
+    // Hotel
+    if (trip.accommodation) {
+      const acc: any = trip.accommodation;
+      const meal = acc.mealPlan || acc.regime || '';
+      const line = cleanText(`Hotel ${acc.name || trip.destination}${meal ? ' · ' + meal : ''}${acc.totalNights ? ' · ' + acc.totalNights + ' noites' : ''}`);
+      (acc.status === 'confirmed' ? confirmedItems : pendingItems).push(line);
+    }
+
+    // Atividades confirmadas (limitadas a 8 para caber)
+    const confirmedActs: string[] = [];
+    (trip.days || []).forEach((d: any) => {
+      (d.activities || []).forEach((a: any) => {
+        if (a.status !== 'confirmed') return;
+        if (a.category === 'voo' || a.category === 'hotel' || a.category === 'transporte') return;
+        const n = (a.name || '').toLowerCase();
+        if (n.includes('transfer') || n.includes('check-in') || n.includes('check-out')) return;
+        confirmedActs.push(cleanText(`Dia ${d.day}: ${a.name}`));
+      });
+    });
+    const shownActs = confirmedActs.slice(0, 8);
+    const extraActs = confirmedActs.length - shownActs.length;
+    shownActs.forEach((s) => confirmedItems.push(s));
+    if (extraActs > 0) confirmedItems.push(`+ ${extraActs} outras atividades confirmadas`);
+
+    if (confirmedItems.length > 0 || pendingItems.length > 0) {
+      checkPage(20);
+      drawRect(14, y, pw - 28, 0.3, B.surface);
+      y += 8;
+      setC(B.emerald, false);
+      doc.setFontSize(11.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SUA VIAGEM INCLUI', 14, y);
+      y += 7;
+
+      const renderBlock = (title: string, items: string[], dotColor: readonly number[]) => {
+        if (items.length === 0) return;
+        checkPage(6 + items.length * 5);
+        setC(dotColor, false);
+        doc.setFontSize(10.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title, 16, y);
+        y += 5;
+        items.forEach((it) => {
+          checkPage(5);
+          drawStatusDot(18, y - 1, dotColor);
+          setC(B.white, false);
+          doc.setFontSize(9.8);
+          doc.setFont('helvetica', 'normal');
+          const wrapped = doc.splitTextToSize(it, pw - 44);
+          doc.text(wrapped, 22, y);
+          y += wrapped.length * 4 + 1;
+        });
+        y += 3;
+      };
+
+      renderBlock('Confirmado', confirmedItems, B.emerald);
+      renderBlock('A confirmar', pendingItems, B.gold);
+    }
+  }
+
+
   // Voo & Hospedagem
   checkPage(30);
   drawRect(14, y, pw - 28, 0.3, B.surface);
