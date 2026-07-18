@@ -961,9 +961,12 @@ export async function exportTripPDF(trip: SavedTrip) {
 
   // ── QR code in bottom-right ──
   if (y + 40 < ph - 30) {
-    const qrData = generateQRBase64('https://kinu-travel.app');
+    const qrData = await generateQRBase64('https://kinu-travel.app');
     if (qrData) {
       try {
+        // Emerald frame around the QR (2mm padding, 25mm QR)
+        drawRect(pw - 41, ph - 46, 27, 27, B.emerald);
+        drawRect(pw - 40.5, ph - 45.5, 26, 26, B.white);
         doc.addImage(qrData, 'PNG', pw - 40, ph - 45, 25, 25);
         setC(B.gray500, false);
         doc.setFontSize(10.5);
