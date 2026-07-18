@@ -78,7 +78,7 @@ export function KinuAIMessage({ message }: KinuAIMessageProps) {
                         onClick={() => applyProposedAction(message.id, idx)}
                         className="px-3 py-1 text-[11px] font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
                       >
-                        ✓ Aplicar
+                        {action.type === 'sugerir_destinos' ? '✓ Ver no mapa' : '✓ Aplicar'}
                       </button>
                       <button
                         type="button"
