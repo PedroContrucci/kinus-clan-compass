@@ -1297,10 +1297,24 @@ export async function exportTripPDF(trip: SavedTrip) {
     }
 
     (day.activities || []).forEach((act) => {
-      checkPage(7);
       const isLogistics = act.category === 'voo' ||
         (act.category === 'hotel' && (act.name?.toLowerCase().includes('check-in') || act.name?.toLowerCase().includes('check-out'))) ||
         act.name?.toLowerCase().includes('transfer');
+
+      const actIdx = (day.activities || []).indexOf(act);
+      const nextAct = (day.activities || [])[actIdx + 1];
+      const hasDistanceHint = !isLogistics && nextAct && nextAct.category !== 'voo' && nextAct.category !== 'hotel' &&
+        !(nextAct.name || '').toLowerCase().includes('transfer');
+
+      const rawDescription = cleanText(act.description || '');
+      const hasDescription = rawDescription && rawDescription !== cleanText(act.name || '') && !isLogistics && rawDescription.length > 5;
+
+      const actName = cleanText(act.name || '');
+      const hasMapsLink = !isLogistics && actName && !actName.toLowerCase().includes('cafe da manha');
+
+      const hasSubLine = hasDistanceHint || hasDescription || hasMapsLink;
+      const blockHeight = 5.5 + (hasDistanceHint ? 4.8 : 0) + (hasDescription ? 4.4 : 0) + (hasMapsLink ? 4.4 : 0) + (hasSubLine ? 2 : 0);
+      checkPage(blockHeight);
 
       setC(isLogistics ? B.gray500 : B.white, false);
       doc.setFontSize(11.5);
@@ -1318,7 +1332,6 @@ export async function exportTripPDF(trip: SavedTrip) {
       const timeStr = act.time || '     ';
       doc.text(timeStr, 26, y);
 
-      const actName = cleanText(act.name || '');
       doc.text(actName, 38, y);
 
       const priceStr = act.cost > 0 ? `R$ ${fmt(act.cost)}` : '';
@@ -1345,46 +1358,43 @@ export async function exportTripPDF(trip: SavedTrip) {
 
       setC(B.white, false);
       doc.setFont('helvetica', 'normal');
-      y += 5;
+      y += 5.5;
 
       // ── Distance hint between activities ──
-      if (!isLogistics) {
-        const actIdx = (day.activities || []).indexOf(act);
-        const nextAct = (day.activities || [])[actIdx + 1];
-        if (nextAct && nextAct.category !== 'voo' && nextAct.category !== 'hotel' &&
-            !(nextAct.name || '').toLowerCase().includes('transfer')) {
-          checkPage(3);
-          setC(B.gray500, false);
-          doc.setFontSize(10.5);
-          doc.setFont('helvetica', 'italic');
-          // Alternate between walking and taxi estimates
-          const distHint = actIdx % 2 === 0 ? '~10 min a pe' : '~20 min de taxi/transporte';
-          doc.text(distHint, 30, y);
-          y += 3;
-        }
+      if (hasDistanceHint) {
+        setC(B.gray500, false);
+        doc.setFontSize(10.5);
+        doc.setFont('helvetica', 'italic');
+        // Alternate between walking and taxi estimates
+        const distHint = actIdx % 2 === 0 ? '~10 min a pe' : '~20 min de taxi/transporte';
+        doc.text(distHint, 30, y);
+        y += 4.8;
       }
 
       // Activity description line
-      if (act.description && act.description !== act.name && !isLogistics && act.description.length > 5) {
-        checkPage(4);
+      if (hasDescription) {
         setC(B.gray500, false);
         doc.setFontSize(9.5);
         doc.setFont('helvetica', 'italic');
-        const descText = act.description.length > 80 ? act.description.substring(0, 77) + '...' : act.description;
+        const descText = rawDescription.length > 80 ? rawDescription.substring(0, 77) + '...' : rawDescription;
         doc.text(descText, 30, y);
-        y += 3.5;
+        y += 4.4;
       }
 
       // Google Maps link for non-logistics activities
-      if (!isLogistics && actName && !actName.toLowerCase().includes('cafe da manha')) {
+      if (hasMapsLink) {
         const cleanActName = actName.replace(/^(Almoco|Jantar|Cafe):\s*/i, '');
         const actMapsQuery = encodeURIComponent(cleanActName + ', ' + trip.destination);
         const actMapsUrl = 'https://www.google.com/maps/search/' + actMapsQuery;
         setC(B.horizon, false);
-        doc.setFontSize(11.5);
+        doc.setFontSize(9.5);
         doc.setFont('helvetica', 'normal');
         doc.textWithLink('Ver no Maps', 30, y, { url: actMapsUrl });
-        y += 3;
+        y += 4.4;
+      }
+
+      if (hasSubLine) {
+        y += 2;
       }
     });
 
