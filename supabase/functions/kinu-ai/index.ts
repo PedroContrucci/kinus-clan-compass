@@ -394,6 +394,7 @@ serve(async (req) => {
         model: "claude-sonnet-4-6",
         max_tokens: 1024,
         system: systemPrompt,
+        tools: KINU_TOOLS,
         messages: messages,
       }),
     });
@@ -415,15 +416,25 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const assistantMessage = data.content?.[0]?.text;
+    const blocks: Array<Record<string, unknown>> = Array.isArray(data.content) ? data.content : [];
+    const textParts = blocks
+      .filter((b) => b.type === "text" && typeof b.text === "string")
+      .map((b) => b.text as string);
+    const proposedActions = blocks
+      .filter((b) => b.type === "tool_use" && typeof b.name === "string")
+      .map((b) => ({ type: b.name as string, params: (b.input as Record<string, unknown>) ?? {} }));
 
-    if (!assistantMessage) {
+    const assistantMessage = textParts.join("\n\n").trim()
+      || (proposedActions.length > 0 ? "Posso propor essa mudança pra você — confirma aí embaixo?" : "");
+
+    if (!assistantMessage && proposedActions.length === 0) {
       throw new Error("Empty response from AI");
     }
 
     return new Response(
       JSON.stringify({ 
         message: assistantMessage,
+        proposedActions,
         usage: data.usage 
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
