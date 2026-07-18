@@ -1670,6 +1670,8 @@ const Viagens = () => {
               onConfirm={handleHeroConfirm}
               onUnconfirm={handleHeroUnconfirm}
               onUpdateTrip={handleUpdateTrip}
+              pendingConfirmRequest={pendingConfirmRequest}
+              onPendingConfirmHandled={() => setPendingConfirmRequest(null)}
               onOpenAuction={(type) => {
                 setOffersModal({
                   isOpen: true,
