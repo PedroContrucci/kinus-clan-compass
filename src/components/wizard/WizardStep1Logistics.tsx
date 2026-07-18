@@ -11,8 +11,9 @@ import { UnsplashThumbnail } from '@/components/shared/UnsplashImage';
 import { DestinationWorldMap } from '@/components/planejar/DestinationWorldMap';
 import { REGIONS, DESTINATION_CATALOG, type RegionName, type CountryEntry, type CityEntry } from '@/data/destinationCatalog';
 import { cn } from '@/lib/utils';
-import { isCityCurated } from '@/lib/curatedCities';
+import { isCityCurated, CURATED_CITIES } from '@/lib/curatedCities';
 import { useToast } from '@/hooks/use-toast';
+import { useKinuAI, type KinuActionHandlers } from '@/contexts/KinuAIContext';
 import type { WizardData } from './types';
 
 interface WizardStep1Props {
@@ -27,9 +28,12 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
   const [selectedCountry, setSelectedCountry] = useState<CountryEntry | null>(null);
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [showCardsGrid, setShowCardsGrid] = useState(false);
+  const [kinuHighlights, setKinuHighlights] = useState<string[]>([]);
   const { toast } = useToast();
+  const { setIsOpen, sendMessage, registerActionHandlers } = useKinuAI();
 
   const handleMapCitySelect = (cityName: string) => {
+    setKinuHighlights([]);
     for (const [region, countries] of Object.entries(DESTINATION_CATALOG)) {
       for (const country of countries) {
         const city = country.cities.find((c) => c.name === cityName);
@@ -91,6 +95,25 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
     }
   }, [selectedCountry]);
 
+  // Register KINU AI map-highlight handler
+  useEffect(() => {
+    registerActionHandlers({
+      sugerir_destinos: ({ cidades }: { cidades: string[]; justificativa?: string }) => {
+        const valid = (cidades || []).filter((c) =>
+          CURATED_CITIES.some((cc) => cc.toLowerCase() === c.toLowerCase())
+        );
+        if (valid.length === 0) return null;
+        setKinuHighlights(valid);
+        return `🗺️ Acendi ${valid.join(', ')} no mapa em dourado — toca na sua escolhida!`;
+      },
+    } as KinuActionHandlers);
+
+    return () => {
+      registerActionHandlers(null);
+    };
+  }, [registerActionHandlers]);
+
+
   const handleRegionSelect = (region: RegionName) => {
     setSelectedRegion(region);
     setSelectedCountry(null);
@@ -122,6 +145,7 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
   };
 
   const handleCitySelect = (city: CityEntry) => {
+    setKinuHighlights([]);
     onChange({
       destinationCity: city.name,
       destinationAirportCode: city.airports[0],
@@ -314,7 +338,17 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
         <div className="space-y-4">
           {!data.destinationCity && (
             <>
-              <DestinationWorldMap onSelectCity={handleMapCitySelect} />
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsOpen(true);
+                  await sendMessage("Quero ajuda para escolher um destino para minha viagem");
+                }}
+                className="w-full px-4 py-3 rounded-xl border border-[#eab308]/40 bg-card/50 hover:bg-card text-sm font-medium transition-colors flex items-center justify-center gap-2 text-[#eab308]"
+              >
+                🌿 Não sei pra onde ir — me ajuda, KINU
+              </button>
+              <DestinationWorldMap onSelectCity={handleMapCitySelect} highlightedCities={kinuHighlights} />
               <button
                 type="button"
                 onClick={() => setShowCardsGrid((prev) => !prev)}
