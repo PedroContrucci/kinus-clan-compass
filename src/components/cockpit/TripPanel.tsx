@@ -1,7 +1,7 @@
 // TripPanel — Orchestrated Executive Dashboard
 
 import { motion } from 'framer-motion';
-import { Check, FileText, ChevronDown, ChevronUp, MapPin, ExternalLink } from 'lucide-react';
+import { Check, FileText, ChevronDown, ChevronUp, MapPin, ExternalLink, X } from 'lucide-react';
 import { WeatherBadge } from './WeatherBadge';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
@@ -387,6 +387,7 @@ function getTripCurrency(dest: string): string {
 
 export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAuction, onNavigateTab, pendingConfirmRequest, onPendingConfirmHandled }: TripPanelProps) => {
   const [showAllActions, setShowAllActions] = useState(false);
+  const [dismissedNow, setDismissedNow] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [flightResults, setFlightResults] = useState<any[] | null>(null);
   const [searchingFlights, setSearchingFlights] = useState(false);
@@ -514,6 +515,35 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
 
   const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
+
+  const nowOnKinu = useMemo(() => {
+    if (!flightConfirmed && daysLeft <= 30) {
+      return {
+        message: '✈️ Seu voo ainda não está confirmado',
+        actionLabel: 'Confirmar voo',
+        onClick: () => openReservationConfirm('flight'),
+      };
+    }
+    if (!hotelConfirmed) {
+      return {
+        message: '🏨 Sua hospedagem ainda não está confirmada',
+        actionLabel: 'Confirmar hotel',
+        onClick: () => openReservationConfirm('hotel'),
+      };
+    }
+    if (daysLeft <= 7) {
+      return {
+        message: `🎒 Faltam ${daysLeft} dias — checklist em ${checklistPct}%`,
+        actionLabel: 'Ver checklist',
+        onClick: () => onNavigateTab('preparacao'),
+      };
+    }
+    return {
+      message: '🌿 Tudo em dia — bora sonhar com o roteiro',
+      actionLabel: 'Ver roteiro',
+      onClick: () => onNavigateTab('roteiro'),
+    };
+  }, [flightConfirmed, hotelConfirmed, daysLeft, checklistPct, openReservationConfirm, onNavigateTab]);
 
   const baggageDone = (trip as any).flightExtras?.baggageDone || false;
   const baggageDetail = (trip as any).flightExtras?.baggageDetail || '';
@@ -730,6 +760,30 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       animate={{ opacity: 1, y: 0 }}
       className="space-y-4"
     >
+      {/* Agora no KINU — single most relevant next item */}
+      {!dismissedNow && (
+        <div className="relative flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500/10 to-transparent border border-border border-l-4 border-l-emerald-500">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-sm truncate">{nowOnKinu.message}</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={nowOnKinu.onClick}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+            >
+              {nowOnKinu.actionLabel}
+            </button>
+            <button
+              onClick={() => setDismissedNow(true)}
+              aria-label="Dispensar"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 1. Header Premium with Hero Image */}
       <div className="relative overflow-hidden rounded-2xl border border-border">
         {/* Hero banner image */}
