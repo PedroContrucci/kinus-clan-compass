@@ -46,6 +46,9 @@ interface KinuAIContextType {
   dismissInsight: (id: string) => void;
   addInsight: (insight: KinuInsight) => void;
   isEmergencyMode: boolean;
+  applyProposedAction: (messageId: string, actionIndex: number) => void;
+  dismissProposedAction: (messageId: string, actionIndex: number) => void;
+  registerActionHandlers: (handlers: KinuActionHandlers | null) => void;
 }
 
 const KinuAIContext = createContext<KinuAIContextType | undefined>(undefined);
