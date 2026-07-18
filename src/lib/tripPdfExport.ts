@@ -1110,24 +1110,33 @@ export async function exportTripPDF(trip: SavedTrip) {
     const confirmedItems: string[] = [];
     const pendingItems: string[] = [];
 
-    // Voo
+    // Voo — priorizar dados reais do Amadeus (mesma fonte do hero card)
     const outb = trip.flights?.outbound;
     const ret = trip.flights?.return;
-    if (outb) {
+    const realOutb = (trip as any).outboundFlight?.option;
+    const realRet = (trip as any).returnFlight?.option;
+    if (outb || realOutb) {
       const parts = ['Voo ida e volta'];
-      const airlines = [outb.airline, ret?.airline].filter(Boolean);
+      const outAirline = (realOutb?.airline && realOutb.airline !== 'A confirmar') ? realOutb.airline : outb?.airline;
+      const retAirline = (realRet?.airline && realRet.airline !== 'A confirmar') ? realRet.airline : ret?.airline;
+      const airlines = [outAirline, retAirline].filter(Boolean);
       if (airlines.length) parts.push(Array.from(new Set(airlines)).join(' / '));
-      if (outb.departureTime) parts.push(`saida ${outb.departureTime}`);
-      if (ret?.departureTime) parts.push(`retorno ${ret.departureTime}`);
+      const outTime = realOutb?.departureTime || outb?.departureTime;
+      const retTime = realRet?.departureTime || ret?.departureTime;
+      if (outTime) parts.push(`saida ${outTime}`);
+      if (retTime) parts.push(`retorno ${retTime}`);
       const line = cleanText(parts.join(' · '));
-      (outb.status === 'confirmed' ? confirmedItems : pendingItems).push(line);
+      ((outb?.status === 'confirmed') ? confirmedItems : pendingItems).push(line);
     }
 
-    // Hotel
+    // Hotel — evitar duplicar a palavra 'Hotel' quando o nome ja comeca com ela
     if (trip.accommodation) {
       const acc: any = trip.accommodation;
       const meal = acc.mealPlan || acc.regime || '';
-      const line = cleanText(`Hotel ${acc.name || trip.destination}${meal ? ' · ' + meal : ''}${acc.totalNights ? ' · ' + acc.totalNights + ' noites' : ''}`);
+      const rawName = String(acc.name || trip.destination || '').trim();
+      const hasHotelPrefix = /^hotel\b/i.test(rawName);
+      const namePart = hasHotelPrefix ? rawName : `Hotel ${rawName}`;
+      const line = cleanText(`${namePart}${meal ? ' · ' + meal : ''}${acc.totalNights ? ' · ' + acc.totalNights + ' noites' : ''}`);
       (acc.status === 'confirmed' ? confirmedItems : pendingItems).push(line);
     }
 
