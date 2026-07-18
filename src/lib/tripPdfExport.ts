@@ -938,6 +938,19 @@ export async function exportTripPDF(trip: SavedTrip) {
   y += 6;
   doc.text(`${totalDays} dias  |  ${trip.travelers} viajante(s)  |  Faixa ${tierLabel}`, pw / 2, y, { align: 'center' });
 
+  // Personalizacao — nome do usuario logado
+  try {
+    const savedUser = typeof localStorage !== 'undefined' ? localStorage.getItem('kinu_user') : null;
+    const userName = savedUser ? (JSON.parse(savedUser)?.name || '') : '';
+    if (userName) {
+      y += 7;
+      setC(B.emeraldL, false);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'italic');
+      doc.text(`Preparado para ${cleanText(String(userName))}`, pw / 2, y, { align: 'center' });
+    }
+  } catch {}
+
   // About destination section (only if space, i.e. no photo pushed it down too much)
   if (y + 40 < ph - 22) {
     y += 14;
