@@ -311,6 +311,10 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
         )}
 
         <div className="space-y-4">
+          {!data.destinationCity && (
+            <DestinationWorldMap onSelectCity={handleMapCitySelect} />
+          )}
+
           {/* Level 1: Region — always visible, selected highlighted, click switches */}
           <div className="grid grid-cols-2 gap-3">
             {REGIONS.map((region) => {
