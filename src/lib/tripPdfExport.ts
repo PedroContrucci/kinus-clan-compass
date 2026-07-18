@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getTopMichelinForCity } from '@/lib/michelinData';
 import { getExpandedCityData } from '@/data/destinationPdfData';
-import { DESTINATION_PHOTO_HINTS } from '@/hooks/useUnsplash';
+
 import { findCityInfo } from '@/data/destinationCatalog';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { getDocsForDestination } from '@/data/destinationDocs';
@@ -738,14 +738,12 @@ async function fetchUnsplashCoverUrls(destination: string): Promise<string[]> {
     if (!city) return [];
     const info = findCityInfo(city);
     const country = info?.country?.country || '';
-    const destKey = city.toLowerCase();
-    const hint = DESTINATION_PHOTO_HINTS[destKey];
-    // Match wizard's useDestinationPhoto query exactly
-    const query = hint
-      ? hint
-      : country
-        ? `${city} ${country} landmark`
-        : `${city} landmark travel`;
+    // PRIMARY: use EXACTLY the wizard destination card query pattern
+    // (WizardStep1Logistics uses `${city} ${country} landmark`). This is the
+    // verified-correct image source for the 20 curated cities. We deliberately
+    // do NOT use DESTINATION_PHOTO_HINTS here because some hints ("Beira Mar
+    // beach", etc.) return generic tropical stock (e.g. Maldives for Fortaleza).
+    const query = country ? `${city} ${country} landmark` : `${city} landmark travel`;
     const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/unsplash?query=${encodeURIComponent(query)}&per_page=2&orientation=landscape`;
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), 6000);
@@ -881,26 +879,30 @@ export async function exportTripPDF(trip: SavedTrip) {
   // Full navy background
   drawRect(0, 0, pw, ph, B.night);
 
-  // Cover photo in top section
+  // Cover photo in top section (130mm band)
+  let coverRendered = false;
   if (coverBase64) {
     try {
       doc.addImage(coverBase64, 'JPEG', 0, 0, pw, 130);
       // Solid navy block at bottom of photo for smooth transition
       drawRect(0, 105, pw, 25, B.night);
+      coverRendered = true;
     } catch {
-      // Fallback: no photo, just navy
+      coverRendered = false;
     }
   }
 
-  // If no cover photo, create visual header with emerald accent
-  if (!coverBase64) {
-    drawRect(0, 0, pw, 50, B.surface);
-    drawRect(0, 0, pw * 0.4, 50, B.emerald);
-    drawRect(0, 48, pw, 2, B.emerald);
+  // LAYOUT GUARD: if the cover image failed to load or decode, render a solid
+  // brand band (dark #0f172a with emerald rule) in the SAME 130mm area so the
+  // rest of page 1 keeps its intended vertical rhythm (titleY = 140).
+  if (!coverRendered) {
+    drawRect(0, 0, pw, 130, B.night);
+    drawRect(0, 128, pw, 2, B.emerald);
+    drawRect(0, 131, pw, 0.4, B.gold);
   }
 
-  // KINU branding — below photo area
-  const titleY = coverBase64 ? 140 : 55;
+  // KINU branding — below cover band (fixed regardless of image load)
+  const titleY = 140;
 
   setC(B.white, false);
   doc.setFontSize(28);
