@@ -493,6 +493,7 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
               )}
             </motion.div>
           )}
+          </div>
 
           {/* City Selected - Show airport selector if multiple */}
           {data.destinationCity && data.destinationAirports.length > 1 && (
