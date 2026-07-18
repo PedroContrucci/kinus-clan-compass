@@ -32,6 +32,7 @@ import { getDestinationActivities } from '@/data/destinationActivities';
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
 import { getFlightPlannedTotal, syncTripFlightPlannedFinances } from '@/lib/flightFinance';
+import { getDocsForDestination } from '@/data/destinationDocs';
 
 import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
@@ -2209,9 +2210,34 @@ const Viagens = () => {
           {/* Preparação Tab = Packing + Checklist + Guia combined */}
           {activeTab === 'preparacao' && (
             <TabErrorBoundary tabName="Preparação">{(() => {
-            const checklist = selectedTrip.checklist || [];
-            const totalItems = checklist.length;
-            const checkedItems = checklist.filter(i => i.checked).length;
+            const rawChecklist = selectedTrip.checklist || [];
+            const docs = getDocsForDestination(selectedTrip.destination);
+
+            // Context-aware transform: enrich Visto (doc-2) and Vacinas (pre-1);
+            // auto-check + hide when there's no obligation for brasileiros.
+            const hiddenIds = new Set<string>();
+            const checklist: ChecklistItem[] = rawChecklist.map((item) => {
+              if (!docs) return item;
+              if (item.id === 'doc-2') {
+                if (docs.vistoIsento) {
+                  hiddenIds.add(item.id);
+                  return { ...item, checked: true, label: `Visto — ${docs.visto}` };
+                }
+                return { ...item, label: `Visto — ${docs.visto}` };
+              }
+              if (item.id === 'pre-1') {
+                if (!docs.vacinaObrigatoria) {
+                  hiddenIds.add(item.id);
+                  return { ...item, checked: true, label: `Vacina — ${docs.vacina}` };
+                }
+                return { ...item, label: `Vacina — ${docs.vacina}` };
+              }
+              return item;
+            });
+
+            const visibleChecklist = checklist.filter((i) => !hiddenIds.has(i.id));
+            const totalItems = visibleChecklist.length;
+            const checkedItems = visibleChecklist.filter(i => i.checked).length;
             const readiness = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
 
             return (
@@ -2247,7 +2273,7 @@ const Viagens = () => {
                   <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">✅ Checklist</h3>
                   <div className="space-y-4">
                     {['documentos', 'reservas', 'packing', 'pre-viagem'].map((category) => {
-                      const items = checklist.filter((i) => i.category === category);
+                      const items = visibleChecklist.filter((i) => i.category === category);
                       if (items.length === 0) return null;
                       const categoryLabels: Record<string, string> = {
                         documentos: '📄 Documentos',
