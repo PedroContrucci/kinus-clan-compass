@@ -1167,12 +1167,26 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                         {isFlights ? '✈️ Voo confirmado' : '🏨 Hotel confirmado'}
                         {paidValue ? ` · R$ ${fmt(Math.round(paidValue))}` : ''}
                       </span>
-                      <button
-                        onClick={openModal}
-                        className="text-[11px] font-medium text-emerald-400/80 hover:text-emerald-300 underline underline-offset-2"
-                      >
-                        Editar
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={openModal}
+                          className="text-[11px] font-medium text-emerald-400/80 hover:text-emerald-300 underline underline-offset-2"
+                        >
+                          Editar
+                        </button>
+                        {onUnconfirm && (
+                          <button
+                            onClick={() => {
+                              if (window.confirm('Desfazer a confirmação? Os valores voltam para o planejado.')) {
+                                onUnconfirm(type);
+                              }
+                            }}
+                            className="text-[11px] font-medium text-muted-foreground hover:text-foreground underline underline-offset-2"
+                          >
+                            Desfazer confirmação
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 }
