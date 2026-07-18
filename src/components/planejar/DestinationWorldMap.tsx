@@ -9,6 +9,46 @@ export interface DestinationWorldMapProps {
   highlightedCities?: string[];
 }
 
+type RegionKey = 'mundo' | 'brasil' | 'americas' | 'europa' | 'asia' | 'africa';
+
+interface RegionChip {
+  key: RegionKey;
+  label: string;
+  bounds?: [[number, number], [number, number]];
+  world?: boolean;
+}
+
+const REGION_CHIPS: RegionChip[] = [
+  { key: 'mundo', label: '🌍 Mundo', world: true },
+  { key: 'brasil', label: '🇧🇷 Brasil', bounds: [[-34, -74], [3, -34]] },
+  { key: 'americas', label: '🌎 Américas', bounds: [[-36, -125], [52, -30]] },
+  { key: 'europa', label: '🌍 Europa', bounds: [[35, -12], [60, 32]] },
+  { key: 'asia', label: '🌏 Ásia & Oriente Médio', bounds: [[-2, 25], [46, 145]] },
+  { key: 'africa', label: '🌍 África', bounds: [[-36, -20], [38, 52]] },
+];
+
+interface CameraControllerProps {
+  region: RegionKey;
+}
+
+function CameraController({ region }: CameraControllerProps) {
+  const map = useMap();
+
+  useEffect(() => {
+    const chip = REGION_CHIPS.find((c) => c.key === region);
+    if (!chip) return;
+    if (chip.world) {
+      map.flyTo([15, -10], 2, { duration: 1.2 });
+      return;
+    }
+    if (chip.bounds) {
+      map.flyToBounds(chip.bounds, { padding: [20, 20], duration: 1.2 });
+    }
+  }, [region, map]);
+
+  return null;
+}
+
 interface ZoomMarkerProps {
   city: string;
   lat: number;
@@ -39,8 +79,11 @@ function CityMarker({
     };
   }, [map]);
 
+  const zoomedIn = zoom >= 3;
+
   const icon = useMemo(() => {
-    const size = isHighlighted ? 18 : 14;
+    const baseSize = zoomedIn ? 16 : 10;
+    const size = isHighlighted ? baseSize + 4 : baseSize;
     const color = isHighlighted ? '#eab308' : isCurated ? '#10b981' : '#64748b';
     const glow = isHighlighted ? '0 0 18px #eab308' : '0 0 12px #10b981';
     const opacity = anyHighlighted && !isHighlighted ? 0.4 : 1;
@@ -64,7 +107,7 @@ function CityMarker({
       iconSize: [28, 28],
       iconAnchor: [14, 14],
     });
-  }, [isCurated, isHighlighted, anyHighlighted]);
+  }, [isCurated, isHighlighted, anyHighlighted, zoomedIn]);
 
   return (
     <Marker
@@ -74,14 +117,16 @@ function CityMarker({
         click: () => onSelect(city),
       }}
     >
-      <Tooltip
-        direction="top"
-        offset={[0, -12]}
-        className="kinu-map-tooltip"
-        permanent={zoom >= 3}
-      >
-        {city}
-      </Tooltip>
+      {zoomedIn && (
+        <Tooltip
+          direction="top"
+          offset={[0, -12]}
+          className="kinu-map-tooltip"
+          permanent
+        >
+          {city}
+        </Tooltip>
+      )}
     </Marker>
   );
 }
@@ -90,6 +135,8 @@ export function DestinationWorldMap({
   onSelectCity,
   highlightedCities = [],
 }: DestinationWorldMapProps) {
+  const [activeRegion, setActiveRegion] = useState<RegionKey>('mundo');
+
   const highlightedSet = useMemo(
     () => new Set(highlightedCities.map((c) => c.toLowerCase())),
     [highlightedCities]
@@ -128,11 +175,32 @@ export function DestinationWorldMap({
         .leaflet-tooltip-pane {
           z-index: 650 !important;
         }
+        .kinu-region-chips::-webkit-scrollbar { display: none; }
+        .kinu-region-chips { scrollbar-width: none; }
       `}</style>
 
       <p className="text-xs text-muted-foreground mb-2 font-['Outfit']">
         🌍 Toque em um destino aceso para começar
       </p>
+
+      <div className="kinu-region-chips flex gap-2 overflow-x-auto pb-2 mb-2 -mx-1 px-1">
+        {REGION_CHIPS.map((chip) => {
+          const isActive = chip.key === activeRegion;
+          const classes = isActive
+            ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
+            : 'bg-[#1e293b] border-emerald-500/20 text-slate-300 hover:text-emerald-300';
+          return (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={() => setActiveRegion(chip.key)}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium font-['Outfit'] transition-colors ${classes}`}
+            >
+              {chip.label}
+            </button>
+          );
+        })}
+      </div>
 
       <div className="h-[300px] lg:h-[380px] rounded-2xl border border-emerald-500/20 overflow-hidden">
         <MapContainer
@@ -149,6 +217,7 @@ export function DestinationWorldMap({
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           />
+          <CameraController region={activeRegion} />
           {Object.entries(CITY_COORDINATES).map(([city, coord]) => {
             const cityLower = city.toLowerCase();
             const isCurated = curatedSet.has(cityLower);
