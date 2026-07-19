@@ -649,13 +649,13 @@ const EMERGENCY_NUMBERS: Record<string, string> = {
   'africa do sul': '10111 (Policia) / 10177 (Ambulancia)',
 };
 
-function getEmergencyNumber(destination: string): string {
-  const key = normalizeForMatch(destination);
-  for (const [k, v] of Object.entries(EMERGENCY_NUMBERS)) {
-    if (key.includes(normalizeForMatch(k)) || normalizeForMatch(k).includes(key)) return v;
+function getEmergencyNumber(trip: SavedTrip): string {
+  if (isDomesticBrazil(trip)) {
+    return '190 (Policia) · 192 (SAMU) · 193 (Bombeiros)';
   }
-  return '112 (padrao internacional)';
+  return '112';
 }
+
 
 // ── Image fetching ──
 
