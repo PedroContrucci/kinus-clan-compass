@@ -1479,50 +1479,6 @@ export async function exportTripPDF(trip: SavedTrip) {
     y += 3;
   }
 
-  // ════════════════════════════════════════
-  // CHECKLIST
-  // ════════════════════════════════════════
-  checkPage(24);
-  drawRect(14, y - 2, pw - 28, 0.3, B.surface);
-  y += 8;
-
-  setC(B.emerald, false);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text('CHECKLIST DE PREPARACAO', 14, y);
-  y += 8;
-
-  const categories = ['documentos', 'reservas', 'packing', 'pre-viagem'];
-  const categoryLabels: Record<string, string> = {
-    documentos: 'Documentos',
-    reservas: 'Reservas',
-    packing: 'Packing',
-    'pre-viagem': 'Pre-Viagem',
-  };
-
-  categories.forEach((cat) => {
-    const items = (trip.checklist || []).filter(i => i.category === cat);
-    if (items.length === 0) return;
-
-    checkPage(10);
-    setC(B.white, false);
-    doc.setFontSize(11.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text(categoryLabels[cat] || cat, 16, y);
-    y += 5;
-
-    items.forEach((item) => {
-      checkPage(6);
-      const box = item.checked ? '[x]' : '[ ]';
-      setC(item.checked ? B.emerald : B.gray400, false);
-      doc.setFontSize(11.5);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`${box}  ${cleanText(item.label)}`, 20, y);
-      y += 5;
-    });
-
-    y += 3;
-  });
 
   // ════════════════════════════════════════
   // INFORMACOES UTEIS + DICAS + FRASES + EMERGENCIA
