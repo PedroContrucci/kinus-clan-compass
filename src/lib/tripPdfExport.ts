@@ -453,6 +453,12 @@ function normalizeForMatch(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
+function isDomesticBrazil(trip: SavedTrip): boolean {
+  const country = normalizeForMatch(trip.country || '');
+  return country === 'brasil' || country === 'brazil';
+}
+
+
 function getDestDescription(destination: string): string {
   // Priority 1: real curated description from destinationPdfData
   const expanded = getExpandedCityData(destination);
@@ -643,13 +649,13 @@ const EMERGENCY_NUMBERS: Record<string, string> = {
   'africa do sul': '10111 (Policia) / 10177 (Ambulancia)',
 };
 
-function getEmergencyNumber(destination: string): string {
-  const key = normalizeForMatch(destination);
-  for (const [k, v] of Object.entries(EMERGENCY_NUMBERS)) {
-    if (key.includes(normalizeForMatch(k)) || normalizeForMatch(k).includes(key)) return v;
+function getEmergencyNumber(trip: SavedTrip): string {
+  if (isDomesticBrazil(trip)) {
+    return '190 (Policia) · 192 (SAMU) · 193 (Bombeiros)';
   }
-  return '112 (padrao internacional)';
+  return '112';
 }
+
 
 // ── Image fetching ──
 
@@ -1473,50 +1479,6 @@ export async function exportTripPDF(trip: SavedTrip) {
     y += 3;
   }
 
-  // ════════════════════════════════════════
-  // CHECKLIST
-  // ════════════════════════════════════════
-  checkPage(24);
-  drawRect(14, y - 2, pw - 28, 0.3, B.surface);
-  y += 8;
-
-  setC(B.emerald, false);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text('CHECKLIST DE PREPARACAO', 14, y);
-  y += 8;
-
-  const categories = ['documentos', 'reservas', 'packing', 'pre-viagem'];
-  const categoryLabels: Record<string, string> = {
-    documentos: 'Documentos',
-    reservas: 'Reservas',
-    packing: 'Packing',
-    'pre-viagem': 'Pre-Viagem',
-  };
-
-  categories.forEach((cat) => {
-    const items = (trip.checklist || []).filter(i => i.category === cat);
-    if (items.length === 0) return;
-
-    checkPage(10);
-    setC(B.white, false);
-    doc.setFontSize(11.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text(categoryLabels[cat] || cat, 16, y);
-    y += 5;
-
-    items.forEach((item) => {
-      checkPage(6);
-      const box = item.checked ? '[x]' : '[ ]';
-      setC(item.checked ? B.emerald : B.gray400, false);
-      doc.setFontSize(11.5);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`${box}  ${cleanText(item.label)}`, 20, y);
-      y += 5;
-    });
-
-    y += 3;
-  });
 
   // ════════════════════════════════════════
   // INFORMACOES UTEIS + DICAS + FRASES + EMERGENCIA
@@ -1724,7 +1686,14 @@ export async function exportTripPDF(trip: SavedTrip) {
 
       setC(B.white, false);
       doc.setFont('helvetica', 'bold');
-      doc.text('Emergencia geral (Europa): 112  |  Global: ligue operadora local', 16, y);
+      doc.text(
+        isDomesticBrazil(trip)
+          ? `Emergencia: ${getEmergencyNumber(trip)}`
+          : 'Emergencia geral (padrao internacional): 112',
+        16,
+        y
+      );
+
       y += 4;
       setC(B.gray400, false);
       doc.setFont('helvetica', 'normal');
@@ -1754,8 +1723,11 @@ export async function exportTripPDF(trip: SavedTrip) {
   const packingCategories: Array<{ title: string; items: string[] }> = [
     {
       title: 'Documentos',
-      items: ['Passaporte (validade > 6 meses)', 'Copias digitais dos documentos', 'Comprovante de hospedagem', 'Passagens aereas impressas', 'Seguro viagem', 'Carteira de vacinacao internacional', 'Cartao de credito internacional'],
+      items: isDomesticBrazil(trip)
+        ? ['RG ou CNH validos (voo domestico)', 'Copias digitais dos documentos', 'Comprovante de hospedagem', 'Passagens aereas impressas', 'Seguro viagem']
+        : ['Passaporte (validade > 6 meses)', 'Copias digitais dos documentos', 'Comprovante de hospedagem', 'Passagens aereas impressas', 'Seguro viagem', 'Carteira de vacinacao internacional', 'Cartao de credito internacional'],
     },
+
     {
       title: 'Eletronicos',
       items: ['Carregador de celular', 'Adaptador de tomada', 'Power bank', 'Fones de ouvido', 'Cabo USB extra'],
@@ -1832,7 +1804,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   doc.text('Numeros de Emergencia', 16, y);
   y += 5;
 
-  const emergencyNum = getEmergencyNumber(trip.destination);
+  const emergencyNum = getEmergencyNumber(trip);
   drawRect(14, y, pw - 28, 14, B.deep);
   drawRect(14, y, 2, 14, B.red);
   setC(B.white, false);
