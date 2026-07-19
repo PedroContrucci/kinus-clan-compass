@@ -1838,7 +1838,7 @@ export async function exportTripPDF(trip: SavedTrip) {
   doc.text('Numeros de Emergencia', 16, y);
   y += 5;
 
-  const emergencyNum = getEmergencyNumber(trip.destination);
+  const emergencyNum = getEmergencyNumber(trip);
   drawRect(14, y, pw - 28, 14, B.deep);
   drawRect(14, y, 2, 14, B.red);
   setC(B.white, false);
