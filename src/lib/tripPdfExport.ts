@@ -1723,8 +1723,11 @@ export async function exportTripPDF(trip: SavedTrip) {
   const packingCategories: Array<{ title: string; items: string[] }> = [
     {
       title: 'Documentos',
-      items: ['Passaporte (validade > 6 meses)', 'Copias digitais dos documentos', 'Comprovante de hospedagem', 'Passagens aereas impressas', 'Seguro viagem', 'Carteira de vacinacao internacional', 'Cartao de credito internacional'],
+      items: isDomesticBrazil(trip)
+        ? ['RG ou CNH validos (voo domestico)', 'Copias digitais dos documentos', 'Comprovante de hospedagem', 'Passagens aereas impressas', 'Seguro viagem']
+        : ['Passaporte (validade > 6 meses)', 'Copias digitais dos documentos', 'Comprovante de hospedagem', 'Passagens aereas impressas', 'Seguro viagem', 'Carteira de vacinacao internacional', 'Cartao de credito internacional'],
     },
+
     {
       title: 'Eletronicos',
       items: ['Carregador de celular', 'Adaptador de tomada', 'Power bank', 'Fones de ouvido', 'Cabo USB extra'],
