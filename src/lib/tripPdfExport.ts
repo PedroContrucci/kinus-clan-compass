@@ -453,6 +453,12 @@ function normalizeForMatch(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
+function isDomesticBrazil(trip: SavedTrip): boolean {
+  const country = normalizeForMatch(trip.country || '');
+  return country === 'brasil' || country === 'brazil';
+}
+
+
 function getDestDescription(destination: string): string {
   // Priority 1: real curated description from destinationPdfData
   const expanded = getExpandedCityData(destination);
