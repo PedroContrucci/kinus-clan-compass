@@ -61,9 +61,9 @@ function createNumberedIcon(num: number): L.DivIcon {
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 12px;
+      font-size: 11px;
       font-family: 'Outfit', sans-serif;
-      box-shadow: 0 0 8px rgba(16,185,129,0.7), 0 0 2px rgba(16,185,129,0.9);
+      box-shadow: 0 0 10px #10b981;
     ">${num}</div>`,
     iconSize: [22, 22],
     iconAnchor: [11, 11],
