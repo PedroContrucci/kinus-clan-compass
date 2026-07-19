@@ -2,131 +2,141 @@ import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { CITY_COORDINATES } from '@/data/cityCoordinates';
-import { CURATED_CITIES } from '@/lib/curatedCities';
+import { DESTINATION_CATALOG, type RegionName } from '@/data/destinationCatalog';
 
 export interface DestinationWorldMapProps {
   onSelectCity: (cityName: string) => void;
   highlightedCities?: string[];
 }
 
-type RegionKey = 'mundo' | 'brasil' | 'americas' | 'europa' | 'asia' | 'africa';
+type Level = 'world' | 'region' | 'country';
 
-interface RegionChip {
-  key: RegionKey;
+interface CityNode {
+  name: string;
+  lat: number;
+  lng: number;
+}
+interface CountryNode {
+  name: string;
+  lat: number;
+  lng: number;
+  cities: CityNode[];
+}
+interface RegionNode {
+  name: RegionName;
   label: string;
+  lat: number;
+  lng: number;
+  countries: CountryNode[];
+}
+
+const REGION_META: Record<RegionName, { label: string; lat: number; lng: number }> = {
+  'Brasil':               { label: '🇧🇷 Brasil',                 lat: -14, lng: -52 },
+  'Américas':             { label: '🌎 Américas',                lat: 23,  lng: -100 },
+  'Europa':               { label: '🌍 Europa',                  lat: 48,  lng: 10 },
+  'Ásia & Oriente Médio': { label: '🌏 Ásia & Oriente Médio',    lat: 25,  lng: 90 },
+  'África':               { label: '🌍 África',                  lat: 2,   lng: 20 },
+  'Oceania':              { label: '🌏 Oceania',                 lat: -25, lng: 135 },
+};
+
+// Build hierarchy at module level, keeping only cities present in CITY_COORDINATES.
+const HIERARCHY: RegionNode[] = (Object.entries(DESTINATION_CATALOG) as [RegionName, typeof DESTINATION_CATALOG[RegionName]][])
+  .map(([regionName, countries]) => {
+    const countryNodes: CountryNode[] = countries
+      .map((c) => {
+        const cityNodes: CityNode[] = c.cities
+          .map((city) => {
+            const coord = CITY_COORDINATES[city.name];
+            if (!coord) return null;
+            return { name: city.name, lat: coord.lat, lng: coord.lng };
+          })
+          .filter((v): v is CityNode => v !== null);
+        if (cityNodes.length === 0) return null;
+        const lat = cityNodes.reduce((s, x) => s + x.lat, 0) / cityNodes.length;
+        const lng = cityNodes.reduce((s, x) => s + x.lng, 0) / cityNodes.length;
+        return { name: c.country, lat, lng, cities: cityNodes };
+      })
+      .filter((v): v is CountryNode => v !== null);
+    if (countryNodes.length === 0) return null;
+    const meta = REGION_META[regionName];
+    return { name: regionName, label: meta.label, lat: meta.lat, lng: meta.lng, countries: countryNodes };
+  })
+  .filter((v): v is RegionNode => v !== null);
+
+function boundsFromCities(cities: CityNode[]): [[number, number], [number, number]] {
+  const lats = cities.map((c) => c.lat);
+  const lngs = cities.map((c) => c.lng);
+  return [
+    [Math.min(...lats), Math.min(...lngs)],
+    [Math.max(...lats), Math.max(...lngs)],
+  ];
+}
+
+interface CameraTarget {
+  kind: 'world' | 'bounds';
   bounds?: [[number, number], [number, number]];
-  world?: boolean;
 }
 
-const REGION_CHIPS: RegionChip[] = [
-  { key: 'mundo', label: '🌍 Mundo', world: true },
-  { key: 'brasil', label: '🇧🇷 Brasil', bounds: [[-34, -74], [3, -34]] },
-  { key: 'americas', label: '🌎 Américas', bounds: [[-36, -125], [52, -30]] },
-  { key: 'europa', label: '🌍 Europa', bounds: [[35, -12], [60, 32]] },
-  { key: 'asia', label: '🌏 Ásia & Oriente Médio', bounds: [[-2, 25], [46, 145]] },
-  { key: 'africa', label: '🌍 África', bounds: [[-36, -20], [38, 52]] },
-];
-
-interface CameraControllerProps {
-  region: RegionKey;
-}
-
-function CameraController({ region }: CameraControllerProps) {
+function CameraController({ target }: { target: CameraTarget }) {
   const map = useMap();
-
   useEffect(() => {
-    const chip = REGION_CHIPS.find((c) => c.key === region);
-    if (!chip) return;
-    if (chip.world) {
+    if (target.kind === 'world') {
       map.flyTo([15, -10], 2, { duration: 1.2 });
       return;
     }
-    if (chip.bounds) {
-      map.flyToBounds(chip.bounds, { padding: [20, 20], duration: 1.2 });
+    if (target.bounds) {
+      map.flyToBounds(target.bounds, { padding: [40, 40], duration: 1.2 });
     }
-  }, [region, map]);
-
+  }, [target, map]);
   return null;
 }
 
-interface ZoomMarkerProps {
-  city: string;
-  lat: number;
-  lng: number;
-  isCurated: boolean;
-  isHighlighted: boolean;
-  anyHighlighted: boolean;
-  onSelect: (city: string) => void;
+function makeIcon(size: number, color: string, glow: string, pulse: boolean) {
+  const touch = Math.max(size + 12, 28);
+  return L.divIcon({
+    className: 'kinu-map-marker',
+    html: `
+      <div class="kinu-map-touch" style="width:${touch}px;height:${touch}px;display:flex;align-items:center;justify-content:center;">
+        <div class="${pulse ? 'kinu-map-pulse' : ''}" style="
+          width:${size}px;
+          height:${size}px;
+          border-radius:50%;
+          background:${color};
+          box-shadow:${glow};
+          transition:opacity 0.2s ease;
+        "></div>
+      </div>
+    `,
+    iconSize: [touch, touch],
+    iconAnchor: [touch / 2, touch / 2],
+  });
 }
 
-function CityMarker({
-  city,
-  lat,
-  lng,
-  isCurated,
-  isHighlighted,
-  anyHighlighted,
-  onSelect,
-}: ZoomMarkerProps) {
-  const map = useMap();
-  const [zoom, setZoom] = useState(map.getZoom());
+interface DotProps {
+  name: string;
+  lat: number;
+  lng: number;
+  size: number;
+  color: string;
+  glow: string;
+  pulse?: boolean;
+  onClick: () => void;
+}
 
-  useEffect(() => {
-    const handler = () => setZoom(map.getZoom());
-    map.on('zoomend', handler);
-    return () => {
-      map.off('zoomend', handler);
-    };
-  }, [map]);
-
-  const zoomedIn = zoom >= 3;
-
-  const icon = useMemo(() => {
-    const baseSize = zoomedIn ? 16 : 10;
-    const size = isHighlighted ? baseSize + 4 : baseSize;
-    const color = isHighlighted ? '#eab308' : isCurated ? '#10b981' : '#64748b';
-    const glow = isHighlighted ? '0 0 18px #eab308' : '0 0 12px #10b981';
-    const opacity = anyHighlighted && !isHighlighted ? 0.4 : 1;
-    const pulseClass = isCurated ? 'kinu-map-pulse' : '';
-
-    return L.divIcon({
-      className: 'kinu-map-marker',
-      html: `
-        <div class="kinu-map-touch" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;">
-          <div class="${pulseClass}" style="
-            width:${size}px;
-            height:${size}px;
-            border-radius:50%;
-            background:${color};
-            box-shadow:${glow};
-            opacity:${opacity};
-            transition:opacity 0.2s ease;
-          "></div>
-        </div>
-      `,
-      iconSize: [28, 28],
-      iconAnchor: [14, 14],
-    });
-  }, [isCurated, isHighlighted, anyHighlighted, zoomedIn]);
-
+function Dot({ name, lat, lng, size, color, glow, pulse, onClick }: DotProps) {
+  const icon = useMemo(
+    () => makeIcon(size, color, glow, !!pulse),
+    [size, color, glow, pulse]
+  );
   return (
     <Marker
       position={[lat, lng]}
       icon={icon}
-      eventHandlers={{
-        click: () => onSelect(city),
-      }}
+      eventHandlers={{ click: onClick }}
     >
-      {zoomedIn && (
-        <Tooltip
-          direction="top"
-          offset={[0, -12]}
-          className="kinu-map-tooltip"
-          permanent
-        >
-          {city}
-        </Tooltip>
-      )}
+      <Tooltip direction="top" offset={[0, -size / 2 - 4]} className="kinu-map-tooltip" permanent>
+        {name}
+      </Tooltip>
     </Marker>
   );
 }
@@ -135,18 +145,59 @@ export function DestinationWorldMap({
   onSelectCity,
   highlightedCities = [],
 }: DestinationWorldMapProps) {
-  const [activeRegion, setActiveRegion] = useState<RegionKey>('mundo');
+  const [level, setLevel] = useState<Level>('world');
+  const [activeRegion, setActiveRegion] = useState<string | null>(null);
+  const [activeCountry, setActiveCountry] = useState<string | null>(null);
 
-  const highlightedSet = useMemo(
-    () => new Set(highlightedCities.map((c) => c.toLowerCase())),
-    [highlightedCities]
+  const regionNode = useMemo(
+    () => HIERARCHY.find((r) => r.name === activeRegion) ?? null,
+    [activeRegion]
   );
-  const curatedSet = useMemo(
-    () => new Set(CURATED_CITIES.map((c) => c.toLowerCase())),
-    []
+  const countryNode = useMemo(
+    () => regionNode?.countries.find((c) => c.name === activeCountry) ?? null,
+    [regionNode, activeCountry]
   );
 
-  const anyHighlighted = highlightedCities.length > 0;
+  // Resolve highlighted cities (KINU suggestions) against CITY_COORDINATES
+  const highlightNodes: CityNode[] = useMemo(() => {
+    const map = new Map<string, CityNode>();
+    for (const raw of highlightedCities) {
+      const key = raw.toLowerCase();
+      for (const [name, coord] of Object.entries(CITY_COORDINATES)) {
+        if (name.toLowerCase() === key) {
+          map.set(name, { name, lat: coord.lat, lng: coord.lng });
+          break;
+        }
+      }
+    }
+    return Array.from(map.values());
+  }, [highlightedCities]);
+  const anyHighlighted = highlightNodes.length > 0;
+
+  // Camera target
+  const cameraTarget: CameraTarget = useMemo(() => {
+    if (anyHighlighted) {
+      return { kind: 'bounds', bounds: boundsFromCities(highlightNodes) };
+    }
+    if (level === 'country' && countryNode) {
+      return { kind: 'bounds', bounds: boundsFromCities(countryNode.cities) };
+    }
+    if (level === 'region' && regionNode) {
+      const allCities = regionNode.countries.flatMap((c) => c.cities);
+      return { kind: 'bounds', bounds: boundsFromCities(allCities) };
+    }
+    return { kind: 'world' };
+  }, [anyHighlighted, highlightNodes, level, regionNode, countryNode]);
+
+  const goWorld = () => {
+    setLevel('world');
+    setActiveRegion(null);
+    setActiveCountry(null);
+  };
+  const goRegion = () => {
+    setLevel('region');
+    setActiveCountry(null);
+  };
 
   return (
     <div className="w-full">
@@ -183,23 +234,51 @@ export function DestinationWorldMap({
         🌍 Toque em um destino aceso para começar
       </p>
 
-      <div className="kinu-region-chips flex gap-2 overflow-x-auto pb-2 mb-2 -mx-1 px-1">
-        {REGION_CHIPS.map((chip) => {
-          const isActive = chip.key === activeRegion;
-          const classes = isActive
-            ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
-            : 'bg-[#1e293b] border-emerald-500/20 text-slate-300 hover:text-emerald-300';
-          return (
+      {/* Breadcrumb */}
+      <div className="kinu-region-chips flex gap-2 overflow-x-auto pb-2 mb-2 -mx-1 px-1 items-center">
+        <button
+          type="button"
+          onClick={goWorld}
+          className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium font-['Outfit'] transition-colors ${
+            level === 'world'
+              ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
+              : 'bg-[#1e293b] border-emerald-500/20 text-slate-300 hover:text-emerald-300'
+          }`}
+        >
+          🌍 Mundo
+        </button>
+        {activeRegion && (
+          <>
+            <span className="text-slate-500 text-xs">›</span>
             <button
-              key={chip.key}
               type="button"
-              onClick={() => setActiveRegion(chip.key)}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium font-['Outfit'] transition-colors ${classes}`}
+              onClick={goRegion}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium font-['Outfit'] transition-colors ${
+                level === 'region'
+                  ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
+                  : 'bg-[#1e293b] border-emerald-500/20 text-slate-300 hover:text-emerald-300'
+              }`}
             >
-              {chip.label}
+              {regionNode?.label ?? activeRegion}
             </button>
-          );
-        })}
+          </>
+        )}
+        {activeCountry && (
+          <>
+            <span className="text-slate-500 text-xs">›</span>
+            <button
+              type="button"
+              onClick={() => setLevel('country')}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium font-['Outfit'] transition-colors ${
+                level === 'country'
+                  ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
+                  : 'bg-[#1e293b] border-emerald-500/20 text-slate-300 hover:text-emerald-300'
+              }`}
+            >
+              {activeCountry}
+            </button>
+          </>
+        )}
       </div>
 
       <div className="h-[300px] lg:h-[380px] rounded-2xl border border-emerald-500/20 overflow-hidden">
@@ -208,7 +287,7 @@ export function DestinationWorldMap({
             center={[15, -10]}
             zoom={2}
             minZoom={2}
-            maxZoom={5}
+            maxZoom={6}
             worldCopyJump
             scrollWheelZoom={false}
             className="h-full w-full"
@@ -218,26 +297,96 @@ export function DestinationWorldMap({
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             />
-            <CameraController region={activeRegion} />
-            {Object.entries(CITY_COORDINATES).map(([city, coord]) => {
-              const cityLower = city.toLowerCase();
-              const isCurated = curatedSet.has(cityLower);
-              const isHighlighted = highlightedSet.has(cityLower);
-              return (
-                <CityMarker
-                  key={city}
-                  city={city}
-                  lat={coord.lat}
-                  lng={coord.lng}
-                  isCurated={isCurated}
-                  isHighlighted={isHighlighted}
-                  anyHighlighted={anyHighlighted}
-                  onSelect={onSelectCity}
+            <CameraController target={cameraTarget} />
+
+            {anyHighlighted ? (
+              highlightNodes.map((c) => (
+                <Dot
+                  key={`hl-${c.name}`}
+                  name={c.name}
+                  lat={c.lat}
+                  lng={c.lng}
+                  size={20}
+                  color="#eab308"
+                  glow="0 0 20px #eab308"
+                  pulse
+                  onClick={() => onSelectCity(c.name)}
                 />
-              );
-            })}
+              ))
+            ) : level === 'world' ? (
+              HIERARCHY.map((r) => (
+                <Dot
+                  key={`r-${r.name}`}
+                  name={r.label}
+                  lat={r.lat}
+                  lng={r.lng}
+                  size={22}
+                  color="#0ea5e9"
+                  glow="0 0 16px #0ea5e9"
+                  onClick={() => {
+                    setActiveRegion(r.name);
+                    setActiveCountry(null);
+                    setLevel('region');
+                  }}
+                />
+              ))
+            ) : level === 'region' && regionNode ? (
+              regionNode.countries.map((c) => (
+                <Dot
+                  key={`c-${c.name}`}
+                  name={c.name}
+                  lat={c.lat}
+                  lng={c.lng}
+                  size={18}
+                  color="#e2e8f0"
+                  glow="0 0 14px rgba(226,232,240,0.6)"
+                  onClick={() => {
+                    setActiveCountry(c.name);
+                    setLevel('country');
+                  }}
+                />
+              ))
+            ) : level === 'country' && countryNode ? (
+              countryNode.cities.map((city) => (
+                <Dot
+                  key={`ci-${city.name}`}
+                  name={city.name}
+                  lat={city.lat}
+                  lng={city.lng}
+                  size={16}
+                  color="#10b981"
+                  glow="0 0 14px #10b981"
+                  pulse
+                  onClick={() => onSelectCity(city.name)}
+                />
+              ))
+            ) : null}
           </MapContainer>
         </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[10px] text-muted-foreground font-['Outfit']">
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#0ea5e9' }} />
+          Continente
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#e2e8f0' }} />
+          País
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#10b981' }} />
+          Cidade
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#eab308' }} />
+          Sugestão do KINU
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#64748b' }} />
+          Em breve
+        </span>
       </div>
 
       <p className="text-[11px] text-muted-foreground mt-2 text-center font-['Outfit']">
