@@ -1730,7 +1730,14 @@ export async function exportTripPDF(trip: SavedTrip) {
 
       setC(B.white, false);
       doc.setFont('helvetica', 'bold');
-      doc.text('Emergencia geral (Europa): 112  |  Global: ligue operadora local', 16, y);
+      doc.text(
+        isDomesticBrazil(trip)
+          ? `Emergencia: ${getEmergencyNumber(trip)}`
+          : 'Emergencia geral (padrao internacional): 112',
+        16,
+        y
+      );
+
       y += 4;
       setC(B.gray400, false);
       doc.setFont('helvetica', 'normal');
