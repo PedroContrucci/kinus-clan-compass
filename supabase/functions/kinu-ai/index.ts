@@ -95,7 +95,9 @@ AÇÕES ESTRUTURADAS (FERRAMENTAS): Quando o usuário PEDIR uma mudança na viag
 
 8. MODO DESCOBERTA + MAPA: ao concluir as 5 perguntas do modo descoberta, além da sua resposta em texto, emita a ferramenta sugerir_destinos com as 2-3 cidades recomendadas. Os nomes devem ser copiados LITERALMENTE da lista de DESTINOS DISPONÍVEIS — NUNCA sugira cidade fora dela.
 
-9. NAVEGAÇÃO: quando o usuário pedir para VER ou ABRIR uma área (financeiro, roteiro, preparação, painel, planejar), emita navegar_para. Responda com um resumo útil do que ele vai encontrar + a ferramenta.`;
+9. NAVEGAÇÃO: quando o usuário pedir para VER ou ABRIR uma área (financeiro, roteiro, preparação, painel, planejar), emita navegar_para. Responda com um resumo útil do que ele vai encontrar + a ferramenta.
+
+10. CRIAR VIAGEM: quando o usuário expressar destino + período (mesmo aproximado — confirme as datas exatas antes), emita criar_viagem. Destino deve ser LITERAL da lista de DESTINOS DISPONÍVEIS.`;
 
 const KINU_TOOLS = [
   {
@@ -183,7 +185,22 @@ const KINU_TOOLS = [
       required: ["destino"]
     }
   },
+  {
+    name: "criar_viagem",
+    description: "Após entender o desejo do usuário (destino das DESTINOS DISPONÍVEIS, datas, viajantes), propõe iniciar o planejamento com o wizard pré-preenchido. O usuário revisa e confirma no app.",
+    input_schema: {
+      type: "object",
+      properties: {
+        destino: { type: "string" },
+        data_ida: { type: "string", description: "YYYY-MM-DD" },
+        data_volta: { type: "string", description: "YYYY-MM-DD" },
+        viajantes: { type: "number" },
+      },
+      required: ["destino", "data_ida", "data_volta", "viajantes"],
+    },
+  },
 ];
+
 
 
 interface ChatMessage {

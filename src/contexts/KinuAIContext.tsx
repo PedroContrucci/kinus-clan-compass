@@ -55,6 +55,8 @@ interface KinuAIContextType {
   clearSuggestedDestinations: () => void;
   pendingNavigation: { destino: string; ts: number } | null;
   clearPendingNavigation: () => void;
+  wizardPrefill: { destino: string; data_ida: string; data_volta: string; viajantes: number } | null;
+  clearWizardPrefill: () => void;
 }
 
 
@@ -69,6 +71,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
   const [isEmergencyMode, setIsEmergencyMode] = useState(false);
   const [suggestedDestinations, setSuggestedDestinations] = useState<string[]>([]);
   const [pendingNavigation, setPendingNavigation] = useState<{ destino: string; ts: number } | null>(null);
+  const [wizardPrefill, setWizardPrefill] = useState<{ destino: string; data_ida: string; data_volta: string; viajantes: number } | null>(null);
 
 
   const checkForEmergency = useCallback((text: string): boolean => {
@@ -212,6 +215,10 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     setPendingNavigation(null);
   }, []);
 
+  const clearWizardPrefill = useCallback(() => {
+    setWizardPrefill(null);
+  }, []);
+
 
   const dismissInsight = useCallback((id: string) => {
     setInsights(prev => prev.filter(insight => insight.id !== id));
@@ -253,6 +260,31 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       setIsOpen(false);
       return;
     }
+
+    if (action.type === 'criar_viagem') {
+      const p = (action.params as any) ?? {};
+      const destino = String(p.destino ?? '');
+      const data_ida = String(p.data_ida ?? '');
+      const data_volta = String(p.data_volta ?? '');
+      const viajantes = Number(p.viajantes);
+      const cityMatch = CURATED_CITIES.find((c) => c.toLowerCase() === destino.toLowerCase());
+      const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+      if (!cityMatch || !dateRe.test(data_ida) || !dateRe.test(data_volta) || !Number.isFinite(viajantes) || viajantes < 1) {
+        toast.error('Não consegui montar essa viagem — dados incompletos.');
+        return;
+      }
+      setWizardPrefill({ destino: cityMatch, data_ida, data_volta, viajantes: Math.floor(viajantes) });
+      setActionStatus(messageId, actionIndex, 'applied');
+      setMessages(prev => [...prev, {
+        id: `msg-${Date.now()}-ack`,
+        role: 'assistant',
+        content: '🧭 Preparei o wizard com tudo que conversamos — revisa e confirma!',
+        timestamp: new Date(),
+      }]);
+      setIsOpen(false);
+      return;
+    }
+
 
     if (action.type === 'sugerir_destinos') {
       const cidades: string[] = Array.isArray((action.params as any)?.cidades)
@@ -355,6 +387,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         clearSuggestedDestinations,
         pendingNavigation,
         clearPendingNavigation,
+        wizardPrefill,
+        clearWizardPrefill,
       }}
     >
       {children}

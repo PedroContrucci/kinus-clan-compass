@@ -29,7 +29,7 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [showCardsGrid, setShowCardsGrid] = useState(false);
   const { toast } = useToast();
-  const { setIsOpen, sendMessage, suggestedDestinations, clearSuggestedDestinations } = useKinuAI();
+  const { setIsOpen, sendMessage, suggestedDestinations, clearSuggestedDestinations, wizardPrefill, clearWizardPrefill } = useKinuAI();
 
   const handleMapCitySelect = (cityName: string) => {
     clearSuggestedDestinations();
@@ -94,6 +94,25 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
       setShowUpcoming(true);
     }
   }, [selectedCountry]);
+
+  // Apply KINU wizard prefill (destino + datas + viajantes) on mount
+  useEffect(() => {
+    if (!wizardPrefill) return;
+    const { destino, data_ida, data_volta, viajantes } = wizardPrefill;
+    handleMapCitySelect(destino);
+    const parseDate = (s: string) => {
+      const [y, m, d] = s.split('-').map(Number);
+      return new Date(y, (m || 1) - 1, d || 1);
+    };
+    onChange({
+      departureDate: parseDate(data_ida),
+      returnDate: parseDate(data_volta),
+      adults: Math.max(1, Math.floor(viajantes)),
+    });
+    clearWizardPrefill();
+    toast({ title: '🧭 Wizard pré-preenchido pelo KINU — revisa e confirma!' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRegionSelect = (region: RegionName) => {
 

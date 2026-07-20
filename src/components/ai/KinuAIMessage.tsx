@@ -27,6 +27,8 @@ function describeAction(action: ProposedAction): string {
       const labels: Record<string, string> = { painel: 'Painel', roteiro: 'Roteiro', financeiro: 'Financeiro', preparacao: 'Preparação', planejar: 'Planejar' };
       return `Abrir ${labels[p.destino] ?? p.destino ?? '—'}`;
     }
+    case 'criar_viagem':
+      return `✈️ Planejar ${p.destino ?? '—'} · ${p.data_ida ?? '—'} → ${p.data_volta ?? '—'} · ${p.viajantes ?? '?'} viajante(s)`;
     default:
       return 'Ação proposta';
   }
@@ -82,7 +84,7 @@ export function KinuAIMessage({ message }: KinuAIMessageProps) {
                         onClick={() => applyProposedAction(message.id, idx)}
                         className="px-3 py-1 text-[11px] font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
                       >
-                        {action.type === 'sugerir_destinos' ? '✓ Ver no mapa' : action.type === 'navegar_para' ? 'Abrir' : '✓ Aplicar'}
+                        {action.type === 'sugerir_destinos' ? '✓ Ver no mapa' : action.type === 'navegar_para' ? 'Abrir' : action.type === 'criar_viagem' ? 'Começar planejamento' : '✓ Aplicar'}
                       </button>
                       <button
                         type="button"
