@@ -164,12 +164,27 @@ function buildViatorLink(city: string, activityName?: string): OfferLink | null 
   };
 }
 
-function buildAirbnbLink(city: string): OfferLink | null {
+function buildAirbnbLink(
+  city: string,
+  startDate?: Date,
+  endDate?: Date,
+  travelers?: number
+): OfferLink | null {
   if (!city) return null;
+
+  let url = `https://www.airbnb.com.br/s/${encodeURIComponent(city)}/homes`;
+
+  if (startDate && endDate) {
+    const checkin = format(startDate, 'yyyy-MM-dd');
+    const checkout = format(endDate, 'yyyy-MM-dd');
+    const adults = Math.max(1, travelers || 1);
+    url = `${url}?checkin=${checkin}&checkout=${checkout}&adults=${adults}`;
+  }
+
   return {
     partner: 'Airbnb',
     description: 'Estadias e apartamentos',
-    url: `https://www.airbnb.com.br/s/${encodeURIComponent(city)}/homes`,
+    url,
     isAffiliate: false,
   };
 }
