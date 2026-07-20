@@ -1030,26 +1030,13 @@ export const GeneratedItineraryStage = ({
   priceLevel: priceLevelProp,
   existingDays,
 }: GeneratedItineraryStageProps) => {
-  const hasCompleteExisting = useMemo(() => {
-    if (!Array.isArray(existingDays) || existingDays.length === 0) return false;
-    const expected = differenceInDays(returnDate, departureDate) + 1;
-    if (existingDays.length !== expected) return false;
-    return existingDays.every((d: any) => Array.isArray(d?.activities) && d.activities.length > 0);
-  }, [existingDays, departureDate, returnDate]);
-
-  // Primary source: always re-run the internal generator so the trip-wide
-  // no-repetition and Michelin rules apply. existingDays is only used as a
-  // graceful fallback if generation throws.
+  // SINGLE SOURCE OF TRUTH: the internal generator ALWAYS runs so trip-wide
+  // no-repetition, Michelin cap and sunset rules apply. existingDays is ignored
+  // as an itinerary source (kept in the prop only for backwards compatibility).
+  void existingDays;
   const { days: initialDays, breakdown: initialBreakdown } = useMemo(() => {
-    try {
-      return generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp);
-    } catch (err) {
-      if (hasCompleteExisting) {
-        return convertTripDaysToItinerary(existingDays as any[], departureDate, travelers, budget);
-      }
-      throw err;
-    }
-  }, [hasCompleteExisting, existingDays, departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]);
+    return generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp);
+  }, [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]);
 
   const [days, setDays] = useState(initialDays);
   const [breakdown] = useState(initialBreakdown);
