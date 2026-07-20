@@ -810,6 +810,10 @@ export function generateItinerary(
           dayTotal += act.estimatedCost;
         }
 
+        const isSunsetActivity = (a: any) =>
+          !!a && typeof a.name === 'string' &&
+          /(p[ôo]r do sol|sunset)/i.test(a.name);
+
         let afternoonActivity = pickActivity('afternoon', dayTheme.title);
         if (afternoonActivity && (afternoonActivity.dayOccupancy === 'full' || afternoonActivity.dayOccupancy === 'half')) {
           // Full/half-day activities must anchor the day from the morning, not the afternoon.
@@ -817,14 +821,39 @@ export function generateItinerary(
           // marked as used so it won't be repeated this day.
           afternoonActivity = pickActivity('afternoon', dayTheme.title);
         }
+
+        // Sunset activities MUST occupy the last afternoon slot (17:30), never 15:00.
+        // If the initial afternoon pick is a sunset, try to draw a normal activity for
+        // 15:00 and place the sunset at 17:30 (swap the effective time slot).
+        let sunsetActivity: typeof afternoonActivity | null = null;
+        if (isSunsetActivity(afternoonActivity)) {
+          sunsetActivity = afternoonActivity;
+          let replacement = pickActivity('afternoon', dayTheme.title);
+          if (replacement && (replacement.dayOccupancy === 'full' || replacement.dayOccupancy === 'half')) {
+            replacement = pickActivity('afternoon', dayTheme.title);
+          }
+          // If the replacement is ALSO a sunset, keep only one sunset at 17:30.
+          if (isSunsetActivity(replacement)) {
+            replacement = null;
+          }
+          afternoonActivity = replacement || null;
+        }
+
         if (afternoonActivity && afternoonActivity.dayOccupancy !== 'full' && afternoonActivity.dayOccupancy !== 'half') {
           afternoonOccupancy = afternoonActivity.dayOccupancy;
           const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00', travelers);
           activities.push(act);
           dayTotal += act.estimatedCost;
-        } else if (!afternoonActivity) {
+        } else if (!afternoonActivity && !sunsetActivity) {
           // EXP pool exhausted for afternoon slot — emit free-slot entry.
           activities.push(buildFreeSlotActivity(i, 'afternoon', '15:00'));
+        }
+
+        if (sunsetActivity && sunsetActivity.dayOccupancy !== 'full' && sunsetActivity.dayOccupancy !== 'half') {
+          if (!afternoonOccupancy) afternoonOccupancy = sunsetActivity.dayOccupancy;
+          const sunsetAct = convertToItineraryActivity(sunsetActivity, i, 'afternoon', '17:30', travelers);
+          activities.push(sunsetAct);
+          dayTotal += sunsetAct.estimatedCost;
         }
       }
 
