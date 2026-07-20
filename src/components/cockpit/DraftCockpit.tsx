@@ -207,17 +207,21 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
     });
   }, [trip, onSave]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback((daysFromStage?: any[]) => {
+    const nextDays = daysFromStage && daysFromStage.length > 0
+      ? daysFromStage
+      : (generatedDays && generatedDays.length > 0 ? generatedDays : trip.days);
     const updatedTrip: any = {
       ...trip,
       flightsSelected: stage === 'itinerary',
       outboundFlight: selectedOutbound,
       returnFlight: selectedReturn,
+      days: nextDays,
     };
     syncTripFlightPlannedFinances(updatedTrip);
     onSave(updatedTrip);
     toast({ title: "Rascunho salvo! 📝" });
-  }, [trip, stage, selectedOutbound, selectedReturn, onSave]);
+  }, [trip, stage, selectedOutbound, selectedReturn, generatedDays, onSave]);
 
   // For KINU-created drafts (or drafts that already carry a full generated itinerary),
   // the itinerary stage is reachable without a real Amadeus flight selection —
@@ -252,7 +256,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   const effectiveReturn = selectedReturn
     || (canSkipFlightSelection ? buildPlaceholderFlight(new Date(trip.endDate), 'return') : undefined);
 
-  const handleActivate = useCallback(() => {
+  const handleActivate = useCallback((daysFromStage?: any[]) => {
     if ((!effectiveOutbound || !effectiveReturn) && !canSkipFlightSelection) {
       toast({ 
         title: "Selecione os voos primeiro", 
@@ -261,20 +265,26 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
       });
       return;
     }
-    
+
+    // Prefer the days the itinerary stage just displayed (source of truth),
+    // falling back to previously generated days, then the trip's own days.
+    const nextDays = daysFromStage && daysFromStage.length > 0
+      ? daysFromStage
+      : (generatedDays && generatedDays.length > 0 ? generatedDays : trip.days);
+
     const updatedTrip: any = {
       ...trip,
       status: 'active',
       flightsSelected: Boolean(selectedOutbound && selectedReturn),
       outboundFlight: selectedOutbound,
       returnFlight: selectedReturn,
-      days: hasExistingDays ? trip.days : (generatedDays || trip.days),
+      days: nextDays,
     };
     syncTripFlightPlannedFinances(updatedTrip);
 
     onActivate(updatedTrip as any);
     toast({ title: "Viagem ativada! 🚀", description: "Sua viagem está pronta para acompanhamento." });
-  }, [trip, selectedOutbound, selectedReturn, effectiveOutbound, effectiveReturn, canSkipFlightSelection, hasExistingDays, generatedDays, onActivate]);
+  }, [trip, selectedOutbound, selectedReturn, effectiveOutbound, effectiveReturn, canSkipFlightSelection, generatedDays, onActivate]);
 
   const handleBackFromItinerary = useCallback(() => {
     setStage('flights');

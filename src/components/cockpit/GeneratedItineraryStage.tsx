@@ -81,8 +81,8 @@ interface GeneratedItineraryStageProps {
   returnFlight: SelectedFlight;
   travelInterests?: string[];
   jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO';
-  onActivate: () => void;
-  onSave: () => void;
+  onActivate: (days?: any[]) => void;
+  onSave: (days?: any[]) => void;
   onBack: () => void;
   onDaysGenerated?: (days: ItineraryDay[]) => void;
   priceLevel?: PriceLevel;
@@ -1126,9 +1126,46 @@ export const GeneratedItineraryStage = ({
     if (days.length > 0) recomputeAndPersistFinances(days);
   }, [days, recomputeAndPersistFinances]);
 
+  // Convert current ItineraryDay[] into TripDay[] shape (matches buildDraftTrip
+  // output) so the parent can persist EXACTLY what the user sees.
+  const toTripDays = (source: ItineraryDay[]): any[] => {
+    const mapCat = (slot: string): string => {
+      if (slot === 'flight') return 'voo';
+      if (slot === 'hotel') return 'hotel';
+      if (slot === 'breakfast' || slot === 'lunch' || slot === 'dinner') return 'comida';
+      return 'passeio';
+    };
+    const mapStatus = (s: string): string =>
+      s === 'defined' ? 'confirmed' : s === 'pending' ? 'cancelled' : 'planned';
+    return source.map((d) => ({
+      day: d.dayNumber,
+      date: d.date instanceof Date ? d.date.toISOString() : d.date,
+      title: d.label,
+      icon: (d.theme || '').split(' ')[0] || '',
+      activities: d.activities.map((a) => {
+        const cat = mapCat(a.timeSlot);
+        return {
+          id: a.id,
+          time: a.time || '',
+          name: a.name,
+          description: (a.tips && a.tips[0]) || '',
+          duration: a.duration || '',
+          cost: Math.round(a.estimatedCost || 0),
+          type: cat,
+          category: cat,
+          status: mapStatus(a.status),
+        };
+      }),
+    }));
+  };
+
   const handleActivateWithFinances = () => {
     recomputeAndPersistFinances(days);
-    onActivate();
+    onActivate(toTripDays(days));
+  };
+  const handleSaveWithDays = () => {
+    recomputeAndPersistFinances(days);
+    onSave(toTripDays(days));
   };
   const [selectedDay, setSelectedDay] = useState(1);
   const [addActivityModal, setAddActivityModal] = useState(false);
@@ -1227,7 +1264,7 @@ export const GeneratedItineraryStage = ({
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onSave}>
+            <Button variant="outline" size="sm" onClick={handleSaveWithDays}>
               <Save size={16} className="mr-1" />
               Salvar
             </Button>
