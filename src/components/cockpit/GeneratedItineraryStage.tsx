@@ -283,9 +283,16 @@ export function generateItinerary(
   const transferCost = getActivityPrice('transfer', destination, priceLevel);
 
   const days: ItineraryDay[] = [];
-  const usedActivityIds: string[] = [];
-  const lastUsedDay: Map<string, number> = new Map();
+  // Trip-wide uniqueness tracking, split by activity class.
+  // EXP (morning/afternoon/night): NEVER repeat across the whole trip.
+  // Restaurants (breakfast/lunch/dinner): may repeat only after the full pool
+  // is exhausted, never on consecutive days, and with >=3 days between repeats.
+  const usedExpIds: Set<string> = new Set();
+  const usedRestaurantIds: Set<string> = new Set();
+  const lastRestaurantUsedDay: Map<string, number> = new Map();
   let currentPickDayIndex = 0;
+
+  const EXP_CATEGORIES = new Set(['morning', 'afternoon', 'night']);
 
   function pickActivity(category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner', themeName: string): SuggestedActivity | null {
     const pool = getDestinationActivities(destination);
@@ -304,33 +311,42 @@ export function generateItinerary(
       luxury:   { breakfast: 200, lunch: 500, dinner: 900, morning: 300, afternoon: 300, night: 300 },
     };
     const target = priceTargets[priceLevel]?.[category] ?? 150;
+    const isExp = EXP_CATEGORIES.has(category);
+    const usedSet = isExp ? usedExpIds : usedRestaurantIds;
+
+    // Preferred pool: unused + matching theme tags.
     let candidates = pool.filter(a =>
       a.category === category &&
-      !usedActivityIds.includes(a.id) &&
+      !usedSet.has(a.id) &&
       (targetTags.length === 0 || (a.styleTags && a.styleTags.some(t => targetTags.includes(t))))
     );
+    // Second pass: unused, any theme.
     if (candidates.length === 0) {
-      candidates = pool.filter(a => a.category === category && !usedActivityIds.includes(a.id));
+      candidates = pool.filter(a => a.category === category && !usedSet.has(a.id));
     }
+
     let forcedReuse = false;
     if (candidates.length === 0) {
-      // Forced reuse: prefer activities used longest ago, and avoid any used on the immediately previous day if alternatives exist.
-      const reusable = pool.filter(a => a.category === category);
-      if (reusable.length === 0) return null;
+      // EXP activities NEVER repeat. Signal exhaustion so caller can emit a free-slot entry.
+      if (isExp) return null;
+
+      // Restaurants: pool fully used — allow reuse under strict spacing rules.
       const prevDay = currentPickDayIndex - 1;
-      const notFromPrevDay = reusable.filter(a => lastUsedDay.get(a.id) !== prevDay);
-      const eligible = notFromPrevDay.length > 0 ? notFromPrevDay : reusable;
-      // Sort by position in usedActivityIds (earliest = used longest ago first); unseen first
-      eligible.sort((a, b) => {
-        const ia = usedActivityIds.indexOf(a.id);
-        const ib = usedActivityIds.indexOf(b.id);
-        const va = ia === -1 ? -1 : ia;
-        const vb = ib === -1 ? -1 : ib;
-        return va - vb;
+      const reusable = pool.filter(a => {
+        if (a.category !== category) return false;
+        const last = lastRestaurantUsedDay.get(a.id);
+        if (last === undefined) return true; // shouldn't happen (pool exhausted), but safe
+        if (last === prevDay) return false; // no consecutive-day repeats
+        if (currentPickDayIndex - last < 3) return false; // >=3 days between repeats
+        return true;
       });
-      candidates = eligible;
+      if (reusable.length === 0) return null;
+      // Prefer restaurants used longest ago
+      reusable.sort((a, b) => (lastRestaurantUsedDay.get(a.id) ?? -1) - (lastRestaurantUsedDay.get(b.id) ?? -1));
+      candidates = reusable;
       forcedReuse = true;
     }
+
     if (candidates.length === 0) return null;
     if (!forcedReuse) {
       // Sort by tier intent: budget=cheapest first, luxury=most expensive first,
@@ -345,9 +361,38 @@ export function generateItinerary(
       });
     }
     const picked = candidates[0];
-    usedActivityIds.push(picked.id);
-    lastUsedDay.set(picked.id, currentPickDayIndex);
+    if (isExp) {
+      usedExpIds.add(picked.id);
+    } else {
+      usedRestaurantIds.add(picked.id);
+      lastRestaurantUsedDay.set(picked.id, currentPickDayIndex);
+    }
     return picked;
+  }
+
+  // Build a free-slot ItineraryActivity for exhausted EXP pools (morning/afternoon).
+  function buildFreeSlotActivity(
+    dayIndex: number,
+    slot: 'morning' | 'afternoon',
+    time: string
+  ): ItineraryActivity {
+    const name = slot === 'morning'
+      ? 'Manhã livre — explore por conta'
+      : 'Tarde livre — explore por conta';
+    return {
+      id: `day-${dayIndex}-free-${slot}`,
+      name,
+      type: 'experience',
+      timeSlot: slot,
+      estimatedCost: 0,
+      costPerPerson: 0,
+      time,
+      duration: '2h',
+      location: destination,
+      status: 'suggestion',
+      source: 'kinu',
+      tips: ['Dia para revisitar o que amou ou descobrir o bairro do hotel no seu ritmo'],
+    };
   }
 
 
@@ -743,6 +788,9 @@ export function generateItinerary(
         const act = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers);
         activities.push(act);
         dayTotal += act.estimatedCost;
+      } else {
+        // EXP pool exhausted for morning slot — emit free-slot entry.
+        activities.push(buildFreeSlotActivity(i, 'morning', '10:00'));
       }
 
       if (morningOccupancy === 'full') {
@@ -777,6 +825,9 @@ export function generateItinerary(
           const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00', travelers);
           activities.push(act);
           dayTotal += act.estimatedCost;
+        } else if (!afternoonActivity) {
+          // EXP pool exhausted for afternoon slot — emit free-slot entry.
+          activities.push(buildFreeSlotActivity(i, 'afternoon', '15:00'));
         }
       }
 
@@ -786,9 +837,9 @@ export function generateItinerary(
       
       let dinnerActivity = pickActivity('dinner', dayTheme.title);
       
-      if (isGastroDay && wantsGastronomy && priceLevel !== 'budget' && michelinCount < 2) {
+      if (isGastroDay && wantsGastronomy && priceLevel !== 'budget' && michelinCount < 1) {
         const michelin = getTopMichelinForCity(destination, 10);
-        const available = michelin.filter(m => !usedActivityIds.includes(`michelin-${m.name}`));
+        const available = michelin;
         let preferred: typeof available;
         if (priceLevel === 'luxury') {
           preferred = available.filter(m => m.stars >= 2);
@@ -821,7 +872,7 @@ export function generateItinerary(
             source: 'kinu',
             tips: [`Cozinha ${availableMichelin.cuisine}`, 'Reserve com 2-3 semanas de antecedência', 'Menu degustação — valor estimado por pessoa'],
           });
-          usedActivityIds.push(`michelin-${availableMichelin.name}`);
+          // (Michelin is capped at 1 per trip via michelinCount; no id-tracking needed.)
           dayTotal += total;
           michelinCount++;
         } else if (dinnerActivity) {
@@ -960,12 +1011,19 @@ export const GeneratedItineraryStage = ({
     return existingDays.every((d: any) => Array.isArray(d?.activities) && d.activities.length > 0);
   }, [existingDays, departureDate, returnDate]);
 
-  const { days: initialDays, breakdown: initialBreakdown } = useMemo(() =>
-    hasCompleteExisting
-      ? convertTripDaysToItinerary(existingDays as any[], departureDate, travelers, budget)
-      : generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp),
-    [hasCompleteExisting, existingDays, departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]
-  );
+  // Primary source: always re-run the internal generator so the trip-wide
+  // no-repetition and Michelin rules apply. existingDays is only used as a
+  // graceful fallback if generation throws.
+  const { days: initialDays, breakdown: initialBreakdown } = useMemo(() => {
+    try {
+      return generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp);
+    } catch (err) {
+      if (hasCompleteExisting) {
+        return convertTripDaysToItinerary(existingDays as any[], departureDate, travelers, budget);
+      }
+      throw err;
+    }
+  }, [hasCompleteExisting, existingDays, departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]);
 
   const [days, setDays] = useState(initialDays);
   const [breakdown] = useState(initialBreakdown);
