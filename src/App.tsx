@@ -23,7 +23,7 @@ const queryClient = new QueryClient();
 function KinuAIWrapper() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { pendingNavigation, clearPendingNavigation } = useKinuAI();
+  const { pendingNavigation, clearPendingNavigation, wizardPrefill } = useKinuAI();
 
   useEffect(() => {
     if (!pendingNavigation) return;
@@ -38,6 +38,12 @@ function KinuAIWrapper() {
     const t = setTimeout(() => clearPendingNavigation(), 300);
     return () => clearTimeout(t);
   }, [pendingNavigation, navigate, clearPendingNavigation]);
+
+  useEffect(() => {
+    if (wizardPrefill && location.pathname !== '/planejar') {
+      navigate('/planejar');
+    }
+  }, [wizardPrefill, location.pathname, navigate]);
 
   if (location.pathname === "/") return null;
   return (
