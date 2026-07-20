@@ -172,6 +172,17 @@ const KINU_TOOLS = [
       required: ["cidades"]
     }
   },
+  {
+    name: "navegar_para",
+    description: "Leva o usuário para uma área do app. Use quando ele pedir para ver/abrir algo (financeiro, roteiro, preparação, painel, planejar).",
+    input_schema: {
+      type: "object",
+      properties: {
+        destino: { type: "string", enum: ["painel", "roteiro", "financeiro", "preparacao", "planejar"] }
+      },
+      required: ["destino"]
+    }
+  },
 ];
 
 
