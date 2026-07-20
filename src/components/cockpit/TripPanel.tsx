@@ -517,6 +517,35 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
 
   const nowOnKinu = useMemo(() => {
+    // TOP PRIORITY: live flight price monitoring signal
+    const priceCheck: any = (trip as any).lastPriceCheck;
+    if (priceCheck && (Date.now() - priceCheck.checkedAt) < 24 * 3600 * 1000) {
+      const anchor = getFlightPlannedTotal(trip);
+      const deltaPct = anchor > 0 ? priceCheck.delta / anchor : 0;
+      const fmtNum = (n: number) => Math.round(n).toLocaleString('pt-BR');
+      if (deltaPct <= -0.05) {
+        const kiwiUrl = buildOfferLinks({
+          category: 'flight',
+          originCode: trip.flights?.outbound?.origin || 'GRU',
+          destinationCode: trip.flights?.outbound?.destination || trip.destination,
+          startDate: trip.startDate ? new Date(trip.startDate) : undefined,
+          endDate: trip.endDate ? new Date(trip.endDate) : undefined,
+          travelers: trip.travelers || 1,
+        }).find(l => l.partner === 'Kiwi')?.url;
+        return {
+          message: `📉 Seu voo caiu R$ ${fmtNum(Math.abs(priceCheck.delta))} — melhor preço agora R$ ${fmtNum(priceCheck.price)}`,
+          actionLabel: 'Ver oferta',
+          onClick: () => { if (kiwiUrl) window.open(kiwiUrl, '_blank', 'noopener,noreferrer'); },
+        };
+      }
+      if (deltaPct >= 0.08) {
+        return {
+          message: '📈 Voos desta rota subiram — seu preço planejado está defasado',
+          actionLabel: 'Atualizar',
+          onClick: () => document.getElementById('central-ofertas')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+        };
+      }
+    }
     if (!flightConfirmed && daysLeft <= 30) {
       return {
         message: '✈️ Seu voo ainda não está confirmado',
@@ -543,7 +572,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       actionLabel: 'Ver roteiro',
       onClick: () => onNavigateTab('roteiro'),
     };
-  }, [flightConfirmed, hotelConfirmed, daysLeft, checklistPct, openReservationConfirm, onNavigateTab]);
+  }, [trip, flightConfirmed, hotelConfirmed, daysLeft, checklistPct, openReservationConfirm, onNavigateTab]);
 
   const baggageDone = (trip as any).flightExtras?.baggageDone || false;
   const baggageDetail = (trip as any).flightExtras?.baggageDetail || '';
@@ -1339,7 +1368,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         };
 
         return (
-          <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+          <div id="central-ofertas" className="bg-card border border-border rounded-xl p-4 space-y-4">
             <div>
               <p className="text-sm font-bold text-foreground font-['Outfit']">🎯 Central de Ofertas</p>
               <p className="text-xs text-muted-foreground">Compare e reserve com nossos parceiros</p>

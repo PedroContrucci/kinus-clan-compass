@@ -822,6 +822,50 @@ const Viagens = () => {
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
   };
 
+  // Shared helper: fetch cheapest real flight price from Amadeus for a trip.
+  // Returns null on any failure or empty results.
+  const fetchCheapestFlightPrice = useCallback(async (trip: SavedTrip): Promise<number | null> => {
+    try {
+      const origin = trip.flights?.outbound?.origin || 'GRU';
+      const destination = trip.flights?.outbound?.destination || trip.destination;
+      const date = trip.startDate?.split('T')[0];
+      const adults = trip.travelers || 1;
+      if (!date || !destination) return null;
+      const { data, error } = await supabase.functions.invoke('amadeus-flights', {
+        body: { action: 'search', origin, destination, date, adults },
+      });
+      if (error) return null;
+      const offers: any[] = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.offers) ? data.offers : []);
+      if (offers.length === 0) return null;
+      const cheapest = Math.min(...offers.map((o: any) => Number(o.price) || Infinity));
+      return Number.isFinite(cheapest) ? cheapest : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Background price monitoring on trip open. Throttled to once per 12h.
+  useEffect(() => {
+    if (!selectedTrip) return;
+    const lastCheck = (selectedTrip as any).lastPriceCheck;
+    const now = Date.now();
+    if (lastCheck?.checkedAt && (now - lastCheck.checkedAt) < 12 * 3600 * 1000) return;
+    let cancelled = false;
+    (async () => {
+      const price = await fetchCheapestFlightPrice(selectedTrip);
+      if (cancelled || price == null) return;
+      const anchor = getFlightPlannedTotal(selectedTrip);
+      const delta = anchor > 0 ? Math.round(price - anchor) : 0;
+      const updated: SavedTrip = {
+        ...selectedTrip,
+        lastPriceCheck: { price: Math.round(price), delta, checkedAt: Date.now() },
+      } as SavedTrip;
+      persistTrip(updated);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTrip?.id]);
+
   const applyPlannedCostDelta = (trip: SavedTrip, activity: TripActivity, delta: number) => {
     // Only planned (not confirmed/bidding) contributes to finances.planned
     if (activity.status === 'confirmed' || activity.status === 'bidding') return;
@@ -994,39 +1038,30 @@ const Viagens = () => {
       },
       verificar_ofertas: async () => {
         try {
+          const cheapest = await fetchCheapestFlightPrice(selectedTrip);
+          if (cheapest == null) {
+            return 'Não consegui consultar os preços agora — tenta de novo em instantes.';
+          }
           const origin = selectedTrip.flights?.outbound?.origin || 'GRU';
           const destination = selectedTrip.flights?.outbound?.destination || selectedTrip.destination;
-          const date = selectedTrip.startDate?.split('T')[0];
           const adults = selectedTrip.travelers || 1;
-          if (!date || !destination) {
-            return 'Não consegui consultar os preços agora — tenta de novo em instantes.';
-          }
-          const { data, error } = await supabase.functions.invoke('amadeus-flights', {
-            body: { action: 'search', origin, destination, date, adults },
-          });
-          if (error) throw error;
-          const offers: any[] = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.offers) ? data.offers : []);
-          if (offers.length === 0) {
-            return 'Não consegui consultar os preços agora — tenta de novo em instantes.';
-          }
-          const cheapest = Math.min(...offers.map((o: any) => Number(o.price) || Infinity));
-          if (!Number.isFinite(cheapest)) {
-            return 'Não consegui consultar os preços agora — tenta de novo em instantes.';
-          }
           const anchor = getFlightPlannedTotal(selectedTrip);
           const startD = selectedTrip.startDate ? new Date(selectedTrip.startDate) : undefined;
           const endD = selectedTrip.endDate ? new Date(selectedTrip.endDate) : undefined;
-          const links = buildOfferLinks({
+          const kiwiUrl = buildOfferLinks({
             category: 'flight',
             originCode: origin,
             destinationCode: destination,
             startDate: startD,
             endDate: endD,
             travelers: adults,
-          });
-          const kiwi = links.find(l => l.partner === 'Kiwi');
-          const kiwiUrl = kiwi?.url || '';
+          }).find(l => l.partner === 'Kiwi')?.url || '';
           const fmt = (n: number) => `R$ ${Math.round(n).toLocaleString('pt-BR')}`;
+          const delta = anchor > 0 ? Math.round(cheapest - anchor) : 0;
+          persistTrip({
+            ...selectedTrip,
+            lastPriceCheck: { price: Math.round(cheapest), delta, checkedAt: Date.now() },
+          } as SavedTrip);
           if (anchor > 0 && cheapest <= anchor * 0.95) {
             const diff = anchor - cheapest;
             return `📉 Achei voo por ${fmt(cheapest)} — ${fmt(diff)} abaixo do seu planejado (${fmt(anchor)}). Vale garantir: ${kiwiUrl}`;
