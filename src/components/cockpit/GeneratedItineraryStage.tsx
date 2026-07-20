@@ -283,9 +283,16 @@ export function generateItinerary(
   const transferCost = getActivityPrice('transfer', destination, priceLevel);
 
   const days: ItineraryDay[] = [];
-  const usedActivityIds: string[] = [];
-  const lastUsedDay: Map<string, number> = new Map();
+  // Trip-wide uniqueness tracking, split by activity class.
+  // EXP (morning/afternoon/night): NEVER repeat across the whole trip.
+  // Restaurants (breakfast/lunch/dinner): may repeat only after the full pool
+  // is exhausted, never on consecutive days, and with >=3 days between repeats.
+  const usedExpIds: Set<string> = new Set();
+  const usedRestaurantIds: Set<string> = new Set();
+  const lastRestaurantUsedDay: Map<string, number> = new Map();
   let currentPickDayIndex = 0;
+
+  const EXP_CATEGORIES = new Set(['morning', 'afternoon', 'night']);
 
   function pickActivity(category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner', themeName: string): SuggestedActivity | null {
     const pool = getDestinationActivities(destination);
@@ -304,33 +311,42 @@ export function generateItinerary(
       luxury:   { breakfast: 200, lunch: 500, dinner: 900, morning: 300, afternoon: 300, night: 300 },
     };
     const target = priceTargets[priceLevel]?.[category] ?? 150;
+    const isExp = EXP_CATEGORIES.has(category);
+    const usedSet = isExp ? usedExpIds : usedRestaurantIds;
+
+    // Preferred pool: unused + matching theme tags.
     let candidates = pool.filter(a =>
       a.category === category &&
-      !usedActivityIds.includes(a.id) &&
+      !usedSet.has(a.id) &&
       (targetTags.length === 0 || (a.styleTags && a.styleTags.some(t => targetTags.includes(t))))
     );
+    // Second pass: unused, any theme.
     if (candidates.length === 0) {
-      candidates = pool.filter(a => a.category === category && !usedActivityIds.includes(a.id));
+      candidates = pool.filter(a => a.category === category && !usedSet.has(a.id));
     }
+
     let forcedReuse = false;
     if (candidates.length === 0) {
-      // Forced reuse: prefer activities used longest ago, and avoid any used on the immediately previous day if alternatives exist.
-      const reusable = pool.filter(a => a.category === category);
-      if (reusable.length === 0) return null;
+      // EXP activities NEVER repeat. Signal exhaustion so caller can emit a free-slot entry.
+      if (isExp) return null;
+
+      // Restaurants: pool fully used — allow reuse under strict spacing rules.
       const prevDay = currentPickDayIndex - 1;
-      const notFromPrevDay = reusable.filter(a => lastUsedDay.get(a.id) !== prevDay);
-      const eligible = notFromPrevDay.length > 0 ? notFromPrevDay : reusable;
-      // Sort by position in usedActivityIds (earliest = used longest ago first); unseen first
-      eligible.sort((a, b) => {
-        const ia = usedActivityIds.indexOf(a.id);
-        const ib = usedActivityIds.indexOf(b.id);
-        const va = ia === -1 ? -1 : ia;
-        const vb = ib === -1 ? -1 : ib;
-        return va - vb;
+      const reusable = pool.filter(a => {
+        if (a.category !== category) return false;
+        const last = lastRestaurantUsedDay.get(a.id);
+        if (last === undefined) return true; // shouldn't happen (pool exhausted), but safe
+        if (last === prevDay) return false; // no consecutive-day repeats
+        if (currentPickDayIndex - last < 3) return false; // >=3 days between repeats
+        return true;
       });
-      candidates = eligible;
+      if (reusable.length === 0) return null;
+      // Prefer restaurants used longest ago
+      reusable.sort((a, b) => (lastRestaurantUsedDay.get(a.id) ?? -1) - (lastRestaurantUsedDay.get(b.id) ?? -1));
+      candidates = reusable;
       forcedReuse = true;
     }
+
     if (candidates.length === 0) return null;
     if (!forcedReuse) {
       // Sort by tier intent: budget=cheapest first, luxury=most expensive first,
@@ -345,9 +361,38 @@ export function generateItinerary(
       });
     }
     const picked = candidates[0];
-    usedActivityIds.push(picked.id);
-    lastUsedDay.set(picked.id, currentPickDayIndex);
+    if (isExp) {
+      usedExpIds.add(picked.id);
+    } else {
+      usedRestaurantIds.add(picked.id);
+      lastRestaurantUsedDay.set(picked.id, currentPickDayIndex);
+    }
     return picked;
+  }
+
+  // Build a free-slot ItineraryActivity for exhausted EXP pools (morning/afternoon).
+  function buildFreeSlotActivity(
+    dayIndex: number,
+    slot: 'morning' | 'afternoon',
+    time: string
+  ): ItineraryActivity {
+    const name = slot === 'morning'
+      ? 'Manhã livre — explore por conta'
+      : 'Tarde livre — explore por conta';
+    return {
+      id: `day-${dayIndex}-free-${slot}`,
+      name,
+      type: 'experience',
+      timeSlot: slot,
+      estimatedCost: 0,
+      costPerPerson: 0,
+      time,
+      duration: '2h',
+      location: destination,
+      status: 'suggestion',
+      source: 'kinu',
+      tips: ['Dia para revisitar o que amou ou descobrir o bairro do hotel no seu ritmo'],
+    };
   }
 
 
