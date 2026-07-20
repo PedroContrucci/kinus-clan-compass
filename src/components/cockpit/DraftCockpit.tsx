@@ -186,7 +186,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
       flightsSelected: true,
       outboundFlight: selectedOutbound,
       returnFlight: selectedReturn,
-      days: generatedDays || trip.days,
+      days: hasExistingDays ? trip.days : (generatedDays || trip.days),
     };
     syncTripFlightPlannedFinances(updatedTrip);
 
