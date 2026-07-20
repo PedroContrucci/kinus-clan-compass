@@ -261,10 +261,10 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
         if (booking) links.push(booking);
       }
 
-      const googleHotels = buildGoogleHotelsLink(city);
+      const googleHotels = buildGoogleHotelsLink(city, start, end);
       if (googleHotels) links.push(googleHotels);
 
-      const airbnb = buildAirbnbLink(city);
+      const airbnb = buildAirbnbLink(city, start, end, travelers);
       if (airbnb) links.push(airbnb);
 
       if (hotelName && start && end) {
