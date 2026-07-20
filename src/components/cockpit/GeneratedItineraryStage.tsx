@@ -951,10 +951,20 @@ export const GeneratedItineraryStage = ({
   onBack,
   onDaysGenerated,
   priceLevel: priceLevelProp,
+  existingDays,
 }: GeneratedItineraryStageProps) => {
-  const { days: initialDays, breakdown: initialBreakdown } = useMemo(() => 
-    generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp),
-    [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]
+  const hasCompleteExisting = useMemo(() => {
+    if (!Array.isArray(existingDays) || existingDays.length === 0) return false;
+    const expected = differenceInDays(returnDate, departureDate) + 1;
+    if (existingDays.length !== expected) return false;
+    return existingDays.every((d: any) => Array.isArray(d?.activities) && d.activities.length > 0);
+  }, [existingDays, departureDate, returnDate]);
+
+  const { days: initialDays, breakdown: initialBreakdown } = useMemo(() =>
+    hasCompleteExisting
+      ? convertTripDaysToItinerary(existingDays as any[], departureDate, travelers, budget)
+      : generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp),
+    [hasCompleteExisting, existingDays, departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]
   );
 
   const [days, setDays] = useState(initialDays);
