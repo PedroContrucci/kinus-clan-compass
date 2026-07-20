@@ -866,7 +866,7 @@ export function generateItinerary(
             source: 'kinu',
             tips: [`Cozinha ${availableMichelin.cuisine}`, 'Reserve com 2-3 semanas de antecedência', 'Menu degustação — valor estimado por pessoa'],
           });
-          usedActivityIds.push(`michelin-${availableMichelin.name}`);
+          // (Michelin is capped at 1 per trip via michelinCount; no id-tracking needed.)
           dayTotal += total;
           michelinCount++;
         } else if (dinnerActivity) {
