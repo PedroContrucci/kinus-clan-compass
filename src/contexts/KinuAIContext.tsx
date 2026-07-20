@@ -273,6 +273,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       const viajantes = Number(p.viajantes);
       const estilo = String(p.estilo ?? '').toLowerCase();
       const interessesRaw: string[] = Array.isArray(p.interesses) ? p.interesses.map(String) : [];
+      const prioridadesRaw: string[] = Array.isArray(p.prioridades) ? p.prioridades.map(String) : [];
+      const orcamentoTotal = Number(p.orcamento_total);
       const cityMatch = CURATED_CITIES.find((c) => c.toLowerCase() === destino.toLowerCase());
       const dateRe = /^\d{4}-\d{2}-\d{2}$/;
       if (!cityMatch || !dateRe.test(data_ida) || !dateRe.test(data_volta) || !Number.isFinite(viajantes) || viajantes < 1) {
@@ -292,11 +294,27 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       if (estilo.includes('econom')) budgetTier = 'economic';
       else if (estilo.includes('premium') || estilo.includes('luxo') || estilo.includes('luxury')) budgetTier = 'luxury';
 
-      // Filter interests to valid wizard IDs
-      const validInterestIds = new Set(TRAVEL_INTERESTS.map((i) => i.id));
-      const travelInterests = interessesRaw
-        .map((s) => s.toLowerCase())
-        .filter((s) => validInterestIds.has(s as any));
+      // Fuzzy matching helper (normalized, lowercase, accent-insensitive)
+      const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      const fuzzyMatch = <T extends { id: string; label: string }>(inputs: string[], options: readonly T[]): string[] => {
+        const result: string[] = [];
+        for (const raw of inputs) {
+          const n = norm(raw);
+          if (!n) continue;
+          for (const opt of options) {
+            const nid = norm(opt.id);
+            const nlabel = norm(opt.label);
+            if (nid.includes(n) || n.includes(nid) || nlabel.includes(n) || n.includes(nlabel)) {
+              if (!result.includes(opt.id)) result.push(opt.id);
+            }
+          }
+        }
+        return result;
+      };
+
+      const travelInterests = fuzzyMatch(interessesRaw, TRAVEL_INTERESTS as any);
+      const priorities = fuzzyMatch(prioridadesRaw, PRIORITY_OPTIONS as any);
+      const budgetAmount = Number.isFinite(orcamentoTotal) && orcamentoTotal > 0 ? orcamentoTotal : 0;
 
       const info = findCityInfo(cityMatch);
       setActionStatus(messageId, actionIndex, 'applied');
@@ -319,9 +337,9 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
             infants: 0,
             budgetTier,
             travelStyle: budgetTier,
-            budgetAmount: 0,
+            budgetAmount,
             travelInterests,
-            priorities: [],
+            priorities,
             biologyAIEnabled: true,
           });
 
