@@ -229,6 +229,9 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
       const kiwi = buildKiwiLink(origin, dest, start, end);
       if (kiwi) links.push(kiwi);
 
+      const decolar = buildDecolarLink(origin, dest, start, end, travelers);
+      if (decolar) links.push(decolar);
+
       const google = buildGoogleFlightsLink(origin, dest, start, end);
       if (google) links.push(google);
 
