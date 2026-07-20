@@ -29,6 +29,8 @@ function describeAction(action: ProposedAction): string {
     }
     case 'criar_viagem':
       return `✈️ Planejar ${p.destino ?? '—'} · ${p.data_ida ?? '—'} → ${p.data_volta ?? '—'} · ${p.viajantes ?? '?'} viajante(s)`;
+    case 'verificar_ofertas':
+      return '🔍 Verificar ofertas de voo agora';
     default:
       return 'Ação proposta';
   }
