@@ -847,7 +847,17 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </div>
       )}
 
-      {/* 1. Header Premium with Hero Image */}
+      {/* Section: Voo & Hospedagem */}
+      <Collapsible open={vooOpen} onOpenChange={setVooOpen}>
+        <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <span className="flex items-center gap-2">
+            <span>✈️🏨</span>
+            <span className="font-medium text-foreground">Voo & Hospedagem</span>
+          </span>
+          {vooOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 mt-4">
+          {/* 1. Header Premium with Hero Image */}
       <div className="relative overflow-hidden rounded-2xl border border-border">
         {/* Hero banner image */}
         <div className="relative h-[150px] overflow-hidden bg-gradient-to-br from-[#0f172a] to-[#1e293b]">
