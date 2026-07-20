@@ -835,7 +835,8 @@ const Viagens = () => {
         body: { action: 'search', origin, destination, date, adults },
       });
       if (error) return null;
-      const offers: any[] = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.offers) ? data.offers : []);
+      if (!data?.success) return null;
+      const offers: any[] = Array.isArray(data?.data) ? data.data : [];
       if (offers.length === 0) return null;
       const cheapest = Math.min(...offers.map((o: any) => Number(o.price) || Infinity));
       return Number.isFinite(cheapest) ? cheapest : null;
