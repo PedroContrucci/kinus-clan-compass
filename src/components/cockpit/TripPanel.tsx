@@ -484,7 +484,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
 
   // Fetch maps embed URL — lazy, only when the "Mapa da viagem" section is expanded
   useEffect(() => {
-    if (!mapExpanded || mapEmbedUrl) return;
+    if (!mapOpen || mapEmbedUrl) return;
     const mapQuery = trip.country
       ? `${trip.destination}, ${trip.country}`
       : trip.destinationAirportCode
@@ -495,7 +495,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     }).then(({ data }) => {
       if (data?.embedUrl) setMapEmbedUrl(data.embedUrl);
     }).catch(() => {});
-  }, [mapExpanded, mapEmbedUrl, trip.destination, trip.country, trip.destinationAirportCode]);
+  }, [mapOpen, mapEmbedUrl, trip.destination, trip.country, trip.destinationAirportCode]);
 
   const flexOrigin = trip.flights?.outbound?.origin || 'GRU';
   const flexDest = trip.flights?.outbound?.destination || trip.destinationAirportCode;
@@ -1775,10 +1775,10 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       </div>
 
       {/* Bottom: Mapa da viagem (collapsed, lazy) */}
-      <Collapsible open={mapExpanded} onOpenChange={setMapExpanded}>
+      <Collapsible open={mapOpen} onOpenChange={setMapOpen}>
         <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
           <span>🗺️ Mapa da viagem</span>
-          {mapExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          {mapOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-2">
           {mapEmbedUrl ? (
@@ -1804,10 +1804,10 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
 
       {/* Bottom: Clima (collapsed) */}
       {trip.destination && (
-        <Collapsible open={weatherExpanded} onOpenChange={setWeatherExpanded}>
+        <Collapsible open={weatherOpen} onOpenChange={setWeatherOpen}>
           <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
             <span>🌤️ Clima</span>
-            {weatherExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {weatherOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-2 bg-card border border-border rounded-xl p-4">
             <WeatherBadge destination={trip.destination} startDate={trip.startDate} />
