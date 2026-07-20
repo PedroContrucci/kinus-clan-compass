@@ -161,6 +161,37 @@ function buildViatorLink(city: string, activityName?: string): OfferLink | null 
   };
 }
 
+function buildAirbnbLink(city: string): OfferLink | null {
+  if (!city) return null;
+  return {
+    partner: 'Airbnb',
+    description: 'Estadias e apartamentos',
+    url: `https://www.airbnb.com.br/s/${encodeURIComponent(city)}/homes`,
+    isAffiliate: false,
+  };
+}
+
+function buildGetYourGuideLink(city: string, activityName?: string): OfferLink | null {
+  if (!city) return null;
+  const text = activityName ? `${activityName} ${city}` : city;
+  return {
+    partner: 'GetYourGuide',
+    description: 'Passeios e ingressos',
+    url: `https://www.getyourguide.com/s/?q=${encodeURIComponent(text)}`,
+    isAffiliate: false,
+  };
+}
+
+function buildCivitatisLink(city: string): OfferLink | null {
+  if (!city) return null;
+  return {
+    partner: 'Civitatis',
+    description: 'Tours em português',
+    url: `https://www.civitatis.com/br/buscar/?q=${encodeURIComponent(city)}`,
+    isAffiliate: false,
+  };
+}
+
 export function buildOfferLinks(params: OfferParams): OfferLink[] {
   const { category, travelers = 1 } = params;
   const links: OfferLink[] = [];
