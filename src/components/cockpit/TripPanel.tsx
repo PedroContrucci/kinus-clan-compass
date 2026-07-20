@@ -1743,6 +1743,47 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </button>
       </div>
 
+      {/* Bottom: Mapa da viagem (collapsed, lazy) */}
+      <Collapsible open={mapExpanded} onOpenChange={setMapExpanded}>
+        <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <span>🗺️ Mapa da viagem</span>
+          {mapExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-2">
+          {mapEmbedUrl ? (
+            <div className="rounded-xl overflow-hidden border border-border">
+              <iframe
+                src={mapEmbedUrl}
+                width="100%"
+                height="200"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title={`Mapa de ${trip.destination}`}
+              />
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted-foreground text-center">
+              Carregando mapa…
+            </div>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Bottom: Clima (collapsed) */}
+      {trip.destination && (
+        <Collapsible open={weatherExpanded} onOpenChange={setWeatherExpanded}>
+          <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <span>🌤️ Clima</span>
+            {weatherExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2 bg-card border border-border rounded-xl p-4">
+            <WeatherBadge destination={trip.destination} startDate={trip.startDate} />
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
       {/* 5. Curation Sources (collapsible) */}
       <CurationSources trip={trip} />
 
