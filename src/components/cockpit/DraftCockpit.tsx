@@ -87,6 +87,38 @@ function inferAirportCode(city: string): string {
   return codeMap[city] || city.substring(0, 3).toUpperCase();
 }
 
+// Convert a planned flight (as created by buildDraftTrip) into a SelectedFlight
+// so the itinerary summary stage can render for KINU-created trips.
+function plannedFlightToSelected(flight: any, date: Date): SelectedFlight {
+  const route = `${flight.origin} → ${flight.destination}`;
+  const duration = flight.duration || '0h';
+  const durationMinutes = (() => {
+    const m = duration.match(/(\d+)h\s*(\d+)?/);
+    if (!m) return 0;
+    const hours = parseInt(m[1], 10) || 0;
+    const minutes = parseInt(m[2], 10) || 0;
+    return hours * 60 + minutes;
+  })();
+
+  const option: FlightOption = {
+    id: flight.id,
+    airline: flight.airline,
+    route,
+    isDirect: flight.stops === 0,
+    duration,
+    durationMinutes,
+    price: flight.price,
+    departureTime: flight.departureTime,
+    arrivalTime: flight.arrivalTime,
+    segments: [{
+      departure: { iataCode: flight.origin, at: flight.departureDate },
+      arrival: { iataCode: flight.destination, at: flight.arrivalDate },
+    }],
+  };
+
+  return { option, date };
+}
+
 // Get emoji from destination
 function getDestinationEmoji(destination: string): string {
   const emojiMap: Record<string, string> = {
