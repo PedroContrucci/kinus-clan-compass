@@ -1553,21 +1553,9 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       </Dialog>
 
 
-      {/* Destination Map Embed */}
-      {mapEmbedUrl && (
-        <div className="rounded-xl overflow-hidden border border-border">
-          <iframe
-            src={mapEmbedUrl}
-            width="100%"
-            height="200"
-            style={{ border: 0 }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            title={`Mapa de ${trip.destination}`}
-          />
-        </div>
-      )}
+      {/* Destination Map Embed moved to bottom collapsible "🗺️ Mapa da viagem" */}
+
+
 
       {/* 1.75 — Activity Summary by Category */}
       {(() => {
