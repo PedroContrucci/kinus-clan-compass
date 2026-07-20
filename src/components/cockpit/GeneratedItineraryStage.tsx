@@ -1059,10 +1059,18 @@ export const GeneratedItineraryStage = ({
 
         let foodPlanned = 0;
         let toursPlanned = 0;
+        let transportPlanned = 0;
         currentDays.forEach((day) => {
           day.activities.forEach((act) => {
             const cost = Math.round(act.estimatedCost || 0);
-            if (['breakfast', 'lunch', 'dinner'].includes(act.timeSlot)) {
+            // Flight and hotel line items are excluded — their cost lives in
+            // the planned flight/hotel totals from breakdown, not on day items.
+            if (['flight', 'hotel', 'checkin', 'checkout'].includes(act.type)) {
+              return;
+            }
+            if (act.type === 'transport') {
+              transportPlanned += cost;
+            } else if (['breakfast', 'lunch', 'dinner'].includes(act.timeSlot)) {
               foodPlanned += cost;
             } else if (['morning', 'afternoon', 'night'].includes(act.timeSlot)) {
               toursPlanned += cost;
@@ -1070,7 +1078,7 @@ export const GeneratedItineraryStage = ({
           });
         });
 
-        const totalPlanned = flightsPlanned + hotelPlanned + foodPlanned + toursPlanned;
+        const totalPlanned = flightsPlanned + hotelPlanned + foodPlanned + toursPlanned + transportPlanned;
 
         const raw = localStorage.getItem('kinu_trips');
         if (!raw) return;
@@ -1109,7 +1117,7 @@ export const GeneratedItineraryStage = ({
             accommodation: { ...cat('accommodation'), planned: hotelPlanned },
             tours: { ...cat('tours'), planned: toursPlanned },
             food: { ...cat('food'), planned: foodPlanned },
-            transport: cat('transport'),
+            transport: { ...cat('transport'), planned: transportPlanned },
             shopping: cat('shopping'),
           },
         };
