@@ -253,7 +253,7 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
         if (booking) links.push(booking);
       }
 
-      const googleHotels = buildGoogleHotelsLink(city, start, end);
+      const googleHotels = buildGoogleHotelsLink(city);
       if (googleHotels) links.push(googleHotels);
 
       const airbnb = buildAirbnbLink(city, start, end, travelers);
