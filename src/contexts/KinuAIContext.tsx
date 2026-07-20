@@ -317,7 +317,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
             children: [],
             infants: 0,
             budgetTier,
-            travelStyle: budgetTier === 'backpacker' ? 'backpacker' : budgetTier === 'economic' ? 'economic' : budgetTier === 'comfort' ? 'comfort' : 'luxury',
+            travelStyle: budgetTier,
             budgetAmount: 0,
             travelInterests,
             priorities: [],
