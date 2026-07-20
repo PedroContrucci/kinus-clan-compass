@@ -6,7 +6,7 @@ import { CURATED_CITIES } from "@/lib/curatedCities";
 import { destinationActivities } from "@/data/destinationActivities";
 import { findCityInfo } from "@/data/destinationCatalog";
 import { buildDraftTrip } from "@/lib/createTrip";
-import { TRAVEL_INTERESTS } from "@/components/wizard/types";
+import { TRAVEL_INTERESTS, PRIORITY_OPTIONS } from "@/components/wizard/types";
 
 export interface KinuActionHandlers {
   trocar_atividade?: (params: { dia: number; atividade_atual: string; nova_atividade: string }) => string | null | Promise<string | null>;
