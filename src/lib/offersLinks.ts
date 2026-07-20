@@ -116,22 +116,25 @@ function buildGoogleHotelsLink(
   hotelName?: string
 ): OfferLink | null {
   if (!city) return null;
+
+  const baseUrl = `https://www.google.com/travel/search?q=${encodeURIComponent('hotels in ' + city)}`;
+
   if (!startDate || !endDate) {
     return {
       partner: 'Google Hotels',
       description: 'Comparar hotéis · busca pronta',
-      url: `https://www.google.com/travel/hotels?q=${encodeURIComponent('hotels in ' + city)}`,
+      url: baseUrl,
       isAffiliate: false,
     };
   }
+
   const checkin = format(startDate, 'yyyy-MM-dd');
   const checkout = format(endDate, 'yyyy-MM-dd');
-  const query = hotelName ? `${hotelName} ${city}` : city;
 
   return {
     partner: 'Google Hotels',
     description: hotelName ? 'Ver este hotel · busca pronta' : 'Comparar hotéis · busca pronta',
-    url: `https://www.google.com/travel/hotels/${encodeURIComponent(city)}?q=${encodeURIComponent(query)}&checkin=${checkin}&checkout=${checkout}`,
+    url: `${baseUrl}&checkin=${checkin}&checkout=${checkout}`,
     isAffiliate: false,
   };
 }
@@ -161,23 +164,52 @@ function buildViatorLink(city: string, activityName?: string): OfferLink | null 
   };
 }
 
-function buildAirbnbLink(city: string): OfferLink | null {
+function buildAirbnbLink(
+  city: string,
+  startDate?: Date,
+  endDate?: Date,
+  travelers?: number
+): OfferLink | null {
   if (!city) return null;
+
+  let url = `https://www.airbnb.com.br/s/${encodeURIComponent(city)}/homes`;
+
+  if (startDate && endDate) {
+    const checkin = format(startDate, 'yyyy-MM-dd');
+    const checkout = format(endDate, 'yyyy-MM-dd');
+    const adults = Math.max(1, travelers || 1);
+    url = `${url}?checkin=${checkin}&checkout=${checkout}&adults=${adults}`;
+  }
+
   return {
     partner: 'Airbnb',
     description: 'Estadias e apartamentos',
-    url: `https://www.airbnb.com.br/s/${encodeURIComponent(city)}/homes`,
+    url,
     isAffiliate: false,
   };
 }
 
-function buildGetYourGuideLink(city: string, activityName?: string): OfferLink | null {
+function buildGetYourGuideLink(
+  city: string,
+  activityName?: string,
+  startDate?: Date,
+  endDate?: Date
+): OfferLink | null {
   if (!city) return null;
   const text = activityName ? `${activityName} ${city}` : city;
+
+  let url = `https://www.getyourguide.com/s/?q=${encodeURIComponent(text)}`;
+
+  if (startDate && endDate) {
+    const dateFrom = format(startDate, 'yyyy-MM-dd');
+    const dateTo = format(endDate, 'yyyy-MM-dd');
+    url = `${url}&date_from=${dateFrom}&date_to=${dateTo}`;
+  }
+
   return {
     partner: 'GetYourGuide',
     description: 'Passeios e ingressos',
-    url: `https://www.getyourguide.com/s/?q=${encodeURIComponent(text)}`,
+    url,
     isAffiliate: false,
   };
 }
@@ -229,10 +261,10 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
         if (booking) links.push(booking);
       }
 
-      const googleHotels = buildGoogleHotelsLink(city);
+      const googleHotels = buildGoogleHotelsLink(city, start, end);
       if (googleHotels) links.push(googleHotels);
 
-      const airbnb = buildAirbnbLink(city);
+      const airbnb = buildAirbnbLink(city, start, end, travelers);
       if (airbnb) links.push(airbnb);
 
       if (hotelName && start && end) {
@@ -253,7 +285,7 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
       const viator = buildViatorLink(city, activityName);
       if (viator) links.push(viator);
 
-      const getYourGuide = buildGetYourGuideLink(city, activityName);
+      const getYourGuide = buildGetYourGuideLink(city, activityName, params.startDate, params.endDate);
       if (getYourGuide) links.push(getYourGuide);
 
       const civitatis = buildCivitatisLink(city);
