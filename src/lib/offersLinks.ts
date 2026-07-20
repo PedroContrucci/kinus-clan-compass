@@ -222,15 +222,20 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
       const start = params.startDate;
       const end = params.endDate;
 
-      if (!city || !start || !end) return [];
+      if (!city) return [];
 
-      const booking = buildBookingLink(city, start, end, travelers, hotelName);
-      if (booking) links.push(booking);
+      if (start && end) {
+        const booking = buildBookingLink(city, start, end, travelers, hotelName);
+        if (booking) links.push(booking);
+      }
 
-      const googleHotels = buildGoogleHotelsLink(city, start, end, hotelName);
+      const googleHotels = buildGoogleHotelsLink(city);
       if (googleHotels) links.push(googleHotels);
 
-      if (hotelName) {
+      const airbnb = buildAirbnbLink(city);
+      if (airbnb) links.push(airbnb);
+
+      if (hotelName && start && end) {
         const generic = buildBookingLink(city, start, end, travelers, undefined, true);
         if (generic) links.push(generic);
       }
