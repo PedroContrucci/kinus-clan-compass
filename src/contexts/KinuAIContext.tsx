@@ -343,7 +343,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
             biologyAIEnabled: true,
           });
 
-          trip.createdVia = 'kinu';
+          (trip as any).createdVia = 'kinu';
 
           const existingTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
           existingTrips.push(trip);

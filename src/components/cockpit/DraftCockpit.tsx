@@ -3,7 +3,7 @@
 
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { FlightSelectionStage, SelectedFlight } from './FlightSelectionStage';
+import { FlightSelectionStage, FlightOption, SelectedFlight } from './FlightSelectionStage';
 import { GeneratedItineraryStage } from './GeneratedItineraryStage';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
 
@@ -31,6 +31,8 @@ interface DraftTrip {
   returnFlight?: SelectedFlight;
   budgetType?: 'backpacker' | 'economic' | 'comfort' | 'luxury';
   days?: any[];
+  createdVia?: string;
+  flights?: any;
 }
 
 interface DraftCockpitProps {
