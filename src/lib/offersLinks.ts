@@ -77,6 +77,21 @@ function buildSkyscannerLink(
   };
 }
 
+function buildDecolarLink(
+  origin: string,
+  dest: string,
+  startDate: Date,
+  endDate: Date,
+  travelers: number
+): OfferLink | null {
+  return {
+    partner: 'Decolar',
+    description: 'Agregador brasileiro · busca pronta',
+    url: `https://www.decolar.com/shop/flights/results/roundtrip/${origin.toUpperCase()}/${dest.toUpperCase()}/${format(startDate, 'yyyy-MM-dd')}/${format(endDate, 'yyyy-MM-dd')}/${travelers}/0/0`,
+    isAffiliate: false,
+  };
+}
+
 function buildBookingLink(
   city: string,
   startDate: Date,
@@ -102,39 +117,13 @@ function buildBookingLink(
   };
 }
 
-function buildGoogleHotelsLink(city: string): OfferLink | null;
-function buildGoogleHotelsLink(
-  city: string,
-  startDate: Date,
-  endDate: Date,
-  hotelName?: string
-): OfferLink | null;
-function buildGoogleHotelsLink(
-  city: string,
-  startDate?: Date,
-  endDate?: Date,
-  hotelName?: string
-): OfferLink | null {
+function buildGoogleHotelsLink(city: string): OfferLink | null {
   if (!city) return null;
-
-  const baseUrl = `https://www.google.com/travel/search?q=${encodeURIComponent('hotels in ' + city)}`;
-
-  if (!startDate || !endDate) {
-    return {
-      partner: 'Google Hotels',
-      description: 'Comparar hotéis · busca pronta',
-      url: baseUrl,
-      isAffiliate: false,
-    };
-  }
-
-  const checkin = format(startDate, 'yyyy-MM-dd');
-  const checkout = format(endDate, 'yyyy-MM-dd');
 
   return {
     partner: 'Google Hotels',
-    description: hotelName ? 'Ver este hotel · busca pronta' : 'Comparar hotéis · busca pronta',
-    url: `${baseUrl}&checkin=${checkin}&checkout=${checkout}`,
+    description: 'Comparar hotéis · ajuste as datas no site',
+    url: `https://www.google.com/travel/search?q=${encodeURIComponent('hotels in ' + city)}`,
     isAffiliate: false,
   };
 }
@@ -240,6 +229,9 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
       const kiwi = buildKiwiLink(origin, dest, start, end);
       if (kiwi) links.push(kiwi);
 
+      const decolar = buildDecolarLink(origin, dest, start, end, travelers);
+      if (decolar) links.push(decolar);
+
       const google = buildGoogleFlightsLink(origin, dest, start, end);
       if (google) links.push(google);
 
@@ -261,7 +253,7 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
         if (booking) links.push(booking);
       }
 
-      const googleHotels = buildGoogleHotelsLink(city, start, end);
+      const googleHotels = buildGoogleHotelsLink(city);
       if (googleHotels) links.push(googleHotels);
 
       const airbnb = buildAirbnbLink(city, start, end, travelers);
