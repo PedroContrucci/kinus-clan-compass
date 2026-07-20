@@ -459,12 +459,17 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   // Fetch maps embed URL — lazy, only when the "Mapa da viagem" section is expanded
   useEffect(() => {
     if (!mapExpanded || mapEmbedUrl) return;
+    const mapQuery = trip.country
+      ? `${trip.destination}, ${trip.country}`
+      : trip.destinationAirportCode
+        ? `${trip.destination} (${trip.destinationAirportCode})`
+        : trip.destination;
     supabase.functions.invoke('maps-embed', {
-      body: { query: trip.destination, zoom: 12 }
+      body: { query: mapQuery, zoom: 12 }
     }).then(({ data }) => {
       if (data?.embedUrl) setMapEmbedUrl(data.embedUrl);
     }).catch(() => {});
-  }, [mapExpanded, mapEmbedUrl, trip.destination]);
+  }, [mapExpanded, mapEmbedUrl, trip.destination, trip.country, trip.destinationAirportCode]);
 
   const flexOrigin = trip.flights?.outbound?.origin || 'GRU';
   const flexDest = trip.flights?.outbound?.destination || trip.destinationAirportCode;
