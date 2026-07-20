@@ -102,12 +102,28 @@ function buildBookingLink(
   };
 }
 
+function buildGoogleHotelsLink(city: string): OfferLink | null;
 function buildGoogleHotelsLink(
   city: string,
   startDate: Date,
   endDate: Date,
   hotelName?: string
+): OfferLink | null;
+function buildGoogleHotelsLink(
+  city: string,
+  startDate?: Date,
+  endDate?: Date,
+  hotelName?: string
 ): OfferLink | null {
+  if (!city) return null;
+  if (!startDate || !endDate) {
+    return {
+      partner: 'Google Hotels',
+      description: 'Comparar hotéis · busca pronta',
+      url: `https://www.google.com/travel/hotels?q=${encodeURIComponent('hotels in ' + city)}`,
+      isAffiliate: false,
+    };
+  }
   const checkin = format(startDate, 'yyyy-MM-dd');
   const checkout = format(endDate, 'yyyy-MM-dd');
   const query = hotelName ? `${hotelName} ${city}` : city;
@@ -145,6 +161,37 @@ function buildViatorLink(city: string, activityName?: string): OfferLink | null 
   };
 }
 
+function buildAirbnbLink(city: string): OfferLink | null {
+  if (!city) return null;
+  return {
+    partner: 'Airbnb',
+    description: 'Estadias e apartamentos',
+    url: `https://www.airbnb.com.br/s/${encodeURIComponent(city)}/homes`,
+    isAffiliate: false,
+  };
+}
+
+function buildGetYourGuideLink(city: string, activityName?: string): OfferLink | null {
+  if (!city) return null;
+  const text = activityName ? `${activityName} ${city}` : city;
+  return {
+    partner: 'GetYourGuide',
+    description: 'Passeios e ingressos',
+    url: `https://www.getyourguide.com/s/?q=${encodeURIComponent(text)}`,
+    isAffiliate: false,
+  };
+}
+
+function buildCivitatisLink(city: string): OfferLink | null {
+  if (!city) return null;
+  return {
+    partner: 'Civitatis',
+    description: 'Tours em português',
+    url: `https://www.civitatis.com/br/buscar/?q=${encodeURIComponent(city)}`,
+    isAffiliate: false,
+  };
+}
+
 export function buildOfferLinks(params: OfferParams): OfferLink[] {
   const { category, travelers = 1 } = params;
   const links: OfferLink[] = [];
@@ -175,15 +222,20 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
       const start = params.startDate;
       const end = params.endDate;
 
-      if (!city || !start || !end) return [];
+      if (!city) return [];
 
-      const booking = buildBookingLink(city, start, end, travelers, hotelName);
-      if (booking) links.push(booking);
+      if (start && end) {
+        const booking = buildBookingLink(city, start, end, travelers, hotelName);
+        if (booking) links.push(booking);
+      }
 
-      const googleHotels = buildGoogleHotelsLink(city, start, end, hotelName);
+      const googleHotels = buildGoogleHotelsLink(city);
       if (googleHotels) links.push(googleHotels);
 
-      if (hotelName) {
+      const airbnb = buildAirbnbLink(city);
+      if (airbnb) links.push(airbnb);
+
+      if (hotelName && start && end) {
         const generic = buildBookingLink(city, start, end, travelers, undefined, true);
         if (generic) links.push(generic);
       }
@@ -200,6 +252,12 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
 
       const viator = buildViatorLink(city, activityName);
       if (viator) links.push(viator);
+
+      const getYourGuide = buildGetYourGuideLink(city, activityName);
+      if (getYourGuide) links.push(getYourGuide);
+
+      const civitatis = buildCivitatisLink(city);
+      if (civitatis) links.push(civitatis);
       break;
     }
   }
