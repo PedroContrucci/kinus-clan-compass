@@ -275,13 +275,18 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
       const activityName = params.activityName?.trim();
       if (!city) return [];
 
+      // Prefer the specific activity day; fall back to trip start/end for category-level links
+      const activityDay = params.activityDate ? new Date(params.activityDate) : undefined;
+      const gygStart = activityDay || params.startDate;
+      const gygEnd = activityDay || params.endDate;
+
       const klook = buildKlookLink();
       if (klook) links.push(klook);
 
-      const viator = buildViatorLink(city, activityName);
+      const viator = buildViatorLink(city, activityName, activityDay);
       if (viator) links.push(viator);
 
-      const getYourGuide = buildGetYourGuideLink(city, activityName, params.startDate, params.endDate);
+      const getYourGuide = buildGetYourGuideLink(city, activityName, gygStart, gygEnd);
       if (getYourGuide) links.push(getYourGuide);
 
       const civitatis = buildCivitatisLink(city);
