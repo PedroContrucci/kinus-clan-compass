@@ -1785,6 +1785,9 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-2 bg-card border border-border rounded-xl p-4">
             <WeatherBadge destination={trip.destination} startDate={trip.startDate} />
+            <p className="text-xs text-muted-foreground/70 mt-2">
+              Previsão detalhada aparece aqui quando a viagem estiver a menos de 7 dias.
+            </p>
           </CollapsibleContent>
         </Collapsible>
       )}
