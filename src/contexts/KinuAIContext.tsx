@@ -71,6 +71,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
   const [isEmergencyMode, setIsEmergencyMode] = useState(false);
   const [suggestedDestinations, setSuggestedDestinations] = useState<string[]>([]);
   const [pendingNavigation, setPendingNavigation] = useState<{ destino: string; ts: number } | null>(null);
+  const [wizardPrefill, setWizardPrefill] = useState<{ destino: string; data_ida: string; data_volta: string; viajantes: number } | null>(null);
 
 
   const checkForEmergency = useCallback((text: string): boolean => {
