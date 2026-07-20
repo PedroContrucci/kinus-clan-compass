@@ -1104,8 +1104,10 @@ const Viagens = () => {
 
   const handleActivateDraft = (updatedTrip: any) => {
     updatedTrip.status = 'active';
-    
-    // Ensure days exist - generate basic itinerary if missing
+
+    // The cockpit forwards the EXACT days the user just saw in the itinerary
+    // stage. Only fall back to a synthetic itinerary when no days arrived AND
+    // the trip has none of its own — never overwrite a live-generated set.
     if (!updatedTrip.days || updatedTrip.days.length === 0) {
       const duration = getTripDuration(updatedTrip);
       updatedTrip.days = generateBasicDays(updatedTrip, duration);
