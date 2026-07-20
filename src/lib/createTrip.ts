@@ -271,32 +271,87 @@ function generateDays(
   travelInterests: string[] = [],
 ): TripDay[] {
   const days: TripDay[] = [];
-  const usedActivityIds = new Set<string>();
+  // EXP (attraction) activities must NEVER repeat within a trip.
+  const usedExpIds = new Set<string>();
+  // Restaurants: may repeat only after pool exhausted, never consecutive days.
+  const restaurantUsage: Record<'breakfast' | 'lunch' | 'dinner', { used: Set<string>; lastDay: Map<string, number> }> = {
+    breakfast: { used: new Set(), lastDay: new Map() },
+    lunch: { used: new Set(), lastDay: new Map() },
+    dinner: { used: new Set(), lastDay: new Map() },
+  };
 
-  function pickActivity(category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner', destination: string, themeName: string): SuggestedActivity | null {
+  const themeStyleMap: Record<string, string[]> = {
+    'Cultura': ['culture', 'history', 'art'],
+    'Gastronomia': ['gastronomy'],
+    'Passeios': ['nature', 'romantic', 'shopping'],
+    'Aventura': ['adventure', 'nature'],
+    'Descobertas': ['culture', 'shopping', 'art'],
+  };
+
+  type ExpPick = { activity: SuggestedActivity | null; isFreeSlot: boolean };
+
+  function pickExp(category: 'morning' | 'afternoon' | 'night', destination: string, themeName: string): ExpPick {
     const pool = getDestinationActivities(destination);
-    const themeStyleMap: Record<string, string[]> = {
-      'Cultura': ['culture', 'history', 'art'],
-      'Gastronomia': ['gastronomy'],
-      'Passeios': ['nature', 'romantic', 'shopping'],
-      'Aventura': ['adventure', 'nature'],
-      'Descobertas': ['culture', 'shopping', 'art'],
-    };
     const targetTags = themeStyleMap[themeName] || [];
     let candidates = pool.filter(a =>
       a.category === category &&
-      !usedActivityIds.has(a.id) &&
+      !usedExpIds.has(a.id) &&
       (targetTags.length === 0 || a.styleTags?.some(t => targetTags.includes(t)))
     );
     if (candidates.length === 0) {
-      candidates = pool.filter(a => a.category === category && !usedActivityIds.has(a.id));
+      candidates = pool.filter(a => a.category === category && !usedExpIds.has(a.id));
     }
+    if (candidates.length === 0) {
+      // Pool exhausted — never recycle EXP; return a curated free-slot marker.
+      const freeName = category === 'morning'
+        ? 'Manhã livre — explore por conta'
+        : category === 'afternoon'
+          ? 'Tarde livre — explore por conta'
+          : 'Fim de tarde livre — explore por conta';
+      const freeActivity = {
+        id: `__free__-${category}`,
+        name: freeName,
+        category,
+        description: 'Dia para revisitar o que amou ou descobrir o bairro do hotel no seu ritmo',
+        tips: ['Dia para revisitar o que amou ou descobrir o bairro do hotel no seu ritmo'],
+        styleTags: [],
+      } as unknown as SuggestedActivity;
+      return { activity: freeActivity, isFreeSlot: true };
+    }
+    const picked = candidates[0];
+    usedExpIds.add(picked.id);
+    return { activity: picked, isFreeSlot: false };
+  }
+
+  function pickRestaurant(category: 'breakfast' | 'lunch' | 'dinner', destination: string, themeName: string, dayNum: number): SuggestedActivity | null {
+    const pool = getDestinationActivities(destination);
+    const targetTags = themeStyleMap[themeName] || [];
+    const state = restaurantUsage[category];
+    const notConsecutive = (a: SuggestedActivity) => (state.lastDay.get(a.id) ?? -99) < dayNum - 1;
+
+    // 1) themed, unused, not consecutive
+    let candidates = pool.filter(a =>
+      a.category === category &&
+      !state.used.has(a.id) &&
+      notConsecutive(a) &&
+      (targetTags.length === 0 || a.styleTags?.some(t => targetTags.includes(t)))
+    );
+    // 2) any unused, not consecutive
+    if (candidates.length === 0) {
+      candidates = pool.filter(a => a.category === category && !state.used.has(a.id) && notConsecutive(a));
+    }
+    // 3) pool exhausted — allow repeats but never consecutive
+    if (candidates.length === 0) {
+      candidates = pool.filter(a => a.category === category && notConsecutive(a));
+    }
+    // 4) final safety fallback
     if (candidates.length === 0) {
       candidates = pool.filter(a => a.category === category);
     }
     if (candidates.length === 0) return null;
     const picked = candidates[0];
-    usedActivityIds.add(picked.id);
+    state.used.add(picked.id);
+    state.lastDay.set(picked.id, dayNum);
     return picked;
   }
 
