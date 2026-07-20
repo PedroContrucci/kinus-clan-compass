@@ -22,6 +22,23 @@ const queryClient = new QueryClient();
 
 function KinuAIWrapper() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { pendingNavigation, clearPendingNavigation } = useKinuAI();
+
+  useEffect(() => {
+    if (!pendingNavigation) return;
+    const { destino } = pendingNavigation;
+    if (destino === 'planejar') {
+      navigate('/planejar');
+    } else {
+      navigate('/viagens');
+    }
+    // Viagens will pick up the tab from pendingNavigation before clearing.
+    // Small delay so consumers on the destination route can read it.
+    const t = setTimeout(() => clearPendingNavigation(), 300);
+    return () => clearTimeout(t);
+  }, [pendingNavigation, navigate, clearPendingNavigation]);
+
   if (location.pathname === "/") return null;
   return (
     <>
