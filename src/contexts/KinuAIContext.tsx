@@ -208,6 +208,10 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     setSuggestedDestinations([]);
   }, []);
 
+  const clearPendingNavigation = useCallback(() => {
+    setPendingNavigation(null);
+  }, []);
+
 
   const dismissInsight = useCallback((id: string) => {
     setInsights(prev => prev.filter(insight => insight.id !== id));
