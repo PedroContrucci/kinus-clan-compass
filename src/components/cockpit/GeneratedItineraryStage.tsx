@@ -831,9 +831,9 @@ export function generateItinerary(
       
       let dinnerActivity = pickActivity('dinner', dayTheme.title);
       
-      if (isGastroDay && wantsGastronomy && priceLevel !== 'budget' && michelinCount < 2) {
+      if (isGastroDay && wantsGastronomy && priceLevel !== 'budget' && michelinCount < 1) {
         const michelin = getTopMichelinForCity(destination, 10);
-        const available = michelin.filter(m => !usedActivityIds.includes(`michelin-${m.name}`));
+        const available = michelin;
         let preferred: typeof available;
         if (priceLevel === 'luxury') {
           preferred = available.filter(m => m.stars >= 2);
