@@ -1368,7 +1368,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         };
 
         return (
-          <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+          <div id="central-ofertas" className="bg-card border border-border rounded-xl p-4 space-y-4">
             <div>
               <p className="text-sm font-bold text-foreground font-['Outfit']">🎯 Central de Ofertas</p>
               <p className="text-xs text-muted-foreground">Compare e reserve com nossos parceiros</p>
