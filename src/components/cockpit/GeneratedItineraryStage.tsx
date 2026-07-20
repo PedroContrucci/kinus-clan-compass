@@ -450,17 +450,16 @@ export function generateItinerary(
       // Short flight + early arrival: complete the day with check-in + afternoon + dinner
       if (sameDayArrival) {
         activities.push({
-          id: `day-${i}-checkin`, name: 'Check-in Hotel', type: 'checkin', timeSlot: 'hotel',
-          estimatedCost: hotelTotal, time: '14:00',
+          id: `day-${i}-checkin`, name: 'Check-in no hotel', type: 'checkin', timeSlot: 'hotel',
+          estimatedCost: 0, costPerPerson: 0, time: '14:00',
           location: (() => {
             const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
             if (rec) return `${rec.name} ⭐ ${rec.stars}.0 • ${rec.neighborhood}`;
             return `Hotel em ${destination}`;
           })(),
           status: 'suggestion', source: 'kinu',
-          tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
+          tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem'],
         });
-        dayTotal += hotelTotal;
         activities.push({
           id: `day-${i}-ambient-walk`,
           name: 'Caminhada leve no bairro do hotel',
@@ -510,9 +509,9 @@ export function generateItinerary(
         activities.push({
           id: `day-${i}-checkin`,
           name: 'Check-in no hotel',
-          type: 'hotel',
-          timeSlot: 'morning',
-          estimatedCost: hotelTotal,
+          type: 'checkin',
+          timeSlot: 'hotel',
+          estimatedCost: 0,
           costPerPerson: 0,
           time: '15:00',
           duration: '1h',
@@ -523,9 +522,8 @@ export function generateItinerary(
           })(),
           status: 'defined',
           source: 'kinu',
-          tips: ['Acomodação após o voo, sem pressa', `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
+          tips: ['Acomodação após o voo, sem pressa', `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem'],
         });
-        dayTotal += hotelTotal;
 
         activities.push({
           id: `day-${i}-walk`,
@@ -568,10 +566,11 @@ export function generateItinerary(
         // Normal arrival day — check-in + light exploration
         activities.push({
           id: `day-${i}-checkin`,
-          name: 'Check-in Hotel',
+          name: 'Check-in no hotel',
           type: 'checkin',
           timeSlot: 'hotel',
-          estimatedCost: hotelTotal,
+          estimatedCost: 0,
+          costPerPerson: 0,
           time: '14:00',
           location: (() => {
             const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
@@ -579,10 +578,9 @@ export function generateItinerary(
             return `Hotel em ${destination}`;
           })(),
           status: 'suggestion',
-          tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
+          tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem'],
           source: 'kinu',
         });
-        dayTotal += hotelTotal;
 
         activities.push({
           id: `day-${i}-ambient-walk`,
@@ -637,12 +635,14 @@ export function generateItinerary(
       const checkoutMinutes = Math.min(11 * 60, transferMinutes - 30);
       activities.push({
         id: `day-${i}-checkout`,
-        name: 'Check-out Hotel',
-        type: 'checkout',
-        timeSlot: 'hotel',
+        name: 'Check-out do hotel',
+        type: 'transport',
+        timeSlot: 'morning',
         estimatedCost: 0,
+        costPerPerson: 0,
         time: fmt(checkoutMinutes),
         status: 'suggestion',
+        tips: ['Logística de saída — sem custo adicional'],
         source: 'kinu',
       });
 
@@ -1059,10 +1059,18 @@ export const GeneratedItineraryStage = ({
 
         let foodPlanned = 0;
         let toursPlanned = 0;
+        let transportPlanned = 0;
         currentDays.forEach((day) => {
           day.activities.forEach((act) => {
             const cost = Math.round(act.estimatedCost || 0);
-            if (['breakfast', 'lunch', 'dinner'].includes(act.timeSlot)) {
+            // Flight and hotel line items are excluded — their cost lives in
+            // the planned flight/hotel totals from breakdown, not on day items.
+            if (['flight', 'hotel', 'checkin', 'checkout'].includes(act.type)) {
+              return;
+            }
+            if (act.type === 'transport') {
+              transportPlanned += cost;
+            } else if (['breakfast', 'lunch', 'dinner'].includes(act.timeSlot)) {
               foodPlanned += cost;
             } else if (['morning', 'afternoon', 'night'].includes(act.timeSlot)) {
               toursPlanned += cost;
@@ -1070,7 +1078,7 @@ export const GeneratedItineraryStage = ({
           });
         });
 
-        const totalPlanned = flightsPlanned + hotelPlanned + foodPlanned + toursPlanned;
+        const totalPlanned = flightsPlanned + hotelPlanned + foodPlanned + toursPlanned + transportPlanned;
 
         const raw = localStorage.getItem('kinu_trips');
         if (!raw) return;
@@ -1109,7 +1117,7 @@ export const GeneratedItineraryStage = ({
             accommodation: { ...cat('accommodation'), planned: hotelPlanned },
             tours: { ...cat('tours'), planned: toursPlanned },
             food: { ...cat('food'), planned: foodPlanned },
-            transport: cat('transport'),
+            transport: { ...cat('transport'), planned: transportPlanned },
             shopping: cat('shopping'),
           },
         };
@@ -1129,7 +1137,13 @@ export const GeneratedItineraryStage = ({
   // Convert current ItineraryDay[] into TripDay[] shape (matches buildDraftTrip
   // output) so the parent can persist EXACTLY what the user sees.
   const toTripDays = (source: ItineraryDay[]): any[] => {
-    const mapCat = (slot: string): string => {
+    const mapCat = (a: ItineraryActivity): string => {
+      const t = a.type;
+      if (t === 'flight') return 'voo';
+      if (t === 'hotel' || t === 'checkin') return 'hotel';
+      if (t === 'transport' || t === 'checkout') return 'transporte';
+      if (t === 'breakfast' || t === 'lunch' || t === 'dinner') return 'comida';
+      const slot = a.timeSlot;
       if (slot === 'flight') return 'voo';
       if (slot === 'hotel') return 'hotel';
       if (slot === 'breakfast' || slot === 'lunch' || slot === 'dinner') return 'comida';
@@ -1143,7 +1157,7 @@ export const GeneratedItineraryStage = ({
       title: d.label,
       icon: (d.theme || '').split(' ')[0] || '',
       activities: d.activities.map((a) => {
-        const cat = mapCat(a.timeSlot);
+        const cat = mapCat(a);
         return {
           id: a.id,
           time: a.time || '',
