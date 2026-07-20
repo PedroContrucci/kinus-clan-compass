@@ -825,6 +825,9 @@ export function generateItinerary(
           const act = convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00', travelers);
           activities.push(act);
           dayTotal += act.estimatedCost;
+        } else if (!afternoonActivity) {
+          // EXP pool exhausted for afternoon slot — emit free-slot entry.
+          activities.push(buildFreeSlotActivity(i, 'afternoon', '15:00'));
         }
       }
 
