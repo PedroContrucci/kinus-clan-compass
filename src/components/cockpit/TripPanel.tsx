@@ -622,8 +622,8 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     !(a.title === 'Voo Ida e Volta') &&
     !(a.title === 'Hospedagem')
   );
-  const visibleActions = showAllActions ? filteredActions : filteredActions.slice(0, 3);
-  const hiddenCount = filteredActions.length - 3;
+  const visibleActions = showAllActions ? filteredActions : filteredActions.slice(0, 2);
+  const hiddenCount = Math.max(0, filteredActions.length - 2);
 
   const dateRange = trip.startDate && trip.endDate
     ? `${format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} – ${format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })}`
