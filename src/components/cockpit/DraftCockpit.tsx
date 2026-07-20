@@ -207,17 +207,21 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
     });
   }, [trip, onSave]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback((daysFromStage?: any[]) => {
+    const nextDays = daysFromStage && daysFromStage.length > 0
+      ? daysFromStage
+      : (generatedDays && generatedDays.length > 0 ? generatedDays : trip.days);
     const updatedTrip: any = {
       ...trip,
       flightsSelected: stage === 'itinerary',
       outboundFlight: selectedOutbound,
       returnFlight: selectedReturn,
+      days: nextDays,
     };
     syncTripFlightPlannedFinances(updatedTrip);
     onSave(updatedTrip);
     toast({ title: "Rascunho salvo! 📝" });
-  }, [trip, stage, selectedOutbound, selectedReturn, onSave]);
+  }, [trip, stage, selectedOutbound, selectedReturn, generatedDays, onSave]);
 
   // For KINU-created drafts (or drafts that already carry a full generated itinerary),
   // the itinerary stage is reachable without a real Amadeus flight selection —
