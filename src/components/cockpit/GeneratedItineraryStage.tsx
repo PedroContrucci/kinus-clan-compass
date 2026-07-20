@@ -635,12 +635,14 @@ export function generateItinerary(
       const checkoutMinutes = Math.min(11 * 60, transferMinutes - 30);
       activities.push({
         id: `day-${i}-checkout`,
-        name: 'Check-out Hotel',
-        type: 'checkout',
-        timeSlot: 'hotel',
+        name: 'Check-out do hotel',
+        type: 'transport',
+        timeSlot: 'morning',
         estimatedCost: 0,
+        costPerPerson: 0,
         time: fmt(checkoutMinutes),
         status: 'suggestion',
+        tips: ['Logística de saída — sem custo adicional'],
         source: 'kinu',
       });
 
