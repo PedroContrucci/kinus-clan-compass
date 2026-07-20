@@ -23,6 +23,10 @@ function describeAction(action: ProposedAction): string {
       return `Adicionar ${p.atividade ?? '—'} às ${p.horario ?? '--:--'} no dia ${p.dia ?? '?'}`;
     case 'sugerir_destinos':
       return `🗺️ Acender ${(p.cidades ?? []).join(', ')} no mapa`;
+    case 'navegar_para': {
+      const labels: Record<string, string> = { painel: 'Painel', roteiro: 'Roteiro', financeiro: 'Financeiro', preparacao: 'Preparação', planejar: 'Planejar' };
+      return `Abrir ${labels[p.destino] ?? p.destino ?? '—'}`;
+    }
     default:
       return 'Ação proposta';
   }
@@ -78,7 +82,7 @@ export function KinuAIMessage({ message }: KinuAIMessageProps) {
                         onClick={() => applyProposedAction(message.id, idx)}
                         className="px-3 py-1 text-[11px] font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
                       >
-                        {action.type === 'sugerir_destinos' ? '✓ Ver no mapa' : '✓ Aplicar'}
+                        {action.type === 'sugerir_destinos' ? '✓ Ver no mapa' : action.type === 'navegar_para' ? 'Abrir' : '✓ Aplicar'}
                       </button>
                       <button
                         type="button"

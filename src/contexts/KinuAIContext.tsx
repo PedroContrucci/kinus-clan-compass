@@ -53,6 +53,8 @@ interface KinuAIContextType {
   registerActionHandlers: (handlers: KinuActionHandlers | null) => void;
   suggestedDestinations: string[];
   clearSuggestedDestinations: () => void;
+  pendingNavigation: { destino: string; ts: number } | null;
+  clearPendingNavigation: () => void;
 }
 
 
@@ -66,6 +68,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
   const [tripContext, setTripContext] = useState<KinuTripContext | null>(null);
   const [isEmergencyMode, setIsEmergencyMode] = useState(false);
   const [suggestedDestinations, setSuggestedDestinations] = useState<string[]>([]);
+  const [pendingNavigation, setPendingNavigation] = useState<{ destino: string; ts: number } | null>(null);
 
 
   const checkForEmergency = useCallback((text: string): boolean => {
@@ -205,6 +208,10 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     setSuggestedDestinations([]);
   }, []);
 
+  const clearPendingNavigation = useCallback(() => {
+    setPendingNavigation(null);
+  }, []);
+
 
   const dismissInsight = useCallback((id: string) => {
     setInsights(prev => prev.filter(insight => insight.id !== id));
@@ -236,6 +243,16 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     const target = messages.find(m => m.id === messageId);
     const action = target?.proposedActions?.[actionIndex];
     if (!action || action.status && action.status !== 'pending') return;
+
+    if (action.type === 'navegar_para') {
+      const destino = String((action.params as any)?.destino ?? '').toLowerCase();
+      const valid = ['painel', 'roteiro', 'financeiro', 'preparacao', 'planejar'];
+      if (!valid.includes(destino)) { toast.error('Destino de navegação inválido.'); return; }
+      setPendingNavigation({ destino, ts: Date.now() });
+      setActionStatus(messageId, actionIndex, 'applied');
+      setIsOpen(false);
+      return;
+    }
 
     if (action.type === 'sugerir_destinos') {
       const cidades: string[] = Array.isArray((action.params as any)?.cidades)
@@ -336,6 +353,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         registerActionHandlers,
         suggestedDestinations,
         clearSuggestedDestinations,
+        pendingNavigation,
+        clearPendingNavigation,
       }}
     >
       {children}

@@ -2,8 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { KinuAIProvider } from "@/contexts/KinuAIContext";
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { KinuAIProvider, useKinuAI } from "@/contexts/KinuAIContext";
 import { KinuAIButton, KinuAIChat } from "@/components/ai";
 import { TopNav } from "@/components/shared/TopNav";
 import { FeedbackButton } from "@/components/shared/FeedbackButton";
@@ -21,6 +22,23 @@ const queryClient = new QueryClient();
 
 function KinuAIWrapper() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { pendingNavigation, clearPendingNavigation } = useKinuAI();
+
+  useEffect(() => {
+    if (!pendingNavigation) return;
+    const { destino } = pendingNavigation;
+    if (destino === 'planejar') {
+      navigate('/planejar');
+    } else {
+      navigate('/viagens');
+    }
+    // Viagens will pick up the tab from pendingNavigation before clearing.
+    // Small delay so consumers on the destination route can read it.
+    const t = setTimeout(() => clearPendingNavigation(), 300);
+    return () => clearTimeout(t);
+  }, [pendingNavigation, navigate, clearPendingNavigation]);
+
   if (location.pathname === "/") return null;
   return (
     <>

@@ -93,7 +93,9 @@ AÇÕES ESTRUTURADAS (FERRAMENTAS): Quando o usuário PEDIR uma mudança na viag
 
 7. DIA DA SEMANA: o bloco ROTEIRO informa o dia da semana entre parênteses em cada data. Use EXCLUSIVAMENTE essa informação — NUNCA calcule dia da semana por conta própria.
 
-8. MODO DESCOBERTA + MAPA: ao concluir as 5 perguntas do modo descoberta, além da sua resposta em texto, emita a ferramenta sugerir_destinos com as 2-3 cidades recomendadas. Os nomes devem ser copiados LITERALMENTE da lista de DESTINOS DISPONÍVEIS — NUNCA sugira cidade fora dela.`;
+8. MODO DESCOBERTA + MAPA: ao concluir as 5 perguntas do modo descoberta, além da sua resposta em texto, emita a ferramenta sugerir_destinos com as 2-3 cidades recomendadas. Os nomes devem ser copiados LITERALMENTE da lista de DESTINOS DISPONÍVEIS — NUNCA sugira cidade fora dela.
+
+9. NAVEGAÇÃO: quando o usuário pedir para VER ou ABRIR uma área (financeiro, roteiro, preparação, painel, planejar), emita navegar_para. Responda com um resumo útil do que ele vai encontrar + a ferramenta.`;
 
 const KINU_TOOLS = [
   {
@@ -168,6 +170,17 @@ const KINU_TOOLS = [
         justificativa: { type: "string", description: "Uma frase curta por cidade explicando o match com o perfil" }
       },
       required: ["cidades"]
+    }
+  },
+  {
+    name: "navegar_para",
+    description: "Leva o usuário para uma área do app. Use quando ele pedir para ver/abrir algo (financeiro, roteiro, preparação, painel, planejar).",
+    input_schema: {
+      type: "object",
+      properties: {
+        destino: { type: "string", enum: ["painel", "roteiro", "financeiro", "preparacao", "planejar"] }
+      },
+      required: ["destino"]
     }
   },
 ];
