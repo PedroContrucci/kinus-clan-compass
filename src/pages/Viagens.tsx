@@ -835,11 +835,24 @@ const Viagens = () => {
         body: { action: 'search', origin, destination, date, adults },
       });
       if (error) return null;
-      if (!data?.success) return null;
-      const offers: any[] = Array.isArray(data?.data) ? data.data : [];
-      if (offers.length === 0) return null;
+      // Match TripPanel's parsing exactly: accept data.data, data.offers, or a
+      // raw array response body. Do NOT gate on data.success — TripPanel doesn't.
+      let offers: any[] = [];
+      if (Array.isArray(data)) {
+        offers = data;
+      } else if (data?.data && Array.isArray(data.data)) {
+        offers = data.data;
+      } else if (data?.offers && Array.isArray(data.offers)) {
+        offers = data.offers;
+      }
+      if (offers.length === 0) {
+        console.info('[KINU monitor] offers=0 cheapest=null');
+        return null;
+      }
       const cheapest = Math.min(...offers.map((o: any) => Number(o.price) || Infinity));
-      return Number.isFinite(cheapest) ? cheapest : null;
+      const result = Number.isFinite(cheapest) ? cheapest : null;
+      console.info(`[KINU monitor] offers=${offers.length} cheapest=${result}`);
+      return result;
     } catch {
       return null;
     }
