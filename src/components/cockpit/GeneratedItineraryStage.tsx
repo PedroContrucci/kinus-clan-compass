@@ -1264,7 +1264,7 @@ export const GeneratedItineraryStage = ({
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onSave}>
+            <Button variant="outline" size="sm" onClick={handleSaveWithDays}>
               <Save size={16} className="mr-1" />
               Salvar
             </Button>
