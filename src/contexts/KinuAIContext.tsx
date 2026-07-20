@@ -242,7 +242,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     actionHandlersRef.current = handlers;
   }, []);
 
-  const setActionStatus = useCallback((messageId: string, actionIndex: number, status: 'applied' | 'dismissed') => {
+  const setActionStatus = useCallback((messageId: string, actionIndex: number, status: 'pending' | 'working' | 'applied' | 'dismissed') => {
     setMessages(prev => prev.map(m => {
       if (m.id !== messageId || !m.proposedActions) return m;
       const next = m.proposedActions.map((a, i) => i === actionIndex ? { ...a, status } : a);
