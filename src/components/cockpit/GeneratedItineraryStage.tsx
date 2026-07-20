@@ -1137,7 +1137,13 @@ export const GeneratedItineraryStage = ({
   // Convert current ItineraryDay[] into TripDay[] shape (matches buildDraftTrip
   // output) so the parent can persist EXACTLY what the user sees.
   const toTripDays = (source: ItineraryDay[]): any[] => {
-    const mapCat = (slot: string): string => {
+    const mapCat = (a: ItineraryActivity): string => {
+      const t = a.type;
+      if (t === 'flight') return 'voo';
+      if (t === 'hotel' || t === 'checkin') return 'hotel';
+      if (t === 'transport' || t === 'checkout') return 'transporte';
+      if (t === 'breakfast' || t === 'lunch' || t === 'dinner') return 'comida';
+      const slot = a.timeSlot;
       if (slot === 'flight') return 'voo';
       if (slot === 'hotel') return 'hotel';
       if (slot === 'breakfast' || slot === 'lunch' || slot === 'dinner') return 'comida';
@@ -1151,7 +1157,7 @@ export const GeneratedItineraryStage = ({
       title: d.label,
       icon: (d.theme || '').split(' ')[0] || '',
       activities: d.activities.map((a) => {
-        const cat = mapCat(a.timeSlot);
+        const cat = mapCat(a);
         return {
           id: a.id,
           time: a.time || '',
