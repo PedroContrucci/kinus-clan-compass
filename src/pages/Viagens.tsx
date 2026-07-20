@@ -32,6 +32,8 @@ import { getDestinationActivities } from '@/data/destinationActivities';
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
 import { getFlightPlannedTotal, syncTripFlightPlannedFinances } from '@/lib/flightFinance';
+import { buildOfferLinks } from '@/lib/offersLinks';
+import { supabase } from '@/integrations/supabase/client';
 import { getDocsForDestination } from '@/data/destinationDocs';
 
 import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
