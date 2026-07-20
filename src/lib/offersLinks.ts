@@ -116,22 +116,25 @@ function buildGoogleHotelsLink(
   hotelName?: string
 ): OfferLink | null {
   if (!city) return null;
+
+  const baseUrl = `https://www.google.com/travel/search?q=${encodeURIComponent('hotels in ' + city)}`;
+
   if (!startDate || !endDate) {
     return {
       partner: 'Google Hotels',
       description: 'Comparar hotéis · busca pronta',
-      url: `https://www.google.com/travel/hotels?q=${encodeURIComponent('hotels in ' + city)}`,
+      url: baseUrl,
       isAffiliate: false,
     };
   }
+
   const checkin = format(startDate, 'yyyy-MM-dd');
   const checkout = format(endDate, 'yyyy-MM-dd');
-  const query = hotelName ? `${hotelName} ${city}` : city;
 
   return {
     partner: 'Google Hotels',
     description: hotelName ? 'Ver este hotel · busca pronta' : 'Comparar hotéis · busca pronta',
-    url: `https://www.google.com/travel/hotels/${encodeURIComponent(city)}?q=${encodeURIComponent(query)}&checkin=${checkin}&checkout=${checkout}`,
+    url: `${baseUrl}&checkin=${checkin}&checkout=${checkout}`,
     isAffiliate: false,
   };
 }
