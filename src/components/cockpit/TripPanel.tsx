@@ -836,9 +836,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           <p className="text-sm text-muted-foreground">
             {dateRange} • {trip.travelers} viajante(s) • Faixa {tierLabel}
           </p>
-          <div className="mt-1.5">
-            <WeatherBadge destination={trip.destination} startDate={trip.startDate} />
-          </div>
           {trip.accommodation?.name && (
             <a
               href={`https://www.google.com/maps/search/${encodeURIComponent(trip.accommodation.name + ', ' + trip.destination)}`}
@@ -854,7 +851,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
             <MiniKPI label={isPast ? 'em viagem' : 'dias'} value={isPast ? 'Em viagem' : String(daysLeft)} urgent={!isPast && daysLeft <= 7} />
             <DualProgressKPI financePct={confirmedPct} roteiroPct={progressPct} />
             <MiniKPI label="gasto" value={`R$${fmt(trip.finances.confirmed / 1000)}k`} />
-            <MiniKPI label="checklist" value={`${checklistPct}%`} />
           </div>
         </div>
       </div>
