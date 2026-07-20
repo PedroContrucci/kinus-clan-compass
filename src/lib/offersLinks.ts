@@ -189,13 +189,27 @@ function buildAirbnbLink(
   };
 }
 
-function buildGetYourGuideLink(city: string, activityName?: string): OfferLink | null {
+function buildGetYourGuideLink(
+  city: string,
+  activityName?: string,
+  startDate?: Date,
+  endDate?: Date
+): OfferLink | null {
   if (!city) return null;
   const text = activityName ? `${activityName} ${city}` : city;
+
+  let url = `https://www.getyourguide.com/s/?q=${encodeURIComponent(text)}`;
+
+  if (startDate && endDate) {
+    const dateFrom = format(startDate, 'yyyy-MM-dd');
+    const dateTo = format(endDate, 'yyyy-MM-dd');
+    url = `${url}&date_from=${dateFrom}&date_to=${dateTo}`;
+  }
+
   return {
     partner: 'GetYourGuide',
     description: 'Passeios e ingressos',
-    url: `https://www.getyourguide.com/s/?q=${encodeURIComponent(text)}`,
+    url,
     isAffiliate: false,
   };
 }
