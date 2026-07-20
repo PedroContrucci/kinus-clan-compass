@@ -199,6 +199,8 @@ const KINU_TOOLS = [
         viajantes: { type: "number" },
         estilo: { type: "string", description: "economica | conforto | premium, se o usuário indicou" },
         interesses: { type: "array", items: { type: "string" } },
+        orcamento_total: { type: "number", description: "Orçamento TOTAL da viagem em BRL, se o usuário mencionou (na descoberta ou na conversa)" },
+        prioridades: { type: "array", items: { type: "string" }, description: "Prioridades do usuário em palavras simples (ex: conforto, gastronomia, economia)" },
       },
       required: ["destino", "data_ida", "data_volta", "viajantes"],
     },
