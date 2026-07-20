@@ -1167,19 +1167,62 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
             <p className="text-[10px] text-emerald-400/90 mt-0.5">🍽️ {(trip.accommodation as any).mealPlan}</p>
           )}
           {!hotelConfirmed && (
-            <div className="mt-3 grid grid-cols-2 gap-1.5">
-              <button 
+            <div className="mt-3 space-y-1.5">
+              <button
                 onClick={() => openReservationConfirm('hotel')}
-                className="text-xs font-semibold py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                className="w-full text-xs font-semibold py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
               >
                 ✅ Confirmar
               </button>
-              <button 
-                onClick={() => onOpenAuction('hotel')}
-                className="text-xs font-semibold py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
-              >
-                🎯 Buscar Hotel
-              </button>
+              <div className="grid grid-cols-2 gap-1.5">
+                {heroHotelBookingSpecific ? (
+                  <a
+                    href={heroHotelBookingSpecific.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors text-center"
+                  >
+                    🔎 Buscar este hotel
+                  </a>
+                ) : (
+                  <button
+                    disabled
+                    className="text-xs font-semibold py-2 rounded-lg bg-amber-500/40 text-white/70 cursor-not-allowed"
+                    title="Sem hotel recomendado"
+                  >
+                    🔎 Buscar este hotel
+                  </button>
+                )}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="text-xs font-semibold py-2 rounded-lg border border-amber-500/40 text-amber-400 hover:bg-amber-500/10 transition-colors">
+                      Ver outros hotéis
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-64 p-2 bg-card border-border">
+                    <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Outros parceiros</p>
+                    {heroHotelGenericLinks.length === 0 ? (
+                      <p className="px-2 py-1.5 text-xs text-muted-foreground">Sem ofertas disponíveis.</p>
+                    ) : heroHotelGenericLinks.map((link) => (
+                      <a
+                        key={link.url}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-muted/60 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xs font-semibold text-foreground font-['Outfit']">{link.partner}</span>
+                          {link.isAffiliate && (
+                            <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500">Parceiro</span>
+                          )}
+                        </div>
+                        <ExternalLink size={12} className="text-muted-foreground shrink-0" />
+                      </a>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           )}
           {hotelConfirmed && onUnconfirm && (
