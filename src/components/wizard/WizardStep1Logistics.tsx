@@ -29,7 +29,7 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [showCardsGrid, setShowCardsGrid] = useState(false);
   const { toast } = useToast();
-  const { setIsOpen, sendMessage, suggestedDestinations, clearSuggestedDestinations } = useKinuAI();
+  const { setIsOpen, sendMessage, suggestedDestinations, clearSuggestedDestinations, wizardPrefill, clearWizardPrefill } = useKinuAI();
 
   const handleMapCitySelect = (cityName: string) => {
     clearSuggestedDestinations();
