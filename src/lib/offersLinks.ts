@@ -231,10 +231,13 @@ function buildGetYourGuideLink(
 
 function buildCivitatisLink(city: string): OfferLink | null {
   if (!city) return null;
+  const slug = CIVITATIS_CITY_SLUGS[city];
+  if (!slug) return null;
+
   return {
     partner: 'Civitatis',
     description: 'Tours em português',
-    url: `https://www.civitatis.com/br/buscar/?texto=${encodeURIComponent(city)}`,
+    url: `https://www.civitatis.com/br/${slug}/`,
     isAffiliate: false,
   };
 }
