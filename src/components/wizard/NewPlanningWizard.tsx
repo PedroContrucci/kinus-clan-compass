@@ -119,155 +119,31 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
 
   const handleGenerateDraft = async () => {
     setIsGenerating(true);
-    
+
     try {
       if (!data.departureDate || !data.returnDate) throw new Error('Datas não definidas');
 
-      const tripId = `trip-${Date.now()}`;
-      const destinationCity = data.destinationCity;
-      const duration = differenceInDays(data.returnDate, data.departureDate) + 1;
-      const totalNights = Math.max(1, duration - 1);
-      const totalTravelers = data.adults + data.children.length + data.infants;
-      
-      // Map budget tier to price level
-      const tier = BUDGET_TIERS.find(t => t.id === data.budgetTier)!;
-      const priceLevel: PriceLevel = tier.priceLevel;
-      const tierMultiplier = tier.multiplier;
-      
-      const tzDiff = getTimezoneDiff(destinationCity);
-      const jetLagImpact = calculateJetLagImpact(tzDiff);
-      const jetLagMode = data.biologyAIEnabled || jetLagImpact.level !== 'BAIXO';
-      const jetLagSeverity = jetLagImpact.level;
-
-      // Calculate flight duration
-      const flightHours = getFlightDuration(data.originCity || 'São Paulo', destinationCity, tzDiff);
-      const isLongHaul = flightHours > 10;
-      const departureTime = isLongHaul ? '23:00' : (flightHours > 6 ? '21:00' : '08:00');
-      
-      // Calculate arrival
-      const { arrivalTime, arrivalDate: arrDate, nextDay } = calculateArrivalTime(
-        departureTime, data.departureDate, flightHours, tzDiff
-      );
-      const flightArrivalDate = arrDate;
-      // For very long flights (>18h), arrival might be 2 days later
-      const arrivalDaysLater = flightHours > 18 ? 2 : 1;
-
-      // Generate days
-      const days = generateDays(destinationCity, duration, data.departureDate, data.returnDate, priceLevel, jetLagMode, totalTravelers, tierMultiplier, jetLagSeverity, departureTime, arrivalTime, flightHours, data.travelInterests || []);
-
-      // Calculate finances from generated days
-      const estimate = calculateTripEstimate(destinationCity, duration, totalTravelers, priceLevel);
-      const toursCost = sumCostsByCategory(days, 'passeio');
-      const foodCost = sumCostsByCategory(days, 'comida');
-      const transportCost = sumCostsByCategory(days, 'transporte');
-      const totalPlanned = Math.round((estimate.flights + estimate.hotel + toursCost + foodCost + transportCost) * tierMultiplier);
-      const budgetTotal = data.budgetAmount || totalPlanned;
-
-      const finances: TripFinances = {
-        total: budgetTotal,
-        confirmed: 0,
-        bidding: 0,
-        planned: totalPlanned,
-        available: Math.max(0, budgetTotal - totalPlanned),
-        categories: {
-          flights: { planned: Math.round(estimate.flights * tierMultiplier), confirmed: 0, bidding: 0 },
-          accommodation: { planned: Math.round(estimate.hotel * tierMultiplier), confirmed: 0, bidding: 0 },
-          tours: { planned: Math.round(toursCost * tierMultiplier), confirmed: 0, bidding: 0 },
-          food: { planned: Math.round(foodCost * tierMultiplier), confirmed: 0, bidding: 0 },
-          transport: { planned: Math.round(transportCost * tierMultiplier), confirmed: 0, bidding: 0 },
-          shopping: { planned: 0, confirmed: 0, bidding: 0 },
-        },
-      };
-
-      const flightPrice = Math.round(getActivityPrice('flight', destinationCity, priceLevel) * totalTravelers * tierMultiplier);
-      const hotelNightPrice = Math.round(getActivityPrice('hotel_night', destinationCity, priceLevel) * tierMultiplier);
-
-      const cityInfo = findCityInfo(destinationCity);
-
-      const idealZone = getIdealHotelZone(destinationCity, data.travelInterests || []);
-      const hotelRec = getHotelRecommendation(destinationCity, data.budgetTier, data.travelInterests || []);
-
-      const hotelName = hotelRec
-        ? `${hotelRec.name} — ${hotelRec.neighborhood}, ${destinationCity}`
-        : idealZone
-          ? `Hotel em ${idealZone.neighborhood}, ${destinationCity}`
-          : `Hotel em ${destinationCity}`;
-
-      const trip: SavedTrip = {
-        id: tripId,
-        status: 'draft',
-        destination: destinationCity,
-        origin: data.originCity,
-        originAirportCode: data.originAirportCode || 'GRU',
-        destinationAirportCode: data.destinationAirportCode || '',
-        country: cityInfo?.country.country || data.selectedCountry || getCountryForCity(destinationCity),
-        emoji: getDestinationEmoji(destinationCity),
-        startDate: data.departureDate.toISOString(),
-        endDate: data.returnDate.toISOString(),
-        budget: budgetTotal,
-        budgetType: data.travelStyle,
-        travelers: totalTravelers,
+      const trip = await buildDraftTrip({
+        originCity: data.originCity,
+        originAirportCode: data.originAirportCode,
+        destinationCity: data.destinationCity,
+        destinationAirportCode: data.destinationAirportCode,
+        destinationTimezoneId: data.destinationTimezoneId,
+        destinationTimezone: data.destinationTimezone,
+        selectedCountry: data.selectedCountry,
+        hasDirectFlight: data.hasDirectFlight,
+        departureDate: data.departureDate,
+        returnDate: data.returnDate,
+        adults: data.adults,
+        children: data.children,
+        infants: data.infants,
+        budgetTier: data.budgetTier,
+        travelStyle: data.travelStyle,
+        budgetAmount: data.budgetAmount,
+        travelInterests: data.travelInterests,
         priorities: data.priorities,
-        progress: 0,
-        timezone: {
-          origin: 'America/Sao_Paulo',
-          destination: data.destinationTimezoneId || data.destinationTimezone || 'Europe/Rome',
-          diff: tzDiff,
-        },
-        jetLagMode,
-        jetLagSeverity: jetLagImpact.level,
-        jetLagDescription: jetLagImpact.description,
-        travelInterests: data.travelInterests || [],
-        flights: {
-          outbound: {
-            id: 'flight-outbound',
-            airline: 'A confirmar',
-            flightNumber: '---',
-            origin: data.originAirportCode || 'GRU',
-            destination: data.destinationAirportCode || destinationCity,
-            departureDate: data.departureDate.toISOString(),
-            departureTime: departureTime,
-            arrivalDate: addDays(data.departureDate, arrivalDaysLater).toISOString(),
-            arrivalTime: arrivalTime,
-            duration: `${flightHours}h`,
-            stops: data.hasDirectFlight ? 0 : 1,
-            price: flightPrice,
-            status: 'planned' as ActivityStatus,
-          },
-          return: {
-            id: 'flight-return',
-            airline: 'A confirmar',
-            flightNumber: '---',
-            origin: data.destinationAirportCode || destinationCity,
-            destination: data.originAirportCode || 'GRU',
-            departureDate: data.returnDate.toISOString(),
-            departureTime: '14:00',
-            arrivalDate: data.returnDate.toISOString(),
-            arrivalTime: calculateArrivalTime('14:00', data.returnDate, flightHours, -tzDiff).arrivalTime,
-            duration: `${flightHours}h`,
-            stops: data.hasDirectFlight ? 0 : 1,
-            price: flightPrice,
-            status: 'planned' as ActivityStatus,
-          },
-        },
-        accommodation: {
-          id: 'hotel-main',
-          name: hotelName,
-          neighborhood: hotelRec?.neighborhood || idealZone?.neighborhood || '',
-          description: hotelRec?.whyGood || idealZone?.whyGood || '',
-          stars: hotelRec?.stars || (priceLevel === 'luxury' ? 5 : priceLevel === 'midrange' ? 4 : 3),
-          checkIn: addDays(data.departureDate, 1).toISOString(),
-          checkOut: data.returnDate.toISOString(),
-          nightlyRate: hotelNightPrice,
-          totalNights,
-          totalPrice: hotelNightPrice * totalNights,
-          status: 'planned' as ActivityStatus,
-        },
-        days,
-        finances,
-        checklist: defaultChecklist.map(item => ({ ...item })),
-        createdAt: new Date().toISOString(),
-      };
+        biologyAIEnabled: data.biologyAIEnabled,
+      });
 
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -285,7 +161,7 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
       if (onComplete) {
         onComplete(data);
       } else {
-        navigate(`/viagens?trip=${tripId}`);
+        navigate(`/viagens?trip=${trip.id}`);
       }
     } catch (error) {
       console.error('Error generating draft:', error);
@@ -298,6 +174,7 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
       setIsGenerating(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-background">
