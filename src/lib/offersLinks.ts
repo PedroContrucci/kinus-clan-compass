@@ -102,12 +102,28 @@ function buildBookingLink(
   };
 }
 
+function buildGoogleHotelsLink(city: string): OfferLink | null;
 function buildGoogleHotelsLink(
   city: string,
   startDate: Date,
   endDate: Date,
   hotelName?: string
+): OfferLink | null;
+function buildGoogleHotelsLink(
+  city: string,
+  startDate?: Date,
+  endDate?: Date,
+  hotelName?: string
 ): OfferLink | null {
+  if (!city) return null;
+  if (!startDate || !endDate) {
+    return {
+      partner: 'Google Hotels',
+      description: 'Comparar hotéis · busca pronta',
+      url: `https://www.google.com/travel/hotels?q=${encodeURIComponent('hotels in ' + city)}`,
+      isAffiliate: false,
+    };
+  }
   const checkin = format(startDate, 'yyyy-MM-dd');
   const checkout = format(endDate, 'yyyy-MM-dd');
   const query = hotelName ? `${hotelName} ${city}` : city;
