@@ -77,6 +77,21 @@ function buildSkyscannerLink(
   };
 }
 
+function buildDecolarLink(
+  origin: string,
+  dest: string,
+  startDate: Date,
+  endDate: Date,
+  travelers: number
+): OfferLink | null {
+  return {
+    partner: 'Decolar',
+    description: 'Agregador brasileiro · busca pronta',
+    url: `https://www.decolar.com/shop/flights/results/roundtrip/${origin.toUpperCase()}/${dest.toUpperCase()}/${format(startDate, 'yyyy-MM-dd')}/${format(endDate, 'yyyy-MM-dd')}/${travelers}/0/0`,
+    isAffiliate: false,
+  };
+}
+
 function buildBookingLink(
   city: string,
   startDate: Date,
