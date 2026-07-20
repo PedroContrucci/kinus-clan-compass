@@ -818,6 +818,26 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     }
   };
 
+  // Hero-scoped offer links: flight partners live behind the flight hero's
+  // "Buscar Ofertas" popover; hotel partners split into a hotel-specific
+  // Booking link and a generic-hotel popover on the hotel hero.
+  const heroOfferParams = {
+    originCode: trip.flights?.outbound?.origin || 'GRU',
+    destinationCode: trip.flights?.outbound?.destination || trip.destinationAirportCode,
+    city: trip.destination,
+    startDate: trip.startDate ? new Date(trip.startDate) : undefined,
+    endDate: trip.endDate ? new Date(trip.endDate) : undefined,
+    travelers: trip.travelers || 1,
+  };
+  const heroFlightLinks = buildOfferLinks({ ...heroOfferParams, category: 'flight' });
+  const heroHotelSpecificLinks = trip.accommodation?.name
+    ? buildOfferLinks({ ...heroOfferParams, category: 'hotel', hotelName: trip.accommodation.name })
+    : [];
+  const heroHotelBookingSpecific = heroHotelSpecificLinks.find(l => l.partner === 'Booking');
+  const heroHotelGenericLinks = buildOfferLinks({ ...heroOfferParams, category: 'hotel' });
+
+
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
