@@ -1011,12 +1011,19 @@ export const GeneratedItineraryStage = ({
     return existingDays.every((d: any) => Array.isArray(d?.activities) && d.activities.length > 0);
   }, [existingDays, departureDate, returnDate]);
 
-  const { days: initialDays, breakdown: initialBreakdown } = useMemo(() =>
-    hasCompleteExisting
-      ? convertTripDaysToItinerary(existingDays as any[], departureDate, travelers, budget)
-      : generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp),
-    [hasCompleteExisting, existingDays, departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]
-  );
+  // Primary source: always re-run the internal generator so the trip-wide
+  // no-repetition and Michelin rules apply. existingDays is only used as a
+  // graceful fallback if generation throws.
+  const { days: initialDays, breakdown: initialBreakdown } = useMemo(() => {
+    try {
+      return generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp);
+    } catch (err) {
+      if (hasCompleteExisting) {
+        return convertTripDaysToItinerary(existingDays as any[], departureDate, travelers, budget);
+      }
+      throw err;
+    }
+  }, [hasCompleteExisting, existingDays, departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]);
 
   const [days, setDays] = useState(initialDays);
   const [breakdown] = useState(initialBreakdown);
