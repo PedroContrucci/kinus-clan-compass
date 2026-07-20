@@ -270,21 +270,84 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       const data_ida = String(p.data_ida ?? '');
       const data_volta = String(p.data_volta ?? '');
       const viajantes = Number(p.viajantes);
+      const estilo = String(p.estilo ?? '').toLowerCase();
+      const interessesRaw: string[] = Array.isArray(p.interesses) ? p.interesses.map(String) : [];
       const cityMatch = CURATED_CITIES.find((c) => c.toLowerCase() === destino.toLowerCase());
       const dateRe = /^\d{4}-\d{2}-\d{2}$/;
       if (!cityMatch || !dateRe.test(data_ida) || !dateRe.test(data_volta) || !Number.isFinite(viajantes) || viajantes < 1) {
         toast.error('Não consegui montar essa viagem — dados incompletos.');
         return;
       }
-      setWizardPrefill({ destino: cityMatch, data_ida, data_volta, viajantes: Math.floor(viajantes) });
+      const adults = Math.max(1, Math.floor(viajantes));
+      const parseDate = (s: string) => {
+        const [y, m, d] = s.split('-').map(Number);
+        return new Date(y, (m || 1) - 1, d || 1);
+      };
+      const departureDate = parseDate(data_ida);
+      const returnDate = parseDate(data_volta);
+
+      // Map estilo → wizard tier
+      let budgetTier: 'backpacker' | 'economic' | 'comfort' | 'luxury' = 'comfort';
+      if (estilo.includes('econom')) budgetTier = 'economic';
+      else if (estilo.includes('premium') || estilo.includes('luxo') || estilo.includes('luxury')) budgetTier = 'luxury';
+
+      // Filter interests to valid wizard IDs
+      const validInterestIds = new Set(TRAVEL_INTERESTS.map((i) => i.id));
+      const travelInterests = interessesRaw
+        .map((s) => s.toLowerCase())
+        .filter((s) => validInterestIds.has(s as any));
+
+      const info = findCityInfo(cityMatch);
       setActionStatus(messageId, actionIndex, 'applied');
-      setMessages(prev => [...prev, {
-        id: `msg-${Date.now()}-ack`,
-        role: 'assistant',
-        content: '🧭 Preparei o wizard com tudo que conversamos — revisa e confirma!',
-        timestamp: new Date(),
-      }]);
-      setIsOpen(false);
+
+      (async () => {
+        try {
+          const trip = await buildDraftTrip({
+            originCity: 'São Paulo',
+            originAirportCode: 'GRU',
+            destinationCity: cityMatch,
+            destinationAirportCode: info?.city.airports?.[0],
+            destinationTimezoneId: info?.city.timezone,
+            destinationTimezone: info?.city.timezone,
+            selectedCountry: info?.country.country,
+            hasDirectFlight: false,
+            departureDate,
+            returnDate,
+            adults,
+            children: [],
+            infants: 0,
+            budgetTier,
+            travelStyle: budgetTier === 'backpacker' ? 'backpacker' : budgetTier === 'economic' ? 'economic' : budgetTier === 'comfort' ? 'comfort' : 'luxury',
+            budgetAmount: 0,
+            travelInterests,
+            priorities: [],
+            biologyAIEnabled: true,
+          });
+
+          const existingTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+          existingTrips.push(trip);
+          localStorage.setItem('kinu_trips', JSON.stringify(existingTrips));
+
+          setPendingNavigation({ destino: 'painel', ts: Date.now(), tripId: trip.id });
+          setMessages(prev => [...prev, {
+            id: `msg-${Date.now()}-ack`,
+            role: 'assistant',
+            content: `✈️ Rascunho de ${cityMatch} criado — revisa o roteiro e ativa quando estiver do seu jeito!`,
+            timestamp: new Date(),
+          }]);
+          setIsOpen(false);
+        } catch (err) {
+          console.error('[criar_viagem] buildDraftTrip failed, falling back to wizard prefill', err);
+          setWizardPrefill({ destino: cityMatch, data_ida, data_volta, viajantes: adults });
+          setMessages(prev => [...prev, {
+            id: `msg-${Date.now()}-ack`,
+            role: 'assistant',
+            content: '🧭 Preparei o wizard com tudo que conversamos — revisa e confirma!',
+            timestamp: new Date(),
+          }]);
+          setIsOpen(false);
+        }
+      })();
       return;
     }
 
