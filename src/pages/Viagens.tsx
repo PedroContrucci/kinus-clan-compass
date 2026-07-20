@@ -273,8 +273,17 @@ const Viagens = () => {
   const mapAnchorRef = useRef<HTMLDivElement | null>(null);
   const [budgetEditOpen, setBudgetEditOpen] = useState(false);
   const [budgetEditValue, setBudgetEditValue] = useState('');
-  const { setTripContext, registerActionHandlers } = useKinuAI();
+  const { setTripContext, registerActionHandlers, pendingNavigation, clearPendingNavigation } = useKinuAI();
   const [pendingConfirmRequest, setPendingConfirmRequest] = useState<{ tipo: 'voo' | 'hotel'; ts: number } | null>(null);
+
+  useEffect(() => {
+    if (!pendingNavigation || !selectedTrip) return;
+    const { destino } = pendingNavigation;
+    if (destino === 'painel' || destino === 'roteiro' || destino === 'financeiro' || destino === 'preparacao') {
+      setActiveTab(destino);
+      clearPendingNavigation();
+    }
+  }, [pendingNavigation, selectedTrip, clearPendingNavigation]);
 
   // Feed trip context to KINU AI when selected trip changes
   useEffect(() => {
