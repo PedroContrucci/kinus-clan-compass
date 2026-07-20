@@ -392,6 +392,8 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const [flightResults, setFlightResults] = useState<any[] | null>(null);
   const [searchingFlights, setSearchingFlights] = useState(false);
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
+  const [mapExpanded, setMapExpanded] = useState(false);
+  const [weatherExpanded, setWeatherExpanded] = useState(false);
   const [showFlexDates, setShowFlexDates] = useState(false);
   const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
   const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string; hotelName: string; mealPlan: string; outboundAirline: string; outboundFlightNumber: string; outboundTime: string; returnAirline: string; returnFlightNumber: string; returnTime: string } | null>(null);
@@ -454,14 +456,15 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingConfirmRequest?.ts]);
 
-  // Fetch maps embed URL
+  // Fetch maps embed URL — lazy, only when the "Mapa da viagem" section is expanded
   useEffect(() => {
-    supabase.functions.invoke('maps-embed', { 
-      body: { query: trip.destination, zoom: 12 } 
+    if (!mapExpanded || mapEmbedUrl) return;
+    supabase.functions.invoke('maps-embed', {
+      body: { query: trip.destination, zoom: 12 }
     }).then(({ data }) => {
       if (data?.embedUrl) setMapEmbedUrl(data.embedUrl);
     }).catch(() => {});
-  }, [trip.destination]);
+  }, [mapExpanded, mapEmbedUrl, trip.destination]);
 
   const flexOrigin = trip.flights?.outbound?.origin || 'GRU';
   const flexDest = trip.flights?.outbound?.destination || trip.destinationAirportCode;
@@ -619,8 +622,8 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     !(a.title === 'Voo Ida e Volta') &&
     !(a.title === 'Hospedagem')
   );
-  const visibleActions = showAllActions ? filteredActions : filteredActions.slice(0, 3);
-  const hiddenCount = filteredActions.length - 3;
+  const visibleActions = showAllActions ? filteredActions : filteredActions.slice(0, 2);
+  const hiddenCount = Math.max(0, filteredActions.length - 2);
 
   const dateRange = trip.startDate && trip.endDate
     ? `${format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} – ${format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })}`
@@ -833,9 +836,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           <p className="text-sm text-muted-foreground">
             {dateRange} • {trip.travelers} viajante(s) • Faixa {tierLabel}
           </p>
-          <div className="mt-1.5">
-            <WeatherBadge destination={trip.destination} startDate={trip.startDate} />
-          </div>
           {trip.accommodation?.name && (
             <a
               href={`https://www.google.com/maps/search/${encodeURIComponent(trip.accommodation.name + ', ' + trip.destination)}`}
@@ -851,7 +851,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
             <MiniKPI label={isPast ? 'em viagem' : 'dias'} value={isPast ? 'Em viagem' : String(daysLeft)} urgent={!isPast && daysLeft <= 7} />
             <DualProgressKPI financePct={confirmedPct} roteiroPct={progressPct} />
             <MiniKPI label="gasto" value={`R$${fmt(trip.finances.confirmed / 1000)}k`} />
-            <MiniKPI label="checklist" value={`${checklistPct}%`} />
           </div>
         </div>
       </div>
@@ -1554,21 +1553,9 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       </Dialog>
 
 
-      {/* Destination Map Embed */}
-      {mapEmbedUrl && (
-        <div className="rounded-xl overflow-hidden border border-border">
-          <iframe
-            src={mapEmbedUrl}
-            width="100%"
-            height="200"
-            style={{ border: 0 }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            title={`Mapa de ${trip.destination}`}
-          />
-        </div>
-      )}
+      {/* Destination Map Embed moved to bottom collapsible "🗺️ Mapa da viagem" */}
+
+
 
       {/* 1.75 — Activity Summary by Category */}
       {(() => {
@@ -1684,75 +1671,13 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mx-auto"
           >
             {showAllActions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            {showAllActions ? 'Menos' : `+ ${hiddenCount} ações`}
+            {showAllActions ? 'Menos insights' : `Ver todos os insights (+${hiddenCount})`}
           </button>
         )}
       </div>
 
-      {/* 2.5 — Roteiro Executivo */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border">
-          <span className="text-sm">🦅</span>
-          <p className="flex-1 text-xs text-muted-foreground leading-relaxed">
-            {getIcarusRoteiroInsight(trip)}
-          </p>
-          <button
-            onClick={() => onNavigateTab('roteiro')}
-            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-          >
-            Editar →
-          </button>
-        </div>
-        <div className="divide-y divide-border">
-          {(trip.days || []).map((day, index) => {
-            const dayData = day as any;
-            const dayIndex = dayData.day ?? dayData.dayNumber ?? index + 1;
-            const realActivities = (dayData.activities || []).filter((a: any) =>
-              a.category !== 'voo' &&
-              !(a.category === 'hotel' && (a.name?.toLowerCase().includes('check-in') || a.name?.toLowerCase().includes('check-out'))) &&
-              !a.name?.toLowerCase().includes('transfer')
-            );
-            const confirmedCount = realActivities.filter((a: any) => a.status === 'confirmed').length;
-            const dayTotal = realActivities.reduce((sum: number, a: any) => sum + (a.cost || a.estimatedCost || 0), 0);
-            const startMs = trip.startDate ? new Date(trip.startDate).getTime() : NaN;
-            const dayDate = !isNaN(startMs) && Number.isFinite(dayIndex)
-              ? format(new Date(startMs + (dayIndex - 1) * 86400000), "dd/MM (EEE)", { locale: ptBR })
-              : '';
-            const dayTitle = dayData.title || dayData.label || dayData.theme || `Dia ${dayIndex}`;
-            const cleanTitle = dayTitle.replace(/[^\w\sà-úÀ-Ú—·•\-,]/gi, '').trim();
+      {/* Roteiro Executivo removed — day-by-day lives in the Roteiro tab */}
 
-            return (
-              <button
-                key={dayIndex}
-                onClick={() => onNavigateTab('roteiro')}
-                className="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-muted/30 transition-colors text-left"
-              >
-                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground flex-shrink-0">
-                  {dayIndex}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-foreground truncate">{cleanTitle || `Dia ${dayIndex}`}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {dayDate} · {realActivities.length} atividades
-                    {confirmedCount > 0 && ` · ${confirmedCount} confirmadas`}
-                  </p>
-                </div>
-                {dayTotal > 0 && (
-                  <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
-                    R$ {fmt(dayTotal)}
-                  </span>
-                )}
-                <div className="w-8 h-1.5 rounded-full bg-muted overflow-hidden flex-shrink-0">
-                  <div
-                    className="h-full bg-emerald-500 rounded-full"
-                    style={{ width: `${realActivities.length > 0 ? (confirmedCount / realActivities.length) * 100 : 0}%` }}
-                  />
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* 3. Resumo Financeiro Compacto */}
       <div className="bg-card border border-border rounded-xl p-3 space-y-2">
@@ -1817,6 +1742,47 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           {pdfLoading ? 'Gerando...' : 'Exportar PDF'}
         </button>
       </div>
+
+      {/* Bottom: Mapa da viagem (collapsed, lazy) */}
+      <Collapsible open={mapExpanded} onOpenChange={setMapExpanded}>
+        <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <span>🗺️ Mapa da viagem</span>
+          {mapExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-2">
+          {mapEmbedUrl ? (
+            <div className="rounded-xl overflow-hidden border border-border">
+              <iframe
+                src={mapEmbedUrl}
+                width="100%"
+                height="200"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title={`Mapa de ${trip.destination}`}
+              />
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted-foreground text-center">
+              Carregando mapa…
+            </div>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Bottom: Clima (collapsed) */}
+      {trip.destination && (
+        <Collapsible open={weatherExpanded} onOpenChange={setWeatherExpanded}>
+          <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <span>🌤️ Clima</span>
+            {weatherExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2 bg-card border border-border rounded-xl p-4">
+            <WeatherBadge destination={trip.destination} startDate={trip.startDate} />
+          </CollapsibleContent>
+        </Collapsible>
+      )}
 
       {/* 5. Curation Sources (collapsible) */}
       <CurationSources trip={trip} />
