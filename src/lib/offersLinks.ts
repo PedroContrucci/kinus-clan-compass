@@ -212,7 +212,7 @@ function buildCivitatisLink(city: string): OfferLink | null {
   return {
     partner: 'Civitatis',
     description: 'Tours em português',
-    url: `https://www.civitatis.com/br/buscar/?q=${encodeURIComponent(city)}`,
+    url: `https://www.civitatis.com/br/buscar/?texto=${encodeURIComponent(city)}`,
     isAffiliate: false,
   };
 }
