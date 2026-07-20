@@ -295,5 +295,5 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
     }
   }
 
-  return links.slice(0, 3);
+  return links.slice(0, 5);
 }
