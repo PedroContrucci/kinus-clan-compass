@@ -23,6 +23,10 @@ function describeAction(action: ProposedAction): string {
       return `Adicionar ${p.atividade ?? '—'} às ${p.horario ?? '--:--'} no dia ${p.dia ?? '?'}`;
     case 'sugerir_destinos':
       return `🗺️ Acender ${(p.cidades ?? []).join(', ')} no mapa`;
+    case 'navegar_para': {
+      const labels: Record<string, string> = { painel: 'Painel', roteiro: 'Roteiro', financeiro: 'Financeiro', preparacao: 'Preparação', planejar: 'Planejar' };
+      return `Abrir ${labels[p.destino] ?? p.destino ?? '—'}`;
+    }
     default:
       return 'Ação proposta';
   }
