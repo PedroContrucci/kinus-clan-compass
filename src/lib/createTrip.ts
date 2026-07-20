@@ -524,11 +524,11 @@ function generateDays(
 
       let theme = orderedThemes[Math.max(0, themeIndex)];
 
-      const morningAct = pickActivity('morning', city, theme.title);
-      const afternoonAct = pickActivity('afternoon', city, theme.title);
-      const nightAct = pickActivity('night', city, theme.title);
-      const lunchAct = pickActivity('lunch', city, theme.title);
-      const dinnerAct = pickActivity('dinner', city, theme.title);
+      const morning = pickExp('morning', city, theme.title);
+      const afternoon = pickExp('afternoon', city, theme.title);
+      const night = pickExp('night', city, theme.title);
+      const lunchAct = pickRestaurant('lunch', city, theme.title, dayNum);
+      const dinnerAct = pickRestaurant('dinner', city, theme.title, dayNum);
 
       let dinnerName = dinnerAct?.name || theme.restaurants.dinner;
       if (travelInterests.includes('gastronomy') && theme.title === 'Gastronomia') {
@@ -538,6 +538,8 @@ function generateDays(
         }
       }
 
+      const freeDesc = 'Dia para revisitar o que amou ou descobrir o bairro do hotel no seu ritmo';
+
       days.push({
         day: dayNum,
         date: dateStr,
@@ -545,10 +547,10 @@ function generateDays(
         icon: theme.icon,
         activities: [
           makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-2`, '09:30', morningAct?.name || theme.activities[0], morningAct?.tips?.[0] || '', '2h30', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-2`, '09:30', morning.activity?.name || theme.activities[0], morning.isFreeSlot ? freeDesc : (morning.activity?.tips?.[0] || ''), '2h30', 'passeio', city, morning.isFreeSlot ? 'free' : 'museum', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-3`, '12:30', `Almoço: ${lunchAct?.name || theme.restaurants.lunch}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-4`, '14:30', afternoonAct?.name || theme.activities[1], afternoonAct?.tips?.[0] || '', '2h30', 'passeio', city, 'tour', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-5`, '17:30', nightAct?.name || theme.activities[2], nightAct?.tips?.[0] || '', '1h30', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, '14:30', afternoon.activity?.name || theme.activities[1], afternoon.isFreeSlot ? freeDesc : (afternoon.activity?.tips?.[0] || ''), '2h30', 'passeio', city, afternoon.isFreeSlot ? 'free' : 'tour', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-5`, '17:30', night.activity?.name || theme.activities[2], night.isFreeSlot ? freeDesc : (night.activity?.tips?.[0] || ''), '1h30', 'passeio', city, night.isFreeSlot ? 'free' : 'museum', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-6`, '19:30', `Jantar: ${dinnerName}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         ],
       });
