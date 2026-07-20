@@ -244,6 +244,16 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     const action = target?.proposedActions?.[actionIndex];
     if (!action || action.status && action.status !== 'pending') return;
 
+    if (action.type === 'navegar_para') {
+      const destino = String((action.params as any)?.destino ?? '').toLowerCase();
+      const valid = ['painel', 'roteiro', 'financeiro', 'preparacao', 'planejar'];
+      if (!valid.includes(destino)) { toast.error('Destino de navegação inválido.'); return; }
+      setPendingNavigation({ destino, ts: Date.now() });
+      setActionStatus(messageId, actionIndex, 'applied');
+      setIsOpen(false);
+      return;
+    }
+
     if (action.type === 'sugerir_destinos') {
       const cidades: string[] = Array.isArray((action.params as any)?.cidades)
         ? (action.params as any).cidades
