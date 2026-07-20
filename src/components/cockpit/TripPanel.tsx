@@ -1261,45 +1261,8 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </div>
       )}
 
-      {/* Status de Reservas */}
-      {totalReservations > 0 && (
-        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-          <div>
-            <p className="text-sm font-bold text-foreground font-['Outfit']">🎫 Status de Reservas</p>
-            <p className="text-xs text-muted-foreground">{confirmedReservations} de {totalReservations} confirmados</p>
-          </div>
-          {allReservationsConfirmed ? (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
-              <span className="text-lg">✅</span>
-              <span className="text-sm font-semibold text-emerald-400 font-['Outfit']">Tudo reservado!</span>
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              {reservationItems.map(item => (
-                <div
-                  key={item.id}
-                  onClick={() => handleReservationAction(item)}
-                  className={`flex items-center justify-between p-2.5 rounded-lg border transition-colors ${
-                    item.confirmed
-                      ? 'bg-emerald-500/5 border-emerald-500/20'
-                      : 'bg-background border-border hover:bg-muted/60 cursor-pointer'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-sm flex-shrink-0">{item.confirmed ? '✅' : '⬜'}</span>
-                    <span className={`text-sm truncate font-['Outfit'] ${item.confirmed ? 'text-emerald-400/80' : 'text-foreground'}`}>
-                      {item.name}
-                    </span>
-                  </div>
-                  {item.confirmed && (
-                    <span className="text-[10px] font-medium text-emerald-400/80 flex-shrink-0 ml-2">confirmado</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {/* Status de Reservas — removed: flight/hotel state now lives in the hero cards only. */}
+
 
       {/* Central de Ofertas */}
       {(() => {
