@@ -9,11 +9,12 @@ import { buildDraftTrip } from "@/lib/createTrip";
 import { TRAVEL_INTERESTS } from "@/components/wizard/types";
 
 export interface KinuActionHandlers {
-  trocar_atividade?: (params: { dia: number; atividade_atual: string; nova_atividade: string }) => string | null;
-  ajustar_horario?: (params: { dia: number; atividade: string; novo_horario: string }) => string | null;
-  remover_atividade?: (params: { dia: number; atividade: string }) => string | null;
-  confirmar_item?: (params: { tipo: 'voo' | 'hotel' }) => string | null;
-  adicionar_atividade?: (params: { dia: number; atividade: string; horario: string }) => string | null;
+  trocar_atividade?: (params: { dia: number; atividade_atual: string; nova_atividade: string }) => string | null | Promise<string | null>;
+  ajustar_horario?: (params: { dia: number; atividade: string; novo_horario: string }) => string | null | Promise<string | null>;
+  remover_atividade?: (params: { dia: number; atividade: string }) => string | null | Promise<string | null>;
+  confirmar_item?: (params: { tipo: 'voo' | 'hotel' }) => string | null | Promise<string | null>;
+  adicionar_atividade?: (params: { dia: number; atividade: string; horario: string }) => string | null | Promise<string | null>;
+  verificar_ofertas?: (params: Record<string, never>) => string | null | Promise<string | null>;
 }
 
 
