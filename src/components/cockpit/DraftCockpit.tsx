@@ -239,7 +239,8 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
         onActivate={handleActivate}
         onSave={handleSave}
         onBack={handleBackFromItinerary}
-        onDaysGenerated={setGeneratedDays}
+        onDaysGenerated={hasExistingDays ? undefined : setGeneratedDays}
+        existingDays={hasExistingDays ? trip.days : undefined}
       />
     );
   }
