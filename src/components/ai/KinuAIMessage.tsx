@@ -27,6 +27,8 @@ function describeAction(action: ProposedAction): string {
       const labels: Record<string, string> = { painel: 'Painel', roteiro: 'Roteiro', financeiro: 'Financeiro', preparacao: 'Preparação', planejar: 'Planejar' };
       return `Abrir ${labels[p.destino] ?? p.destino ?? '—'}`;
     }
+    case 'criar_viagem':
+      return `✈️ Planejar ${p.destino ?? '—'} · ${p.data_ida ?? '—'} → ${p.data_volta ?? '—'} · ${p.viajantes ?? '?'} viajante(s)`;
     default:
       return 'Ação proposta';
   }
