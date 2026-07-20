@@ -195,6 +195,8 @@ const KINU_TOOLS = [
         data_ida: { type: "string", description: "YYYY-MM-DD" },
         data_volta: { type: "string", description: "YYYY-MM-DD" },
         viajantes: { type: "number" },
+        estilo: { type: "string", description: "economica | conforto | premium, se o usuário indicou" },
+        interesses: { type: "array", items: { type: "string" } },
       },
       required: ["destino", "data_ida", "data_volta", "viajantes"],
     },
