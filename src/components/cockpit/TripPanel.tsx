@@ -1592,13 +1592,20 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           </div>
         </DialogContent>
       </Dialog>
+        </CollapsibleContent>
+      </Collapsible>
 
-
-      {/* Destination Map Embed moved to bottom collapsible "🗺️ Mapa da viagem" */}
-
-
-
-      {/* 1.75 — Activity Summary by Category */}
+      {/* Section: Insights do KINU */}
+      <Collapsible open={insightsOpen} onOpenChange={setInsightsOpen}>
+        <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <span className="flex items-center gap-2">
+            <span>💡</span>
+            <span className="font-medium text-foreground">Insights do KINU</span>
+          </span>
+          {insightsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 mt-4">
+          {/* 1.75 — Activity Summary by Category */}
       {(() => {
         const CATEGORY_STYLES: Record<string, { bg: string; border: string; bar: string; hover: string }> = {
           passeio: { bg: 'bg-sky-500/5', border: 'border-sky-500/20', bar: 'bg-sky-500', hover: 'hover:bg-sky-500/10' },
