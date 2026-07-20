@@ -271,32 +271,87 @@ function generateDays(
   travelInterests: string[] = [],
 ): TripDay[] {
   const days: TripDay[] = [];
-  const usedActivityIds = new Set<string>();
+  // EXP (attraction) activities must NEVER repeat within a trip.
+  const usedExpIds = new Set<string>();
+  // Restaurants: may repeat only after pool exhausted, never consecutive days.
+  const restaurantUsage: Record<'breakfast' | 'lunch' | 'dinner', { used: Set<string>; lastDay: Map<string, number> }> = {
+    breakfast: { used: new Set(), lastDay: new Map() },
+    lunch: { used: new Set(), lastDay: new Map() },
+    dinner: { used: new Set(), lastDay: new Map() },
+  };
 
-  function pickActivity(category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner', destination: string, themeName: string): SuggestedActivity | null {
+  const themeStyleMap: Record<string, string[]> = {
+    'Cultura': ['culture', 'history', 'art'],
+    'Gastronomia': ['gastronomy'],
+    'Passeios': ['nature', 'romantic', 'shopping'],
+    'Aventura': ['adventure', 'nature'],
+    'Descobertas': ['culture', 'shopping', 'art'],
+  };
+
+  type ExpPick = { activity: SuggestedActivity | null; isFreeSlot: boolean };
+
+  function pickExp(category: 'morning' | 'afternoon' | 'night', destination: string, themeName: string): ExpPick {
     const pool = getDestinationActivities(destination);
-    const themeStyleMap: Record<string, string[]> = {
-      'Cultura': ['culture', 'history', 'art'],
-      'Gastronomia': ['gastronomy'],
-      'Passeios': ['nature', 'romantic', 'shopping'],
-      'Aventura': ['adventure', 'nature'],
-      'Descobertas': ['culture', 'shopping', 'art'],
-    };
     const targetTags = themeStyleMap[themeName] || [];
     let candidates = pool.filter(a =>
       a.category === category &&
-      !usedActivityIds.has(a.id) &&
+      !usedExpIds.has(a.id) &&
       (targetTags.length === 0 || a.styleTags?.some(t => targetTags.includes(t)))
     );
     if (candidates.length === 0) {
-      candidates = pool.filter(a => a.category === category && !usedActivityIds.has(a.id));
+      candidates = pool.filter(a => a.category === category && !usedExpIds.has(a.id));
     }
+    if (candidates.length === 0) {
+      // Pool exhausted — never recycle EXP; return a curated free-slot marker.
+      const freeName = category === 'morning'
+        ? 'Manhã livre — explore por conta'
+        : category === 'afternoon'
+          ? 'Tarde livre — explore por conta'
+          : 'Fim de tarde livre — explore por conta';
+      const freeActivity = {
+        id: `__free__-${category}`,
+        name: freeName,
+        category,
+        description: 'Dia para revisitar o que amou ou descobrir o bairro do hotel no seu ritmo',
+        tips: ['Dia para revisitar o que amou ou descobrir o bairro do hotel no seu ritmo'],
+        styleTags: [],
+      } as unknown as SuggestedActivity;
+      return { activity: freeActivity, isFreeSlot: true };
+    }
+    const picked = candidates[0];
+    usedExpIds.add(picked.id);
+    return { activity: picked, isFreeSlot: false };
+  }
+
+  function pickRestaurant(category: 'breakfast' | 'lunch' | 'dinner', destination: string, themeName: string, dayNum: number): SuggestedActivity | null {
+    const pool = getDestinationActivities(destination);
+    const targetTags = themeStyleMap[themeName] || [];
+    const state = restaurantUsage[category];
+    const notConsecutive = (a: SuggestedActivity) => (state.lastDay.get(a.id) ?? -99) < dayNum - 1;
+
+    // 1) themed, unused, not consecutive
+    let candidates = pool.filter(a =>
+      a.category === category &&
+      !state.used.has(a.id) &&
+      notConsecutive(a) &&
+      (targetTags.length === 0 || a.styleTags?.some(t => targetTags.includes(t)))
+    );
+    // 2) any unused, not consecutive
+    if (candidates.length === 0) {
+      candidates = pool.filter(a => a.category === category && !state.used.has(a.id) && notConsecutive(a));
+    }
+    // 3) pool exhausted — allow repeats but never consecutive
+    if (candidates.length === 0) {
+      candidates = pool.filter(a => a.category === category && notConsecutive(a));
+    }
+    // 4) final safety fallback
     if (candidates.length === 0) {
       candidates = pool.filter(a => a.category === category);
     }
     if (candidates.length === 0) return null;
     const picked = candidates[0];
-    usedActivityIds.add(picked.id);
+    state.used.add(picked.id);
+    state.lastDay.set(picked.id, dayNum);
     return picked;
   }
 
@@ -469,11 +524,11 @@ function generateDays(
 
       let theme = orderedThemes[Math.max(0, themeIndex)];
 
-      const morningAct = pickActivity('morning', city, theme.title);
-      const afternoonAct = pickActivity('afternoon', city, theme.title);
-      const nightAct = pickActivity('night', city, theme.title);
-      const lunchAct = pickActivity('lunch', city, theme.title);
-      const dinnerAct = pickActivity('dinner', city, theme.title);
+      const morning = pickExp('morning', city, theme.title);
+      const afternoon = pickExp('afternoon', city, theme.title);
+      const night = pickExp('night', city, theme.title);
+      const lunchAct = pickRestaurant('lunch', city, theme.title, dayNum);
+      const dinnerAct = pickRestaurant('dinner', city, theme.title, dayNum);
 
       let dinnerName = dinnerAct?.name || theme.restaurants.dinner;
       if (travelInterests.includes('gastronomy') && theme.title === 'Gastronomia') {
@@ -483,6 +538,8 @@ function generateDays(
         }
       }
 
+      const freeDesc = 'Dia para revisitar o que amou ou descobrir o bairro do hotel no seu ritmo';
+
       days.push({
         day: dayNum,
         date: dateStr,
@@ -490,10 +547,10 @@ function generateDays(
         icon: theme.icon,
         activities: [
           makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-2`, '09:30', morningAct?.name || theme.activities[0], morningAct?.tips?.[0] || '', '2h30', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-2`, '09:30', morning.activity?.name || theme.activities[0], morning.isFreeSlot ? freeDesc : (morning.activity?.tips?.[0] || ''), '2h30', 'passeio', city, morning.isFreeSlot ? 'free' : 'museum', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-3`, '12:30', `Almoço: ${lunchAct?.name || theme.restaurants.lunch}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-4`, '14:30', afternoonAct?.name || theme.activities[1], afternoonAct?.tips?.[0] || '', '2h30', 'passeio', city, 'tour', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-5`, '17:30', nightAct?.name || theme.activities[2], nightAct?.tips?.[0] || '', '1h30', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-4`, '14:30', afternoon.activity?.name || theme.activities[1], afternoon.isFreeSlot ? freeDesc : (afternoon.activity?.tips?.[0] || ''), '2h30', 'passeio', city, afternoon.isFreeSlot ? 'free' : 'tour', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-5`, '17:30', night.activity?.name || theme.activities[2], night.isFreeSlot ? freeDesc : (night.activity?.tips?.[0] || ''), '1h30', 'passeio', city, night.isFreeSlot ? 'free' : 'museum', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-6`, '19:30', `Jantar: ${dinnerName}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         ],
       });
