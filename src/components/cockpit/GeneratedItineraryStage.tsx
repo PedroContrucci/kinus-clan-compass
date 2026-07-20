@@ -81,8 +81,8 @@ interface GeneratedItineraryStageProps {
   returnFlight: SelectedFlight;
   travelInterests?: string[];
   jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO';
-  onActivate: () => void;
-  onSave: () => void;
+  onActivate: (days?: any[]) => void;
+  onSave: (days?: any[]) => void;
   onBack: () => void;
   onDaysGenerated?: (days: ItineraryDay[]) => void;
   priceLevel?: PriceLevel;
