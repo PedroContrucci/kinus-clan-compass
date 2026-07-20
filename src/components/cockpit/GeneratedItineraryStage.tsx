@@ -86,6 +86,102 @@ interface GeneratedItineraryStageProps {
   onBack: () => void;
   onDaysGenerated?: (days: ItineraryDay[]) => void;
   priceLevel?: PriceLevel;
+  /** Existing generated days (TripDay[] shape from createTrip). If complete, they are used instead of running the internal generator. */
+  existingDays?: any[];
+}
+
+// Convert previously-generated TripDay[] (from createTrip) into ItineraryDay[]
+// for display in this stage. Also derives a minimal budget breakdown.
+function convertTripDaysToItinerary(
+  existingDays: any[],
+  departureDate: Date,
+  travelers: number,
+  budget: number
+): { days: ItineraryDay[]; breakdown: BudgetBreakdown } {
+  const inferTimeSlot = (time: string | undefined, category?: string, type?: string): ItineraryActivity['timeSlot'] => {
+    const cat = (category || '').toLowerCase();
+    const t = (type || '').toLowerCase();
+    if (cat === 'voo' || t.includes('voo') || t.includes('flight')) return 'flight';
+    if (cat === 'hotel' || t.includes('hotel') || t.includes('check')) return 'hotel';
+    const h = parseInt((time || '12:00').split(':')[0], 10) || 12;
+    if (cat === 'comida') {
+      if (h < 10) return 'breakfast';
+      if (h < 15) return 'lunch';
+      return 'dinner';
+    }
+    if (h < 11) return 'morning';
+    if (h < 14) return 'lunch';
+    if (h < 17) return 'afternoon';
+    if (h < 21) return 'dinner';
+    return 'night';
+  };
+  const mapType = (category?: string, timeSlot?: ItineraryActivity['timeSlot']): ItineraryActivity['type'] => {
+    const c = (category || '').toLowerCase();
+    if (c === 'voo') return 'flight';
+    if (c === 'hotel') return 'hotel';
+    if (c === 'comida') return (timeSlot as any) || 'lunch';
+    if (c === 'transporte') return 'transport';
+    return 'experience';
+  };
+  const mapStatus = (s: string): ItineraryActivity['status'] => {
+    if (s === 'confirmed') return 'defined';
+    if (s === 'cancelled') return 'pending';
+    return 'suggestion';
+  };
+
+  const days: ItineraryDay[] = existingDays.map((d: any, idx: number) => {
+    const activities: ItineraryActivity[] = (d.activities || []).map((a: any) => {
+      const timeSlot = inferTimeSlot(a.time, a.category, a.type);
+      const cost = Number(a.cost) || 0;
+      return {
+        id: a.id || `existing-${idx}-${Math.random().toString(36).slice(2, 8)}`,
+        name: a.name || 'Atividade',
+        type: mapType(a.category, timeSlot),
+        timeSlot,
+        estimatedCost: cost,
+        costPerPerson: travelers > 0 ? cost / travelers : cost,
+        time: a.time,
+        duration: a.duration,
+        location: a.location,
+        status: mapStatus(a.status),
+        tips: a.description ? [a.description] : undefined,
+        source: 'kinu',
+      } as ItineraryActivity;
+    });
+    const totalCost = activities.reduce((s, a) => s + (a.estimatedCost || 0), 0);
+    const parsedDate = d.date ? new Date(d.date) : addDays(departureDate, idx);
+    return {
+      dayNumber: d.day ?? idx + 1,
+      date: isNaN(parsedDate.getTime()) ? addDays(departureDate, idx) : parsedDate,
+      label: d.title || `Dia ${idx + 1}`,
+      theme: [d.icon, d.title].filter(Boolean).join(' ').trim(),
+      activities,
+      totalCost,
+    };
+  });
+
+  const sumByPredicate = (pred: (a: ItineraryActivity) => boolean) =>
+    days.reduce((s, day) => s + day.activities.filter(pred).reduce((ss, a) => ss + (a.estimatedCost || 0), 0), 0);
+
+  const flightsAmt = sumByPredicate(a => a.type === 'flight');
+  const hotelAmt = sumByPredicate(a => a.type === 'hotel' || a.type === 'checkin' || a.type === 'checkout');
+  const foodAmt = sumByPredicate(a => a.type === 'breakfast' || a.type === 'lunch' || a.type === 'dinner');
+  const experiencesAmt = sumByPredicate(a => !['flight', 'hotel', 'checkin', 'checkout', 'breakfast', 'lunch', 'dinner'].includes(a.type));
+  const total = flightsAmt + hotelAmt + foodAmt + experiencesAmt;
+  const safeBudget = budget > 0 ? budget : total || 1;
+  const pct = (v: number) => Math.round((v / safeBudget) * 100);
+
+  const breakdown: BudgetBreakdown = {
+    flights: { amount: flightsAmt, percent: pct(flightsAmt), status: 'defined' },
+    hotel: { amount: hotelAmt, percent: pct(hotelAmt), status: 'estimated' },
+    experiences: { amount: experiencesAmt, percent: pct(experiencesAmt), status: 'estimated' },
+    food: { amount: foodAmt, percent: pct(foodAmt), status: 'estimated' },
+    total,
+    available: safeBudget - total,
+    trustZonePercent: Math.round((total / safeBudget) * 100),
+  };
+
+  return { days, breakdown };
 }
 
 
