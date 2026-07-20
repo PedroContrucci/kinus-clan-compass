@@ -566,10 +566,11 @@ export function generateItinerary(
         // Normal arrival day — check-in + light exploration
         activities.push({
           id: `day-${i}-checkin`,
-          name: 'Check-in Hotel',
+          name: 'Check-in no hotel',
           type: 'checkin',
           timeSlot: 'hotel',
-          estimatedCost: hotelTotal,
+          estimatedCost: 0,
+          costPerPerson: 0,
           time: '14:00',
           location: (() => {
             const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
@@ -577,10 +578,9 @@ export function generateItinerary(
             return `Hotel em ${destination}`;
           })(),
           status: 'suggestion',
-          tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
+          tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem'],
           source: 'kinu',
         });
-        dayTotal += hotelTotal;
 
         activities.push({
           id: `day-${i}-ambient-walk`,
