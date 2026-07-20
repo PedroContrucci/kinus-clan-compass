@@ -1553,7 +1553,7 @@ export const GeneratedItineraryStage = ({
         <Button
           className="w-full h-14"
           size="lg"
-          onClick={onActivate}
+          onClick={handleActivateWithFinances}
         >
           <PlayCircle size={20} className="mr-2" />
           <span className="font-['Outfit'] text-lg">Ativar Viagem</span>
