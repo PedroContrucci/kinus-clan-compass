@@ -1094,12 +1094,37 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                 >
                   ✅ Confirmar
                 </button>
-                <button 
-                  onClick={() => onOpenAuction('flight')}
-                  className="text-xs font-semibold py-2 rounded-lg bg-sky-500 text-white hover:bg-sky-600 transition-colors"
-                >
-                  🎯 Buscar Ofertas
-                </button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="text-xs font-semibold py-2 rounded-lg bg-sky-500 text-white hover:bg-sky-600 transition-colors"
+                    >
+                      🎯 Buscar Ofertas
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-64 p-2 bg-card border-border">
+                    <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Parceiros de voo</p>
+                    {heroFlightLinks.length === 0 ? (
+                      <p className="px-2 py-1.5 text-xs text-muted-foreground">Sem ofertas disponíveis.</p>
+                    ) : heroFlightLinks.map((link) => (
+                      <a
+                        key={link.url}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-muted/60 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xs font-semibold text-foreground font-['Outfit']">{link.partner}</span>
+                          {link.isAffiliate && (
+                            <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500">Parceiro</span>
+                          )}
+                        </div>
+                        <ExternalLink size={12} className="text-muted-foreground shrink-0" />
+                      </a>
+                    ))}
+                  </PopoverContent>
+                </Popover>
               </div>
               <button
                 onClick={searchRealFlights}
