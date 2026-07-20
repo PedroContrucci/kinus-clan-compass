@@ -1215,7 +1215,7 @@ export const GeneratedItineraryStage = ({
               <Save size={16} className="mr-1" />
               Salvar
             </Button>
-            <Button size="sm" onClick={onActivate}>
+            <Button size="sm" onClick={handleActivateWithFinances}>
               <PlayCircle size={16} className="mr-1" />
               Ativar
             </Button>
