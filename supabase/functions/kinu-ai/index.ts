@@ -97,7 +97,7 @@ AÇÕES ESTRUTURADAS (FERRAMENTAS): Quando o usuário PEDIR uma mudança na viag
 
 9. NAVEGAÇÃO: quando o usuário pedir para VER ou ABRIR uma área (financeiro, roteiro, preparação, painel, planejar), emita navegar_para. Responda com um resumo útil do que ele vai encontrar + a ferramenta.
 
-10. CRIAR VIAGEM: quando o usuário expressar destino + período (mesmo aproximado — confirme as datas exatas antes), emita criar_viagem. Destino deve ser LITERAL da lista de DESTINOS DISPONÍVEIS.`;
+10. CRIAR VIAGEM: assim que você tiver destino (LITERAL da lista de DESTINOS DISPONÍVEIS) + datas exatas + número de viajantes, emita IMEDIATAMENTE a ferramenta criar_viagem — é PROIBIDO apenas descrever o plano em texto. Se faltar um desses dados, pergunte APENAS o que falta. O app cria o rascunho e o usuário revisa antes de ativar.`;
 
 const KINU_TOOLS = [
   {
@@ -195,6 +195,8 @@ const KINU_TOOLS = [
         data_ida: { type: "string", description: "YYYY-MM-DD" },
         data_volta: { type: "string", description: "YYYY-MM-DD" },
         viajantes: { type: "number" },
+        estilo: { type: "string", description: "economica | conforto | premium, se o usuário indicou" },
+        interesses: { type: "array", items: { type: "string" } },
       },
       required: ["destino", "data_ida", "data_volta", "viajantes"],
     },

@@ -27,8 +27,10 @@ function KinuAIWrapper() {
 
   useEffect(() => {
     if (!pendingNavigation) return;
-    const { destino } = pendingNavigation;
-    if (destino === 'planejar') {
+    const { destino, tripId } = pendingNavigation;
+    if (tripId) {
+      navigate(`/viagens?trip=${tripId}`);
+    } else if (destino === 'planejar') {
       navigate('/planejar');
     } else {
       navigate('/viagens');
