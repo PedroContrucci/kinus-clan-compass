@@ -1790,6 +1790,8 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           {pdfLoading ? 'Gerando...' : 'Exportar PDF'}
         </button>
       </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Bottom: Mapa da viagem (collapsed, lazy) */}
       <Collapsible open={mapOpen} onOpenChange={setMapOpen}>
