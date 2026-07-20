@@ -252,6 +252,12 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
 
       const viator = buildViatorLink(city, activityName);
       if (viator) links.push(viator);
+
+      const getYourGuide = buildGetYourGuideLink(city, activityName);
+      if (getYourGuide) links.push(getYourGuide);
+
+      const civitatis = buildCivitatisLink(city);
+      if (civitatis) links.push(civitatis);
       break;
     }
   }
