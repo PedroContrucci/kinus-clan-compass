@@ -139,7 +139,9 @@ function buildKlookLink(): OfferLink | null {
   };
 }
 
-function buildViatorLink(city: string, activityName?: string): OfferLink | null {
+function buildViatorLink(city: string, activityName?: string, _date?: Date): OfferLink | null {
+  // Viator search does not accept a reliable date param — keep text search.
+  // Ensure both activityName and city are present in the query when available.
   const text = activityName
     ? `${activityName} ${city || ''}`.trim()
     : city;
