@@ -203,6 +203,15 @@ const KINU_TOOLS = [
       required: ["destino", "data_ida", "data_volta", "viajantes"],
     },
   },
+  {
+    name: "verificar_ofertas",
+    description: "Verifica agora os preços reais de voo da viagem ativa e compara com o valor planejado. Use quando o usuário pedir para checar preços/ofertas ou perguntar se é bom momento de comprar.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
 ];
 
 
