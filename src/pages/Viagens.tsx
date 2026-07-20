@@ -822,6 +822,50 @@ const Viagens = () => {
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
   };
 
+  // Shared helper: fetch cheapest real flight price from Amadeus for a trip.
+  // Returns null on any failure or empty results.
+  const fetchCheapestFlightPrice = useCallback(async (trip: SavedTrip): Promise<number | null> => {
+    try {
+      const origin = trip.flights?.outbound?.origin || 'GRU';
+      const destination = trip.flights?.outbound?.destination || trip.destination;
+      const date = trip.startDate?.split('T')[0];
+      const adults = trip.travelers || 1;
+      if (!date || !destination) return null;
+      const { data, error } = await supabase.functions.invoke('amadeus-flights', {
+        body: { action: 'search', origin, destination, date, adults },
+      });
+      if (error) return null;
+      const offers: any[] = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.offers) ? data.offers : []);
+      if (offers.length === 0) return null;
+      const cheapest = Math.min(...offers.map((o: any) => Number(o.price) || Infinity));
+      return Number.isFinite(cheapest) ? cheapest : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Background price monitoring on trip open. Throttled to once per 12h.
+  useEffect(() => {
+    if (!selectedTrip) return;
+    const lastCheck = (selectedTrip as any).lastPriceCheck;
+    const now = Date.now();
+    if (lastCheck?.checkedAt && (now - lastCheck.checkedAt) < 12 * 3600 * 1000) return;
+    let cancelled = false;
+    (async () => {
+      const price = await fetchCheapestFlightPrice(selectedTrip);
+      if (cancelled || price == null) return;
+      const anchor = getFlightPlannedTotal(selectedTrip);
+      const delta = anchor > 0 ? Math.round(price - anchor) : 0;
+      const updated: SavedTrip = {
+        ...selectedTrip,
+        lastPriceCheck: { price: Math.round(price), delta, checkedAt: Date.now() },
+      } as SavedTrip;
+      persistTrip(updated);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTrip?.id]);
+
   const applyPlannedCostDelta = (trip: SavedTrip, activity: TripActivity, delta: number) => {
     // Only planned (not confirmed/bidding) contributes to finances.planned
     if (activity.status === 'confirmed' || activity.status === 'bidding') return;
