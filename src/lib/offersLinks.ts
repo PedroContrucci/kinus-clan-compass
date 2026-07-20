@@ -19,6 +19,8 @@ export interface OfferParams {
   startDate?: Date;
   endDate?: Date;
   travelers?: number;
+  /** Specific date (yyyy-MM-dd) of the day the activity is scheduled — used for activity-level links */
+  activityDate?: string;
 }
 
 const TRAVELPAYOUTS_MARKER = '742814';
