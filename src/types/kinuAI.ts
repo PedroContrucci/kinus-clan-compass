@@ -4,7 +4,8 @@ export type ProposedActionType =
   | 'remover_atividade'
   | 'confirmar_item'
   | 'adicionar_atividade'
-  | 'sugerir_destinos';
+  | 'sugerir_destinos'
+  | 'navegar_para';
 
 export interface ProposedAction {
   type: ProposedActionType;
