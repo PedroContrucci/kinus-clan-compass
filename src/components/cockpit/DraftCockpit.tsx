@@ -3,7 +3,7 @@
 
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { FlightSelectionStage, SelectedFlight } from './FlightSelectionStage';
+import { FlightSelectionStage, FlightOption, SelectedFlight } from './FlightSelectionStage';
 import { GeneratedItineraryStage } from './GeneratedItineraryStage';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
 
@@ -31,6 +31,8 @@ interface DraftTrip {
   returnFlight?: SelectedFlight;
   budgetType?: 'backpacker' | 'economic' | 'comfort' | 'luxury';
   days?: any[];
+  createdVia?: string;
+  flights?: any;
 }
 
 interface DraftCockpitProps {
@@ -85,6 +87,38 @@ function inferAirportCode(city: string): string {
   return codeMap[city] || city.substring(0, 3).toUpperCase();
 }
 
+// Convert a planned flight (as created by buildDraftTrip) into a SelectedFlight
+// so the itinerary summary stage can render for KINU-created trips.
+function plannedFlightToSelected(flight: any, date: Date): SelectedFlight {
+  const route = `${flight.origin} → ${flight.destination}`;
+  const duration = flight.duration || '0h';
+  const durationMinutes = (() => {
+    const m = duration.match(/(\d+)h\s*(\d+)?/);
+    if (!m) return 0;
+    const hours = parseInt(m[1], 10) || 0;
+    const minutes = parseInt(m[2], 10) || 0;
+    return hours * 60 + minutes;
+  })();
+
+  const option: FlightOption = {
+    id: flight.id,
+    airline: flight.airline,
+    route,
+    isDirect: flight.stops === 0,
+    duration,
+    durationMinutes,
+    price: flight.price,
+    departureTime: flight.departureTime,
+    arrivalTime: flight.arrivalTime,
+    segments: [{
+      departure: { iataCode: flight.origin, at: flight.departureDate },
+      arrival: { iataCode: flight.destination, at: flight.arrivalDate },
+    }],
+  };
+
+  return { option, date };
+}
+
 // Get emoji from destination
 function getDestinationEmoji(destination: string): string {
   const emojiMap: Record<string, string> = {
@@ -111,13 +145,28 @@ function getDestinationEmoji(destination: string): string {
 }
 
 export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpitProps) => {
-  // Determine initial stage based on whether flights are already selected
+  // KINU-created trips arrive with a pre-generated itinerary, so we jump straight
+  // to the itinerary summary stage while keeping the flight stage reachable.
+  const isKinuCreated = (trip as any).createdVia === 'kinu';
+
   const [stage, setStage] = useState<'flights' | 'itinerary'>(() => 
-    trip.flightsSelected ? 'itinerary' : 'flights'
+    (trip.flightsSelected || isKinuCreated) ? 'itinerary' : 'flights'
   );
   
-  const [selectedOutbound, setSelectedOutbound] = useState<SelectedFlight | undefined>(trip.outboundFlight);
-  const [selectedReturn, setSelectedReturn] = useState<SelectedFlight | undefined>(trip.returnFlight);
+  const [selectedOutbound, setSelectedOutbound] = useState<SelectedFlight | undefined>(() => {
+    if (trip.outboundFlight) return trip.outboundFlight;
+    if (isKinuCreated && trip.flights?.outbound) {
+      return plannedFlightToSelected(trip.flights.outbound, new Date(trip.startDate));
+    }
+    return undefined;
+  });
+  const [selectedReturn, setSelectedReturn] = useState<SelectedFlight | undefined>(() => {
+    if (trip.returnFlight) return trip.returnFlight;
+    if (isKinuCreated && trip.flights?.return) {
+      return plannedFlightToSelected(trip.flights.return, new Date(trip.endDate));
+    }
+    return undefined;
+  });
   const [generatedDays, setGeneratedDays] = useState<any[] | null>(null);
 
   // If the trip already carries a complete generated itinerary (from the wizard /
