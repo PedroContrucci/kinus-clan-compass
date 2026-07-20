@@ -185,7 +185,22 @@ const KINU_TOOLS = [
       required: ["destino"]
     }
   },
+  {
+    name: "criar_viagem",
+    description: "Após entender o desejo do usuário (destino das DESTINOS DISPONÍVEIS, datas, viajantes), propõe iniciar o planejamento com o wizard pré-preenchido. O usuário revisa e confirma no app.",
+    input_schema: {
+      type: "object",
+      properties: {
+        destino: { type: "string" },
+        data_ida: { type: "string", description: "YYYY-MM-DD" },
+        data_volta: { type: "string", description: "YYYY-MM-DD" },
+        viajantes: { type: "number" },
+      },
+      required: ["destino", "data_ida", "data_volta", "viajantes"],
+    },
+  },
 ];
+
 
 
 interface ChatMessage {
