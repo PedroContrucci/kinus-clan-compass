@@ -1843,8 +1843,19 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </Collapsible>
       )}
 
-      {/* 5. Curation Sources (collapsible) */}
-      <CurationSources trip={trip} />
+      {/* Section: Fontes da curadoria */}
+      <Collapsible open={fontesOpen} onOpenChange={setFontesOpen}>
+        <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <span className="flex items-center gap-2">
+            <span>📚</span>
+            <span className="font-medium text-foreground">Fontes da curadoria</span>
+          </span>
+          {fontesOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-2">
+          <CurationSources trip={trip} />
+        </CollapsibleContent>
+      </Collapsible>
 
     </motion.div>
   );
