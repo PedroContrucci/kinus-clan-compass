@@ -95,6 +95,36 @@ function CurationSources({ trip }: { trip: SavedTrip }) {
   );
 }
 
+// Persist open/closed state of each TripPanel section in a single localStorage key.
+function useSectionOpen(id: string, defaultOpen: boolean) {
+  const [open, setOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kinu_trip_panel_sections');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed[id] === 'boolean') return parsed[id];
+      }
+    } catch {
+      // ignore corrupt storage
+    }
+    return defaultOpen;
+  });
+
+  const setOpenPersisted = useCallback((value: boolean) => {
+    setOpen(value);
+    try {
+      const saved = localStorage.getItem('kinu_trip_panel_sections');
+      const parsed = saved ? JSON.parse(saved) : {};
+      parsed[id] = value;
+      localStorage.setItem('kinu_trip_panel_sections', JSON.stringify(parsed));
+    } catch {
+      // ignore storage errors
+    }
+  }, [id]);
+
+  return [open, setOpenPersisted] as const;
+}
+
 interface TripPanelProps {
   trip: SavedTrip;
   onConfirm: (
