@@ -120,6 +120,16 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   const [selectedReturn, setSelectedReturn] = useState<SelectedFlight | undefined>(trip.returnFlight);
   const [generatedDays, setGeneratedDays] = useState<any[] | null>(null);
 
+  // If the trip already carries a complete generated itinerary (from the wizard /
+  // createTrip), we hand it off to GeneratedItineraryStage as `existingDays` and
+  // preserve its original shape on activate — never overwriting with a re-generated one.
+  const totalDaysExpected =
+    trip.totalDays ||
+    (Math.round((new Date(trip.endDate).getTime() - new Date(trip.startDate).getTime()) / 86400000) + 1);
+  const hasExistingDays = Array.isArray(trip.days)
+    && trip.days.length === totalDaysExpected
+    && trip.days.every((d: any) => Array.isArray(d?.activities) && d.activities.length > 0);
+
   // Infer airport codes
   const originCode = trip.originAirportCode || inferAirportCode(trip.origin || 'São Paulo');
   const destinationCode = trip.destinationAirportCode || inferAirportCode(trip.destination);
