@@ -56,7 +56,7 @@ interface KinuAIContextType {
   registerActionHandlers: (handlers: KinuActionHandlers | null) => void;
   suggestedDestinations: string[];
   clearSuggestedDestinations: () => void;
-  pendingNavigation: { destino: string; ts: number } | null;
+  pendingNavigation: { destino: string; ts: number; tripId?: string } | null;
   clearPendingNavigation: () => void;
   wizardPrefill: { destino: string; data_ida: string; data_volta: string; viajantes: number } | null;
   clearWizardPrefill: () => void;
