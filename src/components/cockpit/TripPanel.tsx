@@ -456,14 +456,15 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingConfirmRequest?.ts]);
 
-  // Fetch maps embed URL
+  // Fetch maps embed URL — lazy, only when the "Mapa da viagem" section is expanded
   useEffect(() => {
-    supabase.functions.invoke('maps-embed', { 
-      body: { query: trip.destination, zoom: 12 } 
+    if (!mapExpanded || mapEmbedUrl) return;
+    supabase.functions.invoke('maps-embed', {
+      body: { query: trip.destination, zoom: 12 }
     }).then(({ data }) => {
       if (data?.embedUrl) setMapEmbedUrl(data.embedUrl);
     }).catch(() => {});
-  }, [trip.destination]);
+  }, [mapExpanded, mapEmbedUrl, trip.destination]);
 
   const flexOrigin = trip.flights?.outbound?.origin || 'GRU';
   const flexDest = trip.flights?.outbound?.destination || trip.destinationAirportCode;
