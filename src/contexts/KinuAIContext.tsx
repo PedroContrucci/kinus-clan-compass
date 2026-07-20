@@ -215,6 +215,10 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     setPendingNavigation(null);
   }, []);
 
+  const clearWizardPrefill = useCallback(() => {
+    setWizardPrefill(null);
+  }, []);
+
 
   const dismissInsight = useCallback((id: string) => {
     setInsights(prev => prev.filter(insight => insight.id !== id));
