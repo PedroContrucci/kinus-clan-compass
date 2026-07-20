@@ -14,12 +14,14 @@ interface OffersModalProps {
   onClose: () => void;
   activityName: string;
   city: string;
+  /** yyyy-MM-dd date of the day the activity is scheduled */
+  activityDate?: string;
 }
 
-export const OffersModal = ({ isOpen, onClose, activityName, city }: OffersModalProps) => {
+export const OffersModal = ({ isOpen, onClose, activityName, city, activityDate }: OffersModalProps) => {
   const links = useMemo<OfferLink[]>(
-    () => buildOfferLinks({ category: 'activity', city, activityName }),
-    [city, activityName]
+    () => buildOfferLinks({ category: 'activity', city, activityName, activityDate }),
+    [city, activityName, activityDate]
   );
 
   return (
