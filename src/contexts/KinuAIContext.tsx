@@ -261,6 +261,31 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    if (action.type === 'criar_viagem') {
+      const p = (action.params as any) ?? {};
+      const destino = String(p.destino ?? '');
+      const data_ida = String(p.data_ida ?? '');
+      const data_volta = String(p.data_volta ?? '');
+      const viajantes = Number(p.viajantes);
+      const cityMatch = CURATED_CITIES.find((c) => c.toLowerCase() === destino.toLowerCase());
+      const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+      if (!cityMatch || !dateRe.test(data_ida) || !dateRe.test(data_volta) || !Number.isFinite(viajantes) || viajantes < 1) {
+        toast.error('Não consegui montar essa viagem — dados incompletos.');
+        return;
+      }
+      setWizardPrefill({ destino: cityMatch, data_ida, data_volta, viajantes: Math.floor(viajantes) });
+      setActionStatus(messageId, actionIndex, 'applied');
+      setMessages(prev => [...prev, {
+        id: `msg-${Date.now()}-ack`,
+        role: 'assistant',
+        content: '🧭 Preparei o wizard com tudo que conversamos — revisa e confirma!',
+        timestamp: new Date(),
+      }]);
+      setIsOpen(false);
+      return;
+    }
+
+
     if (action.type === 'sugerir_destinos') {
       const cidades: string[] = Array.isArray((action.params as any)?.cidades)
         ? (action.params as any).cidades
