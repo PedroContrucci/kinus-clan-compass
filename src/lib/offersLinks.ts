@@ -212,7 +212,7 @@ function buildCivitatisLink(city: string): OfferLink | null {
   return {
     partner: 'Civitatis',
     description: 'Tours em português',
-    url: `https://www.civitatis.com/br/buscar/?q=${encodeURIComponent(city)}`,
+    url: `https://www.civitatis.com/br/buscar/?texto=${encodeURIComponent(city)}`,
     isAffiliate: false,
   };
 }
@@ -253,7 +253,10 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
       if (!city) return [];
 
       if (start && end) {
-        const booking = buildBookingLink(city, start, end, travelers, hotelName);
+        // Hotel-specific link when we know the property; otherwise the generic city search. Never both.
+        const booking = hotelName
+          ? buildBookingLink(city, start, end, travelers, hotelName)
+          : buildBookingLink(city, start, end, travelers, undefined, true);
         if (booking) links.push(booking);
       }
 
@@ -262,11 +265,6 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
 
       const airbnb = buildAirbnbLink(city, start, end, travelers);
       if (airbnb) links.push(airbnb);
-
-      if (hotelName && start && end) {
-        const generic = buildBookingLink(city, start, end, travelers, undefined, true);
-        if (generic) links.push(generic);
-      }
       break;
     }
 
