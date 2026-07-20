@@ -6,12 +6,13 @@ export type ProposedActionType =
   | 'adicionar_atividade'
   | 'sugerir_destinos'
   | 'navegar_para'
-  | 'criar_viagem';
+  | 'criar_viagem'
+  | 'verificar_ofertas';
 
 export interface ProposedAction {
   type: ProposedActionType;
   params: Record<string, any>;
-  status?: 'pending' | 'applied' | 'dismissed';
+  status?: 'pending' | 'working' | 'applied' | 'dismissed';
 }
 
 export interface KinuMessage {
