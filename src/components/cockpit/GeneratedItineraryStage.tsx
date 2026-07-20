@@ -263,17 +263,14 @@ export function generateItinerary(
   }
 
   const explorationStart = arrivalDayIndex > 1 ? arrivalDayIndex + 1 : (sameDayArrival ? 1 : 2);
-  const outboundLegPrice = outboundFlight?.option?.price;
-  const returnLegPrice = returnFlight?.option?.price;
-  const hasRealFlights = outboundLegPrice != null && returnLegPrice != null;
+  const outboundLegPrice = Number(outboundFlight?.option?.price) || 0;
+  const returnLegPrice = Number(returnFlight?.option?.price) || 0;
 
-  const flightPerPerson = hasRealFlights
-    ? (outboundLegPrice + returnLegPrice) / 2   // keep per-LEG-per-person semantics so existing /2 and ×2 math stays correct
-    : getActivityPrice('flight', destination, priceLevel);
-
-  const flightsCost = hasRealFlights
-    ? (outboundLegPrice + returnLegPrice) * travelers   // round trip × travelers
-    : flightPerPerson * travelers * 2; // Round trip × travelers
+  // Planned flight total (round-trip, per person) = the same source the flight
+  // hero card uses. Outbound and return line items each carry exactly half.
+  const plannedFlightTotalPerPerson = outboundLegPrice + returnLegPrice;
+  const flightsCost = plannedFlightTotalPerPerson * travelers;
+  const flightPerPerson = plannedFlightTotalPerPerson / 2;
   
   // Hotel is SHARED (not multiplied by travelers)
   const hotelPerNight = getActivityPrice('hotel_night', destination, priceLevel);
