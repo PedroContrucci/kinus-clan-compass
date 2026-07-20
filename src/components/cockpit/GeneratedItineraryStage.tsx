@@ -450,17 +450,16 @@ export function generateItinerary(
       // Short flight + early arrival: complete the day with check-in + afternoon + dinner
       if (sameDayArrival) {
         activities.push({
-          id: `day-${i}-checkin`, name: 'Check-in Hotel', type: 'checkin', timeSlot: 'hotel',
-          estimatedCost: hotelTotal, time: '14:00',
+          id: `day-${i}-checkin`, name: 'Check-in no hotel', type: 'checkin', timeSlot: 'hotel',
+          estimatedCost: 0, costPerPerson: 0, time: '14:00',
           location: (() => {
             const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
             if (rec) return `${rec.name} ⭐ ${rec.stars}.0 • ${rec.neighborhood}`;
             return `Hotel em ${destination}`;
           })(),
           status: 'suggestion', source: 'kinu',
-          tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
+          tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem'],
         });
-        dayTotal += hotelTotal;
         activities.push({
           id: `day-${i}-ambient-walk`,
           name: 'Caminhada leve no bairro do hotel',
