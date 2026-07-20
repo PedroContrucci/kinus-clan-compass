@@ -285,7 +285,7 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
       const viator = buildViatorLink(city, activityName);
       if (viator) links.push(viator);
 
-      const getYourGuide = buildGetYourGuideLink(city, activityName);
+      const getYourGuide = buildGetYourGuideLink(city, activityName, params.startDate, params.endDate);
       if (getYourGuide) links.push(getYourGuide);
 
       const civitatis = buildCivitatisLink(city);
