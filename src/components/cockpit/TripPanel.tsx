@@ -898,7 +898,13 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       </div>
 
       {/* 1.5 — Hero Status: Voo + Hotel */}
+      {(() => {
+        // Prepared once for the flight/hotel hero popovers.
+        return null;
+      })()}
       <div className="grid grid-cols-2 gap-3">
+        {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
+        {(() => { return null; })()}
         {/* Flight Card */}
         <div className={`rounded-xl border p-4 ${
           flightConfirmed 
