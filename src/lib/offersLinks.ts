@@ -22,6 +22,28 @@ export interface OfferParams {
   /** Specific date (yyyy-MM-dd) of the day the activity is scheduled — used for activity-level links */
   activityDate?: string;
 }
+const CIVITATIS_CITY_SLUGS: Record<string, string> = {
+  'Paris': 'paris',
+  'Roma': 'roma',
+  'Lisboa': 'lisboa',
+  'Londres': 'londres',
+  'Barcelona': 'barcelona',
+  'Nova York': 'nueva-york',
+  'Buenos Aires': 'buenos-aires',
+  'Dubai': 'dubai',
+  'Istambul': 'estambul',
+  'Bangkok': 'bangkok',
+  'Marrakech': 'marrakech',
+  'Singapura': 'singapur',
+  'Cidade do Cabo': 'ciudad-del-cabo',
+  'Tóquio': 'tokio',
+  'Orlando': 'orlando',
+  'Fortaleza': 'fortaleza',
+  'Rio de Janeiro': 'rio-de-janeiro',
+  'Salvador': 'salvador-de-bahia',
+  'Gramado': 'gramado',
+  'Porto Seguro': 'porto-seguro',
+};
 
 const TRAVELPAYOUTS_MARKER = '742814';
 
