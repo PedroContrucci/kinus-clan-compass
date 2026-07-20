@@ -1264,21 +1264,10 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       {/* Status de Reservas — removed: flight/hotel state now lives in the hero cards only. */}
 
 
-      {/* Central de Ofertas */}
+      {/* 🎟️ Ofertas de Experiências — activity partner links only.
+          Flight partner links live behind the flight hero's "Buscar Ofertas" popover.
+          Hotel partner links live on the hotel hero. */}
       {(() => {
-        const offerParams = {
-          originCode: trip.flights?.outbound?.origin || 'GRU',
-          destinationCode: trip.flights?.outbound?.destination || trip.destinationAirportCode,
-          city: trip.destination,
-          hotelName: trip.accommodation?.name,
-          startDate: trip.startDate ? new Date(trip.startDate) : undefined,
-          endDate: trip.endDate ? new Date(trip.endDate) : undefined,
-          travelers: trip.travelers || 1,
-        };
-
-        const flightLinks = buildOfferLinks({ ...offerParams, category: 'flight' });
-        const hotelLinks = buildOfferLinks({ ...offerParams, category: 'hotel' });
-
         const paidActivities = (trip.days?.flatMap(d => d.activities) || [])
           .filter(a => a.category === 'passeio' && (a.cost || 0) >= 80);
         const uniqueByName = new Map<string, typeof paidActivities[0]>();
@@ -1286,220 +1275,41 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           if (a.name && !uniqueByName.has(a.name)) uniqueByName.set(a.name, a);
         });
         const uniquePaidActivities = Array.from(uniqueByName.values());
-
-        const hasAnyLinks = flightLinks.length > 0 || hotelLinks.length > 0 || uniquePaidActivities.length > 0;
-        if (!hasAnyLinks) return null;
-
-        const renderGroup = (title: string, links: ReturnType<typeof buildOfferLinks>) => {
-          if (links.length === 0) return null;
-          const isFlights = title === '✈️ Voos';
-          const isHotels = title === '🏨 Hotéis';
-          const sortedFlex = isFlights && flexDates?.length
-            ? [...flexDates].sort((a, b) => a.date.localeCompare(b.date))
-            : [];
-          const minPrice = sortedFlex.length > 0
-            ? Math.min(...sortedFlex.map(d => d.bestPrice))
-            : null;
-          const acc = trip.accommodation;
-          const hasCuratedHotel = isHotels && acc?.name;
-
-          return (
-            <div key={title} className="space-y-2">
-              <p className="text-xs font-semibold text-foreground font-['Outfit']">{title}</p>
-              {hasCuratedHotel && (
-                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs">⭐</span>
-                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Recomendado pelo KINU</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-foreground font-['Outfit']">{acc.name}</p>
-                    <p className="text-xs text-muted-foreground">{acc.stars || 3}★ · {acc.neighborhood || trip.destination}</p>
-                    <p className="text-xs text-muted-foreground">R$ {fmt(acc.nightlyRate || 0)} / noite · {acc.totalNights || 1} noites</p>
-                  </div>
-                  <a
-                    href={`https://www.booking.com/searchresults.pt-br.html?ss=${encodeURIComponent(`${acc.name} ${trip.destination}`)}&checkin=${trip.startDate ? format(new Date(trip.startDate), 'yyyy-MM-dd') : ''}&checkout=${trip.endDate ? format(new Date(trip.endDate), 'yyyy-MM-dd') : ''}&group_adults=${trip.travelers || 1}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center w-full px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                  >
-                    Ver no Booking
-                  </a>
-                </div>
-              )}
-              {hasCuratedHotel && <p className="text-[10px] text-muted-foreground pt-1">Outras ofertas:</p>}
-              <div className="space-y-1.5">
-                {links.map((link) => (
-                  <a
-                    key={link.url}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/60 transition-colors group"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-foreground font-['Outfit']">{link.partner}</span>
-                        {link.isAffiliate && (
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500">
-                            Parceiro KINU
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate">{link.description}</p>
-                    </div>
-                    <ExternalLink size={14} className="text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
-                  </a>
-                ))}
-              </div>
-              {(isFlights || isHotels) && (() => {
-                const type: 'flight' | 'hotel' = isFlights ? 'flight' : 'hotel';
-                const confirmed = isFlights
-                  ? trip.flights?.outbound?.status === 'confirmed'
-                  : trip.accommodation?.status === 'confirmed';
-                const paidValue = isFlights
-                  ? ((trip.flights?.outbound?.price || 0) + (trip.flights?.return?.price || 0))
-                  : (trip.accommodation?.totalPrice || 0);
-                const openModal = () =>
-                  setConfirmReservation({
-                    type,
-                    amount: confirmed && paidValue ? String(Math.round(paidValue)) : type === 'flight' ? String(Math.round(flightPlannedTotal)) : '',
-                    link: '',
-                    hotelName: type === 'hotel' ? trip.accommodation?.name || '' : '',
-                    mealPlan: type === 'hotel' ? (trip.accommodation as any)?.mealPlan || 'Café da manhã' : '',
-                    outboundAirline: type === 'flight' ? ((trip as any).outboundFlight?.option?.airline !== 'A confirmar' ? (trip as any).outboundFlight?.option?.airline : '') || '' : '',
-                    outboundFlightNumber: type === 'flight' ? ((trip as any).outboundFlight?.option?.flightNumber !== '---' ? (trip as any).outboundFlight?.option?.flightNumber : '') || '' : '',
-                    outboundTime: type === 'flight' ? (trip as any).outboundFlight?.option?.departureTime || '' : '',
-                    returnAirline: type === 'flight' ? ((trip as any).returnFlight?.option?.airline !== 'A confirmar' ? (trip as any).returnFlight?.option?.airline : '') || '' : '',
-                    returnFlightNumber: type === 'flight' ? ((trip as any).returnFlight?.option?.flightNumber !== '---' ? (trip as any).returnFlight?.option?.flightNumber : '') || '' : '',
-                    returnTime: type === 'flight' ? (trip as any).returnFlight?.option?.departureTime || '' : '',
-                  });
-                if (confirmed) {
-                  return (
-                    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
-                      <span className="text-xs font-semibold text-emerald-400 font-['Outfit']">
-                        {isFlights ? '✈️ Voo confirmado' : '🏨 Hotel confirmado'}
-                        {paidValue ? ` · R$ ${fmt(Math.round(paidValue))}` : ''}
-                      </span>
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={openModal}
-                          className="text-[11px] font-medium text-emerald-400/80 hover:text-emerald-300 underline underline-offset-2"
-                        >
-                          Editar
-                        </button>
-                        {onUnconfirm && (
-                          <button
-                            onClick={() => {
-                              if (window.confirm('Desfazer a confirmação? Os valores voltam para o planejado.')) {
-                                onUnconfirm(type);
-                              }
-                            }}
-                            className="text-[11px] font-medium text-muted-foreground hover:text-foreground underline underline-offset-2"
-                          >
-                            Desfazer confirmação
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                }
-                return (
-                  <button
-                    onClick={openModal}
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                  >
-                    ✓ Já reservei
-                  </button>
-                );
-              })()}
-              {isFlights && (
-                <div className="space-y-2 pt-1">
-                  {!showFlexDates ? (
-                    <button
-                      onClick={() => setShowFlexDates(true)}
-                      className="w-full text-left px-3 py-2 rounded-lg border border-dashed border-border bg-background/50 hover:bg-muted/60 transition-colors text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      🔍 Ver melhores datas (±3 dias)
-                    </button>
-                  ) : flexDatesLoading ? (
-                    <p className="text-xs text-muted-foreground px-1">Buscando melhores datas...</p>
-                  ) : sortedFlex.length > 0 ? (
-                    <div className="border border-emerald-500/20 bg-emerald-500/5 rounded-lg p-2.5 space-y-1.5">
-                      <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">Melhores datas encontradas</p>
-                      {sortedFlex.map((entry) => {
-                        const isLowest = entry.bestPrice === minPrice;
-                        return (
-                          <div
-                            key={entry.date}
-                            className={`flex items-center justify-between py-1 px-2 rounded-md text-xs ${
-                              isLowest ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-background/50'
-                            }`}
-                          >
-                            <span className={isLowest ? 'text-emerald-400 font-medium' : 'text-muted-foreground'}>
-                              {format(new Date(entry.date), 'dd/MMM', { locale: ptBR })}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              {isLowest && (
-                                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">menor preço</span>
-                              )}
-                              <span className={`font-bold font-['Outfit'] ${isLowest ? 'text-emerald-400' : 'text-foreground'}`}>
-                                R$ {entry.bestPrice.toLocaleString('pt-BR')}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground px-1">Não encontramos datas alternativas agora.</p>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        };
+        if (uniquePaidActivities.length === 0) return null;
 
         return (
-          <div id="central-ofertas" className="bg-card border border-border rounded-xl p-4 space-y-4">
+          <div id="ofertas-experiencias" className="bg-card border border-border rounded-xl p-4 space-y-3">
             <div>
-              <p className="text-sm font-bold text-foreground font-['Outfit']">🎯 Central de Ofertas</p>
-              <p className="text-xs text-muted-foreground">Compare e reserve com nossos parceiros</p>
+              <p className="text-sm font-bold text-foreground font-['Outfit']">🎟️ Ofertas de Experiências</p>
+              <p className="text-xs text-muted-foreground">Reserve as atividades pagas do seu roteiro</p>
             </div>
-            {renderGroup('✈️ Voos', flightLinks)}
-            {renderGroup('🏨 Hotéis', hotelLinks)}
-            {uniquePaidActivities.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-foreground font-['Outfit']">🎟️ Atividades do seu roteiro</p>
-                <p className="text-[10px] text-muted-foreground">Reserve as atividades pagas do seu roteiro</p>
-                <div className="space-y-1.5">
-                  {uniquePaidActivities.map((activity) => (
-                    <button
-                      key={activity.name}
-                      onClick={() => setOffersModal({ isOpen: true, activityName: activity.name })}
-                      className="w-full flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/60 transition-colors group text-left"
-                    >
-                      <span className="text-sm font-semibold text-foreground font-['Outfit']">{activity.name}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Ver ofertas</span>
-                        <ExternalLink size={14} className="text-muted-foreground group-hover:text-foreground shrink-0" />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-                {offersModal && (
-                  <OffersModal
-                    isOpen={offersModal.isOpen}
-                    onClose={() => setOffersModal(null)}
-                    activityName={offersModal.activityName}
-                    city={trip.destination}
-                  />
-                )}
-              </div>
+            <div className="space-y-1.5">
+              {uniquePaidActivities.map((activity) => (
+                <button
+                  key={activity.name}
+                  onClick={() => setOffersModal({ isOpen: true, activityName: activity.name })}
+                  className="w-full flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/60 transition-colors group text-left"
+                >
+                  <span className="text-sm font-semibold text-foreground font-['Outfit']">{activity.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Ver ofertas</span>
+                    <ExternalLink size={14} className="text-muted-foreground group-hover:text-foreground shrink-0" />
+                  </div>
+                </button>
+              ))}
+            </div>
+            {offersModal && (
+              <OffersModal
+                isOpen={offersModal.isOpen}
+                onClose={() => setOffersModal(null)}
+                activityName={offersModal.activityName}
+                city={trip.destination}
+              />
             )}
           </div>
         );
       })()}
+
 
       {/* Reservation Confirm Modal */}
       <Dialog
