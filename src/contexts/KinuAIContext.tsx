@@ -379,33 +379,39 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    setActionStatus(messageId, actionIndex, 'working');
     let confirmationText: string | null = null;
     try {
       switch (action.type) {
         case 'trocar_atividade':
-          confirmationText = handlers.trocar_atividade?.(action.params as any) ?? null;
+          confirmationText = (await handlers.trocar_atividade?.(action.params as any)) ?? null;
           break;
         case 'ajustar_horario':
-          confirmationText = handlers.ajustar_horario?.(action.params as any) ?? null;
+          confirmationText = (await handlers.ajustar_horario?.(action.params as any)) ?? null;
           break;
         case 'remover_atividade':
-          confirmationText = handlers.remover_atividade?.(action.params as any) ?? null;
+          confirmationText = (await handlers.remover_atividade?.(action.params as any)) ?? null;
           break;
         case 'confirmar_item':
-          confirmationText = handlers.confirmar_item?.(action.params as any) ?? null;
+          confirmationText = (await handlers.confirmar_item?.(action.params as any)) ?? null;
           break;
         case 'adicionar_atividade':
-          confirmationText = handlers.adicionar_atividade?.(action.params as any) ?? null;
+          confirmationText = (await handlers.adicionar_atividade?.(action.params as any)) ?? null;
+          break;
+        case 'verificar_ofertas':
+          confirmationText = (await handlers.verificar_ofertas?.(action.params as any)) ?? null;
           break;
       }
     } catch (err) {
       console.error('Erro ao aplicar ação KINU:', err);
       toast.error('Não consegui aplicar essa ação.');
+      setActionStatus(messageId, actionIndex, 'pending');
       return;
     }
 
     if (!confirmationText) {
       toast.error('Não achei o item pra aplicar essa mudança.');
+      setActionStatus(messageId, actionIndex, 'pending');
       return;
     }
 
