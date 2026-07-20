@@ -353,6 +353,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         registerActionHandlers,
         suggestedDestinations,
         clearSuggestedDestinations,
+        pendingNavigation,
+        clearPendingNavigation,
       }}
     >
       {children}
