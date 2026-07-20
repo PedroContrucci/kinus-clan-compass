@@ -509,9 +509,9 @@ export function generateItinerary(
         activities.push({
           id: `day-${i}-checkin`,
           name: 'Check-in no hotel',
-          type: 'hotel',
-          timeSlot: 'morning',
-          estimatedCost: hotelTotal,
+          type: 'checkin',
+          timeSlot: 'hotel',
+          estimatedCost: 0,
           costPerPerson: 0,
           time: '15:00',
           duration: '1h',
@@ -522,9 +522,8 @@ export function generateItinerary(
           })(),
           status: 'defined',
           source: 'kinu',
-          tips: ['Acomodação após o voo, sem pressa', `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`],
+          tips: ['Acomodação após o voo, sem pressa', `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem'],
         });
-        dayTotal += hotelTotal;
 
         activities.push({
           id: `day-${i}-walk`,
