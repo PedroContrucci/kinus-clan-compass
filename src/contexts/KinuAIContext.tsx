@@ -387,6 +387,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         clearSuggestedDestinations,
         pendingNavigation,
         clearPendingNavigation,
+        wizardPrefill,
+        clearWizardPrefill,
       }}
     >
       {children}
