@@ -9,11 +9,12 @@ import { buildDraftTrip } from "@/lib/createTrip";
 import { TRAVEL_INTERESTS } from "@/components/wizard/types";
 
 export interface KinuActionHandlers {
-  trocar_atividade?: (params: { dia: number; atividade_atual: string; nova_atividade: string }) => string | null;
-  ajustar_horario?: (params: { dia: number; atividade: string; novo_horario: string }) => string | null;
-  remover_atividade?: (params: { dia: number; atividade: string }) => string | null;
-  confirmar_item?: (params: { tipo: 'voo' | 'hotel' }) => string | null;
-  adicionar_atividade?: (params: { dia: number; atividade: string; horario: string }) => string | null;
+  trocar_atividade?: (params: { dia: number; atividade_atual: string; nova_atividade: string }) => string | null | Promise<string | null>;
+  ajustar_horario?: (params: { dia: number; atividade: string; novo_horario: string }) => string | null | Promise<string | null>;
+  remover_atividade?: (params: { dia: number; atividade: string }) => string | null | Promise<string | null>;
+  confirmar_item?: (params: { tipo: 'voo' | 'hotel' }) => string | null | Promise<string | null>;
+  adicionar_atividade?: (params: { dia: number; atividade: string; horario: string }) => string | null | Promise<string | null>;
+  verificar_ofertas?: (params: Record<string, never>) => string | null | Promise<string | null>;
 }
 
 
@@ -241,7 +242,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     actionHandlersRef.current = handlers;
   }, []);
 
-  const setActionStatus = useCallback((messageId: string, actionIndex: number, status: 'applied' | 'dismissed') => {
+  const setActionStatus = useCallback((messageId: string, actionIndex: number, status: 'pending' | 'working' | 'applied' | 'dismissed') => {
     setMessages(prev => prev.map(m => {
       if (m.id !== messageId || !m.proposedActions) return m;
       const next = m.proposedActions.map((a, i) => i === actionIndex ? { ...a, status } : a);
@@ -249,7 +250,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const applyProposedAction = useCallback((messageId: string, actionIndex: number) => {
+  const applyProposedAction = useCallback(async (messageId: string, actionIndex: number) => {
     const target = messages.find(m => m.id === messageId);
     const action = target?.proposedActions?.[actionIndex];
     if (!action || action.status && action.status !== 'pending') return;
@@ -378,33 +379,39 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    setActionStatus(messageId, actionIndex, 'working');
     let confirmationText: string | null = null;
     try {
       switch (action.type) {
         case 'trocar_atividade':
-          confirmationText = handlers.trocar_atividade?.(action.params as any) ?? null;
+          confirmationText = (await handlers.trocar_atividade?.(action.params as any)) ?? null;
           break;
         case 'ajustar_horario':
-          confirmationText = handlers.ajustar_horario?.(action.params as any) ?? null;
+          confirmationText = (await handlers.ajustar_horario?.(action.params as any)) ?? null;
           break;
         case 'remover_atividade':
-          confirmationText = handlers.remover_atividade?.(action.params as any) ?? null;
+          confirmationText = (await handlers.remover_atividade?.(action.params as any)) ?? null;
           break;
         case 'confirmar_item':
-          confirmationText = handlers.confirmar_item?.(action.params as any) ?? null;
+          confirmationText = (await handlers.confirmar_item?.(action.params as any)) ?? null;
           break;
         case 'adicionar_atividade':
-          confirmationText = handlers.adicionar_atividade?.(action.params as any) ?? null;
+          confirmationText = (await handlers.adicionar_atividade?.(action.params as any)) ?? null;
+          break;
+        case 'verificar_ofertas':
+          confirmationText = (await handlers.verificar_ofertas?.(action.params as any)) ?? null;
           break;
       }
     } catch (err) {
       console.error('Erro ao aplicar ação KINU:', err);
       toast.error('Não consegui aplicar essa ação.');
+      setActionStatus(messageId, actionIndex, 'pending');
       return;
     }
 
     if (!confirmationText) {
       toast.error('Não achei o item pra aplicar essa mudança.');
+      setActionStatus(messageId, actionIndex, 'pending');
       return;
     }
 

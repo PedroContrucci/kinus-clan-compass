@@ -29,6 +29,8 @@ function describeAction(action: ProposedAction): string {
     }
     case 'criar_viagem':
       return `✈️ Planejar ${p.destino ?? '—'} · ${p.data_ida ?? '—'} → ${p.data_volta ?? '—'} · ${p.viajantes ?? '?'} viajante(s)`;
+    case 'verificar_ofertas':
+      return '🔍 Verificar ofertas de voo agora';
     default:
       return 'Ação proposta';
   }
@@ -84,7 +86,7 @@ export function KinuAIMessage({ message }: KinuAIMessageProps) {
                         onClick={() => applyProposedAction(message.id, idx)}
                         className="px-3 py-1 text-[11px] font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
                       >
-                        {action.type === 'sugerir_destinos' ? '✓ Ver no mapa' : action.type === 'navegar_para' ? 'Abrir' : action.type === 'criar_viagem' ? 'Começar planejamento' : '✓ Aplicar'}
+                        {action.type === 'sugerir_destinos' ? '✓ Ver no mapa' : action.type === 'navegar_para' ? 'Abrir' : action.type === 'criar_viagem' ? 'Começar planejamento' : action.type === 'verificar_ofertas' ? 'Verificar' : '✓ Aplicar'}
                       </button>
                       <button
                         type="button"
@@ -94,6 +96,12 @@ export function KinuAIMessage({ message }: KinuAIMessageProps) {
                         ✗ Recusar
                       </button>
                     </div>
+                  )}
+                  {status === 'working' && (
+                    <p className="mt-2 text-[10px] text-emerald-400 flex items-center gap-1.5">
+                      <span className="inline-block w-3 h-3 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
+                      Consultando…
+                    </p>
                   )}
                   {status === 'applied' && (
                     <p className="mt-2 text-[10px] text-emerald-400">Aplicada ✓</p>
