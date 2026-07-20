@@ -250,7 +250,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const applyProposedAction = useCallback((messageId: string, actionIndex: number) => {
+  const applyProposedAction = useCallback(async (messageId: string, actionIndex: number) => {
     const target = messages.find(m => m.id === messageId);
     const action = target?.proposedActions?.[actionIndex];
     if (!action || action.status && action.status !== 'pending') return;
