@@ -145,13 +145,28 @@ function getDestinationEmoji(destination: string): string {
 }
 
 export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpitProps) => {
-  // Determine initial stage based on whether flights are already selected
+  // KINU-created trips arrive with a pre-generated itinerary, so we jump straight
+  // to the itinerary summary stage while keeping the flight stage reachable.
+  const isKinuCreated = (trip as any).createdVia === 'kinu';
+
   const [stage, setStage] = useState<'flights' | 'itinerary'>(() => 
-    trip.flightsSelected ? 'itinerary' : 'flights'
+    (trip.flightsSelected || isKinuCreated) ? 'itinerary' : 'flights'
   );
   
-  const [selectedOutbound, setSelectedOutbound] = useState<SelectedFlight | undefined>(trip.outboundFlight);
-  const [selectedReturn, setSelectedReturn] = useState<SelectedFlight | undefined>(trip.returnFlight);
+  const [selectedOutbound, setSelectedOutbound] = useState<SelectedFlight | undefined>(() => {
+    if (trip.outboundFlight) return trip.outboundFlight;
+    if (isKinuCreated && trip.flights?.outbound) {
+      return plannedFlightToSelected(trip.flights.outbound, new Date(trip.startDate));
+    }
+    return undefined;
+  });
+  const [selectedReturn, setSelectedReturn] = useState<SelectedFlight | undefined>(() => {
+    if (trip.returnFlight) return trip.returnFlight;
+    if (isKinuCreated && trip.flights?.return) {
+      return plannedFlightToSelected(trip.flights.return, new Date(trip.endDate));
+    }
+    return undefined;
+  });
   const [generatedDays, setGeneratedDays] = useState<any[] | null>(null);
 
   // If the trip already carries a complete generated itinerary (from the wizard /
