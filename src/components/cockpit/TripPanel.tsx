@@ -14,7 +14,7 @@ import { DestinationImage } from '@/components/shared/DestinationImage';
 import type { SavedTrip } from '@/types/trip';
 import { buildOfferLinks } from '@/lib/offersLinks';
 import { OffersModal } from '@/components/cockpit/OffersModal';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { getFlightPlannedTotal, getSelectedFlightPlannedTotal } from '@/lib/flightFinance';
@@ -27,7 +27,6 @@ const TIER_DESCRIPTIONS: Record<string, string> = {
 };
 
 function CurationSources({ trip }: { trip: SavedTrip }) {
-  const [open, setOpen] = useState(false);
   const interests = trip.travelInterests || [];
   const tierLabel = TIER_LABELS[trip.budgetType || 'comfort'] || 'Conforto';
   const tierDesc = TIER_DESCRIPTIONS[trip.budgetType || 'comfort'] || '';
@@ -42,57 +41,81 @@ function CurationSources({ trip }: { trip: SavedTrip }) {
   };
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
-        <span>📚 Fontes da curadoria</span>
-        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-      </CollapsibleTrigger>
-      <CollapsibleContent className="mt-2 bg-card border border-border rounded-xl p-4 space-y-2.5">
-        {interests.length > 0 && (
-          <div className="flex items-start gap-2">
-            <div className="w-0.5 self-stretch rounded-full bg-emerald-500 shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              <span className="text-emerald-400 font-medium">Interesses:</span> {interests.map(i => interestLabels[i] || i).join(', ')}
-            </p>
-          </div>
-        )}
+    <div className="bg-card border border-border rounded-xl p-4 space-y-2.5">
+      {interests.length > 0 && (
         <div className="flex items-start gap-2">
-          <div className="w-0.5 self-stretch rounded-full bg-sky-500 shrink-0" />
+          <div className="w-0.5 self-stretch rounded-full bg-emerald-500 shrink-0" />
           <p className="text-xs text-muted-foreground">
-            <span className="text-sky-400 font-medium">Base curada KINU:</span> Conde Nast Traveler, Lonely Planet, guias especializados
+            <span className="text-emerald-400 font-medium">Interesses:</span> {interests.map(i => interestLabels[i] || i).join(', ')}
           </p>
         </div>
-        {hasGastronomy && (
-          <div className="flex items-start gap-2">
-            <div className="w-0.5 self-stretch rounded-full bg-amber-500 shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              <span className="text-amber-400 font-medium">Guia Michelin:</span> restaurantes estrelados para {trip.destination}
-            </p>
-          </div>
-        )}
-        {trip.jetLagMode && jetLagHours > 0 && (
-          <div className="flex items-start gap-2">
-            <div className="w-0.5 self-stretch rounded-full bg-purple-500 shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              <span className="text-purple-400 font-medium">Biology AI:</span> fuso de {jetLagHours}h adaptado
-            </p>
-          </div>
-        )}
+      )}
+      <div className="flex items-start gap-2">
+        <div className="w-0.5 self-stretch rounded-full bg-sky-500 shrink-0" />
+        <p className="text-xs text-muted-foreground">
+          <span className="text-sky-400 font-medium">Base curada KINU:</span> Conde Nast Traveler, Lonely Planet, guias especializados
+        </p>
+      </div>
+      {hasGastronomy && (
         <div className="flex items-start gap-2">
-          <div className="w-0.5 self-stretch rounded-full bg-violet-500 shrink-0" />
+          <div className="w-0.5 self-stretch rounded-full bg-amber-500 shrink-0" />
           <p className="text-xs text-muted-foreground">
-            <span className="text-violet-400 font-medium">Hotel Intelligence:</span> bairro por interesses e orçamento
+            <span className="text-amber-400 font-medium">Guia Michelin:</span> restaurantes estrelados para {trip.destination}
           </p>
         </div>
+      )}
+      {trip.jetLagMode && jetLagHours > 0 && (
         <div className="flex items-start gap-2">
-          <div className="w-0.5 self-stretch rounded-full bg-green-500 shrink-0" />
+          <div className="w-0.5 self-stretch rounded-full bg-purple-500 shrink-0" />
           <p className="text-xs text-muted-foreground">
-            <span className="text-green-400 font-medium">Perfil {tierLabel}:</span> {tierDesc}
+            <span className="text-purple-400 font-medium">Biology AI:</span> fuso de {jetLagHours}h adaptado
           </p>
         </div>
-      </CollapsibleContent>
-    </Collapsible>
+      )}
+      <div className="flex items-start gap-2">
+        <div className="w-0.5 self-stretch rounded-full bg-violet-500 shrink-0" />
+        <p className="text-xs text-muted-foreground">
+          <span className="text-violet-400 font-medium">Hotel Intelligence:</span> bairro por interesses e orçamento
+        </p>
+      </div>
+      <div className="flex items-start gap-2">
+        <div className="w-0.5 self-stretch rounded-full bg-green-500 shrink-0" />
+        <p className="text-xs text-muted-foreground">
+          <span className="text-green-400 font-medium">Perfil {tierLabel}:</span> {tierDesc}
+        </p>
+      </div>
+    </div>
   );
+}
+
+// Persist open/closed state of each TripPanel section in a single localStorage key.
+function useSectionOpen(id: string, defaultOpen: boolean) {
+  const [open, setOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kinu_trip_panel_sections');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed[id] === 'boolean') return parsed[id];
+      }
+    } catch {
+      // ignore corrupt storage
+    }
+    return defaultOpen;
+  });
+
+  const setOpenPersisted = useCallback((value: boolean) => {
+    setOpen(value);
+    try {
+      const saved = localStorage.getItem('kinu_trip_panel_sections');
+      const parsed = saved ? JSON.parse(saved) : {};
+      parsed[id] = value;
+      localStorage.setItem('kinu_trip_panel_sections', JSON.stringify(parsed));
+    } catch {
+      // ignore storage errors
+    }
+  }, [id]);
+
+  return [open, setOpenPersisted] as const;
 }
 
 interface TripPanelProps {
@@ -392,8 +415,11 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const [flightResults, setFlightResults] = useState<any[] | null>(null);
   const [searchingFlights, setSearchingFlights] = useState(false);
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
-  const [mapExpanded, setMapExpanded] = useState(false);
-  const [weatherExpanded, setWeatherExpanded] = useState(false);
+  const [vooOpen, setVooOpen] = useSectionOpen('vooHospedagem', true);
+  const [insightsOpen, setInsightsOpen] = useSectionOpen('insights', false);
+  const [mapOpen, setMapOpen] = useSectionOpen('mapa', false);
+  const [weatherOpen, setWeatherOpen] = useSectionOpen('clima', false);
+  const [fontesOpen, setFontesOpen] = useSectionOpen('fontes', false);
   const [showFlexDates, setShowFlexDates] = useState(false);
   const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
   const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string; hotelName: string; mealPlan: string; outboundAirline: string; outboundFlightNumber: string; outboundTime: string; returnAirline: string; returnFlightNumber: string; returnTime: string } | null>(null);
@@ -458,7 +484,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
 
   // Fetch maps embed URL — lazy, only when the "Mapa da viagem" section is expanded
   useEffect(() => {
-    if (!mapExpanded || mapEmbedUrl) return;
+    if (!mapOpen || mapEmbedUrl) return;
     const mapQuery = trip.country
       ? `${trip.destination}, ${trip.country}`
       : trip.destinationAirportCode
@@ -469,7 +495,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     }).then(({ data }) => {
       if (data?.embedUrl) setMapEmbedUrl(data.embedUrl);
     }).catch(() => {});
-  }, [mapExpanded, mapEmbedUrl, trip.destination, trip.country, trip.destinationAirportCode]);
+  }, [mapOpen, mapEmbedUrl, trip.destination, trip.country, trip.destinationAirportCode]);
 
   const flexOrigin = trip.flights?.outbound?.origin || 'GRU';
   const flexDest = trip.flights?.outbound?.destination || trip.destinationAirportCode;
@@ -821,7 +847,17 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </div>
       )}
 
-      {/* 1. Header Premium with Hero Image */}
+      {/* Section: Voo & Hospedagem */}
+      <Collapsible open={vooOpen} onOpenChange={setVooOpen}>
+        <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <span className="flex items-center gap-2">
+            <span>✈️🏨</span>
+            <span className="font-medium text-foreground">Voo & Hospedagem</span>
+          </span>
+          {vooOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 mt-4">
+          {/* 1. Header Premium with Hero Image */}
       <div className="relative overflow-hidden rounded-2xl border border-border">
         {/* Hero banner image */}
         <div className="relative h-[150px] overflow-hidden bg-gradient-to-br from-[#0f172a] to-[#1e293b]">
@@ -1556,13 +1592,20 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           </div>
         </DialogContent>
       </Dialog>
+        </CollapsibleContent>
+      </Collapsible>
 
-
-      {/* Destination Map Embed moved to bottom collapsible "🗺️ Mapa da viagem" */}
-
-
-
-      {/* 1.75 — Activity Summary by Category */}
+      {/* Section: Insights do KINU */}
+      <Collapsible open={insightsOpen} onOpenChange={setInsightsOpen}>
+        <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <span className="flex items-center gap-2">
+            <span>💡</span>
+            <span className="font-medium text-foreground">Insights do KINU</span>
+          </span>
+          {insightsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 mt-4">
+          {/* 1.75 — Activity Summary by Category */}
       {(() => {
         const CATEGORY_STYLES: Record<string, { bg: string; border: string; bar: string; hover: string }> = {
           passeio: { bg: 'bg-sky-500/5', border: 'border-sky-500/20', bar: 'bg-sky-500', hover: 'hover:bg-sky-500/10' },
@@ -1747,12 +1790,17 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           {pdfLoading ? 'Gerando...' : 'Exportar PDF'}
         </button>
       </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Bottom: Mapa da viagem (collapsed, lazy) */}
-      <Collapsible open={mapExpanded} onOpenChange={setMapExpanded}>
+      <Collapsible open={mapOpen} onOpenChange={setMapOpen}>
         <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <span>🗺️ Mapa da viagem</span>
-          {mapExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          <span className="flex items-center gap-2">
+            <span>🗺️</span>
+            <span className="font-medium text-foreground">Mapa da viagem</span>
+          </span>
+          {mapOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-2">
           {mapEmbedUrl ? (
@@ -1778,10 +1826,13 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
 
       {/* Bottom: Clima (collapsed) */}
       {trip.destination && (
-        <Collapsible open={weatherExpanded} onOpenChange={setWeatherExpanded}>
+        <Collapsible open={weatherOpen} onOpenChange={setWeatherOpen}>
           <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <span>🌤️ Clima</span>
-            {weatherExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            <span className="flex items-center gap-2">
+              <span>🌤️</span>
+              <span className="font-medium text-foreground">Clima</span>
+            </span>
+            {weatherOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-2 bg-card border border-border rounded-xl p-4">
             <WeatherBadge destination={trip.destination} startDate={trip.startDate} />
@@ -1792,8 +1843,19 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </Collapsible>
       )}
 
-      {/* 5. Curation Sources (collapsible) */}
-      <CurationSources trip={trip} />
+      {/* Section: Fontes da curadoria */}
+      <Collapsible open={fontesOpen} onOpenChange={setFontesOpen}>
+        <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <span className="flex items-center gap-2">
+            <span>📚</span>
+            <span className="font-medium text-foreground">Fontes da curadoria</span>
+          </span>
+          {fontesOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-2">
+          <CurationSources trip={trip} />
+        </CollapsibleContent>
+      </Collapsible>
 
     </motion.div>
   );
