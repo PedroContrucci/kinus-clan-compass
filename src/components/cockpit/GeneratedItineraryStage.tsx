@@ -1030,6 +1030,90 @@ export const GeneratedItineraryStage = ({
       onDaysGenerated(days);
     }
   }, [days, onDaysGenerated]);
+
+  // Recompute finances from the actual generated content and persist onto the
+  // matching draft in localStorage so the Financeiro tab always reflects what
+  // the Roteiro contains. Runs after generation and whenever the days change
+  // in-stage (before activation). Post-activation edits keep working on top.
+  const recomputeAndPersistFinances = useMemo(() => {
+    return (currentDays: ItineraryDay[]) => {
+      try {
+        const flightsPlanned = Math.round(breakdown.flights.amount || 0);
+        const hotelPlanned = Math.round(breakdown.hotel.amount || 0);
+
+        let foodPlanned = 0;
+        let toursPlanned = 0;
+        currentDays.forEach((day) => {
+          day.activities.forEach((act) => {
+            const cost = Math.round(act.estimatedCost || 0);
+            if (['breakfast', 'lunch', 'dinner'].includes(act.timeSlot)) {
+              foodPlanned += cost;
+            } else if (['morning', 'afternoon', 'night'].includes(act.timeSlot)) {
+              toursPlanned += cost;
+            }
+          });
+        });
+
+        const totalPlanned = flightsPlanned + hotelPlanned + foodPlanned + toursPlanned;
+
+        const raw = localStorage.getItem('kinu_trips');
+        if (!raw) return;
+        const trips: any[] = JSON.parse(raw);
+        const depTime = departureDate.getTime();
+        const retTime = returnDate.getTime();
+        const idx = trips.findIndex((t) => {
+          if (!t || t.destination !== destination) return false;
+          const st = t.startDate ? new Date(t.startDate).getTime() : NaN;
+          const en = t.endDate ? new Date(t.endDate).getTime() : NaN;
+          return st === depTime && en === retTime;
+        });
+        if (idx === -1) return;
+
+        const trip = trips[idx];
+        const prevFinances = trip.finances || {};
+        const prevCats = prevFinances.categories || {};
+        const cat = (name: string) => ({
+          planned: 0,
+          confirmed: prevCats[name]?.confirmed || 0,
+          bidding: prevCats[name]?.bidding || 0,
+        });
+
+        const total = trip.budget || prevFinances.total || totalPlanned;
+        const confirmed = prevFinances.confirmed || 0;
+        const bidding = prevFinances.bidding || 0;
+
+        trip.finances = {
+          total,
+          confirmed,
+          bidding,
+          planned: totalPlanned,
+          available: total - totalPlanned - confirmed - bidding,
+          categories: {
+            flights: { ...cat('flights'), planned: flightsPlanned },
+            accommodation: { ...cat('accommodation'), planned: hotelPlanned },
+            tours: { ...cat('tours'), planned: toursPlanned },
+            food: { ...cat('food'), planned: foodPlanned },
+            transport: cat('transport'),
+            shopping: cat('shopping'),
+          },
+        };
+
+        trips[idx] = trip;
+        localStorage.setItem('kinu_trips', JSON.stringify(trips));
+      } catch (err) {
+        console.warn('[GeneratedItineraryStage] finance recompute failed', err);
+      }
+    };
+  }, [breakdown, destination, departureDate, returnDate]);
+
+  useEffect(() => {
+    if (days.length > 0) recomputeAndPersistFinances(days);
+  }, [days, recomputeAndPersistFinances]);
+
+  const handleActivateWithFinances = () => {
+    recomputeAndPersistFinances(days);
+    onActivate();
+  };
   const [selectedDay, setSelectedDay] = useState(1);
   const [addActivityModal, setAddActivityModal] = useState(false);
 
@@ -1131,7 +1215,7 @@ export const GeneratedItineraryStage = ({
               <Save size={16} className="mr-1" />
               Salvar
             </Button>
-            <Button size="sm" onClick={onActivate}>
+            <Button size="sm" onClick={handleActivateWithFinances}>
               <PlayCircle size={16} className="mr-1" />
               Ativar
             </Button>
@@ -1469,7 +1553,7 @@ export const GeneratedItineraryStage = ({
         <Button
           className="w-full h-14"
           size="lg"
-          onClick={onActivate}
+          onClick={handleActivateWithFinances}
         >
           <PlayCircle size={20} className="mr-2" />
           <span className="font-['Outfit'] text-lg">Ativar Viagem</span>
