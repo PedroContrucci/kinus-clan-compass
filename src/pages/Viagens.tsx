@@ -992,6 +992,54 @@ const Viagens = () => {
         handleAddActivity(dia, suggested, horario);
         return `✅ Feito — ${suggested.name} adicionada às ${horario} no dia ${dia}`;
       },
+      verificar_ofertas: async () => {
+        try {
+          const origin = selectedTrip.flights?.outbound?.origin || 'GRU';
+          const destination = selectedTrip.flights?.outbound?.destination || selectedTrip.destination;
+          const date = selectedTrip.startDate?.split('T')[0];
+          const adults = selectedTrip.travelers || 1;
+          if (!date || !destination) {
+            return 'Não consegui consultar os preços agora — tenta de novo em instantes.';
+          }
+          const { data, error } = await supabase.functions.invoke('amadeus-flights', {
+            body: { action: 'search', origin, destination, date, adults },
+          });
+          if (error) throw error;
+          const offers: any[] = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.offers) ? data.offers : []);
+          if (offers.length === 0) {
+            return 'Não consegui consultar os preços agora — tenta de novo em instantes.';
+          }
+          const cheapest = Math.min(...offers.map((o: any) => Number(o.price) || Infinity));
+          if (!Number.isFinite(cheapest)) {
+            return 'Não consegui consultar os preços agora — tenta de novo em instantes.';
+          }
+          const anchor = getFlightPlannedTotal(selectedTrip);
+          const startD = selectedTrip.startDate ? new Date(selectedTrip.startDate) : undefined;
+          const endD = selectedTrip.endDate ? new Date(selectedTrip.endDate) : undefined;
+          const links = buildOfferLinks({
+            category: 'flight',
+            originCode: origin,
+            destinationCode: destination,
+            startDate: startD,
+            endDate: endD,
+            travelers: adults,
+          });
+          const kiwi = links.find(l => l.partner === 'Kiwi');
+          const kiwiUrl = kiwi?.url || '';
+          const fmt = (n: number) => `R$ ${Math.round(n).toLocaleString('pt-BR')}`;
+          if (anchor > 0 && cheapest <= anchor * 0.95) {
+            const diff = anchor - cheapest;
+            return `📉 Achei voo por ${fmt(cheapest)} — ${fmt(diff)} abaixo do seu planejado (${fmt(anchor)}). Vale garantir: ${kiwiUrl}`;
+          }
+          if (anchor > 0 && cheapest <= anchor * 1.05) {
+            return `➡️ Preços estáveis: melhor voo agora ${fmt(cheapest)} vs ${fmt(anchor)} planejado. ${kiwiUrl}`;
+          }
+          return `📈 Voos subiram: melhor agora ${fmt(cheapest)} vs ${fmt(anchor)} planejado. Se puder esperar, eu avisaria — quer que o robô do KINU monitore isso em breve? ${kiwiUrl}`;
+        } catch (err) {
+          console.error('[verificar_ofertas] failed:', err);
+          return 'Não consegui consultar os preços agora — tenta de novo em instantes.';
+        }
+      },
 
     });
     return () => registerActionHandlers(null);
