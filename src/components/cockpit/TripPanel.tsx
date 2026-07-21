@@ -1268,7 +1268,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           Flight partner links live behind the flight hero's "Buscar Ofertas" popover.
           Hotel partner links live on the hotel hero. */}
       {(() => {
-        const paidActivities = (trip.days?.flatMap(d => d.activities) || [])
+        const paidActivities = (trip.days?.flatMap(d => (d.activities || []).map(a => ({ ...a, dayDate: d.date }))) || [])
           .filter(a => a.category === 'passeio' && (a.cost || 0) >= 80);
         const uniqueByName = new Map<string, typeof paidActivities[0]>();
         paidActivities.forEach(a => {
