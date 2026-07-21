@@ -472,7 +472,7 @@ const Viagens = () => {
     setOffersModal({
       isOpen: true,
       activityName: activity.name,
-      activityDate: typeof dayDate === 'string' && dayDate.includes('T') ? dayDate.slice(0, 10) : dayDate,
+      activityDate: String(dayDate || '').slice(0, 10),
     });
   };
 
@@ -1832,7 +1832,7 @@ const Viagens = () => {
                 setOffersModal({
                   isOpen: true,
                   activityName: type === 'flight' ? 'Voo de Ida e Volta' : 'Hospedagem',
-                  activityDate: typeof startDate === 'string' && startDate.includes('T') ? startDate.slice(0, 10) : startDate,
+                  activityDate: String(startDate || '').slice(0, 10),
                 });
               }}
               onNavigateTab={(tab, categoryFilter) => {
@@ -2262,7 +2262,7 @@ const Viagens = () => {
                                   onClick={(e) => { e.stopPropagation(); setOffersModal({
                                     isOpen: true,
                                     activityName: activity.name,
-                                    activityDate: typeof currentDay.date === 'string' && currentDay.date.includes('T') ? currentDay.date.slice(0, 10) : currentDay.date,
+                                    activityDate: String(currentDay.date || '').slice(0, 10),
                                   }); }}
                                   className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-primary/50 transition-colors"
                                 >
