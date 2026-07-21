@@ -1153,7 +1153,7 @@ export const GeneratedItineraryStage = ({
       return 'passeio';
     };
     const mapStatus = (s: string): string =>
-      s === 'defined' ? 'confirmed' : s === 'pending' ? 'cancelled' : 'planned';
+      s === 'pending' ? 'cancelled' : 'planned';
     return source.map((d) => ({
       day: d.dayNumber,
       date: d.date instanceof Date ? d.date.toISOString() : d.date,
