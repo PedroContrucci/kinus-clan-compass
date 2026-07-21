@@ -1978,8 +1978,13 @@ const Viagens = () => {
                       if (roteiroCategoryFilter === 'anchor') return ['voo', 'hotel'].includes(a.category);
                       return true;
                     });
-                    const total = filtered.reduce((s, a) => s + (a.cost || 0), 0);
-                    const confirmed = filtered.filter(a => a.status === 'confirmed').reduce((s, a) => s + (a.paidAmount || a.cost || 0), 0);
+                    let total = filtered.reduce((s, a) => s + (a.cost || 0), 0);
+                    let confirmed = filtered.filter(a => a.status === 'confirmed').reduce((s, a) => s + (a.paidAmount || a.cost || 0), 0);
+                    if (roteiroCategoryFilter === 'anchor') {
+                      const f = selectedTrip.finances?.categories;
+                      total = (f?.flights?.planned || 0) + (f?.flights?.confirmed || 0) + (f?.accommodation?.planned || 0) + (f?.accommodation?.confirmed || 0);
+                      confirmed = (f?.flights?.confirmed || 0) + (f?.accommodation?.confirmed || 0);
+                    }
                     return (
                       <div className="p-3 rounded-xl bg-card border border-border mt-2">
                         <div className="flex justify-between text-sm">
