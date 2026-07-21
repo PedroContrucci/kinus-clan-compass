@@ -1303,6 +1303,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                 isOpen={offersModal.isOpen}
                 onClose={() => setOffersModal(null)}
                 activityName={offersModal.activityName}
+                activityDate={offersModal.activityDate}
                 city={trip.destination}
               />
             )}
