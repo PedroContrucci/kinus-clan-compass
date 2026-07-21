@@ -1920,6 +1920,10 @@ const Viagens = () => {
                       })
                       .map((activity, actIdx) => {
                         const realActIdx = day.activities.indexOf(activity);
+                        const isAnchor = roteiroCategoryFilter === 'anchor';
+                        const isAnchorHero = isAnchor && ['voo', 'hotel'].includes(activity.category);
+                        const acc = selectedTrip.finances?.categories?.accommodation;
+                        const hotelDisplay = (acc?.planned || 0) + (acc?.confirmed || 0);
                         return (
                           <div key={`${dayIdx}-${actIdx}`}
                             onClick={() => setActivityDetailDrawer({ activity, open: true })}
@@ -1942,21 +1946,29 @@ const Viagens = () => {
                                 {activity.cost > 0 && (
                                   <span className="text-xs text-muted-foreground">R$ {activity.cost.toLocaleString('pt-BR')}</span>
                                 )}
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                                  activity.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
-                                }`}>
-                                  {activity.status === 'confirmed' ? '✅ Confirmado' : '⏳ Pendente'}
-                                </span>
+                                {isAnchor && activity.category === 'hotel' && activity.cost === 0 && (
+                                  <span className="text-xs text-muted-foreground">R$ {hotelDisplay.toLocaleString('pt-BR')}</span>
+                                )}
+                                {!isAnchorHero && (
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                    activity.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                                  }`}>
+                                    {activity.status === 'confirmed' ? '✅ Confirmado' : '⏳ Pendente'}
+                                  </span>
+                                )}
                                 {activity.edited && (
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-400 font-medium">
                                     ✏️ ajustado
                                   </span>
                                 )}
                               </div>
+                              {isAnchorHero && (
+                                <p className="text-[10px] text-muted-foreground mt-1">📍 Gerenciado no Painel</p>
+                              )}
                               {/* Google Places Info */}
                               <PlaceInfoCard activityName={activity.name} destination={selectedTrip.destination} />
                             </div>
-                            {activity.status !== 'confirmed' && (
+                            {activity.status !== 'confirmed' && !isAnchorHero && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); setConfirmModal({ isOpen: true, activity, dayIndex: dayIdx, actIndex: realActIdx }); }}
                                 className="self-center px-3 py-1.5 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-colors whitespace-nowrap"
