@@ -12,6 +12,8 @@ interface KinuAnalysisCardProps {
   budget: number;
   flightsCost: number;
   hotelCost: number;
+  toursCost: number;
+  foodCost: number;
   travelInterests?: string[];
 }
 
@@ -28,6 +30,8 @@ export const KinuAnalysisCard = ({
   budget,
   flightsCost,
   hotelCost,
+  toursCost,
+  foodCost,
   travelInterests = [],
 }: KinuAnalysisCardProps) => {
   const [analysis, setAnalysis] = useState<AnalysisSection[]>([]);
@@ -36,15 +40,15 @@ export const KinuAnalysisCard = ({
 
   useEffect(() => {
     generateAnalysis();
-  }, [destination, budget, flightsCost]);
+  }, [destination, budget, flightsCost, hotelCost, toursCost, foodCost]);
 
   const generateAnalysis = async () => {
     setIsLoading(true);
 
     const totalDays = Math.ceil((returnDate.getTime() - departureDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    const remainingBudget = budget - flightsCost - hotelCost;
+    const totalEstimated = flightsCost + hotelCost + toursCost + foodCost;
+    const remainingBudget = budget - totalEstimated;
     const dailyBudget = Math.round(remainingBudget / totalDays);
-    const totalEstimated = flightsCost + hotelCost;
     const isOverBudget = totalEstimated > budget;
 
 
