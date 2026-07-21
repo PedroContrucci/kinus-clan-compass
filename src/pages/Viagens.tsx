@@ -2262,7 +2262,7 @@ const Viagens = () => {
                                   onClick={(e) => { e.stopPropagation(); setOffersModal({
                                     isOpen: true,
                                     activityName: activity.name,
-                                    activityDate: typeof day.date === 'string' && day.date.includes('T') ? day.date.slice(0, 10) : day.date,
+                                    activityDate: typeof currentDay.date === 'string' && currentDay.date.includes('T') ? currentDay.date.slice(0, 10) : currentDay.date,
                                   }); }}
                                   className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-primary/50 transition-colors"
                                 >
