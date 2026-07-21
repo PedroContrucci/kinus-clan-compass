@@ -262,7 +262,7 @@ const Viagens = () => {
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
   const [recentlyConfirmed, setRecentlyConfirmed] = useState<string | null>(null);
   
-  const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
+  const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string; activityDate?: string } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; activity: TripActivity; dayIndex: number; actIndex: number } | null>(null);
   const [swapModal, setSwapModal] = useState<{ dayIndex: number; actIndex: number; activity: any } | null>(null);
   const [confirmAmount, setConfirmAmount] = useState('');
@@ -468,9 +468,11 @@ const Viagens = () => {
     setTrips(updatedTrips);
     localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
 
+    const dayDate = selectedTrip.days[dayIndex]?.date;
     setOffersModal({
       isOpen: true,
       activityName: activity.name,
+      activityDate: typeof dayDate === 'string' && dayDate.includes('T') ? dayDate.slice(0, 10) : dayDate,
     });
   };
 
@@ -1826,9 +1828,11 @@ const Viagens = () => {
               pendingConfirmRequest={pendingConfirmRequest}
               onPendingConfirmHandled={() => setPendingConfirmRequest(null)}
               onOpenAuction={(type) => {
+                const startDate = selectedTrip.startDate;
                 setOffersModal({
                   isOpen: true,
                   activityName: type === 'flight' ? 'Voo de Ida e Volta' : 'Hospedagem',
+                  activityDate: typeof startDate === 'string' && startDate.includes('T') ? startDate.slice(0, 10) : startDate,
                 });
               }}
               onNavigateTab={(tab, categoryFilter) => {
@@ -2258,6 +2262,7 @@ const Viagens = () => {
                                   onClick={(e) => { e.stopPropagation(); setOffersModal({
                                     isOpen: true,
                                     activityName: activity.name,
+                                    activityDate: typeof day.date === 'string' && day.date.includes('T') ? day.date.slice(0, 10) : day.date,
                                   }); }}
                                   className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-primary/50 transition-colors"
                                 >
@@ -2555,6 +2560,7 @@ const Viagens = () => {
             isOpen={offersModal.isOpen}
             onClose={() => setOffersModal(null)}
             activityName={offersModal.activityName}
+            activityDate={offersModal.activityDate}
             city={selectedTrip?.destination || ''}
           />
         )}
