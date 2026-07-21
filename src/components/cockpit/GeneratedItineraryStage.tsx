@@ -1174,12 +1174,17 @@ export const GeneratedItineraryStage = ({
   };
 
   const handleActivateWithFinances = () => {
-    recomputeAndPersistFinances(days);
-    onActivate(toTripDays(days));
+    const tripDays = toTripDays(days);
+    // 1) Persist days via parent chain (DraftCockpit → Viagens → localStorage).
+    onActivate(tripDays);
+    // 2) Recompute finances from those persisted days and write them AFTER,
+    //    so DraftCockpit's stale trip.finances cannot overwrite the result.
+    setTimeout(() => recomputeAndPersistFinances(days), 0);
   };
   const handleSaveWithDays = () => {
-    recomputeAndPersistFinances(days);
-    onSave(toTripDays(days));
+    const tripDays = toTripDays(days);
+    onSave(tripDays);
+    setTimeout(() => recomputeAndPersistFinances(days), 0);
   };
   const [selectedDay, setSelectedDay] = useState(1);
   const [addActivityModal, setAddActivityModal] = useState(false);
