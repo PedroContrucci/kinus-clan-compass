@@ -216,8 +216,8 @@ function buildGetYourGuideLink(
   let url = `https://www.getyourguide.com/s/?q=${encodeURIComponent(text)}`;
 
   if (startDate && endDate) {
-    const dateFrom = format(startDate, 'yyyy-MM-dd');
-    const dateTo = format(endDate, 'yyyy-MM-dd');
+    const dateFrom = startDate.toISOString().slice(0, 10);
+    const dateTo = endDate.toISOString().slice(0, 10);
     url = `${url}&date_from=${dateFrom}&date_to=${dateTo}`;
   }
 
