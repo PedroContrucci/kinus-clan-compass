@@ -1832,7 +1832,7 @@ const Viagens = () => {
                 setOffersModal({
                   isOpen: true,
                   activityName: type === 'flight' ? 'Voo de Ida e Volta' : 'Hospedagem',
-                  activityDate: typeof startDate === 'string' && startDate.includes('T') ? startDate.slice(0, 10) : startDate,
+                  activityDate: String(startDate || '').slice(0, 10),
                 });
               }}
               onNavigateTab={(tab, categoryFilter) => {
