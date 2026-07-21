@@ -1097,14 +1097,19 @@ export async function exportTripPDF(trip: SavedTrip) {
       (acc.status === 'confirmed' ? confirmedItems : pendingItems).push(line);
     }
 
-    // Atividades confirmadas (limitadas a 8 para caber)
+    // Atividades confirmadas (limitadas a 8 para caber): apenas itens reservaveis com custo > 0, excluindo itens de sistema
     const confirmedActs: string[] = [];
+    const normalize = (s: string) =>
+      s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     (trip.days || []).forEach((d: any) => {
       (d.activities || []).forEach((a: any) => {
         if (a.status !== 'confirmed') return;
         if (a.category === 'voo' || a.category === 'hotel' || a.category === 'transporte') return;
-        const n = (a.name || '').toLowerCase();
+        const cost = Math.round(a.estimatedCost || a.costPerPerson || a.totalCost || 0);
+        if (cost <= 0) return;
+        const n = normalize(a.name || '');
         if (n.includes('transfer') || n.includes('check-in') || n.includes('check-out')) return;
+        if (n.includes('cafe da manha') || n.includes('caminhada leve') || n.includes('descanso')) return;
         confirmedActs.push(cleanText(`Dia ${d.day}: ${a.name}`));
       });
     });
