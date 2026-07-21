@@ -43,24 +43,19 @@ const FinOpsDashboard = ({ finances, destination }: FinOpsDashboardProps) => {
   const available = total - planned - confirmed - bidding;
   const categories = finances?.categories ?? {} as TripFinances['categories'];
 
-  // Calculate allocated budgets (example allocation based on typical trip)
-  const categoryAllocations: Record<keyof TripFinances['categories'], number> = {
-    flights: Math.round(total * 0.38),
-    accommodation: Math.round(total * 0.30),
-    tours: Math.round(total * 0.14),
-    food: Math.round(total * 0.10),
-    transport: Math.round(total * 0.05),
-    shopping: Math.round(total * 0.03),
-  };
+  // Allocations come DIRECTLY from the recomputed trip.finances buckets
+  // (planned amount per category). No surface computes its own version.
+  const allocOf = (b: CategoryBudget) => Math.round((b?.planned || 0) + (b?.confirmed || 0) + (b?.bidding || 0));
 
   const categoryList: CategoryInfo[] = [
-    { key: 'flights', label: 'Voos', icon: Plane, budget: categories.flights ?? emptyBudget, allocatedBudget: categoryAllocations.flights },
-    { key: 'accommodation', label: 'Hospedagem', icon: Building, budget: categories.accommodation ?? emptyBudget, allocatedBudget: categoryAllocations.accommodation },
-    { key: 'tours', label: 'Passeios & Tours', icon: MapPin, budget: categories.tours ?? emptyBudget, allocatedBudget: categoryAllocations.tours },
-    { key: 'food', label: 'Alimentação', icon: Utensils, budget: categories.food ?? emptyBudget, allocatedBudget: categoryAllocations.food },
-    { key: 'transport', label: 'Transporte Local', icon: Car, budget: categories.transport ?? emptyBudget, allocatedBudget: categoryAllocations.transport },
-    { key: 'shopping', label: 'Compras & Extras', icon: ShoppingBag, budget: categories.shopping ?? emptyBudget, allocatedBudget: categoryAllocations.shopping },
+    { key: 'flights', label: 'Voos', icon: Plane, budget: categories.flights ?? emptyBudget, allocatedBudget: allocOf(categories.flights ?? emptyBudget) },
+    { key: 'accommodation', label: 'Hospedagem', icon: Building, budget: categories.accommodation ?? emptyBudget, allocatedBudget: allocOf(categories.accommodation ?? emptyBudget) },
+    { key: 'tours', label: 'Passeios & Tours', icon: MapPin, budget: categories.tours ?? emptyBudget, allocatedBudget: allocOf(categories.tours ?? emptyBudget) },
+    { key: 'food', label: 'Alimentação', icon: Utensils, budget: categories.food ?? emptyBudget, allocatedBudget: allocOf(categories.food ?? emptyBudget) },
+    { key: 'transport', label: 'Transporte Local', icon: Car, budget: categories.transport ?? emptyBudget, allocatedBudget: allocOf(categories.transport ?? emptyBudget) },
+    { key: 'shopping', label: 'Compras & Extras', icon: ShoppingBag, budget: categories.shopping ?? emptyBudget, allocatedBudget: allocOf(categories.shopping ?? emptyBudget) },
   ];
+
 
   return (
     <div className="space-y-6 animate-fade-in">
