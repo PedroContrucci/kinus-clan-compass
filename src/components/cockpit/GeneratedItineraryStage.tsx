@@ -1051,34 +1051,36 @@ export const GeneratedItineraryStage = ({
   // matching draft in localStorage so the Financeiro tab always reflects what
   // the Roteiro contains. Runs after generation and whenever the days change
   // in-stage (before activation). Post-activation edits keep working on top.
+  // Single source of truth for the finance buckets shown across all surfaces.
+  // Matches EXACTLY what recomputeAndPersistFinances writes to trip.finances.
+  const computeBuckets = (currentDays: ItineraryDay[]) => {
+    const flightsPlanned = Math.round(breakdown.flights.amount || 0);
+    const hotelPlanned = Math.round(breakdown.hotel.amount || 0);
+    let foodPlanned = 0;
+    let toursPlanned = 0;
+    currentDays.forEach((day) => {
+      day.activities.forEach((act) => {
+        const cost = Math.round(act.estimatedCost || 0);
+        // Exclude flight/hotel/system items — their cost lives only in the
+        // planned flight/hotel totals from breakdown, never on day items.
+        if (['flight', 'hotel', 'checkin', 'checkout', 'transport'].includes(act.type)) return;
+        if (['breakfast', 'lunch', 'dinner'].includes(act.timeSlot)) {
+          foodPlanned += cost;
+        } else if (['morning', 'afternoon', 'night'].includes(act.timeSlot)) {
+          toursPlanned += cost;
+        }
+      });
+    });
+    const totalPlanned = flightsPlanned + hotelPlanned + foodPlanned + toursPlanned;
+    return { flightsPlanned, hotelPlanned, foodPlanned, toursPlanned, totalPlanned };
+  };
+
+  const derivedFinances = useMemo(() => computeBuckets(days), [days, breakdown]);
+
   const recomputeAndPersistFinances = useMemo(() => {
     return (currentDays: ItineraryDay[]) => {
       try {
-        const flightsPlanned = Math.round(breakdown.flights.amount || 0);
-        const hotelPlanned = Math.round(breakdown.hotel.amount || 0);
-
-        let foodPlanned = 0;
-        let toursPlanned = 0;
-        let transportPlanned = 0;
-        currentDays.forEach((day) => {
-          day.activities.forEach((act) => {
-            const cost = Math.round(act.estimatedCost || 0);
-            // Flight and hotel line items are excluded — their cost lives in
-            // the planned flight/hotel totals from breakdown, not on day items.
-            if (['flight', 'hotel', 'checkin', 'checkout'].includes(act.type)) {
-              return;
-            }
-            if (act.type === 'transport') {
-              transportPlanned += cost;
-            } else if (['breakfast', 'lunch', 'dinner'].includes(act.timeSlot)) {
-              foodPlanned += cost;
-            } else if (['morning', 'afternoon', 'night'].includes(act.timeSlot)) {
-              toursPlanned += cost;
-            }
-          });
-        });
-
-        const totalPlanned = flightsPlanned + hotelPlanned + foodPlanned + toursPlanned + transportPlanned;
+        const { flightsPlanned, hotelPlanned, foodPlanned, toursPlanned, totalPlanned } = computeBuckets(currentDays);
 
         const raw = localStorage.getItem('kinu_trips');
         if (!raw) return;
@@ -1111,13 +1113,13 @@ export const GeneratedItineraryStage = ({
           confirmed,
           bidding,
           planned: totalPlanned,
-          available: total - totalPlanned - confirmed - bidding,
+          available: total - totalPlanned - confirmed,
           categories: {
             flights: { ...cat('flights'), planned: flightsPlanned },
             accommodation: { ...cat('accommodation'), planned: hotelPlanned },
             tours: { ...cat('tours'), planned: toursPlanned },
             food: { ...cat('food'), planned: foodPlanned },
-            transport: { ...cat('transport'), planned: transportPlanned },
+            transport: cat('transport'),
             shopping: cat('shopping'),
           },
         };
@@ -1129,6 +1131,7 @@ export const GeneratedItineraryStage = ({
       }
     };
   }, [breakdown, destination, departureDate, returnDate]);
+
 
   useEffect(() => {
     if (days.length > 0) recomputeAndPersistFinances(days);
@@ -1328,98 +1331,110 @@ export const GeneratedItineraryStage = ({
           </h3>
           
           <div className="space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Budget:</span>
-              <span className="font-medium text-foreground">R$ {budget.toLocaleString('pt-BR')}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Plane size={14} className="text-blue-400" />
-                <span className="text-muted-foreground">Voos:</span>
-              </span>
-              <span className="text-foreground">
-                R$ {breakdown.flights.amount.toLocaleString('pt-BR')} ({breakdown.flights.percent}%) 
-                <span className="text-emerald-400 ml-1">✓</span>
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Hotel size={14} className="text-purple-400" />
-                <span className="text-muted-foreground">Hotel:</span>
-              </span>
-              <span className="text-foreground">
-                R$ {breakdown.hotel.amount.toLocaleString('pt-BR')} ({breakdown.hotel.percent}%) 
-                <span className="text-amber-400 ml-1">~</span>
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Sparkles size={14} className="text-emerald-400" />
-                <span className="text-muted-foreground">Experiências:</span>
-              </span>
-              <span className="text-foreground">
-                R$ {breakdown.experiences.amount.toLocaleString('pt-BR')} ({breakdown.experiences.percent}%) 
-                <span className="text-amber-400 ml-1">~</span>
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <MapPin size={14} className="text-orange-400" />
-                <span className="text-muted-foreground">Alimentação:</span>
-              </span>
-              <span className="text-foreground">
-                R$ {breakdown.food.amount.toLocaleString('pt-BR')} ({breakdown.food.percent}%) 
-                <span className="text-amber-400 ml-1">~</span>
-              </span>
-            </div>
-            
-            <div className="border-t border-border pt-2 mt-2">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Total estimado:</span>
-                <span className="font-medium text-foreground">
-                  R$ {breakdown.total.toLocaleString('pt-BR')} ({breakdown.trustZonePercent}%)
-                </span>
-              </div>
-              <div className={cn(
-                'flex items-center justify-between',
-                breakdown.available >= 0 ? 'text-emerald-400' : 'text-red-500'
-              )}>
-                <span>{breakdown.available >= 0 ? 'Disponível:' : 'Acima do orçamento:'}</span>
-                <span className="font-medium">
-                  {breakdown.available >= 0
-                    ? `R$ ${breakdown.available.toLocaleString('pt-BR')} para upgrades`
-                    : `R$ ${Math.abs(breakdown.available).toLocaleString('pt-BR')} acima do limite`}
-                </span>
-              </div>
-            </div>
-            
-            <div className="mt-3">
-              <div className="flex items-center justify-between text-xs mb-1">
-                <span className="text-muted-foreground">Trust Zone</span>
-                <span className={cn(
-                  'font-medium',
-                  breakdown.trustZonePercent <= 98 && breakdown.trustZonePercent >= 85 
-                    ? 'text-emerald-500' 
-                    : breakdown.trustZonePercent < 85 
-                      ? 'text-amber-500' 
-                      : 'text-red-500'
-                )}>
-                  {breakdown.trustZonePercent}% {breakdown.trustZonePercent <= 98 ? '✅' : '⚠️'}
-                </span>
-              </div>
-              <Progress
-                value={Math.min(breakdown.trustZonePercent, 100)}
-                className={cn(
-                  'h-2',
-                  breakdown.trustZonePercent > 100 && '[&>div]:bg-red-500'
-                )}
-              />
-            </div>
+            {(() => {
+              const budgetVal = budget || 0;
+              const pct = (n: number) => (budgetVal > 0 ? Math.round((n / budgetVal) * 100) : 0);
+              const totalPlanned = derivedFinances.totalPlanned;
+              const available = budgetVal - totalPlanned;
+              const trustZonePercent = budgetVal > 0 ? Math.round((totalPlanned / budgetVal) * 100) : 0;
+              return (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Budget:</span>
+                    <span className="font-medium text-foreground">R$ {budgetVal.toLocaleString('pt-BR')}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Plane size={14} className="text-blue-400" />
+                      <span className="text-muted-foreground">Voos:</span>
+                    </span>
+                    <span className="text-foreground">
+                      R$ {derivedFinances.flightsPlanned.toLocaleString('pt-BR')} ({pct(derivedFinances.flightsPlanned)}%)
+                      <span className="text-emerald-400 ml-1">✓</span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Hotel size={14} className="text-purple-400" />
+                      <span className="text-muted-foreground">Hotel:</span>
+                    </span>
+                    <span className="text-foreground">
+                      R$ {derivedFinances.hotelPlanned.toLocaleString('pt-BR')} ({pct(derivedFinances.hotelPlanned)}%)
+                      <span className="text-amber-400 ml-1">~</span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Sparkles size={14} className="text-emerald-400" />
+                      <span className="text-muted-foreground">Experiências:</span>
+                    </span>
+                    <span className="text-foreground">
+                      R$ {derivedFinances.toursPlanned.toLocaleString('pt-BR')} ({pct(derivedFinances.toursPlanned)}%)
+                      <span className="text-amber-400 ml-1">~</span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <MapPin size={14} className="text-orange-400" />
+                      <span className="text-muted-foreground">Alimentação:</span>
+                    </span>
+                    <span className="text-foreground">
+                      R$ {derivedFinances.foodPlanned.toLocaleString('pt-BR')} ({pct(derivedFinances.foodPlanned)}%)
+                      <span className="text-amber-400 ml-1">~</span>
+                    </span>
+                  </div>
+
+                  <div className="border-t border-border pt-2 mt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Total estimado:</span>
+                      <span className="font-medium text-foreground">
+                        R$ {totalPlanned.toLocaleString('pt-BR')} ({trustZonePercent}%)
+                      </span>
+                    </div>
+                    <div className={cn(
+                      'flex items-center justify-between',
+                      available >= 0 ? 'text-emerald-400' : 'text-red-500'
+                    )}>
+                      <span>{available >= 0 ? 'Disponível:' : 'Acima do orçamento:'}</span>
+                      <span className="font-medium">
+                        {available >= 0
+                          ? `R$ ${available.toLocaleString('pt-BR')} para upgrades`
+                          : `R$ ${Math.abs(available).toLocaleString('pt-BR')} acima do limite`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-muted-foreground">Trust Zone</span>
+                      <span className={cn(
+                        'font-medium',
+                        trustZonePercent <= 98 && trustZonePercent >= 85
+                          ? 'text-emerald-500'
+                          : trustZonePercent < 85
+                            ? 'text-amber-500'
+                            : 'text-red-500'
+                      )}>
+                        {trustZonePercent}% {trustZonePercent <= 98 ? '✅' : '⚠️'}
+                      </span>
+                    </div>
+                    <Progress
+                      value={Math.min(trustZonePercent, 100)}
+                      className={cn(
+                        'h-2',
+                        trustZonePercent > 100 && '[&>div]:bg-red-500'
+                      )}
+                    />
+                  </div>
+                </>
+              );
+            })()}
           </div>
+
         </div>
       </div>
 
