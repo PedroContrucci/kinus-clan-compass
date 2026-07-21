@@ -44,6 +44,9 @@ export const KinuAnalysisCard = ({
     const totalDays = Math.ceil((returnDate.getTime() - departureDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const remainingBudget = budget - flightsCost - hotelCost;
     const dailyBudget = Math.round(remainingBudget / totalDays);
+    const totalEstimated = flightsCost + hotelCost;
+    const isOverBudget = totalEstimated > budget;
+
 
     try {
       const { data, error } = await supabase.functions.invoke('kinu-ai', {
