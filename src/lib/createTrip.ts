@@ -95,7 +95,7 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
     },
   };
 
-  const flightPrice = Math.round(getActivityPrice('flight', destinationCity, priceLevel) * totalTravelers * tierMultiplier);
+  const flightPrice = Math.round((getActivityPrice('flight', destinationCity, priceLevel) * tierMultiplier) / 2);
   const hotelNightPrice = Math.round(getActivityPrice('hotel_night', destinationCity, priceLevel) * tierMultiplier);
 
   const cityInfo = findCityInfo(destinationCity);
