@@ -44,6 +44,9 @@ export const KinuAnalysisCard = ({
     const totalDays = Math.ceil((returnDate.getTime() - departureDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const remainingBudget = budget - flightsCost - hotelCost;
     const dailyBudget = Math.round(remainingBudget / totalDays);
+    const totalEstimated = flightsCost + hotelCost;
+    const isOverBudget = totalEstimated > budget;
+
 
     try {
       const { data, error } = await supabase.functions.invoke('kinu-ai', {
@@ -68,9 +71,12 @@ export const KinuAnalysisCard = ({
         setAnalysis([
           {
             icon: <TrendingUp size={16} className="text-emerald-400" />,
-            title: 'Otimização Financeira',
-            content: `Com R$ ${dailyBudget}/dia para experiências, priorizei atividades gratuitas pela manhã e experiências pagas à tarde.`,
+            title: isOverBudget ? 'Orçamento Insuficiente' : 'Otimização Financeira',
+            content: isOverBudget
+              ? `O total estimado (R$ ${totalEstimated.toLocaleString('pt-BR')}) ultrapassa seu budget (R$ ${budget.toLocaleString('pt-BR')}). Considere aumentar o orçamento, reduzir dias ou escolher um destino mais próximo.`
+              : `Com R$ ${dailyBudget}/dia para experiências, priorizei atividades gratuitas pela manhã e experiências pagas à tarde.`,
           },
+
           {
             icon: <Brain size={16} className="text-primary" />,
             title: 'Ritmo da Viagem',
@@ -89,9 +95,12 @@ export const KinuAnalysisCard = ({
       setAnalysis([
         {
           icon: <TrendingUp size={16} className="text-emerald-400" />,
-          title: 'Otimização Financeira',
-          content: `Voos representam ${Math.round((flightsCost / budget) * 100)}% do budget. Compensei com hospedagem custo-benefício e experiências gratuitas.`,
+          title: isOverBudget ? 'Orçamento Insuficiente' : 'Otimização Financeira',
+          content: isOverBudget
+            ? `O total estimado (R$ ${totalEstimated.toLocaleString('pt-BR')}) ultrapassa seu budget (R$ ${budget.toLocaleString('pt-BR')}). Considere aumentar o orçamento, reduzir dias ou escolher um destino mais próximo.`
+            : `Voos representam ${Math.round((flightsCost / budget) * 100)}% do budget. Compensei com hospedagem custo-benefício e experiências gratuitas.`,
         },
+
         {
           icon: <Brain size={16} className="text-primary" />,
           title: 'Distribuição Inteligente',
