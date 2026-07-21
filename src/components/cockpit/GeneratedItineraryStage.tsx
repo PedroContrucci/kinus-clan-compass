@@ -1051,34 +1051,36 @@ export const GeneratedItineraryStage = ({
   // matching draft in localStorage so the Financeiro tab always reflects what
   // the Roteiro contains. Runs after generation and whenever the days change
   // in-stage (before activation). Post-activation edits keep working on top.
+  // Single source of truth for the finance buckets shown across all surfaces.
+  // Matches EXACTLY what recomputeAndPersistFinances writes to trip.finances.
+  const computeBuckets = (currentDays: ItineraryDay[]) => {
+    const flightsPlanned = Math.round(breakdown.flights.amount || 0);
+    const hotelPlanned = Math.round(breakdown.hotel.amount || 0);
+    let foodPlanned = 0;
+    let toursPlanned = 0;
+    currentDays.forEach((day) => {
+      day.activities.forEach((act) => {
+        const cost = Math.round(act.estimatedCost || 0);
+        // Exclude flight/hotel/system items — their cost lives only in the
+        // planned flight/hotel totals from breakdown, never on day items.
+        if (['flight', 'hotel', 'checkin', 'checkout', 'transport'].includes(act.type)) return;
+        if (['breakfast', 'lunch', 'dinner'].includes(act.timeSlot)) {
+          foodPlanned += cost;
+        } else if (['morning', 'afternoon', 'night'].includes(act.timeSlot)) {
+          toursPlanned += cost;
+        }
+      });
+    });
+    const totalPlanned = flightsPlanned + hotelPlanned + foodPlanned + toursPlanned;
+    return { flightsPlanned, hotelPlanned, foodPlanned, toursPlanned, totalPlanned };
+  };
+
+  const derivedFinances = useMemo(() => computeBuckets(days), [days, breakdown]);
+
   const recomputeAndPersistFinances = useMemo(() => {
     return (currentDays: ItineraryDay[]) => {
       try {
-        const flightsPlanned = Math.round(breakdown.flights.amount || 0);
-        const hotelPlanned = Math.round(breakdown.hotel.amount || 0);
-
-        let foodPlanned = 0;
-        let toursPlanned = 0;
-        let transportPlanned = 0;
-        currentDays.forEach((day) => {
-          day.activities.forEach((act) => {
-            const cost = Math.round(act.estimatedCost || 0);
-            // Flight and hotel line items are excluded — their cost lives in
-            // the planned flight/hotel totals from breakdown, not on day items.
-            if (['flight', 'hotel', 'checkin', 'checkout'].includes(act.type)) {
-              return;
-            }
-            if (act.type === 'transport') {
-              transportPlanned += cost;
-            } else if (['breakfast', 'lunch', 'dinner'].includes(act.timeSlot)) {
-              foodPlanned += cost;
-            } else if (['morning', 'afternoon', 'night'].includes(act.timeSlot)) {
-              toursPlanned += cost;
-            }
-          });
-        });
-
-        const totalPlanned = flightsPlanned + hotelPlanned + foodPlanned + toursPlanned + transportPlanned;
+        const { flightsPlanned, hotelPlanned, foodPlanned, toursPlanned, totalPlanned } = computeBuckets(currentDays);
 
         const raw = localStorage.getItem('kinu_trips');
         if (!raw) return;
@@ -1111,13 +1113,13 @@ export const GeneratedItineraryStage = ({
           confirmed,
           bidding,
           planned: totalPlanned,
-          available: total - totalPlanned - confirmed - bidding,
+          available: total - totalPlanned - confirmed,
           categories: {
             flights: { ...cat('flights'), planned: flightsPlanned },
             accommodation: { ...cat('accommodation'), planned: hotelPlanned },
             tours: { ...cat('tours'), planned: toursPlanned },
             food: { ...cat('food'), planned: foodPlanned },
-            transport: { ...cat('transport'), planned: transportPlanned },
+            transport: cat('transport'),
             shopping: cat('shopping'),
           },
         };
@@ -1129,6 +1131,7 @@ export const GeneratedItineraryStage = ({
       }
     };
   }, [breakdown, destination, departureDate, returnDate]);
+
 
   useEffect(() => {
     if (days.length > 0) recomputeAndPersistFinances(days);
