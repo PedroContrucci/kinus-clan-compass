@@ -422,7 +422,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const [weatherOpen, setWeatherOpen] = useSectionOpen('clima', false);
   const [fontesOpen, setFontesOpen] = useSectionOpen('fontes', false);
   const [showFlexDates, setShowFlexDates] = useState(false);
-  const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string } | null>(null);
+  const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string; activityDate?: string } | null>(null);
   const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string; hotelName: string; mealPlan: string; outboundAirline: string; outboundFlightNumber: string; outboundTime: string; returnAirline: string; returnFlightNumber: string; returnTime: string } | null>(null);
   const [editingBaggage, setEditingBaggage] = useState(false);
   const [editingSeat, setEditingSeat] = useState(false);
@@ -1268,7 +1268,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           Flight partner links live behind the flight hero's "Buscar Ofertas" popover.
           Hotel partner links live on the hotel hero. */}
       {(() => {
-        const paidActivities = (trip.days?.flatMap(d => d.activities) || [])
+        const paidActivities = (trip.days?.flatMap(d => (d.activities || []).map(a => ({ ...a, dayDate: d.date }))) || [])
           .filter(a => a.category === 'passeio' && (a.cost || 0) >= 80);
         const uniqueByName = new Map<string, typeof paidActivities[0]>();
         paidActivities.forEach(a => {
@@ -1287,7 +1287,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
               {uniquePaidActivities.map((activity) => (
                 <button
                   key={activity.name}
-                  onClick={() => setOffersModal({ isOpen: true, activityName: activity.name })}
+                  onClick={() => setOffersModal({ isOpen: true, activityName: activity.name, activityDate: String(activity.dayDate || '').slice(0, 10) })}
                   className="w-full flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/60 transition-colors group text-left"
                 >
                   <span className="text-sm font-semibold text-foreground font-['Outfit']">{activity.name}</span>
@@ -1303,6 +1303,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                 isOpen={offersModal.isOpen}
                 onClose={() => setOffersModal(null)}
                 activityName={offersModal.activityName}
+                activityDate={offersModal.activityDate}
                 city={trip.destination}
               />
             )}
