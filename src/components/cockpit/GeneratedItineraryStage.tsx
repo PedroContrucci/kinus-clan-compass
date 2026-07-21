@@ -1310,6 +1310,8 @@ export const GeneratedItineraryStage = ({
           budget={budget}
           flightsCost={breakdown.flights.amount}
           hotelCost={breakdown.hotel.amount}
+          toursCost={breakdown.experiences.amount}
+          foodCost={breakdown.food.amount}
           travelInterests={travelInterests}
         />
       </div>
