@@ -81,8 +81,8 @@ interface GeneratedItineraryStageProps {
   returnFlight: SelectedFlight;
   travelInterests?: string[];
   jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO';
-  onActivate: (days?: any[]) => void;
-  onSave: (days?: any[]) => void;
+  onActivate: (days?: any[], financeBuckets?: { flightsPlanned: number; hotelPlanned: number; foodPlanned: number; toursPlanned: number; totalPlanned: number }) => void;
+  onSave: (days?: any[], financeBuckets?: { flightsPlanned: number; hotelPlanned: number; foodPlanned: number; toursPlanned: number; totalPlanned: number }) => void;
   onBack: () => void;
   onDaysGenerated?: (days: ItineraryDay[]) => void;
   priceLevel?: PriceLevel;
@@ -1178,16 +1178,13 @@ export const GeneratedItineraryStage = ({
 
   const handleActivateWithFinances = () => {
     const tripDays = toTripDays(days);
-    // 1) Persist days via parent chain (DraftCockpit → Viagens → localStorage).
-    onActivate(tripDays);
-    // 2) Recompute finances from those persisted days and write them AFTER,
-    //    so DraftCockpit's stale trip.finances cannot overwrite the result.
-    setTimeout(() => recomputeAndPersistFinances(days), 0);
+    const buckets = computeBuckets(days);
+    onActivate(tripDays, buckets);
   };
   const handleSaveWithDays = () => {
     const tripDays = toTripDays(days);
-    onSave(tripDays);
-    setTimeout(() => recomputeAndPersistFinances(days), 0);
+    const buckets = computeBuckets(days);
+    onSave(tripDays, buckets);
   };
   const [selectedDay, setSelectedDay] = useState(1);
   const [addActivityModal, setAddActivityModal] = useState(false);

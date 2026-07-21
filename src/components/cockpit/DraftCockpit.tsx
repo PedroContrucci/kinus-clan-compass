@@ -207,7 +207,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
     });
   }, [trip, onSave]);
 
-  const handleSave = useCallback((daysFromStage?: any[]) => {
+  const handleSave = useCallback((daysFromStage?: any[], bucketsFromStage?: { flightsPlanned: number; hotelPlanned: number; foodPlanned: number; toursPlanned: number; totalPlanned: number }) => {
     const nextDays = daysFromStage && daysFromStage.length > 0
       ? daysFromStage
       : (generatedDays && generatedDays.length > 0 ? generatedDays : trip.days);
@@ -219,6 +219,30 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
       days: nextDays,
     };
     syncTripFlightPlannedFinances(updatedTrip);
+    if (bucketsFromStage) {
+      const prev = updatedTrip.finances || {};
+      const prevCats = prev.categories || {};
+      const keep = (n: string) => ({ confirmed: prevCats[n]?.confirmed || 0, bidding: prevCats[n]?.bidding || 0 });
+      const flightsPlanned = bucketsFromStage.flightsPlanned > 0
+        ? bucketsFromStage.flightsPlanned
+        : (prevCats.flights?.planned || 0);
+      const planned = flightsPlanned + bucketsFromStage.hotelPlanned + bucketsFromStage.toursPlanned + bucketsFromStage.foodPlanned;
+      const total = updatedTrip.budget || prev.total || planned;
+      const confirmed = prev.confirmed || 0;
+      const bidding = prev.bidding || 0;
+      updatedTrip.finances = {
+        total, confirmed, bidding, planned,
+        available: total - planned - confirmed,
+        categories: {
+          flights: { ...keep('flights'), planned: flightsPlanned },
+          accommodation: { ...keep('accommodation'), planned: bucketsFromStage.hotelPlanned },
+          tours: { ...keep('tours'), planned: bucketsFromStage.toursPlanned },
+          food: { ...keep('food'), planned: bucketsFromStage.foodPlanned },
+          transport: keep('transport'),
+          shopping: keep('shopping'),
+        },
+      };
+    }
     onSave(updatedTrip);
     toast({ title: "Rascunho salvo! 📝" });
   }, [trip, stage, selectedOutbound, selectedReturn, generatedDays, onSave]);
@@ -256,7 +280,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   const effectiveReturn = selectedReturn
     || (canSkipFlightSelection ? buildPlaceholderFlight(new Date(trip.endDate), 'return') : undefined);
 
-  const handleActivate = useCallback((daysFromStage?: any[]) => {
+  const handleActivate = useCallback((daysFromStage?: any[], bucketsFromStage?: { flightsPlanned: number; hotelPlanned: number; foodPlanned: number; toursPlanned: number; totalPlanned: number }) => {
     if ((!effectiveOutbound || !effectiveReturn) && !canSkipFlightSelection) {
       toast({ 
         title: "Selecione os voos primeiro", 
@@ -281,6 +305,30 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
       days: nextDays,
     };
     syncTripFlightPlannedFinances(updatedTrip);
+    if (bucketsFromStage) {
+      const prev = updatedTrip.finances || {};
+      const prevCats = prev.categories || {};
+      const keep = (n: string) => ({ confirmed: prevCats[n]?.confirmed || 0, bidding: prevCats[n]?.bidding || 0 });
+      const flightsPlanned = bucketsFromStage.flightsPlanned > 0
+        ? bucketsFromStage.flightsPlanned
+        : (prevCats.flights?.planned || 0);
+      const planned = flightsPlanned + bucketsFromStage.hotelPlanned + bucketsFromStage.toursPlanned + bucketsFromStage.foodPlanned;
+      const total = updatedTrip.budget || prev.total || planned;
+      const confirmed = prev.confirmed || 0;
+      const bidding = prev.bidding || 0;
+      updatedTrip.finances = {
+        total, confirmed, bidding, planned,
+        available: total - planned - confirmed,
+        categories: {
+          flights: { ...keep('flights'), planned: flightsPlanned },
+          accommodation: { ...keep('accommodation'), planned: bucketsFromStage.hotelPlanned },
+          tours: { ...keep('tours'), planned: bucketsFromStage.toursPlanned },
+          food: { ...keep('food'), planned: bucketsFromStage.foodPlanned },
+          transport: keep('transport'),
+          shopping: keep('shopping'),
+        },
+      };
+    }
 
     onActivate(updatedTrip as any);
     toast({ title: "Viagem ativada! 🚀", description: "Sua viagem está pronta para acompanhamento." });
