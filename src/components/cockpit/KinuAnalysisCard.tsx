@@ -95,9 +95,12 @@ export const KinuAnalysisCard = ({
       setAnalysis([
         {
           icon: <TrendingUp size={16} className="text-emerald-400" />,
-          title: 'Otimização Financeira',
-          content: `Voos representam ${Math.round((flightsCost / budget) * 100)}% do budget. Compensei com hospedagem custo-benefício e experiências gratuitas.`,
+          title: isOverBudget ? 'Orçamento Insuficiente' : 'Otimização Financeira',
+          content: isOverBudget
+            ? `O total estimado (R$ ${totalEstimated.toLocaleString('pt-BR')}) ultrapassa seu budget (R$ ${budget.toLocaleString('pt-BR')}). Considere aumentar o orçamento, reduzir dias ou escolher um destino mais próximo.`
+            : `Voos representam ${Math.round((flightsCost / budget) * 100)}% do budget. Compensei com hospedagem custo-benefício e experiências gratuitas.`,
         },
+
         {
           icon: <Brain size={16} className="text-primary" />,
           title: 'Distribuição Inteligente',
