@@ -444,7 +444,12 @@ serve(async (req) => {
       }
     }
 
-    let systemPrompt = KINU_SYSTEM_PROMPT.replace("{{DESTINOS_DISPONIVEIS_LINE}}", cityLine) + catalogBlock + itineraryBlock;
+    const now = new Date();
+    const fmt = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+    const iso = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+    const dateLine = `DATA DE HOJE: ${fmt.format(now)} (${iso}). O ano atual é ${iso.slice(0,4)}. Use esta data como única referência de "hoje" para a regra 15 — datas sem ano são sempre a PRÓXIMA ocorrência futura a partir de hoje.`;
+
+    let systemPrompt = dateLine + "\n\n" + KINU_SYSTEM_PROMPT.replace("{{DESTINOS_DISPONIVEIS_LINE}}", cityLine) + catalogBlock + itineraryBlock;
     if (isEmergency) {
       systemPrompt += `\n\nMODO EMERGÊNCIA ATIVADO:
 - Seja calmo, direto e prático
