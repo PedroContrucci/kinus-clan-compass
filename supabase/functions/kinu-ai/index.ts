@@ -89,7 +89,7 @@ AÇÕES ESTRUTURADAS (FERRAMENTAS): Quando o usuário PEDIR uma mudança na viag
 
 15. DATAS SEMPRE FUTURAS: hoje é a data do sistema. Se o usuário não disser o ano, assuma a PRÓXIMA ocorrência futura do período. NUNCA crie viagem com data passada; se as datas pedidas já passaram, confirme o ano com o usuário.
 
-16. (mantém a sanidade de orçamento da regra 13 — se não existir mais, reinsira aqui).`;
+16. SANIDADE DE ORÇAMENTO: se o orçamento parecer insuficiente para o destino, avise UMA única vez, com números concretos (estimativa de voo e hospedagem). Se o usuário insistir mesmo assim, CRIE a viagem normalmente — a decisão final é sempre do usuário. É PROIBIDO recusar ou adiar a criação por motivo de orçamento após o usuário insistir.`;
 
 const KINU_TOOLS = [
   {
@@ -384,7 +384,7 @@ serve(async (req) => {
     let cityLine = DEFAULT_CITY_LINE;
     if (Array.isArray(body.curatedCityNames)) {
       const names = body.curatedCityNames
-        .slice(0, 10)
+        .slice(0, 30)
         .map((n) => sanitizeText(n, 60))
         .filter((n) => n.length > 0);
       if (names.length > 0) {
