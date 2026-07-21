@@ -472,7 +472,7 @@ const Viagens = () => {
     setOffersModal({
       isOpen: true,
       activityName: activity.name,
-      activityDate: typeof dayDate === 'string' && dayDate.includes('T') ? dayDate.slice(0, 10) : dayDate,
+      activityDate: String(dayDate || '').slice(0, 10),
     });
   };
 
