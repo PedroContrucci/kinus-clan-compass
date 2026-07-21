@@ -1287,7 +1287,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
               {uniquePaidActivities.map((activity) => (
                 <button
                   key={activity.name}
-                  onClick={() => setOffersModal({ isOpen: true, activityName: activity.name })}
+                  onClick={() => setOffersModal({ isOpen: true, activityName: activity.name, activityDate: String(activity.dayDate || '').slice(0, 10) })
                   className="w-full flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/60 transition-colors group text-left"
                 >
                   <span className="text-sm font-semibold text-foreground font-['Outfit']">{activity.name}</span>
