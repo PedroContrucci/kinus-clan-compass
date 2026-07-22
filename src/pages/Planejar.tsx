@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { loadJson } from '@/lib/safeStorage';
 import { Toaster } from '@/components/ui/toaster';
 import ReverseAuctionModal from '@/components/ReverseAuctionModal';
 import { 
@@ -395,7 +396,7 @@ const Planejar = () => {
     };
 
     // Save to localStorage
-    const existingTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+    const existingTrips = loadJson<any[]>('kinu_trips', []);
     existingTrips.push(savedTrip);
     localStorage.setItem('kinu_trips', JSON.stringify(existingTrips));
 

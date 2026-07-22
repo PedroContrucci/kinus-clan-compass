@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { exportTripPDF } from '@/lib/tripPdfExport';
+import { loadJson } from '@/lib/safeStorage';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -327,15 +328,15 @@ const Viagens = () => {
   }, [selectedTrip, activeTab, setTripContext]);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('kinu_user');
+    const savedUser = loadJson<{ name: string } | null>('kinu_user', null);
     if (!savedUser) {
       navigate('/');
       return;
     }
-    setUser(JSON.parse(savedUser));
+    setUser(savedUser);
 
     // Load trips
-    const rawTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+    const rawTrips = loadJson<any[]>('kinu_trips', []);
     const normalizedTrips = rawTrips.map((trip: any) => normalizeSavedTrip(trip));
     setTrips(normalizedTrips);
     localStorage.setItem('kinu_trips', JSON.stringify(normalizedTrips));

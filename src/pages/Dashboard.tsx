@@ -16,6 +16,7 @@ import { useKinuAI } from '@/contexts/KinuAIContext';
 import { TripCardWithPhoto } from '@/components/dashboard/TripCardWithPhoto';
 import { CountdownCard } from '@/components/dashboard/CountdownCard';
 import { exportTripPDF } from '@/lib/tripPdfExport';
+import { loadJson } from '@/lib/safeStorage';
 
 const ApiStatus = lazy(() => import('@/components/debug/ApiStatus').then(m => ({ default: m.ApiStatus })));
 
@@ -38,7 +39,7 @@ const Dashboard = () => {
       navigate('/');
       return;
     }
-    const savedTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+    const savedTrips = loadJson<any[]>('kinu_trips', []);
     setLocalTrips(savedTrips);
   }, [user, authLoading, navigate]);
 

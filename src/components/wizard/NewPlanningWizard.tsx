@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { buildDraftTrip } from '@/lib/createTrip';
+import { loadJson } from '@/lib/safeStorage';
 import { WizardStep1Logistics } from './WizardStep1Logistics';
 import { WizardStep2Travelers } from './WizardStep2Travelers';
 import { WizardStep3Budget } from './WizardStep3Budget';
@@ -149,7 +150,7 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Save to localStorage
-      const existingTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+      const existingTrips = loadJson<any[]>('kinu_trips', []);
       existingTrips.push(trip);
       localStorage.setItem('kinu_trips', JSON.stringify(existingTrips));
 

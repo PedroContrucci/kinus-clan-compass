@@ -12,10 +12,11 @@ import {
 } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/hooks/useAuth';
 import { BottomNav } from '@/components/shared/BottomNav';
+import { loadJson } from '@/lib/safeStorage';
 import { 
   TopPicksCarousel, 
   ItineraryCard, 
-  ActivityCard, 
+  ActivityCard,
   ActivityDetailModal,
   FilterChips,
   ItineraryDetailModal 
@@ -75,7 +76,7 @@ const Cla = () => {
 
   useEffect(() => {
     try {
-      const trips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+      const trips = loadJson<any[]>('kinu_trips', []);
       setMyTrips(trips.filter((t: any) => t.days && t.days.length > 0));
       const upcoming = trips.filter((t: any) => t.status === 'active' && t.startDate && new Date(t.startDate) > new Date());
       if (upcoming.length > 0) setActiveTrip(upcoming[0]);
