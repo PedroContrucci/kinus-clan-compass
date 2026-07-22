@@ -1,8 +1,7 @@
 // KinuAnalysisCard — AI analysis explaining itinerary choices
-import { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Lightbulb, TrendingUp, Shield, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Brain, Lightbulb, TrendingUp, Shield, ChevronDown, ChevronUp } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface KinuAnalysisCardProps {
@@ -32,94 +31,38 @@ export const KinuAnalysisCard = ({
   hotelCost,
   toursCost,
   foodCost,
-  travelInterests = [],
 }: KinuAnalysisCardProps) => {
-  const [analysis, setAnalysis] = useState<AnalysisSection[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(true);
 
-  useEffect(() => {
-    generateAnalysis();
-  }, [destination, budget, flightsCost, hotelCost, toursCost, foodCost]);
-
-  const generateAnalysis = async () => {
-    setIsLoading(true);
-
+  const analysis = useMemo<AnalysisSection[]>(() => {
     const totalDays = Math.ceil((returnDate.getTime() - departureDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const totalEstimated = flightsCost + hotelCost + toursCost + foodCost;
-    const remainingBudget = budget - totalEstimated;
+    const remainingBudget = Math.max(0, budget - totalEstimated);
     const dailyBudget = Math.round(remainingBudget / totalDays);
     const isOverBudget = totalEstimated > budget;
 
-
-    try {
-      const { data, error } = await supabase.functions.invoke('kinu-ai', {
-        body: {
-          message: `Analise este roteiro e explique as escolhas em 3 pontos curtos (máximo 50 palavras cada):
-          - Destino: ${destination}
-          - Período: ${totalDays} dias
-          - Budget total: R$ ${budget}
-          - Voos: R$ ${flightsCost}
-          - Hotel: R$ ${hotelCost}
-          - Interesses: ${travelInterests.join(', ') || 'Geral'}
-          - Disponível por dia: R$ ${dailyBudget}`,
-          context: { type: 'itinerary_analysis' },
-        },
-      });
-
-      if (error) throw error;
-
-      // Parse AI response or use fallback
-      if (data?.response) {
-        // Simple parsing - in production would be more robust
-        setAnalysis([
-          {
-            icon: <TrendingUp size={16} className="text-emerald-400" />,
-            title: isOverBudget ? 'Orçamento Insuficiente' : 'Otimização Financeira',
-            content: isOverBudget
-              ? `O total estimado (R$ ${totalEstimated.toLocaleString('pt-BR')}) ultrapassa seu budget (R$ ${budget.toLocaleString('pt-BR')}). Considere aumentar o orçamento, reduzir dias ou escolher um destino mais próximo.`
-              : `Com R$ ${dailyBudget}/dia para experiências, priorizei atividades gratuitas pela manhã e experiências pagas à tarde.`,
-          },
-
-          {
-            icon: <Brain size={16} className="text-primary" />,
-            title: 'Ritmo da Viagem',
-            content: `Organizei o roteiro com uma atividade principal por período, evitando correria e permitindo descobertas espontâneas.`,
-          },
-          {
-            icon: <Shield size={16} className="text-amber-400" />,
-            title: 'Margem de Segurança',
-            content: `Mantive ${Math.round((remainingBudget * 0.15) / 1000)}k como reserva para imprevistos e oportunidades únicas.`,
-          },
-        ]);
-      }
-    } catch (err) {
-      console.error('Failed to generate analysis:', err);
-      // Fallback analysis
-      setAnalysis([
-        {
-          icon: <TrendingUp size={16} className="text-emerald-400" />,
-          title: isOverBudget ? 'Orçamento Insuficiente' : 'Otimização Financeira',
-          content: isOverBudget
-            ? `O total estimado (R$ ${totalEstimated.toLocaleString('pt-BR')}) ultrapassa seu budget (R$ ${budget.toLocaleString('pt-BR')}). Considere aumentar o orçamento, reduzir dias ou escolher um destino mais próximo.`
-            : `Voos representam ${Math.round((flightsCost / budget) * 100)}% do budget. Compensei com hospedagem custo-benefício e experiências gratuitas.`,
-        },
-
-        {
-          icon: <Brain size={16} className="text-primary" />,
-          title: 'Distribuição Inteligente',
-          content: `Cada dia tem 5-6 atividades balanceadas: café, cultura, almoço, passeio, jantar. Ritmo confortável sem correria.`,
-        },
-        {
-          icon: <Shield size={16} className="text-amber-400" />,
-          title: 'Reserva de Segurança',
-          content: `Guardei 15% do budget disponível para emergências e oportunidades de última hora.`,
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    return [
+      {
+        icon: <TrendingUp size={16} className="text-emerald-400" />,
+        title: isOverBudget ? 'Orçamento Insuficiente' : 'Otimização Financeira',
+        content: isOverBudget
+          ? `O total estimado (R$ ${totalEstimated.toLocaleString('pt-BR')}) ultrapassa seu budget (R$ ${budget.toLocaleString('pt-BR')}). Considere aumentar o orçamento, reduzir dias ou escolher um destino mais próximo.`
+          : `Com R$ ${dailyBudget}/dia para experiências, priorizei atividades gratuitas pela manhã e experiências pagas à tarde.`,
+      },
+      {
+        icon: <Brain size={16} className="text-primary" />,
+        title: 'Distribuição Inteligente',
+        content: `Cada dia tem 5-6 atividades balanceadas: café, cultura, almoço, passeio, jantar. Ritmo confortável sem correria.`,
+      },
+      {
+        icon: <Shield size={16} className="text-amber-400" />,
+        title: isOverBudget ? 'Sem Folga no Orçamento' : 'Reserva de Segurança',
+        content: isOverBudget
+          ? 'O plano já excede o budget — considere uma reserva à parte para imprevistos.'
+          : `Guardei 15% do budget disponível para emergências e oportunidades de última hora.`,
+      },
+    ];
+  }, [destination, departureDate, returnDate, budget, flightsCost, hotelCost, toursCost, foodCost]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -149,30 +92,23 @@ export const KinuAnalysisCard = ({
 
         <CollapsibleContent>
           <div className="px-4 pb-4 space-y-3">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 size={24} className="text-primary animate-spin" />
-                <span className="ml-2 text-sm text-muted-foreground">Analisando escolhas...</span>
-              </div>
-            ) : (
-              analysis.map((section, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex gap-3 p-3 bg-card/50 rounded-xl"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                    {section.icon}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{section.title}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{section.content}</p>
-                  </div>
-                </motion.div>
-              ))
-            )}
+            {analysis.map((section, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="flex gap-3 p-3 bg-card/50 rounded-xl"
+              >
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  {section.icon}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{section.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{section.content}</p>
+                </div>
+              </motion.div>
+            ))}
 
             {/* Pro tip */}
             <div className="flex items-start gap-2 p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
