@@ -871,11 +871,13 @@ const Viagens = () => {
     (async () => {
       const price = await fetchCheapestFlightPrice(selectedTrip);
       if (cancelled || price == null) return;
+      const travelers = selectedTrip.travelers || 1;
+      const comparable = Math.round(price * 2 * travelers);
       const anchor = getFlightPlannedTotal(selectedTrip);
-      const delta = anchor > 0 ? Math.round(price - anchor) : 0;
+      const delta = anchor > 0 ? Math.round(comparable - anchor) : 0;
       const updated: SavedTrip = {
         ...selectedTrip,
-        lastPriceCheck: { price: Math.round(price), delta, checkedAt: Date.now() },
+        lastPriceCheck: { price: comparable, delta, checkedAt: Date.now() },
       } as SavedTrip;
       persistTrip(updated);
     })();
