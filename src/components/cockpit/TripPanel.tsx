@@ -569,7 +569,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           travelers: trip.travelers || 1,
         }).find(l => l.partner === 'Kiwi')?.url;
         return {
-          message: `📉 Seu voo caiu R$ ${fmtNum(Math.abs(priceCheck.delta))} — melhor preço agora R$ ${fmtNum(priceCheck.price)}`,
+          message: `📉 Seu voo caiu R$ ${fmtNum(Math.abs(priceCheck.delta))} — referência estimada agora R$ ${fmtNum(priceCheck.price)}`,
           actionLabel: 'Ver oferta',
           onClick: () => { if (kiwiUrl) window.open(kiwiUrl, '_blank', 'noopener,noreferrer'); },
         };
