@@ -829,11 +829,11 @@ const Viagens = () => {
   // Returns null on any failure or empty results.
   const fetchCheapestFlightPrice = useCallback(async (trip: SavedTrip): Promise<number | null> => {
     try {
-      const origin = trip.flights?.outbound?.origin || 'GRU';
-      const destination = trip.flights?.outbound?.destination || trip.destination;
+      const origin = trip.originAirportCode || inferAirportCode(trip.origin || 'São Paulo');
+      const destination = trip.destinationAirportCode || inferAirportCode(trip.destination);
       const date = trip.startDate?.split('T')[0];
       const adults = trip.travelers || 1;
-      if (!date || !destination) return null;
+      if (!date || !destination || !/^[A-Z]{3}$/.test(destination)) return null;
       const { data, error } = await supabase.functions.invoke('amadeus-flights', {
         body: { action: 'search', origin, destination, date, adults },
       });
