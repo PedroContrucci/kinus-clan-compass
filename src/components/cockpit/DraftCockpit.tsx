@@ -47,7 +47,7 @@ function getTravelers(trip: DraftTrip): number {
 }
 
 // Infer airport codes from city names
-function inferAirportCode(city: string): string {
+export function inferAirportCode(city: string): string {
   const codeMap: Record<string, string> = {
     'São Paulo': 'GRU',
     'Rio de Janeiro': 'GIG',

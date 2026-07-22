@@ -15,6 +15,7 @@ import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
 import { DraftCockpit, TripGuide, ExchangeRates, EnhancedDayTimeline, SmartPackingWithLuggage, EnhancedExchangeRates } from '@/components/cockpit';
+import { inferAirportCode } from '@/components/cockpit/DraftCockpit';
 import OffersModal from '@/components/cockpit/OffersModal';
 import { TripPanel } from '@/components/cockpit/TripPanel';
 import { AgentTip } from '@/components/shared/AgentTip';
