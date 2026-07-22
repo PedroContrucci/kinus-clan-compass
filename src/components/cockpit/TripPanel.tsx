@@ -415,6 +415,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const [pdfLoading, setPdfLoading] = useState(false);
   const [flightResults, setFlightResults] = useState<any[] | null>(null);
   const [searchingFlights, setSearchingFlights] = useState(false);
+  const [flightSearchError, setFlightSearchError] = useState<string | null>(null);
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
   const [vooOpen, setVooOpen] = useSectionOpen('vooHospedagem', true);
   const [insightsOpen, setInsightsOpen] = useSectionOpen('insights', false);
