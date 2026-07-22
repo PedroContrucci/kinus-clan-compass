@@ -6,6 +6,7 @@ import { toast } from '@/hooks/use-toast';
 import kinuLogo from '@/assets/KINU_logo.png';
 import { SavedTrip } from '@/types/trip';
 import { supabase } from '@/integrations/supabase/client';
+import { loadJson } from '@/lib/safeStorage';
 
 const asArray = (v: unknown): any[] => Array.isArray(v) ? v : (v ? [v] : []);
 
@@ -42,14 +43,14 @@ const Conta = () => {
   };
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('kinu_user');
+    const savedUser = loadJson<{ name: string; email: string } | null>('kinu_user', null);
     if (!savedUser) {
       navigate('/');
       return;
     }
-    setUser(JSON.parse(savedUser));
+    setUser(savedUser);
 
-    const savedTrips: SavedTrip[] = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+    const savedTrips: SavedTrip[] = loadJson<SavedTrip[]>('kinu_trips', []);
     const uniqueCountries = new Set(savedTrips.map(t => t.country).filter(Boolean));
     const totalActivities = savedTrips.reduce((acc, trip) => {
       return acc + (trip.days || []).reduce((dayAcc, day) => dayAcc + (day.activities?.length || 0), 0);
@@ -158,7 +159,7 @@ const Conta = () => {
 
         {/* Beta Feedback Viewer */}
         {(() => {
-          const feedbacks: any[] = JSON.parse(localStorage.getItem('kinu_feedback') || '[]');
+          const feedbacks: any[] = loadJson<any[]>('kinu_feedback', []);
           return (
             <div className="mt-6">
               <div className="flex items-center justify-between mb-3 flex-wrap gap-2">

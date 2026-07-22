@@ -4,6 +4,7 @@ import { X, Star, MapPin, Clock, DollarSign, Plus, ChevronLeft, ChevronRight, Co
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { loadJson } from '@/lib/safeStorage';
 
 interface Photo {
   id: string;
@@ -77,7 +78,7 @@ export const ActivityDetailModal = ({
 
   const handleAddToTrip = () => {
     // Save to localStorage for now
-    const savedActivities = JSON.parse(localStorage.getItem('kinu_saved_activities') || '[]');
+    const savedActivities = loadJson<any[]>('kinu_saved_activities', []);
     if (!savedActivities.find((a: any) => a.id === activity.id)) {
       savedActivities.push(activity);
       localStorage.setItem('kinu_saved_activities', JSON.stringify(savedActivities));

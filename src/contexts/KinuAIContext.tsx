@@ -6,6 +6,7 @@ import { CURATED_CITIES } from "@/lib/curatedCities";
 import { destinationActivities } from "@/data/destinationActivities";
 import { findCityInfo } from "@/data/destinationCatalog";
 import { buildDraftTrip } from "@/lib/createTrip";
+import { loadJson } from "@/lib/safeStorage";
 import { TRAVEL_INTERESTS, PRIORITY_OPTIONS } from "@/components/wizard/types";
 
 export interface KinuActionHandlers {
@@ -345,7 +346,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
 
           (trip as any).createdVia = 'kinu';
 
-          const existingTrips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+          const existingTrips = loadJson<any[]>('kinu_trips', []);
           existingTrips.push(trip);
           localStorage.setItem('kinu_trips', JSON.stringify(existingTrips));
 

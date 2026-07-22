@@ -3,6 +3,7 @@ import { MessageSquare, Send, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { loadJson } from '@/lib/safeStorage';
 
 const FEEDBACK_WHATSAPP = '5511981362866';
 
@@ -18,7 +19,7 @@ export const FeedbackButton = () => {
 
   useEffect(() => {
     try {
-      const trips = JSON.parse(localStorage.getItem('kinu_trips') || '[]');
+      const trips = loadJson<any[]>('kinu_trips', []);
       const upcoming = trips.filter((t: any) => t.status === 'active' && t.startDate && new Date(t.startDate) > new Date());
       if (upcoming.length > 0) setActiveTrip(upcoming[0]);
       else if (trips.length > 0) setActiveTrip(trips[trips.length - 1]);
@@ -90,7 +91,7 @@ export const FeedbackButton = () => {
       },
     }).catch((err) => console.error('feedback-notify invoke failed', err));
 
-    const existing = JSON.parse(localStorage.getItem('kinu_feedback') || '[]');
+    const existing = loadJson<any[]>('kinu_feedback', []);
     existing.push(feedbackRecord);
     localStorage.setItem('kinu_feedback', JSON.stringify(existing));
 
