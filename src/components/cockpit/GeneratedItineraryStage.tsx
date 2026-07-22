@@ -1034,7 +1034,7 @@ export const GeneratedItineraryStage = ({
   // no-repetition, Michelin cap and sunset rules apply. existingDays is ignored
   // as an itinerary source (kept in the prop only for backwards compatibility).
   void existingDays;
-  const { days: initialDays, breakdown: initialBreakdown } = useMemo(() => {
+  const { days: initialDays, breakdown: initialBreakdown, meta = { michelinCount: 0 } } = useMemo(() => {
     return generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp);
   }, [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]);
 
@@ -1313,6 +1313,8 @@ export const GeneratedItineraryStage = ({
           toursCost={derivedFinances.toursPlanned}
           foodCost={derivedFinances.foodPlanned}
           travelInterests={travelInterests}
+          michelinCount={meta.michelinCount}
+          jetLagSeverity={jetLagSeverity}
         />
       </div>
 
