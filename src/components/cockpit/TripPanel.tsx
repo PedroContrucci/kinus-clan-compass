@@ -1138,6 +1138,12 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
               >
                 {searchingFlights ? '✈️ Buscando...' : '✈️ Voos Reais (Amadeus)'}
               </button>
+              {flightSearchError && (
+                <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
+                  <p className="text-[10px] font-semibold text-amber-400">Busca de voos indisponível</p>
+                  <p className="text-[10px] text-muted-foreground">Não conseguimos consultar os preços agora. Tente novamente em alguns minutos.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
