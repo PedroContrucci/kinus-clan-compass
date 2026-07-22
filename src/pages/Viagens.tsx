@@ -871,11 +871,13 @@ const Viagens = () => {
     (async () => {
       const price = await fetchCheapestFlightPrice(selectedTrip);
       if (cancelled || price == null) return;
+      const travelers = selectedTrip.travelers || 1;
+      const comparable = Math.round(price * 2 * travelers);
       const anchor = getFlightPlannedTotal(selectedTrip);
-      const delta = anchor > 0 ? Math.round(price - anchor) : 0;
+      const delta = anchor > 0 ? Math.round(comparable - anchor) : 0;
       const updated: SavedTrip = {
         ...selectedTrip,
-        lastPriceCheck: { price: Math.round(price), delta, checkedAt: Date.now() },
+        lastPriceCheck: { price: comparable, delta, checkedAt: Date.now() },
       } as SavedTrip;
       persistTrip(updated);
     })();
@@ -1062,6 +1064,7 @@ const Viagens = () => {
           const origin = selectedTrip.flights?.outbound?.origin || 'GRU';
           const destination = selectedTrip.flights?.outbound?.destination || selectedTrip.destination;
           const adults = selectedTrip.travelers || 1;
+          const comparable = Math.round(cheapest * 2 * adults);
           const anchor = getFlightPlannedTotal(selectedTrip);
           const startD = selectedTrip.startDate ? new Date(selectedTrip.startDate) : undefined;
           const endD = selectedTrip.endDate ? new Date(selectedTrip.endDate) : undefined;
@@ -1074,19 +1077,19 @@ const Viagens = () => {
             travelers: adults,
           }).find(l => l.partner === 'Kiwi')?.url || '';
           const fmt = (n: number) => `R$ ${Math.round(n).toLocaleString('pt-BR')}`;
-          const delta = anchor > 0 ? Math.round(cheapest - anchor) : 0;
+          const delta = anchor > 0 ? Math.round(comparable - anchor) : 0;
           persistTrip({
             ...selectedTrip,
-            lastPriceCheck: { price: Math.round(cheapest), delta, checkedAt: Date.now() },
+            lastPriceCheck: { price: comparable, delta, checkedAt: Date.now() },
           } as SavedTrip);
-          if (anchor > 0 && cheapest <= anchor * 0.95) {
-            const diff = anchor - cheapest;
-            return `📉 Achei voo por ${fmt(cheapest)} — ${fmt(diff)} abaixo do seu planejado (${fmt(anchor)}). Vale garantir: ${kiwiUrl}`;
+          if (anchor > 0 && comparable <= anchor * 0.95) {
+            const diff = anchor - comparable;
+            return `📉 Achei voo por ${fmt(comparable)} — ${fmt(diff)} abaixo do seu planejado (${fmt(anchor)}). Vale garantir: ${kiwiUrl}`;
           }
-          if (anchor > 0 && cheapest <= anchor * 1.05) {
-            return `➡️ Preços estáveis: melhor voo agora ${fmt(cheapest)} vs ${fmt(anchor)} planejado. ${kiwiUrl}`;
+          if (anchor > 0 && comparable <= anchor * 1.05) {
+            return `➡️ Preços estáveis: melhor voo agora ${fmt(comparable)} vs ${fmt(anchor)} planejado. ${kiwiUrl}`;
           }
-          return `📈 Voos subiram: melhor agora ${fmt(cheapest)} vs ${fmt(anchor)} planejado. Se puder esperar, eu avisaria — quer que o robô do KINU monitore isso em breve? ${kiwiUrl}`;
+          return `📈 Voos subiram: melhor agora ${fmt(comparable)} vs ${fmt(anchor)} planejado. Se puder esperar, eu avisaria — quer que o robô do KINU monitore isso em breve? ${kiwiUrl}`;
         } catch (err) {
           console.error('[verificar_ofertas] failed:', err);
           return 'Não consegui consultar os preços agora — tenta de novo em instantes.';
