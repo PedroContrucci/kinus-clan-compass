@@ -1,7 +1,7 @@
 // KinuAnalysisCard — AI analysis explaining itinerary choices
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Lightbulb, TrendingUp, Shield, ChevronDown, ChevronUp } from 'lucide-react';
+import { Brain, Lightbulb, TrendingUp, Shield, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface KinuAnalysisCardProps {
@@ -14,6 +14,8 @@ interface KinuAnalysisCardProps {
   toursCost: number;
   foodCost: number;
   travelInterests?: string[];
+  michelinCount?: number;
+  jetLagSeverity?: string;
 }
 
 interface AnalysisSection {
@@ -31,6 +33,9 @@ export const KinuAnalysisCard = ({
   hotelCost,
   toursCost,
   foodCost,
+  travelInterests = [],
+  michelinCount = 0,
+  jetLagSeverity,
 }: KinuAnalysisCardProps) => {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -41,7 +46,7 @@ export const KinuAnalysisCard = ({
     const dailyBudget = Math.round(remainingBudget / totalDays);
     const isOverBudget = totalEstimated > budget;
 
-    return [
+    const sections: AnalysisSection[] = [
       {
         icon: <TrendingUp size={16} className="text-emerald-400" />,
         title: isOverBudget ? 'Orçamento Insuficiente' : 'Otimização Financeira',
@@ -62,7 +67,31 @@ export const KinuAnalysisCard = ({
           : `Guardei 15% do budget disponível para emergências e oportunidades de última hora.`,
       },
     ];
-  }, [destination, departureDate, returnDate, budget, flightsCost, hotelCost, toursCost, foodCost]);
+
+    const hasInterests = travelInterests.length > 0;
+    const hasMichelin = michelinCount > 0;
+    const severeJetLag = /^(alto|severo)$/i.test(jetLagSeverity || '');
+
+    if (hasInterests || hasMichelin || severeJetLag) {
+      const clauses: string[] = [];
+      if (hasInterests) {
+        clauses.push(`Roteiro calibrado para: ${travelInterests.join(', ')}, com atividades do catálogo curado KINU.`);
+      }
+      if (hasMichelin) {
+        clauses.push(`Inclui ${michelinCount} jantar com estrela Michelin.`);
+      }
+      if (severeJetLag) {
+        clauses.push(`Primeiro dia em ritmo leve para recuperar o fuso (Biology AI).`);
+      }
+      sections.push({
+        icon: <Sparkles size={16} className="text-sky-400" />,
+        title: 'Feito Para Vocês',
+        content: clauses.join(' '),
+      });
+    }
+
+    return sections;
+  }, [destination, departureDate, returnDate, budget, flightsCost, hotelCost, toursCost, foodCost, travelInterests, michelinCount, jetLagSeverity]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>

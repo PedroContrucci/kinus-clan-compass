@@ -97,7 +97,7 @@ function convertTripDaysToItinerary(
   departureDate: Date,
   travelers: number,
   budget: number
-): { days: ItineraryDay[]; breakdown: BudgetBreakdown } {
+): { days: ItineraryDay[]; breakdown: BudgetBreakdown; meta: { michelinCount: number } } {
   const inferTimeSlot = (time: string | undefined, category?: string, type?: string): ItineraryActivity['timeSlot'] => {
     const cat = (category || '').toLowerCase();
     const t = (type || '').toLowerCase();
@@ -181,7 +181,7 @@ function convertTripDaysToItinerary(
     trustZonePercent: Math.round((total / safeBudget) * 100),
   };
 
-  return { days, breakdown };
+  return { days, breakdown, meta: { michelinCount: 0 } };
 }
 
 
@@ -238,7 +238,7 @@ export function generateItinerary(
   travelInterests: string[] = [],
   jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO',
   priceLevelProp?: PriceLevel
-): { days: ItineraryDay[]; breakdown: BudgetBreakdown } {
+): { days: ItineraryDay[]; breakdown: BudgetBreakdown; meta: { michelinCount: number } } {
   const totalDays = differenceInDays(returnDate, departureDate) + 1;
   const totalNights = totalDays - 1;
   
@@ -965,7 +965,7 @@ export function generateItinerary(
     trustZonePercent: Math.round((totalEstimated / budget) * 100),
   };
 
-  return { days, breakdown };
+  return { days, breakdown, meta: { michelinCount } };
 }
 
 const activityIcons: Record<string, React.ReactNode> = {
@@ -1034,7 +1034,7 @@ export const GeneratedItineraryStage = ({
   // no-repetition, Michelin cap and sunset rules apply. existingDays is ignored
   // as an itinerary source (kept in the prop only for backwards compatibility).
   void existingDays;
-  const { days: initialDays, breakdown: initialBreakdown } = useMemo(() => {
+  const { days: initialDays, breakdown: initialBreakdown, meta = { michelinCount: 0 } } = useMemo(() => {
     return generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp);
   }, [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]);
 
@@ -1313,6 +1313,8 @@ export const GeneratedItineraryStage = ({
           toursCost={derivedFinances.toursPlanned}
           foodCost={derivedFinances.foodPlanned}
           travelInterests={travelInterests}
+          michelinCount={meta.michelinCount}
+          jetLagSeverity={jetLagSeverity}
         />
       </div>
 
