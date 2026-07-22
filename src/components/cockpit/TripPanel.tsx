@@ -711,6 +711,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const searchRealFlights = async () => {
     if (!trip.flights?.outbound) return;
     setSearchingFlights(true);
+    setFlightSearchError(null);
     try {
       const { data, error } = await supabase.functions.invoke('amadeus-flights', {
         body: {
@@ -734,9 +735,12 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         if (bestPrice !== Infinity) {
           savePriceSnapshot(trip.id, bestPrice);
         }
+      } else {
+        setFlightSearchError('Busca de voos indisponível: Não conseguimos consultar os preços agora. Tente novamente em alguns minutos.');
       }
     } catch (err) {
       console.error('Amadeus search failed:', err);
+      setFlightSearchError('Busca de voos indisponível: Não conseguimos consultar os preços agora. Tente novamente em alguns minutos.');
     } finally {
       setSearchingFlights(false);
     }
