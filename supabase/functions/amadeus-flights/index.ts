@@ -65,22 +65,63 @@ function addMinutesIso(iso: string, minutes: number): string {
   }
 }
 
-async function searchFlights(
+function mapItemToOffer(it: any, idx: number, fallbackOrigin: string, fallbackDest: string): FlightOffer {
+  const carrierCode: string = it.airline || '';
+  const transfers: number = Number(it.transfers ?? 0);
+  const isDirect = transfers === 0;
+  const durationMinutes: number = Number(it.duration_to ?? it.duration ?? 0);
+  const departureAt: string = it.departure_at || '';
+  const arrivalAt: string = departureAt ? addMinutesIso(departureAt, durationMinutes) : '';
+  const originCode: string = (it.origin || fallbackOrigin).toUpperCase();
+  const destCode: string = (it.destination || fallbackDest).toUpperCase();
+
+  const routeString = isDirect
+    ? `${originCode} → ${destCode}`
+    : `${originCode} → (${transfers} conex.) → ${destCode}`;
+
+  return {
+    id: String(it.flight_number ? `${carrierCode}${it.flight_number}-${idx}` : `${carrierCode}-${idx}`),
+    airline: AIRLINE_NAMES[carrierCode] || carrierCode,
+    airlineCode: carrierCode,
+    route: routeString,
+    isDirect,
+    connectionCities: [],
+    duration: formatDuration(durationMinutes),
+    durationMinutes,
+    price: Number(it.price ?? 0),
+    currency: 'BRL',
+    departureTime: formatTime(departureAt),
+    arrivalTime: formatTime(arrivalAt),
+    departureAirport: originCode,
+    arrivalAirport: destCode,
+    segments: [
+      {
+        departure: { iataCode: originCode, at: departureAt },
+        arrival: { iataCode: destCode, at: arrivalAt },
+        carrierCode,
+        duration: `PT${Math.floor(durationMinutes / 60)}H${durationMinutes % 60}M`,
+      },
+    ],
+  };
+}
+
+type FetchResult = { ok: boolean; items: any[] };
+
+async function fetchPrices(
   origin: string,
   destination: string,
-  date: string,
-  _adults: number = 1,
-  maxResults: number = 5,
-): Promise<FlightOffer[]> {
+  departureAt: string,
+  limit: number,
+): Promise<FetchResult> {
   const token = Deno.env.get('TRAVELPAYOUTS_TOKEN');
   if (!token) {
     console.error('TRAVELPAYOUTS_TOKEN not configured');
-    return [];
+    return { ok: false, items: [] };
   }
 
-  const url = `${TP_BASE_URL}?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&departure_at=${encodeURIComponent(date)}&one_way=true&direct=false&sorting=price&currency=brl&limit=${maxResults}&token=${encodeURIComponent(token)}`;
+  const url = `${TP_BASE_URL}?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&departure_at=${encodeURIComponent(departureAt)}&one_way=true&direct=false&sorting=price&currency=brl&limit=${limit}&token=${encodeURIComponent(token)}`;
 
-  console.log(`Searching flights (Travelpayouts): ${origin} → ${destination} on ${date}`);
+  console.log(`Travelpayouts fetch: ${origin} → ${destination} @ ${departureAt} (limit ${limit})`);
 
   const response = await fetch(url, {
     headers: {
@@ -92,87 +133,95 @@ async function searchFlights(
 
   if (!response.ok) {
     const body = await response.text();
-    console.error(`Travelpayouts upstream error (status ${response.status}) for ${origin} → ${destination} on ${date}. Body:`, body);
-    return [];
+    console.error(`Travelpayouts upstream error (status ${response.status}) for ${origin} → ${destination} @ ${departureAt}. Body:`, body);
+    return { ok: false, items: [] };
   }
 
   const data = await response.json();
   const items: any[] = Array.isArray(data?.data) ? data.data : [];
+  return { ok: true, items };
+}
 
-  if (items.length === 0) {
-    return [];
+function daysBetween(a: string, b: string): number {
+  try {
+    const da = new Date(a.slice(0, 10)).getTime();
+    const db = new Date(b.slice(0, 10)).getTime();
+    return Math.abs(Math.round((da - db) / 86400000));
+  } catch {
+    return 9999;
+  }
+}
+
+async function searchFlights(
+  origin: string,
+  destination: string,
+  date: string,
+): Promise<{ ok: boolean; offers: FlightOffer[] }> {
+  // Attempt 1: exact date
+  const exact = await fetchPrices(origin, destination, date, 10);
+  if (!exact.ok) return { ok: false, offers: [] };
+
+  if (exact.items.length > 0) {
+    const offers = exact.items.map((it, idx) => mapItemToOffer(it, idx, origin, destination));
+    return { ok: true, offers };
   }
 
-  const offers: FlightOffer[] = items.map((it, idx) => {
-    const carrierCode: string = it.airline || '';
-    const transfers: number = Number(it.transfers ?? 0);
-    const isDirect = transfers === 0;
-    const durationMinutes: number = Number(it.duration_to ?? it.duration ?? 0);
-    const departureAt: string = it.departure_at || '';
-    const arrivalAt: string = departureAt ? addMinutesIso(departureAt, durationMinutes) : '';
-    const originCode: string = (it.origin || origin).toUpperCase();
-    const destCode: string = (it.destination || destination).toUpperCase();
+  // Attempt 2: month window, then pick nearest to requested date
+  const month = date.slice(0, 7);
+  const monthly = await fetchPrices(origin, destination, month, 30);
+  if (!monthly.ok) return { ok: false, offers: [] };
 
-    const routeString = isDirect
-      ? `${originCode} → ${destCode}`
-      : `${originCode} → (${transfers} conex.) → ${destCode}`;
+  if (monthly.items.length === 0) return { ok: true, offers: [] };
 
-    return {
-      id: String(it.flight_number ? `${carrierCode}${it.flight_number}-${idx}` : `${carrierCode}-${idx}`),
-      airline: AIRLINE_NAMES[carrierCode] || carrierCode,
-      airlineCode: carrierCode,
-      route: routeString,
-      isDirect,
-      connectionCities: [],
-      duration: formatDuration(durationMinutes),
-      durationMinutes,
-      price: Number(it.price ?? 0),
-      currency: 'BRL',
-      departureTime: formatTime(departureAt),
-      arrivalTime: formatTime(arrivalAt),
-      departureAirport: originCode,
-      arrivalAirport: destCode,
-      segments: [
-        {
-          departure: { iataCode: originCode, at: departureAt },
-          arrival: { iataCode: destCode, at: arrivalAt },
-          carrierCode,
-          duration: `PT${Math.floor(durationMinutes / 60)}H${durationMinutes % 60}M`,
-        },
-      ],
-    };
-  });
+  const sorted = [...monthly.items].sort((a, b) => {
+    const da = daysBetween(a.departure_at || '', date);
+    const db = daysBetween(b.departure_at || '', date);
+    if (da !== db) return da - db;
+    return Number(a.price ?? 0) - Number(b.price ?? 0);
+  }).slice(0, 5);
 
-  return offers;
+  const offers = sorted.map((it, idx) => mapItemToOffer(it, idx, origin, destination));
+  return { ok: true, offers };
 }
 
 async function searchFlexibleDates(
   origin: string,
   destination: string,
   baseDate: string,
-  adults: number = 1,
   daysRange: number = 3,
-): Promise<{ date: string; bestPrice: number; offers: FlightOffer[] }[]> {
+): Promise<{ ok: boolean; results: { date: string; bestPrice: number; offers: FlightOffer[] }[] }> {
+  const month = baseDate.slice(0, 7);
+  const monthly = await fetchPrices(origin, destination, month, 30);
+  if (!monthly.ok) return { ok: false, results: [] };
+
+  if (monthly.items.length === 0) return { ok: true, results: [] };
+
+  // Group by YYYY-MM-DD within baseDate ± daysRange
+  const groups = new Map<string, any[]>();
+  for (const it of monthly.items) {
+    const dep: string = it.departure_at || '';
+    if (!dep) continue;
+    const d = dep.slice(0, 10);
+    if (daysBetween(dep, baseDate) > daysRange) continue;
+    const arr = groups.get(d) || [];
+    arr.push(it);
+    groups.set(d, arr);
+  }
+
   const results: { date: string; bestPrice: number; offers: FlightOffer[] }[] = [];
-  const baseDateObj = new Date(baseDate);
-
-  for (let i = -daysRange; i <= daysRange; i++) {
-    const searchDate = new Date(baseDateObj);
-    searchDate.setDate(searchDate.getDate() + i);
-    const dateString = searchDate.toISOString().split('T')[0];
-
-    try {
-      const offers = await searchFlights(origin, destination, dateString, adults, 3);
-      if (offers.length > 0) {
-        const bestPrice = Math.min(...offers.map(o => o.price));
-        results.push({ date: dateString, bestPrice, offers });
-      }
-    } catch (error) {
-      console.error(`Error searching ${dateString}:`, error);
+  for (const [date, items] of groups.entries()) {
+    const offers = items
+      .sort((a, b) => Number(a.price ?? 0) - Number(b.price ?? 0))
+      .slice(0, 3)
+      .map((it, idx) => mapItemToOffer(it, idx, origin, destination));
+    if (offers.length > 0) {
+      const bestPrice = Math.min(...offers.map(o => o.price));
+      results.push({ date, bestPrice, offers });
     }
   }
 
-  return results;
+  results.sort((a, b) => a.date.localeCompare(b.date));
+  return { ok: true, results };
 }
 
 serve(async (req) => {
@@ -181,7 +230,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, origin, destination, date, adults, flexibleDays } = await req.json();
+    const { action, origin, destination, date, flexibleDays } = await req.json();
 
     if (!origin || !destination) {
       return new Response(
@@ -191,9 +240,9 @@ serve(async (req) => {
     }
 
     if (action === 'flexible') {
-      const result = await searchFlexibleDates(origin, destination, date, adults || 1, flexibleDays || 3);
+      const { ok, results } = await searchFlexibleDates(origin, destination, date, flexibleDays || 3);
       return new Response(
-        JSON.stringify({ success: true, data: result, timestamp: new Date().toISOString() }),
+        JSON.stringify({ success: ok, data: ok ? results : [], timestamp: new Date().toISOString() }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
@@ -205,17 +254,18 @@ serve(async (req) => {
       );
     }
 
-    const offers = await searchFlights(origin, destination, date, adults || 1, 5);
+    const { ok, offers } = await searchFlights(origin, destination, date);
+
+    if (!ok) {
+      return new Response(
+        JSON.stringify({ success: false, data: [], offers: [], timestamp: new Date().toISOString() }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
 
     if (offers.length === 0) {
       return new Response(
-        JSON.stringify({
-          success: false,
-          data: [],
-          offers: [],
-          message: 'Nenhum voo encontrado para esta data',
-          timestamp: new Date().toISOString(),
-        }),
+        JSON.stringify({ success: true, data: [], offers: [], timestamp: new Date().toISOString() }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
