@@ -126,7 +126,7 @@ export const KinuAnalysisCard = ({
                 key={index}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }
+                transition={{ delay: index * 0.1 }}
                 className="flex gap-3 p-3 bg-card/50 rounded-xl"
               >
                 <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
