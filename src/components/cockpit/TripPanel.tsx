@@ -415,6 +415,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const [pdfLoading, setPdfLoading] = useState(false);
   const [flightResults, setFlightResults] = useState<any[] | null>(null);
   const [searchingFlights, setSearchingFlights] = useState(false);
+  const [flightSearchError, setFlightSearchError] = useState<string | null>(null);
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
   const [vooOpen, setVooOpen] = useSectionOpen('vooHospedagem', true);
   const [insightsOpen, setInsightsOpen] = useSectionOpen('insights', false);
@@ -710,6 +711,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const searchRealFlights = async () => {
     if (!trip.flights?.outbound) return;
     setSearchingFlights(true);
+    setFlightSearchError(null);
     try {
       const { data, error } = await supabase.functions.invoke('amadeus-flights', {
         body: {
@@ -733,9 +735,12 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         if (bestPrice !== Infinity) {
           savePriceSnapshot(trip.id, bestPrice);
         }
+      } else {
+        setFlightSearchError('Busca de voos indisponível: Não conseguimos consultar os preços agora. Tente novamente em alguns minutos.');
       }
     } catch (err) {
       console.error('Amadeus search failed:', err);
+      setFlightSearchError('Busca de voos indisponível: Não conseguimos consultar os preços agora. Tente novamente em alguns minutos.');
     } finally {
       setSearchingFlights(false);
     }
@@ -1133,6 +1138,12 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
               >
                 {searchingFlights ? '✈️ Buscando...' : '✈️ Voos Reais (Amadeus)'}
               </button>
+              {flightSearchError && (
+                <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
+                  <p className="text-[10px] font-semibold text-amber-400">Busca de voos indisponível</p>
+                  <p className="text-[10px] text-muted-foreground">Não conseguimos consultar os preços agora. Tente novamente em alguns minutos.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
