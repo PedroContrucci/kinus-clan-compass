@@ -94,17 +94,17 @@ function generateFallbackFlightOptions(
 
   if (isDomestic) {
     return [
-      { id: `${isReturn?'return':'outbound'}-fallback-dom-1`, airline: 'LATAM',
+      { id: `${isReturn?'return':'outbound'}-fallback-dom-1`, airline: 'Estimativa · companhia a definir',
         route: isReturn?`${destinationCode} → ${originCode}`:`${originCode} → ${destinationCode}`,
         isDirect: true, duration: '1h05', durationMinutes: 65, price: 850,
         departureTime: isReturn?'18:30':'08:15', arrivalTime: isReturn?'19:35':'09:20',
         isBestPrice: true },
-      { id: `${isReturn?'return':'outbound'}-fallback-dom-2`, airline: 'GOL',
+      { id: `${isReturn?'return':'outbound'}-fallback-dom-2`, airline: 'Estimativa · companhia a definir',
         route: isReturn?`${destinationCode} → ${originCode}`:`${originCode} → ${destinationCode}`,
         isDirect: true, duration: '1h10', durationMinutes: 70, price: 920,
         departureTime: isReturn?'20:00':'10:40', arrivalTime: isReturn?'21:10':'11:50',
         isFastest: true },
-      { id: `${isReturn?'return':'outbound'}-fallback-dom-3`, airline: 'Azul',
+      { id: `${isReturn?'return':'outbound'}-fallback-dom-3`, airline: 'Estimativa · companhia a definir',
         route: isReturn?`${destinationCode} → ${originCode}`:`${originCode} → ${destinationCode}`,
         isDirect: true, duration: '1h15', durationMinutes: 75, price: 1050,
         departureTime: isReturn?'15:20':'13:30', arrivalTime: isReturn?'16:35':'14:45' },
@@ -114,10 +114,9 @@ function generateFallbackFlightOptions(
   const baseOptions: FlightOption[] = [
     {
       id: `${isReturn ? 'return' : 'outbound'}-fallback-1`,
-      airline: 'TAP Portugal',
-      route: isReturn ? `${destinationCode} → LIS → ${originCode}` : `${originCode} → LIS → ${destinationCode}`,
-      isDirect: false,
-      connectionCity: 'Lisboa',
+      airline: 'Estimativa · companhia a definir',
+      route: isReturn ? `${destinationCode} → ${originCode}` : `${originCode} → ${destinationCode}`,
+      isDirect: true,
       duration: isReturn ? '13h50' : '14h30',
       durationMinutes: isReturn ? 830 : 870,
       price: 4200,
@@ -127,7 +126,7 @@ function generateFallbackFlightOptions(
     },
     {
       id: `${isReturn ? 'return' : 'outbound'}-fallback-2`,
-      airline: 'Air France',
+      airline: 'Estimativa · companhia a definir',
       route: isReturn ? `${destinationCode} → ${originCode}` : `${originCode} → ${destinationCode}`,
       isDirect: true,
       duration: isReturn ? '11h30' : '11h20',
@@ -139,10 +138,9 @@ function generateFallbackFlightOptions(
     },
     {
       id: `${isReturn ? 'return' : 'outbound'}-fallback-3`,
-      airline: 'Emirates',
-      route: isReturn ? `${destinationCode} → DXB → ${originCode}` : `${originCode} → DXB → ${destinationCode}`,
-      isDirect: false,
-      connectionCity: 'Dubai',
+      airline: 'Estimativa · companhia a definir',
+      route: isReturn ? `${destinationCode} → ${originCode}` : `${originCode} → ${destinationCode}`,
+      isDirect: true,
       duration: isReturn ? '19h20' : '18h45',
       durationMinutes: isReturn ? 1160 : 1125,
       price: isReturn ? 4500 : 4600,
