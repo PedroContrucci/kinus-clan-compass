@@ -1,7 +1,6 @@
-// Amadeus Flight Search Edge Function
-// - OAuth2 authentication with 30-minute token cache
-// - Flight search with flexible dates (±3 days)
-// - Returns sorted options with "Best Price" and "Fastest" tags
+// Flight search Edge Function
+// Engine: Travelpayouts/Aviasales Data API v3 (prices_for_dates)
+// Function name/endpoint/response shape preserved for client compatibility.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -10,14 +9,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Token cache (30 minutes)
-let cachedToken: { token: string; expiresAt: number } | null = null;
-const TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const TP_BASE_URL = 'https://api.travelpayouts.com/aviasales/v3/prices_for_dates';
 
-// Amadeus API endpoints (test environment)
-const AMADEUS_BASE_URL = 'https://test.api.amadeus.com';
-
-const BR_AIRPORTS = new Set(['GRU','CGH','VCP','GIG','SDU','BSB','CNF','SSA','REC','FOR','POA','CWB','FLN','MCZ','NAT','BEL','MAO','VIX','GYN','CGB','CGR','SLZ','THE','AJU','MCP']);
+const AIRLINE_NAMES: Record<string, string> = {
+  LA: 'LATAM', G3: 'GOL', AD: 'Azul', TP: 'TAP Air Portugal',
+  AF: 'Air France', EK: 'Emirates', IB: 'Iberia', LH: 'Lufthansa',
+  AA: 'American Airlines', UA: 'United', DL: 'Delta', KL: 'KLM',
+  BA: 'British Airways', TK: 'Turkish Airlines', QR: 'Qatar Airways',
+};
 
 interface FlightOffer {
   id: string;
@@ -42,249 +41,121 @@ interface FlightOffer {
   }>;
 }
 
-// Get OAuth2 token from Amadeus
-async function getAmadeusToken(): Promise<string> {
-  const now = Date.now();
-  
-  // Return cached token if still valid
-  if (cachedToken && cachedToken.expiresAt > now) {
-    console.log('Using cached Amadeus token');
-    return cachedToken.token;
-  }
-
-  const apiKey = Deno.env.get('AMADEUS_API_KEY');
-  const apiSecret = Deno.env.get('AMADEUS_API_SECRET');
-
-  if (!apiKey || !apiSecret) {
-    console.error('Amadeus API credentials not configured');
-    throw new Error('Flight search service temporarily unavailable');
-  }
-
-  console.log('Fetching new Amadeus token...');
-
-  const response = await fetch(`${AMADEUS_BASE_URL}/v1/security/oauth2/token`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: apiKey,
-      client_secret: apiSecret,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Amadeus auth error:', response.status, errorText);
-    throw new Error('Flight search service temporarily unavailable');
-  }
-
-  const data = await response.json();
-  
-  // Cache the token
-  cachedToken = {
-    token: data.access_token,
-    expiresAt: now + (data.expires_in * 1000) - 60000, // Expire 1 minute early for safety
-  };
-
-  console.log('Amadeus token obtained and cached');
-  return cachedToken.token;
-}
-
-// Parse ISO 8601 duration to minutes
-function parseDuration(duration: string): number {
-  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
-  if (!match) return 0;
-  const hours = parseInt(match[1] || '0', 10);
-  const minutes = parseInt(match[2] || '0', 10);
-  return hours * 60 + minutes;
-}
-
-// Format duration for display
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${h}h${m.toString().padStart(2, '0')}`;
 }
 
-// Airline name mapping
-const airlineNames: Record<string, string> = {
-  'LA': 'LATAM',
-  'G3': 'GOL',
-  'AD': 'Azul',
-  'TP': 'TAP Portugal',
-  'AF': 'Air France',
-  'KL': 'KLM',
-  'LH': 'Lufthansa',
-  'BA': 'British Airways',
-  'IB': 'Iberia',
-  'EK': 'Emirates',
-  'QR': 'Qatar Airways',
-  'TK': 'Turkish Airlines',
-  'AA': 'American Airlines',
-  'UA': 'United Airlines',
-  'DL': 'Delta',
-  'JL': 'Japan Airlines',
-  'NH': 'ANA',
-  'ET': 'Ethiopian Airlines',
-  'LY': 'El Al',
-  'AV': 'Avianca',
-  'CM': 'Copa Airlines',
-  'AM': 'Aeromexico',
-  'AC': 'Air Canada',
-  'SU': 'Aeroflot',
-  'UX': 'Air Europa',
-  'AZ': 'ITA Airways',
-  'LX': 'Swiss',
-  'OS': 'Austrian',
-  'SK': 'SAS',
-};
+function formatTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+}
 
-// Search flights using Amadeus API
+function addMinutesIso(iso: string, minutes: number): string {
+  try {
+    const d = new Date(iso);
+    d.setMinutes(d.getMinutes() + minutes);
+    return d.toISOString();
+  } catch {
+    return iso;
+  }
+}
+
 async function searchFlights(
   origin: string,
   destination: string,
   date: string,
-  adults: number = 1,
-  maxResults: number = 5
+  _adults: number = 1,
+  maxResults: number = 5,
 ): Promise<FlightOffer[]> {
-  const token = await getAmadeusToken();
-
-  const params = new URLSearchParams({
-    originLocationCode: origin,
-    destinationLocationCode: destination,
-    departureDate: date,
-    adults: adults.toString(),
-    currencyCode: 'BRL',
-    max: maxResults.toString(),
-    nonStop: 'false',
-  });
-
-  console.log(`Searching flights: ${origin} → ${destination} on ${date}`);
-
-  const response = await fetch(
-    `${AMADEUS_BASE_URL}/v2/shopping/flight-offers?${params.toString()}`,
-    {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-      },
-    }
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`Amadeus flight search upstream error (status ${response.status}) for ${origin} → ${destination} on ${date}. Body:`, errorText);
-    // Signal upstream failure to the handler so it can return a friendly retry message.
-    const err = new Error(`AmadeusUpstreamError:${response.status}`);
-    (err as any).isUpstream = true;
-    (err as any).status = response.status;
-    throw err;
-  }
-
-
-  const data = await response.json();
-  const offers: FlightOffer[] = [];
-
-  if (!data.data || data.data.length === 0) {
+  const token = Deno.env.get('TRAVELPAYOUTS_TOKEN');
+  if (!token) {
+    console.error('TRAVELPAYOUTS_TOKEN not configured');
     return [];
   }
 
-  for (const offer of data.data) {
-    const itinerary = offer.itineraries[0];
-    const segments = itinerary.segments;
-    const firstSegment = segments[0];
-    const lastSegment = segments[segments.length - 1];
-    
-    const carrierCode = firstSegment.operating?.carrierCode || firstSegment.carrierCode;
-    const isDirect = segments.length === 1;
-    
-    // Get connection cities for multi-segment flights
-    const connectionCities: string[] = [];
-    if (!isDirect) {
-      for (let i = 0; i < segments.length - 1; i++) {
-        connectionCities.push(segments[i].arrival.iataCode);
-      }
-    }
+  const url = `${TP_BASE_URL}?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&departure_at=${encodeURIComponent(date)}&one_way=true&direct=false&sorting=price&currency=brl&limit=${maxResults}&token=${encodeURIComponent(token)}`;
 
-    const durationMinutes = parseDuration(itinerary.duration);
-    
-    // Build route string
-    let routeString = `${firstSegment.departure.iataCode} → ${lastSegment.arrival.iataCode}`;
-    if (!isDirect) {
-      routeString = `${firstSegment.departure.iataCode} → ${connectionCities.join(' → ')} → ${lastSegment.arrival.iataCode}`;
-    }
+  console.log(`Searching flights (Travelpayouts): ${origin} → ${destination} on ${date}`);
 
-    offers.push({
-      id: offer.id,
-      airline: airlineNames[carrierCode] || carrierCode,
+  const response = await fetch(url, {
+    headers: {
+      'X-Access-Token': token,
+      'Accept-Encoding': 'gzip, deflate',
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    console.error(`Travelpayouts upstream error (status ${response.status}) for ${origin} → ${destination} on ${date}. Body:`, body);
+    return [];
+  }
+
+  const data = await response.json();
+  const items: any[] = Array.isArray(data?.data) ? data.data : [];
+
+  if (items.length === 0) {
+    return [];
+  }
+
+  const offers: FlightOffer[] = items.map((it, idx) => {
+    const carrierCode: string = it.airline || '';
+    const transfers: number = Number(it.transfers ?? 0);
+    const isDirect = transfers === 0;
+    const durationMinutes: number = Number(it.duration_to ?? it.duration ?? 0);
+    const departureAt: string = it.departure_at || '';
+    const arrivalAt: string = departureAt ? addMinutesIso(departureAt, durationMinutes) : '';
+    const originCode: string = (it.origin || origin).toUpperCase();
+    const destCode: string = (it.destination || destination).toUpperCase();
+
+    const routeString = isDirect
+      ? `${originCode} → ${destCode}`
+      : `${originCode} → (${transfers} conex.) → ${destCode}`;
+
+    return {
+      id: String(it.flight_number ? `${carrierCode}${it.flight_number}-${idx}` : `${carrierCode}-${idx}`),
+      airline: AIRLINE_NAMES[carrierCode] || carrierCode,
       airlineCode: carrierCode,
       route: routeString,
       isDirect,
-      connectionCities,
+      connectionCities: [],
       duration: formatDuration(durationMinutes),
       durationMinutes,
-      price: parseFloat(offer.price.total),
-      currency: offer.price.currency,
-      departureTime: new Date(firstSegment.departure.at).toLocaleTimeString('pt-BR', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }),
-      arrivalTime: new Date(lastSegment.arrival.at).toLocaleTimeString('pt-BR', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }),
-      departureAirport: firstSegment.departure.iataCode,
-      arrivalAirport: lastSegment.arrival.iataCode,
-      segments: segments.map((seg: any) => ({
-        departure: { iataCode: seg.departure.iataCode, at: seg.departure.at },
-        arrival: { iataCode: seg.arrival.iataCode, at: seg.arrival.at },
-        carrierCode: seg.operating?.carrierCode || seg.carrierCode,
-        duration: seg.duration,
-      })),
-    });
-  }
+      price: Number(it.price ?? 0),
+      currency: 'BRL',
+      departureTime: formatTime(departureAt),
+      arrivalTime: formatTime(arrivalAt),
+      departureAirport: originCode,
+      arrivalAirport: destCode,
+      segments: [
+        {
+          departure: { iataCode: originCode, at: departureAt },
+          arrival: { iataCode: destCode, at: arrivalAt },
+          carrierCode,
+          duration: `PT${Math.floor(durationMinutes / 60)}H${durationMinutes % 60}M`,
+        },
+      ],
+    };
+  });
 
-  const isDomesticBR = BR_AIRPORTS.has(origin) && BR_AIRPORTS.has(destination);
-
-  const filteredOffers = isDomesticBR
-    ? offers.filter(o => o.segments.every(s => BR_AIRPORTS.has(s.departure.iataCode) && BR_AIRPORTS.has(s.arrival.iataCode)))
-    : offers;
-
-  // Sanity filter: exclude offers >2x fastest duration.
-  // Only apply when we have enough data to reason about (>=3 offers);
-  // never fail the whole search because of an enhancement filter.
-  if (filteredOffers.length < 3) {
-    return filteredOffers;
-  }
-  try {
-    const durations = filteredOffers.map(o => o.durationMinutes);
-    const fastest = Math.min(...durations);
-    const threshold = fastest * 2;
-    const withinThreshold = filteredOffers.filter(o => o.durationMinutes <= threshold);
-    if (withinThreshold.length >= 3) return withinThreshold;
-    const sortedByDuration = [...filteredOffers].sort((a, b) => a.durationMinutes - b.durationMinutes);
-    return sortedByDuration.slice(0, 3);
-  } catch (filterError) {
-    console.error('Sanity filter failed, falling back to unfiltered offers:', filterError);
-    return filteredOffers;
-  }
-
+  return offers;
 }
 
-// Search with flexible dates (±3 days)
 async function searchFlexibleDates(
   origin: string,
   destination: string,
   baseDate: string,
   adults: number = 1,
-  daysRange: number = 3
+  daysRange: number = 3,
 ): Promise<{ date: string; bestPrice: number; offers: FlightOffer[] }[]> {
   const results: { date: string; bestPrice: number; offers: FlightOffer[] }[] = [];
   const baseDateObj = new Date(baseDate);
 
-  // Search ±daysRange days
   for (let i = -daysRange; i <= daysRange; i++) {
     const searchDate = new Date(baseDateObj);
     searchDate.setDate(searchDate.getDate() + i);
@@ -292,18 +163,12 @@ async function searchFlexibleDates(
 
     try {
       const offers = await searchFlights(origin, destination, dateString, adults, 3);
-      
       if (offers.length > 0) {
         const bestPrice = Math.min(...offers.map(o => o.price));
-        results.push({
-          date: dateString,
-          bestPrice,
-          offers,
-        });
+        results.push({ date: dateString, bestPrice, offers });
       }
     } catch (error) {
       console.error(`Error searching ${dateString}:`, error);
-      // Continue with other dates
     }
   }
 
@@ -311,7 +176,6 @@ async function searchFlexibleDates(
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -322,98 +186,57 @@ serve(async (req) => {
     if (!origin || !destination) {
       return new Response(
         JSON.stringify({ error: 'Origin and destination are required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
-
-    let result;
 
     if (action === 'flexible') {
-      // Search flexible dates
-      result = await searchFlexibleDates(
-        origin,
-        destination,
-        date,
-        adults || 1,
-        flexibleDays || 3
+      const result = await searchFlexibleDates(origin, destination, date, adults || 1, flexibleDays || 3);
+      return new Response(
+        JSON.stringify({ success: true, data: result, timestamp: new Date().toISOString() }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
-    } else {
-      // Standard search
-      if (!date) {
-        return new Response(
-          JSON.stringify({ error: 'Date is required for standard search' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      let offers: FlightOffer[] = [];
-      let emptyMessage: string | null = null;
-      try {
-        offers = await searchFlights(origin, destination, date, adults || 1, 5);
-      } catch (searchError: any) {
-        if (searchError?.isUpstream) {
-          return new Response(
-            JSON.stringify({
-              success: true,
-              data: [],
-              offers: [],
-              message: 'Busca temporariamente indisponível — tente novamente em instantes',
-              timestamp: new Date().toISOString(),
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        throw searchError;
-      }
-
-      // Tag best price and fastest
-      if (offers.length > 0) {
-        const lowestPrice = Math.min(...offers.map(o => o.price));
-        const shortestDuration = Math.min(...offers.map(o => o.durationMinutes));
-
-        result = offers.map(offer => ({
-          ...offer,
-          isBestPrice: offer.price === lowestPrice,
-          isFastest: offer.durationMinutes === shortestDuration,
-        }));
-      } else {
-        result = [];
-        emptyMessage = 'Nenhum voo encontrado para esta data';
-      }
-
-      if (emptyMessage) {
-        return new Response(
-          JSON.stringify({
-            success: true,
-            data: [],
-            offers: [],
-            message: emptyMessage,
-            timestamp: new Date().toISOString(),
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
     }
 
+    if (!date) {
+      return new Response(
+        JSON.stringify({ error: 'Date is required for standard search' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
+    const offers = await searchFlights(origin, destination, date, adults || 1, 5);
+
+    if (offers.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          data: [],
+          offers: [],
+          message: 'Nenhum voo encontrado para esta data',
+          timestamp: new Date().toISOString(),
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
+    const lowestPrice = Math.min(...offers.map(o => o.price));
+    const shortestDuration = Math.min(...offers.map(o => o.durationMinutes));
+    const result = offers.map(offer => ({
+      ...offer,
+      isBestPrice: offer.price === lowestPrice,
+      isFastest: offer.durationMinutes === shortestDuration,
+    }));
+
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        data: result,
-        timestamp: new Date().toISOString(),
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, data: result, timestamp: new Date().toISOString() }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
-
-
   } catch (error) {
-    console.error('Amadeus flights error:', error);
-    
+    console.error('Flight search error:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: 'Erro ao buscar voos. Tente novamente.',
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, offers: [], data: [] }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
 });
