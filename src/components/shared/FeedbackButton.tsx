@@ -120,6 +120,8 @@ export const FeedbackButton = () => {
       setRating(0);
       setCategory('');
       setMessage('');
+      setMissingFeature('');
+      setImprovement('');
       setPage('');
     }, 1500);
   };
