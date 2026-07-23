@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Brain, Lightbulb, TrendingUp, Shield, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { TRAVEL_INTERESTS } from '@/components/wizard/types';
 
 interface KinuAnalysisCardProps {
   destination: string;
