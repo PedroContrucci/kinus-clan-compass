@@ -241,6 +241,29 @@ export const FeedbackButton = () => {
                 />
               </div>
 
+              {/* Optional research fields */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Qual funcionalidade você sente falta no KINU?</p>
+                <textarea
+                  value={missingFeature}
+                  onChange={(e) => setMissingFeature(e.target.value)}
+                  placeholder="Opcional"
+                  rows={2}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">O que já existe mas deveria melhorar?</p>
+                <textarea
+                  value={improvement}
+                  onChange={(e) => setImprovement(e.target.value)}
+                  placeholder="Opcional"
+                  rows={2}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
+                />
+              </div>
+
               <button
                 onClick={handleSubmit}
                 className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
