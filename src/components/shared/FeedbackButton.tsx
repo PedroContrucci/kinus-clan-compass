@@ -13,6 +13,8 @@ export const FeedbackButton = () => {
   const [rating, setRating] = useState(0);
   const [category, setCategory] = useState('');
   const [message, setMessage] = useState('');
+  const [missingFeature, setMissingFeature] = useState('');
+  const [improvement, setImprovement] = useState('');
   const [page, setPage] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [activeTrip, setActiveTrip] = useState<any>(null);
@@ -50,13 +52,23 @@ export const FeedbackButton = () => {
     const screenSize = `${window.innerWidth}x${window.innerHeight}`;
     const appVersion = 'v0.1.0';
 
+    const trimmedMissing = missingFeature.trim().slice(0, 1000);
+    const trimmedImprovement = improvement.trim().slice(0, 1000);
+    let composedMessage = message.trim();
+    if (trimmedMissing) {
+      composedMessage += `\n\n[Sente falta]: ${trimmedMissing}`;
+    }
+    if (trimmedImprovement) {
+      composedMessage += `\n\n[Deveria melhorar]: ${trimmedImprovement}`;
+    }
+
     const feedbackRecord = {
       id: `fb-${Date.now()}`,
       timestamp: new Date().toISOString(),
       tester_name: trimmedName,
       rating,
       category,
-      message: message.trim(),
+      message: composedMessage,
       page: pagePath,
       userAgent: navigator.userAgent,
       screenSize,
@@ -69,7 +81,7 @@ export const FeedbackButton = () => {
         tester_name: trimmedName,
         rating,
         category,
-        message: message.trim(),
+        message: composedMessage,
         page: pagePath,
         user_agent: navigator.userAgent,
         screen_size: screenSize,
@@ -86,7 +98,7 @@ export const FeedbackButton = () => {
         tester_name: trimmedName,
         rating,
         category,
-        message: message.trim(),
+        message: composedMessage,
         page: pagePath,
       },
     }).catch((err) => console.error('feedback-notify invoke failed', err));
@@ -108,6 +120,8 @@ export const FeedbackButton = () => {
       setRating(0);
       setCategory('');
       setMessage('');
+      setMissingFeature('');
+      setImprovement('');
       setPage('');
     }, 1500);
   };
@@ -223,6 +237,29 @@ export const FeedbackButton = () => {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Ex: O botão de confirmar não apareceu quando cliquei..."
                   rows={3}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
+                />
+              </div>
+
+              {/* Optional research fields */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Qual funcionalidade você sente falta no KINU?</p>
+                <textarea
+                  value={missingFeature}
+                  onChange={(e) => setMissingFeature(e.target.value)}
+                  placeholder="Opcional"
+                  rows={2}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">O que já existe mas deveria melhorar?</p>
+                <textarea
+                  value={improvement}
+                  onChange={(e) => setImprovement(e.target.value)}
+                  placeholder="Opcional"
+                  rows={2}
                   className="w-full px-3 py-2 bg-background border border-border rounded-xl text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
                 />
               </div>
