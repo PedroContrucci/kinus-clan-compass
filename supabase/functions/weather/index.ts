@@ -196,7 +196,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("weather error:", error);
+    console.error("weather error:", error instanceof Error ? sanitizeUrl(error.message) : 'Unknown error');
     const message = error instanceof Error && error.message.includes("não encontrada")
       ? error.message
       : "Erro ao buscar previsão do tempo. Tente novamente.";

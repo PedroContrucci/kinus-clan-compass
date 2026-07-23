@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
         const waBody = await waRes.text();
         console.log('feedback-notify: CallMeBot response', waRes.status, waBody.slice(0, 100));
       } catch (e) {
-        console.error('feedback-notify: WhatsApp call failed', e);
+        console.error('feedback-notify: WhatsApp call failed', e instanceof Error ? sanitizeUrl(e.message) : 'Unknown error');
       }
     }
 

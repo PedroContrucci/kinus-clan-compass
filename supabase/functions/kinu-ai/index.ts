@@ -535,7 +535,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("kinu-ai error:", error instanceof Error ? error.message : "Unknown error");
+    console.error("kinu-ai error:", error instanceof Error ? sanitizeUrl(error.message) : "Unknown error");
     return new Response(
       JSON.stringify({ error: "Erro ao processar mensagem. Tente novamente." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

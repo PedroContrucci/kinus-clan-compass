@@ -68,7 +68,7 @@ serve(async (req) => {
 
     // Fetch from free API (no key needed)
     const url = `https://open.er-api.com/v6/latest/${base}`;
-    console.log('Fetching fresh rates from:', url);
+    console.log('Fetching fresh rates from:', sanitizeUrl(url));
     const response = await fetch(url);
     const data = await response.json();
 
@@ -96,7 +96,7 @@ serve(async (req) => {
     return returnFallback(targets, base);
 
   } catch (error) {
-    console.error('Exchange rate error:', error);
+    console.error('Exchange rate error:', error instanceof Error ? sanitizeUrl(error.message) : 'Unknown error');
     // Return fallback on any error
     try {
       const body = await req.clone().json().catch(() => ({}));
@@ -148,7 +148,7 @@ async function handleHistory(body: any, base: string) {
         });
       }
     } catch (e) {
-      console.warn('Paid API failed for history, generating synthetic:', e);
+      console.warn('Paid API failed for history, generating synthetic:', e instanceof Error ? sanitizeUrl(e.message) : 'Unknown error');
     }
   }
 

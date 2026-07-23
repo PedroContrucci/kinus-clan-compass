@@ -121,7 +121,7 @@ ${JSON.stringify(feedbacks, null, 2)}`;
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (e) {
-    console.error('[feedback-digest] unhandled error', e);
+    console.error('[feedback-digest] unhandled error', e instanceof Error ? sanitizeUrl(e.message) : 'Unknown error');
     return new Response(
       JSON.stringify({ error: (e as Error).message }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

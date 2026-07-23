@@ -182,7 +182,7 @@ IMPORTANTE: Todos os costs já devem estar multiplicados por ${travelers} viajan
     });
 
   } catch (error) {
-    console.error("generate-itinerary error:", error);
+    console.error("generate-itinerary error:", error instanceof Error ? sanitizeUrl(error.message) : 'Unknown error');
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : "Erro desconhecido ao gerar roteiro",
