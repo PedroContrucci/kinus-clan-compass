@@ -1,5 +1,15 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
+function sanitizeUrl(url: string): string {
+  return url
+    .replace(/token=[^&]+/gi, 'token=***')
+    .replace(/apikey=[^&]+/gi, 'apikey=***')
+    .replace(/access_key=[^&]+/gi, 'access_key=***')
+    .replace(/appid=[^&]+/gi, 'appid=***')
+    .replace(/key=[^&]+/gi, 'key=***')
+    .replace(/x-api-key=[^&]+/gi, 'x-api-key=***');
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
