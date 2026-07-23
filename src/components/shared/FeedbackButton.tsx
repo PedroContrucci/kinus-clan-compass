@@ -13,6 +13,8 @@ export const FeedbackButton = () => {
   const [rating, setRating] = useState(0);
   const [category, setCategory] = useState('');
   const [message, setMessage] = useState('');
+  const [missingFeature, setMissingFeature] = useState('');
+  const [improvement, setImprovement] = useState('');
   const [page, setPage] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [activeTrip, setActiveTrip] = useState<any>(null);
