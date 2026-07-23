@@ -65,7 +65,7 @@ function addMinutesIso(iso: string, minutes: number): string {
   }
 }
 
-function mapItemToOffer(it: any, idx: number, fallbackOrigin: string, fallbackDest: string): FlightOffer {
+function mapItemToOffer(it: any, idx: number, fallbackOrigin: string, fallbackDest: string, requestedDate?: string): FlightOffer {
   const carrierCode: string = it.airline || '';
   const transfers: number = Number(it.transfers ?? 0);
   const isDirect = transfers === 0;
@@ -78,6 +78,18 @@ function mapItemToOffer(it: any, idx: number, fallbackOrigin: string, fallbackDe
   const routeString = isDirect
     ? `${originCode} → ${destCode}`
     : `${originCode} → (${transfers} conex.) → ${destCode}`;
+
+  // Re-anchor the cached ticket onto the requested date for standard search,
+  // so the itinerary generator never invents multi-day transits from neighboring
+  // calendar dates in the Aviasales monthly cache.
+  let segmentDepAt = departureAt;
+  let segmentArrAt = arrivalAt;
+  if (requestedDate && departureAt && departureAt.includes('T')) {
+    const timePart = departureAt.slice(11, 16); // HH:mm
+    const depISO = `${requestedDate}T${timePart}:00`;
+    segmentDepAt = depISO;
+    segmentArrAt = new Date(new Date(depISO).getTime() + durationMinutes * 60000).toISOString();
+  }
 
   return {
     id: String(it.flight_number ? `${carrierCode}${it.flight_number}-${idx}` : `${carrierCode}-${idx}`),
@@ -96,8 +108,8 @@ function mapItemToOffer(it: any, idx: number, fallbackOrigin: string, fallbackDe
     arrivalAirport: destCode,
     segments: [
       {
-        departure: { iataCode: originCode, at: departureAt },
-        arrival: { iataCode: destCode, at: arrivalAt },
+        departure: { iataCode: originCode, at: segmentDepAt },
+        arrival: { iataCode: destCode, at: segmentArrAt },
         carrierCode,
         duration: `PT${Math.floor(durationMinutes / 60)}H${durationMinutes % 60}M`,
       },
