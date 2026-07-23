@@ -259,7 +259,8 @@ export function generateItinerary(
   if (lastSeg?.arrival?.at) {
     const arrivalDate = new Date(lastSeg.arrival.at);
     const diff = differenceInCalendarDays(arrivalDate, departureDate);
-    if (diff >= 1) arrivalDayIndex = diff;
+    if (diff >= 1 && diff <= 3) arrivalDayIndex = diff;
+    else if (diff > 3) console.warn('[KINU] implausible flight arrival offset', diff, '— falling back to default');
   }
 
   const explorationStart = arrivalDayIndex > 1 ? arrivalDayIndex + 1 : (sameDayArrival ? 1 : 2);
