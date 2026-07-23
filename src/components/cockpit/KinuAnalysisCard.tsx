@@ -76,7 +76,11 @@ export const KinuAnalysisCard = ({
     if (hasInterests || hasMichelin || severeJetLag) {
       const clauses: string[] = [];
       if (hasInterests) {
-        clauses.push(`Roteiro calibrado para: ${travelInterests.join(', ')}, com atividades do catálogo curado KINU.`);
+        const interestLabels = travelInterests.map((id) => {
+          const match = TRAVEL_INTERESTS.find((i) => i.id === id);
+          return match?.label || id.charAt(0).toUpperCase() + id.slice(1);
+        });
+        clauses.push(`Roteiro calibrado para: ${interestLabels.join(', ')}, com atividades do catálogo curado KINU.`);
       }
       if (hasMichelin) {
         clauses.push(`Inclui ${michelinCount} jantar com estrela Michelin.`);
