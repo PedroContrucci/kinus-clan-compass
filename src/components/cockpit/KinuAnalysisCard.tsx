@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Brain, Lightbulb, TrendingUp, Shield, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { TRAVEL_INTERESTS } from '@/components/wizard/types';
 
 interface KinuAnalysisCardProps {
   destination: string;
@@ -52,7 +53,7 @@ export const KinuAnalysisCard = ({
         title: isOverBudget ? 'Orçamento Insuficiente' : 'Otimização Financeira',
         content: isOverBudget
           ? `O total estimado (R$ ${totalEstimated.toLocaleString('pt-BR')}) ultrapassa seu budget (R$ ${budget.toLocaleString('pt-BR')}). Considere aumentar o orçamento, reduzir dias ou escolher um destino mais próximo.`
-          : `Com R$ ${dailyBudget}/dia para experiências, priorizei atividades gratuitas pela manhã e experiências pagas à tarde.`,
+          : `Com R$ ${dailyBudget.toLocaleString('pt-BR')}/dia para experiências, priorizei atividades gratuitas pela manhã e experiências pagas à tarde.`,
       },
       {
         icon: <Brain size={16} className="text-primary" />,
@@ -75,7 +76,11 @@ export const KinuAnalysisCard = ({
     if (hasInterests || hasMichelin || severeJetLag) {
       const clauses: string[] = [];
       if (hasInterests) {
-        clauses.push(`Roteiro calibrado para: ${travelInterests.join(', ')}, com atividades do catálogo curado KINU.`);
+        const interestLabels = travelInterests.map((id) => {
+          const match = TRAVEL_INTERESTS.find((i) => i.id === id);
+          return match?.label || id.charAt(0).toUpperCase() + id.slice(1);
+        });
+        clauses.push(`Roteiro calibrado para: ${interestLabels.join(', ')}, com atividades do catálogo curado KINU.`);
       }
       if (hasMichelin) {
         clauses.push(`Inclui ${michelinCount} jantar com estrela Michelin.`);
