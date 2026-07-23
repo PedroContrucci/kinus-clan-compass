@@ -174,7 +174,7 @@ async function searchFlights(
   if (!exact.ok) return { ok: false, offers: [] };
 
   if (exact.items.length > 0) {
-    const offers = exact.items.map((it, idx) => mapItemToOffer(it, idx, origin, destination));
+    const offers = exact.items.map((it, idx) => mapItemToOffer(it, idx, origin, destination, date));
     return { ok: true, offers };
   }
 
@@ -192,7 +192,7 @@ async function searchFlights(
     return Number(a.price ?? 0) - Number(b.price ?? 0);
   }).slice(0, 5);
 
-  const offers = sorted.map((it, idx) => mapItemToOffer(it, idx, origin, destination));
+  const offers = sorted.map((it, idx) => mapItemToOffer(it, idx, origin, destination, date));
   return { ok: true, offers };
 }
 
