@@ -53,7 +53,7 @@ export const KinuAnalysisCard = ({
         title: isOverBudget ? 'Orçamento Insuficiente' : 'Otimização Financeira',
         content: isOverBudget
           ? `O total estimado (R$ ${totalEstimated.toLocaleString('pt-BR')}) ultrapassa seu budget (R$ ${budget.toLocaleString('pt-BR')}). Considere aumentar o orçamento, reduzir dias ou escolher um destino mais próximo.`
-          : `Com R$ ${dailyBudget}/dia para experiências, priorizei atividades gratuitas pela manhã e experiências pagas à tarde.`,
+          : `Com R$ ${dailyBudget.toLocaleString('pt-BR')}/dia para experiências, priorizei atividades gratuitas pela manhã e experiências pagas à tarde.`,
       },
       {
         icon: <Brain size={16} className="text-primary" />,
