@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
           console.error('feedback-notify: Anthropic non-OK', aiRes.status, await aiRes.text());
         }
       } catch (e) {
-        console.error('feedback-notify: Anthropic call failed', e);
+        console.error('feedback-notify: Anthropic call failed', e instanceof Error ? sanitizeUrl(e.message) : 'Unknown error');
       }
     }
 
@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e: any) {
-    console.error('feedback-notify: unexpected error', e);
+    console.error('feedback-notify: unexpected error', e instanceof Error ? sanitizeUrl(e.message) : 'Unknown error');
     return new Response(JSON.stringify({ ok: false, error: e?.message || 'unexpected' }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

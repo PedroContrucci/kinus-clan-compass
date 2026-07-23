@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
       .limit(100);
 
     if (error) {
-      console.error('[feedback-digest] supabase select error', error);
+      console.error('[feedback-digest] supabase select error', error instanceof Error ? sanitizeUrl(error.message) : 'Unknown error');
       return new Response(
         JSON.stringify({ error: error.message || 'Erro ao buscar feedbacks' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
