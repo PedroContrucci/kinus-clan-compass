@@ -52,13 +52,23 @@ export const FeedbackButton = () => {
     const screenSize = `${window.innerWidth}x${window.innerHeight}`;
     const appVersion = 'v0.1.0';
 
+    const trimmedMissing = missingFeature.trim().slice(0, 1000);
+    const trimmedImprovement = improvement.trim().slice(0, 1000);
+    let composedMessage = message.trim();
+    if (trimmedMissing) {
+      composedMessage += `\n\n[Sente falta]: ${trimmedMissing}`;
+    }
+    if (trimmedImprovement) {
+      composedMessage += `\n\n[Deveria melhorar]: ${trimmedImprovement}`;
+    }
+
     const feedbackRecord = {
       id: `fb-${Date.now()}`,
       timestamp: new Date().toISOString(),
       tester_name: trimmedName,
       rating,
       category,
-      message: message.trim(),
+      message: composedMessage,
       page: pagePath,
       userAgent: navigator.userAgent,
       screenSize,
@@ -71,7 +81,7 @@ export const FeedbackButton = () => {
         tester_name: trimmedName,
         rating,
         category,
-        message: message.trim(),
+        message: composedMessage,
         page: pagePath,
         user_agent: navigator.userAgent,
         screen_size: screenSize,
@@ -88,7 +98,7 @@ export const FeedbackButton = () => {
         tester_name: trimmedName,
         rating,
         category,
-        message: message.trim(),
+        message: composedMessage,
         page: pagePath,
       },
     }).catch((err) => console.error('feedback-notify invoke failed', err));
