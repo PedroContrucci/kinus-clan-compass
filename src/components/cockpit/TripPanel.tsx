@@ -1136,7 +1136,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                 disabled={searchingFlights}
                 className="w-full text-[10px] font-medium py-1.5 rounded-lg border border-sky-500/30 text-sky-400 hover:bg-sky-500/10 transition-colors disabled:opacity-50"
               >
-                {searchingFlights ? '✈️ Buscando...' : '✈️ Voos Reais (Amadeus)'}
+                {searchingFlights ? '✈️ Buscando...' : '✈️ Voos Reais'}
               </button>
               {flightSearchError && (
                 <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
