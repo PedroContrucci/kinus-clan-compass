@@ -1,5 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+function sanitizeUrl(url: string): string {
+  return url
+    .replace(/token=[^&]+/gi, 'token=***')
+    .replace(/apikey=[^&]+/gi, 'apikey=***')
+    .replace(/access_key=[^&]+/gi, 'access_key=***')
+    .replace(/appid=[^&]+/gi, 'appid=***')
+    .replace(/key=[^&]+/gi, 'key=***')
+    .replace(/x-api-key=[^&]+/gi, 'x-api-key=***');
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -58,7 +68,7 @@ serve(async (req) => {
 
     // Fetch from free API (no key needed)
     const url = `https://open.er-api.com/v6/latest/${base}`;
-    console.log('Fetching fresh rates from:', url);
+    console.log('Fetching fresh rates from:', sanitizeUrl(url));
     const response = await fetch(url);
     const data = await response.json();
 
@@ -86,7 +96,7 @@ serve(async (req) => {
     return returnFallback(targets, base);
 
   } catch (error) {
-    console.error('Exchange rate error:', error);
+    console.error('Exchange rate error:', error instanceof Error ? sanitizeUrl(error.message) : 'Unknown error');
     // Return fallback on any error
     try {
       const body = await req.clone().json().catch(() => ({}));
@@ -138,7 +148,7 @@ async function handleHistory(body: any, base: string) {
         });
       }
     } catch (e) {
-      console.warn('Paid API failed for history, generating synthetic:', e);
+      console.warn('Paid API failed for history, generating synthetic:', e instanceof Error ? sanitizeUrl(e.message) : 'Unknown error');
     }
   }
 

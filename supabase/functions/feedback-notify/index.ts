@@ -1,4 +1,15 @@
 // Feedback notify edge function - sends instant email with AI classification
+
+function sanitizeUrl(url: string): string {
+  return url
+    .replace(/token=[^&]+/gi, 'token=***')
+    .replace(/apikey=[^&]+/gi, 'apikey=***')
+    .replace(/access_key=[^&]+/gi, 'access_key=***')
+    .replace(/appid=[^&]+/gi, 'appid=***')
+    .replace(/key=[^&]+/gi, 'key=***')
+    .replace(/x-api-key=[^&]+/gi, 'x-api-key=***');
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -67,7 +78,7 @@ Deno.serve(async (req) => {
           console.error('feedback-notify: Anthropic non-OK', aiRes.status, await aiRes.text());
         }
       } catch (e) {
-        console.error('feedback-notify: Anthropic call failed', e);
+        console.error('feedback-notify: Anthropic call failed', e instanceof Error ? sanitizeUrl(e.message) : 'Unknown error');
       }
     }
 
@@ -127,7 +138,7 @@ Deno.serve(async (req) => {
         const waBody = await waRes.text();
         console.log('feedback-notify: CallMeBot response', waRes.status, waBody.slice(0, 100));
       } catch (e) {
-        console.error('feedback-notify: WhatsApp call failed', e);
+        console.error('feedback-notify: WhatsApp call failed', e instanceof Error ? sanitizeUrl(e.message) : 'Unknown error');
       }
     }
 
@@ -135,7 +146,7 @@ Deno.serve(async (req) => {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e: any) {
-    console.error('feedback-notify: unexpected error', e);
+    console.error('feedback-notify: unexpected error', e instanceof Error ? sanitizeUrl(e.message) : 'Unknown error');
     return new Response(JSON.stringify({ ok: false, error: e?.message || 'unexpected' }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

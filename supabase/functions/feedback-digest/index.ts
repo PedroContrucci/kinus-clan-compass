@@ -1,5 +1,15 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
+function sanitizeUrl(url: string): string {
+  return url
+    .replace(/token=[^&]+/gi, 'token=***')
+    .replace(/apikey=[^&]+/gi, 'apikey=***')
+    .replace(/access_key=[^&]+/gi, 'access_key=***')
+    .replace(/appid=[^&]+/gi, 'appid=***')
+    .replace(/key=[^&]+/gi, 'key=***')
+    .replace(/x-api-key=[^&]+/gi, 'x-api-key=***');
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -33,7 +43,7 @@ Deno.serve(async (req) => {
       .limit(100);
 
     if (error) {
-      console.error('[feedback-digest] supabase select error', error);
+      console.error('[feedback-digest] supabase select error', error instanceof Error ? sanitizeUrl(error.message) : 'Unknown error');
       return new Response(
         JSON.stringify({ error: error.message || 'Erro ao buscar feedbacks' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -111,7 +121,7 @@ ${JSON.stringify(feedbacks, null, 2)}`;
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (e) {
-    console.error('[feedback-digest] unhandled error', e);
+    console.error('[feedback-digest] unhandled error', e instanceof Error ? sanitizeUrl(e.message) : 'Unknown error');
     return new Response(
       JSON.stringify({ error: (e as Error).message }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

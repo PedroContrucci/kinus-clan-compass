@@ -41,6 +41,16 @@ interface FlightOffer {
   }>;
 }
 
+function sanitizeUrl(url: string): string {
+  return url
+    .replace(/token=[^&]+/gi, 'token=***')
+    .replace(/apikey=[^&]+/gi, 'apikey=***')
+    .replace(/access_key=[^&]+/gi, 'access_key=***')
+    .replace(/appid=[^&]+/gi, 'appid=***')
+    .replace(/key=[^&]+/gi, 'key=***')
+    .replace(/x-api-key=[^&]+/gi, 'x-api-key=***');
+}
+
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -133,7 +143,7 @@ async function fetchPrices(
 
   const url = `${TP_BASE_URL}?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&departure_at=${encodeURIComponent(departureAt)}&one_way=true&direct=false&sorting=price&currency=brl&limit=${limit}&token=${encodeURIComponent(token)}`;
 
-  console.log(`Travelpayouts fetch: ${origin} → ${destination} @ ${departureAt} (limit ${limit})`);
+  console.log(`Travelpayouts fetch: ${origin} → ${destination} @ ${departureAt} (limit ${limit}) | ${sanitizeUrl(url)}`);
 
   const response = await fetch(url, {
     headers: {
@@ -295,7 +305,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (error) {
-    console.error('Flight search error:', error);
+    console.error('Flight search error:', error instanceof Error ? sanitizeUrl(error.message) : 'Unknown error');
     return new Response(
       JSON.stringify({ success: false, offers: [], data: [] }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
