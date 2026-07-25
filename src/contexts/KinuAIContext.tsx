@@ -483,6 +483,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         pendingNavigation,
         clearPendingNavigation,
         wizardPrefill,
+        setWizardPrefill,
         clearWizardPrefill,
       }}
     >
