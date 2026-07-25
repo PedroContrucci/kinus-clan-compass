@@ -98,15 +98,6 @@ export default function Planejar() {
     }
   }, [mode]);
 
-  // Quiz mode triggers the discovery chat flow once per session
-  const quizDiscoverySent = useRef(false);
-  useEffect(() => {
-    if (mode === "quiz" && !quizDiscoverySent.current) {
-      quizDiscoverySent.current = true;
-      setIsOpen(true);
-      sendMessage("Quero ajuda para escolher um destino para minha viagem").catch(() => {});
-    }
-  }, [mode, setIsOpen, sendMessage]);
 
   const handleSelectCity = (cityName: string) => {
     const info = findCityInfo(cityName);
