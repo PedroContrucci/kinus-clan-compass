@@ -101,8 +101,10 @@ export const WizardStep1Logistics = ({ data, onChange }: WizardStep1Props) => {
     const { destino, data_ida, data_volta, viajantes } = wizardPrefill;
     handleMapCitySelect(destino);
     const parseDate = (s: string) => {
+      if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return undefined;
       const [y, m, d] = s.split('-').map(Number);
-      return new Date(y, (m || 1) - 1, d || 1);
+      const date = new Date(y, (m || 1) - 1, d || 1);
+      return Number.isFinite(date.getTime()) ? date : undefined;
     };
     onChange({
       departureDate: parseDate(data_ida),
