@@ -365,7 +365,7 @@ export default function Planejar() {
   if (wizardActive) {
     return (
       <div className="fixed inset-0 z-50 bg-slate-950 overflow-y-auto">
-        <NewPlanningWizard onComplete={handleWizardComplete} onCancel={handleWizardCancel} />
+        <NewPlanningWizard onCancel={handleWizardCancel} />
       </div>
     );
   }
