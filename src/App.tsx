@@ -11,7 +11,7 @@ import { FeedbackButton } from "@/components/shared/FeedbackButton";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Cla from "./pages/Cla";
-import NewPlanejar from "./pages/NewPlanejar";
+import Planejar from "./pages/Planejar";
 import Viagens from "./pages/Viagens";
 import Conta from "./pages/Conta";
 import DestinationDetail from "./pages/DestinationDetail";
