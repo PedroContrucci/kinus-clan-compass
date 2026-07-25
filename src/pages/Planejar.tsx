@@ -190,7 +190,11 @@ export default function Planejar() {
           title="Não sei para onde ir"
           subtitle="Responda 5 perguntas e receba sugestões"
           accent="rose"
-          onClick={() => setMode("quiz")}
+          onClick={() => {
+            setMode("quiz");
+            setIsOpen(true);
+            sendMessage("Quero ajuda para escolher um destino para minha viagem").catch(() => {});
+          }}
         />
       </div>
     </motion.div>
