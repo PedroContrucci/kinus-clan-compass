@@ -1,1994 +1,463 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Search, Users, Wallet, Clock, Euro, RotateCcw, Trash2, Pin, Tag, CalendarIcon, Plane, Brain, Info, Loader2 } from 'lucide-react';
-import { format, differenceInDays, addDays } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Switch } from '@/components/ui/switch';
-import { cn } from '@/lib/utils';
-import { toast } from '@/hooks/use-toast';
-import { loadJson } from '@/lib/safeStorage';
-import { Toaster } from '@/components/ui/toaster';
-import ReverseAuctionModal from '@/components/ReverseAuctionModal';
-import { 
-  TripData, SavedTrip, TripActivity, TripDay, defaultChecklist, defaultFinances, 
-  calculateTimezone, shouldActivateJetLagMode, ActivityStatus,
-  FLIGHT_DURATION, calculateJetLagImpact, calculateArrivalTime, timezoneOffsets,
-  ACTIVITY_IMAGES, getIntensityBadge, ActivityIntensity
-} from '@/types/trip';
-import kinuLogo from '@/assets/KINU_logo.png';
-import { useCityAirportSearch, useCities } from '@/hooks/useSupabaseData';
-import { useKinuAI } from '@/contexts/KinuAIContext';
-import { 
-  DayNavigator, 
-  MinimalFlightCard, 
-  MinimalActivityCard,
-  DailyFinancialSummary,
-  TripHeaderSummary,
-  TripTimeline,
-  BudgetTracker,
-  CompactBudgetHeader,
-  BudgetInsufficientAlert,
-  ReductionStrategyPanel,
-  BudgetOccupation,
-  getActivityImage as getActivityImageFromComponent,
-  getActivityIcon as getActivityIconFromComponent
-} from '@/components/planejar';
-import { 
-  allocateBudget, 
-  checkBudgetOverflow, 
-  validateBudget, 
-  analyzeSpending, 
-  generateReductionSuggestions,
-  type SpendingBreakdown,
-  type ReductionSuggestion,
-  type BudgetValidation
-} from '@/lib/budget';
-import { generateEconomicItinerary, identifyTopVillains, type BudgetVillain } from '@/lib/economicGenerator';
-import { 
-  determineTier, 
-  findValidCombination, 
-  checkViability, 
-  getTierCosts,
-  getDestinationPricing,
-  QUALITY_TIERS,
-  TIER_DISTRIBUTIONS,
-  analyzeBudgetOccupation,
-  type QualityTier 
-} from '@/lib/tierSystem';
-import { type AuctionItem, type AuctionItemType } from '@/components/ReverseAuctionModal';
+import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import {
+  Map,
+  List,
+  MessageCircle,
+  Sparkles,
+  ArrowLeft,
+  Search,
+  ChevronRight,
+  Globe2,
+  Plane,
+} from "lucide-react";
 
-interface Activity {
-  time: string;
-  name: string;
-  description: string;
-  duration: string;
-  cost: number;
-  type: string;
-}
+import { DestinationWorldMap } from "@/components/planejar/DestinationWorldMap";
+import { NewPlanningWizard } from "@/components/wizard/NewPlanningWizard";
+import { useKinuAI } from "@/contexts/KinuAIContext";
+import {
+  DESTINATION_CATALOG,
+  REGIONS,
+  type RegionName,
+  type CountryEntry,
+  type CityEntry,
+  findCityInfo,
+} from "@/data/destinationCatalog";
+import { CURATED_CITIES } from "@/lib/curatedCities";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-interface DayItinerary {
-  day: number;
+
+type PlanejarMode = "hub" | "map" | "list" | "quiz";
+
+interface HubCardProps {
+  icon: React.ReactNode;
   title: string;
-  icon: string;
-  activities: Activity[];
+  subtitle: string;
+  onClick: () => void;
+  accent: "emerald" | "gold" | "indigo" | "rose";
 }
 
-interface ClanTip {
-  tip: string;
-  icon: string;
-}
-
-interface SimilarTrip {
-  destination: string;
-  days: number;
-  budget: number;
-  match: string;
-}
-
-interface GeneratedItinerary {
-  destination: string;
-  country: string;
-  days: number;
-  estimatedBudget: number;
-  focusAreas: string[];
-  itinerary: DayItinerary[];
-  clanTips: ClanTip[];
-  similarTrips: SimilarTrip[];
-}
-
-const loadingMessages = [
-  "Consultando a sabedoria do clã...",
-  "Analisando as melhores rotas...",
-  "Tecendo experiências únicas...",
-  "Quase lá...",
-];
-
-const popularDestinations = [
-  { name: 'Paris', country: 'França', emoji: '🗼' },
-  { name: 'Tóquio', country: 'Japão', emoji: '🏯' },
-  { name: 'Bali', country: 'Indonésia', emoji: '🌴' },
-  { name: 'Roma', country: 'Itália', emoji: '🏛️' },
-];
-
-const travelTypes = [
-  { id: 'solo', label: 'Solo', icon: '🧍' },
-  { id: 'casal', label: 'Casal', icon: '💑' },
-  { id: 'familia', label: 'Família', icon: '👨‍👩‍👧‍👦' },
-  { id: 'amigos', label: 'Amigos', icon: '👥' },
-];
-
-// Updated budget tiers - calibrated ranges
-const budgetPresets = [
-  { id: 'economico', label: 'Econômico', icon: '💚', min: 5000, max: 50000, description: 'Hotéis 3★, voos econômicos, mix de atividades' },
-  { id: 'conforto', label: 'Conforto', icon: '✨', min: 50001, max: 100000, description: 'Hotéis 4★, voos confortáveis, experiências premium' },
-  { id: 'elite', label: 'Elite', icon: '👑', min: 100001, max: 500000, description: 'Hotéis 5★, classe executiva, sem limites' },
-];
-
-const priorityOptions = [
-  { id: 'gastronomia', label: 'Gastronomia', icon: '🍷' },
-  { id: 'historia', label: 'História', icon: '🏛️' },
-  { id: 'natureza', label: 'Natureza', icon: '🌿' },
-  { id: 'compras', label: 'Compras', icon: '🛍️' },
-  { id: 'arte', label: 'Arte', icon: '🎨' },
-  { id: 'praias', label: 'Praias', icon: '🏖️' },
-  { id: 'vida-noturna', label: 'Vida Noturna', icon: '🎉' },
-  { id: 'relax', label: 'Relax', icon: '🧘' },
-];
-
-const destinationEmojis: Record<string, string> = {
-  'Paris': '🗼',
-  'Tóquio': '🏯',
-  'Lisboa': '🚃',
-  'Barcelona': '🏖️',
-  'Roma': '🏛️',
-  'Bali': '🌴',
-  'Nova York': '🗽',
-  'Santorini': '🇬🇷',
-  'Amsterdã': '🚲',
-  'Marrakech': '🕌',
+const ACCENT_STROKES: Record<HubCardProps["accent"], string> = {
+  emerald: "border-emerald-500/20 hover:border-emerald-400/50 bg-emerald-500/5",
+  gold: "border-amber-500/20 hover:border-amber-400/50 bg-amber-500/5",
+  indigo: "border-indigo-500/20 hover:border-indigo-400/50 bg-indigo-500/5",
+  rose: "border-rose-500/20 hover:border-rose-400/50 bg-rose-500/5",
 };
 
-const destinationCountries: Record<string, string> = {
-  'Paris': 'França',
-  'Tóquio': 'Japão',
-  'Lisboa': 'Portugal',
-  'Barcelona': 'Espanha',
-  'Roma': 'Itália',
-  'Bali': 'Indonésia',
-  'Nova York': 'EUA',
-  'Santorini': 'Grécia',
-  'Amsterdã': 'Holanda',
-  'Marrakech': 'Marrocos',
+const ACCENT_ICONS: Record<HubCardProps["accent"], string> = {
+  emerald: "text-emerald-400",
+  gold: "text-amber-400",
+  indigo: "text-indigo-400",
+  rose: "text-rose-400",
 };
 
-// Updated budget classification with new tier ranges
-const getBudgetClassification = (amount: number) => {
-  if (amount <= 0) return null;
-  if (amount <= 50000) {
-    return { type: 'economico', label: '💚 Modo Econômico', message: 'Hotéis 3★, voos econômicos, mix de atividades gratuitas e pagas!' };
-  }
-  if (amount <= 100000) {
-    return { type: 'conforto', label: '✨ Modo Conforto', message: 'Hotéis 4★, voos com conforto extra, experiências premium!' };
-  }
-  return { type: 'elite', label: '👑 Modo Elite', message: 'Hotéis 5★, classe executiva, experiências exclusivas sem limite!' };
-};
+function HubCard({ icon, title, subtitle, onClick, accent }: HubCardProps) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02, y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={cn(
+        "relative w-full text-left rounded-2xl border p-6 transition-colors duration-200 group overflow-hidden",
+        "bg-slate-900/60 backdrop-blur-sm",
+        ACCENT_STROKES[accent]
+      )}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="relative z-10">
+        <div className={cn("mb-4 inline-flex p-3 rounded-xl bg-slate-950/50", ACCENT_ICONS[accent])}>
+          {icon}
+        </div>
+        <h3 className="text-xl font-semibold text-slate-100 mb-2">{title}</h3>
+        <p className="text-sm text-slate-400 leading-relaxed">{subtitle}</p>
+      </div>
+    </motion.button>
+  );
+}
 
-const Planejar = () => {
+export default function Planejar() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
-  const [generatedItinerary, setGeneratedItinerary] = useState<GeneratedItinerary | null>(null);
-  const [selectedDay, setSelectedDay] = useState(1);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [auctionModal, setAuctionModal] = useState<{ isOpen: boolean; item?: AuctionItem; activityName?: string; activityType?: string } | null>(null);
-  const [pinnedActivities, setPinnedActivities] = useState<Set<string>>(new Set());
-  const [isGeneratingEconomic, setIsGeneratingEconomic] = useState(false);
-  const [economicItinerary, setEconomicItinerary] = useState<ReturnType<typeof generateEconomicItinerary> | null>(null);
-  const [currentTier, setCurrentTier] = useState<QualityTier | null>(null);
+  const { setIsOpen, sendMessage, setWizardPrefill } = useKinuAI();
 
-  const [tripData, setTripData] = useState<TripData>({
-    destination: '',
-    startDate: undefined,
-    endDate: undefined,
-    departureTime: '22:30',
-    returnTime: '23:00',
-    travelers: 2,
-    travelType: 'casal',
-    budgetAmount: 0,
-    budgetType: '',
-    priorities: [],
-    jetLagModeEnabled: true,
-  });
+  const [mode, setMode] = useState<PlanejarMode>("hub");
+  const [wizardActive, setWizardActive] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState('');
+  // List mode browsing state
+  const [listSearch, setListSearch] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState<RegionName | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<CountryEntry | null>(null);
 
+  // Reset browse state when leaving list mode
   useEffect(() => {
-    const savedUser = localStorage.getItem('kinu_user');
-    if (!savedUser) {
-      navigate('/');
+    if (mode !== "list") {
+      setListSearch("");
+      setSelectedRegion(null);
+      setSelectedCountry(null);
     }
-  }, [navigate]);
+  }, [mode]);
 
+  // Quiz mode triggers the discovery chat flow
   useEffect(() => {
-    if (isLoading) {
-      const interval = setInterval(() => {
-        setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
-      }, 2000);
-      return () => clearInterval(interval);
+    if (mode === "quiz") {
+      setIsOpen(true);
+      sendMessage("Quero ajuda para escolher um destino para minha viagem").catch(() => {});
     }
-  }, [isLoading]);
+  }, [mode, setIsOpen, sendMessage]);
 
-  // Update budget type based on amount
-  useEffect(() => {
-    const classification = getBudgetClassification(tripData.budgetAmount);
-    if (classification) {
-      setTripData((prev) => ({ ...prev, budgetType: classification.type }));
-    }
-  }, [tripData.budgetAmount]);
+  const handleSelectCity = (cityName: string) => {
+    const info = findCityInfo(cityName);
+    if (!info) return;
 
-  const calculateDays = () => {
-    if (tripData.startDate && tripData.endDate) {
-      const days = differenceInDays(tripData.endDate, tripData.startDate) + 1;
-      return days > 0 ? days : 0;
-    }
-    return 0;
-  };
-
-  const handleNext = () => {
-    if (currentStep < 5) {
-      setCurrentStep((prev) => prev + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep((prev) => prev - 1);
-    }
-  };
-
-  const handleSelectDestination = (dest: string) => {
-    setTripData((prev) => ({ ...prev, destination: dest }));
-    setSearchQuery(dest);
-  };
-
-  const togglePriority = (priority: string) => {
-    setTripData((prev) => {
-      if (prev.priorities.includes(priority)) {
-        return { ...prev, priorities: prev.priorities.filter((p) => p !== priority) };
-      }
-      if (prev.priorities.length < 3) {
-        return { ...prev, priorities: [...prev.priorities, priority] };
-      }
-      return prev;
+    setWizardPrefill({
+      destino: cityName,
+      data_ida: "",
+      data_volta: "",
+      viajantes: 2,
     });
+    setWizardActive(true);
   };
 
-  const handleDayChange = (day: number) => {
-    if (day === selectedDay) return;
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setSelectedDay(day);
-      setIsTransitioning(false);
-    }, 150);
+  const handleWizardComplete = () => {
+    navigate("/viagens");
   };
 
-  const handleBudgetPreset = (preset: typeof budgetPresets[0]) => {
-    const midValue = Math.round((preset.min + preset.max) / 2);
-    setTripData((prev) => ({ ...prev, budgetAmount: midValue, budgetType: preset.id }));
+  const handleWizardCancel = () => {
+    setWizardActive(false);
+    setMode("hub");
   };
 
-  const togglePinActivity = (activityId: string) => {
-    setPinnedActivities((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(activityId)) {
-        newSet.delete(activityId);
-      } else {
-        newSet.add(activityId);
-      }
-      return newSet;
-    });
-  };
-
-  const handleGenerateItinerary = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-itinerary`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({
-            destination: tripData.destination,
-            startDate: tripData.startDate?.toISOString(),
-            endDate: tripData.endDate?.toISOString(),
-            travelers: tripData.travelers,
-            travelType: tripData.travelType,
-            budget: tripData.budgetType,
-            budgetAmount: tripData.budgetAmount,
-            priorities: tripData.priorities,
-          }),
+  const allCities = useMemo(() => {
+    const cities: { city: CityEntry; country: CountryEntry; region: RegionName }[] = [];
+    for (const [region, countries] of Object.entries(DESTINATION_CATALOG)) {
+      for (const country of countries) {
+        for (const city of country.cities) {
+          cities.push({ city, country, region: region as RegionName });
         }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao gerar roteiro');
-      }
-
-      const data = await response.json();
-      setGeneratedItinerary(data);
-    } catch (err) {
-      console.error('Error generating itinerary:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao gerar roteiro');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSaveTrip = () => {
-    if (!generatedItinerary) return;
-
-    const tripId = `trip-${Date.now()}`;
-    const totalBudget = tripData.budgetAmount || generatedItinerary.estimatedBudget;
-    
-    // Calculate timezone info
-    const timezoneInfo = calculateTimezone('Brasil', generatedItinerary.destination);
-    const jetLagMode = shouldActivateJetLagMode(timezoneInfo.diff);
-    
-    // Convert generated itinerary to trip format
-    const tripDays: TripDay[] = generatedItinerary.itinerary.map((day) => ({
-      day: day.day,
-      title: day.title,
-      icon: day.icon,
-      activities: day.activities.map((act, idx) => ({
-        id: `${tripId}-day${day.day}-act${idx}`,
-        time: act.time,
-        name: act.name,
-        description: act.description,
-        duration: act.duration,
-        cost: act.cost,
-        type: act.type,
-        status: pinnedActivities.has(`day${day.day}-act${idx}`) ? 'confirmed' as ActivityStatus : 'planned' as ActivityStatus,
-        category: act.type === 'food' ? 'comida' as const : 
-                  act.type === 'transport' ? 'transporte' as const : 
-                  act.type === 'relax' ? 'hotel' as const : 'passeio' as const,
-        jetLagFriendly: jetLagMode && day.day === 1,
-      })),
-    }));
-
-    // Create initial finances
-    const finances = {
-      ...defaultFinances,
-      total: totalBudget,
-      planned: generatedItinerary.estimatedBudget,
-      available: totalBudget,
-    };
-
-    const savedTrip: SavedTrip = {
-      id: tripId,
-      status: 'draft',
-      destination: generatedItinerary.destination,
-      country: destinationCountries[generatedItinerary.destination] || 'País',
-      emoji: destinationEmojis[generatedItinerary.destination] || '✈️',
-      startDate: tripData.startDate?.toISOString() || '',
-      endDate: tripData.endDate?.toISOString() || '',
-      budget: totalBudget,
-      budgetType: tripData.budgetType,
-      travelers: tripData.travelers,
-      priorities: tripData.priorities,
-      progress: 0,
-      timezone: timezoneInfo,
-      jetLagMode,
-      days: tripDays,
-      finances,
-      checklist: defaultChecklist,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Save to localStorage
-    const existingTrips = loadJson<any[]>('kinu_trips', []);
-    existingTrips.push(savedTrip);
-    localStorage.setItem('kinu_trips', JSON.stringify(existingTrips));
-
-    toast({
-      title: "Roteiro salvo! 🌿",
-      description: "Agora é hora de fechar os detalhes.",
-    });
-
-    setTimeout(() => {
-      navigate('/viagens');
-    }, 1500);
-  };
-
-  const canProceed = () => {
-    switch (currentStep) {
-      case 1:
-        return tripData.destination.length > 0;
-      case 2:
-        return tripData.startDate && tripData.endDate && calculateDays() > 0;
-      case 3:
-        return tripData.travelers > 0 && tripData.travelType;
-      case 4:
-        return tripData.budgetAmount > 0;
-      case 5:
-        return tripData.priorities.length > 0;
-      default:
-        return false;
-    }
-  };
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'food': return '🍽️';
-      case 'culture': return '🏛️';
-      case 'transport': return '🚃';
-      case 'photo': return '📸';
-      case 'relax': return '🏨';
-      default: return '📍';
-    }
-  };
-
-  // Helper functions for activity display
-  const getActivityIntensity = (type: string, duration: string): ActivityIntensity => {
-    const durationHours = parseFloat(duration) || 1;
-    if (type === 'relax' || type === 'food' || durationHours <= 1) return 'light';
-    if (type === 'transport' || durationHours <= 2) return 'moderate';
-    if (durationHours <= 4) return 'intense';
-    return 'very_intense';
-  };
-
-  const getActivityImage = (name: string, type: string): string => {
-    const nameKey = name.toLowerCase()
-      .replace(/torre eiffel/i, 'torre-eiffel')
-      .replace(/louvre/i, 'louvre')
-      .replace(/montmartre/i, 'montmartre')
-      .replace(/cruzeiro.*sena/i, 'sena-cruzeiro')
-      .replace(/notre.?dame/i, 'notre-dame')
-      .replace(/versailles|versalhes/i, 'versailles')
-      .replace(/marais/i, 'marais')
-      .replace(/café|cafe|coffee/i, 'cafe-paris')
-      .replace(/hotel|check.?in/i, 'hotel')
-      .replace(/transfer|taxi|uber/i, 'transfer')
-      .replace(/restaurante|jantar|almoço|breizh|ristorante|trattoria/i, 'restaurante')
-      .replace(/aeroporto|cdg|gru|fiumicino/i, 'aeroporto')
-      .replace(/shibuya/i, 'shibuya')
-      .replace(/senso.?ji/i, 'senso-ji')
-      .replace(/meiji/i, 'meiji')
-      .replace(/belém|belem/i, 'belem')
-      .replace(/alfama/i, 'alfama')
-      // Roma specific
-      .replace(/vaticano|vatican/i, 'vaticano')
-      .replace(/capela sistina|sistine/i, 'capela-sistina')
-      .replace(/basílica.*pedro|st.*peter/i, 'basilica-sao-pedro')
-      .replace(/museus.*vaticano|vatican.*museum/i, 'museus-vaticano')
-      .replace(/coliseu|colosseum|colosseo/i, 'coliseu')
-      .replace(/forum.*romano|roman.*forum/i, 'forum-romano')
-      .replace(/palatino|palatine/i, 'palatino')
-      .replace(/trastevere/i, 'trastevere')
-      .replace(/villa.*este|villa d'este/i, 'villa-este')
-      .replace(/villa.*adriana|hadrian/i, 'villa-adriana')
-      .replace(/fontana.*trevi|trevi.*fountain/i, 'fontana-trevi')
-      .replace(/piazza.*navona/i, 'piazza-navona')
-      .replace(/panteão|pantheon|panteao/i, 'panteao')
-      .replace(/escadaria.*espanhola|spanish.*steps/i, 'escadaria-espanhola')
-      .replace(/castel.*sant.*angelo/i, 'castel-santangelo')
-      .replace(/via.*del.*corso/i, 'via-del-corso')
-      .replace(/carbonara/i, 'carbonara')
-      .replace(/cacio.*pepe/i, 'cacio-pepe')
-      .replace(/gelato|sorvete/i, 'gelato-roma')
-      .replace(/pizza/i, 'pizza-roma')
-      .replace(/pasta|massa/i, 'pasta-roma');
-    
-    for (const key of Object.keys(ACTIVITY_IMAGES)) {
-      if (nameKey.includes(key)) {
-        return ACTIVITY_IMAGES[key];
       }
     }
-    
-    // Fallback by type
-    if (type === 'food') return ACTIVITY_IMAGES['restaurante'];
-    if (type === 'relax') return ACTIVITY_IMAGES['hotel'];
-    if (type === 'transport') return ACTIVITY_IMAGES['transfer'];
-    
-    return ACTIVITY_IMAGES['default'];
-  };
+    return cities;
+  }, []);
 
-  const getClanTip = (type: string): string => {
-    const tips: Record<string, string[]> = {
-      food: [
-        "Pede o prato do dia, sempre mais fresco e barato! — @MariaV",
-        "Reserva pelo Google Maps, eles respondem rápido. — @PedroL",
-      ],
-      culture: [
-        "Vai cedo de manhã pra evitar filas! — @AnaC",
-        "Compra ingresso online com antecedência. — @JoãoM",
-      ],
-      transport: [
-        "Uber costuma ser mais barato que táxi oficial. — @CarlosR",
-        "Pega o metrô se tiver tempo, muito mais barato! — @LucasS",
-      ],
-      photo: [
-        "Melhor luz pra foto é 30min antes do pôr do sol. — @FernandaP",
-        "Chega cedo pra pegar o lugar vazio! — @RafaelT",
-      ],
-      relax: [
-        "Pede um upgrade no check-in, às vezes funciona! — @JuliaM",
-        "Aproveita o frigobar vazio pra guardar suas coisas. — @ThiagoB",
-      ],
-    };
-    const categoryTips = tips[type] || tips.culture;
-    return categoryTips[Math.floor(Math.random() * categoryTips.length)];
-  };
-
-  // Calculate jet lag info for the result screen
-  const jetLagInfo = useMemo(() => {
-    if (!generatedItinerary) return null;
-    const tz = calculateTimezone('São Paulo', generatedItinerary.destination);
-    return { ...tz, ...calculateJetLagImpact(tz.diff) };
-  }, [generatedItinerary]);
-
-  // Loading Screen
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center px-4">
-        <div className="w-16 h-16 border-4 border-[#10b981] border-t-transparent rounded-full animate-spin mb-8" />
-        <p className="text-[#f8fafc] text-xl font-['Outfit'] text-center animate-pulse">
-          {loadingMessages[loadingMessageIndex]}
-        </p>
-        <Toaster />
-      </div>
+  const filteredResults = useMemo(() => {
+    if (!listSearch.trim()) return null;
+    const q = listSearch.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return allCities.filter(
+      ({ city, country }) =>
+        city.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q) ||
+        country.country.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q)
     );
-  }
+  }, [listSearch, allCities]);
 
-  // Error Screen
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center px-4">
-        <div className="text-6xl mb-4">😔</div>
-        <p className="text-[#f8fafc] text-xl font-['Outfit'] text-center mb-2">Ops, algo deu errado</p>
-        <p className="text-[#94a3b8] text-center mb-6">{error}</p>
-        <button
-          onClick={() => {
-            setError(null);
-            handleGenerateItinerary();
-          }}
-          className="px-6 py-3 bg-gradient-to-r from-[#10b981] to-[#0ea5e9] text-white rounded-xl font-semibold"
-        >
-          Tentar Novamente
-        </button>
-        <Toaster />
-      </div>
-    );
-  }
-
-  // Result Screen
-  if (generatedItinerary) {
-    const currentDay = generatedItinerary.itinerary.find((d) => d.day === selectedDay);
-    const startDate = tripData.startDate || new Date();
-    const endDate = tripData.endDate || addDays(startDate, generatedItinerary.days - 1);
-    const currentDayDate = addDays(startDate, selectedDay - 1);
-    
-    // Calculate arrival info for transit day logic
-    const flightDuration = FLIGHT_DURATION[`São Paulo-${generatedItinerary.destination}`] || 11.5;
-    const arrivalInfo = jetLagInfo ? calculateArrivalTime(
-      tripData.departureTime || '22:30',
-      startDate,
-      flightDuration,
-      jetLagInfo.diff
-    ) : null;
-    
-    // If arrival is next day, we have a transit day (day 1 = departure, day 2 = arrival/experience day 1)
-    const hasTransitDay = arrivalInfo?.nextDay ?? true;
-    
-    // Generate day info for navigator
-    // Icons and titles from AI start from the first experience day (not transit)
-    const dayIcons = ['✈️', ...generatedItinerary.itinerary.map(d => d.icon)];
-    const dayTitles = ['Partida', ...generatedItinerary.itinerary.map(d => d.title)];
-    
-    // Total days including transit
-    const totalDaysWithTransit = hasTransitDay ? generatedItinerary.days + 1 : generatedItinerary.days;
-    
-    // Calculate experience days (excluding transit)
-    const totalDays = differenceInDays(endDate, startDate) + 1;
-    const experienceDays = hasTransitDay ? totalDays - 1 : totalDays;
-    
-    // Map selected day to actual itinerary day (account for transit)
-    // selectedDay 1 = transit (no activities from itinerary)
-    // selectedDay 2 = itinerary day 1
-    const itineraryDayIndex = hasTransitDay ? selectedDay - 2 : selectedDay - 1;
-    const currentItineraryDay = generatedItinerary.itinerary[itineraryDayIndex];
-    const isTransitDay = hasTransitDay && selectedDay === 1;
-    const isFirstExperienceDay = hasTransitDay ? selectedDay === 2 : selectedDay === 1;
-    
-    // Calculate daily expenses for current day
-    const currentDayExpenses = currentItineraryDay?.activities.map(act => ({
-      icon: getActivityIcon(act.type),
-      name: act.name,
-      amount: act.cost,
-      category: act.type as 'attraction' | 'food' | 'transport' | 'accommodation' | 'shopping'
-    })) || [];
-    
-    const averageDailySpend = generatedItinerary.estimatedBudget / generatedItinerary.days;
-    
-    // Budget allocation for Hard Budget system
-    const userBudget = tripData.budgetAmount || generatedItinerary.estimatedBudget;
-    const budgetAllocation = allocateBudget(userBudget, totalDays);
-    const dailyBudget = budgetAllocation.dailyBudget.total;
-    
-    // Determine quality tier based on budget
-    const calculatedTier = determineTier(userBudget, generatedItinerary.destination, totalDays);
-    const tierConfig = QUALITY_TIERS[calculatedTier];
-    
-    // Calculate current day spending
-    const currentDaySpent = currentDayExpenses.reduce((sum, e) => sum + e.amount, 0);
-    
-    // Timeline data - include transit day
-    const timelineData = [
-      // Transit day (departure)
-      ...(hasTransitDay ? [{
-        dayNumber: 0,
-        date: startDate,
-        icon: '✈️',
-        title: 'Partida',
-        totalCost: 0,
-        isTransit: true,
-      }] : []),
-      // Experience days
-      ...generatedItinerary.itinerary.map((day, idx) => ({
-        dayNumber: day.day,
-        date: addDays(startDate, hasTransitDay ? idx + 1 : idx),
-        icon: day.icon,
-        title: day.title,
-        totalCost: day.activities.reduce((sum, a) => sum + a.cost, 0),
-        isTransit: false,
-      })),
-    ];
-    
-    const totalSpent = timelineData.reduce((sum, d) => sum + d.totalCost, 0);
-    
-    // Generate mock flight data
-    const outboundFlight = {
-      origin: 'São Paulo',
-      originCode: 'GRU',
-      destination: generatedItinerary.destination,
-      destinationCode: generatedItinerary.destination === 'Paris' ? 'CDG' : 
-                       generatedItinerary.destination === 'Tóquio' ? 'NRT' :
-                       generatedItinerary.destination === 'Lisboa' ? 'LIS' :
-                       generatedItinerary.destination === 'Roma' ? 'FCO' :
-                       generatedItinerary.destination === 'Barcelona' ? 'BCN' :
-                       generatedItinerary.destination === 'Amsterdã' ? 'AMS' : 'XXX',
-      departureDate: startDate,
-      departureTime: tripData.departureTime || '22:30',
-      arrivalDate: addDays(startDate, 1),
-      arrivalTime: jetLagInfo ? 
-        calculateArrivalTime(tripData.departureTime || '22:30', startDate, 
-          FLIGHT_DURATION[`São Paulo-${generatedItinerary.destination}`] || 11.5,
-          jetLagInfo.diff).arrivalTime : '14:00',
-      duration: `${FLIGHT_DURATION[`São Paulo-${generatedItinerary.destination}`] || 11.5}h`,
-      airline: 'LATAM',
-      flightNumber: 'LA8044',
-      stops: 0,
-      pricePerPerson: 3100,
-      totalPrice: 3100 * tripData.travelers,
-      travelers: tripData.travelers,
-      status: 'bidding' as const,
-    };
-    
-    const returnFlight = {
-      origin: generatedItinerary.destination,
-      originCode: outboundFlight.destinationCode,
-      destination: 'São Paulo',
-      destinationCode: 'GRU',
-      departureDate: endDate,
-      departureTime: tripData.returnTime || '23:00',
-      arrivalDate: addDays(endDate, 1),
-      arrivalTime: '06:00',
-      duration: `${FLIGHT_DURATION[`São Paulo-${generatedItinerary.destination}`] || 11.5}h`,
-      airline: 'Air France',
-      flightNumber: 'AF456',
-      stops: 0,
-      pricePerPerson: 3200,
-      totalPrice: 3200 * tripData.travelers,
-      travelers: tripData.travelers,
-      status: 'bidding' as const,
-    };
-    
-    // ═══════════════════════════════════════════════════════════════
-    // HARD BUDGET VALIDATION — Check if total exceeds user budget
-    // ═══════════════════════════════════════════════════════════════
-    const allActivities = generatedItinerary.itinerary.flatMap(day => 
-      day.activities.map(act => ({ name: act.name, cost: act.cost }))
-    );
-    
-    const foodCost = generatedItinerary.itinerary.flatMap(day => 
-      day.activities.filter(a => a.type === 'food')
-    ).reduce((sum, a) => sum + a.cost, 0);
-    
-    const transportCost = generatedItinerary.itinerary.flatMap(day => 
-      day.activities.filter(a => a.type === 'transport')
-    ).reduce((sum, a) => sum + a.cost, 0);
-    
-    const activityCost = generatedItinerary.itinerary.flatMap(day => 
-      day.activities.filter(a => a.type !== 'food' && a.type !== 'transport')
-    ).reduce((sum, a) => sum + a.cost, 0);
-    
-    const totalItineraryCost = outboundFlight.totalPrice + returnFlight.totalPrice + totalSpent;
-    
-    const budgetValidation = validateBudget(userBudget, {
-      flights: outboundFlight.totalPrice + returnFlight.totalPrice,
-      accommodation: experienceDays * 480, // Estimated hotel cost
-      accommodationNights: experienceDays,
-      activities: allActivities.filter(a => 
-        !['food', 'transport'].some(type => a.name.toLowerCase().includes(type))
-      ),
-      food: foodCost,
-      transport: transportCost,
-    });
-    
-    // Identify top 3 spending items (villains) - include type info
-    const activitiesWithType = generatedItinerary.itinerary.flatMap(day => 
-      day.activities.map(act => ({ name: act.name, cost: act.cost, type: act.type }))
-    );
-    
-    const budgetVillains = identifyTopVillains(
-      { outbound: outboundFlight.totalPrice, return: returnFlight.totalPrice },
-      { total: experienceDays * 480, perNight: 480, nights: experienceDays },
-      activitiesWithType,
-      budgetValidation.totalCost
-    );
-    
-    // Handler for generating economic version
-    const handleGenerateEconomicVersion = async () => {
-      setIsGeneratingEconomic(true);
-      
-      try {
-        // Simulate API delay for realistic UX
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        const economicResult = generateEconomicItinerary(
-          generatedItinerary.destination,
-          destinationCountries[generatedItinerary.destination] || 'País',
-          experienceDays,
-          userBudget,
-          tripData.travelers,
-          budgetValidation.totalCost
-        );
-        
-        if (economicResult && economicResult.isWithinBudget) {
-          // Convert economic itinerary to standard format
-          const convertedItinerary: GeneratedItinerary = {
-            destination: economicResult.destination,
-            country: economicResult.country,
-            days: economicResult.days,
-            estimatedBudget: economicResult.totalCost,
-            focusAreas: ['econômico', 'gratuito'],
-            itinerary: economicResult.itinerary.map(day => ({
-              day: day.day,
-              title: day.title,
-              icon: day.icon,
-              activities: day.activities.map(act => ({
-                time: act.time,
-                name: act.name,
-                description: act.description,
-                duration: act.duration,
-                cost: act.cost,
-                type: act.type,
-              })),
-            })),
-            clanTips: [
-              { tip: `Roma tem ${economicResult.itinerary.flatMap(d => d.activities.filter(a => a.isFree)).length} atividades gratuitas incríveis!`, icon: '💚' },
-              { tip: 'Economize comendo em mercados e traquerias locais.', icon: '🍕' },
-            ],
-            similarTrips: [],
-          };
-          
-          setGeneratedItinerary(convertedItinerary);
-          setEconomicItinerary(economicResult);
-          
-          toast({
-            title: "Roteiro Econômico Gerado! 💚",
-            description: `Total: R$ ${economicResult.totalCost.toLocaleString()} — Economia de R$ ${economicResult.savings.toLocaleString()}!`,
-          });
-        } else {
-          toast({
-            title: "Orçamento muito apertado ⚠️",
-            description: "Mesmo com opções econômicas, os custos de voo e hotel superam o budget. Considere alterar datas ou aumentar o orçamento.",
-            variant: "destructive",
-          });
-        }
-      } catch (err) {
-        console.error('Error generating economic itinerary:', err);
-        toast({
-          title: "Erro ao gerar roteiro econômico",
-          description: "Tente novamente em alguns instantes.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsGeneratingEconomic(false);
-      }
-    };
-    
-    // ZERO-OVERHEAD: Only show Reduction Strategy if FIXED COSTS exceed budget
-    // If only activities caused overflow, the generator should have adjusted them
-    const showReductionStrategy = !budgetValidation.isValid && 
-      budgetValidation.fixedCostsExceedBudget && 
-      budgetValidation.breakdown && 
-      budgetValidation.suggestions;
-    
-    if (showReductionStrategy) {
-      return (
-        <div className="min-h-screen bg-background pb-20">
-          {/* Header */}
-          <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  setGeneratedItinerary(null);
-                  setCurrentStep(1);
-                }}
-                className="p-2 hover:bg-muted rounded-lg transition-colors"
-              >
-                <ArrowLeft size={20} className="text-foreground" />
-              </button>
-              <div>
-                <h1 className="font-bold text-lg font-['Outfit'] text-foreground">
-                  ⚠️ Orçamento Insuficiente
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Os custos fixos (voo + hotel) excedem seu orçamento de R$ {userBudget.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </header>
-
-          <main className="px-4 py-6">
-            <ReductionStrategyPanel
-              userBudget={userBudget}
-              totalCost={budgetValidation.totalCost}
-              breakdown={budgetValidation.breakdown}
-              suggestions={budgetValidation.suggestions}
-              destination={generatedItinerary.destination}
-              days={experienceDays}
-              villains={budgetVillains}
-              isGeneratingEconomic={isGeneratingEconomic}
-              onApplySuggestion={(suggestionId) => {
-                toast({
-                  title: "Estratégia aplicada! 🌿",
-                  description: "Regenerando roteiro com as novas configurações...",
-                });
-                // For now, just regenerate
-                handleGenerateItinerary();
-              }}
-              onGenerateEconomic={handleGenerateEconomicVersion}
-              onActivateAuction={(activityName, targetPrice) => {
-                setAuctionModal({ isOpen: true, activityName, activityType: 'activity' });
-              }}
-            />
-          </main>
-          
-          {/* Auction Modal */}
-          {auctionModal && (
-            <ReverseAuctionModal
-              isOpen={auctionModal.isOpen}
-              onClose={() => setAuctionModal(null)}
-              item={auctionModal.item}
-              activityName={auctionModal.activityName}
-              activityType={auctionModal.activityType}
-              destination={generatedItinerary.destination}
-              estimatedPrice={auctionModal.item?.cost}
-            />
-          )}
-          <Toaster />
+  const renderHub = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center px-4 py-8"
+    >
+      <div className="max-w-3xl w-full text-center mb-10">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium mb-5">
+          <Plane className="w-3.5 h-3.5" />
+          Nova viagem
         </div>
-      );
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // NORMAL ITINERARY RENDER — Budget is valid
-    // ═══════════════════════════════════════════════════════════════
-    return (
-      <div className="min-h-screen bg-[#0f172a] pb-20">
-        {/* Header */}
-        <header className="sticky top-0 z-40 bg-[#0f172a]/80 backdrop-blur-lg border-b border-[#334155] px-4 py-3">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                setGeneratedItinerary(null);
-                setCurrentStep(1);
-              }}
-              className="p-2 hover:bg-[#1e293b] rounded-lg transition-colors"
-            >
-              <ArrowLeft size={20} className="text-[#f8fafc]" />
-            </button>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-0.5">
-                <h1 className="font-bold text-lg font-['Outfit'] text-[#f8fafc]">
-                  Teu roteiro pra {generatedItinerary.destination} está pronto! 🌿
-                </h1>
-                <span className={cn(
-                  "px-2 py-0.5 rounded-full text-xs font-medium",
-                  calculatedTier === 'luxury' ? "bg-amber-500/20 text-amber-500" :
-                  calculatedTier === 'premium' ? "bg-emerald-500/20 text-emerald-500" :
-                  calculatedTier === 'comfort' ? "bg-sky-500/20 text-sky-500" :
-                  "bg-slate-400/20 text-slate-400"
-                )}>
-                  {tierConfig.icon} {tierConfig.label}
-                </span>
-              </div>
-              <p className="text-sm text-[#94a3b8]">
-                {format(startDate, 'dd/MM')} - {format(endDate, 'dd/MM')} • R$ {generatedItinerary.estimatedBudget.toLocaleString()} estimado
-              </p>
-            </div>
-          </div>
-        </header>
-
-        <main className="px-4 py-6">
-          {/* Trip Header Summary */}
-          <TripHeaderSummary
-            destination={generatedItinerary.destination}
-            country={destinationCountries[generatedItinerary.destination] || 'País'}
-            emoji={destinationEmojis[generatedItinerary.destination] || '✈️'}
-            startDate={startDate}
-            endDate={endDate}
-            totalDays={totalDays}
-            experienceDays={experienceDays}
-            budget={tripData.budgetAmount || generatedItinerary.estimatedBudget}
-            travelers={tripData.travelers}
-            priorities={tripData.priorities}
-            jetLagEnabled={tripData.jetLagModeEnabled}
-            jetLagImpact={jetLagInfo?.level}
-            arrivalDate={addDays(startDate, 1)}
-          />
-          
-          {/* Timeline Overview */}
-          <TripTimeline
-            startDate={startDate}
-            days={timelineData}
-            totalBudget={tripData.budgetAmount || generatedItinerary.estimatedBudget}
-            totalSpent={totalSpent + outboundFlight.totalPrice + returnFlight.totalPrice}
-          />
-
-          {/* Budget Occupation - Shows how well budget is being utilized */}
-          <BudgetOccupation
-            budget={userBudget}
-            costs={{
-              flights: outboundFlight.totalPrice + returnFlight.totalPrice,
-              accommodation: experienceDays * 480,
-              activities: activityCost,
-              food: foodCost + transportCost,
-            }}
-            tier={calculatedTier}
-            className="mb-6"
-          />
-
-          {/* Compact Budget Header - Always visible */}
-          <CompactBudgetHeader
-            totalSpent={totalSpent + outboundFlight.totalPrice + returnFlight.totalPrice}
-            totalBudget={userBudget}
-            isOverBudget={checkBudgetOverflow(totalSpent + outboundFlight.totalPrice + returnFlight.totalPrice, userBudget).isOverBudget}
-            overflowPercent={checkBudgetOverflow(totalSpent + outboundFlight.totalPrice + returnFlight.totalPrice, userBudget).percentage}
-          />
-
-          {/* Day Navigator with Real Dates */}
-          <DayNavigator
-            startDate={startDate}
-            totalDays={totalDaysWithTransit}
-            selectedDay={selectedDay}
-            onDayChange={handleDayChange}
-            jetLagModeEnabled={tripData.jetLagModeEnabled}
-            icons={dayIcons}
-            titles={dayTitles}
-            hasTransitDay={hasTransitDay}
-          />
-
-          {/* Transit Day Info */}
-          {isTransitDay && (
-            <div className="bg-[#0ea5e9]/10 border border-[#0ea5e9] rounded-2xl p-4 mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">✈️</span>
-                <span className="font-semibold text-[#f8fafc] font-['Outfit']">
-                  Dia de Trânsito
-                </span>
-              </div>
-              <p className="text-[#94a3b8] text-sm mb-3">
-                Hoje você estará viajando para {generatedItinerary.destination}. 
-                {arrivalInfo?.nextDay && ` Chegada prevista: ${format(addDays(startDate, 1), 'dd/MM')} às ${arrivalInfo.arrivalTime}`}
-              </p>
-              <p className="text-[#f8fafc] text-sm italic">
-                "Descansa no voo que amanhã a aventura começa!" 🌿
-              </p>
-            </div>
-          )}
-
-          {/* Jet Lag Mode Banner - Show on first experience day */}
-          {tripData.jetLagModeEnabled && isFirstExperienceDay && jetLagInfo && jetLagInfo.level !== 'BAIXO' && (
-            <div 
-              className="border rounded-2xl p-4 mb-6"
-              style={{ 
-                backgroundColor: 'rgba(234, 179, 8, 0.08)',
-                borderColor: '#eab308' 
-              }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Brain size={20} className="text-[#eab308]" />
-                <span className="font-semibold text-[#f8fafc] font-['Outfit']">
-                  Biology-Aware AI Ativa
-                </span>
-              </div>
-              <p className="text-[#94a3b8] text-sm mb-3">
-                Detectamos +{Math.abs(jetLagInfo.diff)}h de fuso horário. O Dia 1 foi otimizado para neutralização de Jet Lag.
-              </p>
-              <p className="text-[#f8fafc] text-sm italic">
-                "Seu corpo vai agradecer. Amanhã você ataca com tudo — hoje é só curtir a chegada!" 🌿
-              </p>
-            </div>
-          )}
-          
-          {/* Flight Anchor Card - Transit Day */}
-          {isTransitDay && (
-            <div className="mb-6">
-              <MinimalFlightCard
-                type="outbound"
-                flight={outboundFlight}
-                timezoneDiff={jetLagInfo?.diff}
-                onSearchOffers={() => setAuctionModal({ 
-                  isOpen: true, 
-                  item: {
-                    type: 'flight',
-                    id: 'outbound-flight',
-                    name: `Voo ${outboundFlight.originCode} → ${outboundFlight.destinationCode}`,
-                    cost: outboundFlight.totalPrice,
-                    origin: outboundFlight.origin,
-                    originCode: outboundFlight.originCode,
-                    destination: outboundFlight.destination,
-                    destinationCode: outboundFlight.destinationCode,
-                    departureDate: outboundFlight.departureDate,
-                    departureTime: outboundFlight.departureTime,
-                    arrivalTime: outboundFlight.arrivalTime,
-                    duration: outboundFlight.duration,
-                    airline: outboundFlight.airline,
-                    flightClass: 'Econômica',
-                    travelers: outboundFlight.travelers,
-                  },
-                  activityName: 'Voo de Ida',
-                  activityType: 'flight' 
-                })}
-              />
-            </div>
-          )}
-          
-          {/* Flight Anchor Card - Last Day */}
-          {selectedDay === totalDaysWithTransit && (
-            <div className="mb-6">
-              <MinimalFlightCard
-                type="return"
-                flight={returnFlight}
-                onSearchOffers={() => setAuctionModal({ 
-                  isOpen: true, 
-                  item: {
-                    type: 'flight',
-                    id: 'return-flight',
-                    name: `Voo ${returnFlight.originCode} → ${returnFlight.destinationCode}`,
-                    cost: returnFlight.totalPrice,
-                    origin: returnFlight.origin,
-                    originCode: returnFlight.originCode,
-                    destination: returnFlight.destination,
-                    destinationCode: returnFlight.destinationCode,
-                    departureDate: returnFlight.departureDate,
-                    departureTime: returnFlight.departureTime,
-                    arrivalTime: returnFlight.arrivalTime,
-                    duration: returnFlight.duration,
-                    airline: returnFlight.airline,
-                    flightClass: 'Econômica',
-                    travelers: returnFlight.travelers,
-                  },
-                  activityName: 'Voo de Volta',
-                  activityType: 'flight' 
-                })}
-              />
-            </div>
-          )}
-
-          {/* Day Activities - Only show if not transit day and we have activities */}
-          {!isTransitDay && currentItineraryDay && (
-            <div
-              className={`transition-opacity duration-300 ${
-                isTransitioning ? 'opacity-0' : 'opacity-100'
-              }`}
-            >
-              <h3 className="font-semibold text-lg mb-4 text-[#f8fafc] font-['Outfit']">
-                {format(currentDayDate, 'EEEE dd/MM', { locale: ptBR })} — {currentItineraryDay.title}
-              </h3>
-              <div className="space-y-4">
-                {currentItineraryDay.activities.map((activity, index) => {
-                  const activityKey = `day${currentItineraryDay.day}-act${index}`;
-                  const isPinned = pinnedActivities.has(activityKey);
-                  
-                  // Build minimal activity data
-                  const minimalActivity = {
-                    id: activityKey,
-                    time: activity.time,
-                    name: activity.name,
-                    description: activity.description,
-                    duration: activity.duration,
-                    type: activity.type,
-                    cost: activity.cost,
-                    costBreakdown: activity.cost > 0 ? `~R$ ${Math.round(activity.cost / tripData.travelers)}/pessoa × ${tripData.travelers}` : undefined,
-                    status: isPinned ? 'pinned' as const : 'planned' as const,
-                    clanTip: index % 3 === 0 ? { text: getClanTip(activity.type).split('—')[0].trim(), author: getClanTip(activity.type).split('—')[1]?.trim() || '@Clã' } : undefined,
-                  };
-                  
-                  return (
-                    <MinimalActivityCard
-                      key={activityKey}
-                      activity={minimalActivity}
-                      date={currentDayDate}
-                      isPinned={isPinned}
-                      dailyBudget={dailyBudget}
-                      onTogglePin={() => togglePinActivity(activityKey)}
-                      onOpenAuction={() => setAuctionModal({ 
-                        isOpen: true, 
-                        item: {
-                          type: 'activity',
-                          id: activityKey,
-                          name: activity.name,
-                          cost: activity.cost,
-                          activityDate: currentDayDate,
-                          activityTime: activity.time,
-                          activityDuration: activity.duration,
-                          includes: activity.description.split(',').map(s => s.trim()).filter(Boolean).slice(0, 3),
-                        },
-                        activityName: activity.name, 
-                        activityType: activity.type 
-                      })}
-                      onSwap={() => {}}
-                      onRemove={() => {}}
-                    />
-                  );
-                })}
-              </div>
-              
-              {/* Daily Financial Summary */}
-              <DailyFinancialSummary
-                date={currentDayDate}
-                expenses={currentDayExpenses}
-                averageDailySpend={averageDailySpend}
-                tip={isFirstExperienceDay
-                  ? "Dia de chegada — gastos mínimos, foco em adaptação!"
-                  : selectedDay === totalDaysWithTransit 
-                    ? "Último dia — aproveite cada momento!"
-                    : undefined
-                }
-              />
-            </div>
-          )}
-
-          {/* Clan Tips */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-4 font-['Outfit'] text-[#f8fafc]">💡 Dicas de Ouro</h2>
-            <div className="space-y-3">
-              {generatedItinerary.clanTips.map((tip, index) => (
-                <div
-                  key={index}
-                  className="bg-[#eab308]/10 border-l-2 border-[#eab308] rounded-r-xl p-4"
-                >
-                  <p className="text-[#f8fafc] font-['Plus_Jakarta_Sans']">
-                    {tip.icon} {tip.tip}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Similar Trips */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-4 font-['Outfit'] text-[#f8fafc]">
-              🌿 Inspirado no Clã
-            </h2>
-            <p className="text-[#94a3b8] text-sm mb-3">Outros viajantes também fizeram:</p>
-            <div className="grid grid-cols-1 gap-3">
-              {generatedItinerary.similarTrips.map((trip, index) => (
-                <div
-                  key={index}
-                  className="bg-[#1e293b] border border-[#334155] rounded-xl p-4 flex items-center justify-between"
-                >
-                  <div>
-                    <p className="font-semibold text-[#f8fafc] font-['Outfit']">{trip.destination}</p>
-                    <p className="text-sm text-[#94a3b8]">
-                      {trip.days} dias • R$ {trip.budget.toLocaleString()}
-                    </p>
-                  </div>
-                  <span className="text-[#10b981] text-sm font-medium">{trip.match} match</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Save Button */}
-          <button
-            onClick={handleSaveTrip}
-            className="w-full py-4 bg-gradient-to-r from-[#10b981] to-[#0ea5e9] text-white rounded-2xl font-semibold font-['Outfit'] text-lg transition-all hover:shadow-lg hover:shadow-[#10b981]/30"
-          >
-            Salvar em Minhas Viagens →
-          </button>
-        </main>
-
-        {/* Bottom Nav */}
-        <BottomNav currentPath={location.pathname} />
-        
-        {/* Reverse Auction Modal */}
-        {auctionModal && (
-          <ReverseAuctionModal
-            isOpen={auctionModal.isOpen}
-            onClose={() => setAuctionModal(null)}
-            item={auctionModal.item}
-            activityName={auctionModal.activityName}
-            activityType={auctionModal.activityType}
-            destination={generatedItinerary.destination}
-            estimatedPrice={auctionModal.item?.cost}
-          />
-        )}
-        
-        <Toaster />
-      </div>
-    );
-  }
-
-  // Wizard Steps
-  return (
-    <div className="min-h-screen bg-[#0f172a] pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#0f172a]/80 backdrop-blur-lg border-b border-[#334155] px-4 py-3">
-        <div className="flex items-center gap-3 mb-3">
-          <img src={kinuLogo} alt="KINU" className="h-8 w-8 object-contain" />
-          <div>
-            <h1 className="font-bold text-xl font-['Outfit'] text-[#f8fafc]">O Nexo 🧭</h1>
-            <p className="text-sm text-[#94a3b8]">Me conta sobre tua próxima aventura...</p>
-          </div>
-        </div>
-        {/* Progress Bar */}
-        <div className="flex gap-2">
-          {[1, 2, 3, 4, 5].map((step) => (
-            <div
-              key={step}
-              className={`flex-1 h-1 rounded-full transition-colors ${
-                step <= currentStep ? 'bg-[#10b981]' : 'bg-[#334155]'
-              }`}
-            />
-          ))}
-        </div>
-      </header>
-
-      <main className="px-4 py-6">
-        {/* Step 1: Destination with Supabase Autocomplete */}
-        {currentStep === 1 && (
-          <Step1Destination
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            tripData={tripData}
-            setTripData={setTripData}
-            handleSelectDestination={handleSelectDestination}
-            onNext={handleNext}
-          />
-        )}
-
-        {/* Step 2: Dates + Flight Times + Biology-Aware AI */}
-        {currentStep === 2 && (
-          <Step2FlightDates 
-            tripData={tripData} 
-            setTripData={setTripData} 
-            calculateDays={calculateDays}
-          />
-        )}
-
-        {/* Step 3: Travelers */}
-        {currentStep === 3 && (
-          <div className="animate-fade-in">
-            <h2 className="text-2xl font-bold mb-6 font-['Outfit'] text-[#f8fafc]">
-              Quem vai contigo nessa jornada?
-            </h2>
-            <div className="mb-6">
-              <label className="block text-sm text-[#94a3b8] mb-3">Número de viajantes</label>
-              <div className="flex items-center justify-center gap-6">
-                <button
-                  onClick={() => setTripData((prev) => ({ ...prev, travelers: Math.max(1, prev.travelers - 1) }))}
-                  className="w-12 h-12 bg-[#1e293b] border border-[#334155] rounded-xl flex items-center justify-center text-[#f8fafc] text-2xl hover:bg-[#10b981]/20"
-                >
-                  -
-                </button>
-                <span className="text-4xl font-bold text-[#f8fafc] font-['Outfit'] w-16 text-center">
-                  {tripData.travelers}
-                </span>
-                <button
-                  onClick={() => setTripData((prev) => ({ ...prev, travelers: prev.travelers + 1 }))}
-                  className="w-12 h-12 bg-[#1e293b] border border-[#334155] rounded-xl flex items-center justify-center text-[#f8fafc] text-2xl hover:bg-[#10b981]/20"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm text-[#94a3b8] mb-3">Tipo de viagem</label>
-              <div className="grid grid-cols-2 gap-3">
-                {travelTypes.map((type) => (
-                  <button
-                    key={type.id}
-                    onClick={() => setTripData((prev) => ({ ...prev, travelType: type.id }))}
-                    className={`p-4 rounded-xl border transition-all ${
-                      tripData.travelType === type.id
-                        ? 'bg-[#10b981]/20 border-[#10b981]'
-                        : 'bg-[#1e293b] border-[#334155] hover:border-[#10b981]/50'
-                    }`}
-                  >
-                    <span className="text-2xl">{type.icon}</span>
-                    <p className="font-semibold text-[#f8fafc] font-['Outfit'] mt-1">{type.label}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Budget - Free Input with Classification */}
-        {currentStep === 4 && (
-          <div className="animate-fade-in">
-            <h2 className="text-2xl font-bold mb-6 font-['Outfit'] text-[#f8fafc]">
-              Qual o fôlego do teu bolso?
-            </h2>
-            
-            {/* Free Input */}
-            <div className="mb-6">
-              <label className="block text-sm text-[#94a3b8] mb-2">Teu orçamento total</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94a3b8] font-medium">R$</span>
-                <input
-                  type="number"
-                  placeholder="Digite seu orçamento"
-                  value={tripData.budgetAmount || ''}
-                  onChange={(e) => setTripData((prev) => ({ ...prev, budgetAmount: parseInt(e.target.value) || 0 }))}
-                  className="w-full pl-12 pr-4 py-4 bg-[#1e293b] border border-[#334155] rounded-xl text-[#f8fafc] text-xl font-semibold placeholder-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#10b981]"
-                />
-              </div>
-              
-              {/* Budget Classification */}
-              {tripData.budgetAmount > 0 && (
-                <div className={`mt-4 p-4 rounded-xl border-l-4 ${
-                  getBudgetClassification(tripData.budgetAmount)?.type === 'economico' ? 'bg-[#10b981]/10 border-[#10b981]' :
-                  getBudgetClassification(tripData.budgetAmount)?.type === 'conforto' ? 'bg-[#0ea5e9]/10 border-[#0ea5e9]' :
-                  'bg-[#eab308]/10 border-[#eab308]'
-                }`}>
-                  <p className="text-[#f8fafc] font-semibold font-['Outfit']">
-                    {getBudgetClassification(tripData.budgetAmount)?.label}
-                  </p>
-                  <p className="text-[#94a3b8] text-sm">
-                    {getBudgetClassification(tripData.budgetAmount)?.message}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Quick Presets */}
-            <div>
-              <p className="text-sm text-[#94a3b8] mb-3">Ou escolhe um modo rápido:</p>
-              <div className="space-y-3">
-                {budgetPresets.map((preset) => (
-                  <button
-                    key={preset.id}
-                    onClick={() => handleBudgetPreset(preset)}
-                    className={`w-full p-4 rounded-xl border transition-all text-left ${
-                      tripData.budgetType === preset.id
-                        ? 'bg-[#10b981]/20 border-[#10b981]'
-                        : 'bg-[#1e293b] border-[#334155] hover:border-[#10b981]/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{preset.icon}</span>
-                      <div>
-                        <p className="font-semibold text-[#f8fafc] font-['Outfit']">{preset.label}</p>
-                        <p className="text-sm text-[#94a3b8]">
-                          R$ {preset.min.toLocaleString()} - {preset.max.toLocaleString()} • {preset.description}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 5: Priorities */}
-        {currentStep === 5 && (
-          <div className="animate-fade-in">
-            <h2 className="text-2xl font-bold mb-2 font-['Outfit'] text-[#f8fafc]">
-              O que não pode faltar?
-            </h2>
-            <p className="text-[#94a3b8] mb-6">Seleciona até 3 prioridades</p>
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {priorityOptions.map((priority) => (
-                <button
-                  key={priority.id}
-                  onClick={() => togglePriority(priority.id)}
-                  className={`p-4 rounded-xl border transition-all ${
-                    tripData.priorities.includes(priority.id)
-                      ? 'bg-[#10b981]/20 border-[#10b981]'
-                      : 'bg-[#1e293b] border-[#334155] hover:border-[#10b981]/50'
-                  } ${tripData.priorities.length >= 3 && !tripData.priorities.includes(priority.id) ? 'opacity-50' : ''}`}
-                  disabled={tripData.priorities.length >= 3 && !tripData.priorities.includes(priority.id)}
-                >
-                  <span className="text-2xl">{priority.icon}</span>
-                  <p className="font-semibold text-[#f8fafc] font-['Outfit'] mt-1">{priority.label}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Navigation Buttons */}
-        <div className="flex gap-3 mt-8">
-          {currentStep > 1 && (
-            <button
-              onClick={handleBack}
-              className="flex-1 py-4 bg-[#1e293b] border border-[#334155] text-[#f8fafc] rounded-xl font-semibold font-['Outfit'] flex items-center justify-center gap-2 hover:bg-[#1e293b]/80"
-            >
-              <ArrowLeft size={20} />
-              Voltar
-            </button>
-          )}
-          {currentStep < 5 ? (
-            <button
-              onClick={handleNext}
-              disabled={!canProceed()}
-              className={`flex-1 py-4 rounded-xl font-semibold font-['Outfit'] flex items-center justify-center gap-2 transition-all ${
-                canProceed()
-                  ? 'bg-gradient-to-r from-[#10b981] to-[#0ea5e9] text-white hover:shadow-lg hover:shadow-[#10b981]/30'
-                  : 'bg-[#334155] text-[#94a3b8] cursor-not-allowed'
-              }`}
-            >
-              Próximo
-              <ArrowRight size={20} />
-            </button>
-          ) : (
-            <button
-              onClick={handleGenerateItinerary}
-              disabled={!canProceed()}
-              className={`flex-1 py-4 rounded-xl font-semibold font-['Outfit'] text-lg transition-all ${
-                canProceed()
-                  ? 'bg-gradient-to-r from-[#10b981] to-[#0ea5e9] text-white hover:shadow-lg hover:shadow-[#10b981]/30'
-                  : 'bg-[#334155] text-[#94a3b8] cursor-not-allowed'
-              }`}
-            >
-              ✨ Tecer Minha Jornada
-            </button>
-          )}
-        </div>
-      </main>
-
-      {/* Bottom Nav */}
-      <BottomNav currentPath={location.pathname} />
-      <Toaster />
-    </div>
-  );
-};
-
-// Step 2 Component: Flight Dates + Biology-Aware AI
-interface Step2Props {
-  tripData: TripData;
-  setTripData: React.Dispatch<React.SetStateAction<TripData>>;
-  calculateDays: () => number;
-}
-
-const Step2FlightDates = ({ tripData, setTripData, calculateDays }: Step2Props) => {
-  // Calculate timezone and jet lag info
-  const timezoneInfo = useMemo(() => {
-    if (!tripData.destination) return null;
-    return calculateTimezone('São Paulo', tripData.destination);
-  }, [tripData.destination]);
-
-  const jetLagImpact = useMemo(() => {
-    if (!timezoneInfo) return null;
-    return calculateJetLagImpact(timezoneInfo.diff);
-  }, [timezoneInfo]);
-
-  const flightDuration = useMemo(() => {
-    if (!tripData.destination) return 11.5; // Default
-    const key = `São Paulo-${tripData.destination}`;
-    return FLIGHT_DURATION[key] || FLIGHT_DURATION[`Brasil-${tripData.destination}`] || 11.5;
-  }, [tripData.destination]);
-
-  const arrivalInfo = useMemo(() => {
-    if (!tripData.startDate || !tripData.departureTime || !timezoneInfo) return null;
-    return calculateArrivalTime(
-      tripData.departureTime,
-      tripData.startDate,
-      flightDuration,
-      timezoneInfo.diff
-    );
-  }, [tripData.startDate, tripData.departureTime, flightDuration, timezoneInfo]);
-
-  const getTimezoneCode = (city: string) => {
-    const codes: Record<string, string> = {
-      'São Paulo': 'BRT', 'Brasil': 'BRT', 'Paris': 'CET', 'Tóquio': 'JST',
-      'Nova York': 'EST', 'Londres': 'GMT', 'Dubai': 'GST', 'Sydney': 'AEDT',
-      'Lisboa': 'WET', 'Roma': 'CET', 'Barcelona': 'CET', 'Bali': 'WITA',
-      'Amsterdã': 'CET', 'Marrakech': 'WET', 'Santorini': 'EET',
-    };
-    return codes[city] || 'UTC';
-  };
-
-  return (
-    <div className="animate-fade-in">
-      <h2 className="text-2xl font-bold mb-2 font-['Outfit'] text-[#f8fafc]">
-        ✈️ Quando vai rolar essa aventura?
-      </h2>
-      <p className="text-[#94a3b8] mb-6 text-sm">Detalhes do voo para otimizar seu roteiro</p>
-      
-      {/* Outbound Flight */}
-      <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4 mb-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Plane size={18} className="text-[#10b981]" />
-          <span className="font-semibold text-[#f8fafc] font-['Outfit']">VOO DE IDA</span>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          {/* Date Picker */}
-          <div>
-            <label className="block text-xs text-[#94a3b8] mb-1">📅 Data partida</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  className={cn(
-                    "w-full flex items-center gap-2 px-3 py-2.5 bg-[#0f172a] border border-[#334155] rounded-xl text-left text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]",
-                    !tripData.startDate && "text-[#94a3b8]"
-                  )}
-                >
-                  <CalendarIcon size={14} className="text-[#94a3b8]" />
-                  {tripData.startDate ? (
-                    <span className="text-[#f8fafc]">{format(tripData.startDate, "dd/MM/yyyy")}</span>
-                  ) : (
-                    <span>Selecionar</span>
-                  )}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-[#1e293b] border-[#334155]" align="start">
-                <Calendar
-                  mode="single"
-                  selected={tripData.startDate}
-                  onSelect={(date) => setTripData((prev) => ({ ...prev, startDate: date }))}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto bg-[#1e293b] text-[#f8fafc]")}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          
-          {/* Time Picker */}
-          <div>
-            <label className="block text-xs text-[#94a3b8] mb-1">🕐 Horário partida</label>
-            <input
-              type="time"
-              value={tripData.departureTime}
-              onChange={(e) => setTripData((prev) => ({ ...prev, departureTime: e.target.value }))}
-              className="w-full px-3 py-2.5 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]"
-            />
-          </div>
-        </div>
-        
-        <p className="text-xs text-[#94a3b8]">
-          Origem: São Paulo (GRU) — Fuso: {getTimezoneCode('São Paulo')} (UTC-3)
+        <h1 className="text-3xl md:text-5xl font-bold text-slate-50 mb-4">
+          Como você quer planejar?
+        </h1>
+        <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto">
+          Escolha o caminho que faz mais sentido para sua próxima aventura. O KINU se adapta a você.
         </p>
       </div>
 
-      {/* Return Flight */}
-      <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4 mb-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Plane size={18} className="text-[#0ea5e9] rotate-180" />
-          <span className="font-semibold text-[#f8fafc] font-['Outfit']">VOO DE VOLTA</span>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <div>
-            <label className="block text-xs text-[#94a3b8] mb-1">📅 Data retorno</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  className={cn(
-                    "w-full flex items-center gap-2 px-3 py-2.5 bg-[#0f172a] border border-[#334155] rounded-xl text-left text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]",
-                    !tripData.endDate && "text-[#94a3b8]"
-                  )}
-                >
-                  <CalendarIcon size={14} className="text-[#94a3b8]" />
-                  {tripData.endDate ? (
-                    <span className="text-[#f8fafc]">{format(tripData.endDate, "dd/MM/yyyy")}</span>
-                  ) : (
-                    <span>Selecionar</span>
-                  )}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-[#1e293b] border-[#334155]" align="start">
-                <Calendar
-                  mode="single"
-                  selected={tripData.endDate}
-                  onSelect={(date) => setTripData((prev) => ({ ...prev, endDate: date }))}
-                  disabled={(date) => date < (tripData.startDate || new Date())}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto bg-[#1e293b] text-[#f8fafc]")}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          
-          <div>
-            <label className="block text-xs text-[#94a3b8] mb-1">🕐 Horário retorno</label>
-            <input
-              type="time"
-              value={tripData.returnTime}
-              onChange={(e) => setTripData((prev) => ({ ...prev, returnTime: e.target.value }))}
-              className="w-full px-3 py-2.5 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Flight Calculation Card */}
-      {tripData.destination && tripData.startDate && arrivalInfo && timezoneInfo && (
-        <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] border border-[#334155] rounded-2xl p-4 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="text-lg">📊</div>
-            <span className="font-semibold text-[#f8fafc] font-['Outfit']">CÁLCULO AUTOMÁTICO</span>
-          </div>
-          
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-[#94a3b8]">✈️</span>
-              <span className="text-[#f8fafc]">São Paulo → {tripData.destination}</span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <span className="text-[#94a3b8]">🛫</span>
-              <span className="text-[#94a3b8]">
-                Partida: {format(tripData.startDate, "dd/MM")} às {tripData.departureTime} (horário de Brasília)
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <span className="text-[#94a3b8]">⏱️</span>
-              <span className="text-[#94a3b8]">Duração estimada: ~{flightDuration}h</span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <span className="text-[#94a3b8]">🛬</span>
-              <span className="text-[#f8fafc]">
-                Chegada: {arrivalInfo.nextDay ? format(arrivalInfo.arrivalDate, "dd/MM") : format(tripData.startDate, "dd/MM")} às {arrivalInfo.arrivalTime} (horário de {tripData.destination})
-              </span>
-            </div>
-            
-            <div className="h-px bg-[#334155] my-3" />
-            
-            <div className="flex items-center gap-2">
-              <span className="text-lg">⏰</span>
-              <span className="text-[#f8fafc]">
-                Diferença de fuso: {timezoneInfo.diff >= 0 ? '+' : ''}{timezoneInfo.diff} horas
-              </span>
-            </div>
-            
-            {jetLagImpact && (
-              <div 
-                className="flex items-center gap-2 px-3 py-2 rounded-lg mt-2"
-                style={{ backgroundColor: jetLagImpact.bgColor }}
-              >
-                <Brain size={16} style={{ color: jetLagImpact.color }} />
-                <span style={{ color: jetLagImpact.color }} className="font-medium">
-                  Impacto no corpo: {jetLagImpact.level}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Biology-Aware AI Toggle */}
-      {jetLagImpact && jetLagImpact.level !== 'BAIXO' && (
-        <div 
-          className="border rounded-2xl p-4 mb-4 transition-all"
-          style={{ 
-            backgroundColor: 'rgba(234, 179, 8, 0.08)',
-            borderColor: '#eab308' 
-          }}
-        >
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="flex items-center gap-2">
-              <Brain size={20} className="text-[#eab308]" />
-              <span className="font-semibold text-[#f8fafc] font-['Outfit']">
-                Biology-Aware AI
-              </span>
-            </div>
-            <Switch
-              checked={tripData.jetLagModeEnabled}
-              onCheckedChange={(checked) => setTripData((prev) => ({ ...prev, jetLagModeEnabled: checked }))}
-              className="data-[state=checked]:bg-[#10b981]"
-            />
-          </div>
-          
-          <p className="text-[#f8fafc] text-sm mb-2">
-            Detectamos +{Math.abs(timezoneInfo?.diff || 0)}h de fuso horário.
-          </p>
-          <p className="text-[#94a3b8] text-sm">
-            {tripData.jetLagModeEnabled 
-              ? "O Dia 1 será otimizado para neutralização de Jet Lag. Atividades leves e tempo para adaptação."
-              : "⚠️ Roteiro normal ativado. Seu corpo pode reclamar, mas você manda!"
-            }
-          </p>
-        </div>
-      )}
-
-      {/* Days Summary */}
-      {calculateDays() > 0 && (
-        <div className="bg-[#10b981]/20 border border-[#10b981] rounded-xl p-4 mb-4">
-          <p className="text-[#f8fafc] font-['Outfit'] text-center text-lg">
-            ✨ {calculateDays()} dias de aventura!
-          </p>
-        </div>
-      )}
-
-      {/* Golden Tip */}
-      <div className="bg-[#eab308]/10 border-l-2 border-[#eab308] rounded-r-xl p-4">
-        <p className="text-[#f8fafc] text-sm">
-          💡 <span className="text-[#eab308] font-medium">Dica de Ouro:</span>{' '}
-          {tripData.departureTime >= '21:00' || tripData.departureTime <= '06:00'
-            ? "Voo noturno é ótimo! Tenta dormir no avião que você chega mais disposto. 🌿"
-            : "Evita alta temporada pra economizar até 40%"
-          }
-        </p>
-      </div>
-    </div>
-  );
-};
-
-const BottomNav = ({ currentPath }: { currentPath: string }) => {
-  const navigate = useNavigate();
-  
-  const navItems = [
-    { path: '/cla', icon: '🌿', label: 'Clã' },
-    { path: '/planejar', icon: '🧭', label: 'Planejar' },
-    { path: '/viagens', icon: '💼', label: 'Viagens' },
-    { path: '/conta', icon: '👤', label: 'Conta' },
-  ];
-
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-[#1e293b]/90 backdrop-blur-lg border-t border-[#334155] px-4 py-3">
-      <div className="flex justify-around items-center">
-        {navItems.map((item) => {
-          const isActive = currentPath === item.path;
-          return (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`flex flex-col items-center gap-1 ${isActive ? 'text-[#10b981]' : 'text-[#94a3b8]'}`}
-            >
-              {isActive && <div className="w-8 h-0.5 bg-[#10b981] rounded-full mb-1" />}
-              <span className="text-xl">{item.icon}</span>
-              <span className="text-xs font-['Plus_Jakarta_Sans']">{item.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
-  );
-};
-
-// Step 1 Component with Supabase Autocomplete
-interface Step1Props {
-  searchQuery: string;
-  setSearchQuery: (value: string) => void;
-  tripData: TripData;
-  setTripData: React.Dispatch<React.SetStateAction<TripData>>;
-  handleSelectDestination: (dest: string) => void;
-  onNext: () => void;
-}
-
-const Step1Destination = ({
-  searchQuery,
-  setSearchQuery,
-  tripData,
-  setTripData,
-  handleSelectDestination,
-  onNext
-}: Step1Props) => {
-  const { setIsOpen, sendMessage } = useKinuAI();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  
-  // Fetch cities from Supabase for autocomplete
-  const { data: searchResults, isLoading: searchLoading } = useCityAirportSearch(searchQuery);
-  const { data: cities } = useCities();
-  
-  // Helper function - must be defined before useMemo that uses it
-  const getDestinationEmoji = (name: string): string => {
-    const emojiMap: Record<string, string> = {
-      'Tóquio': '🏯', 'Tokyo': '🏯', 'Paris': '🗼', 'Roma': '🏛️', 'Rome': '🏛️',
-      'Lisboa': '🚃', 'Lisbon': '🚃', 'Barcelona': '🏖️', 'Nova York': '🗽', 'New York': '🗽',
-      'Londres': '🎡', 'London': '🎡', 'Dubai': '🏙️', 'Bangkok': '🛕', 'Singapore': '🌆',
-      'Singapura': '🌆', 'Sydney': '🦘', 'Amsterdã': '🌷', 'Amsterdam': '🌷',
-      'Madri': '💃', 'Madrid': '💃', 'Zurique': '🏔️', 'Zurich': '🏔️',
-      'Atenas': '🏛️', 'Athens': '🏛️', 'Cairo': '🏺', 'Bali': '🌴',
-    };
-    return emojiMap[name] || '✈️';
-  };
-
-  // Get popular destinations from Supabase
-  const popularFromDB = useMemo(() => {
-    if (!cities) return [];
-    return cities
-      .filter((c: any) => c.is_popular_destination)
-      .slice(0, 8)
-      .map((c: any) => ({
-        id: c.id,
-        name: c.name_pt,
-        country: c.country?.name_pt || '',
-        emoji: getDestinationEmoji(c.name_pt),
-      }));
-  }, [cities]);
-  
-  // Fallback to static if no DB data
-  const popularDestinationsData = popularFromDB.length > 0 
-    ? popularFromDB 
-    : [
-        { id: '1', name: 'Paris', country: 'França', emoji: '🗼' },
-        { id: '2', name: 'Tóquio', country: 'Japão', emoji: '🏯' },
-        { id: '3', name: 'Roma', country: 'Itália', emoji: '🏛️' },
-        { id: '4', name: 'Lisboa', country: 'Portugal', emoji: '🚃' },
-      ];
-
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setTripData((prev) => ({ ...prev, destination: value }));
-    setIsDropdownOpen(value.length >= 2);
-  };
-
-  const handleSelectFromSearch = (cityName: string, country?: string) => {
-    setSearchQuery(cityName);
-    setTripData((prev) => ({ ...prev, destination: cityName }));
-    setIsDropdownOpen(false);
-  };
-
-  const hasSearchResults = searchResults && (
-    (searchResults.cities && searchResults.cities.length > 0) || 
-    (searchResults.airports && searchResults.airports.length > 0)
-  );
-
-  return (
-    <div className="animate-fade-in">
-      <h2 className="text-2xl font-bold mb-6 mt-6 font-['Outfit'] text-foreground">
-        Pra onde o coração quer ir?
-      </h2>
-      
-      {/* Search Input with Autocomplete */}
-      <div className="relative mb-6">
-        <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="Busca um destino..."
-          value={searchQuery}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          onFocus={() => searchQuery.length >= 2 && setIsDropdownOpen(true)}
-          className="w-full pl-10 pr-10 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl w-full">
+        <HubCard
+          icon={<Map className="w-7 h-7" />}
+          title="Planejar pelo mapa-múndi"
+          subtitle="Explore o mundo e escolha visualmente"
+          accent="emerald"
+          onClick={() => setMode("map")}
         />
-        {searchLoading && (
-          <Loader2 size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin" />
-        )}
-        
-        {/* Search Results Dropdown */}
-        {isDropdownOpen && hasSearchResults && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
-            {/* Cities */}
-            {searchResults.cities && searchResults.cities.length > 0 && (
-              <div>
-                <div className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border">
-                  Cidades
-                </div>
-                {searchResults.cities.map((city: any) => (
-                  <button
-                    key={city.id}
-                    onClick={() => handleSelectFromSearch(city.name_pt, city.country?.name_pt)}
-                    className="w-full px-4 py-3 text-left hover:bg-muted/50 transition-colors flex items-center gap-3"
-                  >
-                    <span className="text-lg">{getDestinationEmoji(city.name_pt)}</span>
-                    <div>
-                      <div className="text-foreground font-medium">{city.name_pt}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {city.country?.name_pt}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-            
-            {/* Airports */}
-            {searchResults.airports && searchResults.airports.length > 0 && (
-              <div>
-                <div className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border">
-                  Aeroportos
-                </div>
-                {searchResults.airports.map((airport: any) => (
-                  <button
-                    key={airport.id}
-                    onClick={() => handleSelectFromSearch(
-                      airport.city?.name_pt || airport.name_pt,
-                      airport.country?.name_pt
-                    )}
-                    className="w-full px-4 py-3 text-left hover:bg-muted/50 transition-colors flex items-center gap-3"
-                  >
-                    <Plane size={18} className="text-accent" />
-                    <div>
-                      <div className="text-foreground font-medium">
-                        {airport.iata_code} — {airport.name_pt}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {airport.city?.name_pt}, {airport.country?.name_pt}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+        <HubCard
+          icon={<List className="w-7 h-7" />}
+          title="Planejar pela lista"
+          subtitle="Todos os destinos por região, com busca"
+          accent="indigo"
+          onClick={() => setMode("list")}
+        />
+        <HubCard
+          icon={<MessageCircle className="w-7 h-7" />}
+          title="Planejar com o KINU AI"
+          subtitle="Converse e o KINU monta com você"
+          accent="gold"
+          onClick={() => setIsOpen(true)}
+        />
+        <HubCard
+          icon={<Sparkles className="w-7 h-7" />}
+          title="Não sei para onde ir"
+          subtitle="Responda 5 perguntas e receba sugestões"
+          accent="rose"
+          onClick={() => setMode("quiz")}
+        />
+      </div>
+    </motion.div>
+  );
+
+  const renderBackButton = () => (
+    <button
+      onClick={() => {
+        setWizardActive(false);
+        setMode("hub");
+      }}
+      className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-100 transition-colors mb-4"
+    >
+      <ArrowLeft className="w-4 h-4" />
+      Voltar
+    </button>
+  );
+
+  const renderMapMode = () => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="h-[calc(100vh-80px)] flex flex-col"
+    >
+      <div className="px-4 py-3 md:px-6 md:py-4">
+        {renderBackButton()}
+        <h2 className="text-xl font-semibold text-slate-100">Mapa-múndi</h2>
+        <p className="text-sm text-slate-400">Toque em uma cidade para começar.</p>
+      </div>
+      <div className="flex-1 min-h-0 px-4 pb-4 md:px-6 md:pb-6">
+        <DestinationWorldMap onSelectCity={handleSelectCity} />
+      </div>
+    </motion.div>
+  );
+
+  const renderListMode = () => {
+    if (selectedCountry) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="min-h-[calc(100vh-80px)] px-4 py-3 md:px-6 md:py-4"
+        >
+          {renderBackButton()}
+          <button
+            onClick={() => setSelectedCountry(null)}
+            className="text-sm text-slate-400 hover:text-slate-100 flex items-center gap-1 mb-2"
+          >
+            <ChevronRight className="w-3 h-3 rotate-180" />
+            {selectedCountry.country}
+          </button>
+          <h2 className="text-xl font-semibold text-slate-100 mb-4">
+            Cidades em {selectedCountry.country} {selectedCountry.flag}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {selectedCountry.cities.map((city) => (
+              <CityCard
+                key={city.name}
+                city={city}
+                country={selectedCountry}
+                onSelect={() => handleSelectCity(city.name)}
+              />
+            ))}
+          </div>
+        </motion.div>
+      );
+    }
+
+    if (selectedRegion) {
+      const countries = DESTINATION_CATALOG[selectedRegion];
+      return (
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="min-h-[calc(100vh-80px)] px-4 py-3 md:px-6 md:py-4"
+        >
+          {renderBackButton()}
+          <button
+            onClick={() => setSelectedRegion(null)}
+            className="text-sm text-slate-400 hover:text-slate-100 flex items-center gap-1 mb-2"
+          >
+            <ChevronRight className="w-3 h-3 rotate-180" />
+            {selectedRegion}
+          </button>
+          <h2 className="text-xl font-semibold text-slate-100 mb-4">{selectedRegion}</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {countries.map((country) => (
+              <CountryCard
+                key={country.country}
+                country={country}
+                onSelect={() => setSelectedCountry(country)}
+              />
+            ))}
+          </div>
+        </motion.div>
+      );
+    }
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -12 }}
+        className="min-h-[calc(100vh-80px)] px-4 py-3 md:px-6 md:py-4"
+      >
+        {renderBackButton()}
+        <h2 className="text-xl font-semibold text-slate-100 mb-4">Todos os destinos</h2>
+
+        <div className="relative mb-5">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Input
+            type="text"
+            placeholder="Buscar cidade ou país..."
+            value={listSearch}
+            onChange={(e) => setListSearch(e.target.value)}
+            className="pl-10 bg-slate-900/60 border-slate-700 text-slate-100 placeholder:text-slate-500 focus-visible:ring-emerald-500"
+          />
+        </div>
+
+        {filteredResults && filteredResults.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filteredResults.map(({ city, country }) => (
+              <CityCard
+                key={city.name}
+                city={city}
+                country={country}
+                onSelect={() => handleSelectCity(city.name)}
+              />
+            ))}
+          </div>
+        ) : filteredResults && listSearch.trim() ? (
+          <p className="text-slate-500 text-sm">Nenhum destino encontrado para “{listSearch}”.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {REGIONS.map((region) => (
+              <RegionCard
+                key={region.id}
+                region={region}
+                onSelect={() => setSelectedRegion(region.id)}
+              />
+            ))}
           </div>
         )}
-      </div>
-      
-      {/* Popular Destinations */}
-      <div className="mb-4">
-        <p className="text-sm text-muted-foreground mb-3">Em alta no clã 🔥</p>
-        <div className="grid grid-cols-2 gap-3">
-          {popularDestinationsData.slice(0, 4).map((dest) => (
-            <button
-              key={dest.id || dest.name}
-              onClick={() => handleSelectDestination(dest.name)}
-              className={`p-4 rounded-xl border transition-all ${
-                tripData.destination === dest.name
-                  ? 'bg-primary/20 border-primary'
-                  : 'bg-card border-border hover:border-primary/50'
-              }`}
-            >
-              <span className="text-2xl">{dest.emoji}</span>
-              <p className="font-semibold text-foreground font-['Outfit'] mt-1">{dest.name}</p>
-              <p className="text-xs text-muted-foreground">{dest.country}</p>
-            </button>
-          ))}
-        </div>
-      </div>
+      </motion.div>
+    );
+  };
 
-      {/* Discovery Entry Point — Ask KINU AI */}
-      <button
-        onClick={async () => {
-          setIsOpen(true);
-          await sendMessage("Estou em dúvida sobre qual destino escolher para minha próxima viagem. Pode me ajudar a decidir? Me faça algumas perguntas para entender o que eu procuro.");
-        }}
-        className="w-full mt-4 p-4 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all flex items-center gap-3 text-left"
-      >
-        <span className="text-2xl">🤔</span>
-        <div>
-          <p className="font-semibold text-foreground font-['Outfit']">
-            Não sabe para onde ir? Pergunte ao KINU AI
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            O KINU vai fazer algumas perguntas e sugerir destinos perfeitos pra ti
-          </p>
-        </div>
-      </button>
+  const renderQuizMode = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center px-4 text-center"
+    >
+      {renderBackButton()}
+      <div className="max-w-md">
+        <Sparkles className="w-12 h-12 text-amber-400 mx-auto mb-4" />
+        <h2 className="text-2xl font-semibold text-slate-100 mb-2">Descoberta com o KINU</h2>
+        <p className="text-slate-400 mb-6">
+          O chat abriu embaixo. Responde umas perguntas rápidas e eu te indico destinos feitos para você.
+        </p>
+        <Button onClick={() => setIsOpen(true)} className="bg-emerald-600 hover:bg-emerald-500 text-white">
+          Abrir KINU AI
+        </Button>
+      </div>
+    </motion.div>
+  );
+
+  if (wizardActive) {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-950 overflow-y-auto">
+        <NewPlanningWizard onComplete={handleWizardComplete} onCancel={handleWizardCancel} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <AnimatePresence mode="wait">
+        {mode === "hub" && renderHub()}
+        {mode === "map" && renderMapMode()}
+        {mode === "list" && renderListMode()}
+        {mode === "quiz" && renderQuizMode()}
+      </AnimatePresence>
     </div>
   );
-};
+}
 
-export default Planejar;
+function RegionCard({
+  region,
+  onSelect,
+}: {
+  region: { id: RegionName; emoji: string };
+  onSelect: () => void;
+}) {
+  const count = DESTINATION_CATALOG[region.id].reduce((sum, c) => sum + c.cities.length, 0);
+  return (
+    <button
+      onClick={onSelect}
+      className="flex items-center justify-between p-4 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800/60 hover:border-emerald-500/30 transition-colors text-left"
+    >
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">{region.emoji}</span>
+        <div>
+          <p className="font-medium text-slate-100">{region.id}</p>
+          <p className="text-xs text-slate-500">{count} cidades</p>
+        </div>
+      </div>
+      <ChevronRight className="w-4 h-4 text-slate-600" />
+    </button>
+  );
+}
+
+function CountryCard({ country, onSelect }: { country: CountryEntry; onSelect: () => void }) {
+  return (
+    <button
+      onClick={onSelect}
+      className="flex items-center justify-between p-4 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800/60 hover:border-emerald-500/30 transition-colors text-left"
+    >
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">{country.flag}</span>
+        <div>
+          <p className="font-medium text-slate-100">{country.country}</p>
+          <p className="text-xs text-slate-500">{country.cities.length} cidades</p>
+        </div>
+      </div>
+      <ChevronRight className="w-4 h-4 text-slate-600" />
+    </button>
+  );
+}
+
+function CityCard({
+  city,
+  country,
+  onSelect,
+}: {
+  city: CityEntry;
+  country: CountryEntry;
+  onSelect: () => void;
+}) {
+  const isCurated = CURATED_CITIES.includes(city.name);
+  return (
+    <button
+      onClick={onSelect}
+      className="relative p-4 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800/60 hover:border-emerald-500/30 transition-colors text-left group"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xl">{country.flag}</span>
+        {isCurated && (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+            KINU
+          </span>
+        )}
+      </div>
+      <p className="font-medium text-slate-100 group-hover:text-emerald-100 transition-colors">{city.name}</p>
+      <p className="text-xs text-slate-500">{country.country}</p>
+    </button>
+  );
+}
