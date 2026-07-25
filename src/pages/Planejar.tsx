@@ -112,10 +112,6 @@ export default function Planejar() {
     setWizardActive(true);
   };
 
-  const handleWizardComplete = () => {
-    navigate("/viagens");
-  };
-
   const handleWizardCancel = () => {
     setWizardActive(false);
     setMode("hub");
