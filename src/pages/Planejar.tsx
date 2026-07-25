@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   Search,
   ChevronRight,
-  Globe2,
   Plane,
 } from "lucide-react";
 
