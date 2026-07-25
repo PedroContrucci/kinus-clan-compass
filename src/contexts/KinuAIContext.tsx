@@ -61,6 +61,7 @@ interface KinuAIContextType {
   pendingNavigation: { destino: string; ts: number; tripId?: string } | null;
   clearPendingNavigation: () => void;
   wizardPrefill: { destino: string; data_ida: string; data_volta: string; viajantes: number } | null;
+  setWizardPrefill: (prefill: { destino: string; data_ida: string; data_volta: string; viajantes: number } | null) => void;
   clearWizardPrefill: () => void;
 }
 
