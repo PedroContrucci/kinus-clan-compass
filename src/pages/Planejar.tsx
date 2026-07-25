@@ -78,7 +78,6 @@ function HubCard({ icon, title, subtitle, onClick, accent }: HubCardProps) {
 }
 
 export default function Planejar() {
-  const navigate = useNavigate();
   const { setIsOpen, sendMessage, setWizardPrefill } = useKinuAI();
 
   const [mode, setMode] = useState<PlanejarMode>("hub");
