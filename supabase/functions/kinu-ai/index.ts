@@ -99,7 +99,9 @@ AÇÕES ESTRUTURADAS (FERRAMENTAS): Quando o usuário PEDIR uma mudança na viag
 
 15. DATAS SEMPRE FUTURAS: hoje é a data do sistema. Se o usuário não disser o ano, assuma a PRÓXIMA ocorrência futura do período. NUNCA crie viagem com data passada; se as datas pedidas já passaram, confirme o ano com o usuário.
 
-16. SANIDADE DE ORÇAMENTO: se o orçamento parecer insuficiente para o destino, avise UMA única vez, com números concretos (estimativa de voo e hospedagem). Se o usuário insistir mesmo assim, CRIE a viagem normalmente — a decisão final é sempre do usuário. É PROIBIDO recusar ou adiar a criação por motivo de orçamento após o usuário insistir.`;
+16. SANIDADE DE ORÇAMENTO: se o orçamento parecer insuficiente para o destino, avise UMA única vez, com números concretos (estimativa de voo e hospedagem). Se o usuário insistir mesmo assim, CRIE a viagem normalmente — a decisão final é sempre do usuário. É PROIBIDO recusar ou adiar a criação por motivo de orçamento após o usuário insistir.
+
+17. REGRAS DE CURADORIA para consultar_lugares: (1) priorize rating >= 4.4 COM pelo menos 300 avaliações — volume valida a nota; (2) apresente no máximo 3-5 vereditos, nunca a lista crua; (3) declare a fonte: itens do catálogo KINU levam o selo 'curadoria KINU'; itens do Places são 'bem avaliados no Google, filtrados pelo critério KINU'; (4) adeque ao contexto da viagem (orçamento, interesses, crianças) quando existir; (5) se a busca falhar ou vier vazia, diga honestamente e sugira alternativas do catálogo.`;
 
 const KINU_TOOLS = [
   {
@@ -214,7 +216,79 @@ const KINU_TOOLS = [
       required: [],
     },
   },
+  {
+    name: "consultar_lugares",
+    description: "Busca lugares reais (restaurantes, atrações, serviços) em uma cidade via Google Places quando o catálogo curado não cobre a pergunta. Retorna os melhores candidatos com rating, volume de avaliações, faixa de preço e bairro para você CURAR a resposta.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "O que buscar, em português (ex.: 'melhor pizza')" },
+        city: { type: "string", description: "Cidade onde buscar (ex.: 'Rio de Janeiro')" },
+        type: { type: "string", description: "Categoria opcional (ex.: restaurante, museu, farmácia)" },
+      },
+      required: ["query", "city"],
+    },
+  },
 ];
+
+// Tools resolved entirely on the server (never sent to the client as proposed actions)
+const SERVER_RESOLVED_TOOLS = new Set(["consultar_lugares"]);
+
+async function resolveConsultarLugares(input: Record<string, unknown>): Promise<string> {
+  try {
+    const query = sanitizeText(input?.query, 120);
+    const city = sanitizeText(input?.city, 100);
+    const type = sanitizeText(input?.type, 60);
+    if (!query || !city) return JSON.stringify({ ok: false, reason: "parametros_insuficientes" });
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      return JSON.stringify({ ok: false, reason: "servico_indisponivel" });
+    }
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/google-places`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        apikey: SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({
+        action: "search_many",
+        query: type ? `${query} ${type}` : query,
+        destination: city,
+        limit: 8,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("consultar_lugares: places call failed", res.status);
+      return JSON.stringify({ ok: false, reason: "busca_falhou" });
+    }
+
+    const data = await res.json();
+    const results = Array.isArray(data?.results) ? data.results.slice(0, 8) : [];
+    if (results.length === 0) return JSON.stringify({ ok: true, city, query, results: [] });
+
+    return JSON.stringify({
+      ok: true,
+      city,
+      query,
+      results: results.map((r: Record<string, unknown>) => ({
+        name: r.name,
+        rating: r.rating,
+        userRatingsTotal: r.totalRatings,
+        priceLevel: r.priceLevel,
+        neighborhood: r.address,
+        openNow: r.openNow,
+      })),
+    });
+  } catch (err) {
+    console.error("consultar_lugares error:", err instanceof Error ? sanitizeUrl(err.message) : "unknown");
+    return JSON.stringify({ ok: false, reason: "busca_falhou" });
+  }
+}
 
 
 
@@ -472,50 +546,74 @@ serve(async (req) => {
     // Build messages array with history — user content isolated in structured block
     const userContent = `${contextStr}<user_message>\n${message}\n</user_message>`;
     
-    const messages: ChatMessage[] = [
+    const messages: Array<{ role: "user" | "assistant"; content: unknown }> = [
       ...history,
       { role: "user", content: userContent }
     ];
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1024,
-        system: systemPrompt,
-        tools: KINU_TOOLS,
-        messages: messages,
-      }),
-    });
+    let data: any = null;
+    let blocks: Array<Record<string, unknown>> = [];
 
-    if (!response.ok) {
-      console.error("AI API error:", response.status);
-      
-      if (response.status === 429) {
+    // Tool loop: server-resolved tools (consultar_lugares) are executed here and
+    // fed back to the model; client-resolved tools are returned as proposedActions.
+    for (let turn = 0; turn < 3; turn++) {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1024,
+          system: systemPrompt,
+          tools: KINU_TOOLS,
+          messages: messages,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("AI API error:", response.status);
+
+        if (response.status === 429) {
+          return new Response(
+            JSON.stringify({ error: "Muitas requisições. Aguarde um momento e tente novamente." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
         return new Response(
-          JSON.stringify({ error: "Muitas requisições. Aguarde um momento e tente novamente." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Erro ao processar mensagem. Tente novamente." }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      
-      return new Response(
-        JSON.stringify({ error: "Erro ao processar mensagem. Tente novamente." }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+
+      data = await response.json();
+      blocks = Array.isArray(data.content) ? data.content : [];
+
+      const serverCalls = blocks.filter(
+        (b) => b.type === "tool_use" && typeof b.name === "string" && SERVER_RESOLVED_TOOLS.has(b.name as string)
       );
+      if (serverCalls.length === 0) break;
+
+      const toolResults = [] as Array<Record<string, unknown>>;
+      for (const call of serverCalls) {
+        const result = call.name === "consultar_lugares"
+          ? await resolveConsultarLugares((call.input as Record<string, unknown>) ?? {})
+          : JSON.stringify({ ok: false, reason: "ferramenta_desconhecida" });
+        toolResults.push({ type: "tool_result", tool_use_id: call.id, content: result });
+      }
+
+      messages.push({ role: "assistant", content: blocks });
+      messages.push({ role: "user", content: toolResults });
     }
 
-    const data = await response.json();
-    const blocks: Array<Record<string, unknown>> = Array.isArray(data.content) ? data.content : [];
     const textParts = blocks
       .filter((b) => b.type === "text" && typeof b.text === "string")
       .map((b) => b.text as string);
     const proposedActions = blocks
-      .filter((b) => b.type === "tool_use" && typeof b.name === "string")
+      .filter((b) => b.type === "tool_use" && typeof b.name === "string" && !SERVER_RESOLVED_TOOLS.has(b.name as string))
       .map((b) => ({ type: b.name as string, params: (b.input as Record<string, unknown>) ?? {} }));
 
     const assistantMessage = textParts.join("\n\n").trim()
