@@ -546,50 +546,74 @@ serve(async (req) => {
     // Build messages array with history — user content isolated in structured block
     const userContent = `${contextStr}<user_message>\n${message}\n</user_message>`;
     
-    const messages: ChatMessage[] = [
+    const messages: Array<{ role: "user" | "assistant"; content: unknown }> = [
       ...history,
       { role: "user", content: userContent }
     ];
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1024,
-        system: systemPrompt,
-        tools: KINU_TOOLS,
-        messages: messages,
-      }),
-    });
+    let data: any = null;
+    let blocks: Array<Record<string, unknown>> = [];
 
-    if (!response.ok) {
-      console.error("AI API error:", response.status);
-      
-      if (response.status === 429) {
+    // Tool loop: server-resolved tools (consultar_lugares) are executed here and
+    // fed back to the model; client-resolved tools are returned as proposedActions.
+    for (let turn = 0; turn < 3; turn++) {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1024,
+          system: systemPrompt,
+          tools: KINU_TOOLS,
+          messages: messages,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("AI API error:", response.status);
+
+        if (response.status === 429) {
+          return new Response(
+            JSON.stringify({ error: "Muitas requisições. Aguarde um momento e tente novamente." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
         return new Response(
-          JSON.stringify({ error: "Muitas requisições. Aguarde um momento e tente novamente." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Erro ao processar mensagem. Tente novamente." }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      
-      return new Response(
-        JSON.stringify({ error: "Erro ao processar mensagem. Tente novamente." }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+
+      data = await response.json();
+      blocks = Array.isArray(data.content) ? data.content : [];
+
+      const serverCalls = blocks.filter(
+        (b) => b.type === "tool_use" && typeof b.name === "string" && SERVER_RESOLVED_TOOLS.has(b.name as string)
       );
+      if (serverCalls.length === 0) break;
+
+      const toolResults = [] as Array<Record<string, unknown>>;
+      for (const call of serverCalls) {
+        const result = call.name === "consultar_lugares"
+          ? await resolveConsultarLugares((call.input as Record<string, unknown>) ?? {})
+          : JSON.stringify({ ok: false, reason: "ferramenta_desconhecida" });
+        toolResults.push({ type: "tool_result", tool_use_id: call.id, content: result });
+      }
+
+      messages.push({ role: "assistant", content: blocks });
+      messages.push({ role: "user", content: toolResults });
     }
 
-    const data = await response.json();
-    const blocks: Array<Record<string, unknown>> = Array.isArray(data.content) ? data.content : [];
     const textParts = blocks
       .filter((b) => b.type === "text" && typeof b.text === "string")
       .map((b) => b.text as string);
     const proposedActions = blocks
-      .filter((b) => b.type === "tool_use" && typeof b.name === "string")
+      .filter((b) => b.type === "tool_use" && typeof b.name === "string" && !SERVER_RESOLVED_TOOLS.has(b.name as string))
       .map((b) => ({ type: b.name as string, params: (b.input as Record<string, unknown>) ?? {} }));
 
     const assistantMessage = textParts.join("\n\n").trim()
