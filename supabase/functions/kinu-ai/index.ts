@@ -216,7 +216,79 @@ const KINU_TOOLS = [
       required: [],
     },
   },
+  {
+    name: "consultar_lugares",
+    description: "Busca lugares reais (restaurantes, atrações, serviços) em uma cidade via Google Places quando o catálogo curado não cobre a pergunta. Retorna os melhores candidatos com rating, volume de avaliações, faixa de preço e bairro para você CURAR a resposta.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "O que buscar, em português (ex.: 'melhor pizza')" },
+        city: { type: "string", description: "Cidade onde buscar (ex.: 'Rio de Janeiro')" },
+        type: { type: "string", description: "Categoria opcional (ex.: restaurante, museu, farmácia)" },
+      },
+      required: ["query", "city"],
+    },
+  },
 ];
+
+// Tools resolved entirely on the server (never sent to the client as proposed actions)
+const SERVER_RESOLVED_TOOLS = new Set(["consultar_lugares"]);
+
+async function resolveConsultarLugares(input: Record<string, unknown>): Promise<string> {
+  try {
+    const query = sanitizeText(input?.query, 120);
+    const city = sanitizeText(input?.city, 100);
+    const type = sanitizeText(input?.type, 60);
+    if (!query || !city) return JSON.stringify({ ok: false, reason: "parametros_insuficientes" });
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      return JSON.stringify({ ok: false, reason: "servico_indisponivel" });
+    }
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/google-places`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        apikey: SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({
+        action: "search_many",
+        query: type ? `${query} ${type}` : query,
+        destination: city,
+        limit: 8,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("consultar_lugares: places call failed", res.status);
+      return JSON.stringify({ ok: false, reason: "busca_falhou" });
+    }
+
+    const data = await res.json();
+    const results = Array.isArray(data?.results) ? data.results.slice(0, 8) : [];
+    if (results.length === 0) return JSON.stringify({ ok: true, city, query, results: [] });
+
+    return JSON.stringify({
+      ok: true,
+      city,
+      query,
+      results: results.map((r: Record<string, unknown>) => ({
+        name: r.name,
+        rating: r.rating,
+        userRatingsTotal: r.totalRatings,
+        priceLevel: r.priceLevel,
+        neighborhood: r.address,
+        openNow: r.openNow,
+      })),
+    });
+  } catch (err) {
+    console.error("consultar_lugares error:", err instanceof Error ? sanitizeUrl(err.message) : "unknown");
+    return JSON.stringify({ ok: false, reason: "busca_falhou" });
+  }
+}
 
 
 
