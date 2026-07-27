@@ -69,6 +69,37 @@ serve(async (req) => {
       });
     }
 
+    if (action === "search_many") {
+      const limit = Math.min(Math.max(Number(body.limit) || 8, 1), 10);
+      const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": API_KEY,
+          "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.priceLevel,places.currentOpeningHours.openNow,places.googleMapsUri,places.primaryType",
+        },
+        body: JSON.stringify({
+          textQuery: `${query}, ${destination}`,
+          languageCode: "pt-BR",
+          maxResultCount: limit,
+        }),
+      });
+      const data = await response.json();
+      const results = (data.places || []).slice(0, limit).map((p: any) => ({
+        name: p.displayName?.text,
+        address: p.formattedAddress,
+        rating: p.rating,
+        totalRatings: p.userRatingCount,
+        priceLevel: p.priceLevel,
+        openNow: p.currentOpeningHours?.openNow,
+        mapsUrl: p.googleMapsUri,
+        type: p.primaryType,
+      }));
+      return new Response(JSON.stringify({ found: results.length > 0, results }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "details") {
       const url = `https://places.googleapis.com/v1/places/${placeId}`;
       const response = await fetch(url, {
