@@ -22,12 +22,12 @@ export interface KinuActionHandlers {
 function buildCuratedCatalog(city: string) {
   const data = destinationActivities[city];
   if (!data) return null;
-  return data.activities.slice(0, 35).map((a) => ({
+  return data.activities.slice(0, 60).map((a) => ({
     name: a.name,
     category: a.category,
     neighborhood: a.neighborhood,
     costBRL: a.estimatedCostBRL,
-    tip: a.tips?.[0] ?? "",
+    tip: (a.tips ?? []).slice(0, 2).join(' · '),
   }));
 }
 
