@@ -6198,316 +6198,129 @@ const fortalezaActivities: SuggestedActivity[] = [
 
 // Rio de Janeiro activities
 const rioActivities: SuggestedActivity[] = [
-  {
-    id: 'rio-cristo-corcovado',
-    name: 'Cristo Redentor (Trem do Corcovado)',
-    category: 'morning',
-    neighborhood: 'Cosme Velho',
-    rating: 4.8,
-    estimatedCostBRL: 160,
-    durationHours: 4,
-    dayOccupancy: 'half',
-    tips: ['O trem sobe pelo meio da Floresta da Tijuca — vá de janela', 'Compre ingresso com horário marcado para evitar fila', 'Manhã cedo tem menos gente e menos nuvem no topo'],
-    styleTags: ['culture', 'nature', 'family'],
-  },
-  {
-    id: 'rio-pao-de-acucar',
-    name: 'Pão de Açúcar (Bondinho)',
-    category: 'morning',
-    neighborhood: 'Urca',
-    rating: 4.8,
-    estimatedCostBRL: 170,
-    durationHours: 3,
-    dayOccupancy: 'half',
-    tips: ['São dois bondinhos: Morro da Urca e depois o Pão de Açúcar', 'Vista de 360° da Baía de Guanabara', 'Fim de manhã pega a melhor luz para fotos'],
-    styleTags: ['nature', 'family', 'romantic'],
-  },
-  {
-    id: 'rio-praia-copacabana',
-    name: 'Praia de Copacabana',
-    category: 'morning',
-    neighborhood: 'Copacabana',
-    rating: 4.7,
-    estimatedCostBRL: 0,
-    durationHours: 3,
-    tips: ['O calçadão de pedras portuguesas é assinatura de Burle Marx', 'Quiosques servem água de coco gelada o dia todo', 'Alugue cadeira e guarda-sol com os barraqueiros'],
-    styleTags: ['beach', 'family'],
-  },
-  {
-    id: 'rio-praia-ipanema',
-    name: 'Praia de Ipanema (Posto 9)',
-    category: 'morning',
-    neighborhood: 'Ipanema',
-    rating: 4.8,
-    estimatedCostBRL: 0,
-    durationHours: 3,
-    tips: ['Posto 9 é o coração jovem da praia', 'Aos domingos a orla fecha para carros — ótimo para pedalar', 'O pôr do sol no Arpoador fica a 10 minutos a pé'],
-    styleTags: ['beach', 'romantic'],
-  },
-  {
-    id: 'rio-jardim-botanico',
-    name: 'Jardim Botânico',
-    category: 'morning',
-    neighborhood: 'Jardim Botânico',
-    rating: 4.8,
-    estimatedCostBRL: 75,
-    durationHours: 3,
-    tips: ['A aleia de palmeiras imperiais é o cartão-postal', 'Orquidário e casa dos beija-flores imperdíveis', 'De manhã cedo é comum ver tucanos soltos'],
-    styleTags: ['nature', 'family', 'romantic'],
-  },
-  {
-    id: 'rio-museu-amanha',
-    name: 'Museu do Amanhã',
-    category: 'morning',
-    neighborhood: 'Centro (Praça Mauá)',
-    rating: 4.6,
-    estimatedCostBRL: 30,
-    durationHours: 2.5,
-    tips: ['Arquitetura futurista de Santiago Calatrava', 'Combine com o Boulevard Olímpico e o AquaRio ao lado', 'Às terças a entrada é gratuita — chegue cedo'],
-    styleTags: ['culture', 'family', 'art'],
-  },
-  {
-    id: 'rio-escadaria-selaron',
-    name: 'Escadaria Selarón e Lapa',
-    category: 'afternoon',
-    neighborhood: 'Lapa',
-    rating: 4.7,
-    estimatedCostBRL: 0,
-    durationHours: 2,
-    tips: ['215 degraus cobertos de azulejos de mais de 60 países', 'Os Arcos da Lapa ficam a 5 minutos a pé', 'Atenção com pertences — leve só o essencial'],
-    styleTags: ['culture', 'art'],
-  },
-  {
-    id: 'rio-parque-lage',
-    name: 'Parque Lage',
-    category: 'afternoon',
-    neighborhood: 'Jardim Botânico',
-    rating: 4.7,
-    estimatedCostBRL: 0,
-    durationHours: 2,
-    tips: ['O palacete tem café no pátio interno — cenário de cinema', 'Vista do Cristo emoldurada pela mata', 'Trilhas leves para caminhar na Floresta da Tijuca'],
-    styleTags: ['nature', 'romantic', 'art'],
-  },
-  {
-    id: 'rio-arpoador',
-    name: 'Pedra do Arpoador ao pôr do sol',
-    category: 'afternoon',
-    neighborhood: 'Ipanema',
-    rating: 4.8,
-    estimatedCostBRL: 0,
-    durationHours: 1.5,
-    tips: ['A multidão aplaude o pôr do sol — tradição carioca', 'Chegue 40 minutos antes para pegar lugar na pedra', 'Vista de Ipanema até o Dois Irmãos'],
-    styleTags: ['beach', 'romantic'],
-  },
-  {
-    id: 'rio-forte-copacabana',
-    name: 'Forte de Copacabana',
-    category: 'afternoon',
-    neighborhood: 'Copacabana',
-    rating: 4.7,
-    estimatedCostBRL: 20,
-    durationHours: 2,
-    tips: ['Museu histórico do Exército na ponta da praia', 'A filial da Confeitaria Colombo tem mesas de frente para o mar', 'Vista de toda a curva de Copacabana'],
-    styleTags: ['culture', 'history'],
-  },
-  {
-    id: 'rio-aquario',
-    name: 'AquaRio',
-    category: 'afternoon',
-    neighborhood: 'Centro (Gamboa)',
-    rating: 4.6,
-    estimatedCostBRL: 140,
-    durationHours: 2.5,
-    tips: ['Maior aquário marinho da América do Sul', 'O túnel submerso é o ponto alto para as crianças', 'Combine com o Museu do Amanhã na mesma região'],
-    styleTags: ['family'],
-  },
-  {
-    id: 'rio-mureta-urca',
-    name: 'Mureta da Urca',
-    category: 'afternoon',
-    neighborhood: 'Urca',
-    rating: 4.7,
-    estimatedCostBRL: 40,
-    durationHours: 2,
-    tips: ['Programa carioca raiz: petiscos do Bar Urca sentado na mureta', 'Vista da enseada de Botafogo com o Cristo ao fundo', 'Fim de tarde é o horário de ouro'],
-    styleTags: ['gastronomy', 'romantic', 'culture'],
-  },
-  {
-    id: 'rio-aprazivel',
-    name: 'Aprazível',
-    category: 'lunch',
-    neighborhood: 'Santa Teresa',
-    rating: 4.6,
-    estimatedCostBRL: 180,
-    durationHours: 2.5,
-    tips: ['Casarão em Santa Teresa com vista panorâmica da cidade', 'Cozinha brasileira contemporânea', 'Reserve mesa na varanda — a vista é o prato principal'],
-    styleTags: ['gastronomy', 'romantic'],
-  },
-  {
-    id: 'rio-braseiro-gavea',
-    name: 'Braseiro da Gávea',
-    category: 'lunch',
-    neighborhood: 'Gávea',
-    rating: 4.5,
-    estimatedCostBRL: 100,
-    durationHours: 2,
-    tips: ['Picanha no ponto perfeito, instituição carioca', 'Ponto de encontro no fim de semana', 'Não aceita reserva — chegue antes do meio-dia'],
-    styleTags: ['gastronomy', 'family'],
-  },
-  {
-    id: 'rio-confeitaria-colombo',
-    name: 'Confeitaria Colombo',
-    category: 'lunch',
-    neighborhood: 'Centro',
-    rating: 4.7,
-    estimatedCostBRL: 90,
-    durationHours: 1.5,
-    tips: ['Belle Époque carioca desde 1894 — espelhos e vitrais originais', 'Salgados e doces históricos no salão de chá', 'Combine com um passeio pelo Centro histórico'],
-    styleTags: ['gastronomy', 'culture', 'history'],
-  },
-  {
-    id: 'rio-galeto-sats',
-    name: "Galeto Sat's",
-    category: 'lunch',
-    neighborhood: 'Copacabana',
-    rating: 4.6,
-    estimatedCostBRL: 80,
-    durationHours: 1.5,
-    tips: ['Galeto na brasa desde 1962, no balcão', 'A farofa de dendê é obrigatória', 'Clássico absoluto da noite e do almoço carioca'],
-    styleTags: ['gastronomy'],
-  },
-  {
-    id: 'rio-casa-feijoada',
-    name: 'Casa da Feijoada',
-    category: 'lunch',
-    neighborhood: 'Ipanema',
-    rating: 4.5,
-    estimatedCostBRL: 130,
-    durationHours: 2,
-    tips: ['Feijoada completa servida todos os dias da semana', 'Caipirinha de boas-vindas na entrada', 'Porções generosas — vá com fome'],
-    styleTags: ['gastronomy', 'culture', 'family'],
-  },
-  {
-    id: 'rio-cervantes',
-    name: 'Cervantes',
-    category: 'lunch',
-    neighborhood: 'Copacabana',
-    rating: 4.5,
-    estimatedCostBRL: 60,
-    durationHours: 1,
-    tips: ['O sanduíche de pernil com abacaxi é lendário', 'Balcão histórico aberto até de madrugada', 'Peça o chope bem gelado para acompanhar'],
-    styleTags: ['gastronomy'],
-  },
-  {
-    id: 'rio-aconchego-carioca',
-    name: 'Aconchego Carioca',
-    category: 'dinner',
-    neighborhood: 'Praça da Bandeira',
-    rating: 4.6,
-    estimatedCostBRL: 110,
-    durationHours: 2,
-    tips: ['O bolinho de feijoada premiado nasceu aqui', 'Boa carta de cervejas artesanais brasileiras', 'Comida carioca de raiz com toque autoral'],
-    styleTags: ['gastronomy', 'culture'],
-  },
-  {
-    id: 'rio-garota-ipanema',
-    name: 'Garota de Ipanema',
-    category: 'dinner',
-    neighborhood: 'Ipanema',
-    rating: 4.4,
-    estimatedCostBRL: 120,
-    durationHours: 2,
-    tips: ['Foi aqui que Tom Jobim e Vinícius compuseram a música', 'Picanha na chapa é o pedido clássico', 'Turístico, mas é parada obrigatória'],
-    styleTags: ['gastronomy', 'culture', 'family'],
-  },
-  {
-    id: 'rio-assador',
-    name: "Assador Rio's",
-    category: 'dinner',
-    neighborhood: 'Flamengo (Aterro)',
-    rating: 4.6,
-    estimatedCostBRL: 220,
-    durationHours: 2.5,
-    tips: ['Rodízio de carnes com vista para o Pão de Açúcar', 'Varanda no fim de tarde pega o pôr do sol na baía', 'Ótima estrutura para famílias'],
-    styleTags: ['gastronomy', 'family'],
-  },
-  {
-    id: 'rio-bar-lagoa',
-    name: 'Bar Lagoa',
-    category: 'dinner',
-    neighborhood: 'Lagoa',
-    rating: 4.5,
-    estimatedCostBRL: 110,
-    durationHours: 2,
-    tips: ['Botequim Art Déco de 1934 à beira da Lagoa', 'Bolinho de bacalhau e chope como manda a tradição', 'Mesas na calçada com vista para a Lagoa iluminada'],
-    styleTags: ['gastronomy', 'history', 'romantic'],
-  },
-  {
-    id: 'rio-sushi-leblon',
-    name: 'Sushi Leblon',
-    category: 'dinner',
-    neighborhood: 'Leblon',
-    rating: 4.6,
-    estimatedCostBRL: 250,
-    durationHours: 2,
-    tips: ['Referência de culinária japonesa no Rio há décadas', 'O balcão é disputado — reserve', 'Peça o ceviche de peixe branco da casa'],
-    styleTags: ['gastronomy', 'romantic'],
-  },
-  {
-    id: 'rio-boteco-belmonte',
-    name: 'Boteco Belmonte',
-    category: 'dinner',
-    neighborhood: 'Copacabana',
-    rating: 4.5,
-    estimatedCostBRL: 90,
-    durationHours: 2,
-    tips: ['As empadas gigantes são a fama da casa', 'Chope gelado e mesa na calçada', 'Espírito de boteco carioca em estado puro'],
-    styleTags: ['gastronomy', 'culture'],
-  },
-  {
-    id: 'rio-talho-capixaba',
-    name: 'Talho Capixaba',
-    category: 'breakfast',
-    neighborhood: 'Leblon',
-    rating: 4.6,
-    estimatedCostBRL: 50,
-    durationHours: 1,
-    tips: ['Padaria-butique clássica do Leblon', 'Pão na chapa, sucos e sanduíches de padaria elevados', 'Movimentado no fim de semana de manhã'],
-    styleTags: ['gastronomy'],
-  },
-  {
-    id: 'rio-casa-cave',
-    name: 'Casa Cavé',
-    category: 'breakfast',
-    neighborhood: 'Centro',
-    rating: 4.6,
-    estimatedCostBRL: 35,
-    durationHours: 1,
-    tips: ['Confeitaria mais antiga do Rio, fundada em 1860', 'Sonho e mate gelado no piso de ladrilhos originais', 'Perto da Confeitaria Colombo — escolha uma por dia'],
-    styleTags: ['gastronomy', 'history'],
-  },
-  {
-    id: 'rio-bar-do-mineiro',
-    name: 'Bar do Mineiro',
-    category: 'dinner',
-    neighborhood: 'Santa Teresa',
-    rating: 4.5,
-    estimatedCostBRL: 90,
-    durationHours: 2,
-    tips: ['Comida mineira no coração boêmio de Santa Teresa', 'A feijoadinha e o pastel de feijão são os clássicos', 'Paredes cobertas de arte popular — ambiente único'],
-    styleTags: ['gastronomy', 'culture'],
-  },
-  {
-    id: 'rio-cafe-do-alto',
-    name: 'Café do Alto',
-    category: 'breakfast',
-    neighborhood: 'Santa Teresa',
-    rating: 4.5,
-    estimatedCostBRL: 45,
-    durationHours: 1,
-    tips: ['Café da manhã nordestino no alto de Santa Teresa', 'Tapioca, cuscuz e bolo de rolo', 'Combine com um passeio pelo bairro depois'],
-    styleTags: ['gastronomy'],
-  },
+  { id: 'rio-academia-cachaca', name: 'Academia da Cachaça', category: 'dinner', neighborhood: 'Leblon', rating: 4.5, estimatedCostBRL: 90, durationHours: 2, tips: ['Feijoadinha famosa e carta com centenas de cachaças', 'Ótima porta de entrada pra cachaça artesanal brasileira'], styleTags: ['gastronomy', 'culture'] },
+
+  { id: 'rio-aconchego-carioca', name: 'Aconchego Carioca', category: 'dinner', neighborhood: 'Praça da Bandeira', rating: 4.6, estimatedCostBRL: 110.0, durationHours: 2.0, tips: ['O bolinho de feijoada premiado nasceu aqui', 'Boa carta de cervejas artesanais brasileiras', 'Comida carioca de raiz com toque autoral'], styleTags: ['gastronomy', 'culture'] },
+
+  { id: 'rio-adega-perola', name: 'Adega Pérola', category: 'night', neighborhood: 'Copacabana', rating: 4.6, estimatedCostBRL: 70, durationHours: 2, tips: ['Balcão de petiscos portugueses icônico desde 1957 — polvo, bacalhau e bolinhos', 'Vai de tira-gosto em tira-gosto com chope — instituição de Copacabana'], styleTags: ['gastronomy', 'nightlife', 'culture'] },
+
+  { id: 'rio-angu-do-gomes', name: 'Angu do Gomes', category: 'lunch', neighborhood: 'Centro', rating: 4.4, estimatedCostBRL: 50, durationHours: 1.5, tips: ['O angu histórico que alimentou gerações de cariocas desde os anos 50'], styleTags: ['gastronomy', 'culture'] },
+
+  { id: 'rio-aprazivel', name: 'Aprazível', category: 'lunch', neighborhood: 'Santa Teresa', rating: 4.6, estimatedCostBRL: 180.0, durationHours: 2.5, tips: ['Casarão em Santa Teresa com vista panorâmica da cidade', 'Cozinha brasileira contemporânea', 'Reserve mesa na varanda — a vista é o prato principal'], styleTags: ['gastronomy', 'romantic'] },
+
+  { id: 'rio-aquario', name: 'AquaRio', category: 'afternoon', neighborhood: 'Centro (Gamboa)', rating: 4.6, estimatedCostBRL: 140.0, durationHours: 2.5, tips: ['Maior aquário marinho da América do Sul', 'O túnel submerso é o ponto alto para as crianças', 'Combine com o Museu do Amanhã na mesma região'], styleTags: ['family'] },
+
+  { id: 'rio-armazem-sao-thiago', name: 'Armazém São Thiago (Bar do Gomez)', category: 'night', neighborhood: 'Santa Teresa', rating: 4.6, estimatedCostBRL: 70, durationHours: 2, tips: ['Armazém centenário que virou o coração boêmio de Santa Teresa', 'Cerveja gelada, torresmo e história nas paredes'], styleTags: ['nightlife', 'culture', 'gastronomy'] },
+
+  { id: 'rio-arpoador', name: 'Pedra do Arpoador ao pôr do sol', category: 'afternoon', neighborhood: 'Ipanema', rating: 4.8, estimatedCostBRL: 0.0, durationHours: 1.5, tips: ['A multidão aplaude o pôr do sol — tradição carioca', 'Chegue 40 minutos antes para pegar lugar na pedra', 'Vista de Ipanema até o Dois Irmãos'], styleTags: ['beach', 'romantic'] },
+
+  { id: 'rio-assador', name: 'Assador Rio\'s', category: 'dinner', neighborhood: 'Flamengo (Aterro)', rating: 4.6, estimatedCostBRL: 220.0, durationHours: 2.5, tips: ['Rodízio de carnes com vista para o Pão de Açúcar', 'Varanda no fim de tarde pega o pôr do sol na baía', 'Ótima estrutura para famílias'], styleTags: ['gastronomy', 'family'] },
+
+  { id: 'rio-bar-descasados', name: 'Bar dos Descasados', category: 'night', neighborhood: 'Santa Teresa', rating: 4.5, estimatedCostBRL: 90, durationHours: 2, tips: ['Drinks ao pôr do sol no terraço do Hotel Santa Teresa — vista e clima de cinema'], styleTags: ['romantic', 'nightlife'] },
+
+  { id: 'rio-bar-do-david', name: 'Bar do David', category: 'lunch', neighborhood: 'Leme', rating: 4.6, estimatedCostBRL: 60, durationHours: 2, tips: ['Boteco premiado no Chapéu Mangueira — comida de raiz com vista de comunidade', 'Feijoada de frutos do mar é a assinatura'], styleTags: ['gastronomy', 'culture'] },
+
+  { id: 'rio-bar-do-mineiro', name: 'Bar do Mineiro', category: 'dinner', neighborhood: 'Santa Teresa', rating: 4.5, estimatedCostBRL: 90.0, durationHours: 2.0, tips: ['Comida mineira no coração boêmio de Santa Teresa', 'A feijoadinha e o pastel de feijão são os clássicos', 'Paredes cobertas de arte popular — ambiente único'], styleTags: ['gastronomy', 'culture'] },
+
+  { id: 'rio-bar-jobi', name: 'Bar Jobi', category: 'night', neighborhood: 'Leblon', rating: 4.5, estimatedCostBRL: 80, durationHours: 2, tips: ['O botequim mais clássico do Leblon, aberto até de madrugada desde 1956', 'Chope gelado e bolinho de bacalhau — point de músicos e boêmios'], styleTags: ['nightlife', 'gastronomy', 'culture'] },
+
+  { id: 'rio-bar-lagoa', name: 'Bar Lagoa', category: 'dinner', neighborhood: 'Lagoa', rating: 4.5, estimatedCostBRL: 110.0, durationHours: 2.0, tips: ['Botequim Art Déco de 1934 à beira da Lagoa', 'Bolinho de bacalhau e chope como manda a tradição', 'Mesas na calçada com vista para a Lagoa iluminada'], styleTags: ['gastronomy', 'history', 'romantic'] },
+
+  { id: 'rio-bar-urca-salao', name: 'Bar Urca (salão)', category: 'dinner', neighborhood: 'Urca', rating: 4.5, estimatedCostBRL: 90, durationHours: 2, tips: ['O salão histórico por trás da famosa mureta — frutos do mar com vista pra baía', 'Complemento perfeito do fim de tarde na mureta'], styleTags: ['gastronomy', 'romantic'] },
+
+  { id: 'rio-bibi-sucos', name: 'Bibi Sucos', category: 'lunch', neighborhood: 'Leblon', rating: 4.4, estimatedCostBRL: 40, durationHours: 1, tips: ['Clássico dos sucos e lanches do Leblon — parada leve entre praia e passeio'], styleTags: ['gastronomy'] },
+
+  { id: 'rio-bioparque', name: 'BioParque do Rio', category: 'morning', neighborhood: 'São Cristóvão', rating: 4.5, estimatedCostBRL: 80, durationHours: 3, tips: ['O zoológico renovado na Quinta da Boa Vista — imersivo e ótimo com crianças'], styleTags: ['family', 'nature'] },
+
+  { id: 'rio-boteco-belmonte', name: 'Boteco Belmonte', category: 'dinner', neighborhood: 'Copacabana', rating: 4.5, estimatedCostBRL: 90.0, durationHours: 2.0, tips: ['As empadas gigantes são a fama da casa', 'Chope gelado e mesa na calçada', 'Espírito de boteco carioca em estado puro'], styleTags: ['gastronomy', 'culture'] },
+
+  { id: 'rio-braseiro-gavea', name: 'Braseiro da Gávea', category: 'lunch', neighborhood: 'Gávea', rating: 4.5, estimatedCostBRL: 100.0, durationHours: 2.0, tips: ['Picanha no ponto perfeito, instituição carioca', 'Ponto de encontro no fim de semana', 'Não aceita reserva — chegue antes do meio-dia'], styleTags: ['gastronomy', 'family'] },
+
+  { id: 'rio-braz-pizzaria', name: 'Bráz Pizzaria', category: 'dinner', neighborhood: 'Jardim Botânico', rating: 4.6, estimatedCostBRL: 100, durationHours: 2, tips: ['A paulistana consagrada com casa no Rio — pão de calabresa obrigatório'], styleTags: ['gastronomy'] },
+
+  { id: 'rio-cafe-do-alto', name: 'Café do Alto', category: 'breakfast', neighborhood: 'Santa Teresa', rating: 4.5, estimatedCostBRL: 45.0, durationHours: 1.0, tips: ['Café da manhã nordestino no alto de Santa Teresa', 'Tapioca, cuscuz e bolo de rolo', 'Combine com um passeio pelo bairro depois'], styleTags: ['gastronomy'] },
+
+  { id: 'rio-cafeina', name: 'Cafeína', category: 'breakfast', neighborhood: 'Ipanema', rating: 4.4, estimatedCostBRL: 45, durationHours: 1, tips: ['Café da manhã completo a duas quadras da praia de Ipanema'], styleTags: ['gastronomy'] },
+
+  { id: 'rio-capricciosa', name: 'Capricciosa', category: 'dinner', neighborhood: 'Ipanema', rating: 4.5, estimatedCostBRL: 110, durationHours: 2, tips: ['Pizza napolitana premium que virou clássico de Ipanema', 'Massa fina e ingredientes importados — pedida pós-praia chique'], styleTags: ['gastronomy'] },
+
+  { id: 'rio-carioca-da-gema', name: 'Carioca da Gema', category: 'night', neighborhood: 'Lapa', rating: 4.5, estimatedCostBRL: 80, durationHours: 3, tips: ['O templo do samba de raiz na Lapa — música boa toda noite'], styleTags: ['nightlife', 'culture'] },
+
+  { id: 'rio-casa-cave', name: 'Casa Cavé', category: 'breakfast', neighborhood: 'Centro', rating: 4.6, estimatedCostBRL: 35.0, durationHours: 1.0, tips: ['Confeitaria mais antiga do Rio, fundada em 1860', 'Sonho e mate gelado no piso de ladrilhos originais', 'Perto da Confeitaria Colombo — escolha uma por dia'], styleTags: ['gastronomy', 'history'] },
+
+  { id: 'rio-casa-feijoada', name: 'Casa da Feijoada', category: 'lunch', neighborhood: 'Ipanema', rating: 4.5, estimatedCostBRL: 130.0, durationHours: 2.0, tips: ['Feijoada completa servida todos os dias da semana', 'Caipirinha de boas-vindas na entrada', 'Porções generosas — vá com fome'], styleTags: ['gastronomy', 'culture', 'family'] },
+
+  { id: 'rio-ccbb', name: 'CCBB Rio', category: 'morning', neighborhood: 'Centro', rating: 4.7, estimatedCostBRL: 30, durationHours: 2.5, tips: ['Exposições de nível internacional num palácio no Centro histórico', 'A melhor carta na manga pra dia de chuva no Rio'], styleTags: ['culture', 'art'] },
+
+  { id: 'rio-cervantes', name: 'Cervantes', category: 'lunch', neighborhood: 'Copacabana', rating: 4.5, estimatedCostBRL: 60.0, durationHours: 1.0, tips: ['O sanduíche de pernil com abacaxi é lendário', 'Balcão histórico aberto até de madrugada', 'Peça o chope bem gelado para acompanhar'], styleTags: ['gastronomy'] },
+
+  { id: 'rio-circo-voador', name: 'Circo Voador', category: 'night', neighborhood: 'Lapa', rating: 4.6, estimatedCostBRL: 100, durationHours: 3, tips: ['A casa de shows histórica sob os Arcos — confira a agenda da semana'], styleTags: ['nightlife', 'culture'] },
+
+  { id: 'rio-confeitaria-colombo', name: 'Confeitaria Colombo', category: 'lunch', neighborhood: 'Centro', rating: 4.7, estimatedCostBRL: 90.0, durationHours: 1.5, tips: ['Belle Époque carioca desde 1894 — espelhos e vitrais originais', 'Salgados e doces históricos no salão de chá', 'Combine com um passeio pelo Centro histórico'], styleTags: ['gastronomy', 'culture', 'history'] },
+
+  { id: 'rio-emporio-jardim', name: 'Empório Jardim', category: 'breakfast', neighborhood: 'Jardim Botânico', rating: 4.5, estimatedCostBRL: 55, durationHours: 1.5, tips: ['Café da manhã farto e charmoso pertinho do Jardim Botânico — combina com a visita'], styleTags: ['gastronomy', 'relaxation'] },
+
+  { id: 'rio-escadaria-selaron', name: 'Escadaria Selarón e Lapa', category: 'afternoon', neighborhood: 'Lapa', rating: 4.7, estimatedCostBRL: 0.0, durationHours: 2.0, tips: ['215 degraus cobertos de azulejos de mais de 60 países', 'Os Arcos da Lapa ficam a 5 minutos a pé', 'Atenção com pertences — leve só o essencial'], styleTags: ['culture', 'art'] },
+
+  { id: 'rio-feira-sao-cristovao', name: 'Feira de São Cristóvão', category: 'night', neighborhood: 'São Cristóvão', rating: 4.5, estimatedCostBRL: 60, durationHours: 3, tips: ['O Nordeste inteiro dentro do Rio — forró, carne de sol e repente', 'Sexta e sábado à noite são o auge'], styleTags: ['culture', 'nightlife', 'gastronomy'] },
+
+  { id: 'rio-ferro-farinha', name: 'Ferro e Farinha', category: 'dinner', neighborhood: 'Catete', rating: 4.7, estimatedCostBRL: 90, durationHours: 2, tips: ['A pizza de fermentação natural mais celebrada do Rio — consenso de crítica e público', 'Casa original no Catete; unidades também em Botafogo, Leblon e Barra', 'Não aceita reserva na matriz: chegue cedo'], styleTags: ['gastronomy'] },
+
+  { id: 'rio-forte-copacabana', name: 'Forte de Copacabana', category: 'afternoon', neighborhood: 'Copacabana', rating: 4.7, estimatedCostBRL: 20.0, durationHours: 2.0, tips: ['Museu histórico do Exército na ponta da praia', 'A filial da Confeitaria Colombo tem mesas de frente para o mar', 'Vista de toda a curva de Copacabana'], styleTags: ['culture', 'history'] },
+
+  { id: 'rio-galeto-sats', name: 'Galeto Sat\'s', category: 'lunch', neighborhood: 'Copacabana', rating: 4.6, estimatedCostBRL: 80.0, durationHours: 1.5, tips: ['Galeto na brasa desde 1962, no balcão', 'A farofa de dendê é obrigatória', 'Clássico absoluto da noite e do almoço carioca'], styleTags: ['gastronomy'] },
+
+  { id: 'rio-garota-ipanema', name: 'Garota de Ipanema', category: 'dinner', neighborhood: 'Ipanema', rating: 4.4, estimatedCostBRL: 120.0, durationHours: 2.0, tips: ['Foi aqui que Tom Jobim e Vinícius compuseram a música', 'Picanha na chapa é o pedido clássico', 'Turístico, mas é parada obrigatória'], styleTags: ['gastronomy', 'culture', 'family'] },
+
+  { id: 'rio-jardim-botanico', name: 'Jardim Botânico', category: 'morning', neighborhood: 'Jardim Botânico', rating: 4.8, estimatedCostBRL: 75.0, durationHours: 3.0, tips: ['A aleia de palmeiras imperiais é o cartão-postal', 'Orquidário e casa dos beija-flores imperdíveis', 'De manhã cedo é comum ver tucanos soltos'], styleTags: ['nature', 'family', 'romantic'] },
+
+  { id: 'rio-lagoa-pedalinho', name: 'Lagoa Rodrigo de Freitas (pedalinho e quiosques)', category: 'afternoon', neighborhood: 'Lagoa', rating: 4.6, estimatedCostBRL: 50, durationHours: 2, tips: ['Pedalinho com as crianças e fim de tarde nos quiosques da orla', 'O cartão-postal mais tranquilo da zona sul'], styleTags: ['family', 'relaxation', 'nature'] },
+
+  { id: 'rio-marchezinho', name: 'Marchezinho', category: 'dinner', neighborhood: 'Botafogo', rating: 4.4, estimatedCostBRL: 80, durationHours: 2, tips: ['Gastrobar descolado de Botafogo — vinhos naturais e pratos pra dividir'], styleTags: ['gastronomy', 'nightlife'] },
+
+  { id: 'rio-mirante-dona-marta', name: 'Mirante Dona Marta', category: 'morning', neighborhood: 'Santa Teresa', rating: 4.8, estimatedCostBRL: 60, durationHours: 1.5, tips: ['A vista mais completa do Rio — Cristo, Pão de Açúcar e baía num quadro só', 'Vá cedo pela luz e pelo trânsito'], styleTags: ['nature', 'romantic'] },
+
+  { id: 'rio-momo-gelato', name: 'Momo Gelato', category: 'afternoon', neighborhood: 'Ipanema', rating: 4.7, estimatedCostBRL: 25, durationHours: 0.5, tips: ['O gelato artesanal mais disputado do Rio — sabores que mudam todo dia'], styleTags: ['gastronomy', 'relaxation'] },
+
+  { id: 'rio-mureta-urca', name: 'Mureta da Urca', category: 'afternoon', neighborhood: 'Urca', rating: 4.7, estimatedCostBRL: 40.0, durationHours: 2.0, tips: ['Programa carioca raiz: petiscos do Bar Urca sentado na mureta', 'Vista da enseada de Botafogo com o Cristo ao fundo', 'Fim de tarde é o horário de ouro'], styleTags: ['gastronomy', 'romantic', 'culture'] },
+
+  { id: 'rio-museu-amanha', name: 'Museu do Amanhã', category: 'morning', neighborhood: 'Centro (Praça Mauá)', rating: 4.6, estimatedCostBRL: 30.0, durationHours: 2.5, tips: ['Arquitetura futurista de Santiago Calatrava', 'Combine com o Boulevard Olímpico e o AquaRio ao lado', 'Às terças a entrada é gratuita — chegue cedo'], styleTags: ['culture', 'family', 'art'] },
+
+  { id: 'rio-museu-arte-rio', name: 'MAR — Museu de Arte do Rio', category: 'morning', neighborhood: 'Centro', rating: 4.5, estimatedCostBRL: 30, durationHours: 2, tips: ['Arte brasileira com vista pra Praça Mauá — vizinho do Museu do Amanhã', 'Combine os dois museus na mesma manhã'], styleTags: ['culture', 'art'] },
+
+  { id: 'rio-nova-capela', name: 'Nova Capela', category: 'dinner', neighborhood: 'Lapa', rating: 4.5, estimatedCostBRL: 80, durationHours: 2, tips: ['Clássico de 1903 — cabrito com arroz de brócolis é o prato-lenda', 'Abre até tarde: parada obrigatória pós-Lapa'], styleTags: ['gastronomy', 'culture', 'nightlife'] },
+
+  { id: 'rio-parque-lage', name: 'Parque Lage', category: 'afternoon', neighborhood: 'Jardim Botânico', rating: 4.7, estimatedCostBRL: 0.0, durationHours: 2.0, tips: ['O palacete tem café no pátio interno — cenário de cinema', 'Vista do Cristo emoldurada pela mata', 'Trilhas leves para caminhar na Floresta da Tijuca'], styleTags: ['nature', 'romantic', 'art'] },
+
+  { id: 'rio-pavao-azul', name: 'Pavão Azul', category: 'dinner', neighborhood: 'Copacabana', rating: 4.5, estimatedCostBRL: 60, durationHours: 2, tips: ['Botequim premiado — pataniscas de bacalhau e pastéis famosos', 'Simples, barato e delicioso: o Rio raiz'], styleTags: ['gastronomy', 'culture'] },
+
+  { id: 'rio-pedra-do-sal', name: 'Roda de samba na Pedra do Sal', category: 'night', neighborhood: 'Saúde', rating: 4.6, estimatedCostBRL: 20, durationHours: 3, tips: ['Samba de rua no berço histórico da Pequena África — segundas e sextas', 'Experiência gratuita e autêntica; vá de transporte por app'], styleTags: ['nightlife', 'culture', 'history'] },
+
+  { id: 'rio-pista-claudio-coutinho', name: 'Pista Cláudio Coutinho', category: 'morning', neighborhood: 'Urca', rating: 4.7, estimatedCostBRL: 0, durationHours: 1.5, tips: ['Caminhada fácil entre o mar e a mata aos pés do Pão de Açúcar — micos garantidos', 'Gratuita e plana: perfeita com crianças ou pra manhã leve'], styleTags: ['nature', 'family', 'relaxation'] },
+
+  { id: 'rio-planetario-gavea', name: 'Planetário da Gávea', category: 'afternoon', neighborhood: 'Gávea', rating: 4.5, estimatedCostBRL: 40, durationHours: 2, tips: ['Sessões de cúpula que encantam crianças — programa certeiro pra dia nublado'], styleTags: ['family', 'culture'] },
+
+  { id: 'rio-polis-sucos', name: 'Polis Sucos', category: 'lunch', neighborhood: 'Ipanema', rating: 4.5, estimatedCostBRL: 35, durationHours: 1, tips: ['O balcão de sucos mais amado de Ipanema — açaí e sanduíche natural pós-praia', 'Rápido, barato e carioca até o osso'], styleTags: ['gastronomy'] },
+
+  { id: 'rio-praia-copacabana', name: 'Praia de Copacabana', category: 'morning', neighborhood: 'Copacabana', rating: 4.7, estimatedCostBRL: 0.0, durationHours: 3.0, tips: ['O calçadão de pedras portuguesas é assinatura de Burle Marx', 'Quiosques servem água de coco gelada o dia todo', 'Alugue cadeira e guarda-sol com os barraqueiros'], styleTags: ['beach', 'family'] },
+
+  { id: 'rio-praia-ipanema', name: 'Praia de Ipanema (Posto 9)', category: 'morning', neighborhood: 'Ipanema', rating: 4.8, estimatedCostBRL: 0.0, durationHours: 3.0, tips: ['Posto 9 é o coração jovem da praia', 'Aos domingos a orla fecha para carros — ótimo para pedalar', 'O pôr do sol no Arpoador fica a 10 minutos a pé'], styleTags: ['beach', 'romantic'] },
+
+  { id: 'rio-real-gabinete', name: 'Real Gabinete Português de Leitura', category: 'morning', neighborhood: 'Centro', rating: 4.8, estimatedCostBRL: 0, durationHours: 1, tips: ['Uma das bibliotecas mais bonitas do mundo — entrada gratuita', 'Rápido, gratuito e inesquecível: combine com o CCBB e a Colombo'], styleTags: ['culture', 'history'] },
+
+  { id: 'rio-rio-scenarium', name: 'Rio Scenarium', category: 'night', neighborhood: 'Lapa', rating: 4.6, estimatedCostBRL: 120, durationHours: 3, tips: ['Casarão de antiquário com samba ao vivo — a noite mais cenográfica da Lapa', 'Reserve ou chegue antes das 20h'], styleTags: ['nightlife', 'culture'] },
+
+  { id: 'rio-rubaiyat', name: 'Rubaiyat Rio (Jockey)', category: 'dinner', neighborhood: 'Gávea', rating: 4.5, estimatedCostBRL: 180, durationHours: 2, tips: ['Carnes premium com vista pro Cristo iluminado no Jockey Club', 'Jantar de ocasião especial — romântico e imponente'], styleTags: ['gastronomy', 'romantic'] },
+
+  { id: 'rio-slow-bakery', name: 'The Slow Bakery', category: 'breakfast', neighborhood: 'Botafogo', rating: 4.6, estimatedCostBRL: 50, durationHours: 1, tips: ['A padaria artesanal que mudou o pão no Rio — fermentação longa e croissants de referência'], styleTags: ['gastronomy'] },
+
+  { id: 'rio-sobrenatural', name: 'Sobrenatural', category: 'lunch', neighborhood: 'Santa Teresa', rating: 4.4, estimatedCostBRL: 110, durationHours: 2, tips: ['Frutos do mar honestos no coração de Santa Teresa — moqueca respeitada', 'Combina com o passeio pelo bairro e o bondinho'], styleTags: ['gastronomy'] },
+
+  { id: 'rio-sushi-leblon', name: 'Sushi Leblon', category: 'dinner', neighborhood: 'Leblon', rating: 4.6, estimatedCostBRL: 250.0, durationHours: 2.0, tips: ['Referência de culinária japonesa no Rio há décadas', 'O balcão é disputado — reserve', 'Peça o ceviche de peixe branco da casa'], styleTags: ['gastronomy', 'romantic'] },
+
+  { id: 'rio-talho-capixaba', name: 'Talho Capixaba', category: 'breakfast', neighborhood: 'Leblon', rating: 4.6, estimatedCostBRL: 50.0, durationHours: 1.0, tips: ['Padaria-butique clássica do Leblon', 'Pão na chapa, sucos e sanduíches de padaria elevados', 'Movimentado no fim de semana de manhã'], styleTags: ['gastronomy'] },
+
+  { id: 'rio-theatro-municipal', name: 'Theatro Municipal (visita guiada)', category: 'afternoon', neighborhood: 'Centro', rating: 4.7, estimatedCostBRL: 30, durationHours: 1.5, tips: ['O interior mais suntuoso do Rio — visita guiada revela os bastidores', 'Confira os horários das visitas no dia'], styleTags: ['culture', 'history'] },
 ];
 
 // Export all destination data
