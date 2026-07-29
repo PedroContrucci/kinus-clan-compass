@@ -17,6 +17,9 @@ dist-ssr
 # the real catalog. Keep these out of the repo.
 src/data/*.js
 
+# Credenciais do sync do catálogo (Supabase kinu-beta) — nunca commitar
+.env.sync
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
