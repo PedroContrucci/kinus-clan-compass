@@ -483,7 +483,7 @@ serve(async (req) => {
       const city = sanitizeText(cat.city, 60);
       if (city && Array.isArray(cat.items)) {
         const items = cat.items
-          .slice(0, 35)
+          .slice(0, 80)
           .filter((i): i is Record<string, unknown> => typeof i === "object" && i !== null)
           .map((i) => ({
             name: sanitizeText(i.name, 150),

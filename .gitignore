@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Compiled JS artifacts in src/data/ shadow the .ts source: Vite resolves
+# .js before .ts for extensionless imports, so a stale .js silently overrides
+# the real catalog. Keep these out of the repo.
+src/data/*.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
