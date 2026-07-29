@@ -1,0 +1,10 @@
+{
+  "name": "kinus-clan-compass",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
+  },
+  "postCreateCommand": "npm install -g @anthropic-ai/claude-code"
+}
