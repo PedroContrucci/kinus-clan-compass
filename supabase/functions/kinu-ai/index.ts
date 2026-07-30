@@ -328,6 +328,17 @@ interface RequestBody {
   itineraryDays?: unknown;
 }
 
+// Seções do catálogo curado, em ordem cronológica do dia. As chaves são as categorias de
+// SuggestedActivity em src/data/destinationActivities.ts.
+const CATALOG_SECTIONS: ReadonlyArray<readonly [string, string]> = [
+  ["breakfast", "☕ CAFÉ DA MANHÃ"],
+  ["morning", "🌅 MANHÃ"],
+  ["lunch", "🍽️ ALMOÇO"],
+  ["afternoon", "🌤️ TARDE"],
+  ["dinner", "🌙 JANTAR"],
+  ["night", "🌃 NOITE"],
+];
+
 // Input sanitization helpers
 function sanitizeText(input: unknown, maxLength: number): string {
   if (typeof input !== "string") return "";
@@ -494,10 +505,30 @@ serve(async (req) => {
           }))
           .filter((i) => i.name.length > 0);
         if (items.length > 0) {
-          const compact = items
-            .map((i) => `- ${i.name} (${i.category}, ${i.neighborhood}${i.costBRL !== null ? `, R$${i.costBRL}` : ""})${i.tip ? ` — ${i.tip}` : ""}`)
-            .join("\n");
-          catalogBlock = `\n\nCATÁLOGO CURADO KINU para ${city} — esta é sua FONTE DA VERDADE para recomendações específicas:\n${compact}`;
+          const renderLine = (i: typeof items[number]) =>
+            `- ${i.name} (${i.category}, ${i.neighborhood}${i.costBRL !== null ? `, R$${i.costBRL}` : ""})${i.tip ? ` — ${i.tip}` : ""}`;
+
+          // Agrupa por momento do dia: numa lista corrida de ~80 linhas o modelo tende a
+          // citar sempre os primeiros itens. Com cabeçalhos ele acha a seção certa para
+          // cada pergunta ("onde jantar?" -> 🌙 JANTAR).
+          const remaining = new Map(items.map((i, idx) => [idx, i]));
+          const sections: string[] = [];
+          for (const [key, label] of CATALOG_SECTIONS) {
+            const lines: string[] = [];
+            for (const [idx, i] of remaining) {
+              if (i.category.toLowerCase() === key) {
+                lines.push(renderLine(i));
+                remaining.delete(idx);
+              }
+            }
+            if (lines.length > 0) sections.push(`${label}\n${lines.join("\n")}`);
+          }
+          // Categoria desconhecida/vazia nunca é descartada silenciosamente.
+          if (remaining.size > 0) {
+            sections.push(`📍 OUTROS\n${[...remaining.values()].map(renderLine).join("\n")}`);
+          }
+
+          catalogBlock = `\n\nCATÁLOGO CURADO KINU para ${city} — esta é sua FONTE DA VERDADE para recomendações específicas. Está agrupado por momento do dia: vá direto à seção que responde à pergunta e considere TODOS os itens dela, não só os primeiros.\n\n${sections.join("\n\n")}`;
         }
       }
     }

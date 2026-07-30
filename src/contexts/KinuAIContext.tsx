@@ -79,6 +79,11 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
   const [pendingNavigation, setPendingNavigation] = useState<{ destino: string; ts: number; tripId?: string } | null>(null);
   const [wizardPrefill, setWizardPrefill] = useState<{ destino: string; data_ida: string; data_volta: string; viajantes: number } | null>(null);
 
+  // Cidade curada "pegajosa": última cidade detectada na conversa. Mensagens de
+  // follow-up ("e pra jantar?") não repetem o nome da cidade — sem isso o catálogo
+  // deixava de ser injetado e o agente perdia a fonte da verdade no meio do papo.
+  const stickyCuratedCityRef = useRef<string | null>(null);
+
 
   const checkForEmergency = useCallback((text: string): boolean => {
     const lowerText = text.toLowerCase();
@@ -109,7 +114,18 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         content: m.content,
       }));
 
-      const curatedCity = detectCuratedCity(content, tripContext?.destination);
+      // Detecção explícita (mensagem) ou viagem ativa têm prioridade e sobrescrevem a
+      // pegajosa; só caímos nela quando não há nem uma nem outra.
+      const hasActiveTrip = Boolean(tripContext?.destination);
+      const detectedCity = detectCuratedCity(content, tripContext?.destination);
+      if (detectedCity) {
+        stickyCuratedCityRef.current = detectedCity;
+      } else if (hasActiveTrip) {
+        // Viagem ativa para destino fora do catálogo: injetar a cidade antiga seria pior
+        // que não injetar nada.
+        stickyCuratedCityRef.current = null;
+      }
+      const curatedCity = detectedCity ?? (hasActiveTrip ? null : stickyCuratedCityRef.current);
       const curatedCatalog = curatedCity ? buildCuratedCatalog(curatedCity) : null;
 
       // Build compact itineraryDays, cap total payload ~4000 chars
@@ -211,6 +227,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
   const clearMessages = useCallback(() => {
     setMessages([]);
     setIsEmergencyMode(false);
+    stickyCuratedCityRef.current = null;
   }, []);
 
   const clearSuggestedDestinations = useCallback(() => {
