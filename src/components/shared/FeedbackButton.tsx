@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MessageSquare, Send, Star } from 'lucide-react';
+import { Send, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -128,20 +128,16 @@ export const FeedbackButton = () => {
 
   return (
     <>
-      {/* Mobile floating button */}
+      {/* Edge tab — mesma aba lateral em todas as larguras.
+          Substitui o antigo FAB redondo do mobile, que sobrepunha cards na zona
+          inferior direita (bottom-44) e competia com o FAB do KINU AI.
+          Largura tocável: line-height do text-sm (20px) + 12px de padding de cada
+          lado = 44px, no mínimo do HIG. Em writing-mode vertical-rl o padding
+          horizontal é que define a largura. */}
       <button
         onClick={() => setIsOpen(true)}
-        className="lg:hidden fixed bottom-44 right-4 z-40 w-12 h-12 rounded-full bg-amber-500 text-white shadow-lg shadow-amber-500/30 flex items-center justify-center hover:bg-amber-600 transition-colors"
-        aria-label="Enviar feedback"
-      >
-        <MessageSquare size={20} />
-      </button>
-
-      {/* Desktop edge tab */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-amber-500 text-white shadow-lg shadow-amber-500/30 hover:bg-amber-600 transition-colors rounded-l-lg items-center justify-center font-semibold text-sm tracking-wide"
-        style={{ writingMode: 'vertical-rl', padding: '10px 6px' }}
+        className="flex fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-amber-500 text-white shadow-lg shadow-amber-500/30 hover:bg-amber-600 transition-colors rounded-l-lg items-center justify-center font-semibold text-sm tracking-wide"
+        style={{ writingMode: 'vertical-rl', padding: '12px' }}
         aria-label="Enviar feedback"
       >
         Feedback
