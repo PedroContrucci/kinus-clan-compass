@@ -1527,7 +1527,7 @@ const Viagens = () => {
   const renderTripList = (isSidebar: boolean) => {
     const containerClass = isSidebar
       ? "h-screen overflow-y-auto border-r border-border bg-[#0f172a]"
-      : "min-h-screen bg-[#0f172a] pb-24";
+      : "min-h-screen bg-[#0f172a] pb-36 lg:pb-24";
 
     return (
       <div className={containerClass}>
@@ -1663,7 +1663,7 @@ const Viagens = () => {
     const isRecoveryDay = tripSeverity === 'SEVERO' && selectedDay >= 3 && selectedDay <= 4;
 
     return (
-      <div className="min-h-screen lg:h-screen lg:overflow-y-auto bg-[#0f172a] pb-24 lg:pb-0">
+      <div className="min-h-screen lg:h-screen lg:overflow-y-auto bg-[#0f172a] pb-36 lg:pb-0">
         {/* Header */}
         <header className="sticky top-0 z-40 bg-[#0f172a]/80 backdrop-blur-lg border-b border-[#334155] px-4 py-3">
           <div className="flex items-center gap-3 mb-3">

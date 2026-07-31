@@ -230,7 +230,7 @@ const Cla = () => {
   const showActivities = selectedCategory === 'all' || selectedCategory !== 'itinerary';
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-36 lg:pb-24">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="px-4 py-3">
