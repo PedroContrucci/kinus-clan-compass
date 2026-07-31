@@ -16,6 +16,7 @@ export const CITY_COORDINATES: Record<string, CityCoordinate> = {
   'Roma':           { name: 'Roma',           lat: 41.9028,  lng: 12.4964 },
   'Salvador':       { name: 'Salvador',       lat: -12.9777, lng: -38.5016 },
   'Buenos Aires':   { name: 'Buenos Aires',   lat: -34.6037, lng: -58.3816 },
+  'Cartagena':      { name: 'Cartagena',      lat: 10.3910,  lng: -75.4794 },
   'Nova York':      { name: 'Nova York',      lat: 40.7128,  lng: -74.0060 },
   'Gramado':        { name: 'Gramado',        lat: -29.3747, lng: -50.8764 },
   'Londres':        { name: 'Londres',        lat: 51.5074,  lng: -0.1278 },

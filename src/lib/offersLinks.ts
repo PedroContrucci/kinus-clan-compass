@@ -30,6 +30,7 @@ const CIVITATIS_CITY_SLUGS: Record<string, string> = {
   'Barcelona': 'barcelona',
   'Nova York': 'nueva-york',
   'Buenos Aires': 'buenos-aires',
+  'Cartagena': 'cartagena-de-indias',
   'Dubai': 'dubai',
   'Istambul': 'estambul',
   'Bangkok': 'bangkok',

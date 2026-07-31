@@ -179,6 +179,7 @@ const CITY_TO_COUNTRY: Record<string, string> = {
   'Roma': 'Itália',
   'Salvador': 'Brasil',
   'Buenos Aires': 'Argentina',
+  'Cartagena': 'Colômbia',
   'Nova York': 'Estados Unidos',
   'Gramado': 'Brasil',
   'Londres': 'Reino Unido',

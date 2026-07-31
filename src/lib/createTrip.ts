@@ -240,6 +240,7 @@ function getDestinationEmoji(destination: string): string {
     'Praga': '🏰', 'Istambul': '🕌', 'Cairo': '🏺',
     'Marrakech': '🕌', 'Seul': '🏯', 'Auckland': '🗻',
     'Rio de Janeiro': '🏖️', 'Salvador': '🎭', 'Florianópolis': '🏖️',
+    'Cartagena': '🏰',
     'Havana': '🇨🇺', 'Cusco': '🏔️', 'Bariloche': '⛷️',
     'Santorini': '🏝️', 'Dubrovnik': '🏰', 'Veneza': '🛶',
     'Malé': '🏝️', 'Phuket': '🏖️',

@@ -138,6 +138,7 @@ function getDestinationEmoji(destination: string): string {
     'Florianópolis': '🏖️',
     'Salvador': '🎭',
     'Buenos Aires': '💃',
+    'Cartagena': '🏰',
     'Cusco': '🏔️',
     'Machu Picchu': '🏔️',
   };
