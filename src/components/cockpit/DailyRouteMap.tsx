@@ -34,6 +34,12 @@ interface GeoPoint {
   isHotel?: boolean;
 }
 
+// Em telas de toque o arrasto do mapa compete com o scroll vertical da página:
+// o dedo que começa o swipe dentro do mapa panora o mapa em vez de rolar o roteiro.
+// Desativamos o dragging só no touch — no desktop o mouse continua arrastando.
+// (Leaflet 1.9 removeu a opção `tap`; toque em pino/popup já usa clique nativo.)
+const IS_TOUCH_DEVICE = typeof window !== 'undefined' && 'ontouchstart' in window;
+
 const LOGISTICS_KEYWORDS = [
   'café da manhã', 'transfer', 'check-in', 'check-out', 'voo',
   'embarque', 'desembarque', 'imigração', 'aeroporto', 'bagagem',
@@ -49,13 +55,17 @@ function isLogistics(activity: { name: string; category?: string }): boolean {
 }
 
 function createNumberedIcon(num: number): L.DivIcon {
+  // Mesmo padrão do makeIcon de DestinationWorldMap: o alvo de toque é maior que
+  // o disco visível, para o pino não ficar num alvo de 22px.
+  const DOT = 22;
+  const touch = Math.max(DOT + 12, 28);
   return L.divIcon({
     className: 'custom-marker',
-    html: `<div style="
+    html: `<div style="width:${touch}px;height:${touch}px;display:flex;align-items:center;justify-content:center;"><div style="
       background: #10b981;
       color: #ffffff;
-      width: 22px;
-      height: 22px;
+      width: ${DOT}px;
+      height: ${DOT}px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -64,9 +74,9 @@ function createNumberedIcon(num: number): L.DivIcon {
       font-size: 11px;
       font-family: 'Outfit', sans-serif;
       box-shadow: 0 0 10px #10b981;
-    ">${num}</div>`,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
+    ">${num}</div></div>`,
+    iconSize: [touch, touch],
+    iconAnchor: [touch / 2, touch / 2],
     popupAnchor: [0, -13],
   });
 }
@@ -321,6 +331,7 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
             style={{ height: '100%', width: '100%' }}
             zoomControl={false}
             attributionControl={false}
+            dragging={!IS_TOUCH_DEVICE}
           >
             <TileLayer
               url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"

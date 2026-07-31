@@ -84,14 +84,14 @@ export function KinuAIMessage({ message }: KinuAIMessageProps) {
                       <button
                         type="button"
                         onClick={() => applyProposedAction(message.id, idx)}
-                        className="px-3 py-1 text-[11px] font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                        className="px-3 py-3 text-[13px] font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
                       >
                         {action.type === 'sugerir_destinos' ? '✓ Ver no mapa' : action.type === 'navegar_para' ? 'Abrir' : action.type === 'criar_viagem' ? 'Começar planejamento' : action.type === 'verificar_ofertas' ? 'Verificar' : '✓ Aplicar'}
                       </button>
                       <button
                         type="button"
                         onClick={() => dismissProposedAction(message.id, idx)}
-                        className="px-3 py-1 text-[11px] font-semibold rounded-lg bg-[#334155] text-muted-foreground hover:text-foreground hover:bg-[#3f4c62] transition-colors"
+                        className="px-3 py-3 text-[13px] font-semibold rounded-lg bg-[#334155] text-muted-foreground hover:text-foreground hover:bg-[#3f4c62] transition-colors"
                       >
                         ✗ Recusar
                       </button>

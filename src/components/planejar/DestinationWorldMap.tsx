@@ -4,6 +4,11 @@ import L from 'leaflet';
 import { CITY_COORDINATES } from '@/data/cityCoordinates';
 import { DESTINATION_CATALOG, type RegionName } from '@/data/destinationCatalog';
 
+// Ver nota em cockpit/DailyRouteMap.tsx: em telas de toque o arrasto do mapa
+// captura o swipe vertical da página. `scrollWheelZoom={false}` abaixo só cobre
+// a roda do mouse (desktop); o dragging é quem prende o dedo.
+const IS_TOUCH_DEVICE = typeof window !== 'undefined' && 'ontouchstart' in window;
+
 export interface DestinationWorldMapProps {
   onSelectCity: (cityName: string) => void;
   highlightedCities?: string[];
@@ -290,6 +295,7 @@ export function DestinationWorldMap({
             maxZoom={6}
             worldCopyJump
             scrollWheelZoom={false}
+            dragging={!IS_TOUCH_DEVICE}
             className="h-full w-full"
             attributionControl={true}
           >
