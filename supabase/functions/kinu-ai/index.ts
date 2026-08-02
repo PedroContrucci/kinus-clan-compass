@@ -490,7 +490,7 @@ serve(async (req) => {
     // Sanitize curated catalog
     let catalogBlock = "";
     if (body.curatedCatalog && typeof body.curatedCatalog === "object") {
-      const cat = body.curatedCatalog as { city?: unknown; items?: unknown };
+      const cat = body.curatedCatalog as { city?: unknown; items?: unknown; hotels?: unknown };
       const city = sanitizeText(cat.city, 60);
       if (city && Array.isArray(cat.items)) {
         const items = cat.items
@@ -526,6 +526,42 @@ serve(async (req) => {
           // Categoria desconhecida/vazia nunca é descartada silenciosamente.
           if (remaining.size > 0) {
             sections.push(`📍 OUTROS\n${[...remaining.values()].map(renderLine).join("\n")}`);
+          }
+
+          // 🏨 HOTÉIS CURADOS — seção final, quando a cidade tem curadoria de hotel.
+          if (Array.isArray(cat.hotels)) {
+            const hotels = cat.hotels
+              .slice(0, 30)
+              .filter((h): h is Record<string, unknown> => typeof h === "object" && h !== null)
+              .map((h) => ({
+                name: sanitizeText(h.name, 150),
+                zone: sanitizeText(h.zone, 80),
+                tier: sanitizeText(h.tier, 40),
+                personaTags: Array.isArray(h.personaTags)
+                  ? h.personaTags.slice(0, 5).map((t) => sanitizeText(t, 30)).filter((t) => t.length > 0)
+                  : [],
+                priceRangeBRL: sanitizeText(h.priceRangeBRL, 60),
+                tip: Array.isArray(h.tips)
+                  ? h.tips.slice(0, 2).map((t) => sanitizeText(t, 150)).filter((t) => t.length > 0).join(" · ")
+                  : "",
+              }))
+              .filter((h) => h.name.length > 0);
+
+            if (hotels.length > 0) {
+              const hotelLines = hotels.map((h) => {
+                const meta = [h.zone, h.tier, h.priceRangeBRL, h.personaTags.join("/")]
+                  .filter((p) => p.length > 0)
+                  .join(", ");
+                return `- ${h.name}${meta ? ` (${meta})` : ""}${h.tip ? ` — ${h.tip}` : ""}`;
+              });
+              sections.push(
+                `🏨 HOTÉIS CURADOS\n` +
+                  `Estes são os ÚNICOS hotéis que você pode recomendar em ${city} — nunca invente outro nome. ` +
+                  `Recomende pela persona da viagem (família / casal / solo), usando as personas marcadas em cada hotel, ` +
+                  `e respeite a faixa de preço do usuário. Sempre ofereça uma alternativa de troca DENTRO desta lista.\n` +
+                  hotelLines.join("\n"),
+              );
+            }
           }
 
           catalogBlock = `\n\nCATÁLOGO CURADO KINU para ${city} — esta é sua FONTE DA VERDADE para recomendações específicas. Está agrupado por momento do dia: vá direto à seção que responde à pergunta e considere TODOS os itens dela, não só os primeiros.\n\n${sections.join("\n\n")}`;

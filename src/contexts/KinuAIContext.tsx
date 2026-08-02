@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CURATED_CITIES } from "@/lib/curatedCities";
 import { destinationActivities } from "@/data/destinationActivities";
+import { getCuratedHotels } from "@/data/curatedHotels";
 import { findCityInfo } from "@/data/destinationCatalog";
 import { buildDraftTrip } from "@/lib/createTrip";
 import { loadJson } from "@/lib/safeStorage";
@@ -28,6 +29,20 @@ function buildCuratedCatalog(city: string) {
     neighborhood: a.neighborhood,
     costBRL: a.estimatedCostBRL,
     tip: (a.tips ?? []).slice(0, 2).join(' · '),
+  }));
+}
+
+/** Hotéis curados da cidade no formato enviado ao agente. null = cidade sem curadoria de hotel. */
+function buildCuratedHotels(city: string) {
+  const hotels = getCuratedHotels(city);
+  if (!hotels) return null;
+  return hotels.map((h) => ({
+    name: h.name,
+    zone: h.zone,
+    tier: h.tier,
+    personaTags: h.personaTags,
+    priceRangeBRL: h.priceRangeBRL,
+    tips: h.tips.slice(0, 2),
   }));
 }
 
@@ -127,6 +142,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       }
       const curatedCity = detectedCity ?? (hasActiveTrip ? null : stickyCuratedCityRef.current);
       const curatedCatalog = curatedCity ? buildCuratedCatalog(curatedCity) : null;
+      const curatedHotelList = curatedCity ? buildCuratedHotels(curatedCity) : null;
 
       // Build compact itineraryDays, cap total payload ~4000 chars
       let itineraryDays: Array<{ day: number; date: string; items: string[] }> | undefined;
@@ -164,7 +180,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
           isEmergency,
           curatedCityNames: CURATED_CITIES,
           curatedCatalog: curatedCatalog
-            ? { city: curatedCity, items: curatedCatalog }
+            ? { city: curatedCity, items: curatedCatalog, hotels: curatedHotelList ?? undefined }
             : undefined,
           itineraryDays,
         },
