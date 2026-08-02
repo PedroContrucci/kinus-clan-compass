@@ -1,6 +1,6 @@
 // GERADO por scripts/sync-hotels.ts — não edite à mão.
 // Fonte: tabela `curated_hotels` (status='published') do projeto kinu-beta.
-// Para atualizar: npx tsx scripts/sync-hotels.ts Cartagena Gramado Orlando 'Rio de Janeiro' 'Porto Seguro' 'Buenos Aires' Lisboa Salvador Rome Paris Tokyo Fortaleza
+// Para atualizar: npx tsx scripts/sync-hotels.ts Cartagena Gramado
 
 export interface CuratedHotel {
   id: string;
@@ -42,61 +42,6 @@ export const curatedHotels: Record<string, CuratedHotel[]> = {
     { id: 'gra-h-st-hubertus', name: 'Estalagem St. Hubertus', zone: 'Lago Negro', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 1.400-2.400', rating: 4.8, tips: ['Vista pro Lago Negro e café da manhã premiado — romance puro', 'Somente adultos: casais agradecem'] },
     { id: 'gra-h-vovo-carolina', name: 'Pousada Vovó Carolina', zone: 'Centro', tier: 'budget', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 350-550', rating: 4.6, tips: ['A pousada de dono presente — café caseiro e preço honesto no centro'] },
     { id: 'gra-h-wish-serrano', name: 'Wish Serrano Resort', zone: 'Centro', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 1.200-2.200', rating: 4.6, tips: ['O resort família de Gramado — piscina térmica coberta e recreação infantil', 'A 5 min a pé da Rua Coberta'] },
-  ],
-  'Orlando': [
-    { id: 'orl-h-art-animation', name: 'Disney Art of Animation Resort', zone: 'Disney World', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 1.000-1.700', rating: 4.6, tips: ['Suítes temáticas Carros/Nemo - imersão Disney com transporte grátis'] },
-    { id: 'orl-h-cabana-bay', name: 'Universal Cabana Bay Beach Resort', zone: 'Universal', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 800-1.400', rating: 4.6, tips: ['Retrô anos 50 com lazy river - o melhor valor da Universal (early access!)'] },
-    { id: 'orl-h-drury', name: 'Drury Plaza Hotel Disney Springs', zone: 'Lake Buena Vista', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 600-1.000', rating: 4.7, tips: ['Refeições e happy hour INCLUSOS - a conta fecha bonito pra família'] },
-    { id: 'orl-h-four-seasons', name: 'Four Seasons Resort Orlando', zone: 'Disney World', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 3.500-6.500', rating: 4.8, tips: ['O luxo dentro da Disney - lazy river e adults pool separada'] },
-    { id: 'orl-h-grand-cypress', name: 'Hyatt Regency Grand Cypress', zone: 'Lake Buena Vista', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 1.200-2.000', rating: 4.6, tips: ['Piscina-caverna com tobogãs a minutos da Disney'] },
-  ],
-  'Rio de Janeiro': [
-    { id: 'rio-h-copa-palace', name: 'Copacabana Palace', zone: 'Copacabana', tier: 'resort', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 3.000-6.000', rating: 4.8, tips: ['O hotel-lenda do Brasil - piscina icônica e glamour centenário'] },
-    { id: 'rio-h-fairmont', name: 'Fairmont Rio Copacabana', zone: 'Copacabana', tier: 'upscale', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 1.500-2.800', rating: 4.6, tips: ['Moderno no Posto 6 - piscinas com vista e estrutura família'] },
-    { id: 'rio-h-janeiro', name: 'Janeiro Hotel', zone: 'Leblon', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 1.800-3.200', rating: 4.6, tips: ['Boutique design com vista pro mar do Leblon - romance carioca'] },
-    { id: 'rio-h-santa-teresa', name: 'Santa Teresa Hotel MGallery', zone: 'Santa Teresa', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 1.400-2.500', rating: 4.7, tips: ['Casarão colonial no alto boêmio - piscina entre árvores'] },
-  ],
-  'Porto Seguro': [
-    { id: 'pse-h-arraial-eco', name: 'Arraial d\'Ajuda Eco Resort', zone: 'Arraial d Ajuda', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 900-1.600', rating: 4.5, tips: ['Resort de reserva ecológica entre a balsa e a vila - praia calma'] },
-    { id: 'pse-h-club-med', name: 'Club Med Trancoso', zone: 'Trancoso', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 2.000-3.500', rating: 4.6, tips: ['All-inclusive à beira da falésia - kids club que salva férias'] },
-    { id: 'pse-h-fasano-trancoso', name: 'Fasano Trancoso', zone: 'Trancoso', tier: 'resort', personaTags: ['couple'], priceRangeBRL: 'R$ 3.500-7.000', rating: 4.8, tips: ['Bangalôs com piscinas privadas sobre a praia de Itapororoca'] },
-    { id: 'pse-h-uxua', name: 'Uxua Casa Hotel & Spa', zone: 'Trancoso', tier: 'resort', personaTags: ['couple'], priceRangeBRL: 'R$ 3.000-6.000', rating: 4.8, tips: ['As casas do Quadrado viradas hotel-lenda - design de Wilbert Das'] },
-  ],
-  'Buenos Aires': [
-    { id: 'bue-h-alvear', name: 'Alvear Palace Hotel', zone: 'Recoleta', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 1.800-3.200', rating: 4.8, tips: ['O grande dame portenho - chá da tarde e mordomos desde 1932'] },
-    { id: 'bue-h-duhau', name: 'Palacio Duhau - Park Hyatt', zone: 'Recoleta', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 1.600-2.800', rating: 4.8, tips: ['Palácio com jardins escalonados - elegância máxima'] },
-    { id: 'bue-h-four-seasons', name: 'Four Seasons Buenos Aires', zone: 'Retiro', tier: 'upscale', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 1.400-2.500', rating: 4.7, tips: ['Mansão belle époque + torre moderna - piscina e kids amados'] },
-    { id: 'bue-h-home', name: 'Home Hotel', zone: 'Palermo Hollywood', tier: 'mid', personaTags: ['couple'], priceRangeBRL: 'R$ 500-900', rating: 4.6, tips: ['O boutique que inventou Palermo Hollywood - jardim com piscina'] },
-  ],
-  'Lisboa': [
-    { id: 'lis-h-bairro-alto', name: 'Bairro Alto Hotel', zone: 'Bairro Alto', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 1.600-2.800', rating: 4.7, tips: ['Boutique histórico entre o Chiado e o Bairro Alto - rooftop pro Tejo'] },
-    { id: 'lis-h-martinhal', name: 'Martinhal Lisbon Chiado', zone: 'Chiado', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 1.100-2.000', rating: 4.7, tips: ['O apart-hotel DESENHADO pra famílias - kids club no centro de Lisboa'] },
-    { id: 'lis-h-memmo', name: 'Memmo Alfama', zone: 'Alfama', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 1.000-1.800', rating: 4.6, tips: ['Escondido na Alfama com piscina vermelha sobre os telhados'] },
-    { id: 'lis-h-pestana-palace', name: 'Pestana Palace', zone: 'Alcântara', tier: 'resort', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 1.200-2.200', rating: 4.7, tips: ['Palácio nacional com jardins e piscinas - viver como rei'] },
-  ],
-  'Salvador': [
-    { id: 'ssa-h-deville', name: 'Deville Prime Salvador', zone: 'Itapuã', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 700-1.100', rating: 4.6, tips: ['Resort urbano pé na areia de Itapuã - piscinas e recreação'] },
-    { id: 'ssa-h-fasano', name: 'Fasano Salvador', zone: 'Comércio', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 1.500-2.800', rating: 4.7, tips: ['Art déco restaurado com rooftop pra Baía - o luxo soteropolitano'] },
-    { id: 'ssa-h-fera', name: 'Fera Palace Hotel', zone: 'Comércio', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 900-1.600', rating: 4.6, tips: ['O palácio de 1934 renascido - piscina de borda na proa do Centro'] },
-  ],
-  'Roma': [
-    { id: 'rom-h-artemide', name: 'Hotel Artemide', zone: 'Via Nazionale', tier: 'upscale', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 900-1.500', rating: 4.7, tips: ['O queridinho de avaliações - rooftop e serviço acima do preço'] },
-    { id: 'rom-h-de-russie', name: 'Hotel de Russie', zone: 'Popolo', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 3.000-5.500', rating: 4.7, tips: ['Jardins secretos entre o Popolo e a Spagna - refúgio de estrelas'] },
-    { id: 'rom-h-santa-maria', name: 'Hotel Santa Maria', zone: 'Trastevere', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 700-1.200', rating: 4.6, tips: ['Claustro com laranjeiras em Trastevere - térreo e tranquilo pra família'] },
-  ],
-  'Paris': [
-    { id: 'par-h-citadines-eiffel', name: 'Citadines Tour Eiffel', zone: '15e', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 800-1.300', rating: 4.4, tips: ['Apart-hotel com cozinha perto da Torre - o formato que família agradece'] },
-    { id: 'par-h-pavillon-reine', name: 'Le Pavillon de la Reine', zone: 'Marais', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 2.200-3.800', rating: 4.7, tips: ['Escondido na Place des Vosges - romance absoluto no Marais'] },
-    { id: 'par-h-plaza-athenee', name: 'Hôtel Plaza Athénée', zone: 'Champs-Élysées', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 5.000-9.000', rating: 4.7, tips: ['As sacadas de gerânios da Avenue Montaigne - alta-costura em hotel'] },
-  ],
-  'Tóquio': [
-    { id: 'tok-h-hoshinoya', name: 'Hoshinoya Tokyo', zone: 'Otemachi', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 3.500-6.000', rating: 4.7, tips: ['Ryokan de luxo vertical - onsen no topo de um arranha-céu'] },
-    { id: 'tok-h-mimaru-ueno', name: 'Mimaru Tokyo Ueno', zone: 'Ueno', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 700-1.200', rating: 4.6, tips: ['Apart-hotel DESENHADO pra famílias - quartos amplos e cozinha (raridade no Japão)'] },
-    { id: 'tok-h-park-hyatt', name: 'Park Hyatt Tokyo', zone: 'Shinjuku', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 2.800-5.000', rating: 4.7, tips: ['O hotel de Lost in Translation - piscina no céu e o bar New York'] },
-  ],
-  'Fortaleza': [
-    { id: 'for-h-gran-marquise', name: 'Gran Marquise', zone: 'Mucuripe', tier: 'upscale', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 800-1.400', rating: 4.7, tips: ['O 5 estrelas da Beira-Mar - serviço impecável e mar na janela'] },
-    { id: 'for-h-vila-gale', name: 'Vila Galé Fortaleza', zone: 'Praia do Futuro', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 700-1.200', rating: 4.5, tips: ['Resort pé na areia da Praia do Futuro - piscinas e all-inclusive opcional'] },
   ],
 };
 

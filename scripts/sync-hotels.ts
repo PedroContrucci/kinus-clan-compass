@@ -19,7 +19,6 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { CURATED_CITIES } from '../src/lib/curatedCities';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -27,34 +26,8 @@ const ENV_FILE = resolve(ROOT, '.env.sync');
 const OUT_FILE = resolve(ROOT, 'src/data/curatedHotels.ts');
 const TSCONFIG = 'tsconfig.app.json';
 
-/** Onda H2 — todas as cidades com hotéis `published` no banco. */
-const DEFAULT_CITIES = [
-  'Cartagena',
-  'Gramado',
-  'Orlando',
-  'Rio de Janeiro',
-  'Porto Seguro',
-  'Buenos Aires',
-  'Lisboa',
-  'Salvador',
-  'Rome',
-  'Paris',
-  'Tokyo',
-  'Fortaleza',
-];
-
-/**
- * Cidades cujo nome no banco difere do nome no app (CURATED_CITIES).
- * A consulta usa a chave (nome do banco); o arquivo é escrito com o valor
- * (nome do app), que é o que `getCuratedHotels(city)` recebe em runtime.
- */
-const CITY_KEY_ALIAS: Record<string, string> = {
-  Rome: 'Roma',
-  Tokyo: 'Tóquio',
-};
-
-/** Nome da cidade como o app a conhece. */
-const appKeyFor = (dbCity: string): string => CITY_KEY_ALIAS[dbCity] ?? dbCity;
+/** Piloto H1 — as duas cidades com curadoria de hotéis fechada. */
+const DEFAULT_CITIES = ['Cartagena', 'Gramado'];
 
 interface DbRow {
   id: string;
@@ -160,23 +133,14 @@ async function main(): Promise<void> {
       die(`ids duplicados no banco para '${city}': ${[...new Set(dupes)].join(', ')}`);
     }
 
-    const key = appKeyFor(city);
-    if (!CURATED_CITIES.includes(key)) {
-      die(
-        `'${city}' vira a chave '${key}', que não existe em CURATED_CITIES. ` +
-          `getCuratedHotels() nunca a encontraria. Acrescente um alias em CITY_KEY_ALIAS ` +
-          `ou corrija o nome da cidade no banco.`,
-      );
-    }
-
-    console.log(`   • ${city}: ${rows.length} hotéis${key !== city ? `  (chave do app: ${key})` : ''}`);
+    console.log(`   • ${city}: ${rows.length} hotéis`);
     total += rows.length;
-    blocks.push(`  ${q(key)}: [\n${rows.map(renderEntry).join('\n')}\n  ],`);
+    blocks.push(`  ${q(city)}: [\n${rows.map(renderEntry).join('\n')}\n  ],`);
   }
 
   const file = `// GERADO por scripts/sync-hotels.ts — não edite à mão.
 // Fonte: tabela \`curated_hotels\` (status='published') do projeto kinu-beta.
-// Para atualizar: npx tsx scripts/sync-hotels.ts ${cities.map((c) => (c.includes(' ') ? `'${c}'` : c)).join(' ')}
+// Para atualizar: npx tsx scripts/sync-hotels.ts ${cities.join(' ')}
 
 export interface CuratedHotel {
   id: string;
