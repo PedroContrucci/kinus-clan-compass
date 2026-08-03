@@ -26,8 +26,10 @@ const ENV_FILE = resolve(ROOT, '.env.sync');
 const OUT_FILE = resolve(ROOT, 'src/data/curatedHotels.ts');
 const TSCONFIG = 'tsconfig.app.json';
 
-/** Piloto H1 — as duas cidades com curadoria de hotéis fechada. */
-const DEFAULT_CITIES = ['Cartagena', 'Gramado'];
+/** Cidades com curadoria de hotéis fechada (H1 + LOTE 6). Um run sem argumentos
+ *  regrava o arquivo inteiro, então esta lista tem de conter TODAS elas — senão
+ *  as que faltarem somem do arquivo sem erro. */
+const DEFAULT_CITIES = ['Cartagena', 'Gramado', 'Nova York', 'Londres', 'Barcelona', 'Dubai'];
 
 interface DbRow {
   id: string;

@@ -1,6 +1,6 @@
 // GERADO por scripts/sync-hotels.ts — não edite à mão.
 // Fonte: tabela `curated_hotels` (status='published') do projeto kinu-beta.
-// Para atualizar: npx tsx scripts/sync-hotels.ts Cartagena Gramado
+// Para atualizar: npx tsx scripts/sync-hotels.ts Cartagena Gramado Nova York Londres Barcelona Dubai
 
 export interface CuratedHotel {
   id: string;
@@ -42,6 +42,27 @@ export const curatedHotels: Record<string, CuratedHotel[]> = {
     { id: 'gra-h-st-hubertus', name: 'Estalagem St. Hubertus', zone: 'Lago Negro', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 1.400-2.400', rating: 4.8, tips: ['Vista pro Lago Negro e café da manhã premiado — romance puro', 'Somente adultos: casais agradecem'] },
     { id: 'gra-h-vovo-carolina', name: 'Pousada Vovó Carolina', zone: 'Centro', tier: 'budget', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 350-550', rating: 4.6, tips: ['A pousada de dono presente — café caseiro e preço honesto no centro'] },
     { id: 'gra-h-wish-serrano', name: 'Wish Serrano Resort', zone: 'Centro', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 1.200-2.200', rating: 4.6, tips: ['O resort família de Gramado — piscina térmica coberta e recreação infantil', 'A 5 min a pé da Rua Coberta'] },
+  ],
+  'Nova York': [
+    { id: 'ny-h-1hotel-bk', name: '1 Hotel Brooklyn Bridge', zone: 'Dumbo', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 2.200-3.800', rating: 4.6, tips: ['Eco-chique com Manhattan inteira na janela'] },
+    { id: 'ny-h-beacon', name: 'Hotel Beacon', zone: 'Upper West Side', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 1.200-2.000', rating: 4.6, tips: ['Suítes com kitchenette perto do Central Park — o favorito das famílias'] },
+    { id: 'ny-h-plaza', name: 'The Plaza', zone: 'Central Park South', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 4.000-8.000', rating: 4.6, tips: ['O hotel-lenda de Home Alone na esquina do Central Park'] },
+  ],
+  'Londres': [
+    { id: 'lon-h-premier-ch', name: 'Premier Inn County Hall', zone: 'South Bank', tier: 'budget', personaTags: ['family'], priceRangeBRL: 'R$ 700-1.100', rating: 4.6, tips: ['Ao lado do London Eye por preço de rede — o segredo das famílias'] },
+    { id: 'lon-h-savoy', name: 'The Savoy', zone: 'Strand', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 4.500-8.000', rating: 4.7, tips: ['A lenda art déco do Tâmisa — chá, história e mordomia'] },
+  ],
+  'Barcelona': [
+    { id: 'bcn-h-arts', name: 'Hotel Arts Barcelona', zone: 'Barceloneta', tier: 'upscale', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 2.500-4.500', rating: 4.7, tips: ['A torre de frente pro mar com piscina e o peixe do Gehry ao lado'] },
+    { id: 'bcn-h-majestic', name: 'Majestic Hotel & Spa', zone: 'Passeig de Gràcia', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 1.800-3.200', rating: 4.6, tips: ['Clássico com rooftop pra Sagrada — elegância no Passeig'] },
+    { id: 'bcn-h-yurbban', name: 'Yurbban Trafalgar', zone: 'Sant Pere', tier: 'mid', personaTags: ['couple', 'solo'], priceRangeBRL: 'R$ 700-1.100', rating: 4.6, tips: ['Rooftop com piscina e a Catedral de fundo — valor imbatível'] },
+  ],
+  'Dubai': [
+    { id: 'dxb-h-address-dt', name: 'Address Downtown', zone: 'Downtown', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 2.000-3.500', rating: 4.7, tips: ['A fonte dançante e o Burj Khalifa na varanda'] },
+    { id: 'dxb-h-atlantis', name: 'Atlantis The Palm', zone: 'Palm Jumeirah', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 2.500-5.000', rating: 4.7, tips: ['O resort-ícone com Aquaventure e aquário inclusos — férias dentro do hotel'] },
+    { id: 'dxb-h-burj-arab', name: 'Burj Al Arab', zone: 'Jumeirah', tier: 'resort', personaTags: ['couple'], priceRangeBRL: 'R$ 8.000-15.000', rating: 4.8, tips: ['A vela mais famosa do mundo — mordomo, Rolls e mar privado'] },
+    { id: 'dxb-h-jumeirah-beach', name: 'Jumeirah Beach Hotel', zone: 'Jumeirah', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 2.200-3.800', rating: 4.6, tips: ['A onda de vidro com praia privada e Wild Wadi grátis'] },
+    { id: 'dxb-h-rove-dt', name: 'Rove Downtown', zone: 'Downtown', tier: 'budget', personaTags: ['family', 'solo'], priceRangeBRL: 'R$ 400-650', rating: 4.6, tips: ['O budget-esperto de Dubai — vista do Burj por preço de gente'] },
   ],
 };
 
