@@ -4,9 +4,9 @@
 **Escopo:** atividades de Nova York / Londres / Barcelona / Dubai, resync de **todos** os hotéis
 (16 cidades), catch-up de Fortaleza. Puro dado — nenhuma lógica de app, contexto ou edge foi tocada.
 
-> **Este relatório substitui a 1ª versão (commit `2c1f98a`), que continha dois erros de fato.**
-> As correções estão nas secções [0](#0-correção-regressão-de-hotéis) e
-> [5](#5-correção-a-edge-está-deployada-e-a-servir).
+> **A 1ª versão deste relatório (commit `2c1f98a`) continha dois erros de fato** — regressão de
+> hotéis e uma crença errada sobre o deploy da edge. Ambos corrigidos em **`RELATORIO-CORRECAO-LOTE6.md`**,
+> que é onde está o detalhe completo. Aqui ficam só os resumos (secções 0 e 5).
 
 ## Resumo
 
@@ -17,69 +17,15 @@
 | Atividades — arquivo inteiro | 917 | **976** | +59 |
 | **Hotéis** | **20 (2 cidades)** | **68 (16 cidades)** | **+48 / +14 cidades** |
 
-## 0) CORREÇÃO: regressão de hotéis
+## 0) Correção — regressão de hotéis (resumo)
 
-O `curatedHotels.ts` ficou com 6 cidades / 33 hotéis quando devia ter 16 / 68. Reconstituição pelo
-git, para que a causa fique registada:
+O `curatedHotels.ts` ficou com 6 cidades / 33 hotéis quando o banco tem 16 / 68. O revert
+`4e610de` (que desfez a onda H2, `f33f7e0`) já era o `HEAD` quando o lote começou; sincronizei
+6 cidades por cima e não restaurei as outras 10. Corrigido: resync total, **68 hotéis em 16
+cidades**, com o `CITY_KEY_ALIAS` (`Rome`→`Roma`, `Tokyo`→`Tóquio`) restaurado e
+`DEFAULT_CITIES` = a lista completa.
 
-| Hash | O quê | Arquivo depois |
-|---|---|---|
-| `d50c8c8` | piloto H1 — Cartagena + Gramado | 2 cidades / 20 hotéis |
-| `f33f7e0` | **onda H2** — todas as cidades published | **12 cidades / 55 hotéis** |
-| `4e610de` | **`Revert "feat: hotels H2 wave"`** | **2 cidades / 20 hotéis** ⬅ aqui os 35 hotéis saíram |
-| `2c1f98a` | LOTE 6, 1ª passagem (6 cidades) | 6 cidades / 33 hotéis |
-| *este* | resync total, sem argumentos | **16 cidades / 68 hotéis** ✅ |
-
-**Quem apagou:** o revert `4e610de`, que já era o `HEAD` quando o LOTE 6 começou. **O que eu errei:**
-li o revert no log, li o `RELATORIO-HOTEIS.md`, e mesmo assim tratei o arquivo de 2 cidades como
-linha de base legítima — sincronizei 6 cidades e deixei as outras 10 de fora. Devia ter estranhado
-um revert que remove dado publicado e perguntado antes de construir por cima dele.
-
-**Por que era grave:** a edge lê os hotéis do payload que o app manda, e o bundle em produção foi
-construído do `f33f7e0`. Com a edge viva (secção 5), os 35 hotéis só continuavam a existir em
-produção enquanto ninguém rebuildasse o front a partir do `main`. O repo era a única coisa a
-segurá-los.
-
-### O resync
-
-```bash
-npx tsx scripts/sync-hotels.ts        # sem argumentos = todas as 16 cidades
-```
-
-Lista levantada do banco antes de rodar (`select distinct city ... where status='published'`):
-
-| Cidade (banco) | Chave no app | Hotéis | | Cidade (banco) | Chave no app | Hotéis |
-|---|---|---|---|---|---|---|
-| Barcelona | Barcelona | 3 | | Nova York | Nova York | 3 |
-| Buenos Aires | Buenos Aires | 4 | | Orlando | Orlando | 5 |
-| Cartagena | Cartagena | 10 | | Paris | Paris | 3 |
-| Dubai | Dubai | 5 | | Porto Seguro | Porto Seguro | 4 |
-| Fortaleza | Fortaleza | 2 | | Rio de Janeiro | Rio de Janeiro | 4 |
-| Gramado | Gramado | 10 | | **Rome** | **Roma** (alias) | 3 |
-| Lisboa | Lisboa | 4 | | Salvador | Salvador | 3 |
-| Londres | Londres | 2 | | **Tokyo** | **Tóquio** (alias) | 3 |
-| | | | | **Total** | **16 cidades** | **68** |
-
-As 5 cidades curadas sem hotel no banco continuam sem seção de hotel no prompt, como esperado:
-Cidade do Cabo, Istambul, Bangkok, Marrakech, Singapura.
-
-### `CITY_KEY_ALIAS` restaurado
-
-O revert `4e610de` levou junto a proteção que a onda H2 tinha criado. Ela é **obrigatória** neste
-resync: o banco grava `Rome` e `Tokyo`, o app usa `Roma` e `Tóquio`. Sem tradução, 6 hotéis entrariam
-sob chaves que `getCuratedHotels()` nunca encontra — a seção sumiria do prompt em Roma e Tóquio, sem
-erro e sem sintoma. Restaurado do `f33f7e0`:
-
-- `CITY_KEY_ALIAS = { Rome: 'Roma', Tokyo: 'Tóquio' }` — consulta pelo nome do banco, escreve o do app;
-- **toda** chave gerada é validada contra `CURATED_CITIES`; o script morre em vez de gravar dado morto.
-
-### `DEFAULT_CITIES` = as 16
-
-Passa a ser a lista completa, com o aviso no topo do script: **o `sync-hotels` regrava o arquivo
-inteiro**, então o que não estiver na lista (ou nos argumentos) some sem erro. Foi assim que o
-arquivo encolheu duas vezes. Um `npx tsx scripts/sync-hotels.ts` sem argumentos agora reconstrói o
-arquivo correto e completo. O cabeçalho do arquivo gerado passa a marcar `RUN PARCIAL` quando é
-gerado com um subconjunto.
+📄 **Detalhe completo, causa e reconstituição pelo git: `RELATORIO-CORRECAO-LOTE6.md` — Correção 1.**
 
 ## 1) Chaves — nada a adicionar em `CURATED_CITIES`
 
@@ -131,29 +77,15 @@ commit anterior: só os arrays sincronizados mudaram, os demais estão idêntico
 | Istambul | 28 | 26 | app +2 |
 | Marrakech | 28 | 26 | app +2 |
 
-## 5) CORREÇÃO: a edge **está** deployada e a servir
+## 5) Correção — a edge **está** deployada (resumo)
 
-A versão anterior deste relatório repetia que a edge `kinu-ai` nunca fora deployada. **Está errado.**
+A 1ª versão dizia que a edge `kinu-ai` nunca fora deployada. **Errado.** O agente recomendou
+`Alvear` / `Duhau` / `Home` em Buenos Aires e os hotéis de Gramado em produção — nomes que só a
+versão nova produz. A sonda que dava `SEM_HOTEIS_NO_CONTEXTO` mira `lnhbamzhturwkhcwiohr`, o ref
+de `config.toml`, que não é quem serve os utilizadores.
 
-**Prova em produção (do usuário, ao vivo):** o agente recomendou `Alvear` / `Duhau` / `Home` em
-Buenos Aires e os hotéis de Gramado. Esses nomes só existem no catálogo curado e só chegam ao
-utilizador pela seção `🏨 HOTÉIS CURADOS`, que é **exclusiva da versão nova** da edge. Se a produção
-servisse a versão antiga, o campo `hotels` seria ignorado e nenhum desses nomes apareceria.
-Confirmei que os três estão no arquivo restaurado — o dado que o agente citou é este.
+**Fica em aberto:** identificar o ref real de produção. Sem ele, `config.toml` e `.env` apontam
+para o alvo errado e a próxima sonda ou `functions deploy` erra outra vez.
 
-**Por que a sonda deu negativo:** ela mira `lnhbamzhturwkhcwiohr`, o ref de `supabase/config.toml:1`
-(o mesmo do `.env` local). O `SEM_HOTEIS_NO_CONTEXTO` é evidência sobre **esse ref**, não sobre a
-produção — a instância que atende os utilizadores não é essa. Um canário apontado ao alvo errado não
-é prova de nada; foi lido como se fosse, e daí saiu a conclusão errada.
-
-**O que muda:**
-
-- ~~"a edge nunca foi deployada"~~ — **retirado**. Está deployada e a funcionar.
-- ~~"os hotéis não têm efeito em produção"~~ — **retirado**. Têm, e é por isso que a regressão da
-  secção 0 importava.
-- **Fica em aberto:** qual é o ref real de produção. Não dá para descobrir daqui — vive no ambiente
-  de deploy do Lovable, e o token local não tem acesso a ele. Enquanto não for identificado e
-  registado, `config.toml` e `.env` continuam a apontar para um ref que não é o que serve, e
-  qualquer sonda ou `functions deploy` futuro vai mirar o alvo errado outra vez.
-
-Detalhe em `RELATORIO-DEPLOY-EDGE.md`, corrigido na mesma passagem.
+📄 **Detalhe completo: `RELATORIO-CORRECAO-LOTE6.md` — Correção 2.** Ver também a correção no topo
+de `RELATORIO-DEPLOY-EDGE.md` e `RELATORIO-HOTEIS.md`.

@@ -23,7 +23,7 @@
 >
 > **Deixou de valer:** tudo neste relatório que diga que a edge nunca foi deployada, que o Lovable
 > não deploya, ou que os hotéis não têm efeito em produção. Leia o que segue com esta correção à
-> frente. Ver `RELATORIO-LOTE6.md` §5.
+> frente. Ver `RELATORIO-CORRECAO-LOTE6.md` — Correção 2.
 
 **Estado da tentativa original (02/08, 2ª tentativa): deploy TENTADO E FALHADO — 403.** O token foi
 fornecido e é válido, mas pertence a uma conta que **não tem acesso ao ref `lnhbamzhturwkhcwiohr`**.
