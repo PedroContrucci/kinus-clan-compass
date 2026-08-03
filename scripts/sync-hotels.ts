@@ -19,6 +19,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { CURATED_CITIES } from '../src/lib/curatedCities';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -26,10 +27,48 @@ const ENV_FILE = resolve(ROOT, '.env.sync');
 const OUT_FILE = resolve(ROOT, 'src/data/curatedHotels.ts');
 const TSCONFIG = 'tsconfig.app.json';
 
-/** Cidades com curadoria de hotéis fechada (H1 + LOTE 6). Um run sem argumentos
- *  regrava o arquivo inteiro, então esta lista tem de conter TODAS elas — senão
- *  as que faltarem somem do arquivo sem erro. */
-const DEFAULT_CITIES = ['Cartagena', 'Gramado', 'Nova York', 'Londres', 'Barcelona', 'Dubai'];
+/**
+ * TODAS as cidades com hotéis `published` no banco — nomes como o BANCO os grava
+ * (ver CITY_KEY_ALIAS para os que diferem do app).
+ *
+ * ⚠️ Este script regrava `curatedHotels.ts` INTEIRO a cada run: o que não estiver
+ * nesta lista (ou nos argumentos) some do arquivo sem erro e sem sintoma. Já
+ * aconteceu duas vezes. Ao publicar hotéis de uma cidade nova no banco,
+ * acrescente-a aqui. Confira a lista real com:
+ *
+ *   select distinct city from curated_hotels where status = 'published';
+ */
+const DEFAULT_CITIES = [
+  'Barcelona',
+  'Buenos Aires',
+  'Cartagena',
+  'Dubai',
+  'Fortaleza',
+  'Gramado',
+  'Lisboa',
+  'Londres',
+  'Nova York',
+  'Orlando',
+  'Paris',
+  'Porto Seguro',
+  'Rio de Janeiro',
+  'Rome',
+  'Salvador',
+  'Tokyo',
+];
+
+/**
+ * Cidades cujo nome no banco difere do nome no app (CURATED_CITIES).
+ * A consulta usa a chave (nome do banco); o arquivo é escrito com o valor
+ * (nome do app), que é o que `getCuratedHotels(city)` recebe em runtime.
+ */
+const CITY_KEY_ALIAS: Record<string, string> = {
+  Rome: 'Roma',
+  Tokyo: 'Tóquio',
+};
+
+/** Nome da cidade como o app a conhece. */
+const appKeyFor = (dbCity: string): string => CITY_KEY_ALIAS[dbCity] ?? dbCity;
 
 interface DbRow {
   id: string;
@@ -135,14 +174,25 @@ async function main(): Promise<void> {
       die(`ids duplicados no banco para '${city}': ${[...new Set(dupes)].join(', ')}`);
     }
 
-    console.log(`   • ${city}: ${rows.length} hotéis`);
+    const key = appKeyFor(city);
+    if (!CURATED_CITIES.includes(key)) {
+      die(
+        `'${city}' vira a chave '${key}', que não existe em CURATED_CITIES. ` +
+          `getCuratedHotels() nunca a encontraria. Acrescente um alias em CITY_KEY_ALIAS ` +
+          `ou corrija o nome da cidade no banco.`,
+      );
+    }
+
+    console.log(`   • ${city}: ${rows.length} hotéis${key !== city ? `  (chave do app: ${key})` : ''}`);
     total += rows.length;
-    blocks.push(`  ${q(city)}: [\n${rows.map(renderEntry).join('\n')}\n  ],`);
+    blocks.push(`  ${q(key)}: [\n${rows.map(renderEntry).join('\n')}\n  ],`);
   }
 
+  const isFullRun = cities.length === DEFAULT_CITIES.length;
   const file = `// GERADO por scripts/sync-hotels.ts — não edite à mão.
 // Fonte: tabela \`curated_hotels\` (status='published') do projeto kinu-beta.
-// Para atualizar: npx tsx scripts/sync-hotels.ts ${cities.join(' ')}
+// Para atualizar: npx tsx scripts/sync-hotels.ts   (sem argumentos = TODAS as cidades)
+// Gerado com ${cities.length} cidade(s)${isFullRun ? '' : ' — RUN PARCIAL, cidades fora da lista foram omitidas'}: ${cities.join(', ')}
 
 export interface CuratedHotel {
   id: string;

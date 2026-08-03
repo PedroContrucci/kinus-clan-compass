@@ -3,10 +3,32 @@
 **Data:** 2026-08-02
 **Escopo:** tirar o deploy das edge functions do Lovable e passá-lo para a CLI do Supabase.
 
-> **Estado deste relatório (02/08, 2ª tentativa): deploy TENTADO E FALHADO — 403.** O token foi
-> fornecido e é válido, mas pertence a uma conta que **não tem acesso ao projeto da aplicação**.
-> A camada de hotéis já está commitada e no `origin/main` (`d50c8c8`). Ver
-> [Bloqueio](#bloqueio-atual-o-token-é-de-outro-projeto).
+> ## ⚠️ CORREÇÃO (03/08): a conclusão central deste relatório estava ERRADA
+>
+> **A edge `kinu-ai` nova ESTÁ deployada e a servir em produção.** Prova ao vivo: o agente recomendou
+> `Alvear` / `Duhau` / `Home` em Buenos Aires e os hotéis de Gramado — nomes que só chegam ao
+> utilizador pela seção `🏨 HOTÉIS CURADOS`, exclusiva da versão nova. A versão antiga ignora o campo
+> `hotels` e nunca os produziria.
+>
+> **O erro:** a sonda das secções 2 e 4 mira `lnhbamzhturwkhcwiohr`, o ref de `supabase/config.toml:1`
+> (e do `.env` local). Esse **não é** o ref que atende os utilizadores. `SEM_HOTEIS_NO_CONTEXTO` é
+> evidência sobre o ref errado, não sobre a produção — e foi lido como se fosse prova de que nada
+> tinha sido deployado. O 403 da secção 4 tem a mesma origem: o token não tem acesso a um projeto
+> que, de todo modo, não é o alvo.
+>
+> **Continua válido:** o token local não serve para deployar (403), e o ref real de produção
+> **ainda não está identificado** — vive no ambiente de deploy do Lovable. Enquanto isso não for
+> resolvido, `config.toml` e `.env` apontam para um ref que não é o que serve, e qualquer sonda ou
+> `functions deploy` daqui mira o alvo errado.
+>
+> **Deixou de valer:** tudo neste relatório que diga que a edge nunca foi deployada, que o Lovable
+> não deploya, ou que os hotéis não têm efeito em produção. Leia o que segue com esta correção à
+> frente. Ver `RELATORIO-LOTE6.md` §5.
+
+**Estado da tentativa original (02/08, 2ª tentativa): deploy TENTADO E FALHADO — 403.** O token foi
+fornecido e é válido, mas pertence a uma conta que **não tem acesso ao ref `lnhbamzhturwkhcwiohr`**.
+A camada de hotéis já está commitada e no `origin/main` (`d50c8c8`). Ver
+[Bloqueio](#bloqueio-atual-o-token-é-de-outro-projeto).
 
 ## 1) O repo contém `HOTÉIS CURADOS` — confirmado
 
@@ -159,6 +181,10 @@ Regras que passam a valer:
 
 ## Pendências
 
+- [x] ~~Redeployar a edge~~ — **não era preciso: já estava deployada.** Ver a correção no topo.
+- [ ] **Identificar e registar o ref real de produção.** É a pendência que sobrou de verdade. Sem
+      ele, `supabase/config.toml:1` e `.env` continuam a apontar para `lnhbamzhturwkhcwiohr`, que não
+      é quem serve — e toda sonda ou deploy daqui mira o alvo errado.
 - [x] ~~Commitar a camada de hotéis~~ — feito: **`d50c8c8`**, `origin/main`
       (`curatedHotels.ts`, `sync-hotels.ts`, `KinuAIContext.tsx`, `kinu-ai/index.ts`,
       `RELATORIO-HOTEIS.md`). `tsc -p tsconfig.app.json --noEmit` ✅ antes do commit.

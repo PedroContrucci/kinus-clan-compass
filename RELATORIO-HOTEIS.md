@@ -75,6 +75,13 @@ personas e 2 tips por hotel. Custo no prompt: **~1.9 kB** por cidade (1902 Carta
 | Render da seção com os dados reais | ✅ 20 hotéis, 2 cidades |
 | Cidade sem curadoria (Paris) | ✅ `hotels` omitido, seção não aparece |
 
+## ⚠️ CORREÇÃO (03/08): esta secção está desatualizada
+
+**A edge nova está deployada e a servir** — provado ao vivo (hotéis de Gramado e Buenos Aires vindos
+do agente em produção). O canário vermelho citado abaixo mira o ref errado (`lnhbamzhturwkhcwiohr`,
+de `config.toml`), não a produção. Ver `RELATORIO-LOTE6.md` §5 e a correção no topo de
+`RELATORIO-DEPLOY-EDGE.md`. O texto abaixo fica como registo do que se acreditava em 02/08.
+
 ## ⚠️ Redeploy da edge é manual — agora via Supabase CLI
 
 A mudança em `supabase/functions/kinu-ai/index.ts` **não vale em produção só com o push**. Até o
