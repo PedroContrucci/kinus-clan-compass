@@ -81,8 +81,11 @@ function convertToFlightOption(offer: AmadeusFlightOffer): FlightOption {
   };
 }
 
-// Fallback mock data when API fails or returns empty
-function generateFallbackFlightOptions(
+// Fallback mock data when API fails or returns empty.
+// originCode/destinationCode are always the TRIP's origin and destination — the
+// direction is derived here from isReturn, so callers must not pre-swap them.
+// Exported for the regression test that pins that invariant.
+export function generateFallbackFlightOptions(
   originCode: string,
   destinationCode: string,
   isReturn: boolean = false
@@ -96,17 +99,17 @@ function generateFallbackFlightOptions(
     return [
       { id: `${isReturn?'return':'outbound'}-fallback-dom-1`, airline: 'Estimativa · companhia a definir',
         route: isReturn?`${destinationCode} → ${originCode}`:`${originCode} → ${destinationCode}`,
-        isDirect: true, duration: '1h05', durationMinutes: 65, price: 850,
+        isDirect: true, duration: '1h05', durationMinutes: 65, price: isReturn?890:850,
         departureTime: isReturn?'18:30':'08:15', arrivalTime: isReturn?'19:35':'09:20',
         isBestPrice: true },
       { id: `${isReturn?'return':'outbound'}-fallback-dom-2`, airline: 'Estimativa · companhia a definir',
         route: isReturn?`${destinationCode} → ${originCode}`:`${originCode} → ${destinationCode}`,
-        isDirect: true, duration: '1h10', durationMinutes: 70, price: 920,
+        isDirect: true, duration: '1h10', durationMinutes: 70, price: isReturn?965:920,
         departureTime: isReturn?'20:00':'10:40', arrivalTime: isReturn?'21:10':'11:50',
         isFastest: true },
       { id: `${isReturn?'return':'outbound'}-fallback-dom-3`, airline: 'Estimativa · companhia a definir',
         route: isReturn?`${destinationCode} → ${originCode}`:`${originCode} → ${destinationCode}`,
-        isDirect: true, duration: '1h15', durationMinutes: 75, price: 1050,
+        isDirect: true, duration: '1h15', durationMinutes: 75, price: isReturn?1010:1050,
         departureTime: isReturn?'15:20':'13:30', arrivalTime: isReturn?'16:35':'14:45' },
     ];
   }
@@ -242,7 +245,7 @@ export const FlightSelectionStage = ({
       return returnData.map(convertToFlightOption);
     }
     // Fallback to mock data if API returns empty
-    return generateFallbackFlightOptions(destinationCode, originCode, true);
+    return generateFallbackFlightOptions(originCode, destinationCode, true);
   }, [returnData, originCode, destinationCode]);
 
   // Sort options and assign best-price / fastest badges to first occurrence only
