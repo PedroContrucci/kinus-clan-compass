@@ -140,23 +140,6 @@ const Conta = () => {
                   📝 Feedbacks Recebidos {feedbacks.length > 0 ? `(${feedbacks.length})` : ''}
                 </h2>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleGenerateDigest}
-                    disabled={digestLoading}
-                    className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
-                  >
-                    {digestLoading ? (
-                      <>
-                        <Loader2 size={14} className="animate-spin" />
-                        Analisando feedbacks...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={14} />
-                        🤖 Gerar análise inteligente
-                      </>
-                    )}
-                  </button>
                   {feedbacks.length > 0 && (
                     <button
                       onClick={() => {
