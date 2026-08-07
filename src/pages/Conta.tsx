@@ -1,46 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, HelpCircle, Star, Info, Sparkles, Loader2 } from 'lucide-react';
+import { LogOut, User, HelpCircle, Star, Info } from 'lucide-react';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { toast } from '@/hooks/use-toast';
 import kinuLogo from '@/assets/KINU_logo.png';
 import { SavedTrip } from '@/types/trip';
-import { supabase } from '@/integrations/supabase/client';
+
 import { loadJson } from '@/lib/safeStorage';
 
-const asArray = (v: unknown): any[] => Array.isArray(v) ? v : (v ? [v] : []);
+
 
 const Conta = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [stats, setStats] = useState({ trips: 0, countries: 0, activities: 0 });
-  const [digest, setDigest] = useState<any>(null);
-  const [digestLoading, setDigestLoading] = useState(false);
-  const [digestError, setDigestError] = useState<{ message: string; raw?: string } | null>(null);
-
-  const handleGenerateDigest = async () => {
-    setDigestLoading(true);
-    setDigest(null);
-    setDigestError(null);
-    try {
-      const { data, error } = await supabase.functions.invoke('feedback-digest');
-      if (error) {
-        setDigestError({ message: error.message || 'Falha ao chamar a função' });
-      } else if (!data) {
-        setDigestError({ message: 'Resposta vazia da função' });
-      } else if (data.error) {
-        setDigestError({ message: String(data.error), raw: data.raw });
-      } else if (data.digest === null || data.digest === undefined) {
-        toast({ title: data.message || 'Sem feedbacks ainda' });
-      } else {
-        setDigest(data.digest);
-      }
-    } catch (err: any) {
-      setDigestError({ message: err?.message || 'Erro inesperado ao gerar análise' });
-    } finally {
-      setDigestLoading(false);
-    }
-  };
 
   useEffect(() => {
     const savedUser = loadJson<{ name: string; email: string } | null>('kinu_user', null);
@@ -167,23 +140,6 @@ const Conta = () => {
                   📝 Feedbacks Recebidos {feedbacks.length > 0 ? `(${feedbacks.length})` : ''}
                 </h2>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleGenerateDigest}
-                    disabled={digestLoading}
-                    className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
-                  >
-                    {digestLoading ? (
-                      <>
-                        <Loader2 size={14} className="animate-spin" />
-                        Analisando feedbacks...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={14} />
-                        🤖 Gerar análise inteligente
-                      </>
-                    )}
-                  </button>
                   {feedbacks.length > 0 && (
                     <button
                       onClick={() => {
@@ -204,127 +160,6 @@ const Conta = () => {
                 </div>
               </div>
 
-              {/* Error card */}
-              {digestError && (
-                <div className="bg-card border-2 border-red-500/50 rounded-xl p-4 mb-4">
-                  <h3 className="text-sm font-semibold text-red-400 mb-2">⚠️ Erro ao gerar análise</h3>
-                  <p className="text-sm text-red-300/80">{digestError.message}</p>
-                  {digestError.raw && (
-                    <pre className="text-xs text-red-300/60 mt-2 whitespace-pre-wrap break-all max-h-40 overflow-auto">
-                      {digestError.raw}
-                    </pre>
-                  )}
-                </div>
-              )}
-
-              {/* Digest Cards */}
-              {digest && (
-                <div className="space-y-3 mb-4">
-                  {/* Resumo */}
-                  <div className="bg-card border border-border rounded-xl p-4">
-                    <h3 className="text-sm font-semibold text-foreground mb-2">📋 Resumo</h3>
-                    {Array.isArray(digest?.resumo) ? (
-                      <ul className="space-y-1">
-                        {asArray(digest?.resumo).map((item: any, i: number) => (
-                          <li key={i} className="text-sm text-muted-foreground list-disc list-inside">
-                            {typeof item === 'string' ? item : JSON.stringify(item)}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">{digest?.resumo ?? ''}</p>
-                    )}
-                  </div>
-
-                  {/* Prioridade 1 */}
-                  {digest?.prioridade_1 && (
-                    <div className="bg-card rounded-xl p-4 border-2" style={{ borderColor: '#eab308' }}>
-                      <h3 className="text-sm font-semibold text-foreground mb-2">🎯 Prioridade #1</h3>
-                      <p className="text-sm text-muted-foreground">{digest?.prioridade_1 ?? ''}</p>
-                    </div>
-                  )}
-
-                  {/* Críticos */}
-                  {asArray(digest?.criticos).length > 0 && (
-                    <div className="bg-card border border-red-500/30 rounded-xl p-4">
-                      <h3 className="text-sm font-semibold text-red-400 mb-2">🔴 Críticos</h3>
-                      <ul className="space-y-1">
-                        {asArray(digest?.criticos).map((item: any, i: number) => (
-                          <li key={i} className="text-sm text-red-300/80 list-disc list-inside">
-                            {typeof item === 'string' ? item : JSON.stringify(item)}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Padrões */}
-                  {asArray(digest?.padroes).length > 0 && (
-                    <div className="bg-card border border-amber-500/30 rounded-xl p-4">
-                      <h3 className="text-sm font-semibold text-amber-400 mb-2">🟡 Padrões</h3>
-                      <ul className="space-y-2">
-                        {asArray(digest?.padroes).map((item: any, i: number) => {
-                          let obj: any = item;
-                          if (typeof item === 'string') {
-                            try {
-                              const parsed = JSON.parse(item);
-                              if (parsed && typeof parsed === 'object') obj = parsed;
-                            } catch {
-                              // keep as string
-                            }
-                          }
-                          if (obj && typeof obj === 'object') {
-                            return (
-                              <li key={i} className="text-sm text-amber-300/80 list-disc list-inside">
-                                <span className="font-medium">{obj.padrao ?? obj.pattern ?? '—'}</span>
-                                {obj.quantas_pessoas !== undefined && (
-                                  <span className="text-amber-300/60"> · {obj.quantas_pessoas} {typeof obj.quantas_pessoas === 'number' ? 'pessoas' : ''}</span>
-                                )}
-                                {obj.sugestao_de_correcao && (
-                                  <div className="ml-5 text-xs text-amber-300/70 mt-1">→ {obj.sugestao_de_correcao}</div>
-                                )}
-                              </li>
-                            );
-                          }
-                          return (
-                            <li key={i} className="text-sm text-amber-300/80 list-disc list-inside">
-                              {String(item)}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Sugestões dos usuários */}
-                  {asArray(digest?.sugestoes_dos_usuarios).length > 0 && (
-                    <div className="bg-card border border-emerald-500/30 rounded-xl p-4">
-                      <h3 className="text-sm font-semibold text-emerald-400 mb-2">💡 Sugestões dos Usuários</h3>
-                      <ul className="space-y-1">
-                        {asArray(digest?.sugestoes_dos_usuarios).map((item: any, i: number) => (
-                          <li key={i} className="text-sm text-emerald-300/80 list-disc list-inside">
-                            {typeof item === 'string' ? item : JSON.stringify(item)}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Destaques positivos */}
-                  {asArray(digest?.destaques_positivos).length > 0 && (
-                    <div className="bg-card border border-emerald-500/30 rounded-xl p-4">
-                      <h3 className="text-sm font-semibold text-emerald-400 mb-2">✅ Destaques Positivos</h3>
-                      <ul className="space-y-1">
-                        {asArray(digest?.destaques_positivos).map((item: any, i: number) => (
-                          <li key={i} className="text-sm text-emerald-300/80 list-disc list-inside">
-                            {typeof item === 'string' ? item : JSON.stringify(item)}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Local feedback list */}
               {feedbacks.length > 0 && (
