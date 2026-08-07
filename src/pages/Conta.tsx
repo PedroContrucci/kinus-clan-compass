@@ -8,7 +8,7 @@ import { SavedTrip } from '@/types/trip';
 
 import { loadJson } from '@/lib/safeStorage';
 
-const asArray = (v: unknown): any[] => Array.isArray(v) ? v : (v ? [v] : []);
+
 
 const Conta = () => {
   const navigate = useNavigate();
