@@ -21,6 +21,14 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // R-04: função desativada. Expunha beta_feedback (service_role) a qualquer chamador
+  // anônimo, contornando a RLS. Sem uso legítimo restante — o dono recebe feedback via
+  // feedback-notify (WhatsApp). Código abaixo mantido inerte para reversão.
+  return new Response(
+    JSON.stringify({ error: 'Esta função foi desativada.' }),
+    { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
