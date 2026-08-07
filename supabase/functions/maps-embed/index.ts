@@ -10,7 +10,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const API_KEY = Deno.env.get("GOOGLE_PLACES_API_KEY");
+  const API_KEY = Deno.env.get("GOOGLE_MAPS_EMBED_KEY");
   if (!API_KEY) {
     return new Response(JSON.stringify({ error: "No key" }), {
       status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
