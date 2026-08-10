@@ -1,5 +1,5 @@
 // Itinerary Detail Modal — Full itinerary with day breakdown, budget, comments
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { X, Star, MapPin, Clock, DollarSign, Heart, Copy, ChevronLeft, ChevronRight, Bookmark, Plane, Hotel, Utensils, Sparkles, MessageCircle, Send, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -77,7 +77,10 @@ const budgetBreakdown = {
   alimentacao: 0.12,
 };
 
-export const ItineraryDetailModal = ({ 
+/** Último recurso quando o roteiro não tem cover_image_url. */
+const FALLBACK_PHOTO = 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200';
+
+export const ItineraryDetailModal = ({
   itinerary, 
   activities = [],
   isOpen, 
@@ -95,6 +98,9 @@ export const ItineraryDetailModal = ({
     [itinerary?.duration_days]
   );
 
+  // Roteiros diferentes têm galerias de tamanhos diferentes: zera o índice ao trocar.
+  useEffect(() => { setCurrentPhotoIndex(0); }, [itinerary?.id]);
+
   if (!itinerary) return null;
 
   const budget = itinerary.estimated_budget_brl || 0;
@@ -105,11 +111,8 @@ export const ItineraryDetailModal = ({
     { icon: '🍜', label: 'Alimentação', value: budget * budgetBreakdown.alimentacao },
   ];
 
-  const photos = [
-    itinerary.cover_image_url || 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200',
-    'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=1200',
-    'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=1200',
-  ];
+  const coverPhotos = [itinerary.cover_image_url].filter(Boolean) as string[];
+  const photos = coverPhotos.length > 0 ? coverPhotos : [FALLBACK_PHOTO];
 
   const handleCopyToTrip = () => {
     toast.success('Roteiro copiado!', {
