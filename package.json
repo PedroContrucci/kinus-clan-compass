@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "sync-catalog": "tsx scripts/sync-catalog.ts"
+    "sync-catalog": "tsx scripts/sync-catalog.ts",
+    "sync-hotels": "tsx scripts/sync-hotels.ts",
+    "writeback-catalog": "tsx scripts/writeback-catalog.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

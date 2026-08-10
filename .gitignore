@@ -20,6 +20,9 @@ src/data/*.js
 # Credenciais do sync do catálogo (Supabase kinu-beta) — nunca commitar
 .env.sync
 
+# Backups das linhas do banco tirados antes de cada write-back (app -> banco)
+.writeback-backups/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
