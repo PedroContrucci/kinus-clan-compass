@@ -1,4 +1,5 @@
 // Itinerary Card Component for complete trip itineraries
+import { useEffect, useState } from 'react';
 import { Calendar, DollarSign, Heart, Copy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useDestinationPhoto } from '@/hooks/useUnsplash';
@@ -36,6 +37,10 @@ export const ItineraryCard = ({ itinerary, onClick }: ItineraryCardProps) => {
   const { imageUrl, credit, fallbackGradient, fallbackEmoji } = useDestinationPhoto(destination);
   const finalImageUrl = itinerary.cover_image_url || imageUrl;
 
+  // URL viva não garante imagem viva: se a foto quebrar, cai no gradiente abaixo.
+  const [imageFailed, setImageFailed] = useState(false);
+  useEffect(() => { setImageFailed(false); }, [finalImageUrl]);
+
   const style = itinerary.travel_style ? styleLabels[itinerary.travel_style] : null;
 
   return (
@@ -47,11 +52,12 @@ export const ItineraryCard = ({ itinerary, onClick }: ItineraryCardProps) => {
     >
       {/* Cover Image with Unsplash or Fallback */}
       <div className="relative h-48 overflow-hidden">
-        {finalImageUrl ? (
+        {finalImageUrl && !imageFailed ? (
           <img
             src={finalImageUrl}
             alt={itinerary.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            onError={() => setImageFailed(true)}
           />
         ) : (
           <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${fallbackGradient}`}>

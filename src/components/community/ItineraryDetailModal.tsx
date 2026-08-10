@@ -1,5 +1,5 @@
 // Itinerary Detail Modal — Full itinerary with day breakdown, budget, comments
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, type SyntheticEvent } from 'react';
 import { X, Star, MapPin, Clock, DollarSign, Heart, Copy, ChevronLeft, ChevronRight, Bookmark, Plane, Hotel, Utensils, Sparkles, MessageCircle, Send, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -80,6 +80,19 @@ const budgetBreakdown = {
 /** Último recurso quando o roteiro não tem cover_image_url. */
 const FALLBACK_PHOTO = 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200';
 
+/**
+ * Troca a foto pelo fallback quando a URL está morta (404, host fora do ar).
+ * O flag em dataset impede loop se o próprio fallback falhar: o React religa o
+ * onError a cada render, então zerar img.onerror sozinho não seguraria o retry.
+ */
+const handlePhotoError = (e: SyntheticEvent<HTMLImageElement>) => {
+  const img = e.currentTarget;
+  if (img.dataset.fallbackApplied) return;
+  img.dataset.fallbackApplied = 'true';
+  img.onerror = null;
+  img.src = FALLBACK_PHOTO;
+};
+
 export const ItineraryDetailModal = ({
   itinerary, 
   activities = [],
@@ -159,6 +172,7 @@ export const ItineraryDetailModal = ({
                 src={photos[currentPhotoIndex]}
                 alt={itinerary.title}
                 className="w-full h-full object-cover cursor-pointer"
+                onError={handlePhotoError}
                 onClick={() => setShowFullGallery(true)}
               />
             </AnimatePresence>
@@ -412,6 +426,7 @@ export const ItineraryDetailModal = ({
               src={photos[currentPhotoIndex]}
               alt=""
               className="max-w-full max-h-full object-contain"
+              onError={handlePhotoError}
               onClick={(e) => e.stopPropagation()}
             />
 
