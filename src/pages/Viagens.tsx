@@ -320,44 +320,51 @@ const Viagens = () => {
     if (!confirmModal || !selectedTrip) return;
 
     const amount = parseFloat(confirmAmount) || 0;
-    const updatedTrip = { ...selectedTrip };
-    const activity = updatedTrip.days[confirmModal.dayIndex].activities[confirmModal.actIndex];
-    
-    activity.status = 'confirmed';
-    activity.paidAmount = amount;
-    activity.confirmationLink = confirmLink;
 
-    // Update finances with new structure
-    updatedTrip.finances.confirmed += amount;
-    updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - amount);
-    updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.planned - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
+    // Toda a edição roda sobre a viagem FRESCA do storage: os totais de finanças são
+    // acumuladores (`+=`), então somar sobre a `selectedTrip` da closure gravaria um
+    // total defasado se outra tela tivesse escrito no meio (recon §4.1, §4.2).
+    const stored = updateTrip(selectedTrip.id, (trip) => {
+      const updatedTrip = { ...trip };
+      const activity = updatedTrip.days[confirmModal.dayIndex].activities[confirmModal.actIndex];
 
-    // Update category
-    const category = activity.category || 'passeio';
-    const categoryMap: Record<string, keyof typeof updatedTrip.finances.categories> = {
-      'voo': 'flights',
-      'hotel': 'accommodation',
-      'passeio': 'tours',
-      'comida': 'food',
-      'transporte': 'transport',
-      'compras': 'shopping',
-    };
-    const financeCategory = categoryMap[category] || 'tours';
-    updatedTrip.finances.categories[financeCategory].confirmed += amount;
+      activity.status = 'confirmed';
+      activity.paidAmount = amount;
+      activity.confirmationLink = confirmLink;
 
-    // Update progress
-    updatedTrip.progress = calculateProgress(updatedTrip);
-    
-    // Update status if needed
-    if (updatedTrip.status === 'draft') {
-      updatedTrip.status = 'active';
-    }
+      // Update finances with new structure
+      updatedTrip.finances.confirmed += amount;
+      updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - amount);
+      updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.planned - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
 
-    // Save
-    setSelectedTrip(updatedTrip);
-    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+      // Update category
+      const category = activity.category || 'passeio';
+      const categoryMap: Record<string, keyof typeof updatedTrip.finances.categories> = {
+        'voo': 'flights',
+        'hotel': 'accommodation',
+        'passeio': 'tours',
+        'comida': 'food',
+        'transporte': 'transport',
+        'compras': 'shopping',
+      };
+      const financeCategory = categoryMap[category] || 'tours';
+      updatedTrip.finances.categories[financeCategory].confirmed += amount;
+
+      // Update progress
+      updatedTrip.progress = calculateProgress(updatedTrip);
+
+      // Update status if needed
+      if (updatedTrip.status === 'draft') {
+        updatedTrip.status = 'active';
+      }
+
+      return updatedTrip;
+    });
+    if (stored) setSelectedTrip(stored);
+
+    // `id`/`name` não são tocados pela edição, então a atividade do modal serve para o
+    // feedback visual sem precisar reextraí-la da viagem gravada.
+    const activity = confirmModal.activity;
 
     // Haptic feedback on mobile
     if (navigator.vibrate) navigator.vibrate(50);
@@ -380,20 +387,22 @@ const Viagens = () => {
   const handleStartBidding = (activity: TripActivity, dayIndex: number, actIndex: number) => {
     if (!selectedTrip) return;
 
-    const updatedTrip = { ...selectedTrip };
-    const act = updatedTrip.days[dayIndex].activities[actIndex];
-    act.status = 'bidding';
+    // `act.cost` sai da viagem do storage: se o custo mudou (swap, recálculo do
+    // GeneratedItineraryStage), o valor movido planned→bidding é o custo real.
+    const stored = updateTrip(selectedTrip.id, (trip) => {
+      const updatedTrip = { ...trip };
+      const act = updatedTrip.days[dayIndex].activities[actIndex];
+      act.status = 'bidding';
 
-    // Update finances
-    updatedTrip.finances.bidding += act.cost;
-    updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - act.cost);
+      // Update finances
+      updatedTrip.finances.bidding += act.cost;
+      updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - act.cost);
 
-    setSelectedTrip(updatedTrip);
-    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+      return updatedTrip;
+    });
+    if (stored) setSelectedTrip(stored);
 
-    const dayDate = selectedTrip.days[dayIndex]?.date;
+    const dayDate = (stored ?? selectedTrip).days[dayIndex]?.date;
     setOffersModal({
       isOpen: true,
       activityName: activity.name,
@@ -405,19 +414,21 @@ const Viagens = () => {
   const handleAddManualExpense = () => {
     if (!selectedTrip || !manualExpense.name || manualExpense.amount <= 0) return;
 
-    const updatedTrip = { ...selectedTrip };
     const amount = manualExpense.amount;
-    
-    updatedTrip.finances.confirmed += amount;
-    updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.planned - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
-    
-    // Update category
-    updatedTrip.finances.categories[manualExpense.category].confirmed += amount;
+    const category = manualExpense.category;
 
-    setSelectedTrip(updatedTrip);
-    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+    const stored = updateTrip(selectedTrip.id, (trip) => {
+      const updatedTrip = { ...trip };
+
+      updatedTrip.finances.confirmed += amount;
+      updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.planned - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
+
+      // Update category
+      updatedTrip.finances.categories[category].confirmed += amount;
+
+      return updatedTrip;
+    });
+    if (stored) setSelectedTrip(stored);
 
     toast({
       title: "Gasto adicionado! 💰",
@@ -431,33 +442,37 @@ const Viagens = () => {
   const handleToggleChecklist = (itemId: string) => {
     if (!selectedTrip) return;
 
-    const updatedTrip = { ...selectedTrip };
-    const item = updatedTrip.checklist.find((i) => i.id === itemId);
-    if (item) item.checked = !item.checked;
+    // O toggle passa a inverter o `checked` do disco, não o da closure: dois cliques
+    // vindos de renders diferentes não podem mais se anular.
+    const stored = updateTrip(selectedTrip.id, (trip) => {
+      const updatedTrip = { ...trip };
+      const item = updatedTrip.checklist.find((i) => i.id === itemId);
+      if (item) item.checked = !item.checked;
 
-    setSelectedTrip(updatedTrip);
-    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+      return updatedTrip;
+    });
+    if (stored) setSelectedTrip(stored);
   };
 
   const handleUpdateBudget = () => {
     if (!selectedTrip) return;
+    // `newBudget` fica FORA do updater de propósito: ele alimenta uma guarda com
+    // early-return, e um updater não pode abortar a escrita — devolver a viagem
+    // intocada gravaria e acordaria o sino à toa. A parte que importa (o recálculo de
+    // `available` sobre planned/bidding/confirmed) roda sobre a viagem do storage.
     const newBudget = parseFloat(budgetEditValue) || selectedTrip.budget;
     if (newBudget <= 0) return;
 
-    const updatedTrip = { ...selectedTrip };
-    updatedTrip.budget = newBudget;
-    updatedTrip.finances = {
-      ...updatedTrip.finances,
-      total: newBudget,
-      available: Math.max(0, newBudget - updatedTrip.finances.planned - updatedTrip.finances.bidding - updatedTrip.finances.confirmed),
-    };
-
-    setSelectedTrip(updatedTrip);
-    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+    const stored = updateTrip(selectedTrip.id, (trip) => ({
+      ...trip,
+      budget: newBudget,
+      finances: {
+        ...trip.finances,
+        total: newBudget,
+        available: Math.max(0, newBudget - trip.finances.planned - trip.finances.bidding - trip.finances.confirmed),
+      },
+    }));
+    if (stored) setSelectedTrip(stored);
 
     toast({
       title: 'Orçamento atualizado 💰',
@@ -501,11 +516,10 @@ const Viagens = () => {
   const handlePackingUpdate = (packingData: PackingData) => {
     if (!selectedTrip) return;
 
-    const updatedTrip = { ...selectedTrip, packing: packingData };
-    setSelectedTrip(updatedTrip);
-    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+    // Escrita mais simples do lote: `packing` (campo fora do tipo, recon §4.6) atravessa
+    // o funil pela index signature de `StoredTrip`, sem `as any`.
+    const stored = updateTrip(selectedTrip.id, (trip) => ({ ...trip, packing: packingData }));
+    if (stored) setSelectedTrip(stored);
   };
 
   const handleSwapActivity = (dayIndex: number, actIndex: number) => {
@@ -558,30 +572,33 @@ const Viagens = () => {
       ? `${poolCategory === 'breakfast' ? 'Café' : poolCategory === 'lunch' ? 'Almoço' : 'Jantar'}: ${picked.name}`
       : picked.name;
 
-    const updatedTrip: SavedTrip = {
-      ...selectedTrip,
-      days: selectedTrip.days.map((d, di) => {
-        if (di !== dayIndex) return d;
-        return {
-          ...d,
-          activities: d.activities.map((a, ai) => {
-            if (ai !== actIndex) return a;
-            return {
-              ...a,
-              id: picked.id,
-              name: newName,
-              description: picked.tips?.[0] || a.description,
-              status: 'suggestion' as ActivityStatus,
-            };
-          }),
-        };
-      }),
-    };
+    // A candidata é escolhida a partir da `selectedTrip` (precisa dos early-returns com
+    // toast, que um updater não pode fazer), mas a viagem gravada é montada sobre `trip`
+    // — os outros dias e as outras atividades vêm do disco, não da closure.
+    const stored = updateTrip(selectedTrip.id, (trip) => {
+      const updatedTrip: StoredTrip = {
+        ...trip,
+        days: trip.days.map((d, di) => {
+          if (di !== dayIndex) return d;
+          return {
+            ...d,
+            activities: d.activities.map((a, ai) => {
+              if (ai !== actIndex) return a;
+              return {
+                ...a,
+                id: picked.id,
+                name: newName,
+                description: picked.tips?.[0] || a.description,
+                status: 'suggestion' as ActivityStatus,
+              };
+            }),
+          };
+        }),
+      };
 
-    setSelectedTrip(updatedTrip);
-    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+      return updatedTrip;
+    });
+    if (stored) setSelectedTrip(stored);
     toast({ title: 'Atividade trocada' });
   };
 
@@ -614,68 +631,72 @@ const Viagens = () => {
   // handleHeroConfirm — saves flight/hotel confirmation to localStorage
   const handleHeroConfirm = (type: 'flight' | 'hotel', amount: number, flightDetails?: { airline?: string; departureTime?: string; returnTime?: string; outbound?: { airline?: string; flightNumber?: string; departureTime?: string }; return?: { airline?: string; flightNumber?: string; departureTime?: string } }, hotelDetails?: { name?: string; mealPlan?: string }) => {
     if (!selectedTrip) return;
-    const updatedTrip = { ...selectedTrip };
 
-    if (type === 'flight') {
-      const previousFlightPlanned = getFlightPlannedTotal(updatedTrip);
-      const previousFlightConfirmed = updatedTrip.finances.categories.flights.confirmed || 0;
-      if (updatedTrip.flights?.outbound) {
-        updatedTrip.flights.outbound.status = 'confirmed';
-        updatedTrip.flights.outbound.price = amount;
-      }
-      if (updatedTrip.flights?.return) {
-        updatedTrip.flights.return.status = 'confirmed';
-      }
-      updatedTrip.finances.confirmed = Math.max(0, updatedTrip.finances.confirmed - previousFlightConfirmed) + amount;
-      updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - previousFlightPlanned);
-      updatedTrip.finances.categories.flights.planned = 0;
-      updatedTrip.finances.categories.flights.confirmed = amount;
+    // `previousFlightPlanned`/`previousFlightConfirmed` são a BASE das subtrações de
+    // finanças. Lê-las da `selectedTrip` significaria estornar um valor que talvez já
+    // não esteja mais no disco — daí a derivação inteira rodar dentro do updater.
+    const stored = updateTrip(selectedTrip.id, (trip) => {
+      const updatedTrip = { ...trip };
 
-      const ob = (updatedTrip as any).outboundFlight?.option;
-      if (flightDetails?.outbound && ob) {
-        if (flightDetails.outbound.airline) ob.airline = flightDetails.outbound.airline;
-        if (flightDetails.outbound.flightNumber) (ob as any).flightNumber = flightDetails.outbound.flightNumber;
-        if (flightDetails.outbound.departureTime) ob.departureTime = flightDetails.outbound.departureTime;
-      }
-      const rb = (updatedTrip as any).returnFlight?.option;
-      if (flightDetails?.return && rb) {
-        if (flightDetails.return.airline) rb.airline = flightDetails.return.airline;
-        if (flightDetails.return.flightNumber) (rb as any).flightNumber = flightDetails.return.flightNumber;
-        if (flightDetails.return.departureTime) rb.departureTime = flightDetails.return.departureTime;
+      if (type === 'flight') {
+        const previousFlightPlanned = getFlightPlannedTotal(updatedTrip);
+        const previousFlightConfirmed = updatedTrip.finances.categories.flights.confirmed || 0;
+        if (updatedTrip.flights?.outbound) {
+          updatedTrip.flights.outbound.status = 'confirmed';
+          updatedTrip.flights.outbound.price = amount;
+        }
+        if (updatedTrip.flights?.return) {
+          updatedTrip.flights.return.status = 'confirmed';
+        }
+        updatedTrip.finances.confirmed = Math.max(0, updatedTrip.finances.confirmed - previousFlightConfirmed) + amount;
+        updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - previousFlightPlanned);
+        updatedTrip.finances.categories.flights.planned = 0;
+        updatedTrip.finances.categories.flights.confirmed = amount;
+
+        const ob = (updatedTrip as any).outboundFlight?.option;
+        if (flightDetails?.outbound && ob) {
+          if (flightDetails.outbound.airline) ob.airline = flightDetails.outbound.airline;
+          if (flightDetails.outbound.flightNumber) (ob as any).flightNumber = flightDetails.outbound.flightNumber;
+          if (flightDetails.outbound.departureTime) ob.departureTime = flightDetails.outbound.departureTime;
+        }
+        const rb = (updatedTrip as any).returnFlight?.option;
+        if (flightDetails?.return && rb) {
+          if (flightDetails.return.airline) rb.airline = flightDetails.return.airline;
+          if (flightDetails.return.flightNumber) (rb as any).flightNumber = flightDetails.return.flightNumber;
+          if (flightDetails.return.departureTime) rb.departureTime = flightDetails.return.departureTime;
+        }
+
+        // Backwards-compatible flat format from older TripPanel UI
+        if (flightDetails && ob && !flightDetails.outbound && !flightDetails.return) {
+          if (flightDetails.airline) ob.airline = flightDetails.airline;
+          if (flightDetails.departureTime) ob.departureTime = flightDetails.departureTime;
+        }
+        if (flightDetails?.returnTime && rb && !flightDetails.return) {
+          rb.departureTime = flightDetails.returnTime;
+        }
+      } else {
+        if (updatedTrip.accommodation) {
+          updatedTrip.accommodation.status = 'confirmed';
+          updatedTrip.accommodation.totalPrice = amount;
+        }
+        if (hotelDetails?.name && updatedTrip.accommodation) {
+          updatedTrip.accommodation.name = hotelDetails.name;
+        }
+        if (hotelDetails?.mealPlan && updatedTrip.accommodation) {
+          (updatedTrip.accommodation as any).mealPlan = hotelDetails.mealPlan;
+        }
+        updatedTrip.finances.confirmed += amount;
+        updatedTrip.finances.categories.accommodation.confirmed += amount;
+        updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - amount);
       }
 
-      // Backwards-compatible flat format from older TripPanel UI
-      if (flightDetails && ob && !flightDetails.outbound && !flightDetails.return) {
-        if (flightDetails.airline) ob.airline = flightDetails.airline;
-        if (flightDetails.departureTime) ob.departureTime = flightDetails.departureTime;
-      }
-      if (flightDetails?.returnTime && rb && !flightDetails.return) {
-        rb.departureTime = flightDetails.returnTime;
-      }
-    } else {
-      if (updatedTrip.accommodation) {
-        updatedTrip.accommodation.status = 'confirmed';
-        updatedTrip.accommodation.totalPrice = amount;
-      }
-      if (hotelDetails?.name && updatedTrip.accommodation) {
-        updatedTrip.accommodation.name = hotelDetails.name;
-      }
-      if (hotelDetails?.mealPlan && updatedTrip.accommodation) {
-        (updatedTrip.accommodation as any).mealPlan = hotelDetails.mealPlan;
-      }
-      updatedTrip.finances.confirmed += amount;
-      updatedTrip.finances.categories.accommodation.confirmed += amount;
-      updatedTrip.finances.planned = Math.max(0, updatedTrip.finances.planned - amount);
-    }
 
+      updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.planned - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
+      updatedTrip.progress = calculateProgress(updatedTrip);
 
-    updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.planned - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
-    updatedTrip.progress = calculateProgress(updatedTrip);
-
-    setSelectedTrip(updatedTrip);
-    const updatedTrips = trips.map(t => t.id === updatedTrip.id ? updatedTrip : t);
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+      return updatedTrip;
+    });
+    if (stored) setSelectedTrip(stored);
 
     // Haptic feedback
     if (navigator.vibrate) navigator.vibrate(50);
@@ -689,38 +710,41 @@ const Viagens = () => {
   // handleHeroUnconfirm — reverse a flight/hotel confirmation, moving amounts back to planned
   const handleHeroUnconfirm = (type: 'flight' | 'hotel') => {
     if (!selectedTrip) return;
-    const updatedTrip = { ...selectedTrip };
 
-    if (type === 'flight') {
-      const previousConfirmed = updatedTrip.finances.categories.flights.confirmed || 0;
-      if (updatedTrip.flights?.outbound) {
-        updatedTrip.flights.outbound.status = 'planned';
-      }
-      if (updatedTrip.flights?.return) {
-        updatedTrip.flights.return.status = 'planned';
-      }
-      updatedTrip.finances.confirmed = Math.max(0, updatedTrip.finances.confirmed - previousConfirmed);
-      updatedTrip.finances.categories.flights.confirmed = 0;
-      updatedTrip.finances.categories.flights.planned = previousConfirmed;
-      updatedTrip.finances.planned += previousConfirmed;
-    } else {
-      const previousConfirmed = updatedTrip.finances.categories.accommodation.confirmed || (updatedTrip.accommodation?.totalPrice || 0);
-      if (updatedTrip.accommodation) {
-        updatedTrip.accommodation.status = 'planned';
-      }
-      updatedTrip.finances.confirmed = Math.max(0, updatedTrip.finances.confirmed - previousConfirmed);
-      updatedTrip.finances.categories.accommodation.confirmed = Math.max(0, (updatedTrip.finances.categories.accommodation.confirmed || 0) - previousConfirmed);
-      updatedTrip.finances.categories.accommodation.planned = (updatedTrip.finances.categories.accommodation.planned || 0) + previousConfirmed;
-      updatedTrip.finances.planned += previousConfirmed;
-    }
+    // `previousConfirmed` é o valor a estornar — tem que ser o do disco, não o da
+    // closure, senão o estorno devolve para `planned` um número que já mudou.
+    const stored = updateTrip(selectedTrip.id, (trip) => {
+      const updatedTrip = { ...trip };
 
-    updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.planned - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
-    updatedTrip.progress = calculateProgress(updatedTrip);
+      if (type === 'flight') {
+        const previousConfirmed = updatedTrip.finances.categories.flights.confirmed || 0;
+        if (updatedTrip.flights?.outbound) {
+          updatedTrip.flights.outbound.status = 'planned';
+        }
+        if (updatedTrip.flights?.return) {
+          updatedTrip.flights.return.status = 'planned';
+        }
+        updatedTrip.finances.confirmed = Math.max(0, updatedTrip.finances.confirmed - previousConfirmed);
+        updatedTrip.finances.categories.flights.confirmed = 0;
+        updatedTrip.finances.categories.flights.planned = previousConfirmed;
+        updatedTrip.finances.planned += previousConfirmed;
+      } else {
+        const previousConfirmed = updatedTrip.finances.categories.accommodation.confirmed || (updatedTrip.accommodation?.totalPrice || 0);
+        if (updatedTrip.accommodation) {
+          updatedTrip.accommodation.status = 'planned';
+        }
+        updatedTrip.finances.confirmed = Math.max(0, updatedTrip.finances.confirmed - previousConfirmed);
+        updatedTrip.finances.categories.accommodation.confirmed = Math.max(0, (updatedTrip.finances.categories.accommodation.confirmed || 0) - previousConfirmed);
+        updatedTrip.finances.categories.accommodation.planned = (updatedTrip.finances.categories.accommodation.planned || 0) + previousConfirmed;
+        updatedTrip.finances.planned += previousConfirmed;
+      }
 
-    setSelectedTrip(updatedTrip);
-    const updatedTrips = trips.map(t => t.id === updatedTrip.id ? updatedTrip : t);
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+      updatedTrip.finances.available = updatedTrip.finances.total - updatedTrip.finances.planned - updatedTrip.finances.confirmed - updatedTrip.finances.bidding;
+      updatedTrip.progress = calculateProgress(updatedTrip);
+
+      return updatedTrip;
+    });
+    if (stored) setSelectedTrip(stored);
 
     toast({
       title: type === 'flight' ? '✈️ Confirmação desfeita' : '🏨 Confirmação desfeita',
@@ -2584,30 +2608,33 @@ const Viagens = () => {
                 const newName = isFoodSlot
                   ? `${poolCategory === 'breakfast' ? 'Café' : poolCategory === 'lunch' ? 'Almoço' : 'Jantar'}: ${picked.name}`
                   : picked.name;
-                const updatedTrip: SavedTrip = {
-                  ...selectedTrip,
-                  days: selectedTrip.days.map((d, di) => {
-                    if (di !== swapModal.dayIndex) return d;
-                    return {
-                      ...d,
-                      activities: d.activities.map((a, ai) => {
-                        if (ai !== swapModal.actIndex) return a;
-                        return {
-                          ...a,
-                          id: picked.id,
-                          name: newName,
-                          description: picked.tips?.[0] || a.description,
-                          cost: typeof picked.estimatedCostBRL === 'number' ? picked.estimatedCostBRL : a.cost,
-                          status: 'suggestion' as ActivityStatus,
-                        };
-                      }),
-                    };
-                  }),
-                };
-                setSelectedTrip(updatedTrip);
-                const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
-                setTrips(updatedTrips);
-                localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+                // As candidatas exibidas continuam derivadas da `selectedTrip` — é o que
+                // está renderizado na tela. Só a ESCRITA passa pelo funil.
+                const stored = updateTrip(selectedTrip.id, (trip) => {
+                  const updatedTrip: StoredTrip = {
+                    ...trip,
+                    days: trip.days.map((d, di) => {
+                      if (di !== swapModal.dayIndex) return d;
+                      return {
+                        ...d,
+                        activities: d.activities.map((a, ai) => {
+                          if (ai !== swapModal.actIndex) return a;
+                          return {
+                            ...a,
+                            id: picked.id,
+                            name: newName,
+                            description: picked.tips?.[0] || a.description,
+                            cost: typeof picked.estimatedCostBRL === 'number' ? picked.estimatedCostBRL : a.cost,
+                            status: 'suggestion' as ActivityStatus,
+                          };
+                        }),
+                      };
+                    }),
+                  };
+
+                  return updatedTrip;
+                });
+                if (stored) setSelectedTrip(stored);
                 setSwapModal(null);
                 toast({ title: 'Atividade trocada' });
               };
