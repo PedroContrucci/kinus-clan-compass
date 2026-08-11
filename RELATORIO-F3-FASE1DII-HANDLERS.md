@@ -263,3 +263,8 @@ que é a origem do risco §4.1) continua sendo o `GeneratedItineraryStage`, esco
 
 **Imports:** nenhum novo. `updateTrip` e `StoredTrip` já tinham chegado na 1d-i
 (`src/pages/Viagens.tsx:37`).
+
+## Adendo pós-entrega (11/ago, noite 2)
+- Prova de runtime 1d-ii: FinOps confirmacao OK (planejado -600 / confirmado +600 / disponivel estavel); checklist persiste; orcamento recalcula (34k->38k, disponivel +4k); swap via modal persiste; hero confirm/unconfirm OK. Swap aleatorio sem botao proprio na UI do card (acionado por outro caminho) — nao testado em runtime, coberto por codigo identico ao modal.
+- Backlog A (UX): confirmacao de atividades hoje vive no Roteiro; avaliar painel proprio de confirmacoes e fluxo por categoria (restaurante confirma 'na hora', ingresso confirma antecipado).
+- Backlog B (produto): aba Preparacao esta generica por destino — checklist/packing deveria customizar por destino (clima, tomada, visto, moeda). Investigar por que Smart Packing nao diferencia.
