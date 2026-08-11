@@ -34,7 +34,7 @@ import { getDestinationActivities } from '@/data/destinationActivities';
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
-import { normalizeTrip } from '@/lib/tripStore';
+import { listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
 import { buildOfferLinks } from '@/lib/offersLinks';
 import { supabase } from '@/integrations/supabase/client';
 import { getDocsForDestination } from '@/data/destinationDocs';
@@ -242,12 +242,28 @@ const Viagens = () => {
     }
     setUser(savedUser);
 
-    // Load trips
-    const rawTrips = loadJson<any[]>('kinu_trips', []);
-    const normalizedTrips = rawTrips.map((trip: any) => normalizeTrip(trip));
-    setTrips(normalizedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(normalizedTrips));
+    // Leitura pelo funil: sempre array, sempre normalizada (recon §4.3, §4.5).
+    // A regravação que existia aqui (escrita-no-read) morreu: normalizar é
+    // responsabilidade da LEITURA, então não há mais o que persistir no mount.
+    setTrips(listTrips());
   }, [navigate]);
+
+  // Sino do storage (recon §4.10): qualquer escrita que passe pelo tripStore — desta aba
+  // (chat criando viagem via addTrip) ou de outra aba (evento `storage`) — recarrega a
+  // lista e re-deriva a seleção. Assina uma vez; o updater funcional de `setSelectedTrip`
+  // dá acesso à seleção corrente sem capturar `selectedTrip` na closure.
+  useEffect(() => {
+    return subscribeTrips(() => {
+      const fresh = listTrips();
+      setTrips(fresh);
+      setSelectedTrip((current) => {
+        if (!current) return current;
+        // Some do storage => some da tela. Manter a seleção obsoleta faria toda edição
+        // seguinte cair no `updateTrip` de id inexistente — o usuário editaria um fantasma.
+        return fresh.find((trip) => trip.id === current.id) ?? null;
+      });
+    });
+  }, []);
 
   const handleDayChange = (day: number) => {
     if (day === selectedDay) return;
@@ -715,22 +731,21 @@ const Viagens = () => {
   const handleUpdateTrip = (updater: (t: any) => any) => {
     if (!selectedTrip) return;
 
-    const updatedTrip = updater({ ...selectedTrip });
-
-    setSelectedTrip(updatedTrip);
-
-    const updatedTrips = trips.map(t => t.id === updatedTrip.id ? updatedTrip : t);
-    setTrips(updatedTrips);
-
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+    // O updater passa a receber a viagem do STORAGE, não a cópia do estado React:
+    // é o read-modify-write do funil. As outras viagens do array nunca são
+    // reconstruídas a partir da memória (§4.1, §4.2).
+    const stored = updateTrip(selectedTrip.id, (trip) => updater(trip));
+    if (stored) setSelectedTrip(stored);
   };
 
   // ---- Itinerary edit helpers (drawer actions) ----
   const persistTrip = (updatedTrip: SavedTrip) => {
-    setSelectedTrip(updatedTrip);
-    const updatedTrips = trips.map(t => t.id === updatedTrip.id ? updatedTrip : t);
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
+    // Os chamadores já montam a viagem inteira a partir da `selectedTrip`, então o
+    // updater aqui é constante — o ganho é de ISOLAMENTO: só o slot deste id é
+    // regravado, as demais viagens vêm do storage. `setTrips` sai: o sino recarrega
+    // a lista no `emit` síncrono de dentro do `updateTrip`.
+    const stored = updateTrip(updatedTrip.id, () => updatedTrip as StoredTrip);
+    if (stored) setSelectedTrip(stored);
   };
 
   // Shared helper: fetch cheapest real flight price from Amadeus for a trip.
