@@ -2,6 +2,8 @@
 
 **Data:** 2026-08-11
 **Base:** `RELATORIO-RECON-TRIPSTORE.md` §2.1, §4.1, §4.2, §4.3, §4.5, §4.10 · adendo da 1c
+**Commit:** `c90fd4a` — *feat(f3): fase 1d-i - /viagens no funil: mount via listTrips + sino + escrita generica*
+**Push:** `42429a4..c90fd4a  main -> main`
 **Status:** aplicado, commitado e pushado. Verde em typecheck / testes / build.
 
 ---
