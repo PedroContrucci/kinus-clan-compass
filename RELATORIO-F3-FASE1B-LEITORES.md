@@ -192,3 +192,7 @@ de 6 vem dos `any` removidos na migração; o arquivo de teste novo entrou **sem
 **Próxima fase (1c/1d):** os consumidores de escrita — é onde a perda silenciosa do §4.2
 e o bug da `/viagens` efetivamente morrem.
 
+
+## Adendo pós-entrega (11/ago)
+- Prova de runtime: 4/4. Sino confirmado em produção (viagem via KINU AI aparece no Dashboard sem F5). /smoke 319/320.
+- Atrito de entrega: webhook do Lovable perdeu o evento do push 70009c5; destravado com commit-isca (chore: trigger lovable sync). Rito de entrega ganha verificação: apos push, conferir se o card do Lovable atualizou; se nao, commit-isca.
