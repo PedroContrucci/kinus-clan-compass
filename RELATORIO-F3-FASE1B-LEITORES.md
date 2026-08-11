@@ -191,3 +191,4 @@ de 6 vem dos `any` removidos na migração; o arquivo de teste novo entrou **sem
 
 **Próxima fase (1c/1d):** os consumidores de escrita — é onde a perda silenciosa do §4.2
 e o bug da `/viagens` efetivamente morrem.
+
