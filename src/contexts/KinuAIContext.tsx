@@ -7,7 +7,7 @@ import { destinationActivities } from "@/data/destinationActivities";
 import { getCuratedHotels } from "@/data/curatedHotels";
 import { findCityInfo } from "@/data/destinationCatalog";
 import { buildDraftTrip } from "@/lib/createTrip";
-import { loadJson } from "@/lib/safeStorage";
+import { addTrip } from "@/lib/tripStore";
 import { TRAVEL_INTERESTS, PRIORITY_OPTIONS } from "@/components/wizard/types";
 
 export interface KinuActionHandlers {
@@ -380,9 +380,9 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
 
           (trip as any).createdVia = 'kinu';
 
-          const existingTrips = loadJson<any[]>('kinu_trips', []);
-          existingTrips.push(trip);
-          localStorage.setItem('kinu_trips', JSON.stringify(existingTrips));
+          // Funil único: read-modify-write contra o storage + notifica os assinantes.
+          // `createdVia` é setado ANTES e sobrevive — StoredTrip preserva campos extras.
+          addTrip(trip);
 
           setPendingNavigation({ destino: 'painel', ts: Date.now(), tripId: trip.id });
           setMessages(prev => [...prev, {
