@@ -2,8 +2,14 @@
 
 **Data:** 2026-08-11
 **Base:** `RELATORIO-RECON-TRIPSTORE.md` §2.1, §4.8 · `RELATORIO-F3-FASE1DI-VIAGENS-INFRA.md`
-**Commit:** `<hash>` — *feat(f3): fase 1d-ii - handlers de edicao da /viagens migrados para updateTrip*
-**Push:** `<saída>`
+**Commit:** `3e433f1` — *feat(f3): fase 1d-ii - handlers de edicao da /viagens migrados para updateTrip*
+**Push:** `git push origin main` →
+
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   40f9887..3e433f1  main -> main
+```
+
 **Status:** aplicado, commitado e pushado. Verde em typecheck / testes / build.
 
 ---
