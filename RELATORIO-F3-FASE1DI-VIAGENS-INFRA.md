@@ -216,3 +216,9 @@ não tocados.
 | **1d-i** | **`/viagens`: mount + sino + escrita genérica** | ✅ **esta fase** |
 | 1d-ii / 1d-iii | os demais handlers da `/viagens` em `updateTrip`/`deleteTrip`/`clearTrips` | ⏳ |
 | 1e | `GeneratedItineraryStage` (§4.1, §4.4) | ⏳ |
+
+## Achados de produto na prova da 1d-i (11/ago)
+- Prova: Lisboa sobrevive a edicao na /viagens (§4.2 morto na pratica); persistTrip migrado grava e persiste; mapa logistico reage.
+- Backlog 1: trocar horario de atividade nao reorganiza a logistica do dia — decidir UX (reordenar automatico vs oferecer reorganizacao via agente).
+- Backlog 2 (PRIORIDADE editorial): durações de passeios precisam de auditoria de sanidade — duracao irreal fere a promessa de catalogo verificado. Adicionar dimensao 'duracao crivel' ao pipeline de curadoria.
+- Backlog 3: handleRemoveActivity existe e esta migrado, mas nao ha botao de remover atividade na UI do roteiro — funcao sem interface.
