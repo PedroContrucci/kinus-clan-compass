@@ -16,7 +16,7 @@ import { useKinuAI } from '@/contexts/KinuAIContext';
 import { TripCardWithPhoto } from '@/components/dashboard/TripCardWithPhoto';
 import { CountdownCard } from '@/components/dashboard/CountdownCard';
 import { exportTripPDF } from '@/lib/tripPdfExport';
-import { loadJson } from '@/lib/safeStorage';
+import { listTrips, subscribeTrips } from '@/lib/tripStore';
 
 const ApiStatus = lazy(() => import('@/components/debug/ApiStatus').then(m => ({ default: m.ApiStatus })));
 
@@ -39,9 +39,13 @@ const Dashboard = () => {
       navigate('/');
       return;
     }
-    const savedTrips = loadJson<any[]>('kinu_trips', []);
-    setLocalTrips(savedTrips);
+    setLocalTrips(listTrips());
   }, [user, authLoading, navigate]);
+
+  // O sino: recarrega quando `kinu_trips` muda nesta aba ou em outra.
+  // Efeito separado de propósito — o de cima depende de `user`/`authLoading` e
+  // re-assinaria a cada mudança de auth.
+  useEffect(() => subscribeTrips(() => setLocalTrips(listTrips())), []);
 
   // Merge trips from both sources
   const allTrips = [...(localTrips || [])];

@@ -4,9 +4,8 @@ import { LogOut, User, HelpCircle, Star, Info } from 'lucide-react';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { toast } from '@/hooks/use-toast';
 import kinuLogo from '@/assets/KINU_logo.png';
-import { SavedTrip } from '@/types/trip';
-
 import { loadJson } from '@/lib/safeStorage';
+import { listTrips } from '@/lib/tripStore';
 
 
 
@@ -23,7 +22,7 @@ const Conta = () => {
     }
     setUser(savedUser);
 
-    const savedTrips: SavedTrip[] = loadJson<SavedTrip[]>('kinu_trips', []);
+    const savedTrips = listTrips();
     const uniqueCountries = new Set(savedTrips.map(t => t.country).filter(Boolean));
     const totalActivities = savedTrips.reduce((acc, trip) => {
       return acc + (trip.days || []).reduce((dayAcc, day) => dayAcc + (day.activities?.length || 0), 0);

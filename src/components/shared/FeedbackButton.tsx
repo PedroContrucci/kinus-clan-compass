@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { loadJson } from '@/lib/safeStorage';
+import { getActiveTrip, subscribeTrips } from '@/lib/tripStore';
 
 const FEEDBACK_WHATSAPP = '5511981362866';
 
@@ -19,13 +20,13 @@ export const FeedbackButton = () => {
   const [submitted, setSubmitted] = useState(false);
   const [activeTrip, setActiveTrip] = useState<any>(null);
 
+  // Monta fora do <Routes> (App.tsx:74), logo nunca desmonta: sem o sino, a leitura
+  // de mount seria uma leitura por sessão inteira e o feedback anexaria a viagem velha.
   useEffect(() => {
-    try {
-      const trips = loadJson<any[]>('kinu_trips', []);
-      const upcoming = trips.filter((t: any) => t.status === 'active' && t.startDate && new Date(t.startDate) > new Date());
-      if (upcoming.length > 0) setActiveTrip(upcoming[0]);
-      else if (trips.length > 0) setActiveTrip(trips[trips.length - 1]);
-    } catch { /* ignore */ }
+    const load = () => setActiveTrip(getActiveTrip());
+
+    load();
+    return subscribeTrips(load);
   }, []);
 
   const categories = [
