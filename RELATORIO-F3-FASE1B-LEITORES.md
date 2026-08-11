@@ -196,3 +196,7 @@ e o bug da `/viagens` efetivamente morrem.
 ## Adendo pós-entrega (11/ago)
 - Prova de runtime: 4/4. Sino confirmado em produção (viagem via KINU AI aparece no Dashboard sem F5). /smoke 319/320.
 - Atrito de entrega: webhook do Lovable perdeu o evento do push 70009c5; destravado com commit-isca (chore: trigger lovable sync). Rito de entrega ganha verificação: apos push, conferir se o card do Lovable atualizou; se nao, commit-isca.
+
+## Adendo pós-entrega (11/ago)
+- Prova de runtime: 4/4. Sino confirmado em produção (viagem via KINU AI aparece no Dashboard sem F5). /smoke 319/320.
+- Atrito de entrega: webhook do Lovable perdeu o evento do push 70009c5; destravado com commit-isca (chore: trigger lovable sync). Rito de entrega ganha verificação: apos push, conferir se o card do Lovable atualizou; se nao, commit-isca.
