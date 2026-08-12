@@ -34,7 +34,7 @@ import { getDestinationActivities } from '@/data/destinationActivities';
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
-import { listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
+import { clearTrips, deleteTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
 import { buildOfferLinks } from '@/lib/offersLinks';
 import { supabase } from '@/integrations/supabase/client';
 import { getDocsForDestination } from '@/data/destinationDocs';
@@ -483,8 +483,10 @@ const Viagens = () => {
 
 
   const handleResetJourney = () => {
-    localStorage.removeItem('kinu_trips');
-    setTrips([]);
+    // Reset pelo funil: apaga `kinu_trips` E varre TODOS os `kinu_price_history_*`,
+    // órfãos de exclusões antigas inclusive (§4.9). `setTrips` sai — o `emit` do
+    // store recarrega a lista (vazia) pelo sino.
+    clearTrips();
     setSelectedTrip(null);
     setResetModal(false);
     toast({
@@ -499,12 +501,18 @@ const Viagens = () => {
     const confirmed = window.confirm('Tem certeza que deseja excluir esta viagem?');
     if (!confirmed) return;
 
-    const filtered = trips.filter((t) => t.id !== tripId);
-    localStorage.setItem('kinu_trips', JSON.stringify(filtered));
-    setTrips(filtered);
+    // Exclusão pelo funil: remove a viagem E o `kinu_price_history_<id>` dela — o
+    // vazamento do recon §4.9 fecha aqui, na primeira exclusão real do app.
+    // `setTrips` sai: o `emit` síncrono do store recarrega a lista pelo sino.
+    deleteTrip(tripId);
 
+    // O sino zera a seleção quando a viagem selecionada some do storage. Esta tela,
+    // porém, promove a primeira viagem restante — comportamento preservado. A lista
+    // vem do storage recém-gravado, não do `trips` do estado: se outra aba tiver
+    // criado uma viagem no meio, ela conta.
     if (selectedTrip?.id === tripId) {
-      setSelectedTrip(filtered.length > 0 ? filtered[0] : null);
+      const remaining = listTrips();
+      setSelectedTrip(remaining.length > 0 ? remaining[0] : null);
     }
 
     toast({
@@ -1049,10 +1057,14 @@ const Viagens = () => {
 
   // Handle draft cockpit actions
   const handleSaveDraft = (updatedTrip: any) => {
-    const updatedTrips = trips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t));
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
-    setSelectedTrip(updatedTrip);
+    // Update puro: o cockpit só abre para uma viagem que JÁ está no storage
+    // (criada por `addTrip` no wizard/chat) e devolve `{ ...trip }` com o mesmo id —
+    // não há caminho de viagem inédita aqui, logo não há fallback `addTrip`. Como o
+    // chamador já montou a viagem inteira, o updater é constante: o ganho é o mesmo
+    // do `persistTrip` (:766) — só o slot deste id é regravado, as demais viagens
+    // vêm do storage (§4.1, §4.2). `setTrips` sai: o sino recarrega a lista.
+    const stored = updateTrip(updatedTrip.id, () => updatedTrip as StoredTrip);
+    if (stored) setSelectedTrip(stored);
   };
 
   const handleActivateDraft = (updatedTrip: any) => {
@@ -1066,12 +1078,16 @@ const Viagens = () => {
       updatedTrip.days = generateBasicDays(updatedTrip, duration);
     }
 
-    const normalizedTrip = normalizeTrip(updatedTrip);
-    
-    const updatedTrips = trips.map((t) => (t.id === normalizedTrip.id ? normalizedTrip : t));
-    setTrips(updatedTrips);
-    localStorage.setItem('kinu_trips', JSON.stringify(updatedTrips));
-    setSelectedTrip(normalizedTrip);
+    // A `normalizeTrip` explícita PERMANECE, e não é redundante: o `updateTrip`
+    // normaliza a viagem que LÊ do storage e entrega ao updater, mas este updater
+    // ignora o argumento (o cockpit já montou a viagem inteira) e o store grava o
+    // retorno como veio. Sem a chamada, o que iria para o disco — e para a
+    // `selectedTrip` — seriam os dias crus recém-gerados, sem `icon`/`category`/ids
+    // e sem o `syncTripFlightPlannedFinances` que acerta `finances.planned` com o
+    // voo que o usuário acabou de escolher. É justamente o momento da ativação em
+    // que essa sincronia importa.
+    const stored = updateTrip(updatedTrip.id, () => normalizeTrip(updatedTrip));
+    if (stored) setSelectedTrip(stored);
   };
 
   // DEBUG: temporary export of selected trip itinerary as a .txt file
