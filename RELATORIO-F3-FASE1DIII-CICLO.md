@@ -2,11 +2,12 @@
 
 **Data:** 2026-08-12
 **Base:** `RELATORIO-RECON-TRIPSTORE.md` §2.1, §4.9 · `RELATORIO-F3-FASE1DII-HANDLERS.md` §1
-**Commit:** `2136413` — *feat(f3): fase 1d-iii - ciclo de vida da /viagens no funil (draft/activate/delete/reset)*
+**Commit:** `7524426` — *feat(f3): fase 1d-iii - ciclo de vida da /viagens no funil (draft/activate/delete/reset)*
 **Push:** `git push origin main` →
 
 ```
-(registrado no commit seguinte)
+To https://github.com/PedroContrucci/kinus-clan-compass
+   fb008db..7524426  main -> main
 ```
 
 **Status:** aplicado, commitado e pushado. Verde em typecheck / testes / build.
