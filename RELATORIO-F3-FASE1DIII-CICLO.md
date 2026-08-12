@@ -203,3 +203,7 @@ para clicar na viagem que acabou de criar.
 O recon já apontava isso em §4.11, e o `getTrip(id)` do store existe exatamente para
 atender esse caso — seriam ~4 linhas de `useEffect`. Não entrou aqui porque é **produto**
 (muda navegação), não migração de storage. Candidato a fase própria.
+
+## Adendo pós-entrega (12/ago)
+- Prova de runtime 1d-iii: delete de viagem remove do kinu_trips (Roma excluida, verificado no storage); nenhum kinu_price_history_ existia previamente (monitor nunca gravou snapshot nas viagens atuais) — limpeza coberta pelos testes unitarios da 1b, nao provada em producao por falta de materia-prima; /smoke 319/320.
+- Comportamento pre-existente identificado (NAO regressao): deletar atividade dentro do cockpit de rascunho nao persiste (estado local do GeneratedItineraryStage/DraftCockpit; onSave nao dispara — console sem nenhum aviso [tripStore]). Edicao de roteiro em draft vive em limbo de persistencia. Endereco da correcao: fase 1e.
