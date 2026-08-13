@@ -3,8 +3,13 @@
 **Data:** 2026-08-13
 **Base:** `RELATORIO-RECON-TRIPSTORE.md` §2.2, §4.1, §4.4, §8.1 ·
 `RELATORIO-F3-FASE1DIII-CICLO.md` §6 e adendo
-**Commit:** `<preenchido no adendo>`
-**Push:** `<preenchido no adendo>`
+**Commit:** `a9e6636` — *feat(f3): fase 1e - GeneratedItineraryStage no funil (ultimo escritor cru)*
+**Push:** `git push origin main` →
+
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   ebd7a07..a9e6636  main -> main
+```
 
 **Status:** aplicado, commitado e pushado. Verde em typecheck / testes / build.
 
