@@ -212,7 +212,7 @@ mensagem — ajusto o insert. Isso afetaria só o script de prova, não as migra
 
 ## 7. Estado do repo
 
-Commit desta entrega: _(hash registrado no commit seguinte, após o push)_
+Commit desta entrega: `7c2eb00`
 Arquivos: 4 novos em `supabase-beta/` + este relatório. Zero modificações em arquivos
 existentes — `git show --stat` confirma só adições.
 
@@ -221,8 +221,13 @@ existentes — `git show --stat` confirma só adições.
 ## 8. Saída do push
 
 ```
-(colada abaixo após o push)
+$ git push origin main
+To https://github.com/PedroContrucci/kinus-clan-compass
+   0939393..7c2eb00  main -> main
 ```
+
+Working tree limpo após o push. `STEP1-ARCO2-MIGRATIONS.md` deletado, como manda o
+protocolo (rascunho, nunca commitado).
 
 ---
 
