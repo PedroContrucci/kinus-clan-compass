@@ -32,6 +32,7 @@ import { getHotelRecommendation } from '@/lib/hotelZones';
 import { KinuAnalysisCard } from './KinuAnalysisCard';
 import { ItineraryDayWeather } from './ItineraryDayWeather';
 import { ItineraryExchangeRate } from './ItineraryExchangeRate';
+import { updateTrip } from '@/lib/tripStore';
 
 // Types
 interface ItineraryActivity {
@@ -70,6 +71,12 @@ interface BudgetBreakdown {
 }
 
 interface GeneratedItineraryStageProps {
+  /**
+   * `id` da viagem no storage. Destrava a escrita por `updateTrip` e aposenta a busca
+   * por destino+datas (recon §8.1 trava 1, §4.4). Obrigatório: um fallback para "sem
+   * id" seria de volta o `return` silencioso que esta fase existe para matar.
+   */
+  tripId: string;
   destination: string;
   origin: string;
   emoji: string;
@@ -1013,6 +1020,7 @@ const statusBadges: Record<string, { label: string; className: string }> = {
 };
 
 export const GeneratedItineraryStage = ({
+  tripId,
   destination,
   origin,
   emoji,
@@ -1083,55 +1091,52 @@ export const GeneratedItineraryStage = ({
       try {
         const { flightsPlanned, hotelPlanned, foodPlanned, toursPlanned, totalPlanned } = computeBuckets(currentDays);
 
-        const raw = localStorage.getItem('kinu_trips');
-        if (!raw) return;
-        const trips: any[] = JSON.parse(raw);
-        const depTime = departureDate.getTime();
-        const retTime = returnDate.getTime();
-        const idx = trips.findIndex((t) => {
-          if (!t || t.destination !== destination) return false;
-          const st = t.startDate ? new Date(t.startDate).getTime() : NaN;
-          const en = t.endDate ? new Date(t.endDate).getTime() : NaN;
-          return st === depTime && en === retTime;
+        // Read-modify-write pelo funil: o updater recebe a viagem FRESCA do storage,
+        // então nenhuma viagem irmã é reconstruída de memória (recon §4.1). Id
+        // inexistente agora loga aviso no store em vez do `return` mudo (§4.4).
+        updateTrip(tripId, (trip) => {
+          const prevFinances = trip.finances || {};
+          const prevCats = prevFinances.categories || {};
+          const cat = (name: string) => ({
+            planned: 0,
+            confirmed: prevCats[name]?.confirmed || 0,
+            bidding: prevCats[name]?.bidding || 0,
+          });
+
+          const total = trip.budget || prevFinances.total || totalPlanned;
+          const confirmed = prevFinances.confirmed || 0;
+          const bidding = prevFinances.bidding || 0;
+
+          return {
+            ...trip,
+            finances: {
+              total,
+              confirmed,
+              bidding,
+              planned: totalPlanned,
+              available: total - totalPlanned - confirmed,
+              categories: {
+                flights: { ...cat('flights'), planned: flightsPlanned },
+                accommodation: { ...cat('accommodation'), planned: hotelPlanned },
+                tours: { ...cat('tours'), planned: toursPlanned },
+                food: { ...cat('food'), planned: foodPlanned },
+                transport: cat('transport'),
+                shopping: cat('shopping'),
+              },
+            },
+          };
         });
-        if (idx === -1) return;
-
-        const trip = trips[idx];
-        const prevFinances = trip.finances || {};
-        const prevCats = prevFinances.categories || {};
-        const cat = (name: string) => ({
-          planned: 0,
-          confirmed: prevCats[name]?.confirmed || 0,
-          bidding: prevCats[name]?.bidding || 0,
-        });
-
-        const total = trip.budget || prevFinances.total || totalPlanned;
-        const confirmed = prevFinances.confirmed || 0;
-        const bidding = prevFinances.bidding || 0;
-
-        trip.finances = {
-          total,
-          confirmed,
-          bidding,
-          planned: totalPlanned,
-          available: total - totalPlanned - confirmed,
-          categories: {
-            flights: { ...cat('flights'), planned: flightsPlanned },
-            accommodation: { ...cat('accommodation'), planned: hotelPlanned },
-            tours: { ...cat('tours'), planned: toursPlanned },
-            food: { ...cat('food'), planned: foodPlanned },
-            transport: cat('transport'),
-            shopping: cat('shopping'),
-          },
-        };
-
-        trips[idx] = trip;
-        localStorage.setItem('kinu_trips', JSON.stringify(trips));
       } catch (err) {
         console.warn('[GeneratedItineraryStage] finance recompute failed', err);
       }
     };
-  }, [breakdown, destination, departureDate, returnDate]);
+    // `destination`/`departureDate`/`returnDate` saem das deps junto com a busca por
+    // conteúdo — e é isso que impede o ciclo. O `updateTrip` emite para o sino da
+    // /viagens, que re-renderiza o DraftCockpit, que recria `new Date(trip.startDate)`
+    // a cada render (DraftCockpit.tsx:371-372): com as datas nas deps, este `useMemo`
+    // recomporia, o effect abaixo redispararia e o laço seria infinito. `breakdown` é
+    // useState sem setter (:1043) e `tripId` é string — ambos estáveis.
+  }, [breakdown, tripId]);
 
 
   useEffect(() => {

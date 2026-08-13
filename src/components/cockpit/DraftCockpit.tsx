@@ -365,6 +365,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   if (stage === 'itinerary' && effectiveOutbound && effectiveReturn) {
     return (
       <GeneratedItineraryStage
+        tripId={trip.id}
         destination={trip.destination}
         origin={trip.origin || 'São Paulo'}
         emoji={emoji}
