@@ -1,18 +1,18 @@
 -- prova-rls.sql
--- kinu-beta · F3/Arco 2 · prova de que o RLS e os triggers funcionam.
+-- kinu-beta · F3/Arco 2 v2 · prova de que o RLS, os triggers e as FKs funcionam
+-- — e de que o catálogo curado saiu intacto.
 --
 -- COMO RODAR: SQL Editor do painel do kinu-beta, UM BLOCO POR VEZ (A, B, C).
 -- O editor só mostra o resultado do último select de cada execução.
 --
 -- Usuários fake com UUID fixo e e-mail @kinu-teste.local. O bloco C apaga tudo.
--- Rodar depois de 001 e 002.
-
+-- Rodar depois de 000, 001, 002 e 003.
 
 -- =====================================================================
--- BLOCO A — setup + prova do trigger de signup
--- Esperado: 2 linhas. nome preenchido (trigger de profile pegou),
--- destination/status preenchidos (colunas geradas), atualizado_em_andou
--- = true para o Teste A e false para o Teste B.
+-- BLOCO A — setup + prova dos triggers
+-- Esperado: 2 linhas. name preenchido (trigger de signup pegou),
+-- preferences = {} (default), destination/status preenchidos (colunas
+-- geradas), updated_at_andou = true para o Teste A e false para o Teste B.
 -- =====================================================================
 begin;
 
@@ -30,17 +30,17 @@ insert into auth.users (
    'authenticated', 'authenticated', 'a@kinu-teste.local', '',
    now(), now(), now(),
    '{"provider":"email","providers":["email"]}'::jsonb,
-   '{"nome":"Teste A"}'::jsonb,
+   '{"name":"Teste A"}'::jsonb,
    '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000',
    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
    'authenticated', 'authenticated', 'b@kinu-teste.local', '',
    now(), now(), now(),
    '{"provider":"email","providers":["email"]}'::jsonb,
-   '{"nome":"Teste B"}'::jsonb,
+   '{"name":"Teste B"}'::jsonb,
    '', '', '', '');
 
--- 1 trip para cada (inserido como postgres; o INSERT sob RLS é testado no bloco B)
+-- 1 trip para cada (inserida como postgres; o INSERT sob RLS é o teste 8)
 insert into public.trips (id, user_id, payload) values
   ('11111111-1111-4111-8111-111111111111',
    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -49,7 +49,7 @@ insert into public.trips (id, user_id, payload) values
    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
    '{"status":"draft","destination":"Cartagena","country":"Colômbia"}'::jsonb);
 
-insert into public.kinu_sessoes (user_id, trip_id, mensagens) values
+insert into public.kinu_sessions (user_id, trip_id, messages) values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
    '11111111-1111-4111-8111-111111111111',
    '[{"role":"user","content":"oi"}]'::jsonb),
@@ -57,7 +57,7 @@ insert into public.kinu_sessoes (user_id, trip_id, mensagens) values
    '22222222-2222-4222-8222-222222222222',
    '[{"role":"user","content":"ola"}]'::jsonb);
 
--- prova do UPDATE trigger: atualizado_em tem de andar
+-- prova do trigger de UPDATE: updated_at tem de andar
 update public.trips
    set payload = payload || '{"destination":"Lisboa e Porto"}'::jsonb
  where id = '11111111-1111-4111-8111-111111111111';
@@ -65,16 +65,15 @@ update public.trips
 commit;
 
 select
-  p.id, p.nome, p.criado_em,
+  p.id, p.name, p.created_at, p.preferences,
   t.destination as trip_destination,
   t.status      as trip_status,
-  (t.atualizado_em > t.criado_em) as atualizado_em_andou
+  (t.updated_at > t.created_at) as updated_at_andou
 from public.profiles p
 left join public.trips t on t.user_id = p.id
 where p.id in ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
                'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
-order by p.nome;
-
+order by p.name;
 
 -- =====================================================================
 -- BLOCO B — prova do RLS (A não vê, não muda, não apaga e não doa nada de B)
@@ -160,9 +159,9 @@ begin
   insert into prova_rls values (9, 'A ve N profiles', '1', n_int::text,
     case when n_int = 1 then 'PASSA' else 'FALHA' end);
 
-  -- 10. kinu_sessoes: A so ve a propria sessao
-  select count(*) into n_int from public.kinu_sessoes;
-  insert into prova_rls values (10, 'A ve N sessoes', '1', n_int::text,
+  -- 10. kinu_sessions: A so ve a propria sessao
+  select count(*) into n_int from public.kinu_sessions;
+  insert into prova_rls values (10, 'A ve N sessions', '1', n_int::text,
     case when n_int = 1 then 'PASSA' else 'FALHA' end);
 
   -- 11. e a trip de B continua intacta? (volta a ser postgres para olhar)
@@ -174,24 +173,48 @@ end $$;
 
 select * from prova_rls order by n;
 
-
 -- =====================================================================
--- BLOCO C — limpeza
--- Esperado: 0, 0, 0 nas três primeiras colunas (prova do cascade);
--- price_alerts e events com a contagem que você já tinha (prova de que
--- esta missão não encostou nelas).
+-- BLOCO C — limpeza + prova de que nada além do escopo foi tocado
 -- =====================================================================
 delete from auth.users where email like '%@kinu-teste.local';
 
+-- C.1 — cascade: as 3 primeiras colunas têm de vir 0 (apagou o usuário no
+-- Auth, foram junto o profile, as trips e as sessions).
+-- curated_activities = 883 e curated_hotels = 132: o catálogo VIVO,
+-- intacto, exatamente como estava antes da missão.
 select
   (select count(*) from public.profiles
      where id in ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-                  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')) as profiles_restantes,
+                  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'))      as profiles_restantes,
   (select count(*) from public.trips
      where user_id in ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
                        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')) as trips_restantes,
-  (select count(*) from public.kinu_sessoes
+  (select count(*) from public.kinu_sessions
      where user_id in ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-                       'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')) as sessoes_restantes,
-  (select count(*) from public.price_alerts) as price_alerts_intacta,
-  (select count(*) from public.events)       as events_intacta;
+                       'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')) as sessions_restantes,
+  (select count(*) from public.curated_activities) as curated_activities_esperado_883,
+  (select count(*) from public.curated_hotels)     as curated_hotels_esperado_132,
+  (select count(*) from public.price_alerts)       as price_alerts_esperado_0,
+  (select count(*) from public.monitor_offers)     as monitor_offers_esperado_0,
+  (select count(*) from public.events)             as events_esperado_0,
+  (select count(*) from public.feedback)           as feedback_esperado_0;
+
+-- C.2 — as FKs recriadas pelo 003 estão no lugar e com a política certa.
+-- Esperado: price_alerts_trip_id_fkey -> trips / cascade
+--           monitor_offers_trip_id_fkey -> trips / set null
+select
+  child.relname as tabela,
+  con.conname   as constraint_name,
+  ref.relname   as aponta_para,
+  case con.confdeltype
+    when 'a' then 'no action' when 'r' then 'restrict'
+    when 'c' then 'cascade'  when 'n' then 'set null'
+    when 'd' then 'set default'
+  end           as on_delete
+from pg_constraint con
+join pg_class child on child.oid = con.conrelid
+join pg_class ref   on ref.oid   = con.confrelid
+where con.contype = 'f'
+  and child.relname in ('price_alerts', 'monitor_offers', 'events', 'feedback',
+                        'trips', 'kinu_sessions', 'profiles')
+order by child.relname, con.conname;
