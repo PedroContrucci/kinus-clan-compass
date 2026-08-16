@@ -4,7 +4,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp, LogOut, Loader2, Plane, Sparkles, Clock, CheckCircle2, TrendingUp, Calendar, MapPin, ArrowRight } from 'lucide-react';
 import { BottomNav } from '@/components/shared/BottomNav';
-import { useUserTrips } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/hooks/useAuth';
 import kinuLogo from '@/assets/KINU_logo.png';
 import { differenceInDays, format } from 'date-fns';
@@ -27,11 +26,9 @@ const Dashboard = () => {
   const { user, isLoading: authLoading, logout } = useAuth();
   const [showCompleted, setShowCompleted] = useState(false);
 
-  // Fetch trips from Supabase
-  const { data: supabaseTrips, isLoading: tripsLoading } = useUserTrips(user?.id);
   const { setIsOpen, sendMessage } = useKinuAI();
 
-  // Also check localStorage for backwards compatibility
+  // Fonte única das viagens: o funil do Arco 1 (tripStore).
   const [localTrips, setLocalTrips] = useState<any[]>([]);
   
   useEffect(() => {
@@ -47,36 +44,13 @@ const Dashboard = () => {
   // re-assinaria a cada mudança de auth.
   useEffect(() => subscribeTrips(() => setLocalTrips(listTrips())), []);
 
-  // Merge trips from both sources
+  // A leitura das trips do projeto LOVABLE morreu aqui (recon §5.1). Ela nunca
+  // rodou de verdade: dependia de `user.id`, que o mock nunca gravou, então
+  // `enabled: Boolean(userId)` a manteve desligada a vida inteira. Com o uuid
+  // real do kinu-beta ela acordaria — para perguntar à tabela `trips` do banco
+  // ERRADO, por um usuário que não existe lá. Código adormecido acorda em hora
+  // ruim: por isso saiu, em vez de ficar desabilitado.
   const allTrips = [...(localTrips || [])];
-  
-  // Transform Supabase trips to match local format
-  if (supabaseTrips) {
-    supabaseTrips.forEach((trip: any) => {
-      const transformedTrip = {
-        id: trip.id,
-        destination: trip.destination_city?.name_pt || trip.name,
-        emoji: getDestinationEmoji(trip.destination_city?.name_pt || trip.name),
-        country: trip.destination_city?.country?.name_pt || '',
-        startDate: trip.departure_date,
-        endDate: trip.return_date,
-        budget: trip.budget_total || 0,
-        budgetUsed: trip.budget_used || 0,
-        finances: {
-          total: trip.budget_total || 0,
-          confirmed: trip.budget_used || 0,
-        },
-        progress: calculateProgress(trip.checklist || []),
-        status: trip.status || 'draft',
-        checklist: trip.checklist || [],
-      };
-      
-      // Avoid duplicates
-      if (!allTrips.find(t => t.id === trip.id)) {
-        allTrips.push(transformedTrip);
-      }
-    });
-  }
 
   const activeTrips = allTrips.filter((t) => 
     t.status === 'active' || t.status === 'ongoing'
@@ -185,8 +159,7 @@ const Dashboard = () => {
         {/* Active Trips */}
         <section>
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4 flex items-center gap-2">
-            🗺️ Viagens Ativas 
-            {tripsLoading && <Loader2 size={14} className="animate-spin ml-2" />}
+            🗺️ Viagens Ativas
           </h2>
 
           {tripKPIs.length > 0 ? (
@@ -440,36 +413,7 @@ const CompletedTripCard = ({ trip, onClick }: { trip: any; onClick: () => void }
   </motion.button>
 );
 
-// Helper functions
-function getDestinationEmoji(destination: string): string {
-  const emojiMap: Record<string, string> = {
-    'Tóquio': '🏯',
-    'Tokyo': '🏯',
-    'Paris': '🗼',
-    'Roma': '🏛️',
-    'Rome': '🏛️',
-    'Lisboa': '🚃',
-    'Lisbon': '🚃',
-    'Barcelona': '🏖️',
-    'Nova York': '🗽',
-    'New York': '🗽',
-    'Londres': '🎡',
-    'London': '🎡',
-    'Dubai': '🏙️',
-    'Bangkok': '🛕',
-    'Singapore': '🌆',
-    'Singapura': '🌆',
-    'Sydney': '🦘',
-    'Japão': '🇯🇵',
-  };
-  
-  return emojiMap[destination] || '✈️';
-}
-
-function calculateProgress(checklist: any[]): number {
-  if (!checklist || checklist.length === 0) return 0;
-  const completed = checklist.filter(item => item.is_completed).length;
-  return Math.round((completed / checklist.length) * 100);
-}
+// getDestinationEmoji e calculateProgress viviam aqui e só eram chamados dentro
+// do merge das trips do Lovable, removido nesta fase — saíram junto.
 
 export default Dashboard;

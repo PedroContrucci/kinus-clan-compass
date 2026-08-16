@@ -230,34 +230,10 @@ export function useCommunityPhotos(activityIds?: string[]) {
   });
 }
 
-// Fetch user trips
-export function useUserTrips(userId?: string) {
-  return useQuery({
-    queryKey: ['trips', userId],
-    queryFn: async () => {
-      if (!userId) return [];
-      
-      const { data, error } = await supabase
-        .from('trips')
-        .select(`
-          *,
-          origin_city:cities!trips_origin_city_id_fkey(*),
-          destination_city:cities!trips_destination_city_id_fkey(*),
-          activities:trip_activities(*),
-          payments:trip_payments(*),
-          checklist:trip_checklist(*),
-          travelers:trip_travelers(*)
-        `)
-        .eq('user_id', userId)
-        .order('departure_date', { ascending: true });
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: Boolean(userId),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-}
+// useUserTrips vivia aqui (trips do projeto Lovable, por user_id). Removida no
+// Arco 3a: nunca rodou — dependia de um user.id que o mock não gravava — e
+// acordaria no uuid do kinu-beta para consultar o banco errado (recon §5.1).
+// As viagens do usuário passam a morar no kinu-beta a partir do Arco 4.
 
 // Search cities and airports for autocomplete
 export function useCityAirportSearch(searchTerm: string) {
