@@ -1,27 +1,31 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, HelpCircle, Star, Info } from 'lucide-react';
+import { LogOut, User, HelpCircle, Star, Info, Loader2 } from 'lucide-react';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { toast } from '@/hooks/use-toast';
 import kinuLogo from '@/assets/KINU_logo.png';
 import { loadJson } from '@/lib/safeStorage';
 import { listTrips } from '@/lib/tripStore';
+import { useAuth } from '@/hooks/useAuth';
 
 
 
 const Conta = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const { user, isLoading: authLoading, logout } = useAuth();
   const [stats, setStats] = useState({ trips: 0, countries: 0, activities: 0 });
 
+  // Guard ASSÍNCRONO — a diferença que importa: só redireciona depois que a
+  // sessão resolveu. Antes, o guard era síncrono (loadJson do mock) e mandaria
+  // todo usuário logado para `/` a cada reload (recon §4). Mesmo formato do
+  // Dashboard.tsx:34.
   useEffect(() => {
-    const savedUser = loadJson<{ name: string; email: string } | null>('kinu_user', null);
-    if (!savedUser) {
-      navigate('/');
-      return;
-    }
-    setUser(savedUser);
+    if (!user && !authLoading) navigate('/');
+  }, [user, authLoading, navigate]);
 
+  // As estatísticas leem o funil do Arco 1 e não dependem de auth — efeito
+  // separado para não recalcular a cada refresh de token.
+  useEffect(() => {
     const savedTrips = listTrips();
     const uniqueCountries = new Set(savedTrips.map(t => t.country).filter(Boolean));
     const totalActivities = savedTrips.reduce((acc, trip) => {
@@ -32,12 +36,12 @@ const Conta = () => {
       countries: uniqueCountries.size,
       activities: totalActivities,
     });
-  }, [navigate]);
+  }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('kinu_user');
-    navigate('/');
-  };
+  // O logout paralelo morreu aqui (recon §2.2, §5.6): ele apagava o mock e
+  // deixaria a sessão Supabase VIVA — a pessoa "sairia" e voltaria logada.
+  // useAuth().logout faz signOut() e já navega para '/'.
+  const handleLogout = () => { void logout(); };
 
   const handleComingSoon = (feature: string) => {
     toast({
@@ -45,6 +49,14 @@ const Conta = () => {
       description: `${feature} estará disponível na próxima versão.`,
     });
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!user) return null;
 

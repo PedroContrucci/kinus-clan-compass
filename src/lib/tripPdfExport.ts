@@ -750,7 +750,13 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
 
 // ── Main Export Function (ASYNC for image fetching) ──
 
-export async function exportTripPDF(trip: SavedTrip) {
+/**
+ * @param displayName nome de quem exporta, vindo de useAuth().user.name.
+ *   Esta lib NÃO é componente e não pode usar hook — antes ela lia `kinu_user`
+ *   do localStorage direto (recon §2.2). A thread agora vem de quem exporta.
+ *   Omitido = PDF sem a linha "Preparado para".
+ */
+export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.getWidth();  // 210
   const ph = doc.internal.pageSize.getHeight(); // 297
@@ -887,35 +893,35 @@ export async function exportTripPDF(trip: SavedTrip) {
   y += 6;
   doc.text(`${totalDays} dias  |  ${trip.travelers} viajante(s)  |  Faixa ${tierLabel}`, pw / 2, y, { align: 'center' });
 
-  // Personalizacao — nome do usuario logado
-  // Hierarquia: (1) display name salvo no perfil, (2) heuristico do email,
-  // (3) omitir linha se nenhum dos dois for um nome proprio (evita imprimir slug).
+  // Personalizacao — nome de quem exporta, recebido por argumento.
+  // A leitura crua de `kinu_user` morreu aqui (Arco 3c): a lib nao pode usar
+  // hook, entao quem chama passa o useAuth().user.name.
+  //
+  // O filtro herdado do codigo antigo continua: melhor nenhuma linha do que
+  // uma linha com slug. Duas rejeicoes, pelo mesmo motivo —
+  //   'Viajante' = o ultimo degrau da cascata do toAppUser, ou seja "nao sei
+  //                teu nome"; imprimir isso e pior que omitir;
+  //   com digito = veio do local part de um email (pedro123), nao e nome.
+  // Nome proprio de uma palavra so ("Pedro") AGORA IMPRIME — antes o
+  // isProperName exigia espaco/ponto/hifen porque a fonte era um mock que
+  // podia guardar slug no campo `name`.
   try {
-    const savedUser = typeof localStorage !== 'undefined' ? localStorage.getItem('kinu_user') : null;
-    const parsed = savedUser ? JSON.parse(savedUser) : null;
-    const rawName: string = String(parsed?.name || '').trim();
-    const rawEmail: string = String(parsed?.email || '').trim();
-    const titleCase = (s: string) => s
-      .split(/[\s._\-]+/)
-      .filter(Boolean)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-      .join(' ');
-    const isProperName = (s: string) => /[\s._\-]/.test(s);
+    const raw = (displayName || '').trim();
+    const isFallbackName = raw.toLowerCase() === 'viajante';
+    const looksLikeSlug = /\d/.test(raw);
 
-    let displayName = '';
-    if (rawName && isProperName(rawName)) {
-      displayName = titleCase(rawName);           // nome do perfil
-    } else if (rawEmail.includes('@')) {
-      const local = rawEmail.split('@')[0];
-      if (isProperName(local)) displayName = titleCase(local); // fallback email
-    }
+    if (raw && !isFallbackName && !looksLikeSlug) {
+      const pretty = raw
+        .split(/[\s._\-]+/)
+        .filter(Boolean)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
 
-    if (displayName) {
       y += 7;
       setC(B.emeraldL, false);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'italic');
-      doc.text(`Preparado para ${cleanText(displayName)}`, pw / 2, y, { align: 'center' });
+      doc.text(`Preparado para ${cleanText(pretty)}`, pw / 2, y, { align: 'center' });
     }
   } catch {}
 

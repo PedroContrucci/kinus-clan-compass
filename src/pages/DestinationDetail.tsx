@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Heart, Star, Clock, Euro, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Heart, Star, Clock, Euro, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { destinations } from '@/data/destinations';
+import { useAuth } from '@/hooks/useAuth';
 
 const DestinationDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
   const [selectedDay, setSelectedDay] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -13,12 +15,19 @@ const DestinationDetail = () => {
 
   const destination = destinations.find((d) => d.id === id);
 
+  // Guard assíncrono (recon §4): o `!authLoading` é o que impede o flash de
+  // logout no reload — antes esta leitura era síncrona no localStorage.
   useEffect(() => {
-    const savedUser = localStorage.getItem('kinu_user');
-    if (!savedUser) {
-      navigate('/');
-    }
-  }, [navigate]);
+    if (!user && !authLoading) navigate('/');
+  }, [user, authLoading, navigate]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-emerald-500" />
+      </div>
+    );
+  }
 
   if (!destination) {
     return (

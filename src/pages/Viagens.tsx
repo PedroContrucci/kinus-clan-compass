@@ -1,14 +1,14 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useKinuAI } from "@/contexts/KinuAIContext";
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Pencil } from 'lucide-react';
+import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Pencil, Loader2 } from 'lucide-react';
 import { format, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { exportTripPDF } from '@/lib/tripPdfExport';
-import { loadJson } from '@/lib/safeStorage';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -161,7 +161,7 @@ function hasMapCoordinates(activityName: string, destination: string): boolean {
 const Viagens = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  const { user, isLoading: authLoading } = useAuth();
   const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(null);
   const [activeTab, setActiveTab] = useState<'painel' | 'roteiro' | 'financeiro' | 'preparacao'>('painel');
@@ -234,19 +234,23 @@ const Viagens = () => {
     }
   }, [selectedTrip, activeTab, setTripContext]);
 
+  // Guard ASSÍNCRONO — o mais caro de errar do arco (recon §4). O guard antigo
+  // era síncrono (loadJson do mock); com sessão vinda da rede, redirecionar
+  // antes de `authLoading` cair chutaria TODO usuário logado para `/` a cada
+  // reload da tela principal do produto. Só se decide quando a sessão resolveu.
   useEffect(() => {
-    const savedUser = loadJson<{ name: string } | null>('kinu_user', null);
-    if (!savedUser) {
-      navigate('/');
-      return;
-    }
-    setUser(savedUser);
+    if (!user && !authLoading) navigate('/');
+  }, [user, authLoading, navigate]);
 
-    // Leitura pelo funil: sempre array, sempre normalizada (recon §4.3, §4.5).
-    // A regravação que existia aqui (escrita-no-read) morreu: normalizar é
-    // responsabilidade da LEITURA, então não há mais o que persistir no mount.
+  // Leitura pelo funil: sempre array, sempre normalizada (recon §4.3, §4.5).
+  // A regravação que existia aqui (escrita-no-read) morreu: normalizar é
+  // responsabilidade da LEITURA, então não há mais o que persistir no mount.
+  //
+  // Efeito separado do guard de propósito: as viagens são locais e não esperam
+  // a rede — carregam no mount, independentes do estado de auth.
+  useEffect(() => {
     setTrips(listTrips());
-  }, [navigate]);
+  }, []);
 
   // Sino do storage (recon §4.10): qualquer escrita que passe pelo tripStore — desta aba
   // (chat criando viagem via addTrip) ou de outra aba (evento `storage`) — recarrega a
@@ -1471,6 +1475,16 @@ const Viagens = () => {
     return days;
   };
 
+  // Enquanto a sessão não resolve, espera — não decide. Devolver null aqui
+  // seria uma tela branca a cada reload; o guard acima é quem redireciona.
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-primary" />
+      </div>
+    );
+  }
+
   if (!user) return null;
 
   // Draft Trip → Flight Selection Flow
@@ -1789,6 +1803,7 @@ const Viagens = () => {
 
               <TripPanel
               trip={selectedTrip}
+              exporterName={user?.name}
               onConfirm={handleHeroConfirm}
               onUnconfirm={handleHeroUnconfirm}
               onUpdateTrip={handleUpdateTrip}
@@ -1824,7 +1839,7 @@ const Viagens = () => {
                   <p className="text-[10px] text-muted-foreground">PDF premium com fotos, mapa e dicas</p>
                 </div>
                 <button
-                  onClick={() => exportTripPDF(selectedTrip)}
+                  onClick={() => exportTripPDF(selectedTrip, user?.name)}
                   className="px-4 py-2 text-xs font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   Gerar PDF

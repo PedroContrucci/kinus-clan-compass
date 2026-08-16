@@ -133,6 +133,13 @@ interface TripPanelProps {
   onNavigateTab: (tab: string, categoryFilter?: string) => void;
   pendingConfirmRequest?: { tipo: 'voo' | 'hotel'; ts: number } | null;
   onPendingConfirmHandled?: () => void;
+  /**
+   * Nome de quem exporta, repassado ao exportTripPDF (Arco 3c). Vem por prop e
+   * não por useAuth() aqui de dentro: este painel monta a cada seleção de
+   * viagem e um hook de auth aqui abriria uma segunda assinatura do GoTrue e um
+   * getSession() extra por montagem. A Viagens já tem o usuário — passa.
+   */
+  exporterName?: string;
 }
 
 
@@ -409,7 +416,7 @@ function getTripCurrency(dest: string): string {
   return DEST_CURRENCY_MAP[n] || 'USD';
 }
 
-export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAuction, onNavigateTab, pendingConfirmRequest, onPendingConfirmHandled }: TripPanelProps) => {
+export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAuction, onNavigateTab, pendingConfirmRequest, onPendingConfirmHandled, exporterName }: TripPanelProps) => {
   const [showAllActions, setShowAllActions] = useState(false);
   const [dismissedNow, setDismissedNow] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -675,7 +682,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       case 'navigate-roteiro': onNavigateTab('roteiro'); break;
       case 'export-pdf': {
         setPdfLoading(true);
-        exportTripPDF(trip).finally(() => setPdfLoading(false));
+        exportTripPDF(trip, exporterName).finally(() => setPdfLoading(false));
         break;
       }
     }
@@ -684,7 +691,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const handleExportPdf = async () => {
     setPdfLoading(true);
     try {
-      await exportTripPDF(trip);
+      await exportTripPDF(trip, exporterName);
     } finally {
       setPdfLoading(false);
     }
