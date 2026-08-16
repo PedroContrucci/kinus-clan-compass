@@ -302,4 +302,20 @@ Conforme instruído: **nada foi publicado no Lovable**. O arco fecha completo
 feat(f3): arco 3b+3c - Login real, corte seco do mock, Conta/Viagens/DestinationDetail no hook, PDF por argumento (kinu_user: uma porta)
 ```
 
-<!-- HASH_E_PUSH -->
+**Hash:** `ba120b5` — 9 arquivos (8 de código + este relatório), 657 inserções,
+77 remoções.
+
+**Push:**
+
+```
+$ git push origin main
+To https://github.com/PedroContrucci/kinus-clan-compass
+   3141d9b..ba120b5  main -> main
+```
+
+(O adendo com hash e push é um commit à parte porque a saída de um push não cabe
+dentro do commit que ela publica — mesmo padrão do `1e527b3` no Arco 2 e do
+`092fea3` na 3a.)
+
+**`STEP1-AUTH-3B.md` deletado** após a aplicação, como combinado — não entrou em
+commit nenhum.
