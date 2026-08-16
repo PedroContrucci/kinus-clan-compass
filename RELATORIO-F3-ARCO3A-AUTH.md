@@ -235,6 +235,16 @@ ocorrências fora do módulo de corte de legado.
 feat(f3): arco 3a - cliente kinu-beta + useAuth sobre Supabase Auth (interface preservada) + remove useUserTrips do Lovable
 ```
 
-Hash e saída do push registrados abaixo, em adendo (uma sequência de push não
-cabe dentro do commit que ela publica — mesmo padrão do commit `1e527b3` do
-Arco 2).
+**Hash:** `8fd915e` — 7 arquivos (5 de código/config + este relatório + o
+`RELATORIO-RECON-AUTH.md` do reconhecimento), 215 inserções, 119 remoções.
+
+**Push:**
+
+```
+$ git push origin main
+To https://github.com/PedroContrucci/kinus-clan-compass
+   d50dc50..8fd915e  main -> main
+```
+
+(O adendo com hash e push é um commit à parte porque a saída de um push não cabe
+dentro do commit que ela publica — mesmo padrão do `1e527b3` no Arco 2.)
