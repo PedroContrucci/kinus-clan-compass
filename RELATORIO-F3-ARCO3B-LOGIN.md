@@ -319,3 +319,11 @@ dentro do commit que ela publica — mesmo padrão do `1e527b3` no Arco 2 e do
 
 **`STEP1-AUTH-3B.md` deletado** após a aplicação, como combinado — não entrou em
 commit nenhum.
+
+## Adendo (17/ago) — Prova manual do Arco 3
+- Ambiente: app local no Codespace (npm run dev), storage virgem (dominio novo).
+- Login com conta inexistente → 'Email ou senha incorretos.' (mapa de erros OK).
+- Criar conta (Confirm email desligado) → /dashboard direto → F5 mantem sessao (guard assincrono OK) → /viagens entra (guard mais caro OK).
+- /conta → Sair → / → F5 continua deslogado (sessao Supabase morta de verdade; logout paralelo eliminado) → re-login volta ao dashboard.
+- Verniz do corte seco NAO testado (storage virgem, sem kinu_user para consumir; nao foi possivel plantar a chave via DevTools) — codigo revisado, prova fica para primeiro navegador do beta com mock antigo. PDF displayName nao testado (sem viagem) — check leve pos-publish.
+- Primeiro usuario real do kinu-beta criado (pedrocontrucci@hotmail.com); conferir profile via trigger no painel.
