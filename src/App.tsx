@@ -19,16 +19,22 @@ import NotFound from "./pages/NotFound";
 import SmokeTest from "./pages/SmokeTest";
 import { migrateLegacyTripIds } from "@/lib/tripIdMigration";
 import { startSession } from "@/lib/session";
+import { startTripSync } from "@/lib/tripSync";
 
 // Boot, no escopo do módulo: roda uma vez na avaliação de App.tsx, portanto ANTES do
 // `createRoot(...).render()` do main.tsx — nenhum componente que lê trips chegou a montar.
 // Idempotente: na segunda carga não existe id legado e ela não escreve nada.
 migrateLegacyTripIds();
 
-// DEPOIS da migração, de propósito: quando o espelho do 4c entrar nesta mesma linha, ele já
-// encontra todo id em uuid. startSession() não bloqueia nem devolve promessa — só assina o
-// GoTrue e dispara o getSession inicial. Idempotente.
+// DEPOIS da migração, de propósito: o espelho abaixo já encontra todo id em uuid.
+// startSession() não bloqueia nem devolve promessa — só assina o GoTrue e dispara o
+// getSession inicial. Idempotente.
 startSession();
+
+// DEPOIS do startSession(), de propósito: o espelho semeia o snapshot aqui e pergunta pela
+// sessão via session.ts. Sem sessão resolvida com userId ele é no-op total — o /planejar
+// anônimo não muda. Ainda não LÊ do banco (4f) e não adota o que já estava aqui (4e).
+startTripSync();
 
 const queryClient = new QueryClient();
 
