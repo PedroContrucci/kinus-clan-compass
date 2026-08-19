@@ -270,3 +270,12 @@ To https://github.com/PedroContrucci/kinus-clan-compass
 
 Sem `--amend` depois do push, sem `--force` — esta linha entra num commit `docs:` separado, em
 cima do commit do código.
+
+## Adendo (20/ago) — PUBLISH Arcos 3 + 4a/4b/4c/4d, prova em producao 6/6
+- Login real no kinu-travel.app → dashboard. Verniz nao apareceu (storage sem kinu_user).
+- 4a: id da viagem Paris em uuid (8896d550-...), migracao one-shot rodou.
+- 4c/4d: /smoke Espelho com sessao b5c1c62c-..., outbox 0/0/0, 0 erros, 2 upsert ok.
+- kinu-beta: trips com 1 linha (id=storage, user_id correto, schema_version 1); profiles com 1 linha via trigger.
+- ACHADO: profiles.name = NULL (esperado 'Pedro') — investigar options.data.name no signUp ou timing do trigger; toAppUser cobre a UI. Backlog.
+- Smoke 319/320 intacto.
+- Regra nova: Code NAO edita relatorio ja commitado (adendo = commit novo); edicao local da 4d descartada via git restore antes do publish.
