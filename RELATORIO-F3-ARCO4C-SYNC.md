@@ -8,8 +8,8 @@
 
 | Arquivo | Status | Linhas |
 |---|---|---|
-| `src/lib/tripSync.ts` | **novo** | 466 |
-| `src/test/tripSync.test.ts` | **novo** | 17 testes |
+| `src/lib/tripSync.ts` | **novo** | 587 |
+| `src/test/tripSync.test.ts` | **novo** | 448 (17 testes) |
 | `src/App.tsx` | +6 linhas (liga o espelho no boot) | — |
 
 `tripStore.ts`, `session.ts`, `useAuth.ts`, `src/data/`, `hotelZones`, `michelinData`,
@@ -292,6 +292,22 @@ o documento inteiro como unidade — a mesma semântica que o localStorage já t
 
 ## 10. Commit e push
 
-**Commit:** `feat(f3): arco 4c - tripSync: espelho de escrita localStorage→kinu-beta (outbox + diff + flush)`
+**Commit:** `07ad92a` — `feat(f3): arco 4c - tripSync: espelho de escrita localStorage→kinu-beta (outbox + diff + flush)`
 
-Sem `--amend` depois do push, sem `--force`.
+```
+ RELATORIO-F3-ARCO4C-SYNC.md | 297 ++++++++++++++++++++++
+ src/App.tsx                 |  12 +-
+ src/lib/tripSync.ts         | 587 ++++++++++++++++++++++++++++++++++++++++++++
+ src/test/tripSync.test.ts   | 448 +++++++++++++++++++++++++++++++++
+ 4 files changed, 1341 insertions(+), 3 deletions(-)
+```
+
+**Push** (`git push origin main`):
+
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   c9ffeac..07ad92a  main -> main
+```
+
+Sem `--amend` depois do push, sem `--force` — a regra da casa foi respeitada: esta linha
+entra num commit `docs:` separado, em cima do commit do código.
