@@ -264,4 +264,16 @@ padrão dos Arcos 1-3.
 
 ### 8.1 Saída do push
 
-<!-- PUSH-OUTPUT -->
+Commit do arco: `8fa4b5a`.
+
+```
+$ git push origin main
+To https://github.com/PedroContrucci/kinus-clan-compass
+   a75e197..8fa4b5a  main -> main
+```
+
+Fast-forward de `a75e197` (adendo da 4a) para `8fa4b5a`. Nenhum `--amend`, nenhum `--force`,
+nenhum `--force-with-lease` — nada da história do remoto foi reescrito, e uma janela com
+commit do Lovable seria resolvida por merge, não por sobrescrita. Este texto vai num commit
+`docs:` separado, que é o preço de não emendar: dois commits em vez de um, e nenhum push
+forçado.
