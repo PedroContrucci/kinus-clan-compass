@@ -243,3 +243,7 @@ src/test/tripStore.test.ts     +32 −1
 ```
 
 `STEP1-ARCO4A.md` deletado antes do commit — não entrou no repositório em momento nenhum.
+
+## Adendo pós-entrega (19/ago)
+- REGRA DA CASA (reafirmada): NUNCA force-push na main, nem --force-with-lease. O Lovable pusha na main de forma autonoma; um force numa janela com commit dele reescreve historia alheia. A saida do push vai em commit docs: separado (padrao dos Arcos 1-3). O amend duplo desta entrega foi seguro por sorte de timing, nao por regra.
+- Prova de runtime: pendente no navegador de producao (storage com viagens legadas); Codespace tem storage virgem.
