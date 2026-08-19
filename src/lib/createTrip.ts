@@ -13,6 +13,7 @@ import { defaultChecklist, FLIGHT_DURATION, calculateArrivalTime, calculateJetLa
 import type { SavedTrip, TripDay, TripActivity, ActivityStatus, TripFinances } from '@/types/trip';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { BUDGET_TIERS } from '@/components/wizard/types';
+import { newTripId } from '@/lib/tripStore';
 
 export interface DraftTripInput {
   originCity: string;
@@ -39,7 +40,7 @@ export interface DraftTripInput {
 export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> {
   if (!input.departureDate || !input.returnDate) throw new Error('Datas não definidas');
 
-  const tripId = `trip-${Date.now()}`;
+  const tripId = newTripId();
   const destinationCity = input.destinationCity;
   const duration = differenceInDays(input.returnDate, input.departureDate) + 1;
   const totalNights = Math.max(1, duration - 1);

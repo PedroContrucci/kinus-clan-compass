@@ -17,6 +17,12 @@ import Conta from "./pages/Conta";
 import DestinationDetail from "./pages/DestinationDetail";
 import NotFound from "./pages/NotFound";
 import SmokeTest from "./pages/SmokeTest";
+import { migrateLegacyTripIds } from "@/lib/tripIdMigration";
+
+// Boot, no escopo do módulo: roda uma vez na avaliação de App.tsx, portanto ANTES do
+// `createRoot(...).render()` do main.tsx — nenhum componente que lê trips chegou a montar.
+// Idempotente: na segunda carga não existe id legado e ela não escreve nada.
+migrateLegacyTripIds();
 
 const queryClient = new QueryClient();
 

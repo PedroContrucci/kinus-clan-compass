@@ -49,6 +49,32 @@ export interface PriceSnapshot {
 const PRICE_HISTORY_LIMIT = 10;
 
 // ---------------------------------------------------------------------------
+// Identidade
+// ---------------------------------------------------------------------------
+
+/**
+ * Gera o id de uma viagem. É a MESMA identidade das duas pontas: `trips.id` no kinu-beta
+ * é `uuid`, então um `trip_1755…` sequer entra na coluna (`22P02`). Recon §2.1, opção A.
+ *
+ * `crypto.randomUUID` não está garantido: o browser o esconde fora de origem segura
+ * (http num IP de LAN — cenário real do beta no celular), e nem todo ambiente de teste o
+ * expõe. O fallback usa `getRandomValues`, que existe nos dois casos, e monta o v4 na
+ * mão — sem dependência nova.
+ */
+export function newTripId(): string {
+  const native = globalThis.crypto?.randomUUID?.();
+  if (native) return native;
+
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40; // versão 4
+  bytes[8] = (bytes[8] & 0x3f) | 0x80; // variante RFC 4122
+
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+// ---------------------------------------------------------------------------
 // Normalização — movida de Viagens.tsx:111-203, lógica idêntica.
 // As cinco auxiliares são privadas: cada uma tinha exatamente um chamador, aqui dentro.
 // ---------------------------------------------------------------------------
@@ -286,7 +312,7 @@ export function getActiveTrip(): StoredTrip | null {
 export function addTrip(trip: SavedTrip): StoredTrip {
   const stored = trip as StoredTrip;
 
-  if (!stored.id) stored.id = `trip_${Date.now()}`;
+  if (!stored.id) stored.id = newTripId();
   if (!stored.createdAt) stored.createdAt = new Date().toISOString();
 
   const trips = readRaw();

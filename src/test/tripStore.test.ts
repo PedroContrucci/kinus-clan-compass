@@ -14,7 +14,11 @@ import {
   subscribeTrips,
   getPriceHistory,
   pushPriceSnapshot,
+  newTripId,
 } from '@/lib/tripStore';
+
+/** O formato exato que a coluna `uuid` do kinu-beta aceita. */
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type RawTrip = Record<string, unknown>;
 
@@ -54,6 +58,33 @@ beforeEach(() => {
 
 afterEach(() => {
   warn.mockRestore();
+});
+
+describe('newTripId', () => {
+  it('gera uuid v4 válido', () => {
+    expect(newTripId()).toMatch(UUID_V4);
+  });
+
+  it('não repete', () => {
+    const ids = new Set(Array.from({ length: 500 }, () => newTripId()));
+    expect(ids.size).toBe(500);
+  });
+
+  // O ambiente de teste TEM `crypto.randomUUID` (vitest 3 mantém o webcrypto do Node sob
+  // o jsdom). O fallback existe para origem não-segura no browser, onde ele some — e só é
+  // exercitado se a gente o forçar aqui.
+  it('cai no fallback de getRandomValues quando randomUUID não existe', () => {
+    const original = (globalThis.crypto as any).randomUUID;
+    try {
+      (globalThis.crypto as any).randomUUID = undefined;
+
+      const ids = new Set(Array.from({ length: 100 }, () => newTripId()));
+      ids.forEach((id) => expect(id).toMatch(UUID_V4));
+      expect(ids.size).toBe(100);
+    } finally {
+      (globalThis.crypto as any).randomUUID = original;
+    }
+  });
 });
 
 describe('listTrips', () => {
@@ -162,7 +193,7 @@ describe('addTrip', () => {
 
     const created = addTrip(fixture({ destination: 'Lisboa' }));
 
-    expect(created.id).toMatch(/^trip_\d+$/);
+    expect(created.id).toMatch(UUID_V4);
     expect(Number.isNaN(Date.parse(created.createdAt as string))).toBe(false);
 
     const stored = readRaw();
