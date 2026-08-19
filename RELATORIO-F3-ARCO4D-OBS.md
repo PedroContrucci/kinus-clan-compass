@@ -251,6 +251,22 @@ A/B do §1.
 
 ## 8. Commit e push
 
-**Commit:** `feat(f3): arco 4d - observabilidade do espelho (kinu_sync_log + getSyncStatus + painel Espelho no /smoke)`
+**Commit:** `8eb6bbb` — `feat(f3): arco 4d - observabilidade do espelho (kinu_sync_log + getSyncStatus + painel Espelho no /smoke)`
 
-Sem `--amend` depois do push, sem `--force`.
+```
+ RELATORIO-F3-ARCO4D-OBS.md | 256 +++++++++++++++++++++++++++++++++++++++++++++
+ src/lib/tripSync.ts        | 171 ++++++++++++++++++++++++++++++
+ src/pages/SmokeTest.tsx    | 250 +++++++++++++++++++++++++++++++++++++++++++
+ src/test/tripSync.test.ts  | 132 +++++++++++++++++++++--
+ 4 files changed, 802 insertions(+), 7 deletions(-)
+```
+
+**Push** (`git push origin main`):
+
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   83ea030..8eb6bbb  main -> main
+```
+
+Sem `--amend` depois do push, sem `--force` — esta linha entra num commit `docs:` separado, em
+cima do commit do código.
