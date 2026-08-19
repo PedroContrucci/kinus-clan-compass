@@ -69,8 +69,20 @@ function trip(id: string, extra: Record<string, unknown> = {}): SavedTrip {
   return { id, status: 'draft', destination: 'Rio de Janeiro', ...extra } as unknown as SavedTrip;
 }
 
+async function boot(mods: { session: any; sync: any }) {
+  mods.session.startSession();
+  mods.sync.startTripSync();
+  await tick(); // deixa o getSession resolver
+}
+
 async function fresh(
-  opts: { userId?: string | null; seed?: unknown[]; outbox?: unknown[]; autoStart?: boolean } = {},
+  opts: {
+    userId?: string | null;
+    seed?: unknown[];
+    outbox?: unknown[];
+    log?: unknown[];
+    autoStart?: boolean;
+  } = {},
 ) {
   vi.resetModules();
   localStorage.clear();
@@ -87,18 +99,16 @@ async function fresh(
 
   if (opts.seed) localStorage.setItem('kinu_trips', JSON.stringify(opts.seed));
   if (opts.outbox) localStorage.setItem('kinu_trips_outbox', JSON.stringify(opts.outbox));
+  if (opts.log) localStorage.setItem('kinu_sync_log', JSON.stringify(opts.log));
 
   const store = await import('@/lib/tripStore');
   const session = await import('@/lib/session');
   const sync = await import('@/lib/tripSync');
 
-  if (opts.autoStart !== false) {
-    session.startSession();
-    sync.startTripSync();
-    await tick(); // deixa o getSession resolver
-  }
+  const mods = { store, session, sync };
+  if (opts.autoStart !== false) await boot(mods);
 
-  return { store, session, sync };
+  return mods;
 }
 
 function fireAuthEvent(event: string, session: unknown) {
@@ -444,5 +454,113 @@ describe('tripSync — boot', () => {
 
     expect(onWindow.mock.calls.length).toBe(windowCalls);
     expect(onDocument.mock.calls.length).toBe(documentCalls);
+  });
+});
+
+describe('tripSync — observabilidade (Arco 4d)', () => {
+  it('18. tentativa bem-sucedida entra no log como ok', async () => {
+    const { store, sync } = await fresh();
+
+    store.addTrip(trip(A));
+    await tick();
+
+    const log = sync.getSyncLog();
+    expect(log).toHaveLength(1);
+    expect(log[0]).toMatchObject({ op: 'upsert', id: A, ok: true });
+    expect(log[0].ts).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(log[0]).not.toHaveProperty('code');
+
+    const status = sync.getSyncStatus();
+    expect(status.lastFlushAt).toBe(log[0].ts);
+    expect(status.errors24h).toBe(0);
+    expect(status.outbox).toMatchObject({ pending: 0, blocked: 0, foreignOwner: 0 });
+  });
+
+  it('19. tentativa falha entra no log com o código', async () => {
+    const { store, sync } = await fresh();
+
+    db.state.upsertResult = () =>
+      Promise.resolve({ data: null, error: { code: '42501', message: 'row-level security' } });
+
+    store.addTrip(trip(A));
+    await tick();
+
+    const log = sync.getSyncLog();
+    expect(log).toHaveLength(1);
+    expect(log[0]).toMatchObject({ op: 'upsert', id: A, ok: false, code: '42501' });
+    expect(sync.getSyncStatus().errors24h).toBe(1);
+  });
+
+  it('20. o anel para em 50: o 51º descarta o mais antigo', async () => {
+    const seeded = Array.from({ length: 50 }, (_, i) => ({
+      ts: `2026-08-19T00:00:${String(i).padStart(2, '0')}.000Z`,
+      op: 'upsert' as const,
+      id: uuid(9),
+      ok: true,
+    }));
+
+    const { store, sync } = await fresh({ log: seeded });
+
+    store.addTrip(trip(A));
+    await tick();
+
+    const log = sync.getSyncLog();
+    expect(log).toHaveLength(50);
+    expect(log[0].ts).toBe(seeded[1].ts); // o primeiro semeado saiu pela frente
+    expect(log[49]).toMatchObject({ id: A, ok: true }); // o novo entrou pelo fim
+  });
+
+  it('21. getSyncStatus separa pendente, blocked e outro dono', async () => {
+    const C = uuid(3);
+    const mods = await fresh({
+      seed: [
+        { id: A, status: 'draft', destination: 'Rio de Janeiro' },
+        { id: B, status: 'draft', destination: 'Lisboa' },
+        { id: C, status: 'draft', destination: 'Salvador' },
+      ],
+      outbox: [
+        { op: 'upsert', id: A, seq: 1, uid: 'u-1' },
+        { op: 'upsert', id: B, seq: 2, uid: 'u-1', blocked: true },
+        { op: 'delete', id: C, seq: 3, uid: 'u-2' },
+      ],
+      autoStart: false,
+    });
+
+    // offline: o flush do boot tenta o pendente e não o drena, então os três casos coexistem
+    db.state.upsertResult = () => Promise.reject(new Error('offline'));
+    await boot(mods);
+
+    const status = mods.sync.getSyncStatus();
+    expect(status.ownerUserId).toBe('u-1');
+    expect(status.sessionResolved).toBe(true);
+    expect(status.outbox.pending).toBe(1);
+    expect(status.outbox.blocked).toBe(1);
+    expect(status.outbox.foreignOwner).toBe(1);
+    expect(status.outbox.ids).toEqual({ pending: [A], blocked: [B], foreignOwner: [C] });
+
+    // a invariante: os três casos somam o outbox inteiro, sem sobra nem dupla contagem
+    const { pending, blocked, foreignOwner } = status.outbox;
+    expect(pending + blocked + foreignOwner).toBe(mods.sync.getOutboxLength());
+  });
+
+  it('22. errors24h conta só erro das últimas 24h', async () => {
+    const now = Date.now();
+    const h = (hours: number) => new Date(now - hours * 60 * 60 * 1000).toISOString();
+    const recent = h(2);
+
+    const { sync } = await fresh({
+      log: [
+        { ts: h(30), op: 'upsert', id: A, ok: false, code: '42501' }, // velho: fora
+        { ts: 'não é data', op: 'upsert', id: A, ok: false, code: 'x' }, // ilegível: fora
+        { ts: recent, op: 'upsert', id: A, ok: false, code: null }, // conta
+        { ts: recent, op: 'delete', id: B, ok: true }, // sucesso: não é erro
+      ],
+      autoStart: false,
+    });
+
+    const status = sync.getSyncStatus();
+    expect(status.errors24h).toBe(1);
+    // sem flush nesta sessão, o `lastFlushAt` vem do anel gravado (aba recarregada)
+    expect(status.lastFlushAt).toBe(recent);
   });
 });

@@ -6,6 +6,14 @@ import { validateItinerary, validateOfferLinks, formatReport, type ValidationRes
 import { buildOfferLinks } from '@/lib/offersLinks';
 import type { PriceLevel } from '@/lib/activityPricing';
 import { toast } from '@/hooks/use-toast';
+import {
+  flush,
+  getSyncLog,
+  getSyncStatus,
+  clearSyncLog,
+  type SyncLogEvent,
+  type SyncStatus,
+} from '@/lib/tripSync';
 
 interface TestConfig {
   label: string;
@@ -405,6 +413,246 @@ interface TestOutcome {
   error?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Espelho (Arco 4) — ADITIVO. Nada aqui entra no placar do smoke: `totals` é
+// calculado só sobre `outcomes`, e este componente tem estado próprio.
+//
+// Mostra o lado LOCAL do espelho (outbox, log, status). A comparação local × banco
+// (só-no-local, só-no-banco, payload divergente, ordem) precisa de `select` e chega
+// na 4f junto com a hidratação — o aviso na tela diz isso ao vivo.
+// ---------------------------------------------------------------------------
+
+const MIRROR_REFRESH_MS = 2000;
+
+/** Uuid inteiro é ilegível numa tabela; o começo basta para bater olho, e o title tem tudo. */
+function shortId(id: string): string {
+  return id.length > 8 ? id.slice(0, 8) : id;
+}
+
+function hhmmss(iso: string): string {
+  const parsed = new Date(iso);
+  return Number.isNaN(parsed.getTime()) ? iso : parsed.toLocaleTimeString('pt-BR');
+}
+
+function MirrorTile({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  tone: 'ok' | 'warn' | 'bad';
+}) {
+  const color =
+    tone === 'bad' ? 'text-red-400' : tone === 'warn' ? 'text-amber-400' : 'text-emerald-400';
+  return (
+    <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3">
+      <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
+      <div className={`text-lg font-mono ${color}`}>{value}</div>
+    </div>
+  );
+}
+
+function MirrorIds({ label, ids }: { label: string; ids: string[] }) {
+  return (
+    <p className="text-xs text-slate-400">
+      <span className="text-slate-500">{label}:</span>{' '}
+      {ids.length === 0 ? (
+        '—'
+      ) : (
+        <span className="font-mono text-slate-300">
+          {ids.map((id) => (
+            <span key={id} title={id} className="mr-2">
+              {shortId(id)}
+            </span>
+          ))}
+        </span>
+      )}
+    </p>
+  );
+}
+
+function MirrorPanel() {
+  const [status, setStatus] = useState<SyncStatus>(() => getSyncStatus());
+  const [log, setLog] = useState<SyncLogEvent[]>(() => getSyncLog());
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // Polling em vez de assinatura: o espelho não expõe sino próprio, e um painel de soak
+  // precisa se mexer sozinho enquanto você usa o app em outra aba.
+  useEffect(() => {
+    const refresh = () => {
+      setStatus(getSyncStatus());
+      setLog(getSyncLog());
+    };
+    const timer = window.setInterval(refresh, MIRROR_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const sessionLabel = !status.sessionResolved
+    ? 'resolvendo…'
+    : status.ownerUserId
+      ? status.ownerUserId
+      : 'anônimo (espelho desligado)';
+
+  const forceFlush = async () => {
+    setBusy(true);
+    setFeedback('Flush em andamento…');
+    try {
+      await flush();
+    } finally {
+      setBusy(false);
+    }
+
+    const next = getSyncStatus();
+    setStatus(next);
+    setLog(getSyncLog());
+
+    if (!next.ownerUserId) {
+      setFeedback('Sem sessão resolvida com userId: o flush é no-op e nenhuma chamada foi feita.');
+    } else if (next.lastFlushError) {
+      setFeedback(
+        `Terminou com erro ${next.lastFlushError.code ?? 'sem código'}: ${next.lastFlushError.message}`,
+      );
+    } else {
+      setFeedback(`Flush concluído. Restam ${next.outbox.pending} pendente(s) na fila.`);
+    }
+  };
+
+  const handleClearLog = () => {
+    clearSyncLog();
+    setStatus(getSyncStatus());
+    setLog(getSyncLog());
+    setFeedback('Log apagado. O outbox NÃO foi tocado.');
+  };
+
+  const newestFirst = [...log].reverse();
+
+  return (
+    <section className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="font-semibold text-lg">🪞 Espelho (Arco 4) — lado local</h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Sessão: <span className="font-mono text-slate-200">{sessionLabel}</span> · inFlight:{' '}
+            <span className="font-mono">{status.inFlight ? 'sim' : 'não'}</span>
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={forceFlush}
+            disabled={busy}
+            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-medium transition"
+          >
+            {busy ? 'Flushando…' : 'Forçar flush'}
+          </button>
+          <button
+            onClick={handleClearLog}
+            className="px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-200 text-sm font-medium transition"
+          >
+            Limpar log
+          </button>
+        </div>
+      </div>
+
+      <p className="text-xs text-amber-400 border border-amber-500/30 bg-amber-500/5 rounded-lg p-3">
+        ⚠ Comparação local × banco (só-no-local, só-no-banco, payload divergente, ordem) chega na{' '}
+        <strong>4f</strong>, junto com a hidratação — ela precisa de <code>select</code>, e a 4d
+        não lê do banco. Este painel mostra só o lado local: outbox, log e status.
+      </p>
+
+      {feedback && (
+        <p className="text-xs font-mono text-slate-200 border border-slate-700 bg-slate-950/60 rounded-lg p-2">
+          {feedback}
+        </p>
+      )}
+
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-5">
+        <MirrorTile
+          label="Pendente"
+          value={status.outbox.pending}
+          tone={status.outbox.pending > 0 ? 'warn' : 'ok'}
+        />
+        <MirrorTile
+          label="Blocked (42501)"
+          value={status.outbox.blocked}
+          tone={status.outbox.blocked > 0 ? 'bad' : 'ok'}
+        />
+        <MirrorTile
+          label="Outro dono"
+          value={status.outbox.foreignOwner}
+          tone={status.outbox.foreignOwner > 0 ? 'warn' : 'ok'}
+        />
+        <MirrorTile
+          label="Erros 24h"
+          value={status.errors24h}
+          tone={status.errors24h > 0 ? 'bad' : 'ok'}
+        />
+        <MirrorTile
+          label="Último flush"
+          value={status.lastFlushAt ? hhmmss(status.lastFlushAt) : '—'}
+          tone={status.lastFlushAt ? 'ok' : 'warn'}
+        />
+      </div>
+
+      <div className="space-y-1">
+        <MirrorIds label="ids pendentes" ids={status.outbox.ids.pending} />
+        <MirrorIds label="ids blocked" ids={status.outbox.ids.blocked} />
+        <MirrorIds label="ids de outro dono" ids={status.outbox.ids.foreignOwner} />
+        <p className="text-xs text-slate-400">
+          <span className="text-slate-500">Último erro:</span>{' '}
+          {status.lastFlushError ? (
+            <span className="font-mono text-red-400">
+              [{status.lastFlushError.code ?? 'sem código'}] {status.lastFlushError.message}
+            </span>
+          ) : (
+            'nenhum'
+          )}
+        </p>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-semibold text-slate-300 mb-2">
+          kinu_sync_log — {log.length}/50 evento(s), mais recente no topo
+        </h3>
+        {newestFirst.length === 0 ? (
+          <p className="text-xs text-slate-500">Nenhuma tentativa registrada nesta origem ainda.</p>
+        ) : (
+          <div className="max-h-72 overflow-auto rounded-lg border border-slate-800">
+            <table className="w-full text-xs font-mono">
+              <thead className="bg-slate-950/80 text-slate-500 sticky top-0">
+                <tr>
+                  <th className="text-left p-2">quando</th>
+                  <th className="text-left p-2">op</th>
+                  <th className="text-left p-2">id</th>
+                  <th className="text-left p-2">resultado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {newestFirst.map((event, i) => (
+                  <tr
+                    key={`${event.ts}-${event.id}-${i}`}
+                    className="border-t border-slate-800/60"
+                  >
+                    <td className="p-2 text-slate-400">{hhmmss(event.ts)}</td>
+                    <td className="p-2 text-slate-300">{event.op}</td>
+                    <td className="p-2 text-slate-300" title={event.id}>
+                      {shortId(event.id)}
+                    </td>
+                    <td className={`p-2 ${event.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {event.ok ? '✅ ok' : `🔴 ${event.code ?? 'sem código'}`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function SmokeTest() {
   const [outcomes, setOutcomes] = useState<TestOutcome[]>([]);
 
@@ -562,6 +810,8 @@ export default function SmokeTest() {
           );
         })}
       </div>
+
+      <MirrorPanel />
 
       <pre className="text-xs bg-slate-900 border border-slate-800 rounded-lg p-4 overflow-auto whitespace-pre-wrap">
         {outcomes.map((o) => o.report).join('\n\n')}

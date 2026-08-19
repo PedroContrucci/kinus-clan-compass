@@ -46,6 +46,12 @@ const BATCH_SIZE = 5;
  */
 const MAX_ROUNDS = 200;
 
+/** Anel de diagnóstico do espelho (recon §7.2). Não é fila: perder evento antigo é o desenho. */
+export const SYNC_LOG_KEY = 'kinu_sync_log';
+
+/** 50 eventos. Mesmo idioma do anel de `pushPriceSnapshot` no tripStore (`shift()` no topo). */
+const LOG_LIMIT = 50;
+
 export type OutboxOp = 'upsert' | 'delete';
 
 /**
@@ -84,6 +90,41 @@ export interface FlushError {
   at: string;
 }
 
+/**
+ * Uma TENTATIVA de flush, por op. Sucesso e falha, os dois — um log que só registra erro não
+ * responde "o espelho está funcionando?", só "o espelho quebrou".
+ *
+ * `code` só existe em falha, e vem `null` quando a falha não trouxe código do PostgREST (rede
+ * caída, por exemplo): `null` aqui é "falhou sem código", que é diferente de ausente.
+ */
+export interface SyncLogEvent {
+  ts: string;
+  op: OutboxOp;
+  id: string;
+  ok: boolean;
+  code?: string | null;
+}
+
+/**
+ * O retrato do lado LOCAL do espelho. `pending + blocked + foreignOwner === total do outbox`,
+ * sempre — é a invariante que a 4c deixou faltando (relatório 4c §9 item 4: um número só não
+ * distinguia os três casos).
+ */
+export interface SyncStatus {
+  ownerUserId: string | null;
+  sessionResolved: boolean;
+  outbox: {
+    pending: number;
+    blocked: number;
+    foreignOwner: number;
+    ids: { pending: string[]; blocked: string[]; foreignOwner: string[] };
+  };
+  lastFlushAt: string | null;
+  lastFlushError: FlushError | null;
+  errors24h: number;
+  inFlight: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Estado do módulo — vive o tempo do documento, como no session.ts
 // ---------------------------------------------------------------------------
@@ -92,6 +133,7 @@ let started = false;
 let inFlight = false;
 let snapshot = new Map<string, string>();
 let lastFlushError: FlushError | null = null;
+let lastFlushAt: string | null = null;
 let profileInsertTried = false;
 
 // ---------------------------------------------------------------------------
@@ -223,6 +265,64 @@ function markBlocked(batch: OutboxEntry[]): void {
 }
 
 // ---------------------------------------------------------------------------
+// kinu_sync_log — o anel de diagnóstico (recon §7.2)
+// ---------------------------------------------------------------------------
+
+function isLogEvent(value: unknown): value is SyncLogEvent {
+  const event = value as SyncLogEvent | null;
+  return Boolean(event)
+    && typeof event.ts === 'string'
+    && typeof event.id === 'string'
+    && (event.op === 'upsert' || event.op === 'delete')
+    && typeof event.ok === 'boolean';
+}
+
+/**
+ * Nunca lança, sempre array. Sem `console.warn` para log torto, de propósito: barulho SOBRE o
+ * diagnóstico é pior que o diagnóstico faltando — e este anel é descartável por natureza.
+ */
+function readLog(): SyncLogEvent[] {
+  const raw = loadJson<unknown>(SYNC_LOG_KEY, []);
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(isLogEvent);
+}
+
+/**
+ * Registra uma tentativa por op, e marca o `lastFlushAt`.
+ *
+ * NUNCA LANÇA — e isso é requisito, não zelo: um `QuotaExceededError` gravando diagnóstico não
+ * pode derrubar o flush que estava funcionando. O `lastFlushAt` é marcado ANTES da gravação,
+ * porque a tentativa aconteceu mesmo que o registro dela não caiba no storage.
+ *
+ * Read-modify-write, como todo o resto: duas abas espelhando compartilham este anel.
+ */
+function logAttempt(entries: OutboxEntry[], ok: boolean, code?: string | null): void {
+  if (entries.length === 0) return;
+
+  const ts = new Date().toISOString();
+  lastFlushAt = ts;
+
+  try {
+    const events = readLog();
+
+    entries.forEach((entry) => {
+      events.push(
+        ok
+          ? { ts, op: entry.op, id: entry.id, ok: true }
+          : { ts, op: entry.op, id: entry.id, ok: false, code: code ?? null },
+      );
+    });
+
+    // Anel: o mais antigo sai pela frente. Mesmo `while` do PRICE_HISTORY_LIMIT do tripStore.
+    while (events.length > LOG_LIMIT) events.shift();
+
+    localStorage.setItem(SYNC_LOG_KEY, JSON.stringify(events));
+  } catch (err) {
+    console.warn('[tripSync] não foi possível gravar kinu_sync_log', err);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Diff por snapshot (recon §4.3, opção 1)
 // ---------------------------------------------------------------------------
 
@@ -343,6 +443,11 @@ async function ensureProfile(userId: string): Promise<void> {
 async function sendPreparedRows(rows: TripRow[], entries: OutboxEntry[]): Promise<boolean> {
   const outcome = await upsertRows(rows);
 
+  // Registra a tentativa ANTES de decidir o que fazer com ela: no caminho do 42501 o lote é
+  // reenviado uma linha por vez, e cada reenvio é uma tentativa nova — que aparece no log como
+  // tal. "Cada tentativa" é literal.
+  logAttempt(entries, outcome.ok, outcome.code);
+
   if (outcome.ok) {
     settle(entries);
     return true;
@@ -371,6 +476,8 @@ async function sendPreparedRows(rows: TripRow[], entries: OutboxEntry[]): Promis
     await ensureProfile(rows[0].user_id);
 
     const retry = await upsertRows(rows);
+    logAttempt(entries, retry.ok, retry.code);
+
     if (retry.ok) {
       settle(entries);
       return true;
@@ -429,6 +536,8 @@ async function sendDelete(entry: OutboxEntry): Promise<boolean> {
   } catch (err) {
     outcome = note(err);
   }
+
+  logAttempt([entry], outcome.ok, outcome.code);
 
   if (outcome.ok) {
     settle([entry]);
@@ -584,4 +693,66 @@ export function getOutboxLength(): number {
  */
 export function getLastFlushError(): FlushError | null {
   return lastFlushError;
+}
+
+/**
+ * O retrato do espelho. Funciona sem `startTripSync()` — é leitura de storage e de estado de
+ * módulo, o que permite inspecionar uma aba onde o espelho nunca ligou.
+ *
+ * A classificação é a mesma regra do `flush()`: op de outro dono não é minha para drenar. Com
+ * a sessão ainda resolvendo (ou anônima), `ownerUserId` é `null` e TODA op cai em
+ * `foreignOwner` — que é a verdade: neste instante nenhuma delas pode subir.
+ */
+export function getSyncStatus(): SyncStatus {
+  const ownerUserId = activeUserId();
+  const entries = readOutbox();
+
+  const ids = {
+    pending: [] as string[],
+    blocked: [] as string[],
+    foreignOwner: [] as string[],
+  };
+
+  entries.forEach((entry) => {
+    if (entry.uid !== ownerUserId) ids.foreignOwner.push(entry.id);
+    else if (entry.blocked) ids.blocked.push(entry.id);
+    else ids.pending.push(entry.id);
+  });
+
+  const log = readLog();
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  // `Date.parse` de um `ts` torto dá NaN, e `NaN >= cutoff` é `false`: evento com data
+  // ilegível não entra na conta em vez de virar erro de hoje.
+  const errors24h = log.filter((event) => !event.ok && Date.parse(event.ts) >= cutoff).length;
+
+  return {
+    ownerUserId,
+    sessionResolved: isSessionResolved(),
+    outbox: {
+      pending: ids.pending.length,
+      blocked: ids.blocked.length,
+      foreignOwner: ids.foreignOwner.length,
+      ids,
+    },
+    // O anel é cronológico por construção (append no fim), então o último é o mais recente. O
+    // fallback existe para o caso de a aba ter recarregado: a variável de módulo zera, o
+    // storage não.
+    lastFlushAt: lastFlushAt ?? (log.length > 0 ? log[log.length - 1].ts : null),
+    lastFlushError,
+    errors24h,
+    inFlight,
+  };
+}
+
+/** O anel como está gravado: cronológico, mais antigo primeiro. Quem quer o topo, inverte. */
+export function getSyncLog(): SyncLogEvent[] {
+  return readLog();
+}
+
+/**
+ * Apaga o anel de diagnóstico. **NÃO** toca no outbox — apagar o outbox seria descartar
+ * escrita do usuário que ainda não subiu, e nenhum botão de painel tem esse direito.
+ */
+export function clearSyncLog(): void {
+  localStorage.removeItem(SYNC_LOG_KEY);
 }
