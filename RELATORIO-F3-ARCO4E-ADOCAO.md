@@ -350,3 +350,9 @@ To https://github.com/PedroContrucci/kinus-clan-compass
 Sem `--amend` depois do push, sem `--force` — esta linha entra num commit `docs:` separado, em
 cima do commit do código. O `STEP1-ARCO4E.md` foi deletado após a aplicação e não entrou em
 nenhum commit.
+
+## Adendo (20/ago, manha) — PUBLISH 4e, prova em producao
+- Dialogo da adocao apareceu no primeiro carregamento pos-publish; fundador aceitou (registro: adotado em 09:45:18); upsert idempotente da Paris (8896d550) as 09:45:19 ✅ — teste 10 ao vivo.
+- Linha 'Adocao (4e)' no painel Espelho funcionando (decisao 3 da missao).
+- Log mostra id novo 00fe552e com 4 upserts — espelho da 4c operando em rotina para viagem nova.
+- Outbox 0/0/0, 0 erros. Pendencia: confirmacao visual calma do dialogo (apareceu rapido); prova do fluxo de RECUSA fica para o soak com segundo usuario.
