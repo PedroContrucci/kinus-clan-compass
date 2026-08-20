@@ -338,7 +338,35 @@ aviso âmbar da 4d **sumiu**, "Recarregar do banco" chama a hidratação (e a te
 
 ---
 
-## 11. Pendências acumuladas do Arco 4
+## 11. Commit e push
+
+**Commit:** `e3d822d` — `feat(f3): arco 4f - hidratacao banco->localStorage (banco vence menos o
+outbox) + painel comparativo`
+
+```
+ RELATORIO-F3-ARCO4F-HIDRATACAO.md |  ...
+ src/App.tsx                       |    6 +
+ src/lib/tripAdoption.ts           |   17 +
+ src/lib/tripHydration.ts          |  455 +++++++++++++
+ src/lib/tripStore.ts              |  110 +++
+ src/lib/tripSync.ts               |   85 ++-
+ src/pages/SmokeTest.tsx           |  177 ++++--
+ src/test/tripHydration.test.ts    |  543 ++++++++++++++++
+```
+
+**Push** (`git push origin main`):
+
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   ff538ee..e3d822d  main -> main
+```
+
+Sem `--amend` depois do push, sem `--force`. O `STEP1-ARCO4F.md` foi deletado após a aplicação e
+não entrou em nenhum commit.
+
+---
+
+## 12. Pendências acumuladas do Arco 4
 
 1. **Prova de runtime da 4a** no navegador de produção (herdada de 4b/4c/4d/4e).
 2. **Confirmação visual** em navegador de verdade: as quatro métricas do painel e os dois botões.
