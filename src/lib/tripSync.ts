@@ -131,6 +131,7 @@ export interface SyncStatus {
 
 let started = false;
 let inFlight = false;
+let absorbing = false;
 let snapshot = new Map<string, string>();
 let lastFlushError: FlushError | null = null;
 let lastFlushAt: string | null = null;
@@ -156,7 +157,12 @@ function activeUserId(): string | null {
 // Hash do payload — barato, determinístico, sem dependência nova
 // ---------------------------------------------------------------------------
 
-function hashTrip(trip: StoredTrip): string {
+/**
+ * Exportado desde a 4f para o painel comparativo do `/smoke` (§7.3): "payload divergente" é,
+ * literalmente, este hash dos dois lados. Continua sendo detalhe do espelho — quem o usa
+ * compara, nunca interpreta o valor.
+ */
+export function hashTrip(trip: StoredTrip): string {
   const json = JSON.stringify(trip);
 
   // djb2-xor. O `^` já reduz a int32 a cada volta, então `h` nunca sai da faixa exata dos
@@ -257,6 +263,56 @@ function enqueue(ops: Array<{ op: OutboxOp; id: string }>, uid: string): void {
  */
 export function enqueueUpserts(ids: string[], uid: string): void {
   enqueue(ids.map((id) => ({ op: 'upsert' as const, id })), uid);
+}
+
+/**
+ * O QUE A HIDRATAÇÃO NÃO PODE TOCAR (4f) — a regra "hidrata tudo, menos o que está no outbox"
+ * (recon §3.3) traduzida para dois conjuntos de ids:
+ *
+ *   - `keepLocal`  (`upsert` pendente): a versão local vence a do banco e não é removida. É uma
+ *     edição do usuário que o banco ainda não viu; sobrescrevê-la é perdê-la.
+ *   - `skipRemote` (`delete` pendente): a linha do banco **não** volta para o local. Ela está
+ *     prestes a morrer lá, e reimportá-la ressuscitaria uma viagem que o usuário apagou.
+ *
+ * `blocked` CONTA como pendente nos dois casos. Uma entrada recusada pela policy nunca será
+ * retentada, mas o que ela significa continua sendo "esta escrita não chegou ao banco" — e um
+ * `delete` blocked cuja linha voltasse do banco é exatamente a viagem-zumbi acima.
+ *
+ * Ops de outro dono não protegem nada: mesma regra do `flush()`.
+ */
+export function getOutboxProtection(uid: string): { keepLocal: string[]; skipRemote: string[] } {
+  const keepLocal: string[] = [];
+  const skipRemote: string[] = [];
+
+  readOutbox().forEach((entry) => {
+    if (entry.uid !== uid) return;
+    if (entry.op === 'upsert') keepLocal.push(entry.id);
+    else skipRemote.push(entry.id);
+  });
+
+  return { keepLocal, skipRemote };
+}
+
+/**
+ * A TROCA DE DONO (4f) descarta os `upsert` de quem não é `currentUid` — e **só** eles.
+ *
+ * O upsert alheio fica órfão no instante em que a hidratação remove a viagem do dono anterior:
+ * sem payload local, ele não tem o que enviar, e o `sendUpserts` o descartaria com aviso na
+ * próxima vez que aquele usuário logasse aqui. Tirá-lo agora é a mesma decisão, sem o barulho —
+ * e sem deixar o painel do soak em âmbar permanente por causa de fila que ninguém vai drenar.
+ *
+ * O `delete` alheio FICA: ele não precisa de payload, continua executável, e perdê-lo faria uma
+ * viagem que o dono anterior apagou voltar a existir na conta dele.
+ *
+ * Devolve quantas entradas saíram.
+ */
+export function discardForeignUpserts(currentUid: string): number {
+  const entries = readOutbox();
+  const kept = entries.filter((entry) => entry.uid === currentUid || entry.op === 'delete');
+
+  if (kept.length !== entries.length) writeOutbox(kept);
+
+  return entries.length - kept.length;
 }
 
 /**
@@ -635,8 +691,35 @@ export async function flush(): Promise<void> {
 // O sino do Arco 1
 // ---------------------------------------------------------------------------
 
+/**
+ * Roda `write()` com o espelho em modo ABSORÇÃO: o sino toca, o snapshot é atualizado e **nada
+ * é enfileirado**. É o mesmo comportamento do caminho anônimo, ligado de propósito.
+ *
+ * POR QUE EXISTE (4f): a hidratação grava em `kinu_trips`, o `writeAll` toca o sino, o diff vê
+ * N viagens "mudadas" e enfileira upsert de tudo que ACABOU DE CHEGAR do banco. Seriam N
+ * requests inúteis por sessão, `updated_at` batido à toa, log poluído — e, pior, um
+ * last-write-wins ao contrário: o dispositivo que acabou de ligar sobrescrevendo o que outro
+ * escreveu há um segundo.
+ *
+ * A janela é uma chamada SÍNCRONA. Não há escrita de outra aba para engolir por acidente: o
+ * evento `storage` não chega no meio de um bloco síncrono desta aba.
+ */
+export function absorbLocalWrite(write: () => void): void {
+  absorbing = true;
+  try {
+    write();
+  } finally {
+    absorbing = false;
+  }
+}
+
 function handleLocalChange(): void {
   const { upserts, deletes } = diffLocal();
+
+  // O diff ACIMA já correu, então o snapshot está em dia: o que a hidratação trouxe deixa de
+  // ser "novidade local" e não sobe depois, por nenhum outro gatilho.
+  if (absorbing) return;
+
   if (upserts.length === 0 && deletes.length === 0) return;
 
   // ANÔNIMO: o snapshot ACIMA já foi atualizado e nada é enfileirado. Atualizar o snapshot

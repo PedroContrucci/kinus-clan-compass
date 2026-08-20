@@ -22,6 +22,7 @@ import { migrateLegacyTripIds } from "@/lib/tripIdMigration";
 import { startSession } from "@/lib/session";
 import { startTripSync } from "@/lib/tripSync";
 import { startTripAdoption } from "@/lib/tripAdoption";
+import { startTripHydration } from "@/lib/tripHydration";
 
 // Boot, no escopo do módulo: roda uma vez na avaliação de App.tsx, portanto ANTES do
 // `createRoot(...).render()` do main.tsx — nenhum componente que lê trips chegou a montar.
@@ -43,6 +44,11 @@ startTripSync();
 // diálogo aparece se, e só se, a sessão resolver com usuário, houver viagem local e ninguém
 // tiver decidido ainda neste navegador. Idempotente.
 startTripAdoption();
+
+// POR ÚLTIMO, de propósito: a hidratação (4f) só age quando o marcador da adoção já diz de quem
+// é este navegador, e absorve a própria escrita pelo `absorbLocalWrite` do espelho — que precisa
+// estar ligado antes. Nenhuma leitura acontece aqui: o gate exige sessão resolvida com usuário.
+startTripHydration();
 
 const queryClient = new QueryClient();
 

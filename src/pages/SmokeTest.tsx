@@ -15,6 +15,13 @@ import {
   type SyncStatus,
 } from '@/lib/tripSync';
 import { getTripsOwner, type TripsOwner } from '@/lib/tripAdoption';
+import {
+  compareWithDatabase,
+  getHydrationStatus,
+  hydrateNow,
+  type HydrationStatus,
+  type MirrorDiff,
+} from '@/lib/tripHydration';
 
 interface TestConfig {
   label: string;
@@ -418,9 +425,10 @@ interface TestOutcome {
 // Espelho (Arco 4) — ADITIVO. Nada aqui entra no placar do smoke: `totals` é
 // calculado só sobre `outcomes`, e este componente tem estado próprio.
 //
-// Mostra o lado LOCAL do espelho (outbox, log, status). A comparação local × banco
-// (só-no-local, só-no-banco, payload divergente, ordem) precisa de `select` e chega
-// na 4f junto com a hidratação — o aviso na tela diz isso ao vivo.
+// Lado LOCAL (4d): outbox, log, status. Lado do BANCO (4f): hidratação e a
+// comparação do recon §7.3 — só-no-local, só-no-banco, payload divergente, ordem.
+// A comparação é sob demanda, e não por polling, por dois motivos: ela custa um
+// request e um instrumento que mede sozinho o tempo todo vira ruído no soak.
 // ---------------------------------------------------------------------------
 
 const MIRROR_REFRESH_MS = 2000;
@@ -484,20 +492,56 @@ function ownerLabel(owner: TripsOwner | null): string {
   return `${owner.userId} · adotado em ${hhmmss(owner.adoptedAt)}`;
 }
 
+/** O motivo pelo qual a hidratação (4f) não rodou, em português de tela. */
+function hydrationLabel(hydration: HydrationStatus): string {
+  if (hydration.inFlight) return 'lendo do banco…';
+
+  if (hydration.lastSkip) {
+    const why = {
+      'sem-sessao': 'sem sessão — o banco é parede',
+      'sem-decisao': 'esperando a decisão da adoção (4e)',
+      'recusa': 'recusada: este navegador é local por decisão do usuário',
+      'em-voo': 'outra hidratação em andamento',
+    }[hydration.lastSkip];
+    return `não hidrata — ${why}`;
+  }
+
+  if (hydration.lastHydrationError) {
+    return `🔴 [${hydration.lastHydrationError.code ?? 'sem código'}] ${hydration.lastHydrationError.message}`;
+  }
+
+  if (!hydration.lastHydrationAt) return 'ainda não rodou nesta aba';
+
+  const r = hydration.lastResult;
+  const quando = hhmmss(hydration.lastHydrationAt);
+  if (!r) return `ok em ${quando}`;
+
+  const detalhe = r.changed
+    ? `+${r.added} ~${r.updated} −${r.removed} · ${r.keptLocal} preservada(s)`
+    : 'nada a mudar';
+
+  return `${quando} · ${detalhe}${r.ignored.length > 0 ? ` · ${r.ignored.length} ignorada(s)` : ''}` +
+    `${r.takeover ? ' · TROCA DE DONO' : ''}`;
+}
+
 function MirrorPanel() {
   const [status, setStatus] = useState<SyncStatus>(() => getSyncStatus());
   const [log, setLog] = useState<SyncLogEvent[]>(() => getSyncLog());
   const [owner, setOwner] = useState<TripsOwner | null>(() => getTripsOwner());
+  const [hydration, setHydration] = useState<HydrationStatus>(() => getHydrationStatus());
+  const [diff, setDiff] = useState<MirrorDiff | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   // Polling em vez de assinatura: o espelho não expõe sino próprio, e um painel de soak
-  // precisa se mexer sozinho enquanto você usa o app em outra aba.
+  // precisa se mexer sozinho enquanto você usa o app em outra aba. A COMPARAÇÃO fica de
+  // fora deste ciclo de propósito — ela custa um request.
   useEffect(() => {
     const refresh = () => {
       setStatus(getSyncStatus());
       setLog(getSyncLog());
       setOwner(getTripsOwner());
+      setHydration(getHydrationStatus());
     };
     const timer = window.setInterval(refresh, MIRROR_REFRESH_MS);
     return () => window.clearInterval(timer);
@@ -540,13 +584,59 @@ function MirrorPanel() {
     setFeedback('Log apagado. O outbox NÃO foi tocado.');
   };
 
+  const reloadFromDatabase = async () => {
+    setBusy(true);
+    setFeedback('Lendo do banco…');
+    let outcome: Awaited<ReturnType<typeof hydrateNow>>;
+    try {
+      outcome = await hydrateNow();
+    } finally {
+      setBusy(false);
+    }
+
+    setHydration(getHydrationStatus());
+    setStatus(getSyncStatus());
+
+    if (outcome.skipped) {
+      setFeedback(`Hidratação não rodou: ${hydrationLabel(getHydrationStatus())}`);
+    } else if (outcome.error) {
+      setFeedback(`Hidratação falhou — o localStorage NÃO foi tocado: ${outcome.error.message}`);
+    } else {
+      const r = outcome.result;
+      setFeedback(
+        r && r.changed
+          ? `Hidratado: ${r.added} nova(s), ${r.updated} atualizada(s), ${r.removed} removida(s), ` +
+            `${r.keptLocal} preservada(s) pelo outbox.`
+          : 'Hidratado: o banco já era exatamente o que estava aqui.',
+      );
+    }
+  };
+
+  const runComparison = async () => {
+    setBusy(true);
+    setFeedback('Comparando local × banco…');
+    let result: MirrorDiff;
+    try {
+      result = await compareWithDatabase();
+    } finally {
+      setBusy(false);
+    }
+
+    setDiff(result);
+    setFeedback(
+      result.ok
+        ? `Comparação feita: ${result.localCount} local × ${result.remoteCount} no banco.`
+        : `Comparação falhou: ${result.error?.message ?? 'sem detalhe'}`,
+    );
+  };
+
   const newestFirst = [...log].reverse();
 
   return (
     <section className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="font-semibold text-lg">🪞 Espelho (Arco 4) — lado local</h2>
+          <h2 className="font-semibold text-lg">🪞 Espelho (Arco 4) — local e banco</h2>
           <p className="text-xs text-slate-400 mt-0.5">
             Sessão: <span className="font-mono text-slate-200">{sessionLabel}</span> · inFlight:{' '}
             <span className="font-mono">{status.inFlight ? 'sim' : 'não'}</span>
@@ -554,14 +644,32 @@ function MirrorPanel() {
           <p className="text-xs text-slate-400 mt-0.5">
             Adoção (4e): <span className="font-mono text-slate-200">{ownerLabel(owner)}</span>
           </p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Hidratação (4f):{' '}
+            <span className="font-mono text-slate-200">{hydrationLabel(hydration)}</span>
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={forceFlush}
             disabled={busy}
             className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-medium transition"
           >
             {busy ? 'Flushando…' : 'Forçar flush'}
+          </button>
+          <button
+            onClick={reloadFromDatabase}
+            disabled={busy}
+            className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-sm font-medium transition"
+          >
+            Recarregar do banco
+          </button>
+          <button
+            onClick={runComparison}
+            disabled={busy}
+            className="px-3 py-1.5 rounded-lg border border-sky-700 hover:bg-slate-800 disabled:opacity-50 text-sky-200 text-sm font-medium transition"
+          >
+            Comparar local × banco
           </button>
           <button
             onClick={handleClearLog}
@@ -571,12 +679,6 @@ function MirrorPanel() {
           </button>
         </div>
       </div>
-
-      <p className="text-xs text-amber-400 border border-amber-500/30 bg-amber-500/5 rounded-lg p-3">
-        ⚠ Comparação local × banco (só-no-local, só-no-banco, payload divergente, ordem) chega na{' '}
-        <strong>4f</strong>, junto com a hidratação — ela precisa de <code>select</code>, e a 4d
-        não lê do banco. Este painel mostra só o lado local: outbox, log e status.
-      </p>
 
       {feedback && (
         <p className="text-xs font-mono text-slate-200 border border-slate-700 bg-slate-950/60 rounded-lg p-2">
@@ -626,6 +728,57 @@ function MirrorPanel() {
             'nenhum'
           )}
         </p>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-semibold text-slate-300 mb-2">
+          Comparação local × banco (recon §7.3) — o critério do corte da Fase C
+        </h3>
+
+        {!diff ? (
+          <p className="text-xs text-slate-500">
+            Sob demanda: aperte “Comparar local × banco”. Verde é ∅ nas quatro linhas, com o
+            outbox vazio e 0 erro em 24h.
+          </p>
+        ) : !diff.ok ? (
+          <p className="text-xs font-mono text-red-400">
+            🔴 {diff.error?.message ?? 'falhou sem detalhe'} — nada foi gravado.
+          </p>
+        ) : (
+          <div className="space-y-1">
+            <div className="grid gap-3 grid-cols-2 md:grid-cols-4 mb-2">
+              <MirrorTile
+                label="Só no local"
+                value={diff.onlyLocal.length}
+                tone={diff.onlyLocal.length > 0 ? 'bad' : 'ok'}
+              />
+              <MirrorTile
+                label="Só no banco"
+                value={diff.onlyRemote.length}
+                tone={diff.onlyRemote.length > 0 ? 'bad' : 'ok'}
+              />
+              <MirrorTile
+                label="Payload divergente"
+                value={diff.divergent.length}
+                tone={diff.divergent.length > 0 ? 'bad' : 'ok'}
+              />
+              <MirrorTile
+                label="Ordem created_at"
+                value={diff.orderMatches ? 'igual' : 'DIFERENTE'}
+                tone={diff.orderMatches ? 'ok' : 'bad'}
+              />
+            </div>
+            <MirrorIds label="só no local" ids={diff.onlyLocal} />
+            <MirrorIds label="só no banco" ids={diff.onlyRemote} />
+            <MirrorIds label="payload divergente" ids={diff.divergent} />
+            <MirrorIds label="ignoradas (schema_version ≠ 1)" ids={diff.ignored} />
+            <p className="text-xs text-slate-500">
+              {diff.localCount} local × {diff.remoteCount} no banco · medido às{' '}
+              {hhmmss(diff.checkedAt)}. A ordem é comparada só sobre os ids comuns aos dois
+              lados — “só no local” já tem métrica própria.
+            </p>
+          </div>
+        )}
       </div>
 
       <div>

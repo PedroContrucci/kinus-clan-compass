@@ -380,6 +380,116 @@ export function clearTrips(): void {
 }
 
 // ---------------------------------------------------------------------------
+// Hidratação (Arco 4f) — a ÚNICA porta de entrada do banco para a lista
+// ---------------------------------------------------------------------------
+
+export interface HydrationResult {
+  added: number;
+  updated: number;
+  removed: number;
+  keptLocal: number;
+  /** `false` quando a fusão deu exatamente o que já estava gravado: nada escrito, sino mudo. */
+  changed: boolean;
+}
+
+/**
+ * Funde o retrato do banco com o que está no storage e grava o resultado.
+ *
+ * POR QUE ISTO NÃO VIOLA A REGRA DE OURO (recon §1.4 previa só o `newTripId` aqui). A regra
+ * proíbe **regravar o todo a partir de estado React em memória** — o padrão que produz a perda
+ * silenciosa do recon §4.1/§4.2, onde uma aba apaga a escrita da outra por carregar uma cópia
+ * velha do array. Esta função relê o storage por dentro (`readRaw`) e funde; o array que entra
+ * não é "o estado do app", é o retrato do banco. Read-modify-write continua valendo — o
+ * "modify" é que passou a ter duas fontes.
+ *
+ * A alternativa (o `tripHydration` gravar `kinu_trips` direto) fura o funil que 28 pontos de
+ * acesso respeitam e **não toca o sino**: `emit` é privado, e sem ele as 4 telas assinantes não
+ * acordariam.
+ *
+ * CONTRATO:
+ *   - `incoming` chega **na ordem final** (o `select` ordena por `created_at asc`, recon §2.4)
+ *     e já normalizado. A ordem é semântica: `getActiveTrip()` usa "a última da lista";
+ *   - `keepLocalIds` são os ids que o banco **não** pode sobrescrever nem remover — escritas
+ *     locais que ele ainda não viu (o outbox) e linhas que este cliente não entende
+ *     (`schema_version` futuro). Quem monta a lista é o `tripHydration`;
+ *   - viagem local ausente do banco e fora do `keepLocalIds` é **removida** — junto com o
+ *     `kinu_price_history_<id>` dela, o mesmo contrato do `deleteTrip` (recon §4.9);
+ *   - entrada local sem id **sobrevive sempre**: ela não tem PK, o banco nunca a viu e nunca a
+ *     verá. Apagar dado do usuário por não conseguir identificá-lo é a pior das falhas.
+ */
+export function hydrateTrips(incoming: StoredTrip[], keepLocalIds: string[] = []): HydrationResult {
+  const keep = new Set(keepLocalIds);
+  const local = readRaw();
+
+  const localById = new Map<string, StoredTrip>();
+  const unidentified: StoredTrip[] = [];
+
+  local.forEach((trip) => {
+    const id = trip && typeof trip === 'object' ? trip.id : null;
+    if (typeof id === 'string' && id) localById.set(id, trip);
+    else unidentified.push(trip);
+  });
+
+  const merged: StoredTrip[] = [];
+  const taken = new Set<string>();
+  let added = 0;
+  let updated = 0;
+  let keptLocal = 0;
+
+  incoming.forEach((row) => {
+    const id = row?.id;
+    if (typeof id !== 'string' || !id) return;
+    if (taken.has(id)) return; // `trips.id` é PK; duplicata só existiria por bug de quem chama
+    taken.add(id);
+
+    const mine = localById.get(id);
+
+    if (mine && keep.has(id)) {
+      merged.push(mine);
+      keptLocal += 1;
+      return;
+    }
+
+    merged.push(row);
+    if (!mine) added += 1;
+    else if (JSON.stringify(mine) !== JSON.stringify(row)) updated += 1;
+  });
+
+  const removedIds: string[] = [];
+
+  // A ordem do Map é a ordem do array local: as preservadas entram no fim, que é onde as
+  // escritas mais recentes sempre estiveram (o `push` do `addTrip`).
+  localById.forEach((trip, id) => {
+    if (taken.has(id)) return;
+    if (keep.has(id)) {
+      merged.push(trip);
+      keptLocal += 1;
+      return;
+    }
+    removedIds.push(id);
+  });
+
+  if (unidentified.length > 0) {
+    console.warn(
+      `[tripStore] ${unidentified.length} entrada(s) sem id preservada(s) na hidratação — ` +
+      'sem PK não há como confrontá-las com o banco',
+    );
+    merged.push(...unidentified);
+  }
+
+  // Idempotência: hidratar duas vezes não pode acordar as 4 telas para nada. É o que torna o
+  // botão "Recarregar do banco" barato de apertar durante o soak.
+  if (JSON.stringify(merged) === JSON.stringify(local)) {
+    return { added: 0, updated: 0, removed: 0, keptLocal, changed: false };
+  }
+
+  writeAll(merged);
+  removedIds.forEach((id) => localStorage.removeItem(priceHistoryKey(id)));
+
+  return { added, updated, removed: removedIds.length, keptLocal, changed: true };
+}
+
+// ---------------------------------------------------------------------------
 // Histórico de preços — trip-scoped, uma chave por viagem
 // ---------------------------------------------------------------------------
 

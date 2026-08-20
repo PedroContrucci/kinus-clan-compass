@@ -266,6 +266,23 @@ export function acceptAdoption(): void {
 }
 
 /**
+ * A PORTA DA TROCA DE DONO (4f) — o único caminho pelo qual alguém que não passou pelo diálogo
+ * vira dono deste navegador.
+ *
+ * Existe porque `kinu_trips_owner` é segredo deste módulo (o formato, os quatro estados e a
+ * ordem de leitura moram aqui), e a hidratação precisa reescrevê-lo quando o usuário B loga num
+ * navegador cujo marcador é do usuário A. `adoptedAt: null` é o valor certo e não é atalho: a
+ * troca de dono acontece DEPOIS de a hidratação ter removido o passado de A, então não havia
+ * nada a adotar — exatamente o mesmo estado do login com `kinu_trips` vazio.
+ *
+ * Quem chama já provou que o `select` do banco de B respondeu; gravar antes disso deixaria o
+ * navegador sem o passado de A e sem o presente de B.
+ */
+export function claimOwnership(userId: string): void {
+  writeOwner({ userId, adoptedAt: null });
+}
+
+/**
  * "Deixar só neste navegador": grava a recusa e não fala com o banco.
  *
  * `userId: null` — a recusa vale para o navegador, não para a conta. Um segundo usuário neste
