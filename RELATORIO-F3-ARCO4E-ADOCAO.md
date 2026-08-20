@@ -327,4 +327,26 @@ fina — mas rodar uma vez custou nada e teria pego um `null` mal colocado.
 
 ## 11. Commit e push
 
-*(preenchido no commit `docs:` seguinte, conforme a regra da casa)*
+**Commit:** `8106f43` — `feat(f3): arco 4e - adocao consentida das viagens locais no primeiro login`
+
+```
+ RELATORIO-F3-ARCO4E-ADOCAO.md                | 330 ++++++++++++++++++++
+ src/App.tsx                                  |  11 +-
+ src/components/shared/TripAdoptionDialog.tsx | 113 +++++++
+ src/lib/tripAdoption.ts                      | 281 +++++++++++++++++
+ src/lib/tripSync.ts                          |  15 +
+ src/pages/SmokeTest.tsx                      |  17 ++
+ src/test/tripAdoption.test.ts                | 432 +++++++++++++++++++++++++++
+ 7 files changed, 1198 insertions(+), 1 deletion(-)
+```
+
+**Push** (`git push origin main`):
+
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   eea7e7e..8106f43  main -> main
+```
+
+Sem `--amend` depois do push, sem `--force` — esta linha entra num commit `docs:` separado, em
+cima do commit do código. O `STEP1-ARCO4E.md` foi deletado após a aplicação e não entrou em
+nenhum commit.
