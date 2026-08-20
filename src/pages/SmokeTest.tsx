@@ -14,6 +14,7 @@ import {
   type SyncLogEvent,
   type SyncStatus,
 } from '@/lib/tripSync';
+import { getTripsOwner, type TripsOwner } from '@/lib/tripAdoption';
 
 interface TestConfig {
   label: string;
@@ -472,9 +473,21 @@ function MirrorIds({ label, ids }: { label: string; ids: string[] }) {
   );
 }
 
+/**
+ * O marcador da adoção (4e) em uma linha. Os quatro estados de `kinu_trips_owner` são
+ * indistinguíveis no DevTools sem conhecer a convenção — aqui eles viram texto.
+ */
+function ownerLabel(owner: TripsOwner | null): string {
+  if (!owner) return 'nunca perguntado';
+  if (owner.userId === null) return 'recusada — ninguém adota neste navegador';
+  if (!owner.adoptedAt) return `${owner.userId} · sem passado a adotar`;
+  return `${owner.userId} · adotado em ${hhmmss(owner.adoptedAt)}`;
+}
+
 function MirrorPanel() {
   const [status, setStatus] = useState<SyncStatus>(() => getSyncStatus());
   const [log, setLog] = useState<SyncLogEvent[]>(() => getSyncLog());
+  const [owner, setOwner] = useState<TripsOwner | null>(() => getTripsOwner());
   const [feedback, setFeedback] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -484,6 +497,7 @@ function MirrorPanel() {
     const refresh = () => {
       setStatus(getSyncStatus());
       setLog(getSyncLog());
+      setOwner(getTripsOwner());
     };
     const timer = window.setInterval(refresh, MIRROR_REFRESH_MS);
     return () => window.clearInterval(timer);
@@ -536,6 +550,9 @@ function MirrorPanel() {
           <p className="text-xs text-slate-400 mt-0.5">
             Sessão: <span className="font-mono text-slate-200">{sessionLabel}</span> · inFlight:{' '}
             <span className="font-mono">{status.inFlight ? 'sim' : 'não'}</span>
+          </p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Adoção (4e): <span className="font-mono text-slate-200">{ownerLabel(owner)}</span>
           </p>
         </div>
         <div className="flex gap-2">

@@ -17,9 +17,11 @@ import Conta from "./pages/Conta";
 import DestinationDetail from "./pages/DestinationDetail";
 import NotFound from "./pages/NotFound";
 import SmokeTest from "./pages/SmokeTest";
+import { TripAdoptionDialog } from "@/components/shared/TripAdoptionDialog";
 import { migrateLegacyTripIds } from "@/lib/tripIdMigration";
 import { startSession } from "@/lib/session";
 import { startTripSync } from "@/lib/tripSync";
+import { startTripAdoption } from "@/lib/tripAdoption";
 
 // Boot, no escopo do módulo: roda uma vez na avaliação de App.tsx, portanto ANTES do
 // `createRoot(...).render()` do main.tsx — nenhum componente que lê trips chegou a montar.
@@ -33,8 +35,14 @@ startSession();
 
 // DEPOIS do startSession(), de propósito: o espelho semeia o snapshot aqui e pergunta pela
 // sessão via session.ts. Sem sessão resolvida com userId ele é no-op total — o /planejar
-// anônimo não muda. Ainda não LÊ do banco (4f) e não adota o que já estava aqui (4e).
+// anônimo não muda. Ainda não LÊ do banco (4f).
 startTripSync();
+
+// DEPOIS do espelho, de propósito: a adoção enfileira pela porta dele (`enqueueUpserts`) e
+// conta com o snapshot já semeado. Nada é perguntado aqui — este start só assina a sessão. O
+// diálogo aparece se, e só se, a sessão resolver com usuário, houver viagem local e ninguém
+// tiver decidido ainda neste navegador. Idempotente.
+startTripAdoption();
 
 const queryClient = new QueryClient();
 
@@ -90,6 +98,7 @@ const App = () => (
           <TopNav />
           <KinuAIWrapper />
           <BetaFeedbackWrapper />
+          <TripAdoptionDialog />
           <div className="min-h-screen bg-background">
             <div className="lg:max-w-5xl xl:max-w-6xl lg:mx-auto">
             <Routes>

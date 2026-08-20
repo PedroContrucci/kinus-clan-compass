@@ -245,6 +245,21 @@ function enqueue(ops: Array<{ op: OutboxOp; id: string }>, uid: string): void {
 }
 
 /**
+ * A PORTA DA ADOÇÃO (4e) — o único caminho pelo qual o PASSADO entra na fila.
+ *
+ * O sino do `tripStore` só enfileira o que MUDOU depois do login (ver o cabeçalho deste
+ * arquivo); trazer o que já estava no navegador é decisão do usuário, e quem a coleta é o
+ * `tripAdoption.ts`. Esta função existe para que ele não precise conhecer o formato do
+ * outbox: `seq`, `uid`, `blocked` e a regra "op mais recente por id vence" continuam sendo
+ * segredo daqui, e a adoção herda os três de graça por passar pelo mesmo `enqueue()`.
+ *
+ * Não faz flush: quem chama decide quando (a adoção grava o marcador antes de disparar).
+ */
+export function enqueueUpserts(ids: string[], uid: string): void {
+  enqueue(ids.map((id) => ({ op: 'upsert' as const, id })), uid);
+}
+
+/**
  * Tira do outbox as entradas que subiram. Casa `(id, seq)`: se o mesmo id foi reenfileirado
  * durante o voo, ele tem `seq` novo e SOBREVIVE. Sem essa comparação, o espelho perderia
  * silenciosamente a última edição do usuário — exatamente a classe de bug que o Arco 1 matou.
