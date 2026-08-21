@@ -379,3 +379,8 @@ não entrou em nenhum commit.
 6. **Tamanho real do payload** (recon §10.3).
 7. **`profiles.name = NULL`** (achado de 19/ago).
 8. **Histórico de preços não espelhado** (risco 12).
+
+## Adendo (21/ago) — PUBLISH 4f + MULTI-DISPOSITIVO PROVADO
+- Painel /smoke completo: Hidratacao (4f) 07:56:29 +1 ~2 -0, comparacao 3 local x 3 banco, outbox 0/0/0, 0 erros. Instrumento de corte operacional.
+- PROVA DO MULTI-DISPOSITIVO: login no celular → todas as viagens apareceram num dispositivo que nunca as viu. A Fase B cumpriu a promessa.
+- Hidratacao +1 = viagem desceu do banco para o navegador (porta de volta funcionando em producao).
