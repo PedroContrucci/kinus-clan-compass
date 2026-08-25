@@ -562,7 +562,30 @@ observação, não de chute.
 
 ---
 
-## 8. Conformidade da missão
+## 8. Commit e push
+
+**Commit:** `5ecf20d` — `docs: recon arco 5 - rate limiting + CORS nas edge functions`
+
+```
+ RELATORIO-RECON-ARCO5.md | 1 file changed (novo)
+```
+
+`git status --short` antes do commit: uma única linha, `?? RELATORIO-RECON-ARCO5.md`. Nenhum
+arquivo do app foi modificado, como exigido pela missão.
+
+**Push** (`git push origin main`):
+
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   edc18b5..5ecf20d  main -> main
+```
+
+Sem `--amend` depois do push, sem `--force`. Esta seção entra em commit `docs:` separado,
+conforme a regra da casa.
+
+---
+
+## 9. Conformidade da missão
 
 - **Somente leitura:** nenhum arquivo do app foi tocado. `git status` antes do commit deste
   relatório mostra apenas `RELATORIO-RECON-ARCO5.md` como novo.
