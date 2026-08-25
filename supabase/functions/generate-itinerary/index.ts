@@ -55,6 +55,17 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Arco 5.b: função desativada. Proxy Claude aberto à internet (~$0,06/req,
+  // max_tokens 4096) sem identidade nem rate limiting — e órfã: zero chamadores
+  // em src/, scripts/ ou package.json. Ver RELATORIO-RECON-ARCO5.md §1.2 e §6.2.
+  // Código abaixo mantido inerte para reversão: basta remover este bloco.
+  return new Response(
+    JSON.stringify({
+      error: "Esta função foi desativada — sem chamadores; ver RELATORIO-RECON-ARCO5.md",
+    }),
+    { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+
   try {
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 
