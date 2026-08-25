@@ -593,3 +593,8 @@ conforme a regra da casa.
   Relatórios já commitados (`AUDITORIA-SEGURANCA.md`, `RELATORIO-RECON-AUTH.md`,
   `RELATORIO-DEPLOY-EDGE.md`) foram **lidos e citados**, nunca editados.
 - **A saída do push** vai em commit `docs:` separado, conforme a regra.
+
+## Adendo (25/ago) — Arco 5.a: PROVADO
+- Access token real do kinu-beta decodificado: alg ES256, kid 0cff482f-f6c2-43aa-8b7a-4e7e1ffee463 — o MESMO kid do JWKS publico.
+- Rota (a) do recon (verificacao JWT por JWKS dentro das functions do Lovable) sai de 'viavel' para PROVADA. O 5.d e mecanica.
+- Arco 5.0 (teto Anthropic) ja cumprido de manha (teto de US$50 bateu e foi ajustado conscientemente).
