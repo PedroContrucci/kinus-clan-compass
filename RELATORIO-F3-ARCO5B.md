@@ -207,3 +207,10 @@ deploy. Continua valendo, e continua valendo *antes* de qualquer linha de códig
 | `feedback-digest` (precedente) | neutralizado em `d7cbd0d` |
 
 **Rascunho `STEP1-ARCO5B.md`:** deletado, conforme protocolo. Nunca entrou em commit.
+
+## Adendo (25/ago, noite) — Arco 5.b FECHADO EM PRODUCAO + manual de deploy descoberto
+- Curl pos-publish inicial: 200 (proxy aberto) → DESCOBERTA: o Publish/git-sync do Lovable NAO redeploya edge functions.
+- Solucao provada: prompt de redeploy no chat do Lovable ('redeploy X from current repository code, do not modify') → 'Deployed edge functions: generate-itinerary' → curl 403 ✅.
+- P-2 fechada. MANUAL DO ARCO 5: toda missao de function (5.c/5.d/5.e) termina com prompt de redeploy no Lovable + curl de prova.
+- Ref de producao confirmado: lnhbamzhturwkhcwiohr (P-1 fechada mais cedo).
+- Achado colateral: pipeline de build do Lovable roda tsc e acusa os 4 erros baseline do GeneratedItineraryStage (1099,1106-1108) + 2 novos em flight-fallback.test.tsx (imports screen/fireEvent). Site no ar, mas a divida venceu — pagar antes da proxima missao de front.
