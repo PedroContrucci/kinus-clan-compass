@@ -395,3 +395,8 @@ não entrou em nenhum commit.
 - Diagnostico: raw_user_meta_data do signup original (17/ago) veio sem name — o campo Nome ficou vazio no cadastro de teste do Codespace. Trigger e fluxo Login→options.data.name→Auth→handle_new_user estao corretos, provado com conta nova (name 'Teste' chegou ponta a ponta em 25/ago).
 - Fix: UPDATE cosmetico profiles.name='Pedro' no usuario original.
 - Bonus: conta pedcon@gmail.com fica como segundo usuario para a prova-espelho de RLS com 2 contas (backlog).
+
+## Adendo (25/ago, noite) — SOAK RODADA 2: 🟢 — CRITERIO DO CORTE CUMPRIDO (2/2)
+- Checklist §7.4 completa pela 2a vez em dia diferente (R1: 21/ago; R2: 25/ago). Todos os passos bem-sucedidos.
+- Painel final: outbox 0/0/0, erros 24h 0, comparacao 3 local x 3 banco, so-local/so-banco/divergentes 0/0/0, ordem igual, hidratacao 'nada a mudar'.
+- FASE C AUTORIZADA: o 4g (corte — banco fonte unica) pode comecar.
