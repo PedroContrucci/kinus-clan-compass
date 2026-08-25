@@ -390,3 +390,8 @@ não entrou em nenhum commit.
 - Painel final: 0/0/0, erros 24h 0, comparacao 3 local x 3 banco, so-no-local/so-no-banco/divergentes 0/0/0, ordem igual, hidratacao 'nada a mudar'. 33 eventos no log, todos ✅.
 - Nota (backlog, nao bloqueia): upserts em pares repetidos por edicao no cockpit (efeito do Stage regravando financas, conhecido da 1e) — candidato a debounce no flush.
 - RODADA 2 pendente: mesma checklist, outro dia. 2/2 🟢 autoriza o 4g (corte).
+
+## Adendo (25/ago) — profiles.name NULL: RESOLVIDO (nao era bug)
+- Diagnostico: raw_user_meta_data do signup original (17/ago) veio sem name — o campo Nome ficou vazio no cadastro de teste do Codespace. Trigger e fluxo Login→options.data.name→Auth→handle_new_user estao corretos, provado com conta nova (name 'Teste' chegou ponta a ponta em 25/ago).
+- Fix: UPDATE cosmetico profiles.name='Pedro' no usuario original.
+- Bonus: conta pedcon@gmail.com fica como segundo usuario para a prova-espelho de RLS com 2 contas (backlog).
