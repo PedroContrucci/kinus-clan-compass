@@ -17,10 +17,17 @@
  * localStorage intacto (recon §4.4, o fallback local). Só um `select` que RESPONDEU move uma
  * vírgula.
  *
- * SEM TEMPO REAL, declarado: os gatilhos são resolução de sessão, decisão da adoção e o botão
- * do `/smoke`. Nada de `visibilitychange`, `online` ou polling — hidratar é destrutivo por
- * natureza e não deve rodar sozinho enquanto o usuário digita. Frescor multi-dispositivo na
- * Fase B é por recarga de página, que é literalmente o passo 8 da checklist do recon §7.4.
+ * SEM TEMPO REAL, declarado (revisto no Arco 4g): os gatilhos são resolução de sessão, decisão
+ * da adoção, RETORNO DE ABA e o botão do `/smoke`. Nada de `online` nem de polling.
+ *
+ * O `visibilitychange` entrou na 4g e o `online` NÃO, e a diferença é o que o evento implica, não
+ * a frequência dele: `visible` significa que a pessoa estava FORA da aba — ou seja, não estava
+ * digitando —, enquanto `online` dispara numa oscilação de Wi-Fi com o formulário aberto na tela,
+ * que é exatamente o momento que este arquivo evita de propósito. O piso de
+ * `AUTO_HYDRATION_MIN_INTERVAL_MS` limita QUANTAS vezes; só a escolha do evento limita QUANDO.
+ *
+ * Frescor multi-dispositivo na Fase C é: boot, decisão da adoção, retorno de aba (com piso) e
+ * recarga de página — o passo 8 da checklist do recon §7.4 continua valendo, com uma porta a mais.
  */
 
 import { kinuBeta } from '@/integrations/kinu-beta/client';
@@ -328,6 +335,29 @@ export async function hydrateNow(): Promise<HydrationOutcome> {
 // ---------------------------------------------------------------------------
 
 /**
+ * Piso entre hidratações AUTOMÁTICAS (Arco 4g). Não vale para os gatilhos de sessão e de adoção
+ * — o aceite precisa hidratar no instante em que o marcador é gravado — nem para o botão do
+ * `/smoke`, que é instrumento de soak: um instrumento que se recusa a medir não serve.
+ */
+const AUTO_HYDRATION_MIN_INTERVAL_MS = 60_000;
+
+let lastAutoHydrationAt = 0;
+
+/**
+ * O gatilho de retorno de aba. O debounce mora AQUI, e não dentro de `hydrateNow()`, para que o
+ * piso não estrangule os gatilhos que precisam rodar na hora.
+ */
+function hydrateOnReturn(): void {
+  const now = Date.now();
+  if (now - lastAutoHydrationAt < AUTO_HYDRATION_MIN_INTERVAL_MS) return;
+
+  // Carimba na TENTATIVA, não no sucesso: erro de rede não deve virar martelada de um request
+  // por troca de aba.
+  lastAutoHydrationAt = now;
+  void hydrateNow();
+}
+
+/**
  * Liga a hidratação. Idempotente, e não devolve promessa: o boot não espera por rede.
  *
  * As assinaturas não são guardadas — este módulo vive o tempo do documento, como os outros três.
@@ -349,6 +379,20 @@ export function startTripHydration(): void {
   subscribeAdoption((prompt) => {
     if (!prompt) void hydrateNow();
   });
+
+  // O RETORNO DE ABA (4g). A guarda `=== 'visible'` é obrigatória: `visibilitychange` também
+  // dispara ao esconder. Mesmo idioma do listener de flush do `tripSync`.
+  //
+  // Corrida com aquele flush: os dois handlers disparam no MESMO evento, e a fila pode drenar com
+  // o `select` no ar — que é literalmente a janela que o `prepare()` fecha com a união
+  // `before ∪ after` do outbox. Não é corrida nova.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') hydrateOnReturn();
+  });
+
+  // O boot está prestes a hidratar (ou a barrar no gate) — 60s de silêncio antes do primeiro
+  // retorno de aba valer. Sem esta semente, ir e voltar em 5s hidrataria duas vezes no boot.
+  lastAutoHydrationAt = Date.now();
 
   // A sessão pode ter resolvido ANTES desta linha: `subscribeSession` não replica o estado atual
   // na assinatura (contrato do 4b). Mesmo empurrão do `startTripSync()` e do `startTripAdoption()`.

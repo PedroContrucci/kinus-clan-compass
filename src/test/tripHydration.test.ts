@@ -541,3 +541,129 @@ describe('tripHydration — a comparação do painel (§7.3)', () => {
     expect(diff.error?.message).toContain('sem sessão');
   });
 });
+
+/**
+ * O gatilho de retorno de aba (Arco 4g).
+ *
+ * DUAS FERRAMENTAS NOVAS, e as duas existem por um motivo específico:
+ *
+ * 1. `vi.useFakeTimers({ toFake: ['Date'] })` — SÓ `Date`. O `tick()` do harness depende de um
+ *    `setTimeout` real, e falsificar os timers inteiros travaria o arquivo. O relógio do debounce
+ *    é `Date.now()`, então falsificar `Date` basta.
+ *
+ * 2. O dublê de `document.addEventListener`, que REGISTRA e ENGOLE em vez de deixar passar. Sem
+ *    ele os testes contariam errado: `vi.resetModules()` cria uma instância nova do módulo a cada
+ *    `fresh()`, mas as instâncias ANTERIORES continuam vivas — o listener delas ficou no mesmo
+ *    `document` e não há `stopTripHydration()` para removê-lo. Um `dispatchEvent` de verdade
+ *    acordaria a hidratação de todos os testes já rodados, cada uma somando `select` ao mesmo
+ *    `db.state`. Capturando os handlers desta rodada e chamando só eles, o que se mede é a
+ *    instância sob teste. O handler do `tripSync` entra na captura junto, de propósito: é o
+ *    cenário real dos dois no mesmo evento.
+ */
+describe('tripHydration — o retorno de aba (4g)', () => {
+  const T0 = new Date('2026-08-26T12:00:00.000Z').getTime();
+  const at = (ms: number) => vi.setSystemTime(new Date(T0 + ms));
+
+  let handlers: EventListener[] = [];
+
+  const setVisibility = (state: 'visible' | 'hidden') => {
+    Object.defineProperty(document, 'visibilityState', { value: state, configurable: true });
+    const event = new Event('visibilitychange');
+    handlers.forEach((handler) => handler(event));
+  };
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    at(0);
+
+    handlers = [];
+    vi.spyOn(document, 'addEventListener').mockImplementation(((type: string, handler: unknown) => {
+      if (type === 'visibilitychange' && typeof handler === 'function') {
+        handlers.push(handler as EventListener);
+      }
+    }) as typeof document.addEventListener);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+  });
+
+  it('23. aba volta a ficar visível: hidrata', async () => {
+    await fresh({ owner: OWNED, rows: [row(A, trip(A))] });
+    expect(db.state.selects).toHaveLength(1); // o do boot
+
+    at(61_000);
+    setVisibility('visible');
+    await tick();
+
+    expect(db.state.selects).toHaveLength(2);
+  });
+
+  it('24. segundo retorno dentro de 60s: não hidrata', async () => {
+    await fresh({ owner: OWNED, rows: [row(A, trip(A))] });
+
+    at(61_000);
+    setVisibility('visible');
+    await tick();
+    expect(db.state.selects).toHaveLength(2);
+
+    at(91_000); // 30s depois do anterior
+    setVisibility('visible');
+    await tick();
+
+    expect(db.state.selects).toHaveLength(2); // o piso mordeu
+  });
+
+  it('25. passados 60s, o retorno hidrata de novo', async () => {
+    await fresh({ owner: OWNED, rows: [row(A, trip(A))] });
+
+    at(61_000);
+    setVisibility('visible');
+    await tick();
+
+    at(122_000); // 61s depois do anterior
+    setVisibility('visible');
+    await tick();
+
+    // Sem este teste, o 24 passaria com o gatilho nunca registrado — o modo de falha mais fácil
+    // de não perceber. Os dois andam juntos.
+    expect(db.state.selects).toHaveLength(3);
+  });
+
+  it('26. visibilitychange para hidden: não hidrata', async () => {
+    await fresh({ owner: OWNED, rows: [row(A, trip(A))] });
+
+    at(61_000);
+    setVisibility('hidden');
+    await tick();
+
+    expect(db.state.selects).toHaveLength(1); // só o do boot
+  });
+
+  it('27. o gatilho novo respeita o gate: recusa continua sem hidratar', async () => {
+    const { hydration } = await fresh({
+      seed: [trip(A)],
+      owner: { userId: null, adoptedAt: null },
+      rows: [row(B, trip(B))],
+    });
+
+    at(61_000);
+    setVisibility('visible');
+    await tick();
+
+    expect(db.state.selects).toHaveLength(0);
+    expect(hydration.getHydrationStatus().lastSkip).toBe('recusa');
+  });
+
+  it('28. o boot semeia o relógio: ir e voltar na hora não hidrata de novo', async () => {
+    await fresh({ owner: OWNED, rows: [row(A, trip(A))] });
+
+    at(5_000);
+    setVisibility('hidden');
+    setVisibility('visible');
+    await tick();
+
+    expect(db.state.selects).toHaveLength(1);
+  });
+});

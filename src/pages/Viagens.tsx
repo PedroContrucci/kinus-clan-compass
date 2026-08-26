@@ -2795,13 +2795,16 @@ const Viagens = () => {
               Reiniciar Jornada?
             </DialogTitle>
             <DialogDescription className="text-[#94a3b8]">
-              Isso vai remover o roteiro atual e todos os dados salvos.
+              Isso apaga todas as suas viagens: roteiros, orçamentos e histórico de preços.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            <div className="flex items-center gap-2 p-3 bg-[#ef4444]/10 border border-[#ef4444]/30 rounded-xl">
+            <div className="flex items-start gap-2 p-3 bg-[#ef4444]/10 border border-[#ef4444]/30 rounded-xl">
               <span className="text-[#ef4444]">⚠️</span>
-              <p className="text-sm text-[#ef4444]">Esta ação não pode ser desfeita.</p>
+              <p className="text-sm text-[#ef4444]">
+                A exclusão é permanente e vale para a sua conta — as viagens somem deste e dos
+                outros dispositivos onde você entrar. Não dá para desfazer.
+              </p>
             </div>
             <div className="flex gap-3">
               <button
@@ -2814,7 +2817,7 @@ const Viagens = () => {
                 onClick={handleResetJourney}
                 className="flex-1 py-3 bg-[#ef4444] rounded-xl text-white font-semibold"
               >
-                Confirmar Reset
+                Apagar tudo
               </button>
             </div>
           </div>
