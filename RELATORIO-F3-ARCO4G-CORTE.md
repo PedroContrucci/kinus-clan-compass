@@ -291,3 +291,10 @@ não promete.
 O gatilho de retorno de aba é a única linha de comportamento novo, e entrou pelo
 caminho mais estreito possível: um evento que implica que o usuário não está
 digitando, um piso de 60s, e nenhuma mudança em `hydrateNow()`.
+
+## Adendo (26/ago) — PUBLISH: F3 COMPLETA EM PRODUCAO
+- Publish levou 4g + fix do tsc juntos. Build do Lovable: sem card vermelho novo (o visivel e o antigo de 25/ago) — peer dependency resolvida, divida quitada em producao.
+- Site de pe, /smoke 319/320.
+- Prova visual do modal novo: pendente (cosmetica — strings conferidas no diff, testes verdes, texto na fila da Rachel lote 3).
+- MARCO: F3 'A Fabrica' completa e publicada — Arcos 0-4g + 5.0-5.b. De localStorage-only com auth mock para: identidade real (kinu-beta), RLS provada, espelho com entrega garantida, hidratacao multi-dispositivo, adocao consentida, contrato formalizado (ARQUITETURA-DADOS.md), proxy orfao morto, build verde.
+- Proxima fronteira: Arco 5.c (CORS + burst guard nas 10 functions vivas), depois UI generativa + onboarding.
