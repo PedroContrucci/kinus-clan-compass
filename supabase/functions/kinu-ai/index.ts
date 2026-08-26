@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsGate } from "../_shared/http.ts";
+import { shadowIdentify, shadowHeader } from "../_shared/verifyKinuBetaJwt.ts";
 
 function sanitizeUrl(url: string): string {
   return url
@@ -371,7 +372,14 @@ serve(async (req) => {
   // Nada abaixo desta linha mudou.
   const gate = corsGate(req, { fn: "kinu-ai", limit: 12, windowMs: 10_000 });
   if (gate.response) return gate.response;
-  const corsHeaders = gate.headers;
+
+  // Arco 5.d — MODO SOMBRA: identifica e LOGA. Não bloqueia nada, nunca; o
+  // bloqueio é o 5.f, e só depois de os números saírem daqui.
+  // O `x-kinu-shadow` entra em corsHeaders e por isso alcança as SEIS respostas
+  // desta function sem tocar em nenhuma delas — e só existe quando o chamador
+  // mandou token (ver shadowHeader). Ver RELATORIO-F3-ARCO5D.md §2.
+  const who = await shadowIdentify(req, "kinu-ai");
+  const corsHeaders = { ...gate.headers, ...shadowHeader(who) };
 
   try {
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");

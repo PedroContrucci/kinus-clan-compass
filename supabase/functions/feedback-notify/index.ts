@@ -1,6 +1,7 @@
 // Feedback notify edge function - sends instant email with AI classification
 
 import { corsGate } from "../_shared/http.ts";
+import { shadowIdentify, shadowHeader } from "../_shared/verifyKinuBetaJwt.ts";
 
 function sanitizeUrl(url: string): string {
   return url
@@ -25,7 +26,13 @@ Deno.serve(async (req) => {
   // Três em 10 s já é robô. Ver RELATORIO-F3-ARCO5C.md. Nada abaixo mudou.
   const gate = corsGate(req, { fn: 'feedback-notify', limit: 3, windowMs: 10_000 });
   if (gate.response) return gate.response;
-  const corsHeaders = gate.headers;
+
+  // Arco 5.d — MODO SOMBRA: identifica e LOGA, nunca bloqueia. O `x-kinu-shadow`
+  // entra em corsHeaders e alcança as QUATRO respostas desta function sem tocar em
+  // nenhuma delas. DECISÃO REGISTRADA: feedback-notify NUNCA será apertada por
+  // identidade (RELATORIO-F3-ARCO5D.md §6.2) — aqui a sombra é só medição.
+  const who = await shadowIdentify(req, 'feedback-notify');
+  const corsHeaders = { ...gate.headers, ...shadowHeader(who) };
 
   try {
     const fb = await req.json();

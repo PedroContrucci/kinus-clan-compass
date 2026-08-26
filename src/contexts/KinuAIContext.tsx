@@ -6,6 +6,7 @@ import { CURATED_CITIES } from "@/lib/curatedCities";
 import { destinationActivities } from "@/data/destinationActivities";
 import { getCuratedHotels } from "@/data/curatedHotels";
 import { findCityInfo } from "@/data/destinationCatalog";
+import { kinuAuthHeaders } from "@/lib/kinuAuthHeader";
 import { buildDraftTrip } from "@/lib/createTrip";
 import { addTrip } from "@/lib/tripStore";
 import { TRAVEL_INTERESTS, PRIORITY_OPTIONS } from "@/components/wizard/types";
@@ -173,6 +174,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       }
 
       const { data, error } = await supabase.functions.invoke("kinu-ai", {
+        // Arco 5.d: identidade em modo sombra. Anônimo devolve {} e nada muda.
+        headers: await kinuAuthHeaders(),
         body: {
           message: content,
           context: tripContext,

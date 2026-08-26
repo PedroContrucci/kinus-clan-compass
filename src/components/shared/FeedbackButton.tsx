@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { loadJson } from '@/lib/safeStorage';
+import { kinuAuthHeaders } from '@/lib/kinuAuthHeader';
 import { getActiveTrip, subscribeTrips } from '@/lib/tripStore';
 
 const FEEDBACK_WHATSAPP = '5511981362866';
@@ -94,7 +95,10 @@ export const FeedbackButton = () => {
     }
 
     // Fire-and-forget instant notification (always send, even if table insert fails)
+    // Arco 5.d: o await é só do header (sessão em memória); o envio segue solto.
+    const kinuHeaders = await kinuAuthHeaders();
     supabase.functions.invoke('feedback-notify', {
+      headers: kinuHeaders,
       body: {
         tester_name: trimmedName,
         rating,

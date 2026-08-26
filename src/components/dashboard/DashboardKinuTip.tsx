@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Sparkles, RefreshCw, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { kinuAuthHeaders } from '@/lib/kinuAuthHeader';
 
 interface DashboardKinuTipProps {
   nextTrip?: {
@@ -25,6 +26,8 @@ export const DashboardKinuTip = ({ nextTrip }: DashboardKinuTipProps) => {
         : 'Usuário ainda não tem viagens planejadas.';
 
       const { data, error } = await supabase.functions.invoke('kinu-ai', {
+        // Arco 5.d: identidade em modo sombra. Anônimo devolve {} e nada muda.
+        headers: await kinuAuthHeaders(),
         body: {
           message: 'Dê uma dica curta e útil de viagem (máximo 100 caracteres)',
           context: {
