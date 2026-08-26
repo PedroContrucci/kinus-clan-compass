@@ -3,11 +3,7 @@
 // Function name/endpoint/response shape preserved for client compatibility.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsGate } from "../_shared/http.ts";
 
 const TP_BASE_URL = 'https://api.travelpayouts.com/aviasales/v3/prices_for_dates';
 
@@ -247,9 +243,12 @@ async function searchFlexibleDates(
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // Arco 5.c: envelope CORS (allowlist ALLOWED_ORIGINS) + burst guard em memória.
+  // Também unifica o Allow-Headers no dialeto longo — esta função estava no curto
+  // (recon §2.2). Ver RELATORIO-F3-ARCO5C.md. Nada abaixo desta linha mudou.
+  const gate = corsGate(req, { fn: 'amadeus-flights', limit: 30, windowMs: 10_000 });
+  if (gate.response) return gate.response;
+  const corsHeaders = gate.headers;
 
   try {
     const { action, origin, destination, date, flexibleDays } = await req.json();

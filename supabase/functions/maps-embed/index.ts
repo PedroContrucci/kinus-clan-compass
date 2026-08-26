@@ -1,14 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { corsGate } from "../_shared/http.ts";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // Arco 5.c: envelope CORS (allowlist ALLOWED_ORIGINS) + burst guard em memória.
+  // Ver RELATORIO-F3-ARCO5C.md. Nada abaixo desta linha mudou.
+  const gate = corsGate(req, { fn: "maps-embed", limit: 30, windowMs: 10_000 });
+  if (gate.response) return gate.response;
+  const corsHeaders = gate.headers;
 
   const API_KEY = Deno.env.get("GOOGLE_MAPS_EMBED_KEY");
   if (!API_KEY) {

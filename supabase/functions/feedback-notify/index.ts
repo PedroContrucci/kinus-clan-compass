@@ -1,5 +1,7 @@
 // Feedback notify edge function - sends instant email with AI classification
 
+import { corsGate } from "../_shared/http.ts";
+
 function sanitizeUrl(url: string): string {
   return url
     .replace(/token=[^&]+/gi, 'token=***')
@@ -10,11 +12,6 @@ function sanitizeUrl(url: string): string {
     .replace(/x-api-key=[^&]+/gi, 'x-api-key=***');
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 const GRAVIDADE_EMOJI: Record<string, string> = {
   critico: '🔴',
   confusao: '🟡',
@@ -23,9 +20,12 @@ const GRAVIDADE_EMOJI: Record<string, string> = {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // Arco 5.c: envelope CORS (allowlist ALLOWED_ORIGINS) + burst guard em memória.
+  // limit 3/10s: cada chamada dispara um WhatsApp no telefone do fundador (R-05).
+  // Três em 10 s já é robô. Ver RELATORIO-F3-ARCO5C.md. Nada abaixo mudou.
+  const gate = corsGate(req, { fn: 'feedback-notify', limit: 3, windowMs: 10_000 });
+  if (gate.response) return gate.response;
+  const corsHeaders = gate.headers;
 
   try {
     const fb = await req.json();

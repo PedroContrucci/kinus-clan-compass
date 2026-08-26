@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsGate } from "../_shared/http.ts";
 
 function sanitizeUrl(url: string): string {
   return url
@@ -9,11 +10,6 @@ function sanitizeUrl(url: string): string {
     .replace(/key=[^&]+/gi, 'key=***')
     .replace(/x-api-key=[^&]+/gi, 'x-api-key=***');
 }
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
 
 // In-memory cache with 24h TTL
 const cache = new Map<string, { data: UnsplashPhoto[]; timestamp: number }>();
@@ -52,10 +48,12 @@ interface UnsplashResponse {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // Arco 5.c: envelope CORS (allowlist ALLOWED_ORIGINS) + burst guard em memória.
+  // limit 120/10s: o pior caso legítimo medido é a tela do Clã (~35 requisições
+  // distintas em ~2 s). Ver RELATORIO-F3-ARCO5C.md. Nada abaixo mudou.
+  const gate = corsGate(req, { fn: 'unsplash', limit: 120, windowMs: 10_000 });
+  if (gate.response) return gate.response;
+  const corsHeaders = gate.headers;
 
   try {
     const UNSPLASH_ACCESS_KEY = Deno.env.get('UNSPLASH_ACCESS_KEY');

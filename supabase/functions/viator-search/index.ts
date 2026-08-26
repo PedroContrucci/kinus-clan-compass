@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsGate } from "../_shared/http.ts";
 
 function sanitizeUrl(url: string): string {
   return url
@@ -9,11 +10,6 @@ function sanitizeUrl(url: string): string {
     .replace(/key=[^&]+/gi, 'key=***')
     .replace(/x-api-key=[^&]+/gi, 'x-api-key=***');
 }
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
 
 // Mapping of popular destinations to Viator destination IDs
 const DESTINATION_MAP: Record<string, number> = {
@@ -135,9 +131,11 @@ function getTagsForType(activityType: string): number[] {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // Arco 5.c: envelope CORS (allowlist ALLOWED_ORIGINS) + burst guard em memória.
+  // Ver RELATORIO-F3-ARCO5C.md. Nada abaixo desta linha mudou.
+  const gate = corsGate(req, { fn: "viator-search", limit: 30, windowMs: 10_000 });
+  if (gate.response) return gate.response;
+  const corsHeaders = gate.headers;
 
   try {
     const VIATOR_API_KEY = Deno.env.get("VIATOR_API_KEY");

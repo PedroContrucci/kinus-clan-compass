@@ -1,14 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { corsGate } from "../_shared/http.ts";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // Arco 5.c: envelope CORS (allowlist ALLOWED_ORIGINS) + burst guard em memória.
+  // limit 90/10s, alto de propósito: kinu-ai:250 chama esta função servidor→servidor,
+  // sem Origin e com o IP da infraestrutura da edge — todos os usuários do agente
+  // dividem um balde só (recon §6.3 item 9). Apertar aqui mataria o consultar_lugares.
+  // Ver RELATORIO-F3-ARCO5C.md. Nada abaixo mudou.
+  const gate = corsGate(req, { fn: "google-places", limit: 90, windowMs: 10_000 });
+  if (gate.response) return gate.response;
+  const corsHeaders = gate.headers;
 
   const API_KEY = Deno.env.get("GOOGLE_PLACES_API_KEY");
   if (!API_KEY) {

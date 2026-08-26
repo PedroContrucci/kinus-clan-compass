@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsGate } from "../_shared/http.ts";
 
 function sanitizeUrl(url: string): string {
   return url
@@ -9,11 +10,6 @@ function sanitizeUrl(url: string): string {
     .replace(/key=[^&]+/gi, 'key=***')
     .replace(/x-api-key=[^&]+/gi, 'x-api-key=***');
 }
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
 
 const KINU_SYSTEM_PROMPT = `Você é o KINU, um assistente de viagens brasileiro que age como um irmão mais velho experiente e protetor.
 
@@ -369,9 +365,13 @@ function sanitizeHistory(input: unknown): ChatMessage[] {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // Arco 5.c: envelope CORS (allowlist ALLOWED_ORIGINS) + burst guard em memória.
+  // limit 12/10s — o mais apertado do lote: ~$0,70/req no pior caso (auditoria R-03)
+  // e ninguém digita 12 mensagens em 10 s. Ver RELATORIO-F3-ARCO5C.md.
+  // Nada abaixo desta linha mudou.
+  const gate = corsGate(req, { fn: "kinu-ai", limit: 12, windowMs: 10_000 });
+  if (gate.response) return gate.response;
+  const corsHeaders = gate.headers;
 
   try {
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");

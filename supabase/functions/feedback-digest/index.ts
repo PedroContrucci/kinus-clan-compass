@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { corsGate } from "../_shared/http.ts";
 
 function sanitizeUrl(url: string): string {
   return url
@@ -10,16 +11,14 @@ function sanitizeUrl(url: string): string {
     .replace(/x-api-key=[^&]+/gi, 'x-api-key=***');
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-};
-
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  // Arco 5.c: envelope CORS (allowlist ALLOWED_ORIGINS). burst: false — o 403 logo
+  // abaixo não custa cota nem fatura, então contar seria cerimônia. O Allow-Methods
+  // que esta função declarava sozinha agora sai para as 10.
+  // Ver RELATORIO-F3-ARCO5C.md. O 403 do R-04 continua exatamente onde estava.
+  const gate = corsGate(req, { fn: 'feedback-digest', limit: 0, burst: false });
+  if (gate.response) return gate.response;
+  const corsHeaders = gate.headers;
 
   // R-04: função desativada. Expunha beta_feedback (service_role) a qualquer chamador
   // anônimo, contornando a RLS. Sem uso legítimo restante — o dono recebe feedback via

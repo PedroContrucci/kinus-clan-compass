@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsGate } from "../_shared/http.ts";
 
 function sanitizeUrl(url: string): string {
   return url
@@ -9,11 +10,6 @@ function sanitizeUrl(url: string): string {
     .replace(/key=[^&]+/gi, 'key=***')
     .replace(/x-api-key=[^&]+/gi, 'x-api-key=***');
 }
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
 
 // In-memory cache (persists across warm invocations)
 let cachedRates: Record<string, number> | null = null;
@@ -32,9 +28,15 @@ const FALLBACK_RATES: Record<string, number> = {
 };
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  // Arco 5.c: envelope CORS (allowlist ALLOWED_ORIGINS) + burst guard em memória.
+  // Esta função é a exceção do lote: jsonResponse/handleHistory/returnFallback vivem
+  // FORA do handler, então os headers viajam por parâmetro (`cors`) em vez de um
+  // const de módulo — um isolate atende requisições concorrentes e um `let`
+  // reatribuído vazaria a origem de um usuário para a resposta de outro.
+  // Ver RELATORIO-F3-ARCO5C.md. Nenhuma lógica de câmbio mudou.
+  const gate = corsGate(req, { fn: 'exchange-rates', limit: 30, windowMs: 10_000 });
+  if (gate.response) return gate.response;
+  const corsHeaders = gate.headers;
 
   try {
     const body = await req.json();
@@ -46,7 +48,7 @@ serve(async (req) => {
 
     // For history action, use the paid API if available
     if (action === 'history') {
-      return await handleHistory(body, base);
+      return await handleHistory(body, base, corsHeaders);
     }
 
     // Check cache
@@ -63,7 +65,7 @@ serve(async (req) => {
         source: base,
         updated_at: new Date(cachedAt).toISOString(),
         cached: true,
-      });
+      }, corsHeaders);
     }
 
     // Fetch from free API (no key needed)
@@ -88,12 +90,12 @@ serve(async (req) => {
         source: base,
         updated_at: data.time_last_update_utc || new Date().toISOString(),
         cached: false,
-      });
+      }, corsHeaders);
     }
 
     // API failed — return fallback
     console.warn('API returned unexpected result, using fallback');
-    return returnFallback(targets, base);
+    return returnFallback(targets, base, corsHeaders);
 
   } catch (error) {
     console.error('Exchange rate error:', error instanceof Error ? sanitizeUrl(error.message) : 'Unknown error');
@@ -101,14 +103,14 @@ serve(async (req) => {
     try {
       const body = await req.clone().json().catch(() => ({}));
       const targets = (body as any).targets || ['USD', 'EUR', 'JPY', 'GBP'];
-      return returnFallback(targets, 'BRL');
+      return returnFallback(targets, 'BRL', corsHeaders);
     } catch {
-      return returnFallback(['USD', 'EUR', 'JPY', 'GBP'], 'BRL');
+      return returnFallback(['USD', 'EUR', 'JPY', 'GBP'], 'BRL', corsHeaders);
     }
   }
 });
 
-async function handleHistory(body: any, base: string) {
+async function handleHistory(body: any, base: string, cors: Record<string, string>) {
   const { startDate, endDate, currencies } = body;
   const currency = (body.targets?.[0]) || (currencies ? currencies.split(',')[0] : 'USD');
 
@@ -145,7 +147,7 @@ async function handleHistory(body: any, base: string) {
         return jsonResponse({
           success: true, source: base, currency, history,
           statistics: { min, max, avg, current, trend, trendPercent: trendPercent.toFixed(2) },
-        });
+        }, cors);
       }
     } catch (e) {
       console.warn('Paid API failed for history, generating synthetic:', e instanceof Error ? sanitizeUrl(e.message) : 'Unknown error');
@@ -172,10 +174,10 @@ async function handleHistory(body: any, base: string) {
       current: baseRate, trend: 'stable' as const, trendPercent: '0.00',
     },
     isFallback: true,
-  });
+  }, cors);
 }
 
-function returnFallback(targets: string[], base: string) {
+function returnFallback(targets: string[], base: string, cors: Record<string, string>) {
   const filtered: Record<string, number> = {};
   for (const t of targets) {
     filtered[t] = FALLBACK_RATES[t] || 0;
@@ -186,12 +188,12 @@ function returnFallback(targets: string[], base: string) {
     source: base,
     updated_at: new Date().toISOString(),
     isFallback: true,
-  });
+  }, cors);
 }
 
-function jsonResponse(data: any, status = 200) {
+function jsonResponse(data: any, cors: Record<string, string>, status = 200) {
   return new Response(JSON.stringify(data), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...cors, 'Content-Type': 'application/json' },
     status,
   });
 }
