@@ -517,3 +517,12 @@ mecanismo; **a navegação prova os limites do §2.5** — e o Clã é justament
 
 **Rascunho `STEP1-ARCO5C.md`:** deletado, conforme protocolo. Nunca entrou em commit.
 **Harness `/tmp/http-check.mjs`:** fora do repositório, como combinado.
+
+## Adendo (26/ago) — 5.c FECHADO EM PRODUCAO: os 4 atos completos
+- Ato 1 (piloto weather sem secret): _shared/ EMPACOTOU (Vary/Max-Age/x-kinu-authorization presentes) — R1 morto. Fallback wildcard confirmado. Probe 5: 32x200 (limitacao por-isolate declarada, nao falha).
+- Ato 2 (secret via prompt ao Lovable — painel inacessivel, projeto vive na org do Lovable): ALLOWED_ORIGINS ativo SEM redeploy. Probes: hostil 403, permitida com ECO da origem, sem-Origin passa.
+- Ato 3 (lote de 9): deployadas de uma vez; matriz OPTIONS 8/8 (hostil=403, permitida=200).
+- Ato 4 (POSTs funcionais): exchange-rates OK (threading sobreviveu), google-places sem Origin OK (agente vivo), feedback-digest 403 R-04 intacto, kinu-ai respondendo.
+- Fecho de navegacao: Dashboard→Cla→Viagens com DevTools — ZERO erro CORS, ZERO 429 (pior caso unsplash ~35 passou limpo; limites calibrados). Ruido do console = extensoes do navegador, nao do app.
+- P-3 e P-4 FECHADAS. Descoberta operacional: painel Supabase do projeto Lovable e inacessivel (org deles) — secrets via prompt ao Lovable, provado funcionando.
+- Proximo: 5.d (identidade JWT modo sombra — ES256 provado, header ja no Allow-Headers).
