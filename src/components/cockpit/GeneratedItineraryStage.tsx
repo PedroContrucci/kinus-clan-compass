@@ -33,6 +33,7 @@ import { KinuAnalysisCard } from './KinuAnalysisCard';
 import { ItineraryDayWeather } from './ItineraryDayWeather';
 import { ItineraryExchangeRate } from './ItineraryExchangeRate';
 import { updateTrip } from '@/lib/tripStore';
+import type { TripFinances } from '@/types/trip';
 
 // Types
 interface ItineraryActivity {
@@ -1095,8 +1096,8 @@ export const GeneratedItineraryStage = ({
         // então nenhuma viagem irmã é reconstruída de memória (recon §4.1). Id
         // inexistente agora loga aviso no store em vez do `return` mudo (§4.4).
         updateTrip(tripId, (trip) => {
-          const prevFinances = trip.finances || {};
-          const prevCats = prevFinances.categories || {};
+          const prevFinances: Partial<TripFinances> = trip.finances || {};
+          const prevCats: Partial<TripFinances['categories']> = prevFinances.categories || {};
           const cat = (name: string) => ({
             planned: 0,
             confirmed: prevCats[name]?.confirmed || 0,
