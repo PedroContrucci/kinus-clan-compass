@@ -148,6 +148,82 @@ function getDestinationEmoji(destination: string): string {
   return emojiMap[destination] || '✈️';
 }
 
+// In-cockpit stages (read from the actual stage state machine; do not invent).
+const DRAFT_STAGES: Array<{ id: 'flights' | 'itinerary'; label: string; subtitle: string }> = [
+  { id: 'flights', label: 'Voo', subtitle: 'Escolha os voos de ida e volta' },
+  { id: 'itinerary', label: 'Roteiro', subtitle: 'Revise o roteiro e ative a viagem' },
+];
+
+interface DraftStepperProps {
+  currentStage: 'flights' | 'itinerary';
+  onChange: (stage: 'flights' | 'itinerary') => void;
+}
+
+const DraftStepper = ({ currentStage, onChange }: DraftStepperProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const currentPillRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (currentPillRef.current && containerRef.current) {
+      currentPillRef.current.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      });
+    }
+  }, [currentStage]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="sticky top-0 z-30 w-full overflow-x-auto bg-background/90 backdrop-blur-md border-b border-border"
+    >
+      <div className="flex items-center gap-2 px-4 py-3 min-w-max">
+        {DRAFT_STAGES.map((s, index) => {
+          const isDone = currentStage === 'itinerary' && s.id === 'flights';
+          const isCurrent = s.id === currentStage;
+          const isUpcoming = !isDone && !isCurrent;
+          const clickable = isCurrent || isDone;
+
+          return (
+            <button
+              key={s.id}
+              ref={isCurrent ? currentPillRef : null}
+              type="button"
+              disabled={!clickable}
+              onClick={() => clickable && onChange(s.id)}
+              className={cn(
+                'relative flex flex-col items-center gap-0.5 px-3.5 py-2 rounded-full border transition-all',
+                'font-["Outfit"] text-sm font-medium',
+                isCurrent &&
+                  'bg-[hsl(45,93%,47%)] text-[hsl(222,47%,11%)] border-[hsl(45,93%,47%)] shadow-[0_0_12px_hsla(45,93%,47%,0.25)]',
+                isDone &&
+                  'bg-[hsl(160,84%,39%)]/15 text-[hsl(160,77%,67%)] border-[hsl(160,84%,39%)] hover:bg-[hsl(160,84%,39%)]/25',
+                isUpcoming &&
+                  'bg-muted/30 text-muted-foreground border-border cursor-not-allowed opacity-70'
+              )}
+            >
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
+                {isDone ? (
+                  <Check size={14} className="text-[hsl(160,77%,67%)]" />
+                ) : (
+                  <span className="text-xs opacity-80">{String(index + 1).padStart(2, '0')}</span>
+                )}
+                {s.label}
+              </span>
+              {isCurrent && (
+                <span className="text-[10px] leading-tight font-["Plus_Jakarta_Sans"] font-normal text-center max-w-[160px] opacity-90">
+                  {s.subtitle}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpitProps) => {
   // KINU-created trips arrive with a pre-generated itinerary, so we jump straight
   // to the itinerary summary stage while keeping the flight stage reachable.
