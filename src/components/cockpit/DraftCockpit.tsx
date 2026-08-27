@@ -194,7 +194,7 @@ const DraftStepper = ({ currentStage, onChange }: DraftStepperProps) => {
               onClick={() => clickable && onChange(s.id)}
               className={cn(
                 'relative flex flex-col items-center gap-0.5 px-3.5 py-2 rounded-full border transition-all',
-                'font-["Outfit"] text-sm font-medium',
+                'font-[\'Outfit\'] text-sm font-medium',
                 isCurrent &&
                   'bg-[hsl(45,93%,47%)] text-[hsl(222,47%,11%)] border-[hsl(45,93%,47%)] shadow-[0_0_12px_hsla(45,93%,47%,0.25)]',
                 isDone &&
