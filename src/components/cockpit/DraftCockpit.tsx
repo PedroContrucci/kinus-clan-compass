@@ -193,14 +193,14 @@ const DraftStepper = ({ currentStage, onChange }: DraftStepperProps) => {
               disabled={!clickable}
               onClick={() => clickable && onChange(s.id)}
               className={cn(
-                'relative flex flex-col items-center gap-0.5 px-3.5 py-2 rounded-full border transition-all',
-                'font-[\'Outfit\'] text-sm font-medium',
+                "relative flex flex-col items-center gap-0.5 px-3.5 py-2 rounded-full border transition-all",
+                "font-['Outfit'] text-sm font-medium",
                 isCurrent &&
-                  'bg-[hsl(45,93%,47%)] text-[hsl(222,47%,11%)] border-[hsl(45,93%,47%)] shadow-[0_0_12px_hsla(45,93%,47%,0.25)]',
+                  "bg-[hsl(45,93%,47%)] text-[hsl(222,47%,11%)] border-[hsl(45,93%,47%)] shadow-[0_0_12px_hsla(45,93%,47%,0.25)]",
                 isDone &&
-                  'bg-[hsl(160,84%,39%)]/15 text-[hsl(160,77%,67%)] border-[hsl(160,84%,39%)] hover:bg-[hsl(160,84%,39%)]/25',
+                  "bg-[hsl(160,84%,39%)]/15 text-[hsl(160,77%,67%)] border-[hsl(160,84%,39%)] hover:bg-[hsl(160,84%,39%)]/25",
                 isUpcoming &&
-                  'bg-muted/30 text-muted-foreground border-border cursor-not-allowed opacity-70'
+                  "bg-muted/30 text-muted-foreground border-border cursor-not-allowed opacity-70"
               )}
             >
               <span className="flex items-center gap-1.5 whitespace-nowrap">
