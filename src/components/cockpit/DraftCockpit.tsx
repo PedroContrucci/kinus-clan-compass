@@ -525,7 +525,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   if (stage === 'flights') {
     return (
       <>
-        <DraftStepper currentStage={stage} onChange={setStage} />
+        <DraftStepper trip={trip} currentStage={stage} onChange={setStage} />
         <FlightSelectionStage
           destination={trip.destination}
           origin={trip.origin || 'São Paulo'}
@@ -547,7 +547,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   if (stage === 'itinerary' && effectiveOutbound && effectiveReturn) {
     return (
       <>
-        <DraftStepper currentStage={stage} onChange={setStage} />
+        <DraftStepper trip={trip} currentStage={stage} onChange={setStage} />
         <GeneratedItineraryStage
           tripId={trip.id}
           destination={trip.destination}
@@ -575,7 +575,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   // Fallback to flights if no flights selected
   return (
     <>
-      <DraftStepper currentStage={stage} onChange={setStage} />
+      <DraftStepper trip={trip} currentStage={stage} onChange={setStage} />
       <FlightSelectionStage
         destination={trip.destination}
         origin={trip.origin || 'São Paulo'}
