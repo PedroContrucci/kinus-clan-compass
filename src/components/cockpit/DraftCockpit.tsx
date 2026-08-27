@@ -148,20 +148,115 @@ function getDestinationEmoji(destination: string): string {
   return emojiMap[destination] || '✈️';
 }
 
-// In-cockpit stages (read from the actual stage state machine; do not invent).
-const DRAFT_STAGES: Array<{ id: 'flights' | 'itinerary'; label: string; subtitle: string }> = [
-  { id: 'flights', label: 'Voo', subtitle: 'Escolha os voos de ida e volta' },
-  { id: 'itinerary', label: 'Roteiro', subtitle: 'Revise o roteiro e ative a viagem' },
-];
+// Journey trail: wizard decisions (read-only, done) → hotel → in-cockpit stages.
+// Wizard steps in Planejar (NewPlanningWizard): Logística → Viajantes → Budget → Resumo.
+// Resumo is a review screen, not a decision — it is not rendered as a pill.
+type StepperStageId = 'flights' | 'itinerary';
 
-interface DraftStepperProps {
-  currentStage: 'flights' | 'itinerary';
-  onChange: (stage: 'flights' | 'itinerary') => void;
+interface TrailPill {
+  id: string;
+  label: string;
+  subtitle: string;
+  state: 'done' | 'current' | 'upcoming';
+  stageId?: StepperStageId; // set only for in-cockpit stages (clickable)
 }
 
-const DraftStepper = ({ currentStage, onChange }: DraftStepperProps) => {
+const BUDGET_TIER_LABELS: Record<string, string> = {
+  backpacker: 'Mochileiro',
+  economic: 'Econômico',
+  comfort: 'Conforto',
+  luxury: 'Luxo',
+};
+
+function formatShortDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  return `${d.getUTCDate()} ${months[d.getUTCMonth()]}`;
+}
+
+function buildTrail(trip: DraftTrip, currentStage: StepperStageId): TrailPill[] {
+  const pills: TrailPill[] = [];
+
+  // Wizard: Destino
+  pills.push({
+    id: 'destino',
+    label: 'Destino',
+    subtitle: trip.destination || '—',
+    state: 'done',
+  });
+
+  // Wizard: Datas
+  const start = formatShortDate(trip.startDate);
+  const end = formatShortDate(trip.endDate);
+  pills.push({
+    id: 'datas',
+    label: 'Datas',
+    subtitle: start && end ? `${start} – ${end}` : '—',
+    state: 'done',
+  });
+
+  // Wizard: Viajantes
+  const t = getTravelers(trip);
+  pills.push({
+    id: 'viajantes',
+    label: 'Viajantes',
+    subtitle: `${t} ${t === 1 ? 'pessoa' : 'pessoas'}`,
+    state: 'done',
+  });
+
+  // Wizard: Budget
+  const tier = trip.budgetType ? BUDGET_TIER_LABELS[trip.budgetType] : null;
+  const budgetFmt = trip.budget
+    ? `R$ ${Math.round(trip.budget).toLocaleString('pt-BR')}`
+    : '';
+  pills.push({
+    id: 'budget',
+    label: 'Budget',
+    subtitle: [tier, budgetFmt].filter(Boolean).join(' · ') || '—',
+    state: 'done',
+  });
+
+  // Hotel (chosen by KINU inside the itinerary; read-only for now)
+  const hotelName = (trip as any).accommodation?.name as string | undefined;
+  pills.push({
+    id: 'hotel',
+    label: 'Hotel',
+    subtitle: hotelName
+      ? `Escolhido pelo KINU · ${hotelName.split('—')[0].trim()}`
+      : 'O KINU escolhe no roteiro',
+    state: hotelName ? 'done' : 'upcoming',
+  });
+
+  // In-cockpit stages (unchanged behavior)
+  pills.push({
+    id: 'flights',
+    label: 'Voo',
+    subtitle: 'Escolha os voos de ida e volta',
+    state: currentStage === 'itinerary' ? 'done' : 'current',
+    stageId: 'flights',
+  });
+  pills.push({
+    id: 'itinerary',
+    label: 'Roteiro',
+    subtitle: 'Revise o roteiro e ative a viagem',
+    state: currentStage === 'itinerary' ? 'current' : 'upcoming',
+    stageId: 'itinerary',
+  });
+
+  return pills;
+}
+
+interface DraftStepperProps {
+  trip: DraftTrip;
+  currentStage: StepperStageId;
+  onChange: (stage: StepperStageId) => void;
+}
+
+const DraftStepper = ({ trip, currentStage, onChange }: DraftStepperProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const currentPillRef = useRef<HTMLButtonElement>(null);
+  const trail = buildTrail(trip, currentStage);
 
   useEffect(() => {
     if (currentPillRef.current && containerRef.current) {
@@ -179,11 +274,14 @@ const DraftStepper = ({ currentStage, onChange }: DraftStepperProps) => {
       className="sticky top-0 z-30 w-full overflow-x-auto bg-background/90 backdrop-blur-md border-b border-border"
     >
       <div className="flex items-center gap-2 px-4 py-3 min-w-max">
-        {DRAFT_STAGES.map((s, index) => {
-          const isDone = currentStage === 'itinerary' && s.id === 'flights';
-          const isCurrent = s.id === currentStage;
-          const isUpcoming = !isDone && !isCurrent;
-          const clickable = isCurrent || isDone;
+        {trail.map((s, index) => {
+          const isDone = s.state === 'done';
+          const isCurrent = s.state === 'current';
+          const isUpcoming = s.state === 'upcoming';
+          // Only in-cockpit stages keep their existing clickability.
+          const clickable = !!s.stageId && (isCurrent || isDone);
+          // Wizard/hotel pills always show their value; stage pills when current.
+          const showSubtitle = !s.stageId || isCurrent;
 
           return (
             <button
@@ -191,14 +289,16 @@ const DraftStepper = ({ currentStage, onChange }: DraftStepperProps) => {
               ref={isCurrent ? currentPillRef : null}
               type="button"
               disabled={!clickable}
-              onClick={() => clickable && onChange(s.id)}
+              onClick={() => clickable && s.stageId && onChange(s.stageId)}
               className={cn(
                 "relative flex flex-col items-center gap-0.5 px-3.5 py-2 rounded-full border transition-all",
                 "font-['Outfit'] text-sm font-medium",
                 isCurrent &&
                   "bg-[hsl(45,93%,47%)] text-[hsl(222,47%,11%)] border-[hsl(45,93%,47%)] shadow-[0_0_12px_hsla(45,93%,47%,0.25)]",
-                isDone &&
+                isDone && s.stageId &&
                   "bg-[hsl(160,84%,39%)]/15 text-[hsl(160,77%,67%)] border-[hsl(160,84%,39%)] hover:bg-[hsl(160,84%,39%)]/25",
+                isDone && !s.stageId &&
+                  "bg-[hsl(160,84%,39%)]/10 text-[hsl(160,77%,67%)] border-[hsl(160,84%,39%)]/60 cursor-default",
                 isUpcoming &&
                   "bg-muted/30 text-muted-foreground border-border cursor-not-allowed opacity-70"
               )}
@@ -211,8 +311,8 @@ const DraftStepper = ({ currentStage, onChange }: DraftStepperProps) => {
                 )}
                 {s.label}
               </span>
-              {isCurrent && (
-                <span className="text-[10px] leading-tight font-normal text-center max-w-[160px] opacity-90">
+              {showSubtitle && (
+                <span className="text-[10px] leading-tight font-normal text-center max-w-[180px] opacity-90">
                   {s.subtitle}
                 </span>
               )}
@@ -425,7 +525,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   if (stage === 'flights') {
     return (
       <>
-        <DraftStepper currentStage={stage} onChange={setStage} />
+        <DraftStepper trip={trip} currentStage={stage} onChange={setStage} />
         <FlightSelectionStage
           destination={trip.destination}
           origin={trip.origin || 'São Paulo'}
@@ -447,7 +547,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   if (stage === 'itinerary' && effectiveOutbound && effectiveReturn) {
     return (
       <>
-        <DraftStepper currentStage={stage} onChange={setStage} />
+        <DraftStepper trip={trip} currentStage={stage} onChange={setStage} />
         <GeneratedItineraryStage
           tripId={trip.id}
           destination={trip.destination}
@@ -475,7 +575,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   // Fallback to flights if no flights selected
   return (
     <>
-      <DraftStepper currentStage={stage} onChange={setStage} />
+      <DraftStepper trip={trip} currentStage={stage} onChange={setStage} />
       <FlightSelectionStage
         destination={trip.destination}
         origin={trip.origin || 'São Paulo'}
