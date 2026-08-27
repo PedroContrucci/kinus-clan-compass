@@ -1,7 +1,10 @@
 // DraftCockpit — Draft trip editing interface with 3-stage flow:
 // Stage 1: Flight Selection → Stage 2: Generated Itinerary → Stage 3: Active Trip
+// UI stepper reflects the two in-cockpit stages: flights and itinerary.
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { FlightSelectionStage, FlightOption, SelectedFlight } from './FlightSelectionStage';
 import { GeneratedItineraryStage } from './GeneratedItineraryStage';
@@ -144,6 +147,82 @@ function getDestinationEmoji(destination: string): string {
   };
   return emojiMap[destination] || '✈️';
 }
+
+// In-cockpit stages (read from the actual stage state machine; do not invent).
+const DRAFT_STAGES: Array<{ id: 'flights' | 'itinerary'; label: string; subtitle: string }> = [
+  { id: 'flights', label: 'Voo', subtitle: 'Escolha os voos de ida e volta' },
+  { id: 'itinerary', label: 'Roteiro', subtitle: 'Revise o roteiro e ative a viagem' },
+];
+
+interface DraftStepperProps {
+  currentStage: 'flights' | 'itinerary';
+  onChange: (stage: 'flights' | 'itinerary') => void;
+}
+
+const DraftStepper = ({ currentStage, onChange }: DraftStepperProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const currentPillRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (currentPillRef.current && containerRef.current) {
+      currentPillRef.current.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      });
+    }
+  }, [currentStage]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="sticky top-0 z-30 w-full overflow-x-auto bg-background/90 backdrop-blur-md border-b border-border"
+    >
+      <div className="flex items-center gap-2 px-4 py-3 min-w-max">
+        {DRAFT_STAGES.map((s, index) => {
+          const isDone = currentStage === 'itinerary' && s.id === 'flights';
+          const isCurrent = s.id === currentStage;
+          const isUpcoming = !isDone && !isCurrent;
+          const clickable = isCurrent || isDone;
+
+          return (
+            <button
+              key={s.id}
+              ref={isCurrent ? currentPillRef : null}
+              type="button"
+              disabled={!clickable}
+              onClick={() => clickable && onChange(s.id)}
+              className={cn(
+                "relative flex flex-col items-center gap-0.5 px-3.5 py-2 rounded-full border transition-all",
+                "font-['Outfit'] text-sm font-medium",
+                isCurrent &&
+                  "bg-[hsl(45,93%,47%)] text-[hsl(222,47%,11%)] border-[hsl(45,93%,47%)] shadow-[0_0_12px_hsla(45,93%,47%,0.25)]",
+                isDone &&
+                  "bg-[hsl(160,84%,39%)]/15 text-[hsl(160,77%,67%)] border-[hsl(160,84%,39%)] hover:bg-[hsl(160,84%,39%)]/25",
+                isUpcoming &&
+                  "bg-muted/30 text-muted-foreground border-border cursor-not-allowed opacity-70"
+              )}
+            >
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
+                {isDone ? (
+                  <Check size={14} className="text-[hsl(160,77%,67%)]" />
+                ) : (
+                  <span className="text-xs opacity-80">{String(index + 1).padStart(2, '0')}</span>
+                )}
+                {s.label}
+              </span>
+              {isCurrent && (
+                <span className="text-[10px] leading-tight font-normal text-center max-w-[160px] opacity-90">
+                  {s.subtitle}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpitProps) => {
   // KINU-created trips arrive with a pre-generated itinerary, so we jump straight
@@ -345,6 +424,58 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   // Stage 1: Flight Selection
   if (stage === 'flights') {
     return (
+      <>
+        <DraftStepper currentStage={stage} onChange={setStage} />
+        <FlightSelectionStage
+          destination={trip.destination}
+          origin={trip.origin || 'São Paulo'}
+          originCode={originCode}
+          destinationCode={destinationCode}
+          departureDate={new Date(trip.startDate)}
+          returnDate={new Date(trip.endDate)}
+          budget={trip.budget}
+          emoji={emoji}
+          onFlightsSelected={handleFlightsSelected}
+          onSave={handleSave}
+          onBack={onClose}
+        />
+      </>
+    );
+  }
+
+  // Stage 2: Generated Itinerary
+  if (stage === 'itinerary' && effectiveOutbound && effectiveReturn) {
+    return (
+      <>
+        <DraftStepper currentStage={stage} onChange={setStage} />
+        <GeneratedItineraryStage
+          tripId={trip.id}
+          destination={trip.destination}
+          origin={trip.origin || 'São Paulo'}
+          emoji={emoji}
+          departureDate={new Date(trip.startDate)}
+          returnDate={new Date(trip.endDate)}
+          budget={trip.budget}
+          travelers={getTravelers(trip)}
+          outboundFlight={effectiveOutbound}
+          returnFlight={effectiveReturn}
+          travelInterests={trip.travelInterests}
+          jetLagSeverity={trip.jetLagSeverity}
+          priceLevel={chosenPriceLevel}
+          onActivate={handleActivate}
+          onSave={handleSave}
+          onBack={handleBackFromItinerary}
+          onDaysGenerated={hasExistingDays ? undefined : setGeneratedDays}
+          existingDays={hasExistingDays ? trip.days : undefined}
+        />
+      </>
+    );
+  }
+
+  // Fallback to flights if no flights selected
+  return (
+    <>
+      <DraftStepper currentStage={stage} onChange={setStage} />
       <FlightSelectionStage
         destination={trip.destination}
         origin={trip.origin || 'São Paulo'}
@@ -358,50 +489,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
         onSave={handleSave}
         onBack={onClose}
       />
-    );
-  }
-
-  // Stage 2: Generated Itinerary
-  if (stage === 'itinerary' && effectiveOutbound && effectiveReturn) {
-    return (
-      <GeneratedItineraryStage
-        tripId={trip.id}
-        destination={trip.destination}
-        origin={trip.origin || 'São Paulo'}
-        emoji={emoji}
-        departureDate={new Date(trip.startDate)}
-        returnDate={new Date(trip.endDate)}
-        budget={trip.budget}
-        travelers={getTravelers(trip)}
-        outboundFlight={effectiveOutbound}
-        returnFlight={effectiveReturn}
-        travelInterests={trip.travelInterests}
-        jetLagSeverity={trip.jetLagSeverity}
-        priceLevel={chosenPriceLevel}
-        onActivate={handleActivate}
-        onSave={handleSave}
-        onBack={handleBackFromItinerary}
-        onDaysGenerated={hasExistingDays ? undefined : setGeneratedDays}
-        existingDays={hasExistingDays ? trip.days : undefined}
-      />
-    );
-  }
-
-  // Fallback to flights if no flights selected
-  return (
-    <FlightSelectionStage
-      destination={trip.destination}
-      origin={trip.origin || 'São Paulo'}
-      originCode={originCode}
-      destinationCode={destinationCode}
-      departureDate={new Date(trip.startDate)}
-      returnDate={new Date(trip.endDate)}
-      budget={trip.budget}
-      emoji={emoji}
-      onFlightsSelected={handleFlightsSelected}
-      onSave={handleSave}
-      onBack={onClose}
-    />
+    </>
   );
 };
 
