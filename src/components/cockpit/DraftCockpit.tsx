@@ -212,7 +212,7 @@ const DraftStepper = ({ currentStage, onChange }: DraftStepperProps) => {
                 {s.label}
               </span>
               {isCurrent && (
-                <span className="text-[10px] leading-tight font-["Plus_Jakarta_Sans"] font-normal text-center max-w-[160px] opacity-90">
+                <span className="text-[10px] leading-tight font-['Plus_Jakarta_Sans'] font-normal text-center max-w-[160px] opacity-90">
                   {s.subtitle}
                 </span>
               )}
