@@ -424,6 +424,58 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   // Stage 1: Flight Selection
   if (stage === 'flights') {
     return (
+      <>
+        <DraftStepper currentStage={stage} onChange={setStage} />
+        <FlightSelectionStage
+          destination={trip.destination}
+          origin={trip.origin || 'São Paulo'}
+          originCode={originCode}
+          destinationCode={destinationCode}
+          departureDate={new Date(trip.startDate)}
+          returnDate={new Date(trip.endDate)}
+          budget={trip.budget}
+          emoji={emoji}
+          onFlightsSelected={handleFlightsSelected}
+          onSave={handleSave}
+          onBack={onClose}
+        />
+      </>
+    );
+  }
+
+  // Stage 2: Generated Itinerary
+  if (stage === 'itinerary' && effectiveOutbound && effectiveReturn) {
+    return (
+      <>
+        <DraftStepper currentStage={stage} onChange={setStage} />
+        <GeneratedItineraryStage
+          tripId={trip.id}
+          destination={trip.destination}
+          origin={trip.origin || 'São Paulo'}
+          emoji={emoji}
+          departureDate={new Date(trip.startDate)}
+          returnDate={new Date(trip.endDate)}
+          budget={trip.budget}
+          travelers={getTravelers(trip)}
+          outboundFlight={effectiveOutbound}
+          returnFlight={effectiveReturn}
+          travelInterests={trip.travelInterests}
+          jetLagSeverity={trip.jetLagSeverity}
+          priceLevel={chosenPriceLevel}
+          onActivate={handleActivate}
+          onSave={handleSave}
+          onBack={handleBackFromItinerary}
+          onDaysGenerated={hasExistingDays ? undefined : setGeneratedDays}
+          existingDays={hasExistingDays ? trip.days : undefined}
+        />
+      </>
+    );
+  }
+
+  // Fallback to flights if no flights selected
+  return (
+    <>
+      <DraftStepper currentStage={stage} onChange={setStage} />
       <FlightSelectionStage
         destination={trip.destination}
         origin={trip.origin || 'São Paulo'}
@@ -437,50 +489,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
         onSave={handleSave}
         onBack={onClose}
       />
-    );
-  }
-
-  // Stage 2: Generated Itinerary
-  if (stage === 'itinerary' && effectiveOutbound && effectiveReturn) {
-    return (
-      <GeneratedItineraryStage
-        tripId={trip.id}
-        destination={trip.destination}
-        origin={trip.origin || 'São Paulo'}
-        emoji={emoji}
-        departureDate={new Date(trip.startDate)}
-        returnDate={new Date(trip.endDate)}
-        budget={trip.budget}
-        travelers={getTravelers(trip)}
-        outboundFlight={effectiveOutbound}
-        returnFlight={effectiveReturn}
-        travelInterests={trip.travelInterests}
-        jetLagSeverity={trip.jetLagSeverity}
-        priceLevel={chosenPriceLevel}
-        onActivate={handleActivate}
-        onSave={handleSave}
-        onBack={handleBackFromItinerary}
-        onDaysGenerated={hasExistingDays ? undefined : setGeneratedDays}
-        existingDays={hasExistingDays ? trip.days : undefined}
-      />
-    );
-  }
-
-  // Fallback to flights if no flights selected
-  return (
-    <FlightSelectionStage
-      destination={trip.destination}
-      origin={trip.origin || 'São Paulo'}
-      originCode={originCode}
-      destinationCode={destinationCode}
-      departureDate={new Date(trip.startDate)}
-      returnDate={new Date(trip.endDate)}
-      budget={trip.budget}
-      emoji={emoji}
-      onFlightsSelected={handleFlightsSelected}
-      onSave={handleSave}
-      onBack={onClose}
-    />
+    </>
   );
 };
 
