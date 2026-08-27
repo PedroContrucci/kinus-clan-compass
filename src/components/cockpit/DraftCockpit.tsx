@@ -1,7 +1,10 @@
 // DraftCockpit — Draft trip editing interface with 3-stage flow:
 // Stage 1: Flight Selection → Stage 2: Generated Itinerary → Stage 3: Active Trip
+// UI stepper reflects the two in-cockpit stages: flights and itinerary.
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { FlightSelectionStage, FlightOption, SelectedFlight } from './FlightSelectionStage';
 import { GeneratedItineraryStage } from './GeneratedItineraryStage';
