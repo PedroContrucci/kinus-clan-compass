@@ -61,7 +61,6 @@ const Conta = () => {
       setDeleteDialogOpen(false);
       toast({ title: 'Conta excluída. Obrigado por testar o KINU.' });
       navigate('/', { replace: true });
-      window.location.reload();
     } catch (err) {
       console.error('[conta] delete_my_account falhou', err);
       toast({
@@ -99,6 +98,7 @@ const Conta = () => {
         description: "v0.1.0 POC • Onde a sabedoria do clã encontra a precisão da engenharia.",
       });
     }},
+    { icon: Shield, label: 'Privacidade', action: () => navigate('/privacidade') },
   ];
 
   return (
