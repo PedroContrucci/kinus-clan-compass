@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import kinuLogo from '@/assets/KINU_logo.png';
 import { useAuth } from '@/hooks/useAuth';
@@ -73,6 +73,7 @@ const Login = () => {
   const [notice, setNotice] = useState('');
   const [showLegacyNotice, setShowLegacyNotice] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const legacyChecked = useRef(false);
 
   // O inverso do guard (recon §4): quem já tem sessão não fica parado na porta.
@@ -250,9 +251,32 @@ const Login = () => {
             <p className="text-primary text-sm">{notice}</p>
           )}
 
+          {!isLogin && (
+            <label className="flex items-start gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={privacyAccepted}
+                onChange={(e) => setPrivacyAccepted(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[hsl(160,84%,39%)]"
+              />
+              <span className="text-sm text-muted-foreground font-['Plus_Jakarta_Sans'] leading-snug">
+                Li e aceito a{' '}
+                <Link
+                  to="/privacidade"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Política de Privacidade
+                </Link>
+              </span>
+            </label>
+          )}
+
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || (!isLogin && !privacyAccepted)}
             className="w-full py-3.5 btn-primary font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSubmitting
@@ -302,6 +326,11 @@ const Login = () => {
         <div className="w-48 h-px bg-border mx-auto mb-4" />
         <p className="text-center text-sm text-muted-foreground/70 font-['Plus_Jakarta_Sans']">
           Sua jornada, nossa inteligência coletiva.
+        </p>
+        <p className="text-center text-sm mt-2">
+          <Link to="/privacidade" className="text-muted-foreground/70 hover:text-primary transition-colors font-['Plus_Jakarta_Sans']">
+            Privacidade
+          </Link>
         </p>
       </div>
     </div>
