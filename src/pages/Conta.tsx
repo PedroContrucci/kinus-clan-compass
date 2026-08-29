@@ -222,11 +222,67 @@ const Conta = () => {
           );
         })()}
 
+        {/* Zona de risco — exclusão LGPD */}
+        <div className="mt-8 border border-destructive/40 rounded-2xl p-5">
+          <h2 className="text-lg font-bold font-['Outfit'] text-destructive mb-2">Zona de risco</h2>
+          <p className="text-sm text-muted-foreground font-['Plus_Jakarta_Sans'] mb-4">
+            Excluir sua conta apaga seus dados do KINU de forma definitiva.
+          </p>
+          <button
+            onClick={() => { setDeleteConfirmText(''); setDeleteDialogOpen(true); }}
+            className="w-full flex items-center justify-center gap-2 py-3 border border-destructive text-destructive rounded-xl font-medium hover:bg-destructive/10 transition-colors"
+          >
+            <Trash2 size={18} />
+            Excluir minha conta
+          </button>
+        </div>
+
         {/* Version */}
         <p className="text-center text-xs text-muted-foreground/50 mt-8 font-['Plus_Jakarta_Sans']">
           KINU v0.1.0 • The Travel OS
         </p>
       </main>
+
+      {/* Diálogo de confirmação de exclusão */}
+      {deleteDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-card border border-destructive/40 rounded-2xl p-6 shadow-xl">
+            <h3 className="text-lg font-bold font-['Outfit'] text-destructive mb-2">Excluir minha conta</h3>
+            <p className="text-sm text-muted-foreground font-['Plus_Jakarta_Sans'] leading-relaxed mb-4">
+              Isso apaga sua conta, suas viagens e suas conversas com o KINU. Não dá para desfazer.
+            </p>
+            <p className="text-sm text-foreground font-['Plus_Jakarta_Sans'] mb-2">
+              Digite <span className="font-bold text-destructive">EXCLUIR</span> para confirmar:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="EXCLUIR"
+              autoFocus
+              className="w-full px-4 py-3 mb-4 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-destructive text-foreground placeholder:text-muted-foreground"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteDialogOpen(false)}
+                disabled={isDeleting}
+                className="flex-1 py-3 bg-muted/40 border border-border rounded-xl text-foreground font-medium hover:bg-muted/60 transition-colors disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== 'EXCLUIR' || isDeleting}
+                className="flex-1 py-3 bg-destructive text-destructive-foreground rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting && <Loader2 size={16} className="animate-spin" />}
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <BottomNav />
     </div>
   );
