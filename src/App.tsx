@@ -16,6 +16,7 @@ import Viagens from "./pages/Viagens";
 import Conta from "./pages/Conta";
 import DestinationDetail from "./pages/DestinationDetail";
 import NotFound from "./pages/NotFound";
+import Privacidade from "./pages/Privacidade";
 import SmokeTest from "./pages/SmokeTest";
 import { TripAdoptionDialog } from "@/components/shared/TripAdoptionDialog";
 import { migrateLegacyTripIds } from "@/lib/tripIdMigration";
@@ -109,6 +110,7 @@ const App = () => (
             <div className="lg:max-w-5xl xl:max-w-6xl lg:mx-auto">
             <Routes>
               <Route path="/" element={<Login />} />
+              <Route path="/privacidade" element={<Privacidade />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/cla" element={<Cla />} />
               <Route path="/planejar" element={<Planejar />} />
