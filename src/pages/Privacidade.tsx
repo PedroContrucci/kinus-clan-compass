@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import kinuLogo from '@/assets/KINU_logo.png';
 
-const CONTATO_EMAIL = 'CONTATO_EMAIL';
+const CONTATO_EMAIL = 'pedrocontrucci@hotmail.com';
 
 const Privacidade = () => {
   return (
