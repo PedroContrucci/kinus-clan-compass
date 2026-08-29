@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { LogOut, User, HelpCircle, Star, Info, Loader2 } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { LogOut, User, HelpCircle, Star, Info, Loader2, Shield, Trash2 } from 'lucide-react';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { toast } from '@/hooks/use-toast';
 import kinuLogo from '@/assets/KINU_logo.png';
 import { loadJson } from '@/lib/safeStorage';
-import { listTrips } from '@/lib/tripStore';
+import { listTrips, clearTrips } from '@/lib/tripStore';
 import { useAuth } from '@/hooks/useAuth';
+import { kinuBeta } from '@/integrations/kinu-beta/client';
 
 
 
@@ -14,6 +15,9 @@ const Conta = () => {
   const navigate = useNavigate();
   const { user, isLoading: authLoading, logout } = useAuth();
   const [stats, setStats] = useState({ trips: 0, countries: 0, activities: 0 });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Guard ASSÍNCRONO — a diferença que importa: só redireciona depois que a
   // sessão resolveu. Antes, o guard era síncrono (loadJson do mock) e mandaria
@@ -42,6 +46,31 @@ const Conta = () => {
   // deixaria a sessão Supabase VIVA — a pessoa "sairia" e voltaria logada.
   // useAuth().logout faz signOut() e já navega para '/'.
   const handleLogout = () => { void logout(); };
+
+  // Exclusão LGPD: a RPC delete_my_account apaga dados + auth row no servidor.
+  // Em caso de erro NÃO sai da sessão — o usuário pode tentar de novo.
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'EXCLUIR' || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      const { error } = await kinuBeta.rpc('delete_my_account');
+      if (error) throw error;
+
+      await kinuBeta.auth.signOut();
+      clearTrips();
+      setDeleteDialogOpen(false);
+      toast({ title: 'Conta excluída. Obrigado por testar o KINU.' });
+      navigate('/', { replace: true });
+      window.location.reload();
+    } catch (err) {
+      console.error('[conta] delete_my_account falhou', err);
+      toast({
+        title: 'Não foi possível excluir agora. Tente novamente.',
+        variant: 'destructive',
+      });
+      setIsDeleting(false);
+    }
+  };
 
   const handleComingSoon = (feature: string) => {
     toast({
