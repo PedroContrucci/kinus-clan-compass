@@ -1,4 +1,5 @@
 import { destinationActivities, SuggestedActivity } from '@/data/destinationActivities';
+import { normalizePlaceName } from '@/lib/placeIdentity';
 
 export interface ValidationResult {
   rule: string;
@@ -166,24 +167,49 @@ export function validateItinerary(
   );
 
   // R5 NO DUPLICATES
-  const nameToDays = new Map<string, number[]>();
+  // Compara por nome normalizado: o catálogo tem a mesma casa real sob ids
+  // distintos em categorias distintas, então id não identifica lugar.
+  // Experiência repetida é erro — o gerador nunca deve fazê-lo. Refeição
+  // repetida é a degradação deliberada de quando o pool da categoria esgota
+  // (um dia sem jantar é pior que um jantar repetido), logo WARN, não FAIL.
+  const MEAL_SLOTS = new Set(['breakfast', 'lunch', 'dinner']);
+  const nameToEntries = new Map<string, { day: number; isMeal: boolean }[]>();
   for (const day of days) {
     for (const a of day.activities) {
       if (isGeneric(a.name)) continue;
-      const arr = nameToDays.get(a.name) || [];
-      arr.push(day.dayNumber);
-      nameToDays.set(a.name, arr);
+      const key = normalizePlaceName(a.name);
+      const arr = nameToEntries.get(key) || [];
+      arr.push({ day: day.dayNumber, isMeal: MEAL_SLOTS.has(a.timeSlot) || MEAL_SLOTS.has(a.type) });
+      nameToEntries.set(key, arr);
     }
   }
-  const dupes: string[] = [];
-  nameToDays.forEach((d, name) => {
-    if (d.length > 1) dupes.push(`${name} (days ${d.join(', ')})`);
+  const expDupes: string[] = [];
+  const mealDupes: string[] = [];
+  nameToEntries.forEach((entries, name) => {
+    if (entries.length < 2) return;
+    const dayList = entries.map((e) => e.day);
+    const gap = Math.min(
+      ...dayList.slice(1).map((d, i) => d - dayList[i])
+    );
+    const label = `${name} (days ${dayList.join(', ')})`;
+    // Só é degradação aceitável se todas as aparições forem em papel de refeição.
+    if (entries.every((e) => e.isMeal)) {
+      mealDupes.push(`${label}, menor intervalo ${gap}d`);
+    } else {
+      expDupes.push(label);
+    }
   });
-  results.push(
-    dupes.length === 0
-      ? { rule: 'R5 NO DUPLICATES', status: 'PASS' }
-      : { rule: 'R5 NO DUPLICATES', status: 'FAIL', detail: dupes.join(' | ') }
-  );
+  if (expDupes.length > 0) {
+    results.push({ rule: 'R5 NO DUPLICATES', status: 'FAIL', detail: expDupes.join(' | ') });
+  } else if (mealDupes.length > 0) {
+    results.push({
+      rule: 'R5 NO DUPLICATES',
+      status: 'WARN',
+      detail: `pool de restaurantes esgotado — ${mealDupes.join(' | ')}`,
+    });
+  } else {
+    results.push({ rule: 'R5 NO DUPLICATES', status: 'PASS' });
+  }
 
   // R6 DENSITY
   const densityIssues: string[] = [];

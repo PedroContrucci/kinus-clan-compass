@@ -31,6 +31,7 @@ import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { TRAVEL_INTERESTS } from '@/components/wizard/types';
 import { getDestinationActivities } from '@/data/destinationActivities';
+import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '@/lib/placeIdentity';
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
@@ -541,8 +542,10 @@ const Viagens = () => {
     if (!activity) return;
 
     // Collect all activity ids currently used across every day
-    const usedIds = new Set<string>();
-    selectedTrip.days.forEach((d) => d.activities.forEach((a) => usedIds.add(a.id)));
+    // Keyed by normalized name, not id: the same venue lives under distinct
+    // ids in distinct categories, and swapping must not reintroduce it.
+    const usedNames = new Set<string>();
+    selectedTrip.days.forEach((d) => d.activities.forEach((a) => usedNames.add(normalizePlaceName(a.name))));
 
     // Infer curated-pool category from current activity (time + type)
     const inferPoolCategory = (a: any): 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner' | null => {
@@ -572,7 +575,7 @@ const Viagens = () => {
     }
 
     const pool = getDestinationActivities(selectedTrip.destination);
-    const candidates = pool.filter((p: any) => p.category === poolCategory && !usedIds.has(p.id));
+    const candidates = pool.filter((p: any) => p.category === poolCategory && !usedNames.has(normalizePlaceName(p.name)));
     if (candidates.length === 0) {
       toast({ title: 'Sem outra opção curada para este horário' });
       return;
@@ -1206,8 +1209,11 @@ const Viagens = () => {
     const museumPrice = museumPricePP * travelers;
     const tourPrice = tourPricePP * travelers;
     
-    const usedActivityIds = new Set<string>();
-    function pickActivity(category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner', destination: string, themeName: string): SuggestedActivity | null {
+    // Trip-wide uniqueness keyed by normalized NAME, shared across categories:
+    // the same real venue exists in the catalog under distinct ids in distinct
+    // categories, so an id-keyed Set cannot tell it is already in the trip.
+    const usedPlaces = createPlaceUsageTracker();
+    function pickActivity(category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner', destination: string, themeName: string, dayIndex: number): SuggestedActivity | null {
       const pool = getDestinationActivities(destination);
       const themeStyleMap: Record<string, string[]> = {
         'Cultura': ['culture', 'history', 'art'],
@@ -1217,12 +1223,19 @@ const Viagens = () => {
         'Descobertas': ['culture', 'shopping', 'art'],
       };
       const targetTags = themeStyleMap[themeName] || [];
-      let candidates = pool.filter(a => a.category === category && !usedActivityIds.has(a.id) && (targetTags.length === 0 || a.styleTags?.some(t => targetTags.includes(t))));
-      if (candidates.length === 0) candidates = pool.filter(a => a.category === category && !usedActivityIds.has(a.id));
-      if (candidates.length === 0) candidates = pool.filter(a => a.category === category);
+      const inCategory = pool.filter(a => a.category === category);
+      const isFresh = (a: SuggestedActivity) => !usedPlaces.isUsed(a.name);
+      let candidates = inCategory.filter(a => isFresh(a) && (targetTags.length === 0 || a.styleTags?.some(t => targetTags.includes(t))));
+      if (candidates.length === 0) candidates = inCategory.filter(isFresh);
+      // Pool exhausted. Experiences never repeat; meals degrade with spacing
+      // rather than leaving the slot empty.
+      if (candidates.length === 0) {
+        if (category === 'morning' || category === 'afternoon' || category === 'night') return null;
+        candidates = pickReusableByGap(inCategory, usedPlaces, dayIndex);
+      }
       if (candidates.length === 0) return null;
       const picked = candidates[0];
-      usedActivityIds.add(picked.id);
+      usedPlaces.mark(picked.name, dayIndex);
       return picked;
     }
 
@@ -1398,11 +1411,11 @@ const Viagens = () => {
         title = theme.title;
         icon = theme.icon;
 
-        const morningAct = pickActivity('morning', trip.destination, theme.title);
-        const afternoonAct = pickActivity('afternoon', trip.destination, theme.title);
-        const nightAct = pickActivity('night', trip.destination, theme.title);
-        const lunchAct = pickActivity('lunch', trip.destination, theme.title);
-        const dinnerAct = pickActivity('dinner', trip.destination, theme.title);
+        const morningAct = pickActivity('morning', trip.destination, theme.title, i);
+        const afternoonAct = pickActivity('afternoon', trip.destination, theme.title, i);
+        const nightAct = pickActivity('night', trip.destination, theme.title, i);
+        const lunchAct = pickActivity('lunch', trip.destination, theme.title, i);
+        const dinnerAct = pickActivity('dinner', trip.destination, theme.title, i);
 
         activities = [
           {
@@ -2620,11 +2633,11 @@ const Viagens = () => {
                 return 'afternoon';
               };
               const poolCategory = inferPoolCategory(current);
-              const usedIds = new Set<string>();
-              selectedTrip.days.forEach((d) => d.activities.forEach((a) => usedIds.add(a.id)));
+              const usedNames = new Set<string>();
+              selectedTrip.days.forEach((d) => d.activities.forEach((a) => usedNames.add(normalizePlaceName(a.name))));
               const pool = poolCategory ? getDestinationActivities(selectedTrip.destination) : [];
               const candidates = poolCategory
-                ? pool.filter((p: any) => p.category === poolCategory && !usedIds.has(p.id))
+                ? pool.filter((p: any) => p.category === poolCategory && !usedNames.has(normalizePlaceName(p.name)))
                 : [];
 
               if (candidates.length === 0) {

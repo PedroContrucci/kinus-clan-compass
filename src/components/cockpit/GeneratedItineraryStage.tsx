@@ -28,6 +28,7 @@ import {
   type DestinationTheme
 } from '@/data/destinationActivities';
 import { getTopMichelinForCity } from '@/lib/michelinData';
+import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '@/lib/placeIdentity';
 import { getHotelRecommendation } from '@/lib/hotelZones';
 import { KinuAnalysisCard } from './KinuAnalysisCard';
 import { ItineraryDayWeather } from './ItineraryDayWeather';
@@ -289,13 +290,16 @@ export function generateItinerary(
   const transferCost = getActivityPrice('transfer', destination, priceLevel);
 
   const days: ItineraryDay[] = [];
-  // Trip-wide uniqueness tracking, split by activity class.
-  // EXP (morning/afternoon/night): NEVER repeat across the whole trip.
-  // Restaurants (breakfast/lunch/dinner): may repeat only after the full pool
-  // is exhausted, never on consecutive days, and with >=3 days between repeats.
-  const usedExpIds: Set<string> = new Set();
-  const usedRestaurantIds: Set<string> = new Set();
-  const lastRestaurantUsedDay: Map<string, number> = new Map();
+  // Trip-wide uniqueness, keyed by NORMALIZED NAME and shared across every
+  // category. Keying by id was the bug: the catalog carries the same real
+  // venue under distinct ids in distinct categories (Cabaña del Primo is both
+  // for-cabana-del-primo/lunch and for-rest-cabana-del-primo/dinner), so an
+  // id-keyed Set happily scheduled the same house twice in one trip.
+  //
+  // EXP (morning/afternoon/night): NEVER repeat — an exhausted slot becomes
+  // free time instead. Restaurants (breakfast/lunch/dinner): may repeat only
+  // once no unseen name is left, preferring the one used longest ago.
+  const usedPlaces = createPlaceUsageTracker();
   let currentPickDayIndex = 0;
 
   const EXP_CATEGORIES = new Set(['morning', 'afternoon', 'night']);
@@ -318,17 +322,17 @@ export function generateItinerary(
     };
     const target = priceTargets[priceLevel]?.[category] ?? 150;
     const isExp = EXP_CATEGORIES.has(category);
-    const usedSet = isExp ? usedExpIds : usedRestaurantIds;
+    const isFresh = (a: SuggestedActivity) => !usedPlaces.isUsed(a.name);
 
-    // Preferred pool: unused + matching theme tags.
+    // Preferred pool: unseen name + matching theme tags.
     let candidates = pool.filter(a =>
       a.category === category &&
-      !usedSet.has(a.id) &&
+      isFresh(a) &&
       (targetTags.length === 0 || (a.styleTags && a.styleTags.some(t => targetTags.includes(t))))
     );
-    // Second pass: unused, any theme.
+    // Second pass: unseen name, any theme.
     if (candidates.length === 0) {
-      candidates = pool.filter(a => a.category === category && !usedSet.has(a.id));
+      candidates = pool.filter(a => a.category === category && isFresh(a));
     }
 
     let forcedReuse = false;
@@ -336,20 +340,14 @@ export function generateItinerary(
       // EXP activities NEVER repeat. Signal exhaustion so caller can emit a free-slot entry.
       if (isExp) return null;
 
-      // Restaurants: pool fully used — allow reuse under strict spacing rules.
-      const prevDay = currentPickDayIndex - 1;
-      const reusable = pool.filter(a => {
-        if (a.category !== category) return false;
-        const last = lastRestaurantUsedDay.get(a.id);
-        if (last === undefined) return true; // shouldn't happen (pool exhausted), but safe
-        if (last === prevDay) return false; // no consecutive-day repeats
-        if (currentPickDayIndex - last < 3) return false; // >=3 days between repeats
-        return true;
-      });
-      if (reusable.length === 0) return null;
-      // Prefer restaurants used longest ago
-      reusable.sort((a, b) => (lastRestaurantUsedDay.get(a.id) ?? -1) - (lastRestaurantUsedDay.get(b.id) ?? -1));
-      candidates = reusable;
+      // Restaurants: every name already used — degrade gracefully rather than
+      // leave the slot empty. A repeated dinner beats a day with no dinner.
+      candidates = pickReusableByGap(
+        pool.filter(a => a.category === category),
+        usedPlaces,
+        currentPickDayIndex
+      );
+      if (candidates.length === 0) return null;
       forcedReuse = true;
     }
 
@@ -367,12 +365,7 @@ export function generateItinerary(
       });
     }
     const picked = candidates[0];
-    if (isExp) {
-      usedExpIds.add(picked.id);
-    } else {
-      usedRestaurantIds.add(picked.id);
-      lastRestaurantUsedDay.set(picked.id, currentPickDayIndex);
-    }
+    usedPlaces.mark(picked.name, currentPickDayIndex);
     return picked;
   }
 
@@ -1214,10 +1207,10 @@ export const GeneratedItineraryStage = ({
     const activity = day?.activities.find(a => a.id === activityId);
     if (!day || !activity) return;
 
-    // Collect all base activity ids currently in use across all days
-    const stripPrefix = (id: string) => id.replace(/^day-\d+-/, '');
-    const usedIds = new Set<string>();
-    days.forEach(d => d.activities.forEach(a => usedIds.add(stripPrefix(a.id))));
+    // Names already in the trip. Keyed by normalized name, not id, so swapping
+    // cannot land on a venue the trip already has under another category's id.
+    const usedNames = new Set<string>();
+    days.forEach(d => d.activities.forEach(a => usedNames.add(normalizePlaceName(a.name))));
 
     const category = activity.timeSlot;
     if (category === 'flight' || category === 'hotel') return;
@@ -1233,13 +1226,14 @@ export const GeneratedItineraryStage = ({
     const targetTags = themeStyleMap[themeName] || [];
 
     const pool = getDestinationActivities(destination);
+    const isFresh = (a: SuggestedActivity) => !usedNames.has(normalizePlaceName(a.name));
     let candidates = pool.filter(a =>
       a.category === category &&
-      !usedIds.has(a.id) &&
+      isFresh(a) &&
       (targetTags.length === 0 || (a.styleTags && a.styleTags.some(t => targetTags.includes(t))))
     );
     if (candidates.length === 0) {
-      candidates = pool.filter(a => a.category === category && !usedIds.has(a.id));
+      candidates = pool.filter(a => a.category === category && isFresh(a));
     }
     if (candidates.length === 0) {
       toast({ title: "Sem outra opção curada para este horário" });

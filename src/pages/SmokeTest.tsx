@@ -123,6 +123,25 @@ const TESTS: TestConfig[] = [
     returnDuration: '3h25',
   },
   {
+    // 9 dias: a duração que expôs o Cabaña del Primo 3× no PDF de produção.
+    // Com 8 dias o roteiro cabe no pool e o bug ficava invisível ao smoke.
+    label: 'Fortaleza 9 dias (regressão no-repeat)',
+    origin: 'São Paulo',
+    destination: 'Fortaleza',
+    originIata: 'GRU',
+    destIata: 'FOR',
+    days: 9,
+    travelers: 1,
+    budget: 10000,
+    interests: ['gastronomy', 'beach', 'family'],
+    jetLagSeverity: 'BAIXO',
+    outboundDeparture: '08:40',
+    outboundDuration: '3h25',
+    returnDeparture: '17:00',
+    returnDuration: '3h25',
+    priceLevel: 'midrange',
+  },
+  {
     label: 'Rio simples',
     origin: 'São Paulo',
     destination: 'Rio de Janeiro',
