@@ -334,8 +334,8 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
             dragging={!IS_TOUCH_DEVICE}
           >
             <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+              attribution='Tiles © Esri — Esri, DeLorme, NAVTEQ · © OpenStreetMap contributors'
             />
             <FitBounds points={points} />
             <FocusPoint point={focusPoint} />
