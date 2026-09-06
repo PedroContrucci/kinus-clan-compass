@@ -26,11 +26,6 @@ export interface RouteLeg {
   distanceKm: string;
 }
 
-export interface MapStop {
-  name: string;
-  num: number;
-}
-
 interface DailyRouteMapProps {
   destination: string;
   activities: { name: string; time?: string; category?: string }[];

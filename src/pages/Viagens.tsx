@@ -123,41 +123,6 @@ function isLogistics(activity: { name: string; category?: string }): boolean {
   return LOGISTICS_KEYWORDS.some(kw => nameLower.includes(kw));
 }
 
-function hasMapCoordinates(activityName: string, destination: string): boolean {
-  const cleanName = (raw: string) => {
-    let n = raw
-      .replace(/^[^\p{L}\p{N}]+/u, '')
-      .replace(/^(almoço|almoco|jantar|café|cafe)\s*:\s*/i, '')
-      .replace(/\s*\(.*?\)/g, '')
-      .replace(/\s+[&e]\s+.*$/i, '')
-      .replace(/\s*\+\s*.*/g, '')
-      .trim();
-    return n;
-  };
-
-  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-
-  const actClean = cleanName(activityName);
-  const actNorm = norm(actClean);
-  const destNorm = norm(destination);
-
-  const exactEntry = Object.entries(ATTRACTION_COORDS).find(([k]) => {
-    const kNorm = norm(k);
-    return kNorm === `${actNorm}, ${destNorm}`;
-  });
-  if (exactEntry) return true;
-
-  const partialMatch = Object.entries(ATTRACTION_COORDS).find(([k]) => {
-    const parts = k.split(',');
-    const keyAttractionPart = norm(parts[0] || '');
-    const keyCity = norm(parts[1] || '');
-    if (!keyCity.includes(destNorm) && !destNorm.includes(keyCity)) return false;
-    if (!actNorm || !keyAttractionPart) return false;
-    return actNorm.includes(keyAttractionPart) || keyAttractionPart.includes(actNorm);
-  });
-
-  return !!partialMatch;
-}
 
 const Viagens = () => {
   const navigate = useNavigate();
