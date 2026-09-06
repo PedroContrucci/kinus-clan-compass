@@ -559,3 +559,10 @@ To https://github.com/PedroContrucci/kinus-clan-compass
 O `git pull --ff-only` do início trouxe 26 commits de front (`bae1117..c28135b`) — nenhum deles
 tocou em `supabase/`, conferido com `git diff --stat bae1117..c28135b -- supabase/` (vazio). As
 premissas do STEP1 seguiram válidas.
+
+## Adendo (06/09) — Arco 5.e FECHADO EM PRODUCAO
+- Migracao aplicada por prompt ao Lovable. ACHADO DO LOVABLE que o nosso SQL nao cobria: o Supabase concede EXECUTE a anon/authenticated DIRETO nos roles (nao via PUBLIC) — revoke from public sozinho nao fechava as 5 funcoes. Ele rodou 2a migracao revogando dos tres roles e provou com has_function_privilege: anon=false, authenticated=false, service_role=true nas cinco. Sem isso o contador do 5.f nasceria forjavel pela anon key. Regra da casa nova: todo revoke de funcao cobre public E anon E authenticated.
+- Deploy kinu-ai + feedback-notify + metrics + _shared/telemetry.ts juntos, secret METRICS_ALLOWED_SUBS via prompt.
+- Sondas 6/6: (1) anonimo 200 sem shadow (2) identified (3) metrics sem token 403 (4) anon key como token 403 (5) metrics com token do fundador → 200 com criterio[] contendo as proprias sondas ja persistidas (identified=1, no-header=1, buckets user+ip) — TRAFEGO REAL VIROU LINHA (6) preflight hostil 403, 5.c intacto.
+- RELOGIO DO 5.f: serie diaria comeca 06/09; aperto elegivel a partir de 13/09 conforme criterio do 5.d §6.2. Leitura diaria: sonda 5 (curl na metrics).
+- Avisos do linter aceitos por desenho: RLS sem policy nas 2 tabelas (deny-all intencional); Leaked Password Protection e do Auth do projeto Lovable, nao usado.
