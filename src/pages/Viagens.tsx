@@ -2201,7 +2201,25 @@ const Viagens = () => {
                           activity.status === 'cancelled' ? 'opacity-50' : ''
                         } ${recentlyConfirmed === activity.id ? 'ring-2 ring-emerald-400 ring-opacity-75' : ''}`}>
                           <div className="flex flex-col items-center">
-                            <div className="text-xl">{getActivityIcon(activity.type)}</div>
+                            {pinNumber ? (
+                              /* Same numbered badge as the map pin (DailyRouteMap createNumberedIcon):
+                                 solid emerald disc, white bold number */
+                              <div
+                                className="rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
+                                style={{
+                                  width: 22,
+                                  height: 22,
+                                  background: '#10b981',
+                                  fontSize: 11,
+                                  fontFamily: "'Outfit', sans-serif",
+                                  boxShadow: '0 0 10px rgba(16,185,129,0.6)',
+                                }}
+                              >
+                                {pinNumber}
+                              </div>
+                            ) : (
+                              <div className="text-xl">{getActivityIcon(activity.type)}</div>
+                            )}
                             {actIndex < currentDay.activities.length - 1 && (
                               <div className="w-0.5 flex-1 bg-[#334155] mt-2" />
                             )}
@@ -2261,11 +2279,6 @@ const Viagens = () => {
                               )}
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              {pinNumber && (
-                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold text-white border-2 border-white/90 shadow-md flex-shrink-0" style={{ background: 'linear-gradient(135deg, hsl(160, 84%, 39%), hsl(199, 89%, 48%))', fontFamily: "'Outfit', sans-serif" }}>
-                                  {pinNumber}
-                                </span>
-                              )}
                               <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
                               {activity.status === 'confirmed' && (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-medium border border-emerald-500/20 animate-scale-in">
@@ -2320,6 +2333,8 @@ const Viagens = () => {
                             )}
                           </div>
                         </div>
+                        {legConnector}
+                        </Fragment>
                       );
                     })}
                   </div>
