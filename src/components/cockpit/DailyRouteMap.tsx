@@ -369,8 +369,9 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
             <FitBounds points={points} />
             <FocusPoint point={focusPoint} />
             {points.map((point, idx) => {
-              const hotelOffset = points[0]?.isHotel ? 1 : 0;
-              const activityNum = point.isHotel ? null : idx + 1 - hotelOffset;
+              // Numbering comes from the day list (stopNumbers), keyed by
+              // activity name — pre-assigned regardless of geocoding success.
+              const activityNum = point.isHotel ? null : (stopNumbers?.[point.name] ?? idx + 1);
               return (
                 <Marker
                   key={idx}
@@ -390,14 +391,16 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
               <>
                 {segments.map((seg, i) => (
                   <Polyline
+                    key={`seg-casing-${i}`}
+                    positions={seg.path}
+                    pathOptions={{ color: '#ffffff', weight: 8, opacity: 0.8 }}
+                  />
+                ))}
+                {segments.map((seg, i) => (
+                  <Polyline
                     key={`seg-${i}`}
                     positions={seg.path}
-                    pathOptions={{
-                      color: '#10b981',
-                      weight: 3,
-                      opacity: 0.7,
-                      dashArray: '6 8',
-                    }}
+                    pathOptions={{ color: '#10b981', weight: 5, opacity: 1 }}
                   />
                 ))}
                 {segments.map((seg, i) => {
@@ -414,15 +417,16 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
               </>
             ) : (
               polylinePositions.length > 1 && (
-                <Polyline
-                  positions={polylinePositions}
-                  pathOptions={{
-                    color: '#10b981',
-                    weight: 3,
-                    opacity: 0.7,
-                    dashArray: '6 8',
-                  }}
-                />
+                <>
+                  <Polyline
+                    positions={polylinePositions}
+                    pathOptions={{ color: '#ffffff', weight: 8, opacity: 0.8 }}
+                  />
+                  <Polyline
+                    positions={polylinePositions}
+                    pathOptions={{ color: '#10b981', weight: 5, opacity: 1 }}
+                  />
+                </>
               )
             )}
           </MapContainer>
