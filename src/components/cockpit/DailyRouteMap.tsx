@@ -257,17 +257,26 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
       if (!abortRef.current) {
         setPoints(results);
         setLoading(false);
+        // Report stop numbering — identical to the pin numbering below:
+        // pins are numbered by resolved order, skipping the hotel.
+        const hotelOffset = results[0]?.isHotel ? 1 : 0;
+        const stops = results
+          .map((p, idx) => ({ name: p.name, num: idx + 1 - hotelOffset, isHotel: !!p.isHotel }))
+          .filter(s => !s.isHotel)
+          .map(({ name, num }) => ({ name, num }));
+        onStopsChange?.(stops);
       }
     })();
 
     return () => { abortRef.current = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destination, hotelNeighborhood, JSON.stringify(filteredActivities.map(a => a.name)), geocode]);
+  }, [destination, hotelNeighborhood, JSON.stringify(filteredActivities.map(a => a.name)), geocode, onStopsChange]);
 
   // Fetch real walking routes from OSRM between consecutive points
   useEffect(() => {
     if (points.length < 2) {
       setSegments([]);
+      onLegsChange?.([]);
       return;
     }
     let cancelled = false;
@@ -289,15 +298,20 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
             path,
             durationMin: Math.round(route.duration / 60),
             distanceKm: (route.distance / 1000).toFixed(1),
+            fromName: a.name,
+            toName: b.name,
           });
         } catch {
           // skip segment
         }
       }
-      if (!cancelled) setSegments(results);
+      if (!cancelled) {
+        setSegments(results);
+        onLegsChange?.(results.map(({ fromName, toName, durationMin, distanceKm }) => ({ fromName, toName, durationMin, distanceKm })));
+      }
     })();
     return () => { cancelled = true; };
-  }, [points]);
+  }, [points, onLegsChange]);
 
   const focusPoint = useMemo(() => {
     if (!focusActivityName || points.length === 0) return null;
