@@ -2132,7 +2132,27 @@ const Viagens = () => {
                   <div className="space-y-4">
                     {currentDay.activities.map((activity, actIndex) => {
                       const dayIndex = selectedTrip.days.findIndex((d) => d.day === currentDay.day);
-                      const pinNumber = dayMapNumbers.get(activity.id);
+                      const pinNumber = liveStops?.get(activity.name) ?? dayMapNumbers.get(activity.id);
+                      // Per-leg travel data reported by DailyRouteMap (same OSRM
+                      // results as the map pills). Matched by stop names.
+                      const nextActivity = currentDay.activities[actIndex + 1];
+                      const legToNext = (liveLegs && nextActivity)
+                        ? liveLegs.find(l => l.fromName === activity.name && l.toName === nextActivity.name)
+                        : undefined;
+                      const legIsWalk = legToNext ? legToNext.durationMin <= 45 : false;
+                      const legMinutes = legToNext
+                        ? (legIsWalk ? legToNext.durationMin : Math.max(8, Math.round(parseFloat(legToNext.distanceKm) * 2.5)))
+                        : 0;
+                      const legConnector = legToNext ? (
+                        <div className="flex items-center gap-2 -mt-2 mb-1">
+                          <div className="w-7 flex justify-center flex-shrink-0">
+                            <div className="w-0.5 h-3 bg-[#334155]" />
+                          </div>
+                          <span className="text-[10px] text-muted-foreground font-['Outfit']">
+                            {legIsWalk ? '🚶' : '🚕'} ~{legMinutes} min · {legIsWalk ? 'a pé' : 'táxi'}
+                          </span>
+                        </div>
+                      ) : null;
                       
                       // Auto-detect logistics activities (flight/check-in/check-out/transfer)
                       const isLogisticsActivity = activity.isHeroItem ||
