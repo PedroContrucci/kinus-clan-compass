@@ -332,12 +332,12 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
             zoomControl={false}
             attributionControl={false}
             dragging={!IS_TOUCH_DEVICE}
+            maxZoom={19}
           >
             <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
-              attribution='Tiles © Esri — Esri, DeLorme, NAVTEQ · © OpenStreetMap contributors'
-              maxNativeZoom={16}
-              maxZoom={18}
+              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='© OpenStreetMap contributors'
+              maxZoom={19}
             />
             <FitBounds points={points} />
             <FocusPoint point={focusPoint} />
