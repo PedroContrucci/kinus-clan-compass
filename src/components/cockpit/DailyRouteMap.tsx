@@ -36,9 +36,10 @@ interface DailyRouteMapProps {
   activities: { name: string; time?: string; category?: string }[];
   hotelNeighborhood?: string;
   focusActivityName?: string | null;
-  // Reports the resolved stop numbering (same order as the map pins) so the
-  // itinerary list can render the same numbered badges.
-  onStopsChange?: (stops: MapStop[]) => void;
+  // Pre-assigned activity numbers (activity name -> number), computed once by
+  // the day list from the chronological non-logistics activities. Pins render
+  // ONLY for geocoded stops, each using the activity's pre-assigned number.
+  stopNumbers?: Record<string, number>;
   // Reports per-leg travel data (same OSRM results as the map pills) so the
   // itinerary list can render leg time/distance labels outside the map.
   onLegsChange?: (legs: RouteLeg[]) => void;
@@ -150,7 +151,7 @@ interface RouteSegment {
   toName: string;
 }
 
-export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood, focusActivityName, onStopsChange, onLegsChange }: DailyRouteMapProps) => {
+export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood, focusActivityName, stopNumbers, onLegsChange }: DailyRouteMapProps) => {
   const [points, setPoints] = useState<GeoPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [segments, setSegments] = useState<RouteSegment[]>([]);
@@ -233,7 +234,6 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
     abortRef.current = false;
     setLoading(true);
     setPoints([]);
-    onStopsChange?.([]);
 
     if (filteredActivities.length === 0) {
       setLoading(false);
@@ -258,20 +258,12 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
       if (!abortRef.current) {
         setPoints(results);
         setLoading(false);
-        // Report stop numbering — identical to the pin numbering below:
-        // pins are numbered by resolved order, skipping the hotel.
-        const hotelOffset = results[0]?.isHotel ? 1 : 0;
-        const stops = results
-          .map((p, idx) => ({ name: p.name, num: idx + 1 - hotelOffset, isHotel: !!p.isHotel }))
-          .filter(s => !s.isHotel)
-          .map(({ name, num }) => ({ name, num }));
-        onStopsChange?.(stops);
       }
     })();
 
     return () => { abortRef.current = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destination, hotelNeighborhood, JSON.stringify(filteredActivities.map(a => a.name)), geocode, onStopsChange]);
+  }, [destination, hotelNeighborhood, JSON.stringify(filteredActivities.map(a => a.name)), geocode]);
 
   // Fetch real walking routes from OSRM between consecutive points
   useEffect(() => {
