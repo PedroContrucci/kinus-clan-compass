@@ -33,14 +33,13 @@ import { TRAVEL_INTERESTS } from '@/components/wizard/types';
 import { getDestinationActivities } from '@/data/destinationActivities';
 import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '@/lib/placeIdentity';
 import type { SuggestedActivity } from '@/data/destinationActivities';
-import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { clearTrips, deleteTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
 import { buildOfferLinks } from '@/lib/offersLinks';
 import { supabase } from '@/integrations/supabase/client';
 import { getDocsForDestination } from '@/data/destinationDocs';
 
-import { DailyRouteMap, RouteLeg, MapStop } from '@/components/cockpit/DailyRouteMap';
+import { DailyRouteMap, RouteLeg } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
@@ -123,41 +122,6 @@ function isLogistics(activity: { name: string; category?: string }): boolean {
   return LOGISTICS_KEYWORDS.some(kw => nameLower.includes(kw));
 }
 
-function hasMapCoordinates(activityName: string, destination: string): boolean {
-  const cleanName = (raw: string) => {
-    let n = raw
-      .replace(/^[^\p{L}\p{N}]+/u, '')
-      .replace(/^(almoço|almoco|jantar|café|cafe)\s*:\s*/i, '')
-      .replace(/\s*\(.*?\)/g, '')
-      .replace(/\s+[&e]\s+.*$/i, '')
-      .replace(/\s*\+\s*.*/g, '')
-      .trim();
-    return n;
-  };
-
-  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-
-  const actClean = cleanName(activityName);
-  const actNorm = norm(actClean);
-  const destNorm = norm(destination);
-
-  const exactEntry = Object.entries(ATTRACTION_COORDS).find(([k]) => {
-    const kNorm = norm(k);
-    return kNorm === `${actNorm}, ${destNorm}`;
-  });
-  if (exactEntry) return true;
-
-  const partialMatch = Object.entries(ATTRACTION_COORDS).find(([k]) => {
-    const parts = k.split(',');
-    const keyAttractionPart = norm(parts[0] || '');
-    const keyCity = norm(parts[1] || '');
-    if (!keyCity.includes(destNorm) && !destNorm.includes(keyCity)) return false;
-    if (!actNorm || !keyAttractionPart) return false;
-    return actNorm.includes(keyAttractionPart) || keyAttractionPart.includes(actNorm);
-  });
-
-  return !!partialMatch;
-}
 
 const Viagens = () => {
   const navigate = useNavigate();
@@ -183,14 +147,11 @@ const Viagens = () => {
   const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
   const [focusMapActivity, setFocusMapActivity] = useState<string | null>(null);
   const mapAnchorRef = useRef<HTMLDivElement | null>(null);
-  // Route data reported by DailyRouteMap — the list reuses the map's own
-  // pin numbering and OSRM per-leg times instead of deriving its own.
-  const [routeStops, setRouteStops] = useState<{ day: number; stops: Map<string, number> } | null>(null);
+  // Route legs reported by DailyRouteMap — the list reuses the map's OSRM
+  // per-leg times instead of deriving its own. (Pin numbering flows the
+  // other way: computed here from the day's list and passed down to the map.)
   const [routeLegs, setRouteLegs] = useState<{ day: number; legs: RouteLeg[] } | null>(null);
   const currentDayRef = useRef<number | null>(null);
-  const handleRouteStopsChange = useCallback((stops: MapStop[]) => {
-    setRouteStops({ day: currentDayRef.current ?? -1, stops: new Map(stops.map(s => [s.name, s.num])) });
-  }, []);
   const handleRouteLegsChange = useCallback((legs: RouteLeg[]) => {
     setRouteLegs({ day: currentDayRef.current ?? -1, legs });
   }, []);
@@ -2055,25 +2016,25 @@ const Viagens = () => {
                 );
                 const photoQuery = mainActivity?.name || currentDay.title || selectedTrip.destination;
 
-                // Compute map pin numbers for the day (same filter, same time-sort and
-                // same coordinate resolution as DailyRouteMap's filteredActivities).
-                // Used only until the map reports its own resolved stops via onStopsChange.
+                // Numbering source of truth: the day's chronological list of
+                // non-logistics activities — first = 1, second = 2, etc.,
+                // assigned regardless of geocoding success. The list shows
+                // these badges for ALL non-logistics activities; the map
+                // receives the same numbering and renders pins only for the
+                // stops it actually geocoded (a failed stop 2 shows 1, 3, 4
+                // on the map while the list still shows 2).
                 currentDayRef.current = currentDay.day;
                 const dayMapNumbers = new Map<string, number>();
-                let pinCounter = 0;
-                const mapOrderedActivities = currentDay.activities
+                const stopNumbers: Record<string, number> = {};
+                currentDay.activities
                   .filter(a => !isLogistics(a))
                   .slice()
-                  .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
-                for (const act of mapOrderedActivities) {
-                  if (hasMapCoordinates(act.name, selectedTrip.destination)) {
-                    pinCounter++;
-                    dayMapNumbers.set(act.id, pinCounter);
-                  }
-                }
-                // Exact numbering straight from the map's resolved pins (covers
-                // Nominatim-resolved stops that the offline table can't predict).
-                const liveStops = routeStops && routeStops.day === currentDay.day ? routeStops.stops : null;
+                  .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'))
+                  .forEach((act, idx) => {
+                    dayMapNumbers.set(act.id, idx + 1);
+                    stopNumbers[act.name] = idx + 1;
+                  });
+                // OSRM leg times reported by the map (same data as its pills).
                 const liveLegs = routeLegs && routeLegs.day === currentDay.day ? routeLegs.legs : null;
                 
                 return (
@@ -2126,7 +2087,7 @@ const Viagens = () => {
                         activities={currentDay.activities}
                         hotelNeighborhood={selectedTrip.accommodation?.neighborhood}
                         focusActivityName={focusMapActivity}
-                        onStopsChange={handleRouteStopsChange}
+                        stopNumbers={stopNumbers}
                         onLegsChange={handleRouteLegsChange}
                       />
                     </div>
@@ -2134,7 +2095,7 @@ const Viagens = () => {
                   <div className="space-y-4">
                     {currentDay.activities.map((activity, actIndex) => {
                       const dayIndex = selectedTrip.days.findIndex((d) => d.day === currentDay.day);
-                      const pinNumber = liveStops?.get(activity.name) ?? dayMapNumbers.get(activity.id);
+                      const pinNumber = dayMapNumbers.get(activity.id);
                       // Per-leg travel data reported by DailyRouteMap (same OSRM
                       // results as the map pills). Matched by stop names.
                       const nextActivity = currentDay.activities[actIndex + 1];
