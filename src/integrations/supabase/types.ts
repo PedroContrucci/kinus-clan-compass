@@ -1012,6 +1012,51 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          bucket_key: string
+          fn: string
+          hits: number
+          updated_at: string
+          window_start: string
+        }
+        Insert: {
+          bucket_key: string
+          fn: string
+          hits?: number
+          updated_at?: string
+          window_start: string
+        }
+        Update: {
+          bucket_key?: string
+          fn?: string
+          hits?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      shadow_daily: {
+        Row: {
+          day: string
+          fn: string
+          hits: number
+          outcome: string
+        }
+        Insert: {
+          day: string
+          fn: string
+          hits?: number
+          outcome: string
+        }
+        Update: {
+          day?: string
+          fn?: string
+          hits?: number
+          outcome?: string
+        }
+        Relationships: []
+      }
       trip_activities: {
         Row: {
           actual_cost: number | null
@@ -1463,10 +1508,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bump_rate: { Args: { p_fn: string; p_key: string }; Returns: number }
       calculate_traveler_age: {
         Args: { birth_date: string; travel_date: string }
         Returns: number
       }
+      rate_metrics: {
+        Args: { p_days?: number }
+        Returns: {
+          buckets: number
+          day: string
+          fn: string
+          kind: string
+          max_hits_hour: number
+          reqs: number
+        }[]
+      }
+      record_request: {
+        Args: { p_fn: string; p_key: string; p_outcome: string }
+        Returns: number
+      }
+      record_shadow: {
+        Args: { p_fn: string; p_outcome: string }
+        Returns: undefined
+      }
+      shadow_outcome_bucket: { Args: { p_outcome: string }; Returns: string }
       traveler_pays: {
         Args: { birth_date: string; travel_date: string }
         Returns: boolean
