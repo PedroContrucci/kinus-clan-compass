@@ -40,7 +40,7 @@ import { buildOfferLinks } from '@/lib/offersLinks';
 import { supabase } from '@/integrations/supabase/client';
 import { getDocsForDestination } from '@/data/destinationDocs';
 
-import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
+import { DailyRouteMap, RouteLeg, MapStop } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
@@ -183,6 +183,17 @@ const Viagens = () => {
   const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
   const [focusMapActivity, setFocusMapActivity] = useState<string | null>(null);
   const mapAnchorRef = useRef<HTMLDivElement | null>(null);
+  // Route data reported by DailyRouteMap — the list reuses the map's own
+  // pin numbering and OSRM per-leg times instead of deriving its own.
+  const [routeStops, setRouteStops] = useState<{ day: number; stops: Map<string, number> } | null>(null);
+  const [routeLegs, setRouteLegs] = useState<{ day: number; legs: RouteLeg[] } | null>(null);
+  const currentDayRef = useRef<number | null>(null);
+  const handleRouteStopsChange = useCallback((stops: MapStop[]) => {
+    setRouteStops({ day: currentDayRef.current ?? -1, stops: new Map(stops.map(s => [s.name, s.num])) });
+  }, []);
+  const handleRouteLegsChange = useCallback((legs: RouteLeg[]) => {
+    setRouteLegs({ day: currentDayRef.current ?? -1, legs });
+  }, []);
   const [budgetEditOpen, setBudgetEditOpen] = useState(false);
   const [budgetEditValue, setBudgetEditValue] = useState('');
   const { setTripContext, registerActionHandlers, pendingNavigation, clearPendingNavigation } = useKinuAI();
