@@ -19,11 +19,29 @@ class MapErrorBoundary extends Component<
   }
 }
 
+export interface RouteLeg {
+  fromName: string;
+  toName: string;
+  durationMin: number;
+  distanceKm: string;
+}
+
+export interface MapStop {
+  name: string;
+  num: number;
+}
+
 interface DailyRouteMapProps {
   destination: string;
   activities: { name: string; time?: string; category?: string }[];
   hotelNeighborhood?: string;
   focusActivityName?: string | null;
+  // Reports the resolved stop numbering (same order as the map pins) so the
+  // itinerary list can render the same numbered badges.
+  onStopsChange?: (stops: MapStop[]) => void;
+  // Reports per-leg travel data (same OSRM results as the map pills) so the
+  // itinerary list can render leg time/distance labels outside the map.
+  onLegsChange?: (legs: RouteLeg[]) => void;
 }
 
 interface GeoPoint {
@@ -128,9 +146,11 @@ interface RouteSegment {
   path: [number, number][];
   durationMin: number;
   distanceKm: string;
+  fromName: string;
+  toName: string;
 }
 
-export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood, focusActivityName }: DailyRouteMapProps) => {
+export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood, focusActivityName, onStopsChange, onLegsChange }: DailyRouteMapProps) => {
   const [points, setPoints] = useState<GeoPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [segments, setSegments] = useState<RouteSegment[]>([]);
