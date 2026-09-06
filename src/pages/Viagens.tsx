@@ -2131,7 +2131,7 @@ const Viagens = () => {
                   <div className="space-y-4">
                     {currentDay.activities.map((activity, actIndex) => {
                       const dayIndex = selectedTrip.days.findIndex((d) => d.day === currentDay.day);
-                      const pinNumber = liveStops?.get(activity.name) ?? dayMapNumbers.get(activity.id);
+                      const pinNumber = dayMapNumbers.get(activity.id);
                       // Per-leg travel data reported by DailyRouteMap (same OSRM
                       // results as the map pills). Matched by stop names.
                       const nextActivity = currentDay.activities[actIndex + 1];
