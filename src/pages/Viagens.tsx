@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef, Fragment } from 'react';
 import { useKinuAI } from "@/contexts/KinuAIContext";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Pencil, Loader2 } from 'lucide-react';
@@ -40,7 +40,7 @@ import { buildOfferLinks } from '@/lib/offersLinks';
 import { supabase } from '@/integrations/supabase/client';
 import { getDocsForDestination } from '@/data/destinationDocs';
 
-import { DailyRouteMap } from '@/components/cockpit/DailyRouteMap';
+import { DailyRouteMap, RouteLeg, MapStop } from '@/components/cockpit/DailyRouteMap';
 import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
@@ -183,6 +183,17 @@ const Viagens = () => {
   const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
   const [focusMapActivity, setFocusMapActivity] = useState<string | null>(null);
   const mapAnchorRef = useRef<HTMLDivElement | null>(null);
+  // Route data reported by DailyRouteMap — the list reuses the map's own
+  // pin numbering and OSRM per-leg times instead of deriving its own.
+  const [routeStops, setRouteStops] = useState<{ day: number; stops: Map<string, number> } | null>(null);
+  const [routeLegs, setRouteLegs] = useState<{ day: number; legs: RouteLeg[] } | null>(null);
+  const currentDayRef = useRef<number | null>(null);
+  const handleRouteStopsChange = useCallback((stops: MapStop[]) => {
+    setRouteStops({ day: currentDayRef.current ?? -1, stops: new Map(stops.map(s => [s.name, s.num])) });
+  }, []);
+  const handleRouteLegsChange = useCallback((legs: RouteLeg[]) => {
+    setRouteLegs({ day: currentDayRef.current ?? -1, legs });
+  }, []);
   const [budgetEditOpen, setBudgetEditOpen] = useState(false);
   const [budgetEditValue, setBudgetEditValue] = useState('');
   const { setTripContext, registerActionHandlers, pendingNavigation, clearPendingNavigation } = useKinuAI();
@@ -2044,15 +2055,26 @@ const Viagens = () => {
                 );
                 const photoQuery = mainActivity?.name || currentDay.title || selectedTrip.destination;
 
-                // Compute map pin numbers for the day (same filter + coordinate resolution as DailyRouteMap)
+                // Compute map pin numbers for the day (same filter, same time-sort and
+                // same coordinate resolution as DailyRouteMap's filteredActivities).
+                // Used only until the map reports its own resolved stops via onStopsChange.
+                currentDayRef.current = currentDay.day;
                 const dayMapNumbers = new Map<string, number>();
                 let pinCounter = 0;
-                for (const act of currentDay.activities) {
-                  if (!isLogistics(act) && hasMapCoordinates(act.name, selectedTrip.destination)) {
+                const mapOrderedActivities = currentDay.activities
+                  .filter(a => !isLogistics(a))
+                  .slice()
+                  .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+                for (const act of mapOrderedActivities) {
+                  if (hasMapCoordinates(act.name, selectedTrip.destination)) {
                     pinCounter++;
                     dayMapNumbers.set(act.id, pinCounter);
                   }
                 }
+                // Exact numbering straight from the map's resolved pins (covers
+                // Nominatim-resolved stops that the offline table can't predict).
+                const liveStops = routeStops && routeStops.day === currentDay.day ? routeStops.stops : null;
+                const liveLegs = routeLegs && routeLegs.day === currentDay.day ? routeLegs.legs : null;
                 
                 return (
                 <div
@@ -2104,13 +2126,35 @@ const Viagens = () => {
                         activities={currentDay.activities}
                         hotelNeighborhood={selectedTrip.accommodation?.neighborhood}
                         focusActivityName={focusMapActivity}
+                        onStopsChange={handleRouteStopsChange}
+                        onLegsChange={handleRouteLegsChange}
                       />
                     </div>
                   )}
                   <div className="space-y-4">
                     {currentDay.activities.map((activity, actIndex) => {
                       const dayIndex = selectedTrip.days.findIndex((d) => d.day === currentDay.day);
-                      const pinNumber = dayMapNumbers.get(activity.id);
+                      const pinNumber = liveStops?.get(activity.name) ?? dayMapNumbers.get(activity.id);
+                      // Per-leg travel data reported by DailyRouteMap (same OSRM
+                      // results as the map pills). Matched by stop names.
+                      const nextActivity = currentDay.activities[actIndex + 1];
+                      const legToNext = (liveLegs && nextActivity)
+                        ? liveLegs.find(l => l.fromName === activity.name && l.toName === nextActivity.name)
+                        : undefined;
+                      const legIsWalk = legToNext ? legToNext.durationMin <= 45 : false;
+                      const legMinutes = legToNext
+                        ? (legIsWalk ? legToNext.durationMin : Math.max(8, Math.round(parseFloat(legToNext.distanceKm) * 2.5)))
+                        : 0;
+                      const legConnector = legToNext ? (
+                        <div className="flex items-center gap-2 -mt-2 mb-1">
+                          <div className="w-7 flex justify-center flex-shrink-0">
+                            <div className="w-0.5 h-3 bg-[#334155]" />
+                          </div>
+                          <span className="text-[10px] text-muted-foreground font-['Outfit']">
+                            {legIsWalk ? '🚶' : '🚕'} ~{legMinutes} min · {legIsWalk ? 'a pé' : 'táxi'}
+                          </span>
+                        </div>
+                      ) : null;
                       
                       // Auto-detect logistics activities (flight/check-in/check-out/transfer)
                       const isLogisticsActivity = activity.isHeroItem ||
@@ -2125,7 +2169,8 @@ const Viagens = () => {
                       // Hero items render as muted markers
                       if (isLogisticsActivity) {
                         return (
-                          <div key={activity.id} className="flex gap-3 opacity-40">
+                          <Fragment key={activity.id}>
+                          <div className="flex gap-3 opacity-40">
                             <div className="flex flex-col items-center">
                               <div className="text-xl">{getActivityIcon(activity.type)}</div>
                               {actIndex < currentDay.activities.length - 1 && (
@@ -2143,11 +2188,14 @@ const Viagens = () => {
                               <p className="text-xs text-[#475569] mt-0.5">📍 Logística — gerenciado no Painel</p>
                             </div>
                           </div>
+                          {legConnector}
+                          </Fragment>
                         );
                       }
 
                       return (
-                        <div key={activity.id}
+                        <Fragment key={activity.id}>
+                        <div
                           onClick={() => setActivityDetailDrawer({ activity, open: true })}
                           className={`flex gap-3 transition-all duration-500 cursor-pointer hover:ring-1 hover:ring-primary/30 ${
                           activity.status === 'confirmed' ? 'bg-[#10b981]/10 -mx-2 px-2 py-2 rounded-xl border border-[#10b981]/30' :
@@ -2155,7 +2203,25 @@ const Viagens = () => {
                           activity.status === 'cancelled' ? 'opacity-50' : ''
                         } ${recentlyConfirmed === activity.id ? 'ring-2 ring-emerald-400 ring-opacity-75' : ''}`}>
                           <div className="flex flex-col items-center">
-                            <div className="text-xl">{getActivityIcon(activity.type)}</div>
+                            {pinNumber ? (
+                              /* Same numbered badge as the map pin (DailyRouteMap createNumberedIcon):
+                                 solid emerald disc, white bold number */
+                              <div
+                                className="rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
+                                style={{
+                                  width: 22,
+                                  height: 22,
+                                  background: '#10b981',
+                                  fontSize: 11,
+                                  fontFamily: "'Outfit', sans-serif",
+                                  boxShadow: '0 0 10px rgba(16,185,129,0.6)',
+                                }}
+                              >
+                                {pinNumber}
+                              </div>
+                            ) : (
+                              <div className="text-xl">{getActivityIcon(activity.type)}</div>
+                            )}
                             {actIndex < currentDay.activities.length - 1 && (
                               <div className="w-0.5 flex-1 bg-[#334155] mt-2" />
                             )}
@@ -2215,11 +2281,6 @@ const Viagens = () => {
                               )}
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              {pinNumber && (
-                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold text-white border-2 border-white/90 shadow-md flex-shrink-0" style={{ background: 'linear-gradient(135deg, hsl(160, 84%, 39%), hsl(199, 89%, 48%))', fontFamily: "'Outfit', sans-serif" }}>
-                                  {pinNumber}
-                                </span>
-                              )}
                               <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
                               {activity.status === 'confirmed' && (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-medium border border-emerald-500/20 animate-scale-in">
@@ -2274,6 +2335,8 @@ const Viagens = () => {
                             )}
                           </div>
                         </div>
+                        {legConnector}
+                        </Fragment>
                       );
                     })}
                   </div>
