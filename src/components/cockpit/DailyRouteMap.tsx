@@ -233,6 +233,7 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
     abortRef.current = false;
     setLoading(true);
     setPoints([]);
+    onStopsChange?.([]);
 
     if (filteredActivities.length === 0) {
       setLoading(false);
