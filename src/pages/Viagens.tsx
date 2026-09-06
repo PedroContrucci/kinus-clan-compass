@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef, Fragment } from 'react';
 import { useKinuAI } from "@/contexts/KinuAIContext";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Pencil, Loader2 } from 'lucide-react';
@@ -2167,7 +2167,8 @@ const Viagens = () => {
                       // Hero items render as muted markers
                       if (isLogisticsActivity) {
                         return (
-                          <div key={activity.id} className="flex gap-3 opacity-40">
+                          <Fragment key={activity.id}>
+                          <div className="flex gap-3 opacity-40">
                             <div className="flex flex-col items-center">
                               <div className="text-xl">{getActivityIcon(activity.type)}</div>
                               {actIndex < currentDay.activities.length - 1 && (
@@ -2185,11 +2186,14 @@ const Viagens = () => {
                               <p className="text-xs text-[#475569] mt-0.5">📍 Logística — gerenciado no Painel</p>
                             </div>
                           </div>
+                          {legConnector}
+                          </Fragment>
                         );
                       }
 
                       return (
-                        <div key={activity.id}
+                        <Fragment key={activity.id}>
+                        <div
                           onClick={() => setActivityDetailDrawer({ activity, open: true })}
                           className={`flex gap-3 transition-all duration-500 cursor-pointer hover:ring-1 hover:ring-primary/30 ${
                           activity.status === 'confirmed' ? 'bg-[#10b981]/10 -mx-2 px-2 py-2 rounded-xl border border-[#10b981]/30' :
