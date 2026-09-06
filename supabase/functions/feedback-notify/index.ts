@@ -2,6 +2,7 @@
 
 import { corsGate } from "../_shared/http.ts";
 import { shadowIdentify, shadowHeader } from "../_shared/verifyKinuBetaJwt.ts";
+import { recordRequest } from "../_shared/telemetry.ts";
 
 function sanitizeUrl(url: string): string {
   return url
@@ -33,6 +34,13 @@ Deno.serve(async (req) => {
   // identidade (RELATORIO-F3-ARCO5D.md §6.2) — aqui a sombra é só medição.
   const who = await shadowIdentify(req, 'feedback-notify');
   const corsHeaders = { ...gate.headers, ...shadowHeader(who) };
+
+  // Arco 5.e — SÓ REGISTRA, e aqui o registro NUNCA vira aperto: a decisão do
+  // 5.d §6.3 é que feedback-notify não será limitada por identidade (um falso
+  // negativo custa um feedback de beta perdido para sempre). O contador dela
+  // existe para dizer quantos testadores estão logados na hora de mandar
+  // feedback — é medição pura. Fire-and-forget, não aguardada, não lança.
+  recordRequest(req, 'feedback-notify', who);
 
   try {
     const fb = await req.json();

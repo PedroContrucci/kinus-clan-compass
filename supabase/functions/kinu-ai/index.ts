@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsGate } from "../_shared/http.ts";
 import { shadowIdentify, shadowHeader } from "../_shared/verifyKinuBetaJwt.ts";
+import { recordRequest } from "../_shared/telemetry.ts";
 
 function sanitizeUrl(url: string): string {
   return url
@@ -380,6 +381,12 @@ serve(async (req) => {
   // mandou token (ver shadowHeader). Ver RELATORIO-F3-ARCO5D.md §2.
   const who = await shadowIdentify(req, "kinu-ai");
   const corsHeaders = { ...gate.headers, ...shadowHeader(who) };
+
+  // Arco 5.e — SÓ REGISTRA: persiste o veredicto da sombra e conta a requisição
+  // por chave (user:<sub> se identificado, senão ip:<hash>). Fire-and-forget: não
+  // é aguardada, não lança, e uma falha de telemetria não atrasa nem derruba a
+  // resposta. NENHUM limite é aplicado aqui — o aperto é o 5.f.
+  recordRequest(req, "kinu-ai", who);
 
   try {
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
