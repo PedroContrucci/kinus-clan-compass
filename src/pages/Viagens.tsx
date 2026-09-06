@@ -2055,15 +2055,26 @@ const Viagens = () => {
                 );
                 const photoQuery = mainActivity?.name || currentDay.title || selectedTrip.destination;
 
-                // Compute map pin numbers for the day (same filter + coordinate resolution as DailyRouteMap)
+                // Compute map pin numbers for the day (same filter, same time-sort and
+                // same coordinate resolution as DailyRouteMap's filteredActivities).
+                // Used only until the map reports its own resolved stops via onStopsChange.
+                currentDayRef.current = currentDay.day;
                 const dayMapNumbers = new Map<string, number>();
                 let pinCounter = 0;
-                for (const act of currentDay.activities) {
-                  if (!isLogistics(act) && hasMapCoordinates(act.name, selectedTrip.destination)) {
+                const mapOrderedActivities = currentDay.activities
+                  .filter(a => !isLogistics(a))
+                  .slice()
+                  .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+                for (const act of mapOrderedActivities) {
+                  if (hasMapCoordinates(act.name, selectedTrip.destination)) {
                     pinCounter++;
                     dayMapNumbers.set(act.id, pinCounter);
                   }
                 }
+                // Exact numbering straight from the map's resolved pins (covers
+                // Nominatim-resolved stops that the offline table can't predict).
+                const liveStops = routeStops && routeStops.day === currentDay.day ? routeStops.stops : null;
+                const liveLegs = routeLegs && routeLegs.day === currentDay.day ? routeLegs.legs : null;
                 
                 return (
                 <div
