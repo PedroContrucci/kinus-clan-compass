@@ -33,7 +33,6 @@ import { TRAVEL_INTERESTS } from '@/components/wizard/types';
 import { getDestinationActivities } from '@/data/destinationActivities';
 import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '@/lib/placeIdentity';
 import type { SuggestedActivity } from '@/data/destinationActivities';
-import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { clearTrips, deleteTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
 import { buildOfferLinks } from '@/lib/offersLinks';
