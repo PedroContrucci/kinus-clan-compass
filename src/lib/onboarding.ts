@@ -16,6 +16,8 @@ import { kinuBeta } from '@/integrations/kinu-beta/client';
 export type OnboardingPrefs = {
   onboarding_welcome_seen?: boolean;
   onboarding_checklist_done?: boolean;
+  /** dicas contextuais já vistas, por área: { viagens: true, ... } */
+  onboarding_hints?: Record<string, boolean>;
 };
 
 const CACHE_KEY = 'kinu_onboarding_prefs';
