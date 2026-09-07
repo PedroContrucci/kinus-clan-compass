@@ -1,5 +1,5 @@
 // Dashboard — Unified view with active trips, drafts, completed, and KINU insights
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp, LogOut, Loader2, Plane, Sparkles, Clock, CheckCircle2, TrendingUp, Calendar, MapPin, ArrowRight } from 'lucide-react';
@@ -16,6 +16,16 @@ import { TripCardWithPhoto } from '@/components/dashboard/TripCardWithPhoto';
 import { CountdownCard } from '@/components/dashboard/CountdownCard';
 import { exportTripPDF } from '@/lib/tripPdfExport';
 import { listTrips, subscribeTrips } from '@/lib/tripStore';
+import { WelcomeOverlay } from '@/components/onboarding/WelcomeOverlay';
+import { EmptyStateHero } from '@/components/onboarding/EmptyStateHero';
+import { OnboardingChecklist, type OnboardingStep } from '@/components/onboarding/OnboardingChecklist';
+import {
+  fetchOnboardingPrefs,
+  readCachedPrefs,
+  setOnboardingPref,
+  trackOnboarding,
+} from '@/lib/onboarding';
+
 
 const ApiStatus = lazy(() => import('@/components/debug/ApiStatus').then(m => ({ default: m.ApiStatus })));
 
