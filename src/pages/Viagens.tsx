@@ -44,6 +44,7 @@ import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
 import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
+import { HintBalloon } from '@/components/onboarding/HintBalloon';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 
