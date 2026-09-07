@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, HelpCircle, Star, Info, Loader2, Shield, Trash2 } from 'lucide-react';
+import { LogOut, User, HelpCircle, Star, Info, Loader2, Shield, Trash2, Compass } from 'lucide-react';
+import { HintBalloon } from '@/components/onboarding/HintBalloon';
+import { resetHints, trackOnboarding } from '@/lib/onboarding';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { toast } from '@/hooks/use-toast';
 import kinuLogo from '@/assets/KINU_logo.png';
