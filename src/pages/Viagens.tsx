@@ -1505,6 +1505,11 @@ const Viagens = () => {
 
           {trips.length > 0 ? (
             <div className="space-y-3">
+              <HintBalloon
+                area="viagens"
+                arrow="none"
+                text="Seus rascunhos e viagens ativas vivem aqui."
+              />
               {trips.map((trip) => {
                 const progress = calculateProgress(trip);
                 const days = trip?.days && Array.isArray(trip.days) ? trip.days : [];
@@ -2343,6 +2348,12 @@ const Viagens = () => {
           {activeTab === 'financeiro' && (
             <TabErrorBoundary tabName="Financeiro"><div className="animate-fade-in space-y-6">
               <AgentTip agent="hestia" variant="compact" message={getHestiaCambio(selectedTrip)} />
+
+              <HintBalloon
+                area="financeiro"
+                arrow="down"
+                text="O KINU acompanha seu orçamento em tempo real, em reais."
+              />
               
               {/* Budget Summary */}
               {(() => {

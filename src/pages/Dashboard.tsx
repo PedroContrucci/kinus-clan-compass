@@ -18,7 +18,8 @@ import { exportTripPDF } from '@/lib/tripPdfExport';
 import { listTrips, subscribeTrips } from '@/lib/tripStore';
 import { WelcomeOverlay } from '@/components/onboarding/WelcomeOverlay';
 import { EmptyStateHero } from '@/components/onboarding/EmptyStateHero';
-import { OnboardingChecklist, type OnboardingStep } from '@/components/onboarding/OnboardingChecklist';
+import { type OnboardingStep } from '@/components/onboarding/OnboardingChecklist';
+import { OnboardingProgressStrip } from '@/components/onboarding/OnboardingProgressStrip';
 import {
   fetchOnboardingPrefs,
   readCachedPrefs,
@@ -221,7 +222,7 @@ const Dashboard = () => {
       <main className="px-4 py-6 space-y-6">
         {/* Checklist da primeira viagem */}
         {showChecklist && (
-          <OnboardingChecklist steps={onboardingSteps} onDismiss={dismissChecklist} />
+          <OnboardingProgressStrip steps={onboardingSteps} onDismiss={dismissChecklist} />
         )}
 
         {hasNoTrips ? (
