@@ -406,6 +406,19 @@ const Dashboard = () => {
 
       {/* Bottom Navigation */}
       <BottomNav />
+
+      {welcomeOpen && (
+        <WelcomeOverlay
+          name={user.name.split(' ')[0]}
+          onWizard={() => goWizard('welcome')}
+          onAI={() => goAI('welcome')}
+          onDismiss={() => {
+            trackOnboarding('onboarding.dismissed', user.id, { surface: 'welcome' });
+            markWelcomeSeen();
+          }}
+        />
+      )}
+
     </div>
   );
 };
