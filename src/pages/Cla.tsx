@@ -355,6 +355,14 @@ const Cla = () => {
 
       {/* Main Content */}
       <main className="space-y-6">
+        <div className="px-4 pt-4">
+          <HintBalloon
+            area="cla"
+            arrow="up"
+            text="O Clã é a sabedoria coletiva — em breve você poderá contribuir."
+          />
+        </div>
+
         {/* My Shared Itineraries */}
         {myTrips.length > 0 && (
           <section className="px-4 pt-4">
