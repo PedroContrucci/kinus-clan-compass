@@ -114,101 +114,113 @@ const Dashboard = () => {
       )}
 
       <main className="px-4 py-6 space-y-6">
-        {/* CTA Button — Plan New Trip */}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => navigate('/planejar')}
-          className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-5 px-6 rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <Plane size={24} className="text-white" />
-            </div>
-            <div className="text-left">
-              <p className="font-bold text-lg font-['Outfit']">Planejar Nova Viagem</p>
-              <p className="text-white/80 text-sm">Comece sua próxima aventura</p>
-            </div>
-          </div>
-          <ArrowRight size={24} className="text-white/80 group-hover:translate-x-1 transition-transform" />
-        </motion.button>
+        {/* Checklist da primeira viagem */}
+        {showChecklist && (
+          <OnboardingChecklist steps={onboardingSteps} onDismiss={dismissChecklist} />
+        )}
 
-        {/* Discovery Entry Point */}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => {
-            setIsOpen(true);
-            sendMessage("Estou em dúvida sobre qual destino escolher para minha próxima viagem. Me ajuda a decidir? Pode começar me fazendo só a primeira pergunta.");
-          }}
-          className="w-full bg-card border border-border rounded-xl py-4 px-5 flex items-center gap-4 text-left hover:border-emerald-500/30 transition-colors group"
-        >
-          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-            <span className="text-lg">🧭</span>
-          </div>
-          <div className="flex-1">
-            <p className="font-medium text-foreground font-['Outfit']">Não sabe para onde ir?</p>
-            <p className="text-sm text-emerald-400">Deixe o KINU AI te ajudar a escolher</p>
-          </div>
-          <ArrowRight size={20} className="text-muted-foreground group-hover:text-emerald-400 transition-colors" />
-        </motion.button>
-
-        {/* Agent Cards */}
-        <AgentCards trips={allTrips} onNavigate={navigate} />
-
-        {/* Active Trips */}
-        <section>
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4 flex items-center gap-2">
-            🗺️ Viagens Ativas
-          </h2>
-
-          {tripKPIs.length > 0 ? (
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: {
-                  opacity: 1,
-                  transition: { staggerChildren: 0.1 },
-                },
-              }}
-              className="space-y-4"
+        {hasNoTrips ? (
+          <EmptyStateHero onWizard={() => goWizard('empty_state')} onAI={() => goAI('empty_state')} />
+        ) : (
+          <>
+            {/* CTA Button — Plan New Trip */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate('/planejar')}
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-5 px-6 rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-between group"
             >
-              {/* Countdown for nearest active trip */}
-              {(() => {
-                const nearest = tripKPIs.sort((a, b) => a.daysUntil - b.daysUntil)[0];
-                if (!nearest) return null;
-                return (
-                  <CountdownCard
-                    daysLeft={Math.max(0, nearest.daysUntil)}
-                    isUrgent={nearest.isUrgent}
-                    isPast={nearest.daysUntil < 0}
-                    destination={nearest.destination}
-                    emoji={nearest.emoji || '✈️'}
-                    trip={nearest}
-                    onNavigate={(tab) => navigate(`/viagens?trip=${nearest.id}&tab=${tab}`)}
-                    onExportPdf={() => exportTripPDF(nearest, user?.name)}
-                  />
-                );
-              })()}
-              {tripKPIs.map((trip) => (
-                <TripCardWithPhoto
-                  key={trip.id}
-                  trip={trip}
-                  onClick={() => handleTripClick(trip.id)}
-                />
-              ))}
-            </motion.div>
-          ) : (
-            <div className="bg-card border border-border rounded-2xl p-8 text-center">
-              <p className="text-muted-foreground mb-2">Nenhuma viagem ativa</p>
-              <p className="text-sm text-muted-foreground/70">
-                Clique em "Planejar Nova Viagem" para começar
-              </p>
-            </div>
-          )}
-        </section>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <Plane size={24} className="text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-lg font-['Outfit']">Planejar Nova Viagem</p>
+                  <p className="text-white/80 text-sm">Comece sua próxima aventura</p>
+                </div>
+              </div>
+              <ArrowRight size={24} className="text-white/80 group-hover:translate-x-1 transition-transform" />
+            </motion.button>
+
+            {/* Discovery Entry Point */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                setIsOpen(true);
+                sendMessage("Estou em dúvida sobre qual destino escolher para minha próxima viagem. Me ajuda a decidir? Pode começar me fazendo só a primeira pergunta.");
+              }}
+              className="w-full bg-card border border-border rounded-xl py-4 px-5 flex items-center gap-4 text-left hover:border-emerald-500/30 transition-colors group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                <span className="text-lg">🧭</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-foreground font-['Outfit']">Não sabe para onde ir?</p>
+                <p className="text-sm text-emerald-400">Deixe o KINU AI te ajudar a escolher</p>
+              </div>
+              <ArrowRight size={20} className="text-muted-foreground group-hover:text-emerald-400 transition-colors" />
+            </motion.button>
+
+            {/* Agent Cards */}
+            <AgentCards trips={allTrips} onNavigate={navigate} />
+
+            {/* Active Trips */}
+            <section>
+              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4 flex items-center gap-2">
+                🗺️ Viagens Ativas
+              </h2>
+
+              {tripKPIs.length > 0 ? (
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: {
+                      opacity: 1,
+                      transition: { staggerChildren: 0.1 },
+                    },
+                  }}
+                  className="space-y-4"
+                >
+                  {/* Countdown for nearest active trip */}
+                  {(() => {
+                    const nearest = tripKPIs.sort((a, b) => a.daysUntil - b.daysUntil)[0];
+                    if (!nearest) return null;
+                    return (
+                      <CountdownCard
+                        daysLeft={Math.max(0, nearest.daysUntil)}
+                        isUrgent={nearest.isUrgent}
+                        isPast={nearest.daysUntil < 0}
+                        destination={nearest.destination}
+                        emoji={nearest.emoji || '✈️'}
+                        trip={nearest}
+                        onNavigate={(tab) => navigate(`/viagens?trip=${nearest.id}&tab=${tab}`)}
+                        onExportPdf={() => exportTripPDF(nearest, user?.name)}
+                      />
+                    );
+                  })()}
+                  {tripKPIs.map((trip) => (
+                    <TripCardWithPhoto
+                      key={trip.id}
+                      trip={trip}
+                      onClick={() => handleTripClick(trip.id)}
+                    />
+                  ))}
+                </motion.div>
+              ) : (
+                <div className="bg-card border border-border rounded-2xl p-8 text-center">
+                  <p className="text-muted-foreground mb-2">Nenhuma viagem ativa</p>
+                  <p className="text-sm text-muted-foreground/70">
+                    Clique em "Planejar Nova Viagem" para começar
+                  </p>
+                </div>
+              )}
+            </section>
+          </>
+        )}
+
 
         {/* Draft Trips */}
         {draftTrips.length > 0 && (
