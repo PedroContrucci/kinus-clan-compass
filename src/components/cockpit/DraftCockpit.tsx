@@ -320,6 +320,13 @@ const DraftStepper = ({ trip, currentStage, onChange }: DraftStepperProps) => {
           );
         })}
       </div>
+      <div className="px-4 pb-3">
+        <HintBalloon
+          area="draft_cockpit"
+          arrow="up"
+          text="Sua trilha: toque numa etapa para voltar a ela."
+        />
+      </div>
     </div>
   );
 };
