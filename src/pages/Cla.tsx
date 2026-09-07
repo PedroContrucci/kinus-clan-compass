@@ -12,6 +12,7 @@ import {
 } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/hooks/useAuth';
 import { BottomNav } from '@/components/shared/BottomNav';
+import { HintBalloon } from '@/components/onboarding/HintBalloon';
 import { getActiveTrip, listTrips, subscribeTrips } from '@/lib/tripStore';
 import { 
   TopPicksCarousel, 

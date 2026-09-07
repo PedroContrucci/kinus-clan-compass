@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { FlightSelectionStage, FlightOption, SelectedFlight } from './FlightSelectionStage';
 import { GeneratedItineraryStage } from './GeneratedItineraryStage';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
+import { HintBalloon } from '@/components/onboarding/HintBalloon';
 
 // Types
 interface DraftTrip {
