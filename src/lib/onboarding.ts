@@ -78,11 +78,28 @@ export async function setOnboardingPref(
   }
 }
 
+/** Marca uma dica como vista, mesclando dentro de onboarding_hints. */
+export async function markHintSeen(userId: string, area: string): Promise<void> {
+  const cached = readCachedPrefs();
+  const hints = { ...(cached.onboarding_hints ?? {}), [area]: true };
+  await setOnboardingPref(userId, { onboarding_hints: hints });
+}
+
+/** Zera todas as dicas — o guia volta a aparecer conforme a navegação. */
+export async function resetHints(
+  userId: string,
+  extra: OnboardingPrefs = {}
+): Promise<void> {
+  await setOnboardingPref(userId, { onboarding_hints: {}, ...extra });
+}
+
 export type OnboardingEvent =
   | 'onboarding.welcome_shown'
   | 'onboarding.path_chosen'
   | 'onboarding.dismissed'
-  | 'onboarding.checklist_done';
+  | 'onboarding.checklist_done'
+  | 'onboarding.hint_shown'
+  | 'onboarding.guide_reset';
 
 /**
  * Fire-and-forget. O esqueleto da tabela `events` do kinu-beta não é tipado
