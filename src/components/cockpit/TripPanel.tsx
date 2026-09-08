@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Check, FileText, ChevronDown, ChevronUp, MapPin, ExternalLink, X } from 'lucide-react';
+import { HintBalloon } from '@/components/onboarding/HintBalloon';
 import { WeatherBadge } from './WeatherBadge';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
@@ -14,7 +15,7 @@ import { DestinationImage } from '@/components/shared/DestinationImage';
 import type { SavedTrip } from '@/types/trip';
 import { buildOfferLinks } from '@/lib/offersLinks';
 import { OffersModal } from '@/components/cockpit/OffersModal';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
@@ -417,6 +418,7 @@ function getTripCurrency(dest: string): string {
 }
 
 export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAuction, onNavigateTab, pendingConfirmRequest, onPendingConfirmHandled, exporterName }: TripPanelProps) => {
+  const summaryHeaderRef = useRef<HTMLDivElement | null>(null);
   const [showAllActions, setShowAllActions] = useState(false);
   const [dismissedNow, setDismissedNow] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
