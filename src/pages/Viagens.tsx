@@ -2302,7 +2302,10 @@ const Viagens = () => {
 
                             {/* Actions — max 2 buttons: Confirmar + Ver Ofertas */}
                             {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (
-                              <div className="flex gap-2 mt-3 flex-wrap">
+                              <div
+                                ref={activity.id === firstActionableActivityId ? roteiroActionRef : undefined}
+                                className="flex gap-2 mt-3 flex-wrap"
+                              >
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setConfirmModal({ isOpen: true, activity, dayIndex, actIndex }); }}
                                   className="flex items-center gap-1 px-3 py-1.5 bg-[#10b981] rounded-lg text-xs text-white hover:bg-[#10b981]/80 transition-colors"
