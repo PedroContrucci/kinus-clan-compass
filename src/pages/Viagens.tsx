@@ -1865,6 +1865,14 @@ const Viagens = () => {
             <TabErrorBoundary tabName="Roteiro"><div className="animate-fade-in">
               <AgentTip agent="icarus" variant="compact" message={getIcarusRoteiro(selectedTrip, selectedDay)} />
 
+              <HintBalloon
+                area="roteiro"
+                arrow="up"
+                anchorRef={roteiroActionRef}
+                text="Confirmar marca o que você já reservou. Trocar sugere alternativas do catálogo."
+              />
+
+
               {/* Category Quick Filters */}
               <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide">
                 {(() => {
