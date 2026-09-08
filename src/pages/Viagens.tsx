@@ -148,6 +148,8 @@ const Viagens = () => {
   const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
   const [focusMapActivity, setFocusMapActivity] = useState<string | null>(null);
   const mapAnchorRef = useRef<HTMLDivElement | null>(null);
+  const roteiroActionRef = useRef<HTMLDivElement | null>(null);
+  const preparacaoHeaderRef = useRef<HTMLDivElement | null>(null);
   // Route legs reported by DailyRouteMap — the list reuses the map's OSRM
   // per-leg times instead of deriving its own. (Pin numbering flows the
   // other way: computed here from the day's list and passed down to the map.)
@@ -1621,6 +1623,25 @@ const Viagens = () => {
     if (!selectedTrip) return null;
     
     const currentDay = selectedTrip.days?.find((d) => d.day === selectedDay);
+    // Primeira atividade não-logística e não resolvida do dia visível —
+    // âncora da dica do Roteiro (pula se não houver / não estiver no DOM).
+    const firstActionableActivityId = (() => {
+      const isLogisticsActivity = (a: TripActivity) =>
+        a.isHeroItem ||
+        a.category === 'voo' ||
+        (a.category === 'hotel' &&
+          (a.name?.toLowerCase().includes('check-in') ||
+            a.name?.toLowerCase().includes('check-out'))) ||
+        a.name?.toLowerCase().includes('check-in aeroporto') ||
+        a.name?.toLowerCase().includes('transfer');
+      const a = (currentDay?.activities || []).find(
+        (x) =>
+          !isLogisticsActivity(x) &&
+          x.status !== 'confirmed' &&
+          x.status !== 'cancelled',
+      );
+      return a?.id ?? null;
+    })();
     const tripSeverity = selectedTrip.jetLagSeverity || 'BAIXO';
     const showJetLagAlert = selectedTrip.jetLagMode && (
       (tripSeverity === 'MODERADO' && selectedDay === 2) ||
