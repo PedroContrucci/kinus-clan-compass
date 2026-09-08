@@ -2536,6 +2536,14 @@ const Viagens = () => {
               <div className="animate-fade-in space-y-6">
                 <AgentTip agent="hermes" variant="compact" message={getHermesPacking(selectedTrip)} />
 
+                <HintBalloon
+                  area="preparacao"
+                  arrow="up"
+                  anchorRef={preparacaoHeaderRef}
+                  text="O KINU monta sua lista de preparação — documentos, malas e lembretes."
+                />
+
+
                 {/* Readiness Score */}
                 <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
                   <div className="flex items-center justify-between mb-2">
