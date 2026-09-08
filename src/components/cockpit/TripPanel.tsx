@@ -893,7 +893,13 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-4 mt-4">
           {/* 1. Header Premium with Hero Image */}
-      <div className="relative overflow-hidden rounded-2xl border border-border">
+      <HintBalloon
+        area="painel"
+        arrow="up"
+        anchorRef={summaryHeaderRef}
+        text="Seu centro de comando: tudo da viagem num lugar só."
+      />
+      <div ref={summaryHeaderRef} className="relative overflow-hidden rounded-2xl border border-border">
         {/* Hero banner image */}
         <div className="relative h-[150px] overflow-hidden bg-gradient-to-br from-[#0f172a] to-[#1e293b]">
           <DestinationImage destination={trip.destination} query={`${trip.destination} travel landmark`} className="absolute inset-0 w-full h-full object-cover" alt={trip.destination} />
