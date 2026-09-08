@@ -2569,7 +2569,7 @@ const Viagens = () => {
                 </div>
 
                 {/* Checklist */}
-                <div>
+                <div ref={preparacaoHeaderRef}>
                   <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">✅ Checklist</h3>
                   <div className="space-y-4">
                     {['documentos', 'reservas', 'packing', 'pre-viagem'].map((category) => {
