@@ -148,6 +148,8 @@ const Viagens = () => {
   const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
   const [focusMapActivity, setFocusMapActivity] = useState<string | null>(null);
   const mapAnchorRef = useRef<HTMLDivElement | null>(null);
+  const roteiroActionRef = useRef<HTMLDivElement | null>(null);
+  const preparacaoHeaderRef = useRef<HTMLDivElement | null>(null);
   // Route legs reported by DailyRouteMap — the list reuses the map's OSRM
   // per-leg times instead of deriving its own. (Pin numbering flows the
   // other way: computed here from the day's list and passed down to the map.)
@@ -1621,6 +1623,25 @@ const Viagens = () => {
     if (!selectedTrip) return null;
     
     const currentDay = selectedTrip.days?.find((d) => d.day === selectedDay);
+    // Primeira atividade não-logística e não resolvida do dia visível —
+    // âncora da dica do Roteiro (pula se não houver / não estiver no DOM).
+    const firstActionableActivityId = (() => {
+      const isLogisticsActivity = (a: TripActivity) =>
+        a.isHeroItem ||
+        a.category === 'voo' ||
+        (a.category === 'hotel' &&
+          (a.name?.toLowerCase().includes('check-in') ||
+            a.name?.toLowerCase().includes('check-out'))) ||
+        a.name?.toLowerCase().includes('check-in aeroporto') ||
+        a.name?.toLowerCase().includes('transfer');
+      const a = (currentDay?.activities || []).find(
+        (x) =>
+          !isLogisticsActivity(x) &&
+          x.status !== 'confirmed' &&
+          x.status !== 'cancelled',
+      );
+      return a?.id ?? null;
+    })();
     const tripSeverity = selectedTrip.jetLagSeverity || 'BAIXO';
     const showJetLagAlert = selectedTrip.jetLagMode && (
       (tripSeverity === 'MODERADO' && selectedDay === 2) ||
@@ -1843,6 +1864,14 @@ const Viagens = () => {
           {activeTab === 'roteiro' && (
             <TabErrorBoundary tabName="Roteiro"><div className="animate-fade-in">
               <AgentTip agent="icarus" variant="compact" message={getIcarusRoteiro(selectedTrip, selectedDay)} />
+
+              <HintBalloon
+                area="roteiro"
+                arrow="up"
+                anchorRef={roteiroActionRef}
+                text="Confirmar marca o que você já reservou. Trocar sugere alternativas do catálogo."
+              />
+
 
               {/* Category Quick Filters */}
               <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide">
@@ -2273,7 +2302,10 @@ const Viagens = () => {
 
                             {/* Actions — max 2 buttons: Confirmar + Ver Ofertas */}
                             {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (
-                              <div className="flex gap-2 mt-3 flex-wrap">
+                              <div
+                                ref={activity.id === firstActionableActivityId ? roteiroActionRef : undefined}
+                                className="flex gap-2 mt-3 flex-wrap"
+                              >
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setConfirmModal({ isOpen: true, activity, dayIndex, actIndex }); }}
                                   className="flex items-center gap-1 px-3 py-1.5 bg-[#10b981] rounded-lg text-xs text-white hover:bg-[#10b981]/80 transition-colors"
@@ -2504,6 +2536,14 @@ const Viagens = () => {
               <div className="animate-fade-in space-y-6">
                 <AgentTip agent="hermes" variant="compact" message={getHermesPacking(selectedTrip)} />
 
+                <HintBalloon
+                  area="preparacao"
+                  arrow="up"
+                  anchorRef={preparacaoHeaderRef}
+                  text="O KINU monta sua lista de preparação — documentos, malas e lembretes."
+                />
+
+
                 {/* Readiness Score */}
                 <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -2529,7 +2569,7 @@ const Viagens = () => {
                 </div>
 
                 {/* Checklist */}
-                <div>
+                <div ref={preparacaoHeaderRef}>
                   <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">✅ Checklist</h3>
                   <div className="space-y-4">
                     {['documentos', 'reservas', 'packing', 'pre-viagem'].map((category) => {

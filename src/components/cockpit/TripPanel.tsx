@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Check, FileText, ChevronDown, ChevronUp, MapPin, ExternalLink, X } from 'lucide-react';
+import { HintBalloon } from '@/components/onboarding/HintBalloon';
 import { WeatherBadge } from './WeatherBadge';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
@@ -14,7 +15,7 @@ import { DestinationImage } from '@/components/shared/DestinationImage';
 import type { SavedTrip } from '@/types/trip';
 import { buildOfferLinks } from '@/lib/offersLinks';
 import { OffersModal } from '@/components/cockpit/OffersModal';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
@@ -417,6 +418,7 @@ function getTripCurrency(dest: string): string {
 }
 
 export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAuction, onNavigateTab, pendingConfirmRequest, onPendingConfirmHandled, exporterName }: TripPanelProps) => {
+  const summaryHeaderRef = useRef<HTMLDivElement | null>(null);
   const [showAllActions, setShowAllActions] = useState(false);
   const [dismissedNow, setDismissedNow] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -891,7 +893,13 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-4 mt-4">
           {/* 1. Header Premium with Hero Image */}
-      <div className="relative overflow-hidden rounded-2xl border border-border">
+      <HintBalloon
+        area="painel"
+        arrow="up"
+        anchorRef={summaryHeaderRef}
+        text="Seu centro de comando: tudo da viagem num lugar só."
+      />
+      <div ref={summaryHeaderRef} className="relative overflow-hidden rounded-2xl border border-border">
         {/* Hero banner image */}
         <div className="relative h-[150px] overflow-hidden bg-gradient-to-br from-[#0f172a] to-[#1e293b]">
           <DestinationImage destination={trip.destination} query={`${trip.destination} travel landmark`} className="absolute inset-0 w-full h-full object-cover" alt={trip.destination} />

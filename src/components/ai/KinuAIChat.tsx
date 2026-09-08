@@ -6,6 +6,7 @@ import { KinuAIMessage } from "./KinuAIMessage";
 import { KinuQuickActions } from "./KinuQuickActions";
 import { KinuEmergencyActions } from "./KinuEmergencyActions";
 import { KinuTypingIndicator } from "./KinuTypingIndicator";
+import { HintBalloon } from "@/components/onboarding/HintBalloon";
 
 export function KinuAIChat() {
   const {
@@ -141,6 +142,12 @@ export function KinuAIChat() {
             </div>
 
             {/* Input */}
+            <HintBalloon
+              area="kinu_chat"
+              arrow="down"
+              anchorRef={inputRef as unknown as { current: HTMLElement | null }}
+              text="Fale comigo como falaria com um amigo que entende de viagem."
+            />
             <form
               onSubmit={handleSubmit}
               className="p-4 border-t border-[#334155] bg-[#1E293B]"
