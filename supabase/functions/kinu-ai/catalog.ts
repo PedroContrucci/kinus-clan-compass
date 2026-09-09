@@ -1,6 +1,6 @@
 // GERADO por scripts/build-kinu-catalog.ts — NÃO EDITAR À MÃO.
 // Fonte: src/data/destinationActivities.ts + src/data/curatedHotels.ts
-// 21 cidades · 893 atividades · 68 hotéis
+// 21 cidades · 901 atividades · 68 hotéis
 //
 // Este arquivo é o que permite ao KINU responder sobre uma cidade curada SEM viagem
 // ativa e SEM o front ter adivinhado a cidade na mensagem. Ele viaja com o deploy da
@@ -662,6 +662,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Artesanato de qualidade superior, com curadoria · Peças mais autênticas que a Feirinha turística"
       },
       {
+        "name": "Cemoara",
+        "category": "lunch",
+        "neighborhood": "Meireles",
+        "costBRL": 180,
+        "tip": "Frutos do mar de décadas na divisa Meireles/Aldeota — peixada e camarão no coco"
+      },
+      {
         "name": "Coco Bambu Beira-Mar",
         "category": "lunch",
         "neighborhood": "Meireles",
@@ -709,6 +716,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Meireles",
         "costBRL": 0,
         "tip": "Feira de artesanato tradicional no calçadão, todos os dias a partir do fim da tarde · Rendas, redes e castanha — melhor lugar para lembranças"
+      },
+      {
+        "name": "Giz Cozinha Afetiva",
+        "category": "lunch",
+        "neighborhood": "Meireles",
+        "costBRL": 150,
+        "tip": "Cozinha afetiva autoral — almoço tranquilo perto da Beira-Mar"
       },
       {
         "name": "Pôr do sol e noite na Ponte dos Ingleses",
@@ -772,6 +786,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Praia de Iracema",
         "costBRL": 0,
         "tip": "Caminhada histórica com a estátua de Iracema e vista do mar · A Ponte dos Ingleses é o point do pôr do sol"
+      },
+      {
+        "name": "Recanto Praiano",
+        "category": "lunch",
+        "neighborhood": "Praia de Iracema",
+        "costBRL": 120,
+        "tip": "Peixada cearense honesta perto da Ponte dos Ingleses"
       },
       {
         "name": "Boteco Praia",
@@ -3728,6 +3749,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "As antigas masmorras viradas lojinhas de artesanato — souvenir com história e sombra"
       },
       {
+        "name": "Café del Mural",
+        "category": "breakfast",
+        "neighborhood": "Getsemaní",
+        "costBRL": 50,
+        "tip": "Café de especialidade colombiano com método na mesa"
+      },
+      {
         "name": "Café Havana (salsa)",
         "category": "night",
         "neighborhood": "Getsemaní",
@@ -3784,6 +3812,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Sacadas floridas, praças e as palenqueras de frutas — o cartão-postal vivo · Foto com palenquera: combine e PAGUE (é o trabalho delas); calçadas de pedra = carrinho de bebê sofre, prefira canguru"
       },
       {
+        "name": "La Cocina de Pepina",
+        "category": "lunch",
+        "neighborhood": "Getsemaní",
+        "costBRL": 140,
+        "tip": "Cozinha das avós do Caribe colombiano — mote de queso e posta negra"
+      },
+      {
         "name": "Crepes & Waffles",
         "category": "breakfast",
         "neighborhood": "Bocagrande",
@@ -3803,6 +3838,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Getsemaní",
         "costBRL": 70,
         "tip": "Pizza napolitana honesta em Getsemaní — o coringa quando as crianças pedem \"comida normal\""
+      },
+      {
+        "name": "El Barón Café & Liquor Bar",
+        "category": "dinner",
+        "neighborhood": "Centro Histórico",
+        "costBRL": 180,
+        "tip": "Jantar leve + coquetelaria na Plaza San Pedro — pede mesa na praça"
       },
       {
         "name": "Época Espresso Bar",
@@ -3840,11 +3882,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Jantar na praça mais charmosa — as crianças correm na praça enquanto os pratos chegam · A fórmula mágica de jantar com filhos pequenos: praça + mesa externa"
       },
       {
+        "name": "La Mulata",
+        "category": "lunch",
+        "neighborhood": "Centro Histórico",
+        "costBRL": 90,
+        "tip": "Almoço caribenho de bandeja — chegue antes do meio-dia, a fila do executivo é real"
+      },
+      {
         "name": "Mar y Zielo",
         "category": "dinner",
         "neighborhood": "Centro Histórico",
         "costBRL": 160,
         "tip": "Frutos do mar contemporâneos com rooftop — impressiona sem formalidade"
+      },
+      {
+        "name": "María",
+        "category": "dinner",
+        "neighborhood": "San Diego",
+        "costBRL": 260,
+        "tip": "Contemporâneo elegante no Centro — reserve"
       },
       {
         "name": "Caminhada pelas Muralhas",
@@ -3915,6 +3971,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Centro Histórico",
         "costBRL": 40,
         "tip": "O café premiado da Colômbia com degustação guiada — os pais agradecem · Peça o cold brew se o calor já tiver chegado"
+      },
+      {
+        "name": "Café Stepping Stone",
+        "category": "breakfast",
+        "neighborhood": "Getsemaní",
+        "costBRL": 60,
+        "tip": "Brunch australiano com projeto social — emprega jovens locais"
       },
       {
         "name": "Passeio de barco ao pôr do sol na baía",
@@ -6222,13 +6285,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Porto (docas)",
         "costBRL": 190,
         "tip": "Taverna de frutos do mar escondida no porto de trabalho · Lagostas e ostras sem frescura desde 1989"
-      },
-      {
-        "name": "Península do Cabo: pinguins de Boulders e Cabo da Boa Esperança",
-        "category": "morning",
-        "neighborhood": "Simon's Town/Cape Point",
-        "costBRL": 320,
-        "tip": "A colônia de pinguins-africanos a metros de você — as crianças piram · Chapman's Peak Drive é a estrada cênica do caminho"
       },
       {
         "name": "The Pot Luck Club",

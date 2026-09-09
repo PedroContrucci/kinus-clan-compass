@@ -51,7 +51,6 @@ const PAGE = 1000;
 const DAY_OCCUPANCY: Record<string, 'full' | 'half'> = {
   'bkk-ayutthaya': 'full',
   'bkk-mercado-flutuante': 'half',
-  'cpt-peninsula': 'full',
   'cpt-robben-island': 'half',
   'cpt-table-mountain': 'half',
   'ist-ilhas-principes': 'full',
