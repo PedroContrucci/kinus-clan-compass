@@ -8,10 +8,11 @@
 //   onboarding_welcome_seen : boolean — welcome mostrado/dispensado
 //   onboarding_checklist_done : boolean — primeira viagem ativada (some pra sempre)
 //
-// Eventos: tabela `events` do kinu-beta, fire-and-forget. Nunca lança,
-// nunca bloqueia UI.
+// Eventos: tabela `events` do kinu-beta pelo emissor único de `lib/kinuEvents.ts`
+// (fire-and-forget, anel local como rede). Nunca lança, nunca bloqueia UI.
 
 import { kinuBeta } from '@/integrations/kinu-beta/client';
+import { trackEvent, type EventProps } from '@/lib/kinuEvents';
 
 export type OnboardingPrefs = {
   onboarding_welcome_seen?: boolean;
@@ -102,29 +103,20 @@ export type OnboardingEvent =
   | 'onboarding.guide_reset';
 
 /**
- * Fire-and-forget. O esqueleto da tabela `events` do kinu-beta não é tipado
- * aqui, então tentamos os formatos plausíveis em ordem e desistimos em
- * silêncio — telemetria jamais derruba a tela.
+ * Fire-and-forget, agora pelo emissor único (`lib/kinuEvents.ts`).
+ *
+ * O que havia aqui antes tentava três formatos de coluna em ordem
+ * (`type/payload`, `event_type/data`, `name/properties`) porque o schema da tabela
+ * `events` não era conhecido. Com o schema lido do PostgREST — `(user_id, name, props)` —
+ * ficou claro que NENHUM dos três casava: esta telemetria nunca gravou uma linha. Um
+ * formato só, o certo, e o anel local segurando o que não for aceito.
+ *
+ * A assinatura fica: os 7 pontos de chamada (Dashboard, Conta, HintBalloon) não mudam.
  */
 export function trackOnboarding(
   event: OnboardingEvent,
   userId?: string,
   payload: Record<string, unknown> = {}
 ): void {
-  const shapes: Record<string, unknown>[] = [
-    { user_id: userId, type: event, payload },
-    { user_id: userId, event_type: event, data: payload },
-    { user_id: userId, name: event, properties: payload },
-  ];
-
-  void (async () => {
-    for (const row of shapes) {
-      try {
-        const { error } = await kinuBeta.from('events').insert(row as any);
-        if (!error) return;
-      } catch {
-        /* tenta o próximo formato */
-      }
-    }
-  })();
+  trackEvent(event, payload as EventProps, userId);
 }

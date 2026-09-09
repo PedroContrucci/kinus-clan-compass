@@ -33,7 +33,13 @@ export interface AccommodationLike {
   status?: string;
   mealPlan?: string;
   curatedHotelId?: string;
+  /** Quem escolheu este hotel. Vai por fora do tipo, como `curatedHotelId` e `mealPlan`.
+   *  Ausente nas viagens nascidas antes deste arco — ver `hotelChoiceLabel`. */
+  chosenBy?: HotelChoiceAuthor;
 }
+
+/** `'kinu'` = gerador (curado ou HOTEL_RECOMMENDATIONS); `'user'` = troca no modal/ficha. */
+export type HotelChoiceAuthor = 'kinu' | 'user';
 
 export interface FinanceBucketLike {
   planned?: number;
@@ -76,7 +82,33 @@ export interface RankedHotel {
   score: number;
   /** É o hotel que a viagem já tem? Verdadeiro em ~8% dos casos (ver cabeçalho). */
   isCurrent: boolean;
+  /** Por que este hotel casa com esta viagem — uma entrada por parcela do `score`. */
+  reasons: HotelReason[];
 }
+
+/** Cada motivo corresponde a UMA parcela do score. Sem parcela não há motivo, e vice-versa. */
+export type HotelReasonKind = 'tier' | 'tier-resort' | 'persona' | 'zone' | 'rating';
+
+export interface HotelReason {
+  kind: HotelReasonKind;
+  /** Texto pronto para a UI, em pt-BR. */
+  label: string;
+}
+
+/** Tier da curadoria -> português. Exportado porque bloco, modal e ficha leem o MESMO
+ *  dicionário: duas cópias é como "Conforto" viraria "mid" em uma das telas. */
+export const TIER_LABEL: Record<string, string> = {
+  budget: 'Econômico',
+  mid: 'Conforto',
+  upscale: 'Alto padrão',
+  resort: 'Resort',
+};
+
+export const PERSONA_LABEL: Record<string, string> = {
+  family: 'família',
+  couple: 'casal',
+  solo: 'solo',
+};
 
 /** Impacto de uma troca no orçamento planejado, para a UI mostrar antes de aplicar. */
 export interface SwapImpact {
@@ -144,6 +176,14 @@ export function personaOfTrip(trip: Pick<SwapTripLike, 'travelers'> | null | und
   return 'couple';
 }
 
+/** Busca no Maps pelo nome COM a zona e a cidade — hotel homônimo em outro país é o erro
+ *  comum de um link só com o nome ("Novotel" tem 500). Vive aqui, e não no componente,
+ *  para o lint de fast-refresh não brigar com um util exportado de um arquivo de UI. */
+export function hotelMapsUrl(hotel: Pick<CuratedHotel, 'name' | 'zone'>, city: string): string {
+  const query = [hotel.name, hotel.zone, city].filter(Boolean).join(', ');
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
 /** Nome do hotel sem o sufixo " — Bairro, Cidade" que o gerador acrescenta. */
 export function baseHotelName(name: string | undefined | null): string {
   return String(name ?? '').split('—')[0].trim();
@@ -174,6 +214,14 @@ export function getCuratedHotelsForCity(city: string | undefined | null): Curate
 /**
  * Ordena os curados da cidade por afinidade com a viagem:
  * tier igual primeiro, depois persona, depois a zona ideal, rating no desempate.
+ *
+ * Devolve também o PORQUÊ (`reasons`) de cada hotel. Regra que este arco se impõe: nenhum
+ * motivo tem condição própria — cada um nasce na mesma linha que soma a parcela do score.
+ * Motivo sem parcela seria o produto inventando afinidade; parcela sem motivo seria o
+ * produto escondendo o critério. `hotelReasons.test.ts` trava as duas pontas nos 68 hotéis.
+ *
+ * A ordem dos motivos é FIXA (tier → persona → zona → nota), não a ordem de descoberta:
+ * bloco, modal e ficha precisam ler igual.
  */
 export function rankHotelsForTrip(
   city: string | undefined | null,
@@ -191,22 +239,41 @@ export function rankHotelsForTrip(
   return hotels
     .map((hotel) => {
       let score = 0;
-      if (hotel.tier === tier) score += 100;
-      // 'resort' atende quem pediu acima de budget, mas nunca ganha do tier exato.
-      else if (hotel.tier === 'resort' && tier !== 'budget') score += 40;
+      const reasons: HotelReason[] = [];
 
-      if (hotel.personaTags?.includes(persona)) score += 50;
+      if (hotel.tier === tier) {
+        score += 100;
+        reasons.push({ kind: 'tier', label: `tier ${TIER_LABEL[hotel.tier] ?? hotel.tier} ✓` });
+      }
+      // 'resort' atende quem pediu acima de budget, mas nunca ganha do tier exato.
+      else if (hotel.tier === 'resort' && tier !== 'budget') {
+        score += 40;
+        reasons.push({ kind: 'tier-resort', label: 'resort — atende acima do econômico' });
+      }
+
+      if (hotel.personaTags?.includes(persona)) {
+        score += 50;
+        reasons.push({ kind: 'persona', label: `perfil ${PERSONA_LABEL[persona] ?? persona} ✓` });
+      }
 
       const hz = hotel.zone?.toLowerCase() ?? '';
-      if (zoneName && hz && (hz.includes(zoneName) || zoneName.includes(hz))) score += 10;
+      if (zoneName && hz && (hz.includes(zoneName) || zoneName.includes(hz))) {
+        score += 10;
+        reasons.push({ kind: 'zone', label: `zona ideal ${idealZone?.neighborhood} ✓` });
+      }
 
-      score += Number(hotel.rating) || 0;
+      const rating = Number(hotel.rating) || 0;
+      if (rating > 0) {
+        score += rating;
+        reasons.push({ kind: 'rating', label: `nota ${hotel.rating}` });
+      }
 
       return {
         hotel,
         price: parsePriceRangeBRL(hotel.priceRangeBRL),
         score,
         isCurrent: sameHotel(hotel.name, currentName),
+        reasons,
       };
     })
     .sort((a, b) => b.score - a.score || a.hotel.name.localeCompare(b.hotel.name));
@@ -265,13 +332,51 @@ export function pickCuratedHotelForTrip(
 export function curatedAccommodationFields(
   hotel: CuratedHotel,
   fallback?: { description?: string; stars?: number },
-): Pick<AccommodationLike, 'name' | 'neighborhood' | 'description' | 'stars' | 'curatedHotelId'> {
+  /** Autoria da escolha. Obrigatório de propósito: é o dado que impede o bloco de dizer
+   *  "Escolhido porque" sobre um hotel que o próprio usuário escolheu. */
+  chosenBy: HotelChoiceAuthor = 'kinu',
+): Pick<
+  AccommodationLike,
+  'name' | 'neighborhood' | 'description' | 'stars' | 'curatedHotelId' | 'chosenBy'
+> {
   return {
     name: hotel.name,
     neighborhood: hotel.zone,
     description: hotel.tips?.[0] ?? fallback?.description ?? '',
     stars: TIER_STARS[hotel.tier] ?? (Number(fallback?.stars) || 4),
     curatedHotelId: hotel.id,
+    chosenBy,
+  };
+}
+
+/**
+ * O rótulo honesto do bloco de hospedagem — e a razão de `chosenBy` existir.
+ *
+ * "Escolhido porque:" sobre um hotel que o USUÁRIO escolheu atribui ao KINU uma decisão
+ * que não foi dele. É pequeno e é exatamente o tipo de mentira que a regra de produto
+ * deste arco existe para não contar.
+ *
+ * Viagens nascidas antes deste arco não têm `chosenBy`. Para elas, a heurística: se o hotel
+ * atual é o que `pickCuratedHotelForTrip` escolheria hoje, foi o KINU; senão, foi o usuário.
+ * `inferred: true` marca esse caso — é dedução, não registro, e quem chama pode querer saber.
+ */
+export function hotelChoiceLabel(
+  city: string | undefined | null,
+  trip: SwapTripLike | null | undefined,
+): { author: HotelChoiceAuthor; label: string; inferred: boolean } {
+  const acc = trip?.accommodation;
+  const recorded = acc?.chosenBy;
+
+  const author: HotelChoiceAuthor = recorded
+    ? recorded
+    : sameHotel(pickCuratedHotelForTrip(city, trip)?.name, acc?.name)
+      ? 'kinu'
+      : 'user';
+
+  return {
+    author,
+    label: author === 'kinu' ? 'Escolhido porque:' : 'Sua escolha · combina porque:',
+    inferred: !recorded,
   };
 }
 
@@ -309,8 +414,9 @@ export function applyHotelSwap<T extends SwapTripLike>(trip: T, hotel: CuratedHo
     ...acc,
     id: acc.id ?? 'hotel-main',
     // Nome, zona, tip, estrelas e proveniência saem do mesmo helper que o gerador
-    // usa — é o que impede troca e criação de divergirem.
-    ...curatedAccommodationFields(hotel, { description: acc.description, stars: acc.stars }),
+    // usa — é o que impede troca e criação de divergirem. A autoria é a única coisa
+    // que difere: aqui quem escolheu foi o usuário, e o bloco vai dizer isso.
+    ...curatedAccommodationFields(hotel, { description: acc.description, stars: acc.stars }, 'user'),
     nightlyRate,
     totalNights: nights,
     totalPrice,

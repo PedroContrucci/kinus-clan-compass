@@ -14,22 +14,12 @@ import {
   baseHotelName,
   tierOfTrip,
   personaOfTrip,
+  TIER_LABEL,
+  PERSONA_LABEL,
   type RankedHotel,
   type SwapTripLike,
 } from '@/lib/hotelSwap';
-
-const TIER_LABEL: Record<string, string> = {
-  budget: 'Econômico',
-  mid: 'Conforto',
-  upscale: 'Alto padrão',
-  resort: 'Resort',
-};
-
-const PERSONA_LABEL: Record<string, string> = {
-  family: 'família',
-  couple: 'casal',
-  solo: 'solo',
-};
+import { trackEvent } from '@/lib/kinuEvents';
 
 const brl = (n: number) => `R$ ${Math.round(n).toLocaleString('pt-BR')}`;
 
@@ -41,9 +31,14 @@ interface HotelSwapModalProps {
   onSelect: (hotel: CuratedHotel) => void;
   /** Caminho externo das cidades sem curadoria — o "Buscar Hotel" que já existe. */
   onOpenOffers?: () => void;
+  /**
+   * Abre a ficha do hotel. Quando não vem — `TripPanel` e `DraftCockpit`, que abrem este
+   * modal por conta própria —, a linha segue selecionando no toque, como sempre fez.
+   */
+  onOpenDetail?: (hotel: CuratedHotel) => void;
 }
 
-export const HotelSwapModal = ({ open, onClose, trip, onSelect, onOpenOffers }: HotelSwapModalProps) => {
+export const HotelSwapModal = ({ open, onClose, trip, onSelect, onOpenOffers, onOpenDetail }: HotelSwapModalProps) => {
   const [pending, setPending] = useState<CuratedHotel | null>(null);
 
   const city = String(trip?.destination ?? '');
@@ -58,15 +53,27 @@ export const HotelSwapModal = ({ open, onClose, trip, onSelect, onOpenOffers }: 
 
   const impact = pending && trip ? previewSwapImpact(trip, pending) : null;
 
+  /** `from` é lido ANTES da troca — depois dela o nome atual já é o novo. */
+  const trackSwap = (hotel: CuratedHotel) => {
+    trackEvent('hotel.swapped', {
+      from: currentName,
+      to: hotel.name,
+      city,
+      surface: 'modal',
+    });
+  };
+
   const handlePick = (hotel: CuratedHotel) => {
     // Trocar um hotel confirmado desfaz a confirmação: pede um segundo toque.
     if (confirmed) return setPending(hotel);
+    trackSwap(hotel);
     onSelect(hotel);
     onClose();
   };
 
   const confirmPending = () => {
     if (!pending) return;
+    trackSwap(pending);
     onSelect(pending);
     setPending(null);
     onClose();
@@ -116,7 +123,13 @@ export const HotelSwapModal = ({ open, onClose, trip, onSelect, onOpenOffers }: 
               </h3>
               <div className="space-y-2">
                 {ranked.map((r, i) => (
-                  <HotelRow key={r.hotel.id} ranked={r} recommended={i === 0} onPick={handlePick} />
+                  <HotelRow
+                    key={r.hotel.id}
+                    ranked={r}
+                    recommended={i === 0}
+                    onPick={handlePick}
+                    onOpenDetail={onOpenDetail}
+                  />
                 ))}
               </div>
             </section>
@@ -184,28 +197,11 @@ export const HotelSwapModal = ({ open, onClose, trip, onSelect, onOpenOffers }: 
   );
 };
 
-function HotelRow({
-  ranked,
-  recommended,
-  onPick,
-}: {
-  ranked: RankedHotel;
-  recommended: boolean;
-  onPick: (h: CuratedHotel) => void;
-}) {
-  const { hotel, price, isCurrent } = ranked;
+function RowBody({ ranked, recommended }: { ranked: RankedHotel; recommended: boolean }) {
+  const { hotel, price, isCurrent, reasons } = ranked;
 
   return (
-    <button
-      type="button"
-      disabled={isCurrent}
-      onClick={() => onPick(hotel)}
-      className={`w-full text-left rounded-xl border p-3 transition-colors ${
-        isCurrent
-          ? 'border-emerald-500/40 bg-emerald-500/5 cursor-default'
-          : 'border-border hover:border-purple-500/40 hover:bg-purple-500/5'
-      }`}
-    >
+    <>
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium text-foreground">{hotel.name}</p>
         {isCurrent ? (
@@ -236,10 +232,86 @@ function HotelRow({
         )}
       </p>
 
+      {/* Os motivos são o mesmo `reasons[]` do bloco do roteiro: é aqui que o usuário
+          compara, e comparar sem o critério na frente é escolher no escuro. */}
+      {reasons.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-1.5">
+          {reasons.map((r) => (
+            <span
+              key={r.kind}
+              className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25"
+            >
+              {r.label}
+            </span>
+          ))}
+        </div>
+      )}
+
       {hotel.tips?.[0] && (
         <p className="text-[11px] text-muted-foreground mt-1.5 italic">{hotel.tips[0]}</p>
       )}
-    </button>
+    </>
+  );
+}
+
+function HotelRow({
+  ranked,
+  recommended,
+  onPick,
+  onOpenDetail,
+}: {
+  ranked: RankedHotel;
+  recommended: boolean;
+  onPick: (h: CuratedHotel) => void;
+  onOpenDetail?: (h: CuratedHotel) => void;
+}) {
+  const { hotel, isCurrent } = ranked;
+  const frame = isCurrent
+    ? 'border-emerald-500/40 bg-emerald-500/5'
+    : 'border-border hover:border-purple-500/40 hover:bg-purple-500/5';
+
+  // Sem ficha: a linha inteira é o botão de escolher, exatamente como antes.
+  if (!onOpenDetail) {
+    return (
+      <button
+        type="button"
+        disabled={isCurrent}
+        onClick={() => onPick(hotel)}
+        className={`w-full text-left rounded-xl border p-3 transition-colors ${frame} ${
+          isCurrent ? 'cursor-default' : ''
+        }`}
+      >
+        <RowBody ranked={ranked} recommended={recommended} />
+      </button>
+    );
+  }
+
+  // Com ficha: dois destinos no mesmo cartão. Botão dentro de botão não existe em HTML,
+  // então a moldura é uma div e cada afordância tem o seu próprio <button>.
+  return (
+    <div className={`rounded-xl border transition-colors ${frame}`}>
+      <button
+        type="button"
+        onClick={() => onOpenDetail(hotel)}
+        className="w-full text-left p-3"
+        aria-label={`Ver detalhes de ${hotel.name}`}
+      >
+        <RowBody ranked={ranked} recommended={recommended} />
+      </button>
+      <div className="flex justify-end border-t border-border/60 px-3 py-2">
+        {isCurrent ? (
+          <span className="text-[11px] font-semibold text-emerald-400">é o seu hotel</span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onPick(hotel)}
+            className="text-[11px] font-semibold text-purple-300 hover:text-purple-200"
+          >
+            Escolher este
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 

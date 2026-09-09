@@ -45,6 +45,8 @@ import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
 import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
 import { HintBalloon } from '@/components/onboarding/HintBalloon';
+import { HotelPlanBlock } from '@/components/hotel/HotelPlanBlock';
+import { applyHotelSwap } from '@/lib/hotelSwap';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 
@@ -1865,6 +1867,18 @@ const Viagens = () => {
           {activeTab === 'roteiro' && (
             <TabErrorBoundary tabName="Roteiro"><div className="animate-fade-in">
               <AgentTip agent="icarus" variant="compact" message={getIcarusRoteiro(selectedTrip, selectedDay)} />
+
+              {/* O hotel com o porquê e a porta de saída, no topo do roteiro: hospedagem
+                  é a moldura da viagem inteira, não um evento do dia do check-in. */}
+              <HotelPlanBlock
+                trip={selectedTrip}
+                onSelectHotel={(hotel) => handleUpdateTrip((t) => applyHotelSwap(t, hotel))}
+                onOpenOffers={() => setOffersModal({
+                  isOpen: true,
+                  activityName: 'Hospedagem',
+                  activityDate: String(selectedTrip.startDate || '').slice(0, 10),
+                })}
+              />
 
               <HintBalloon
                 area="roteiro"

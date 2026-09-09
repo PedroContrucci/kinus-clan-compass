@@ -210,16 +210,24 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
     // entra por fora do tipo, como `mealPlan` já entrava (recon §4.6).
     accommodation: {
       id: 'hotel-main',
+      // `chosenBy: 'kinu'` nos DOIS caminhos: curado ou HOTEL_RECOMMENDATIONS, quem
+      // escolheu foi o app. É o que autoriza o bloco do roteiro a dizer "Escolhido
+      // porque" sem mentir — e a NÃO dizer isso depois que o usuário trocar.
       ...(curatedHotel
-        ? curatedAccommodationFields(curatedHotel, {
-            description: hotelRec?.whyGood || idealZone?.whyGood || '',
-            stars: hotelRec?.stars,
-          })
+        ? curatedAccommodationFields(
+            curatedHotel,
+            {
+              description: hotelRec?.whyGood || idealZone?.whyGood || '',
+              stars: hotelRec?.stars,
+            },
+            'kinu',
+          )
         : {
             name: hotelName,
             neighborhood: hotelRec?.neighborhood || idealZone?.neighborhood || '',
             description: hotelRec?.whyGood || idealZone?.whyGood || '',
             stars: hotelRec?.stars || (priceLevel === 'luxury' ? 5 : priceLevel === 'midrange' ? 4 : 3),
+            chosenBy: 'kinu' as const,
           }),
       checkIn: addDays(input.departureDate, arrivalDaysLater).toISOString(),
       checkOut: input.returnDate.toISOString(),

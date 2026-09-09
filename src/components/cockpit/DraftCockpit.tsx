@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { FlightSelectionStage, FlightOption, SelectedFlight } from './FlightSelectionStage';
 import { GeneratedItineraryStage } from './GeneratedItineraryStage';
 import { HotelSwapModal } from '@/components/hotel/HotelSwapModal';
+import { HotelPlanBlock } from '@/components/hotel/HotelPlanBlock';
 import { applyHotelSwap, type SwapTripLike, type AccommodationLike } from '@/lib/hotelSwap';
 import type { StoredTrip } from '@/lib/tripStore';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
@@ -597,6 +598,12 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip }
       <>
         <DraftStepper trip={trip} currentStage={stage} onChange={setStage} onSwapHotel={() => setHotelSwapOpen(true)} />
       {hotelSwapModal}
+        {/* O hotel no roteiro do rascunho: mesmo bloco da viagem ativa, com o porquê e a
+            porta de saída. Fica ACIMA do estágio de propósito — o gerador não é tocado. */}
+        <HotelPlanBlock
+          trip={trip as SwapTripLike}
+          onSelectHotel={(hotel) => onUpdateTrip?.((t) => applyHotelSwap(t, hotel))}
+        />
         <GeneratedItineraryStage
           tripId={trip.id}
           destination={trip.destination}

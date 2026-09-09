@@ -94,6 +94,19 @@ describe('troca de hotel sobrevive ao storage', () => {
     expect((norm.accommodation as AccommodationLike).curatedHotelId).toBe(escolhido.id);
   });
 
+  it("grava a autoria 'user' e ela sobrevive ao reload e ao normalizador", () => {
+    // Sem este campo, o bloco do roteiro diria "Escolhido porque" sobre um hotel que o
+    // usuário escolheu — a mentirinha que a regra de transparência existe para evitar.
+    const id = newTripId();
+    addTrip(baseTrip(id));
+
+    updateTrip(id, (t) => applyHotelSwap(t, CARTAGENA[3]));
+
+    expect((getTrip(id)!.accommodation as AccommodationLike).chosenBy).toBe('user');
+    const norm = normalizeTrip(JSON.parse(localStorage.getItem(TRIPS_KEY)!)[0]);
+    expect((norm.accommodation as AccommodationLike).chosenBy).toBe('user');
+  });
+
   it('não toca nas outras viagens do array', () => {
     const a = newTripId();
     const b = newTripId();
