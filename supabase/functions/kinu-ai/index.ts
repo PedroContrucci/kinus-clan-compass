@@ -2,6 +2,11 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsGate } from "../_shared/http.ts";
 import { shadowIdentify, shadowHeader } from "../_shared/verifyKinuBetaJwt.ts";
 import { recordRequest } from "../_shared/telemetry.ts";
+// Catálogo curado das 21 cidades, gerado por scripts/build-kinu-catalog.ts e
+// deployado junto com esta function. É o que permite responder sobre uma cidade
+// curada sem viagem ativa e sem o front ter adivinhado a cidade na mensagem.
+// Import de módulo local: nenhuma rede, nenhum segredo, nenhuma leitura de banco.
+import { CATALOG, CATALOG_INDEX } from "./catalog.ts";
 
 function sanitizeUrl(url: string): string {
   return url
@@ -61,9 +66,11 @@ MODO DESCOBERTA: você precisa descobrir, NESTA ordem de prioridade, o que ainda
 
 ESCOPO DA CONVERSA: Se houver uma viagem ativa, ela é CONTEXTO para enriquecer respostas — NUNCA uma limitação. Responda normalmente perguntas sobre qualquer destino ou tema de viagem, mesmo que não tenha relação direta com a viagem ativa. Nunca recuse uma pergunta apenas porque foge do destino atual.
 
-⚠️ REGRA ABSOLUTA DE VERACIDADE: ao citar lugares específicos (praias, restaurantes, atrações, mercados), use EXCLUSIVAMENTE os do CATÁLOGO CURADO quando ele for fornecido. É PROIBIDO inventar nomes de estabelecimentos ou atrações, e PROIBIDO afirmar características que você não pode garantir (condições do mar, pratos servidos, horários). Se o catálogo curado não cobrir a cidade perguntada, limite-se a orientações genéricas (bairros, categorias, logística, segurança) e deixe claro que são informações gerais. Nesse caso, diga que esse destino ainda 'chega em breve ao KINU' e, quando fizer sentido, sugira uma cidade do catálogo curado como alternativa disponível — SEMPRE rotulada como alternativa, nunca como se atendesse ao que foi pedido (ver REGRA DE RECORTE HONESTO). NUNCA convide a criar uma viagem no KINU para uma cidade que não esteja na lista de DESTINOS DISPONÍVEIS. SEGURANÇA: NUNCA afirme que um mar/praia é calmo, seguro ou apropriado para crianças por conta própria — condições de segurança só podem ser mencionadas se estiverem LITERALMENTE escritas nas tips do catálogo, e devem ser reproduzidas fielmente (incluindo avisos ⚠️). Na dúvida, recomende verificar condições locais. Quebrar esta regra destrói a confiança no produto.
+⚠️ REGRA ABSOLUTA DE VERACIDADE: ao citar lugares específicos (praias, restaurantes, atrações, mercados), use EXCLUSIVAMENTE os do CATÁLOGO CURADO quando ele for fornecido. É PROIBIDO inventar nomes de estabelecimentos ou atrações, e PROIBIDO afirmar características que você não pode garantir (condições do mar, pratos servidos, horários). Se a cidade perguntada NÃO ESTIVER na lista de DESTINOS DISPONÍVEIS, limite-se a orientações genéricas (bairros, categorias, logística, segurança) e deixe claro que são informações gerais. Nesse caso, diga que esse destino ainda 'chega em breve ao KINU' e, quando fizer sentido, sugira uma cidade do catálogo curado como alternativa disponível — SEMPRE rotulada como alternativa, nunca como se atendesse ao que foi pedido (ver REGRA DE RECORTE HONESTO). NUNCA convide a criar uma viagem no KINU para uma cidade que não esteja na lista de DESTINOS DISPONÍVEIS. SEGURANÇA: NUNCA afirme que um mar/praia é calmo, seguro ou apropriado para crianças por conta própria — condições de segurança só podem ser mencionadas se estiverem LITERALMENTE escritas nas tips do catálogo, e devem ser reproduzidas fielmente (incluindo avisos ⚠️). Na dúvida, recomende verificar condições locais. Quebrar esta regra destrói a confiança no produto.
 
 ⚠️ REGRA DE RECORTE HONESTO (PEDIDO POR REGIÃO, PAÍS OU TEMA): quando o usuário nomeia um recorte — uma região ("Caribe", "Europa"), um país, ou um tema ("neve", "deserto", "praia") — a sua PRIMEIRA frase é o recorte honesto do catálogo: quais DESTINOS DISPONÍVEIS realmente pertencem àquele recorte, e quantos são. Exemplo: "no catálogo verificado, do Caribe eu tenho uma: Cartagena". Se o recorte tiver ZERO destinos, diga isso com todas as letras ANTES de qualquer outra coisa: "de neve garantida eu não tenho nenhum no catálogo hoje". SÓ DEPOIS de entregar o recorte, e só se fizer sentido, ofereça alternativas de fora dele — e SEMPRE marcadas como fora, com a palavra "fora" ou equivalente: "se o ponto é praia quente, FORA do Caribe eu tenho Fortaleza e Porto Seguro". É PROIBIDO misturar destinos de dentro e de fora do recorte na mesma lista, sem separação, como se todos atendessem ao pedido — responder "Caribe" com Rio de Janeiro, Salvador e Cartagena lado a lado é exatamente o erro que esta regra existe para impedir. Na dúvida sobre se uma cidade pertence ao recorte, ela fica FORA: recorte estreito e honesto vale mais que recorte largo e errado. Esta regra vale inclusive no MODO DESCOBERTA e antes de qualquer sugerir_destinos.
+
+⚠️ REGRA DE CATÁLOGO SOB DEMANDA: toda cidade da lista DESTINOS DISPONÍVEIS TEM catálogo curado — sempre, mesmo que o bloco CATÁLOGO CURADO desta conversa não fale dela e mesmo que o usuário não tenha viagem nenhuma no app. O usuário pode ter parente na cidade, estar de passagem, ou só ter curiosidade: ele não precisa ter planejado nada no KINU para você responder. O bloco do contexto é uma CONVENIÊNCIA, não é o inventário. É PROIBIDO dizer que uma cidade da lista "não está no catálogo curado", "ainda não tem curadoria" ou "chega em breve ao KINU" — para as cidades da lista isso é FALSO e destrói a confiança no produto. Quando precisar falar de lugares de uma cidade da lista e não tiver o bloco dela, diga que vai buscar ("essa eu tenho — deixa eu puxar o catálogo") e CHAME consultar_catalogo. Só depois de a ferramenta responder que a cidade NÃO É CURADA você pode dizer que não há curadoria. "Chega em breve ao KINU" vale exclusivamente para cidade FORA da lista DESTINOS DISPONÍVEIS.
 
 ⚠️ REGRA DE TRANSPARÊNCIA DE CONTEXTO: o bloco <trip_context> vem do APP, não da boca do usuário — ele pode nunca ter dito nada daquilo, e o dado pode estar desatualizado. Na PRIMEIRA vez que você usar um dado do <trip_context> numa resposta (destino, datas, viajantes, orçamento, estilo, hotel, interesses), declare de onde veio e abra a porta para correção, numa frase curta e leve: "considerando os 2 viajantes e o orçamento de R$ 8 mil que estão na sua viagem — me corrige se mudou". Declarado uma vez na conversa, pode usar à vontade sem repetir o aviso. É PROIBIDO apresentar dado do contexto como se o usuário tivesse dito ("você me falou que...", "como você disse..."), e é PROIBIDO afirmar dado que não esteja NEM no <trip_context> NEM na conversa.
 
@@ -221,6 +228,21 @@ const KINU_TOOLS = [
     },
   },
   {
+    name: "consultar_catalogo",
+    description:
+      "Busca o CATÁLOGO CURADO KINU de uma cidade — restaurantes, atrações e hotéis verificados pela curadoria. " +
+      "Use SEMPRE que for falar de lugares de uma cidade da lista DESTINOS DISPONÍVEIS cujo catálogo não esteja " +
+      "no contexto desta conversa, com ou sem viagem ativa. NUNCA diga que uma cidade da lista não tem catálogo " +
+      "sem antes chamar esta ferramenta. Não use quando o catálogo da cidade já estiver no contexto.",
+    input_schema: {
+      type: "object",
+      properties: {
+        cidade: { type: "string", description: "Nome da cidade (aceita sem acento e apelidos: 'Toquio', 'Rome', 'Rio')" },
+      },
+      required: ["cidade"],
+    },
+  },
+  {
     name: "consultar_lugares",
     description: "Busca lugares reais (restaurantes, atrações, serviços) em uma cidade via Google Places quando o catálogo curado não cobre a pergunta. Retorna os melhores candidatos com rating, volume de avaliações, faixa de preço e bairro para você CURAR a resposta.",
     input_schema: {
@@ -236,7 +258,7 @@ const KINU_TOOLS = [
 ];
 
 // Tools resolved entirely on the server (never sent to the client as proposed actions)
-const SERVER_RESOLVED_TOOLS = new Set(["consultar_lugares"]);
+const SERVER_RESOLVED_TOOLS = new Set(["consultar_lugares", "consultar_catalogo"]);
 
 async function resolveConsultarLugares(input: Record<string, unknown>): Promise<string> {
   try {
@@ -342,6 +364,114 @@ const CATALOG_SECTIONS: ReadonlyArray<readonly [string, string]> = [
   ["dinner", "🌙 JANTAR"],
   ["night", "🌃 NOITE"],
 ];
+
+interface CatalogRenderItem {
+  name: string;
+  category: string;
+  neighborhood: string;
+  costBRL: number | null;
+  tip: string;
+}
+
+interface CatalogRenderHotel {
+  name: string;
+  zone: string;
+  tier: string;
+  personaTags: string[];
+  priceRangeBRL: string;
+  tip: string;
+}
+
+// Montagem do bloco CATÁLOGO CURADO. Usada pelos DOIS caminhos — o catálogo que o
+// front injeta no body e o que a ferramenta consultar_catalogo puxa do artefato
+// local — para que o agente veja exatamente o mesmo formato nos dois casos.
+// O texto é idêntico, byte a byte, ao que esta function já produzia.
+function renderCuratedCatalog(
+  city: string,
+  items: CatalogRenderItem[],
+  hotels: CatalogRenderHotel[],
+): string {
+  if (items.length === 0) return "";
+
+  const renderLine = (i: CatalogRenderItem) =>
+    `- ${i.name} (${i.category}, ${i.neighborhood}${i.costBRL !== null ? `, R$${i.costBRL}` : ""})${i.tip ? ` — ${i.tip}` : ""}`;
+
+  // Agrupa por momento do dia: numa lista corrida de ~80 linhas o modelo tende a
+  // citar sempre os primeiros itens. Com cabeçalhos ele acha a seção certa para
+  // cada pergunta ("onde jantar?" -> 🌙 JANTAR).
+  const remaining = new Map(items.map((i, idx) => [idx, i]));
+  const sections: string[] = [];
+  for (const [key, label] of CATALOG_SECTIONS) {
+    const lines: string[] = [];
+    for (const [idx, i] of remaining) {
+      if (i.category.toLowerCase() === key) {
+        lines.push(renderLine(i));
+        remaining.delete(idx);
+      }
+    }
+    if (lines.length > 0) sections.push(`${label}\n${lines.join("\n")}`);
+  }
+  // Categoria desconhecida/vazia nunca é descartada silenciosamente.
+  if (remaining.size > 0) {
+    sections.push(`📍 OUTROS\n${[...remaining.values()].map(renderLine).join("\n")}`);
+  }
+
+  // 🏨 HOTÉIS CURADOS — seção final, quando a cidade tem curadoria de hotel.
+  if (hotels.length > 0) {
+    const hotelLines = hotels.map((h) => {
+      const meta = [h.zone, h.tier, h.priceRangeBRL, h.personaTags.join("/")]
+        .filter((p) => p.length > 0)
+        .join(", ");
+      return `- ${h.name}${meta ? ` (${meta})` : ""}${h.tip ? ` — ${h.tip}` : ""}`;
+    });
+    sections.push(
+      `🏨 HOTÉIS CURADOS\n` +
+        `Estes são os ÚNICOS hotéis que você pode recomendar em ${city} — nunca invente outro nome. ` +
+        `Recomende pela persona da viagem (família / casal / solo), usando as personas marcadas em cada hotel, ` +
+        `e respeite a faixa de preço do usuário. Sempre ofereça uma alternativa de troca DENTRO desta lista.\n` +
+        hotelLines.join("\n"),
+    );
+  }
+
+  return `\n\nCATÁLOGO CURADO KINU para ${city} — esta é sua FONTE DA VERDADE para recomendações específicas. Está agrupado por momento do dia: vá direto à seção que responde à pergunta e considere TODOS os itens dela, não só os primeiros.\n\n${sections.join("\n\n")}`;
+}
+
+/** minúsculo, sem diacríticos, espaços colapsados. Mesma normalização do gerador. */
+function normalizeCityKey(input: string): string {
+  return input
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// consultar_catalogo — resolve sobre o artefato local. Sem rede, sem I/O, síncrona.
+// "Cidade não curada" devolve uma frase explícita em vez de erro: é o que autoriza
+// o agente a dizer "não tenho essa" com base em fato, e não em bloco ausente.
+function resolveConsultarCatalogo(input: Record<string, unknown>): string {
+  const pedida = sanitizeText(input?.cidade, 60);
+  if (!pedida) {
+    return `CIDADE NÃO INFORMADA: chame consultar_catalogo passando o nome da cidade.`;
+  }
+
+  const canonical = CATALOG_INDEX[normalizeCityKey(pedida)];
+  const entry = canonical ? CATALOG[canonical] : undefined;
+
+  if (!entry) {
+    return (
+      `CIDADE NÃO CURADA: "${pedida}" não está entre os DESTINOS DISPONÍVEIS do KINU e não tem ` +
+      `catálogo curado. Aqui — e só aqui — vale dizer que esse destino ainda chega em breve ao ` +
+      `KINU, e limitar-se a orientações genéricas (bairros, categorias, logística, segurança).`
+    );
+  }
+
+  const bloco = renderCuratedCatalog(entry.city, entry.items, entry.hotels);
+  if (!bloco) {
+    return `CIDADE NÃO CURADA: "${entry.city}" está na lista mas veio sem itens — reporte como indisponível no momento, sem inventar lugares.`;
+  }
+  return bloco.trimStart();
+}
 
 // Input sanitization helpers
 function sanitizeText(input: unknown, maxLength: number): string {
@@ -536,66 +666,26 @@ serve(async (req) => {
           }))
           .filter((i) => i.name.length > 0);
         if (items.length > 0) {
-          const renderLine = (i: typeof items[number]) =>
-            `- ${i.name} (${i.category}, ${i.neighborhood}${i.costBRL !== null ? `, R$${i.costBRL}` : ""})${i.tip ? ` — ${i.tip}` : ""}`;
+          const hotels = Array.isArray(cat.hotels)
+            ? cat.hotels
+                .slice(0, 30)
+                .filter((h): h is Record<string, unknown> => typeof h === "object" && h !== null)
+                .map((h) => ({
+                  name: sanitizeText(h.name, 150),
+                  zone: sanitizeText(h.zone, 80),
+                  tier: sanitizeText(h.tier, 40),
+                  personaTags: Array.isArray(h.personaTags)
+                    ? h.personaTags.slice(0, 5).map((t) => sanitizeText(t, 30)).filter((t) => t.length > 0)
+                    : [],
+                  priceRangeBRL: sanitizeText(h.priceRangeBRL, 60),
+                  tip: Array.isArray(h.tips)
+                    ? h.tips.slice(0, 2).map((t) => sanitizeText(t, 150)).filter((t) => t.length > 0).join(" · ")
+                    : "",
+                }))
+                .filter((h) => h.name.length > 0)
+            : [];
 
-          // Agrupa por momento do dia: numa lista corrida de ~80 linhas o modelo tende a
-          // citar sempre os primeiros itens. Com cabeçalhos ele acha a seção certa para
-          // cada pergunta ("onde jantar?" -> 🌙 JANTAR).
-          const remaining = new Map(items.map((i, idx) => [idx, i]));
-          const sections: string[] = [];
-          for (const [key, label] of CATALOG_SECTIONS) {
-            const lines: string[] = [];
-            for (const [idx, i] of remaining) {
-              if (i.category.toLowerCase() === key) {
-                lines.push(renderLine(i));
-                remaining.delete(idx);
-              }
-            }
-            if (lines.length > 0) sections.push(`${label}\n${lines.join("\n")}`);
-          }
-          // Categoria desconhecida/vazia nunca é descartada silenciosamente.
-          if (remaining.size > 0) {
-            sections.push(`📍 OUTROS\n${[...remaining.values()].map(renderLine).join("\n")}`);
-          }
-
-          // 🏨 HOTÉIS CURADOS — seção final, quando a cidade tem curadoria de hotel.
-          if (Array.isArray(cat.hotels)) {
-            const hotels = cat.hotels
-              .slice(0, 30)
-              .filter((h): h is Record<string, unknown> => typeof h === "object" && h !== null)
-              .map((h) => ({
-                name: sanitizeText(h.name, 150),
-                zone: sanitizeText(h.zone, 80),
-                tier: sanitizeText(h.tier, 40),
-                personaTags: Array.isArray(h.personaTags)
-                  ? h.personaTags.slice(0, 5).map((t) => sanitizeText(t, 30)).filter((t) => t.length > 0)
-                  : [],
-                priceRangeBRL: sanitizeText(h.priceRangeBRL, 60),
-                tip: Array.isArray(h.tips)
-                  ? h.tips.slice(0, 2).map((t) => sanitizeText(t, 150)).filter((t) => t.length > 0).join(" · ")
-                  : "",
-              }))
-              .filter((h) => h.name.length > 0);
-
-            if (hotels.length > 0) {
-              const hotelLines = hotels.map((h) => {
-                const meta = [h.zone, h.tier, h.priceRangeBRL, h.personaTags.join("/")]
-                  .filter((p) => p.length > 0)
-                  .join(", ");
-                return `- ${h.name}${meta ? ` (${meta})` : ""}${h.tip ? ` — ${h.tip}` : ""}`;
-              });
-              sections.push(
-                `🏨 HOTÉIS CURADOS\n` +
-                  `Estes são os ÚNICOS hotéis que você pode recomendar em ${city} — nunca invente outro nome. ` +
-                  `Recomende pela persona da viagem (família / casal / solo), usando as personas marcadas em cada hotel, ` +
-                  `e respeite a faixa de preço do usuário. Sempre ofereça uma alternativa de troca DENTRO desta lista.\n` +
-                  hotelLines.join("\n"),
-              );
-            }
-          }
-
-          catalogBlock = `\n\nCATÁLOGO CURADO KINU para ${city} — esta é sua FONTE DA VERDADE para recomendações específicas. Está agrupado por momento do dia: vá direto à seção que responde à pergunta e considere TODOS os itens dela, não só os primeiros.\n\n${sections.join("\n\n")}`;
+          catalogBlock = renderCuratedCatalog(city, items, hotels);
         }
       }
     }
@@ -699,7 +789,9 @@ serve(async (req) => {
       for (const call of serverCalls) {
         const result = call.name === "consultar_lugares"
           ? await resolveConsultarLugares((call.input as Record<string, unknown>) ?? {})
-          : JSON.stringify({ ok: false, reason: "ferramenta_desconhecida" });
+          : call.name === "consultar_catalogo"
+            ? resolveConsultarCatalogo((call.input as Record<string, unknown>) ?? {})
+            : JSON.stringify({ ok: false, reason: "ferramenta_desconhecida" });
         toolResults.push({ type: "tool_result", tool_use_id: call.id, content: result });
       }
 

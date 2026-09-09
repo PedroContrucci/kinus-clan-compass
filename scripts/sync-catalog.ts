@@ -425,7 +425,19 @@ async function main(): Promise<void> {
     die(`type-check falhou. Arquivo restaurado ao estado original.`);
   }
 
-  console.log(`\n✅ Sync concluído — ${tBefore} -> ${tAfter} entradas, ${plans.length} cidades.\n`);
+  // Etapa 6: regerar o artefato que a edge function kinu-ai deploya junto.
+  // Sem isto o agente serviria o catálogo anterior — velho com cara de novo. O
+  // gerador não usa credencial nenhuma; só transforma o TS que acabou de ser escrito.
+  console.log(`   • regerando supabase/functions/kinu-ai/catalog.ts…`);
+  try {
+    execSync(`npx tsx scripts/build-kinu-catalog.ts`, { cwd: ROOT, stdio: 'inherit' });
+  } catch {
+    restore();
+    die(`falhou ao regerar o catálogo da kinu-ai. Arquivo restaurado ao estado original.`);
+  }
+
+  console.log(`\n✅ Sync concluído — ${tBefore} -> ${tAfter} entradas, ${plans.length} cidades.`);
+  console.log(`   Lembre: o deploy da kinu-ai leva index.ts E catalog.ts juntos.\n`);
 }
 
 main().catch((err) => die(err instanceof Error ? err.message : String(err)));
