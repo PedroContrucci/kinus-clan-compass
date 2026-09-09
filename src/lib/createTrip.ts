@@ -5,6 +5,7 @@ import { differenceInDays, differenceInCalendarDays, addDays, format } from 'dat
 import { ptBR } from 'date-fns/locale';
 import { getActivityPrice, calculateTripEstimate } from '@/lib/activityPricing';
 import { getIdealHotelZone, getHotelRecommendation } from '@/lib/hotelZones';
+import { pickCuratedHotelForTrip, nightlyRateFor, curatedAccommodationFields } from '@/lib/hotelSwap';
 import { getDestinationThemes, getDestinationActivities } from '@/data/destinationActivities';
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { getTopMichelinForCity } from '@/lib/michelinData';
@@ -89,7 +90,33 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
   const toursCost = sumCostsByCategory(days, 'passeio');
   const foodCost = sumCostsByCategory(days, 'comida');
   const transportCost = sumCostsByCategory(days, 'transporte');
-  const totalPlanned = Math.round((estimate.flights + estimate.hotel + toursCost + foodCost + transportCost) * tierMultiplier);
+
+  // O hotel da viagem sai da CURADORIA quando a cidade tem um curado do tier pedido
+  // (33 das 84 células cidade×tier, medido). Antes deste ponto o gerador lia só
+  // HOTEL_RECOMMENDATIONS e servia `Novotel Cartagena` com 10 curados ao lado — o
+  // produto mentindo sobre a pílula "Escolhido pelo KINU".
+  //
+  // `budgetTier` vem do INPUT de propósito: o SavedTrip guarda `budgetType:
+  // travelStyle`, que não é tier — dívida anotada no relatório, junto das de
+  // src/types/.
+  const curatedHotel = pickCuratedHotelForTrip(destinationCity, {
+    budgetTier: input.budgetTier,
+    travelers: totalTravelers,
+    travelInterests: input.travelInterests || [],
+  });
+
+  // A diária do curado é o PONTO MÉDIO da faixa (a curadoria tem faixa, não número);
+  // sem curado, a estimativa de sempre.
+  const baseHotelNightPrice = Math.round(getActivityPrice('hotel_night', destinationCity, priceLevel) * tierMultiplier);
+  const hotelNightPrice = curatedHotel ? nightlyRateFor(curatedHotel, baseHotelNightPrice) : baseHotelNightPrice;
+
+  // Só a hospedagem muda de fonte: o resto do planejado sai da mesma conta de antes e
+  // o delta é exatamente 0 quando não há curado — é isso que mantém as 51 células sem
+  // curadoria byte a byte iguais.
+  const baseHotelPlanned = Math.round(estimate.hotel * tierMultiplier);
+  const hotelPlanned = curatedHotel ? hotelNightPrice * totalNights : baseHotelPlanned;
+  const totalPlanned = Math.round((estimate.flights + estimate.hotel + toursCost + foodCost + transportCost) * tierMultiplier)
+    + (hotelPlanned - baseHotelPlanned);
   const budgetTotal = input.budgetAmount || totalPlanned;
 
   const finances: TripFinances = {
@@ -100,7 +127,7 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
     available: Math.max(0, budgetTotal - totalPlanned),
     categories: {
       flights: { planned: Math.round(estimate.flights * tierMultiplier), confirmed: 0, bidding: 0 },
-      accommodation: { planned: Math.round(estimate.hotel * tierMultiplier), confirmed: 0, bidding: 0 },
+      accommodation: { planned: hotelPlanned, confirmed: 0, bidding: 0 },
       tours: { planned: Math.round(toursCost * tierMultiplier), confirmed: 0, bidding: 0 },
       food: { planned: Math.round(foodCost * tierMultiplier), confirmed: 0, bidding: 0 },
       transport: { planned: Math.round(transportCost * tierMultiplier), confirmed: 0, bidding: 0 },
@@ -109,7 +136,6 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
   };
 
   const flightPrice = Math.round((getActivityPrice('flight', destinationCity, priceLevel) * tierMultiplier) / 2);
-  const hotelNightPrice = Math.round(getActivityPrice('hotel_night', destinationCity, priceLevel) * tierMultiplier);
 
   const cityInfo = findCityInfo(destinationCity);
 
@@ -179,19 +205,29 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
         status: 'planned' as ActivityStatus,
       },
     },
+    // Hotel curado quando existe (nome puro, zona, tip e curatedHotelId vêm do mesmo
+    // helper que a troca do usuário usa); senão o bloco de sempre. `curatedHotelId`
+    // entra por fora do tipo, como `mealPlan` já entrava (recon §4.6).
     accommodation: {
       id: 'hotel-main',
-      name: hotelName,
-      neighborhood: hotelRec?.neighborhood || idealZone?.neighborhood || '',
-      description: hotelRec?.whyGood || idealZone?.whyGood || '',
-      stars: hotelRec?.stars || (priceLevel === 'luxury' ? 5 : priceLevel === 'midrange' ? 4 : 3),
+      ...(curatedHotel
+        ? curatedAccommodationFields(curatedHotel, {
+            description: hotelRec?.whyGood || idealZone?.whyGood || '',
+            stars: hotelRec?.stars,
+          })
+        : {
+            name: hotelName,
+            neighborhood: hotelRec?.neighborhood || idealZone?.neighborhood || '',
+            description: hotelRec?.whyGood || idealZone?.whyGood || '',
+            stars: hotelRec?.stars || (priceLevel === 'luxury' ? 5 : priceLevel === 'midrange' ? 4 : 3),
+          }),
       checkIn: addDays(input.departureDate, arrivalDaysLater).toISOString(),
       checkOut: input.returnDate.toISOString(),
       nightlyRate: hotelNightPrice,
       totalNights,
       totalPrice: hotelNightPrice * totalNights,
       status: 'planned' as ActivityStatus,
-    },
+    } as SavedTrip['accommodation'],
     days,
     finances,
     checklist: defaultChecklist.map(item => ({ ...item })),

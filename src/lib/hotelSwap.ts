@@ -5,12 +5,15 @@
 // algoritmo e não tinha porta de saída. É a segunda maior decisão de uma viagem em
 // família.
 //
-// ATENÇÃO ao ler este arquivo: o hotel que a viagem tem hoje quase nunca está entre
-// os curados. `buildDraftTrip` chama getHotelRecommendation (hotelZones.ts), que lê
-// HOTEL_RECOMMENDATIONS — outra base, escrita à mão, 107 hotéis em 32 cidades.
-// Medido: 7 de 84 escolhas do algoritmo aparecem na lista curada. Por isso a UI
-// mostra o atual numa seção própria, rotulado como fora da curadoria, em vez de
-// fingir que ele é um dos nossos. Unificar as duas bases é a missão seguinte.
+// ATENÇÃO ao ler este arquivo: viagens ANTIGAS quase nunca têm um hotel curado. Elas
+// nasceram do getHotelRecommendation (hotelZones.ts), que lê HOTEL_RECOMMENDATIONS —
+// outra base, escrita à mão, 107 hotéis em 32 cidades; medido, 7 de 84 escolhas dela
+// aparecem na lista curada. Por isso a UI mostra o atual numa seção própria, rotulado
+// como fora da curadoria, em vez de fingir que ele é um dos nossos.
+//
+// Viagens NOVAS já nascem curadas quando a cidade tem o tier: `buildDraftTrip` usa o
+// `pickCuratedHotelForTrip` daqui (33 das 84 células cidade×tier). As outras seguem
+// no HOTEL_RECOMMENDATIONS — ver o comentário do ACCEPTED_TIERS para o porquê.
 import { curatedHotels, type CuratedHotel } from '@/data/curatedHotels';
 import { getIdealHotelZone } from '@/lib/hotelZones';
 
@@ -214,6 +217,64 @@ export function nightlyRateFor(hotel: CuratedHotel, fallback: number): number {
   return parsePriceRangeBRL(hotel.priceRangeBRL)?.mid ?? Math.round(Number(fallback) || 0);
 }
 
+/**
+ * Tiers que uma viagem aceita quando é o GERADOR que escolhe sozinho.
+ *
+ * `rankHotelsForTrip` foi escrita para LISTAR: o humano vê o preço e decide. Como
+ * escolha automática ela é cega a tier quando a cidade não tem o tier exato — a
+ * curadoria cobre `budget` em 4 das 16 cidades, `mid` em 9 — e o `[0]` cru entrega
+ * Copacabana Palace a R$ 4.500/noite para quem escolheu Mochileiro (medido).
+ *
+ * `upscale` e `resort` são par porque no topo eles são pares de verdade, e a
+ * ordenação já assume isso (`resort` vale +40 para quem pediu acima de budget).
+ * Abaixo disso não há substituição: subir estoura o orçamento que a família
+ * assumiu, descer rebaixa o tier que ela escolheu.
+ */
+const ACCEPTED_TIERS: Record<string, string[]> = {
+  budget: ['budget'],
+  mid: ['mid'],
+  upscale: ['upscale', 'resort'],
+  resort: ['resort', 'upscale'],
+};
+
+/**
+ * O hotel que o gerador escolhe para uma viagem nova — ou `null` quando a curadoria
+ * da cidade não cobre o tier.
+ *
+ * `null` é resposta legítima, não falha: quem chama volta para
+ * `HOTEL_RECOMMENDATIONS`. É o mesmo padrão honesto das 5 cidades sem curadoria —
+ * prefiro dizer que não tenho a inventar um upgrade que ninguém pediu. A porta de
+ * saída continua sendo o modal, que mostra a curadoria inteira COM o preço.
+ */
+export function pickCuratedHotelForTrip(
+  city: string | undefined | null,
+  trip: SwapTripLike | null | undefined,
+): CuratedHotel | null {
+  const accepted = ACCEPTED_TIERS[tierOfTrip(trip)] ?? [];
+  if (accepted.length === 0) return null;
+  return rankHotelsForTrip(city, trip).find((r) => accepted.includes(r.hotel.tier))?.hotel ?? null;
+}
+
+/**
+ * Hotel curado -> campos de hospedagem. Fonte de verdade única: a troca do usuário
+ * (`applyHotelSwap`) e o gerador (`buildDraftTrip`) escrevem hospedagem do mesmo
+ * jeito, então nunca divergem no nome, na zona, na tip ou na proveniência.
+ *
+ * `curatedHotelId` vai por fora do tipo, como `mealPlan` já ia (recon §4.6).
+ */
+export function curatedAccommodationFields(
+  hotel: CuratedHotel,
+  fallback?: { description?: string; stars?: number },
+): Pick<AccommodationLike, 'name' | 'neighborhood' | 'description' | 'stars' | 'curatedHotelId'> {
+  return {
+    name: hotel.name,
+    neighborhood: hotel.zone,
+    description: hotel.tips?.[0] ?? fallback?.description ?? '',
+    stars: TIER_STARS[hotel.tier] ?? (Number(fallback?.stars) || 4),
+    curatedHotelId: hotel.id,
+  };
+}
+
 /** O que a troca faz com o planejado — para o modal mostrar ANTES de aplicar. */
 export function previewSwapImpact(
   trip: SwapTripLike | null | undefined,
@@ -247,17 +308,13 @@ export function applyHotelSwap<T extends SwapTripLike>(trip: T, hotel: CuratedHo
   const accommodation: AccommodationLike = {
     ...acc,
     id: acc.id ?? 'hotel-main',
-    name: hotel.name,
-    neighborhood: hotel.zone,
-    description: hotel.tips?.[0] ?? acc.description ?? '',
-    stars: TIER_STARS[hotel.tier] ?? (Number(acc.stars) || 4),
+    // Nome, zona, tip, estrelas e proveniência saem do mesmo helper que o gerador
+    // usa — é o que impede troca e criação de divergirem.
+    ...curatedAccommodationFields(hotel, { description: acc.description, stars: acc.stars }),
     nightlyRate,
     totalNights: nights,
     totalPrice,
     status: 'planned',
-    // Proveniência gravada por fora do tipo, como accommodation.mealPlan já é
-    // (recon §4.6). É o que permite a UI marcar "✓ atual" na lista curada.
-    curatedHotelId: hotel.id,
   };
 
   const next: SwapTripLike = { ...trip, accommodation };

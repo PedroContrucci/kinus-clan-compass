@@ -97,6 +97,14 @@ interface GeneratedItineraryStageProps {
   priceLevel?: PriceLevel;
   /** Existing generated days (TripDay[] shape from createTrip). If complete, they are used instead of running the internal generator. */
   existingDays?: any[];
+  /**
+   * Hospedagem planejada que vem da viagem, não da estimativa desta etapa. Chega
+   * preenchido só quando a viagem tem hotel CURADO (`accommodation.curatedHotelId`):
+   * aí o valor autoritativo é o `accommodation.totalPrice` — diária curada × noites —,
+   * e não o `getActivityPrice('hotel_night') × noites` daqui, que ignora o hotel real
+   * e reverteria a troca de hotel do usuário no mount.
+   */
+  hotelPlannedOverride?: number;
 }
 
 // Convert previously-generated TripDay[] (from createTrip) into ItineraryDay[]
@@ -1033,6 +1041,7 @@ export const GeneratedItineraryStage = ({
   onDaysGenerated,
   priceLevel: priceLevelProp,
   existingDays,
+  hotelPlannedOverride,
 }: GeneratedItineraryStageProps) => {
   // SINGLE SOURCE OF TRUTH: the internal generator ALWAYS runs so trip-wide
   // no-repetition, Michelin cap and sunset rules apply. existingDays is ignored
@@ -1059,7 +1068,11 @@ export const GeneratedItineraryStage = ({
   // Matches EXACTLY what recomputeAndPersistFinances writes to trip.finances.
   const computeBuckets = (currentDays: ItineraryDay[]) => {
     const flightsPlanned = Math.round(breakdown.flights.amount || 0);
-    const hotelPlanned = Math.round(breakdown.hotel.amount || 0);
+    // Hotel curado manda: `hotelPlannedOverride` é a diária curada × noites da própria
+    // viagem. Sem ele (viagem sem hotel curado), a estimativa desta etapa, como antes.
+    const hotelPlanned = hotelPlannedOverride && hotelPlannedOverride > 0
+      ? Math.round(hotelPlannedOverride)
+      : Math.round(breakdown.hotel.amount || 0);
     let foodPlanned = 0;
     let toursPlanned = 0;
     currentDays.forEach((day) => {
@@ -1079,7 +1092,7 @@ export const GeneratedItineraryStage = ({
     return { flightsPlanned, hotelPlanned, foodPlanned, toursPlanned, totalPlanned };
   };
 
-  const derivedFinances = useMemo(() => computeBuckets(days), [days, breakdown]);
+  const derivedFinances = useMemo(() => computeBuckets(days), [days, breakdown, hotelPlannedOverride]);
 
   const recomputeAndPersistFinances = useMemo(() => {
     return (currentDays: ItineraryDay[]) => {
@@ -1131,7 +1144,10 @@ export const GeneratedItineraryStage = ({
     // a cada render (DraftCockpit.tsx:371-372): com as datas nas deps, este `useMemo`
     // recomporia, o effect abaixo redispararia e o laço seria infinito. `breakdown` é
     // useState sem setter (:1043) e `tripId` é string — ambos estáveis.
-  }, [breakdown, tripId]);
+    // `hotelPlannedOverride` é number|undefined derivado de `accommodation.totalPrice`:
+    // só muda quando o hotel da viagem muda, e recomputar com o MESMO valor não
+    // redispara nada — não reabre o laço que este comentário guarda.
+  }, [breakdown, tripId, hotelPlannedOverride]);
 
 
   useEffect(() => {

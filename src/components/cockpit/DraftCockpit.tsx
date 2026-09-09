@@ -9,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { FlightSelectionStage, FlightOption, SelectedFlight } from './FlightSelectionStage';
 import { GeneratedItineraryStage } from './GeneratedItineraryStage';
 import { HotelSwapModal } from '@/components/hotel/HotelSwapModal';
-import { applyHotelSwap, type SwapTripLike } from '@/lib/hotelSwap';
+import { applyHotelSwap, type SwapTripLike, type AccommodationLike } from '@/lib/hotelSwap';
 import type { StoredTrip } from '@/lib/tripStore';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
 import { HintBalloon } from '@/components/onboarding/HintBalloon';
@@ -37,6 +37,8 @@ interface DraftTrip {
   outboundFlight?: SelectedFlight;
   returnFlight?: SelectedFlight;
   budgetType?: 'backpacker' | 'economic' | 'comfort' | 'luxury';
+  /** Inclui o `curatedHotelId` que gerador e troca gravam por fora do tipo (recon §4.6). */
+  accommodation?: AccommodationLike;
   days?: any[];
   createdVia?: string;
   flights?: any;
@@ -384,6 +386,15 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip }
     && trip.days.length === totalDaysExpected
     && trip.days.every((d: any) => Array.isArray(d?.activities) && d.activities.length > 0);
 
+  // Hospedagem curada manda no bucket de hospedagem. A etapa de roteiro recalcula as
+  // finanças no mount a partir da SUA estimativa (getActivityPrice × noites) e, sem
+  // este override, ela desfazia em silêncio tanto o hotel curado do gerador quanto o
+  // delta de uma troca feita pelo usuário — o "Trocar hotel" desfazendo a si mesmo.
+  // Portão no `curatedHotelId`: viagem sem hotel curado não muda um centavo.
+  const curatedHotelPlanned = trip.accommodation?.curatedHotelId
+    ? Math.round(Number(trip.accommodation.totalPrice) || 0) || undefined
+    : undefined;
+
   // Infer airport codes
   const originCode = trip.originAirportCode || inferAirportCode(trip.origin || 'São Paulo');
   const destinationCode = trip.destinationAirportCode || inferAirportCode(trip.destination);
@@ -605,6 +616,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip }
           onBack={handleBackFromItinerary}
           onDaysGenerated={hasExistingDays ? undefined : setGeneratedDays}
           existingDays={hasExistingDays ? trip.days : undefined}
+          hotelPlannedOverride={curatedHotelPlanned}
         />
       </>
     );
