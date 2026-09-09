@@ -8,6 +8,9 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { FlightSelectionStage, FlightOption, SelectedFlight } from './FlightSelectionStage';
 import { GeneratedItineraryStage } from './GeneratedItineraryStage';
+import { HotelSwapModal } from '@/components/hotel/HotelSwapModal';
+import { applyHotelSwap, type SwapTripLike } from '@/lib/hotelSwap';
+import type { StoredTrip } from '@/lib/tripStore';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
 import { HintBalloon } from '@/components/onboarding/HintBalloon';
 
@@ -44,6 +47,8 @@ interface DraftCockpitProps {
   onSave: (trip: DraftTrip) => void;
   onActivate: (trip: DraftTrip) => void;
   onClose: () => void;
+  /** Mesmo contrato do TripPanel: read-modify-write do storage, não da cópia React. */
+  onUpdateTrip?: (updater: (t: StoredTrip) => StoredTrip) => void;
 }
 
 function getTravelers(trip: DraftTrip): number {
@@ -160,6 +165,8 @@ interface TrailPill {
   subtitle: string;
   state: 'done' | 'current' | 'upcoming';
   stageId?: StepperStageId; // set only for in-cockpit stages (clickable)
+  /** Pílula que abre uma ação em vez de mudar de estágio (hoje: trocar hotel). */
+  action?: 'swap-hotel';
 }
 
 const BUDGET_TIER_LABELS: Record<string, string> = {
@@ -218,15 +225,17 @@ function buildTrail(trip: DraftTrip, currentStage: StepperStageId): TrailPill[] 
     state: 'done',
   });
 
-  // Hotel (chosen by KINU inside the itinerary; read-only for now)
+  // Hotel: escolhido pelo KINU, mas agora com porta de saída — a pílula abre a
+  // troca pelos curados da cidade. Era o único ponto da trilha sem retorno.
   const hotelName = (trip as any).accommodation?.name as string | undefined;
   pills.push({
     id: 'hotel',
     label: 'Hotel',
     subtitle: hotelName
-      ? `Escolhido pelo KINU · ${hotelName.split('—')[0].trim()}`
+      ? `${hotelName.split('—')[0].trim()} · toque pra trocar`
       : 'O KINU escolhe no roteiro',
     state: hotelName ? 'done' : 'upcoming',
+    action: hotelName ? 'swap-hotel' : undefined,
   });
 
   // In-cockpit stages (unchanged behavior)
@@ -252,9 +261,10 @@ interface DraftStepperProps {
   trip: DraftTrip;
   currentStage: StepperStageId;
   onChange: (stage: StepperStageId) => void;
+  onSwapHotel?: () => void;
 }
 
-const DraftStepper = ({ trip, currentStage, onChange }: DraftStepperProps) => {
+const DraftStepper = ({ trip, currentStage, onChange, onSwapHotel }: DraftStepperProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const currentPillRef = useRef<HTMLButtonElement>(null);
   const trail = buildTrail(trip, currentStage);
@@ -279,8 +289,8 @@ const DraftStepper = ({ trip, currentStage, onChange }: DraftStepperProps) => {
           const isDone = s.state === 'done';
           const isCurrent = s.state === 'current';
           const isUpcoming = s.state === 'upcoming';
-          // Only in-cockpit stages keep their existing clickability.
-          const clickable = !!s.stageId && (isCurrent || isDone);
+          // Estágios do cockpit seguem como estavam; a pílula de hotel ganha ação própria.
+          const clickable = (!!s.stageId && (isCurrent || isDone)) || (s.action === 'swap-hotel' && !!onSwapHotel);
           // Wizard/hotel pills always show their value; stage pills when current.
           const showSubtitle = !s.stageId || isCurrent;
 
@@ -290,7 +300,11 @@ const DraftStepper = ({ trip, currentStage, onChange }: DraftStepperProps) => {
               ref={isCurrent ? currentPillRef : null}
               type="button"
               disabled={!clickable}
-              onClick={() => clickable && s.stageId && onChange(s.stageId)}
+              onClick={() => {
+                if (!clickable) return;
+                if (s.action === 'swap-hotel') return onSwapHotel?.();
+                if (s.stageId) onChange(s.stageId);
+              }}
               className={cn(
                 "relative flex flex-col items-center gap-0.5 px-3.5 py-2 rounded-full border transition-all",
                 "font-['Outfit'] text-sm font-medium",
@@ -298,8 +312,10 @@ const DraftStepper = ({ trip, currentStage, onChange }: DraftStepperProps) => {
                   "bg-[hsl(45,93%,47%)] text-[hsl(222,47%,11%)] border-[hsl(45,93%,47%)] shadow-[0_0_12px_hsla(45,93%,47%,0.25)]",
                 isDone && s.stageId &&
                   "bg-[hsl(160,84%,39%)]/15 text-[hsl(160,77%,67%)] border-[hsl(160,84%,39%)] hover:bg-[hsl(160,84%,39%)]/25",
-                isDone && !s.stageId &&
+                isDone && !s.stageId && !s.action &&
                   "bg-[hsl(160,84%,39%)]/10 text-[hsl(160,77%,67%)] border-[hsl(160,84%,39%)]/60 cursor-default",
+                isDone && !s.stageId && s.action &&
+                  "bg-[hsl(160,84%,39%)]/10 text-[hsl(160,77%,67%)] border-[hsl(160,84%,39%)]/60 hover:bg-[hsl(160,84%,39%)]/25",
                 isUpcoming &&
                   "bg-muted/30 text-muted-foreground border-border cursor-not-allowed opacity-70"
               )}
@@ -332,7 +348,7 @@ const DraftStepper = ({ trip, currentStage, onChange }: DraftStepperProps) => {
   );
 };
 
-export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpitProps) => {
+export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip }: DraftCockpitProps) => {
   // KINU-created trips arrive with a pre-generated itinerary, so we jump straight
   // to the itinerary summary stage while keeping the flight stage reachable.
   const isKinuCreated = (trip as any).createdVia === 'kinu';
@@ -356,6 +372,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
     return undefined;
   });
   const [generatedDays, setGeneratedDays] = useState<any[] | null>(null);
+  const [hotelSwapOpen, setHotelSwapOpen] = useState(false);
 
   // If the trip already carries a complete generated itinerary (from the wizard /
   // createTrip), we hand it off to GeneratedItineraryStage as `existingDays` and
@@ -530,10 +547,22 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   const chosenPriceLevel = trip.budgetType ? tierToPriceLevel[trip.budgetType] : undefined;
 
   // Stage 1: Flight Selection
+  // Troca de hotel no rascunho. Mesmo modal e mesma persistência da viagem ativa:
+  // um só caminho de escrita para os dois estados da viagem.
+  const hotelSwapModal = (
+    <HotelSwapModal
+      open={hotelSwapOpen}
+      onClose={() => setHotelSwapOpen(false)}
+      trip={trip as SwapTripLike}
+      onSelect={(hotel) => onUpdateTrip?.((t) => applyHotelSwap(t, hotel))}
+    />
+  );
+
   if (stage === 'flights') {
     return (
       <>
-        <DraftStepper trip={trip} currentStage={stage} onChange={setStage} />
+        <DraftStepper trip={trip} currentStage={stage} onChange={setStage} onSwapHotel={() => setHotelSwapOpen(true)} />
+      {hotelSwapModal}
         <FlightSelectionStage
           destination={trip.destination}
           origin={trip.origin || 'São Paulo'}
@@ -555,7 +584,8 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   if (stage === 'itinerary' && effectiveOutbound && effectiveReturn) {
     return (
       <>
-        <DraftStepper trip={trip} currentStage={stage} onChange={setStage} />
+        <DraftStepper trip={trip} currentStage={stage} onChange={setStage} onSwapHotel={() => setHotelSwapOpen(true)} />
+      {hotelSwapModal}
         <GeneratedItineraryStage
           tripId={trip.id}
           destination={trip.destination}
@@ -583,7 +613,8 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose }: DraftCockpit
   // Fallback to flights if no flights selected
   return (
     <>
-      <DraftStepper trip={trip} currentStage={stage} onChange={setStage} />
+      <DraftStepper trip={trip} currentStage={stage} onChange={setStage} onSwapHotel={() => setHotelSwapOpen(true)} />
+      {hotelSwapModal}
       <FlightSelectionStage
         destination={trip.destination}
         origin={trip.origin || 'São Paulo'}

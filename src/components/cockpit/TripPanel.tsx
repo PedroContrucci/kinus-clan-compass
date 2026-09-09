@@ -15,6 +15,8 @@ import { DestinationImage } from '@/components/shared/DestinationImage';
 import type { SavedTrip } from '@/types/trip';
 import { buildOfferLinks } from '@/lib/offersLinks';
 import { OffersModal } from '@/components/cockpit/OffersModal';
+import { HotelSwapModal } from '@/components/hotel/HotelSwapModal';
+import { applyHotelSwap } from '@/lib/hotelSwap';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -434,6 +436,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const [showFlexDates, setShowFlexDates] = useState(false);
   const [offersModal, setOffersModal] = useState<{ isOpen: boolean; activityName: string; activityDate?: string } | null>(null);
   const [confirmReservation, setConfirmReservation] = useState<{ type: 'flight' | 'hotel'; amount: string; link: string; hotelName: string; mealPlan: string; outboundAirline: string; outboundFlightNumber: string; outboundTime: string; returnAirline: string; returnFlightNumber: string; returnTime: string } | null>(null);
+  const [hotelSwapOpen, setHotelSwapOpen] = useState(false);
   const [editingBaggage, setEditingBaggage] = useState(false);
   const [editingSeat, setEditingSeat] = useState(false);
   const [baggageInput, setBaggageInput] = useState('');
@@ -1192,6 +1195,15 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           {((trip.accommodation as any)?.mealPlan) && (
             <p className="text-[10px] text-emerald-400/90 mt-0.5">🍽️ {(trip.accommodation as any).mealPlan}</p>
           )}
+          {/* Trocar hotel — a porta de saída da segunda maior decisão da viagem.
+              Fica visível inclusive com o hotel confirmado: o modal avisa que a
+              troca desfaz a confirmação antes de aplicar. */}
+          <button
+            onClick={() => setHotelSwapOpen(true)}
+            className="w-full mt-3 text-xs font-semibold py-2 rounded-lg border border-purple-500/40 text-purple-400 hover:bg-purple-500/10 transition-colors"
+          >
+            🔄 Trocar hotel
+          </button>
           {!hotelConfirmed && (
             <div className="mt-3 space-y-1.5">
               <button
@@ -1336,6 +1348,16 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           </div>
         );
       })()}
+
+      {/* Troca de hotel. Persiste pelo onUpdateTrip, que é o read-modify-write do
+          storage (Viagens.handleUpdateTrip) — não a cópia do estado React. */}
+      <HotelSwapModal
+        open={hotelSwapOpen}
+        onClose={() => setHotelSwapOpen(false)}
+        trip={trip}
+        onSelect={(hotel) => onUpdateTrip?.((t) => applyHotelSwap(t, hotel))}
+        onOpenOffers={() => onOpenAuction('hotel')}
+      />
 
 
       {/* Reservation Confirm Modal */}

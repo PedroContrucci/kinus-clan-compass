@@ -1483,6 +1483,7 @@ const Viagens = () => {
         onSave={handleSaveDraft}
         onActivate={handleActivateDraft}
         onClose={() => setSelectedTrip(null)}
+        onUpdateTrip={handleUpdateTrip}
       />
     );
   }

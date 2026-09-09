@@ -91,7 +91,7 @@ breve ao KINU" → a mentira sai com cara de honestidade.
 ### 4.1 `scripts/build-kinu-catalog.ts` (novo) — o gerador sem credencial
 
 Lê `src/data/destinationActivities.ts` + `curatedHotels.ts` e escreve
-`supabase/functions/kinu-ai/catalog.ts`. **259 KB, 21 cidades, 893 atividades, 61 hotéis.**
+`supabase/functions/kinu-ai/catalog.ts`. **259 KB, 21 cidades, 893 atividades, 68 hotéis.**
 
 **Roda sem credencial nenhuma.** Ao contrário do `sync-catalog.ts` — que precisa da
 `KINU_BETA_SERVICE_KEY` no `.env.sync` para ler o banco — este só transforma arquivos que já
@@ -253,14 +253,20 @@ dia de chegada (`94113bc`, o `needsTransitDay` competindo com o cálculo real).
 
 ### 8.2 O `catalog.ts` carrega os hotéis — fundação da missão seguinte
 
-O artefato traz `hotels` com `zone`, `tier`, `personaTags`, `priceRangeBRL` e tips das **61**
+> **Correção (09/09, no commit da troca de hotel).** Esta seção saiu com dois números errados:
+> eram **68** hotéis, não 61, e **5** cidades sem curadoria, não onze. O gerador e o artefato
+> sempre estiveram certos — o cabeçalho do `catalog.ts` diz `68 hotéis` desde o primeiro run.
+> Foi a prosa que errou, e os números errados entraram no briefing da missão seguinte.
+
+O artefato traz `hotels` com `zone`, `tier`, `personaTags`, `priceRangeBRL` e tips das **68**
 curadorias de hotel, e a ferramenta os devolve na seção 🏨 HOTÉIS CURADOS. **É a fundação da
 missão de troca de hotel:** o agente passa a poder falar de hotel de qualquer cidade curada, não
 só da viagem ativa. A suíte de deriva trava explicitamente a presença de `hotels` e
 `personaTags` no artefato — se o gerador parar de emiti-los, quebra aqui e não lá.
 
-Onze cidades ainda não têm curadoria de hotel (Istambul, Bangkok, Marrakech, Singapura, Cidade do
-Cabo entre elas). O agente sabe disso pelo bloco ausente, não por inferência.
+**Cinco** das 21 cidades ainda não têm curadoria de hotel: Cidade do Cabo, Istambul, Bangkok,
+Marrakech e Singapura. As outras 16 têm. O agente sabe disso pelo bloco ausente, não por
+inferência.
 
 ### 8.3 Dívidas herdadas, ainda abertas
 
