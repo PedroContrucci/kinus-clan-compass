@@ -1,7 +1,7 @@
 // createTrip — shared draft trip builder used by wizard and KINU AI.
 // Logic extracted verbatim from NewPlanningWizard.handleGenerateDraft + generateDays.
 
-import { differenceInDays, addDays, format } from 'date-fns';
+import { differenceInDays, differenceInCalendarDays, addDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getActivityPrice, calculateTripEstimate } from '@/lib/activityPricing';
 import { getIdealHotelZone, getHotelRecommendation } from '@/lib/hotelZones';
@@ -60,18 +60,29 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
   // Calculate flight duration
   const flightHours = getFlightDuration(input.originCity || 'São Paulo', destinationCity, tzDiff);
   const isLongHaul = flightHours > 10;
-  const departureTime = isLongHaul ? '23:00' : (flightHours > 6 ? '21:00' : '08:00');
+  // O que faz um voo ser noturno é a DIREÇÃO, não só a duração. A regra antiga
+  // (`> 6h => 21:00`) foi calibrada no transatlântico para leste — GRU→Lisboa sai
+  // à noite mesmo — e por tabela mandava para a madrugada tudo que passasse de 6h,
+  // inclusive as 7,5h de GRU→Cartagena, que na vida real é voo de dia. tzDiff >= 3
+  // separa Europa/África/Ásia das Américas, que ficam no diurno.
+  const isEastboundOvernight = tzDiff >= 3;
+  const departureTime = isLongHaul ? '23:00' : (flightHours > 6 && isEastboundOvernight ? '21:00' : '08:00');
 
   // Calculate arrival
-  const { arrivalTime, arrivalDate: arrDate, nextDay } = calculateArrivalTime(
+  const { arrivalTime, arrivalDate: arrDate } = calculateArrivalTime(
     departureTime, input.departureDate, flightHours, tzDiff
   );
-  const flightArrivalDate = arrDate;
-  // For very long flights (>18h), arrival might be 2 days later
-  const arrivalDaysLater = flightHours > 18 ? 2 : 1;
+  // Dia de chegada = diferença de CALENDÁRIO entre a chegada calculada e a partida.
+  // Vale 0 quando o voo não cruza a meia-noite — o caso que o antigo
+  // `flightHours > 18 ? 2 : 1` tornava inexprimível, e que punha voo diurno curto
+  // (GRU→Cartagena 08:00) chegando no D2 com a hora do D1. A resposta já vinha
+  // pronta de calculateArrivalTime; só não estava ligada.
+  // Clamp [0,3]: protege contra fuso extremo e duração absurda vinda da tabela.
+  const arrivalDaysLater = Math.max(0, Math.min(3,
+    differenceInCalendarDays(arrDate, input.departureDate)));
 
   // Generate days
-  const days = generateDays(destinationCity, duration, input.departureDate, input.returnDate, priceLevel, jetLagMode, totalTravelers, tierMultiplier, jetLagSeverity, departureTime, arrivalTime, flightHours, input.travelInterests || []);
+  const days = generateDays(destinationCity, duration, input.departureDate, input.returnDate, priceLevel, jetLagMode, totalTravelers, tierMultiplier, jetLagSeverity, departureTime, arrivalTime, flightHours, input.travelInterests || [], arrivalDaysLater + 1);
 
   // Calculate finances from generated days
   const estimate = calculateTripEstimate(destinationCity, duration, totalTravelers, priceLevel);
@@ -174,7 +185,7 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
       neighborhood: hotelRec?.neighborhood || idealZone?.neighborhood || '',
       description: hotelRec?.whyGood || idealZone?.whyGood || '',
       stars: hotelRec?.stars || (priceLevel === 'luxury' ? 5 : priceLevel === 'midrange' ? 4 : 3),
-      checkIn: addDays(input.departureDate, 1).toISOString(),
+      checkIn: addDays(input.departureDate, arrivalDaysLater).toISOString(),
       checkOut: input.returnDate.toISOString(),
       nightlyRate: hotelNightPrice,
       totalNights,
@@ -272,6 +283,10 @@ function generateDays(
   smartArrivalTime: string = '11:00',
   flightHours: number = 12,
   travelInterests: string[] = [],
+  // Número do dia (1-based) em que o avião pousa. Derivado da chegada calculada
+  // em buildDraftTrip; 1 = chega no mesmo dia do embarque. O default 2 preserva
+  // o comportamento antigo para qualquer chamador que não passe o parâmetro.
+  arrivalDayNum: number = 2,
 ): TripDay[] {
   const days: TripDay[] = [];
   // Trip-wide uniqueness keyed by normalized NAME, shared across categories.
@@ -369,18 +384,19 @@ function generateDays(
 
   const fmtTime = (h: number, m = 0) => `${Math.min(23, Math.max(0, h)).toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 
-  const needsTransitDay = flightHours >= 20;
-
   for (let i = 0; i < duration; i++) {
     const dayNum = i + 1;
     const dayDate = addDays(departureDate, i);
     const dateStr = format(dayDate, "dd/MM (EEEE)", { locale: ptBR });
 
-    const isArrivalDay = (!needsTransitDay && dayNum === 2) || (needsTransitDay && dayNum === 3);
-    const isRecoveryDay = (needsTransitDay && dayNum === 4 && jetLagSeverity === 'SEVERO') ||
-                          (!needsTransitDay && dayNum === 3 && jetLagSeverity === 'SEVERO');
+    // O dia de chegada agora vem da aritmética do voo (arrivalDayNum), não de uma
+    // constante. Quando o voo não cruza a meia-noite, arrivalDayNum é 1 e o dia 1
+    // é embarque E chegada — daí o isArrivalDay ser testado ANTES do dayNum === 1.
+    const isArrivalDay = dayNum === arrivalDayNum;
+    const isDepartureDay = dayNum === 1;
+    const isRecoveryDay = dayNum === arrivalDayNum + 1 && jetLagSeverity === 'SEVERO';
 
-    if (dayNum === 1) {
+    if (isDepartureDay && !isArrivalDay) {
       days.push({
         day: dayNum,
         date: dateStr,
@@ -391,7 +407,7 @@ function generateDays(
           { ...makeActivity(`act-${dayNum}-2`, smartDepartureTime, `Voo ${city}`, `Voo de ida para ${city}`, `${flightHours}h`, 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
         ],
       });
-    } else if (needsTransitDay && dayNum === 2) {
+    } else if (dayNum > 1 && dayNum < arrivalDayNum) {
       days.push({
         day: dayNum,
         date: dateStr,
@@ -406,7 +422,20 @@ function generateDays(
     } else if (isArrivalDay) {
       const arrivalThemes = getDestinationThemes(city);
       const arrivalTheme = arrivalThemes[0];
+      // Voo que não vira o dia: o embarque e a chegada moram no MESMO dia 1.
+      // Antes isto era inalcançável — o dia 1 devolvia só check-in + voo e o
+      // roteiro real só começava no dia seguinte, mesmo para um voo das 08:00.
+      const sameDayDeparture = isDepartureDay;
+      const arrivalDayTitle = sameDayDeparture ? 'Embarque e Chegada ✈️🛬' : 'Chegada 🛬';
+      const arrivalDayIcon = sameDayDeparture ? '✈️' : '🛬';
+      const departureLeg: TripActivity[] = sameDayDeparture
+        ? [
+            { ...makeActivity(`act-${dayNum}-dep1`, checkInTime, 'Check-in aeroporto', 'Apresentar documentação e despachar bagagem', '2h', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
+            { ...makeActivity(`act-${dayNum}-dep2`, smartDepartureTime, `Voo ${city}`, `Voo de ida para ${city}`, `${flightHours}h`, 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
+          ]
+        : [];
       const activities: TripActivity[] = [
+        ...departureLeg,
         { ...makeActivity(`act-${dayNum}-1`, smartArrivalTime, `Chegada em ${city}`, 'Desembarque e imigração', '1h30', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
         makeActivity(`act-${dayNum}-2`, fmtTime(transferFinishH - 1, 30), 'Transfer para hotel', 'Transporte do aeroporto ao hotel', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
         { ...makeActivity(`act-${dayNum}-3`, fmtTime(checkInHotelH), 'Check-in no hotel', 'Acomodação e descanso', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
@@ -416,7 +445,7 @@ function generateDays(
         activities.push(
           makeActivity(`act-${dayNum}-4`, fmtTime(Math.min(23, checkInHotelH + 1)), 'Room service — chegada tardia', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier, true),
         );
-        days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
+        days.push({ day: dayNum, date: dateStr, title: arrivalDayTitle, icon: arrivalDayIcon, activities });
       } else if (jetLagSeverity === 'SEVERO') {
         const restStartH = checkInHotelH + 1;
         const dinnerH = Math.max(19, Math.min(22, restStartH + 2));
@@ -424,7 +453,7 @@ function generateDays(
           makeActivity(`act-${dayNum}-4`, fmtTime(restStartH), 'Descanso obrigatório — fuso horário severo', `Diferença de fuso significativa. Seu corpo precisa de descanso completo.`, `${Math.max(1, dinnerH - restStartH)}h`, 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
           makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), 'Room service ou restaurante do hotel', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier, true),
         );
-        days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
+        days.push({ day: dayNum, date: dateStr, title: arrivalDayTitle, icon: arrivalDayIcon, activities });
       } else if (jetLagSeverity === 'ALTO') {
         const restStartH = checkInHotelH + 1;
         const dinnerH = Math.max(19, Math.min(22, restStartH + 3));
@@ -432,7 +461,7 @@ function generateDays(
           makeActivity(`act-${dayNum}-4`, fmtTime(restStartH), 'Descanso e adaptação ao fuso', 'Descanso no hotel para adaptação ao novo fuso horário', '3h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
           makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), `Jantar leve próximo ao hotel`, 'Refeição leve na região do hotel', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier, true),
         );
-        days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
+        days.push({ day: dayNum, date: dateStr, title: arrivalDayTitle, icon: arrivalDayIcon, activities });
       } else if (jetLagMode) {
         const actStartH = checkInHotelH + 1;
         const dinnerH = Math.max(19, Math.min(22, actStartH + 2 + 1));
@@ -440,7 +469,7 @@ function generateDays(
           makeActivity(`act-${dayNum}-4`, fmtTime(actStartH, 30), arrivalTheme.activities[0], '', '2h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier, true),
           makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), `Jantar: ${claim(arrivalTheme.restaurants.dinner, dayNum)}`, '', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
-        days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
+        days.push({ day: dayNum, date: dateStr, title: arrivalDayTitle, icon: arrivalDayIcon, activities });
       } else {
         const actStartH = checkInHotelH + 1;
         const dinnerH = Math.max(19, Math.min(22, actStartH + 3 + 1));
@@ -448,7 +477,7 @@ function generateDays(
           makeActivity(`act-${dayNum}-4`, fmtTime(actStartH, 30), arrivalTheme.activities[0], '', '3h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), `Jantar: ${claim(arrivalTheme.restaurants.dinner, dayNum)}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
-        days.push({ day: dayNum, date: dateStr, title: 'Chegada 🛬', icon: '🛬', activities });
+        days.push({ day: dayNum, date: dateStr, title: arrivalDayTitle, icon: arrivalDayIcon, activities });
       }
     } else if (dayNum === duration) {
       days.push({
@@ -496,9 +525,10 @@ function generateDays(
       scoredThemes.sort((a, b) => b.score - a.score);
       const orderedThemes = scoredThemes.map(s => s.theme);
 
-      const explorationStart = needsTransitDay
-        ? (jetLagSeverity === 'SEVERO' ? 5 : 4)
-        : (jetLagSeverity === 'SEVERO' ? 4 : 3);
+      // Primeiro dia de exploração: o dia seguinte à chegada, mais um se o fuso é
+      // severo. Idêntico aos valores fixos antigos (chegada no 2 -> 3/4; chegada no
+      // 3 com trânsito -> 4/5), agora derivado do dia de chegada real.
+      const explorationStart = arrivalDayNum + (jetLagSeverity === 'SEVERO' ? 2 : 1);
 
       const isArrivalRecoveryDay = (dayNum === explorationStart) &&
         (jetLagSeverity === 'MODERADO' || jetLagSeverity === 'ALTO' || jetLagSeverity === 'SEVERO');

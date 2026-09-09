@@ -254,13 +254,14 @@ export function generateItinerary(
   // Prefer the user-chosen budget tier; only recalculate when none was provided
   const priceLevel: PriceLevel = priceLevelProp ?? findBestPriceLevel(destination, totalDays, travelers, budget).level;
 
-  // Detect short flight that cannot cross midnight — enables same-day arrival flow
-  const isShortFlight = outboundFlight.option.durationMinutes < 240;
+  // Detect a flight that cannot cross midnight — enables same-day arrival flow
   const depHourStr = outboundFlight.option.departureTime?.split(':')[0];
   const departureHour = parseInt(depHourStr, 10) || 0;
   const flightHours = outboundFlight.option.durationMinutes / 60;
   const crossesMidnight = (departureHour + flightHours) >= 24;
-  const sameDayArrival = isShortFlight && !crossesMidnight;
+  // Quem decide se virou o dia é só a meia-noite. O antigo `durationMinutes < 240`
+  // reprovava 08:00+9h (pousa 17:00 do mesmo dia) e excluía exatamente 4h no limite.
+  const sameDayArrival = !crossesMidnight;
 
   // Compute real arrival day offset (supports multi-day flights)
   const lastSeg = (outboundFlight.option as any).segments?.[(outboundFlight.option as any).segments.length - 1];
@@ -268,7 +269,7 @@ export function generateItinerary(
   if (lastSeg?.arrival?.at) {
     const arrivalDate = new Date(lastSeg.arrival.at);
     const diff = differenceInCalendarDays(arrivalDate, departureDate);
-    if (diff >= 1 && diff <= 3) arrivalDayIndex = diff;
+    if (diff >= 0 && diff <= 3) arrivalDayIndex = diff;
     else if (diff > 3) console.warn('[KINU] implausible flight arrival offset', diff, '— falling back to default');
   }
 

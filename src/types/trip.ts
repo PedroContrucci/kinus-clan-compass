@@ -332,6 +332,10 @@ export const FLIGHT_DURATION: Record<string, number> = {
   'São Paulo-Santiago': 4.5,
   'São Paulo-Lima': 5.5,
   'São Paulo-Bogotá': 7,
+  // Cartagena não tem voo direto do Brasil: 7-9h com conexão (Bogotá ou Panamá).
+  // Sem esta linha o fallback por fuso devolvia 4h (America/Bogota está a só 2h de
+  // São Paulo, mas a 4.500 km) e o gerador escolhia um voo diurno de 08:00.
+  'São Paulo-Cartagena': 7.5,
   'São Paulo-Cancún': 9,
   'São Paulo-Miami': 9,
   'São Paulo-Orlando': 9.5,
