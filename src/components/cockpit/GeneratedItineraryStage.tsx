@@ -354,7 +354,8 @@ export function generateItinerary(
       candidates = pickReusableByGap(
         pool.filter(a => a.category === category),
         usedPlaces,
-        currentPickDayIndex
+        currentPickDayIndex,
+        category
       );
       if (candidates.length === 0) return null;
       forcedReuse = true;
@@ -374,7 +375,7 @@ export function generateItinerary(
       });
     }
     const picked = candidates[0];
-    usedPlaces.mark(picked.name, currentPickDayIndex);
+    usedPlaces.mark(picked.name, currentPickDayIndex, category);
     return picked;
   }
 

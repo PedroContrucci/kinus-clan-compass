@@ -134,4 +134,38 @@ describe('pickReusableByGap', () => {
   it('devolve vazio quando não há candidato nenhum', () => {
     expect(pickReusableByGap([], createPlaceUsageTracker(), 3)).toEqual([]);
   });
+
+  it('no reuso, não escala como almoço a casa que já foi jantar', () => {
+    // O buraco que o esgotamento abria: a unicidade por nome barra o Cabaña
+    // del Primo no caminho inédito, mas o pool de almoço continha o id de
+    // almoço da mesma casa e o reuso o servia como se fosse outro lugar.
+    const t = createPlaceUsageTracker();
+    t.mark('Cabaña del Primo', 3, 'dinner');
+    t.mark('Coco Bambu Beira-Mar', 5, 'lunch');
+    const lunchPool = [{ name: 'Cabaña del Primo' }, { name: 'Coco Bambu Beira-Mar' }];
+    const out = pickReusableByGap(lunchPool, t, 11, 'lunch');
+    expect(out.map((c) => c.name)).toEqual(['Coco Bambu Beira-Mar']);
+  });
+
+  it('cede o filtro de papel quando ele esvaziaria o slot', () => {
+    // Almoço repetido que já foi jantar ainda é melhor que dia sem almoço.
+    const t = createPlaceUsageTracker();
+    t.mark('Cabaña del Primo', 3, 'dinner');
+    const out = pickReusableByGap([{ name: 'Cabaña del Primo' }], t, 11, 'lunch');
+    expect(out.map((c) => c.name)).toEqual(['Cabaña del Primo']);
+  });
+
+  it('uso gravado sem papel não bloqueia papel nenhum', () => {
+    const t = createPlaceUsageTracker();
+    t.mark('Cabaña del Primo', 3);
+    expect(t.usedInOtherRole('Cabaña del Primo', 'lunch')).toBe(false);
+    expect(t.usedInOtherRole('Cabaña del Primo', 'dinner')).toBe(false);
+  });
+
+  it('o papel viaja pelo nome normalizado, não pelo id', () => {
+    const t = createPlaceUsageTracker();
+    t.mark('Jantar: Cabaña del Primo', 3, 'dinner');
+    expect(t.usedInOtherRole('cabana del primo', 'lunch')).toBe(true);
+    expect(t.usedInOtherRole('cabana del primo', 'dinner')).toBe(false);
+  });
 });

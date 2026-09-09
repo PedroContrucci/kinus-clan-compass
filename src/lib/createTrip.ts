@@ -336,8 +336,8 @@ function generateDays(
   // os restaurantes do tema, e um dia gastronômico pode promover uma casa
   // Michelin. Esses nomes ocupam a viagem do mesmo jeito — registrá-los impede
   // que o pool os reescale depois como se fossem inéditos.
-  const claim = (name: string, dayNum: number): string => {
-    usedPlaces.mark(name, dayNum);
+  const claim = (name: string, dayNum: number, role: 'lunch' | 'dinner'): string => {
+    usedPlaces.mark(name, dayNum, role);
     return name;
   };
 
@@ -381,7 +381,7 @@ function generateDays(
       return { activity: freeActivity, isFreeSlot: true };
     }
     const picked = candidates[0];
-    usedPlaces.mark(picked.name, dayNum);
+    usedPlaces.mark(picked.name, dayNum, category);
     return { activity: picked, isFreeSlot: false };
   }
 
@@ -402,11 +402,11 @@ function generateDays(
     }
     // 3) every name used — degrade gracefully instead of emptying the slot
     if (candidates.length === 0) {
-      candidates = pickReusableByGap(inCategory, usedPlaces, dayNum);
+      candidates = pickReusableByGap(inCategory, usedPlaces, dayNum, category);
     }
     if (candidates.length === 0) return null;
     const picked = candidates[0];
-    usedPlaces.mark(picked.name, dayNum);
+    usedPlaces.mark(picked.name, dayNum, category);
     return picked;
   }
 
@@ -503,7 +503,7 @@ function generateDays(
         const dinnerH = Math.max(19, Math.min(22, actStartH + 2 + 1));
         activities.push(
           makeActivity(`act-${dayNum}-4`, fmtTime(actStartH, 30), arrivalTheme.activities[0], '', '2h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), `Jantar: ${claim(arrivalTheme.restaurants.dinner, dayNum)}`, '', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), `Jantar: ${claim(arrivalTheme.restaurants.dinner, dayNum, 'dinner')}`, '', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
         days.push({ day: dayNum, date: dateStr, title: arrivalDayTitle, icon: arrivalDayIcon, activities });
       } else {
@@ -511,7 +511,7 @@ function generateDays(
         const dinnerH = Math.max(19, Math.min(22, actStartH + 3 + 1));
         activities.push(
           makeActivity(`act-${dayNum}-4`, fmtTime(actStartH, 30), arrivalTheme.activities[0], '', '3h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), `Jantar: ${claim(arrivalTheme.restaurants.dinner, dayNum)}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-5`, fmtTime(dinnerH), `Jantar: ${claim(arrivalTheme.restaurants.dinner, dayNum, 'dinner')}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         );
         days.push({ day: dayNum, date: dateStr, title: arrivalDayTitle, icon: arrivalDayIcon, activities });
       }
@@ -539,10 +539,10 @@ function generateDays(
         activities: [
           makeActivity(`act-${dayNum}-1`, '09:00', 'Café da manhã', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-2`, '10:30', theme.activities[0], 'Atividade leve — corpo em adaptação', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`act-${dayNum}-3`, '13:00', `Almoço: ${claim(theme.restaurants.lunch, dayNum)}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-3`, '13:00', `Almoço: ${claim(theme.restaurants.lunch, dayNum, 'lunch')}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-4`, '15:00', 'Descanso — adaptação ao fuso', 'Intervalo de descanso recomendado pela KINU AI', '2h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
           makeActivity(`act-${dayNum}-5`, '17:30', theme.activities.length > 1 ? theme.activities[1] : 'Caminhada leve', 'Atividade leve ao pôr do sol', '1h30', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`act-${dayNum}-6`, '19:30', `Jantar: ${claim(theme.restaurants.dinner, dayNum)}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-6`, '19:30', `Jantar: ${claim(theme.restaurants.dinner, dayNum, 'dinner')}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
         ],
       });
     } else {
@@ -600,14 +600,14 @@ function generateDays(
       const lunchAct = pickRestaurant('lunch', city, theme.title, dayNum);
       const dinnerAct = pickRestaurant('dinner', city, theme.title, dayNum);
 
-      let dinnerName = dinnerAct?.name || claim(theme.restaurants.dinner, dayNum);
+      let dinnerName = dinnerAct?.name || claim(theme.restaurants.dinner, dayNum, 'dinner');
       if (travelInterests.includes('gastronomy') && theme.title === 'Gastronomia') {
         // Sempre pegar michelin[0] repetia a mesma casa em todo dia com tema
         // Gastronomia — escolher a melhor ainda não usada na viagem.
         const michelin = getTopMichelinForCity(city, 3)
           .filter(m => !usedPlaces.isUsed(m.name));
         if (michelin.length > 0) {
-          claim(michelin[0].name, dayNum);
+          claim(michelin[0].name, dayNum, 'dinner');
           dinnerName = `${michelin[0].name} (⭐ Michelin)`;
         }
       }
@@ -622,7 +622,7 @@ function generateDays(
         activities: [
           makeActivity(`act-${dayNum}-1`, '08:00', 'Café da manhã', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-2`, '09:30', morning.activity?.name || theme.activities[0], morning.isFreeSlot ? freeDesc : (morning.activity?.tips?.[0] || ''), '2h30', 'passeio', city, morning.isFreeSlot ? 'free' : 'museum', priceLevel, travelers, tierMultiplier),
-          makeActivity(`act-${dayNum}-3`, '12:30', `Almoço: ${lunchAct?.name || claim(theme.restaurants.lunch, dayNum)}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
+          makeActivity(`act-${dayNum}-3`, '12:30', `Almoço: ${lunchAct?.name || claim(theme.restaurants.lunch, dayNum, 'lunch')}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-4`, '14:30', afternoon.activity?.name || theme.activities[1], afternoon.isFreeSlot ? freeDesc : (afternoon.activity?.tips?.[0] || ''), '2h30', 'passeio', city, afternoon.isFreeSlot ? 'free' : 'tour', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-5`, '17:30', night.activity?.name || theme.activities[2], night.isFreeSlot ? freeDesc : (night.activity?.tips?.[0] || ''), '1h30', 'passeio', city, night.isFreeSlot ? 'free' : 'museum', priceLevel, travelers, tierMultiplier),
           makeActivity(`act-${dayNum}-6`, '19:30', `Jantar: ${dinnerName}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),

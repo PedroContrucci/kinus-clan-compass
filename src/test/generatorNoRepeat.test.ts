@@ -153,19 +153,26 @@ describe('gerador — não repetir o mesmo lugar na viagem', () => {
     // enquanto ainda há casa inédita disponível na categoria.
     const offenders: string[] = [];
     for (const city of CITIES) {
-      const poolSize = (slot: string) =>
+      const poolNames = (slot: string) =>
         new Set(
           destinationActivities[city].activities
             .filter((a) => a.category === slot)
             .map((a) => normalizePlaceName(a.name))
-        ).size;
+        );
       for (const cfg of MATRIX) {
         const places = run(city, cfg);
         for (const slot of MEAL_SLOTS) {
           const served = places.filter((p) => p.slot === slot);
           if (served.length === 0) continue;
           const distinct = new Set(served.map((p) => p.name)).size;
-          const available = poolSize(slot);
+          // Um nome que a viagem já gastou em OUTRO papel não está disponível
+          // para este: a regra de unicidade por nome (teste acima) o proíbe, e
+          // ele não pode ser cobrado aqui. Fortaleza é o caso vivo — a mesma
+          // casa está no pool de almoço e no de jantar sob ids distintos.
+          const takenElsewhere = new Set(
+            places.filter((p) => p.slot !== slot).map((p) => p.name)
+          );
+          const available = [...poolNames(slot)].filter((n) => !takenElsewhere.has(n)).length;
           // Todo nome disponível deve ter sido usado antes de qualquer repetição
           const expected = Math.min(available, served.length);
           if (distinct < expected) {

@@ -40,13 +40,23 @@ export interface PlaceUsageTracker {
    * comparações de espaçamento tratarem "nunca usado" como o melhor caso.
    */
   gapSince(name: string, dayIndex: number): number;
-  /** Registra o uso do nome no dia informado. */
-  mark(name: string, dayIndex: number): void;
+  /**
+   * O nome já entrou na viagem ocupando um papel DIFERENTE deste? Usos gravados
+   * sem papel (nomes que não vêm do pool curado) não contam como papel algum.
+   */
+  usedInOtherRole(name: string, role: string): boolean;
+  /**
+   * Registra o uso do nome no dia informado. `role` é o slot ocupado
+   * (breakfast/lunch/dinner/morning/...) — informe sempre que souber, é o que
+   * permite ao reuso não trocar a casa de papel.
+   */
+  mark(name: string, dayIndex: number, role?: string): void;
 }
 
 export function createPlaceUsageTracker(): PlaceUsageTracker {
   const lastDay = new Map<string, number>();
   const uses = new Map<string, number>();
+  const roles = new Map<string, Set<string>>();
   return {
     isUsed: (name) => lastDay.has(normalizePlaceName(name)),
     lastDayOf: (name) => lastDay.get(normalizePlaceName(name)),
@@ -55,10 +65,21 @@ export function createPlaceUsageTracker(): PlaceUsageTracker {
       const last = lastDay.get(normalizePlaceName(name));
       return last === undefined ? Infinity : dayIndex - last;
     },
-    mark: (name, dayIndex) => {
+    usedInOtherRole: (name, role) => {
+      const seen = roles.get(normalizePlaceName(name));
+      if (!seen) return false;
+      for (const r of seen) if (r !== role) return true;
+      return false;
+    },
+    mark: (name, dayIndex, role) => {
       const key = normalizePlaceName(name);
       lastDay.set(key, dayIndex);
       uses.set(key, (uses.get(key) ?? 0) + 1);
+      if (role) {
+        const seen = roles.get(key) ?? new Set<string>();
+        seen.add(role);
+        roles.set(key, seen);
+      }
     },
   };
 }
@@ -78,14 +99,26 @@ export const REUSE_GAP_CASCADE = [3, 2, 0] as const;
  * Espalhar as repetições importa: com 7 almoços e 6 restaurantes no pool, uma
  * repetição é aritmeticamente inevitável — mas nada obriga a concentrá-la na
  * mesma casa, que é como o Cabaña del Primo chegou a três aparições.
+ *
+ * Com `role`, o reuso ainda respeita a regra que o caminho inédito já respeita:
+ * uma casa que entrou na viagem como jantar não volta como almoço. O pool da
+ * categoria contém o id de almoço do Cabaña del Primo mesmo depois do id de
+ * jantar ter sido escalado — sem este filtro, o esgotamento reabria a porta que
+ * a unicidade por nome tinha fechado. Se sobrar ninguém, o filtro cede: um dia
+ * sem almoço é pior que um almoço que já foi jantar.
  */
 export function pickReusableByGap<T extends { name: string }>(
   candidates: T[],
   tracker: PlaceUsageTracker,
-  dayIndex: number
+  dayIndex: number,
+  role?: string
 ): T[] {
+  const sameRole = role
+    ? candidates.filter((c) => !tracker.usedInOtherRole(c.name, role))
+    : candidates;
+  const pool = sameRole.length > 0 ? sameRole : candidates;
   for (const minGap of REUSE_GAP_CASCADE) {
-    const viable = candidates.filter((c) => tracker.gapSince(c.name, dayIndex) >= minGap);
+    const viable = pool.filter((c) => tracker.gapSince(c.name, dayIndex) >= minGap);
     if (viable.length > 0) {
       return [...viable].sort(
         (a, b) =>

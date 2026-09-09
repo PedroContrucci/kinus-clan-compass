@@ -1206,11 +1206,11 @@ const Viagens = () => {
       // rather than leaving the slot empty.
       if (candidates.length === 0) {
         if (category === 'morning' || category === 'afternoon' || category === 'night') return null;
-        candidates = pickReusableByGap(inCategory, usedPlaces, dayIndex);
+        candidates = pickReusableByGap(inCategory, usedPlaces, dayIndex, category);
       }
       if (candidates.length === 0) return null;
       const picked = candidates[0];
-      usedPlaces.mark(picked.name, dayIndex);
+      usedPlaces.mark(picked.name, dayIndex, category);
       return picked;
     }
 
