@@ -1,6 +1,6 @@
 # Relatório — kinu-ai: honestidade de catálogo e transparência de contexto
 
-**Commit:** `6128941` · `fix(kinu-ai): recorte honesto de catálogo e transparência de contexto`
+**Commit:** `9c543dd` · `fix(kinu-ai): recorte honesto de catálogo e transparência de contexto`
 **Data:** 09/09/2026 · **Origem:** feedback da testadora-zero
 **Arquivo tocado:** `supabase/functions/kinu-ai/index.ts` (único) · 18 inserções, 2 remoções
 **Estado:** no repo e no `main`. **Pendente em produção** — precisa do redeploy da §6.
@@ -164,7 +164,7 @@ curl -si -X OPTIONS "$FN/kinu-ai" -H 'Origin: https://evil-lovable.app' \
 E a sonda 5 do 5.e (`metrics` com o token do fundador, `{"days":7}`): `hits` da `kinu-ai` tem que
 **subir** com o tráfego das sondas 1-4. A série que o 5.f vai medir não pode ter degrau aqui.
 
-**Se der errado:** o revert é `git revert 6128941` — um commit que só mexe em strings, sem
+**Se der errado:** o revert é `git revert 9c543dd` — um commit que só mexe em strings, sem
 migração, sem secret, sem schema. Nada a desfazer no banco.
 
 ---
@@ -175,7 +175,7 @@ Só a `kinu-ai`. Sem migração, sem secret novo, sem arquivo compartilhado — 
 aqui não há dependência de deploy conjunto.
 
 > Redeploy the edge function `kinu-ai` from the current `main` of the GitHub repo
-> (commit `6128941`). No migration, no new secret, no other function — only `kinu-ai`.
+> (commit `9c543dd`). No migration, no new secret, no other function — only `kinu-ai`.
 > The change is limited to the system prompt text and the `<trip_context>` string builder inside
 > `supabase/functions/kinu-ai/index.ts`; `corsGate`, `shadowIdentify` and `recordRequest` are
 > untouched.
