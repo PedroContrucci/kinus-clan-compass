@@ -1558,8 +1558,17 @@ const Viagens = () => {
                 }, 0);
 
                 return (
+                  <div key={trip.id} className="space-y-0">
+                  <CheckinBanner
+                    trip={trip as any}
+                    compact
+                    onOpen={() => {
+                      setSelectedTrip(trip);
+                      setSelectedDay(1);
+                      setActiveTab('painel');
+                    }}
+                  />
                   <button
-                    key={trip.id}
                     onClick={() => {
                       setSelectedTrip(trip);
                       setSelectedDay(1);
