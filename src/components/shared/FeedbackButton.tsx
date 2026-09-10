@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { loadJson } from '@/lib/safeStorage';
 import { kinuAuthHeaders } from '@/lib/kinuAuthHeader';
 import { getActiveTrip, subscribeTrips } from '@/lib/tripStore';
+import { trackEvent } from '@/lib/kinuEvents';
 
 const FEEDBACK_WHATSAPP = '5511981362866';
 
@@ -53,6 +54,11 @@ export const FeedbackButton = () => {
     const pagePath = page || window.location.pathname;
     const screenSize = `${window.innerWidth}x${window.innerHeight}`;
     const appVersion = 'v0.1.0';
+
+    // Antes dos dois envios, de propósito: o feedback é salvo no aparelho mesmo sem rede
+    // (:111), então o fato "mandou feedback" já é verdade aqui — e nenhum `await` fica
+    // entre o clique e o evento. Chamada direta ao emissor: um ponto de emissão, uma prop.
+    trackEvent('cla.feedback_sent', { page: pagePath });
 
     const trimmedMissing = missingFeature.trim().slice(0, 1000);
     const trimmedImprovement = improvement.trim().slice(0, 1000);

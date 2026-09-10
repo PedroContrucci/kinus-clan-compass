@@ -24,6 +24,7 @@ import { startSession } from "@/lib/session";
 import { startTripSync } from "@/lib/tripSync";
 import { startTripAdoption } from "@/lib/tripAdoption";
 import { startTripHydration } from "@/lib/tripHydration";
+import { startTripCompletion } from "@/lib/tripEvents";
 
 // Boot, no escopo do módulo: roda uma vez na avaliação de App.tsx, portanto ANTES do
 // `createRoot(...).render()` do main.tsx — nenhum componente que lê trips chegou a montar.
@@ -50,6 +51,12 @@ startTripAdoption();
 // é este navegador, e absorve a própria escrita pelo `absorbLocalWrite` do espelho — que precisa
 // estar ligado antes. Nenhuma leitura acontece aqui: o gate exige sessão resolvida com usuário.
 startTripHydration();
+
+// DEPOIS de tudo, de propósito: a varredura de viagem concluída lê a lista local e exige
+// sessão com usuário, então só tem o que fazer quando a hidratação já pôde trazer o que
+// falta. Ela também assina o sino do store — o que chegar depois deste boot é varrido na
+// hora. Idempotente, síncrona, não emite nada para quem está anônimo.
+startTripCompletion();
 
 const queryClient = new QueryClient();
 

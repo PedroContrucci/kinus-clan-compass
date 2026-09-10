@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { buildDraftTrip } from '@/lib/createTrip';
-import { addTrip } from '@/lib/tripStore';
+import { addTrip, type StoredTrip } from '@/lib/tripStore';
+import { trackTripCreated } from '@/lib/tripEvents';
 import { WizardStep1Logistics } from './WizardStep1Logistics';
 import { WizardStep2Travelers } from './WizardStep2Travelers';
 import { WizardStep3Budget } from './WizardStep3Budget';
@@ -149,8 +150,16 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
 
+      // Fora do gerador de propósito: `src/lib/createTrip.ts` não muda nesta missão, e a index
+      // signature do `StoredTrip` é a porta declarada para campo que o tipo ainda não tem — o
+      // mesmo caminho do `createdVia`. `travelers` é só o total (adultos + crianças + bebês),
+      // então sem isto "viajou com criança" é indecidível.
+      const stored = trip as StoredTrip;
+      stored.childrenCount = data.children.length;
+
       // Funil único: read-modify-write contra o storage + notifica os assinantes.
-      addTrip(trip);
+      addTrip(stored);
+      trackTripCreated(stored, 'wizard');
 
       toast({
         title: "Buscando voos... ✈️",

@@ -34,7 +34,8 @@ import { getDestinationActivities } from '@/data/destinationActivities';
 import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '@/lib/placeIdentity';
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
-import { clearTrips, deleteTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
+import { clearTrips, deleteTrip, getTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
+import { itemKindOf, trackTripActivated, trackTripItemConfirmed } from '@/lib/tripEvents';
 import { buildOfferLinks } from '@/lib/offersLinks';
 import { supabase } from '@/integrations/supabase/client';
 import { getDocsForDestination } from '@/data/destinationDocs';
@@ -303,6 +304,11 @@ const Viagens = () => {
 
     const amount = parseFloat(confirmAmount) || 0;
 
+    // Lido do STORAGE antes da escrita: a promoção `draft → active` acontece lá dentro, e
+    // a `selectedTrip` da closure pode estar velha. Sem isto eu não sei se a ativação
+    // aconteceu AGORA — e "agora" é o que separa emitir de reemitir.
+    const statusAntes = getTrip(selectedTrip.id)?.status;
+
     // Toda a edição roda sobre a viagem FRESCA do storage: os totais de finanças são
     // acumuladores (`+=`), então somar sobre a `selectedTrip` da closure gravaria um
     // total defasado se outra tela tivesse escrito no meio (recon §4.1, §4.2).
@@ -343,6 +349,16 @@ const Viagens = () => {
       return updatedTrip;
     });
     if (stored) setSelectedTrip(stored);
+
+    // Fatos, DEPOIS da escrita: a viagem no disco já é a que o evento descreve.
+    trackTripItemConfirmed(
+      selectedTrip.id,
+      itemKindOf(confirmModal.activity?.category),
+      confirmModal.activity?.id ?? '',
+    );
+    // Confirmar item de rascunho ativa a viagem sem passar pelo botão Ativar. A marca dentro
+    // de `trackTripActivated` garante uma emissão por viagem, venha ela por qual caminho vier.
+    if (statusAntes === 'draft' && stored?.status === 'active') trackTripActivated(selectedTrip.id);
 
     // `id`/`name` não são tocados pela edição, então a atividade do modal serve para o
     // feedback visual sem precisar reextraí-la da viagem gravada.
@@ -689,6 +705,15 @@ const Viagens = () => {
       return updatedTrip;
     });
     if (stored) setSelectedTrip(stored);
+
+    // O `type` já é o vocabulário do evento. O `item_id` é o id fixo do item na viagem —
+    // opaco, e o bastante para o dedupe do emissor não engolir hotel confirmado logo depois
+    // de voo confirmado.
+    trackTripItemConfirmed(
+      selectedTrip.id,
+      type,
+      type === 'flight' ? 'flight-outbound' : 'accommodation',
+    );
 
     // Haptic feedback
     if (navigator.vibrate) navigator.vibrate(50);
@@ -1072,6 +1097,11 @@ const Viagens = () => {
     // que essa sincronia importa.
     const stored = updateTrip(updatedTrip.id, () => normalizeTrip(updatedTrip));
     if (stored) setSelectedTrip(stored);
+
+    // Depois da escrita: o evento descreve a viagem que está no disco. `trackTripActivated`
+    // grava a própria marca por dentro (outro `updateTrip`), então a `selectedTrip` do React
+    // fica sem ela — não faz falta, nada renderiza a marca e toda escrita relê o storage.
+    trackTripActivated(updatedTrip.id);
   };
 
   // DEBUG: temporary export of selected trip itinerary as a .txt file

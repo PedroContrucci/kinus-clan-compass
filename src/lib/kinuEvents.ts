@@ -8,18 +8,15 @@
 //   events(id bigserial pk, user_id uuid NULL, name text NOT NULL,
 //          props jsonb NOT NULL, created_at timestamptz default now())
 //
-// ATENÇÃO — A PORTA ESTÁ FECHADA HOJE. Medido com curl contra o projeto:
-//   anon         -> INSERT: 42501 "permission denied for table events"
-//   service_role -> SELECT: 42501 "permission denied for table events"
-// A tabela existe e está exposta, mas nenhum GRANT foi aplicado. Consequência que vale
-// dizer em voz alta: o `trackOnboarding` nunca gravou um evento — nem por causa disso,
-// ele também tentava três formatos de coluna e NENHUM dos três era o desta tabela
-// (`type/payload`, `event_type/data`, `name/properties` — a coluna é `props`).
+// A PORTA ABRIU EM 10/09/2026: o GRANT e a RLS de `events` foram aplicados e provados no
+// projeto. Até ali nada gravava — e não era só o grant: o antigo `trackOnboarding` tentava
+// três formatos de coluna (`type/payload`, `event_type/data`, `name/properties`) e nenhum
+// dos três era o desta tabela, cuja coluna é `props`.
 //
-// É por isso que o anel local NÃO é decoração. Cada evento entra no anel primeiro e sai
-// dele quando o kinu-beta aceita. Enquanto o GRANT não for aplicado (o SQL está no
-// relatório deste arco), nada se perde: o primeiro evento emitido depois do grant
-// carrega consigo a fila acumulada.
+// É por isso que o anel local NÃO é decoração, e continua não sendo depois do grant. Cada
+// evento entra no anel primeiro e sai dele quando o kinu-beta aceita: enquanto a resposta
+// não vem (sem rede, RLS negando), nada se perde — o primeiro evento emitido depois que a
+// porta responde carrega consigo a fila acumulada.
 //
 // INVARIANTE: nada aqui lança, nunca. Telemetria que derruba a tela é pior que
 // telemetria que falta — é o mesmo compromisso do anel `kinu_sync_log` (tripSync.ts).

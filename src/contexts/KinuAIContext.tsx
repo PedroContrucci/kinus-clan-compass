@@ -8,7 +8,8 @@ import { getCuratedHotels } from "@/data/curatedHotels";
 import { findCityInfo } from "@/data/destinationCatalog";
 import { kinuAuthHeaders } from "@/lib/kinuAuthHeader";
 import { buildDraftTrip } from "@/lib/createTrip";
-import { addTrip } from "@/lib/tripStore";
+import { addTrip, type StoredTrip } from "@/lib/tripStore";
+import { trackTripCreated } from "@/lib/tripEvents";
 import { TRAVEL_INTERESTS, PRIORITY_OPTIONS } from "@/components/wizard/types";
 
 export interface KinuActionHandlers {
@@ -381,11 +382,14 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
             biologyAIEnabled: true,
           });
 
-          (trip as any).createdVia = 'kinu';
+          const stored = trip as StoredTrip;
+          stored.createdVia = 'kinu';
+          stored.childrenCount = 0; // o chat não pergunta por crianças (`children: []` acima)
 
           // Funil único: read-modify-write contra o storage + notifica os assinantes.
-          // `createdVia` é setado ANTES e sobrevive — StoredTrip preserva campos extras.
-          addTrip(trip);
+          // Os dois campos são setados ANTES e sobrevivem — StoredTrip preserva campos extras.
+          addTrip(stored);
+          trackTripCreated(stored, 'kinu_ai');
 
           setPendingNavigation({ destino: 'painel', ts: Date.now(), tripId: trip.id });
           setMessages(prev => [...prev, {
