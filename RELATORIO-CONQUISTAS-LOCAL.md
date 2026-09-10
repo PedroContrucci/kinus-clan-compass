@@ -95,6 +95,14 @@ To https://github.com/PedroContrucci/kinus-clan-compass
    1029266..7bb736c  main -> main
 ```
 
+E o push deste próprio relatório:
+
+```
+$ git push
+To https://github.com/PedroContrucci/kinus-clan-compass
+   7bb736c..77ed784  main -> main
+```
+
 O `git pull --rebase` conflitou em `src/test/tripEvents.test.ts`: o Lovable tinha consertado o mesmo `tsc` vermelho com `as any`. Resolvi pelo helper tipado. Sem `--amend`, sem `--force`.
 
 ---
