@@ -142,6 +142,27 @@ describe('uma drenagem por vez', () => {
     expect(readEvents().every((e) => e.sent)).toBe(true);
   });
 
+  // O segundo bug da entrega, achado pelo motor de conquistas: dois eventos do MESMO NOME no
+  // mesmo milissegundo têm o mesmo `ts|name`. A drenagem só entregava o primeiro (o segundo
+  // entrou no anel depois que ela já tinha lido a fila), mas marcava os DOIS como enviados —
+  // e o segundo sumia em silêncio, sem ficar pendente para ninguém.
+  //
+  // Não é caso de laboratório: é a varredura concluindo três viagens e o motor gravando dois
+  // troféus, os dois em laço, dentro do mesmo milissegundo.
+  it('dois eventos do mesmo nome no mesmo milissegundo chegam os dois', async () => {
+    // O relógio congelado é o que torna o teste determinístico: solto, ele passa quando as duas
+    // emissões caem em milissegundos diferentes — que foi exatamente como o bug se escondeu.
+    vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2026-09-10T12:00:00.000Z');
+
+    trackEvent('achievement.unlocked', { key: 'primeira_fogueira' });
+    trackEvent('achievement.unlocked', { key: 'pe_na_estrada' });
+    await tick();
+
+    expect(db.state.inserted.map((r) => (r.props as { key: string }).key))
+      .toEqual(['primeira_fogueira', 'pe_na_estrada']);
+    expect(readEvents().every((e) => e.sent)).toBe(true);
+  });
+
   it('o evento que chega no meio da drenagem não fica esperando a próxima emissão', async () => {
     trackEvent('a');
     await Promise.resolve(); // a drenagem de `a` já está no ar, ainda sem resolver

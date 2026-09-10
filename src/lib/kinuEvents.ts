@@ -70,8 +70,18 @@ function writeEvents(events: KinuEvent[]): boolean {
   }
 }
 
-/** Identidade de uma entrada para o read-modify-write da drenagem. */
-const keyOf = (e: KinuEvent) => `${e.ts}|${e.name}`;
+/**
+ * Identidade de uma entrada para o read-modify-write da drenagem.
+ *
+ * AS PROPS FAZEM PARTE DA IDENTIDADE, e isso não é zelo: `ts|name` colide sempre que dois
+ * eventos do MESMO nome saem no mesmo milissegundo, que é o caso normal de quem emite em
+ * laço — a varredura do `tripEvents` concluindo três viagens, o motor de conquistas gravando
+ * dois troféus. Na colisão, a marcação de entregue pegava as DUAS entradas enquanto só uma
+ * tinha sido inserida: a segunda ficava `sent: true` sem nunca ter chegado no kinu-beta, e
+ * sumia em silêncio. Duas entradas com mesmo ts, mesmo nome E mesmas props são o mesmo evento;
+ * aí colapsar é o certo.
+ */
+const keyOf = (e: KinuEvent) => `${e.ts}|${e.name}|${JSON.stringify(e.props)}`;
 
 /** A identidade de um evento para o dedupe: nome + props + dono. */
 const signatureOf = (name: string, props: EventProps, userId?: string) =>
@@ -107,6 +117,45 @@ function isDuplicate(events: KinuEvent[], signature: string): boolean {
 
   const last = events[events.length - 1];
   return Boolean(last) && signatureOf(last.name, last.props, last.userId) === signature;
+}
+
+// ---------------------------------------------------------------------------
+// O sino do emissor — quem quer saber que um fato aconteceu
+// ---------------------------------------------------------------------------
+
+type EventListener = (name: string) => void;
+
+const listeners = new Set<EventListener>();
+
+/**
+ * Assina as emissões ACEITAS. Devolve o unsubscribe.
+ *
+ * Existe para o motor de conquistas (`achievementEngine.ts`), que precisa recalcular quando um
+ * fato novo acontece — e não a cada mexida no roteiro. Assinar o `tripStore` seria mais fácil e
+ * mais errado: arrastar uma atividade toca o sino do store e não é fato nenhum.
+ *
+ * Toca com o NOME, não com o evento inteiro: quem assina vai ler a tabela de qualquer jeito, e
+ * entregar as props aqui convidaria alguém a computar conquista em cima do anel local.
+ *
+ * Mesmo contrato do `subscribeTrips` e do `subscribeSession`: não replica nada na assinatura.
+ */
+export function subscribeEvents(listener: EventListener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+// Um listener que lança não pode derrubar a emissão — é a invariante do arquivo, e quem chama
+// `trackEvent` é uma tela.
+function emit(name: string): void {
+  listeners.forEach((listener) => {
+    try {
+      listener(name);
+    } catch (err) {
+      console.warn('[kinuEvents] listener lançou exceção — ignorado', err);
+    }
+  });
 }
 
 /** O uid da sessão, quando quem emite não sabe quem é o usuário. Nunca lança. */
@@ -232,4 +281,8 @@ export function trackEvent(name: string, props: EventProps = {}, userId?: string
   // único caminho em que isso acontece, e é o único em que não há onde guardar.
   if (enfileirado) void flushEvents();
   else void (async () => { await insertOne(entry, await currentUserId()); })();
+
+  // POR ÚLTIMO, e só para o que passou pelo dedupe: evento descartado não é fato novo, e o sino
+  // toca depois da drenagem começar para que quem assina já encontre a entrega em curso.
+  emit(name);
 }

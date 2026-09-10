@@ -38,4 +38,15 @@ describe('os pontos de emissão continuam onde foram postos', () => {
   it('o boot liga a varredura de viagem concluída', () => {
     expect(src('App.tsx')).toContain('startTripCompletion();');
   });
+
+  it('o boot liga o motor de conquistas e pendura a celebração', () => {
+    const app = src('App.tsx');
+    expect(app).toContain('startAchievements();');
+    // Fora do Perfil de propósito: a conquista destrava em `/viagens`, não em `/conta`.
+    expect(app).toContain('<AchievementCelebration />');
+  });
+
+  it('o Perfil mostra a grade de conquistas', () => {
+    expect(src('pages/Conta.tsx')).toContain('<AchievementsPanel />');
+  });
 });

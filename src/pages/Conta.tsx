@@ -10,6 +10,7 @@ import { loadJson } from '@/lib/safeStorage';
 import { listTrips, clearTrips } from '@/lib/tripStore';
 import { useAuth } from '@/hooks/useAuth';
 import { kinuBeta } from '@/integrations/kinu-beta/client';
+import { AchievementsPanel } from '@/components/conquistas/AchievementsPanel';
 
 
 
@@ -159,12 +160,15 @@ const Conta = () => {
           </div>
         </div>
 
+        {/* Conquistas — nível, XP e a grade. Toda a regra vive no achievementEngine. */}
+        <AchievementsPanel />
+
         {/* Menu */}
         <div className="space-y-2">
           <HintBalloon
             area="perfil"
             arrow="none"
-            text="Conta, privacidade e (em breve) suas conquistas."
+            text="Suas conquistas, conta e privacidade."
           />
           {menuItems.map((item, index) => (
             <button

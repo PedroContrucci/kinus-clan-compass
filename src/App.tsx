@@ -25,6 +25,8 @@ import { startTripSync } from "@/lib/tripSync";
 import { startTripAdoption } from "@/lib/tripAdoption";
 import { startTripHydration } from "@/lib/tripHydration";
 import { startTripCompletion } from "@/lib/tripEvents";
+import { startAchievements } from "@/lib/achievementEngine";
+import { AchievementCelebration } from "@/components/conquistas/AchievementCelebration";
 
 // Boot, no escopo do módulo: roda uma vez na avaliação de App.tsx, portanto ANTES do
 // `createRoot(...).render()` do main.tsx — nenhum componente que lê trips chegou a montar.
@@ -57,6 +59,11 @@ startTripHydration();
 // falta. Ela também assina o sino do store — o que chegar depois deste boot é varrido na
 // hora. Idempotente, síncrona, não emite nada para quem está anônimo.
 startTripCompletion();
+
+// DEPOIS da varredura, de propósito: o motor de conquistas assina o emissor, e a conclusão que a
+// varredura acabar de emitir já o acorda. Ele não lê nada sem sessão resolvida com usuário e não
+// grava nada sem antes ler da tabela o que já está destravado. Idempotente, síncrona.
+startAchievements();
 
 const queryClient = new QueryClient();
 
@@ -113,6 +120,7 @@ const App = () => (
           <KinuAIWrapper />
           <BetaFeedbackWrapper />
           <TripAdoptionDialog />
+          <AchievementCelebration />
           <div className="min-h-screen bg-background">
             <div className="lg:max-w-5xl xl:max-w-6xl lg:mx-auto">
             <Routes>

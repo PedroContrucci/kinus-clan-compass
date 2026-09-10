@@ -64,6 +64,11 @@ Perfil: nível + barra de XP + grade de troféus (bloqueados em silhueta). Celeb
 1. ✅ `landmark_tier` nas 21 cidades
 2. ✅ Eventos de viagem instrumentados (`tripEvents.ts`, 01ba151)
 3. ⏳ Check-in pós-viagem (Lovable)
-4. ⏳ Motor: computa `events` → grava `achievement.unlocked` idempotente (Code; leitura via RPC security definer no kinu-beta — service_role não tem SELECT em events)
-5. ⏳ UI do Perfil
-6. ⏳ Retroativo para testadores atuais
+4. ✅ Motor: `achievementEngine.ts` computa `events` → grava `achievement.unlocked` idempotente por chave natural lida do servidor. **Sem RPC:** rodando no cliente com a RLS *own*, o usuário lê os próprios eventos direto — a RPC `security definer` só faria falta se o motor rodasse com `service_role`.
+5. ✅ UI do Perfil (`AchievementsPanel` no `/conta` + `AchievementCelebration` no App)
+6. ✅ Retroativo — não é um modo: toda passada lê o histórico inteiro, então quem já viajou acorda com os troféus sem migração nenhuma.
+
+**Duas diferenças entre o §3 e o que o motor implementa**, ambas por falta de dado nos eventos:
+`tudo_no_lugar` não checa "antes da partida" (nenhum evento carrega `startDate`; mede voo + hotel
++ 3 atividades na mesma viagem) e `cla_em_movimento` cruza o `children` da **ativação** com a
+conclusão — viagem ativada antes de 01ba151 não tem esse evento e não destrava.
