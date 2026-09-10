@@ -61,12 +61,19 @@ const UID = 'user-1';
 const row = (name: string, props: Record<string, unknown>, userId: string | null = UID) =>
   ({ user_id: userId, name, props });
 
-/** Uma viagem inteira vivida: criada, ativada, concluída. */
+/**
+ * Uma viagem inteira vivida: criada, ativada, concluída.
+ *
+ * O destino é o **Porto**, e não Lisboa, de propósito: Porto não é uma das 21 cidades
+ * classificadas, então nenhum troféu da Camada Local entra junto. Estas suítes são sobre
+ * idempotência, sino e cache — o que a Camada Local destrava tem suíte própria
+ * (`achievementsLocal.test.ts`). Fixture que destrava demais testa o motor por acidente.
+ */
 const livedTrip = (tripId: string, over: Record<string, unknown> = {}) => [
-  row('trip.created', { trip_id: tripId, destination: 'Lisboa', origin: 'wizard' }),
-  row('trip.activated', { trip_id: tripId, destination: 'Lisboa', days: 5, travelers: 2, ...over }),
+  row('trip.created', { trip_id: tripId, destination: 'Porto', origin: 'wizard' }),
+  row('trip.activated', { trip_id: tripId, destination: 'Porto', days: 5, travelers: 2, ...over }),
   row('trip.completed', {
-    trip_id: tripId, destination: 'Lisboa', country: 'Portugal', continent: 'Europa', days: 5, ...over,
+    trip_id: tripId, destination: 'Porto', country: 'Portugal', continent: 'Europa', days: 5, ...over,
   }),
 ];
 
@@ -245,7 +252,8 @@ describe('o sino do emissor', () => {
 
     state.rows.push(...livedTrip('t1'));
     events.trackEvent('trip.completed', {
-      trip_id: 't2', destination: 'Roma', country: 'Itália', continent: 'Europa', days: 4,
+      // Milão pelo mesmo motivo do Porto no `livedTrip`: fora das 21 classificadas.
+      trip_id: 't2', destination: 'Milão', country: 'Itália', continent: 'Europa', days: 4,
     }, UID);
     await settle(engine, events);
 

@@ -14,6 +14,12 @@
  * O caminho inverso (app -> banco) é `writeback-catalog.ts`, e ele roda **antes** deste
  * sempre que o app tiver itens que o banco não tem — senão eles são apagados aqui.
  *
+ * **Também emite `src/data/generated/landmarkTiers.ts`** no `--apply`. A coluna
+ * `landmark_tier` NÃO entra em `destinationActivities.ts` (ela não é campo de roteiro,
+ * é classificação de conquista) — mas o motor de troféus precisa dela em runtime, e
+ * runtime não fala com o banco. O arquivo gerado é a ponte, e é a ÚNICA: nenhum outro
+ * lugar do app conhece o tier.
+ *
  * Uso:
  *   npx tsx scripts/sync-catalog.ts            # dry-run: imprime o plano, não escreve
  *   npx tsx scripts/sync-catalog.ts --apply    # escreve, valida, e restaura se falhar
@@ -25,15 +31,18 @@
  * (A anon key do .env **não** serve: o papel `anon` não tem SELECT em curated_activities.)
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+
+import { CURATED_CITIES } from '../src/lib/curatedCities';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const ENV_FILE = resolve(ROOT, '.env.sync');
 const CATALOG_FILE = resolve(ROOT, 'src/data/destinationActivities.ts');
+const TIERS_FILE = resolve(ROOT, 'src/data/generated/landmarkTiers.ts');
 const TSCONFIG = 'tsconfig.app.json';
 
 /** Aborta se uma cidade vier com menos que esta fração da contagem atual do arquivo. */
@@ -67,6 +76,12 @@ const DAY_OCCUPANCY: Record<string, 'full' | 'half'> = {
 /** A união de `SuggestedActivity['category']`. Valor fora dela aborta o run. */
 const CATEGORIES = new Set(['breakfast', 'lunch', 'dinner', 'morning', 'afternoon', 'night']);
 
+/** As categorias que são comida. É o que o "Garfo" do §4 do desenho conta. */
+const FOOD_CATEGORIES = new Set(['breakfast', 'lunch', 'dinner']);
+
+/** Os valores aceitos em `curated_activities.landmark_tier`. Outro valor aborta o run. */
+const TIERS = new Set(['icon', 'essential', 'hidden_gem']);
+
 // ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
@@ -83,10 +98,11 @@ interface DbRow {
   duration_hours: number | string | null;
   tips: string[] | null;
   style_tags: string[] | null;
+  landmark_tier: string | null;
 }
 
 const SELECT =
-  'id,city,name,category,neighborhood,rating,google_rating,estimated_cost_brl,duration_hours,tips,style_tags';
+  'id,city,name,category,neighborhood,rating,google_rating,estimated_cost_brl,duration_hours,tips,style_tags,landmark_tier';
 
 // ---------------------------------------------------------------------------
 // Utilidades
@@ -272,6 +288,136 @@ function renderEntry(r: DbRow): string {
 }
 
 // ---------------------------------------------------------------------------
+// 4b) O artefato de tiers — a única ponte entre `landmark_tier` e o runtime
+// ---------------------------------------------------------------------------
+
+/** minúsculo, sem diacríticos. Mesma normalização do `build-kinu-catalog`. */
+function normalize(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/** O slug da chave do troféu. CONGELADO — mudar aqui re-destrava a coleção inteira. */
+function slugOf(city: string): string {
+  return normalize(city).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+/**
+ * O nome canônico da cidade do banco.
+ *
+ * O banco diz `Rome` e `Tokyo`; `CURATED_CITIES` diz `Roma` e `Tóquio`. Os dois apelidos
+ * apontam para a MESMA const no registry de `destinationActivities` — é por aí que a
+ * tradução acontece, sem tabela de sinônimos para envelhecer. Ambiguidade aborta: chave de
+ * troféu errada é troféu errado para sempre.
+ */
+function canonicalCity(dbCity: string, registry: Map<string, string>): string {
+  const constName = registry.get(dbCity);
+  if (!constName) die(`cidade '${dbCity}' não tem chave no registry — impossível canonizar.`);
+  const hits = CURATED_CITIES.filter((c) => registry.get(c) === constName);
+  if (hits.length !== 1) {
+    die(
+      `'${dbCity}' -> const '${constName}' casa com ${hits.length} cidades curadas ` +
+        `(${hits.join(', ') || 'nenhuma'}). Nada foi escrito.`
+    );
+  }
+  return hits[0];
+}
+
+/**
+ * Gera `src/data/generated/landmarkTiers.ts`.
+ *
+ * Emite só o que o motor de conquistas precisa e nada mais: os itens classificados e os
+ * gastronômicos. O resto do catálogo já vive em `destinationActivities.ts` — duplicá-lo aqui
+ * seria criar uma segunda verdade sobre a mesma coisa.
+ */
+function renderTiers(rows: DbRow[], registry: Map<string, string>): string {
+  const byCanonical = new Map<string, DbRow[]>();
+  for (const r of rows) {
+    const city = canonicalCity(r.city, registry);
+    if (!byCanonical.has(city)) byCanonical.set(city, []);
+    byCanonical.get(city)!.push(r);
+  }
+
+  const faltando = CURATED_CITIES.filter((c) => !byCanonical.has(c));
+  if (faltando.length) die(`cidades curadas sem linha no banco: ${faltando.join(', ')}. Nada foi escrito.`);
+
+  const slugs = new Map<string, string>();
+  const blocks: string[] = [];
+
+  // Na ordem de CURATED_CITIES: a saída tem que ser estável entre runs, ou o diff mente.
+  for (const city of CURATED_CITIES) {
+    const cityRows = [...byCanonical.get(city)!].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    const slug = slugOf(city);
+    const clash = [...slugs.entries()].find(([, s]) => s === slug);
+    if (clash) die(`slug '${slug}' colide entre '${clash[0]}' e '${city}'. Nada foi escrito.`);
+    slugs.set(city, slug);
+
+    const tiers: string[] = [];
+    const food: string[] = [];
+    for (const r of cityRows) {
+      const tier = r.landmark_tier;
+      if (tier !== null && tier !== undefined && tier !== '') {
+        if (!TIERS.has(tier)) die(`landmark_tier '${tier}' de '${r.id}' não é icon|essential|hidden_gem.`);
+        tiers.push(`      ${q(r.id)}: ${q(tier)},`);
+      }
+      if (FOOD_CATEGORIES.has(r.category)) food.push(q(r.id));
+    }
+
+    // Os limiares dos cinco moldes. Cidade classificada pela metade produziria troféu que
+    // NUNCA destrava — melhor não escrever o arquivo do que escrever a promessa quebrada.
+    const count = (t: string) => cityRows.filter((r) => r.landmark_tier === t).length;
+    if (count('icon') !== 1) die(`'${city}' tem ${count('icon')} itens 'icon' (o molde Ícone exige exatamente 1).`);
+    if (count('essential') < 5) die(`'${city}' tem ${count('essential')} 'essential' (o molde Coração exige 5).`);
+    if (count('hidden_gem') < 1) die(`'${city}' não tem nenhum 'hidden_gem' (o molde Segredo exige 1).`);
+    if (food.length < 3) die(`'${city}' tem ${food.length} itens gastronômicos (o molde Garfo exige 3).`);
+
+    const constName = registry.get(city)!;
+    const aliases = [...registry.keys()].filter((k) => registry.get(k) === constName).sort();
+
+    blocks.push(
+      `  ${q(city)}: {\n` +
+        `    slug: ${q(slug)},\n` +
+        `    aliases: [${aliases.map(q).join(', ')}],\n` +
+        `    tiers: {\n${tiers.join('\n')}\n    },\n` +
+        `    food: [${food.join(', ')}],\n` +
+        `  },`
+    );
+  }
+
+  return `// GERADO por scripts/sync-catalog.ts --apply — não edite à mão.
+//
+// A classificação \`landmark_tier\` vive só em \`curated_activities\` no kinu-beta, e o motor de
+// conquistas roda no cliente, sem rede. Este arquivo é a ponte — e é a única: nenhum outro
+// lugar do app conhece o tier. Editar aqui é escrever no espelho; o próximo \`--apply\` apaga.
+//
+// A trava de deriva é \`src/test/landmarkTiersArtifact.test.ts\`. Ela NÃO consulta o banco (a
+// suíte não tem a service key, e não deve ter): confere o que dá para conferir offline — que
+// todo id daqui ainda existe em \`destinationActivities\`, que \`food\` é exatamente a
+// gastronomia do catálogo, e que cada cidade fecha os limiares dos cinco moldes.
+
+/** As três classes do §4 do DESENHO-CONQUISTAS-v2. */
+export type LandmarkTier = 'icon' | 'essential' | 'hidden_gem';
+
+export interface CityLandmarks {
+  /** O pedaço do meio da chave do troféu (\`local.<slug>.<molde>\`). CONGELADO. */
+  slug: string;
+  /** Todo nome que significa esta cidade — vem do registry de \`destinationActivities\`, que já
+   *  carrega os apelidos ('Tokyo' e 'Tóquio' apontam para a mesma const). É o que faz um
+   *  \`trip.checkin\` com \`city: 'Rome'\` cair em 'Roma'. */
+  aliases: string[];
+  /** Só os itens classificados. Quem não está aqui não vale troféu de tier. */
+  tiers: Record<string, LandmarkTier>;
+  /** Ids de category breakfast|lunch|dinner — o que o molde Garfo conta. */
+  food: string[];
+}
+
+/** Chaveado pelo nome canônico de \`CURATED_CITIES\` ('Roma', 'Tóquio' — não 'Rome'/'Tokyo'). */
+export const LANDMARKS: Record<string, CityLandmarks> = {
+${blocks.join('\n')}
+};
+`;
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -379,6 +525,17 @@ async function main(): Promise<void> {
     console.log(`⚠ DAY_OCCUPANCY tem id(s) fora do export (não fatal): ${staleOcc.join(', ')}\n`);
   }
 
+  // --- O artefato de tiers, montado (e validado) ANTES de qualquer escrita ---
+  // Se a classificação do banco não fecha os limiares dos moldes, o run morre aqui — com
+  // `destinationActivities.ts` ainda intacto no disco.
+  const tiersContent = renderTiers(rows, registry);
+  const tiersBefore = existsSync(TIERS_FILE) ? readFileSync(TIERS_FILE, 'utf8') : null;
+  const tiersChanged = tiersBefore !== tiersContent;
+  console.log(
+    `landmarkTiers.ts: ${rows.filter((r) => r.landmark_tier).length} itens classificados em ` +
+      `${CURATED_CITIES.length} cidades — ${tiersBefore === null ? 'ARQUIVO NOVO' : tiersChanged ? 'muda' : 'sem mudança'}\n`
+  );
+
   if (!apply) {
     console.log(`Dry-run — nada foi escrito. Para aplicar:\n\n   npx tsx scripts/sync-catalog.ts --apply\n`);
     return;
@@ -397,7 +554,17 @@ async function main(): Promise<void> {
   }
   writeFileSync(CATALOG_FILE, updated, 'utf8');
 
-  const restore = () => writeFileSync(CATALOG_FILE, original, 'utf8');
+  // O artefato de tiers sai junto, no mesmo run: catálogo novo com tiers velhos é exatamente
+  // a deriva que a trava do teste existe para pegar — e ela pegaria DEPOIS do commit.
+  mkdirSync(dirname(TIERS_FILE), { recursive: true });
+  writeFileSync(TIERS_FILE, tiersContent, 'utf8');
+
+  // Restaura os DOIS. Meio-caminho é o pior estado possível: o app compila com um catálogo
+  // e classifica com o outro.
+  const restore = () => {
+    writeFileSync(CATALOG_FILE, original, 'utf8');
+    if (tiersBefore !== null) writeFileSync(TIERS_FILE, tiersBefore, 'utf8');
+  };
 
   // --- Revalidação a partir do arquivo escrito ---
   const rewritten = readFileSync(CATALOG_FILE, 'utf8');
@@ -416,6 +583,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`   • ${tAfter} entradas escritas em ${plans.length} consts`);
+  console.log(`   • src/data/generated/landmarkTiers.ts — ${tiersContent.length} bytes`);
   console.log(`   • rodando type-check (tsc -p ${TSCONFIG} --noEmit)…`);
   try {
     execSync(`npx tsc -p ${TSCONFIG} --noEmit`, { cwd: ROOT, stdio: 'inherit' });

@@ -45,6 +45,9 @@ const TRACKED_NAMES = [
   'trip.activated',
   'trip.completed',
   'trip.item_confirmed',
+  // A fonte PRIMÁRIA da vivência (§2). Fora desta lista, a Camada Local inteira dependeria
+  // do fallback — e o item confirmado e não vivido valeria troféu.
+  'trip.checkin',
   'budget.closed_under',
   UNLOCKED_EVENT,
 ];
@@ -79,8 +82,17 @@ const emittedThisSession = new Set<string>();
 function readCache(): Progress {
   try {
     const cached = loadJson<Progress | null>(ACHIEVEMENTS_KEY, null);
-    // Snapshot velho de um formato anterior não pode virar tela quebrada.
-    if (cached && typeof cached.xp === 'number' && Array.isArray(cached.unlocked)) return cached;
+    // Snapshot velho de um formato anterior não pode virar tela quebrada. O de antes da
+    // Camada Local não tem `visitedCities` e traz um `total` de 12 — NORMALIZA em vez de
+    // descartar: o cache existe só para a primeira pintura, e a passada seguinte corrige
+    // os números de qualquer forma. Descartar faria a tela piscar zerada em todo boot.
+    if (cached && typeof cached.xp === 'number' && Array.isArray(cached.unlocked)) {
+      return {
+        ...cached,
+        total: typeof cached.total === 'number' ? cached.total : EMPTY_PROGRESS.total,
+        visitedCities: Array.isArray(cached.visitedCities) ? cached.visitedCities : [],
+      };
+    }
   } catch {
     /* cache é descartável */
   }

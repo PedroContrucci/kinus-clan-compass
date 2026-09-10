@@ -17,6 +17,7 @@ import {
   WORLD_ACHIEVEMENTS,
   type AchievementEvent,
 } from '@/lib/achievements';
+import { LOCAL_CITIES } from '@/lib/localAchievements';
 
 // --- construtores de fato, no formato exato do tripEvents -------------------
 
@@ -296,9 +297,15 @@ describe('XP', () => {
     const events = [...trip('t1'), underBudget('t1')];
     const progress = computeProgress(events);
 
-    // primeira_fogueira, pe_na_estrada, capitao_do_orcamento.
-    expect(progress.unlocked).toEqual(['primeira_fogueira', 'pe_na_estrada', 'capitao_do_orcamento']);
-    expect(progress.xp).toBe(100 + 50 + 150 + 50 + 3 * 25);
+    // primeira_fogueira, pe_na_estrada, capitao_do_orcamento — e o Carimbo de Lisboa, que a
+    // Camada Local dá de graça a QUALQUER viagem concluída numa das 21 cidades curadas.
+    expect(progress.unlocked).toEqual([
+      'primeira_fogueira',
+      'pe_na_estrada',
+      'capitao_do_orcamento',
+      'local.lisboa.carimbo',
+    ]);
+    expect(progress.xp).toBe(100 + 50 + 150 + 50 + 4 * 25);
   });
 
   it('segundo país no mesmo continente vale país, não continente', () => {
@@ -316,7 +323,10 @@ describe('XP', () => {
     expect(progress.xp).toBe(0);
     expect(progress.level.name).toBe('Aprendiz do Clã');
     expect(progress.unlocked).toEqual([]);
-    expect(progress.total).toBe(12);
+    // 12 da Mundo + 5 por cidade classificada. O total é DINÂMICO: sai do arquivo gerado,
+    // não de um número escrito no catálogo.
+    expect(progress.total).toBe(12 + 5 * LOCAL_CITIES.length);
+    expect(progress.visitedCities).toEqual([]);
   });
 });
 

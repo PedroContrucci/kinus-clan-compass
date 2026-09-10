@@ -15,6 +15,7 @@ vi.mock('@/integrations/kinu-beta/client', () => ({
 
 import { readEvents, type EventProps } from '@/lib/kinuEvents';
 import { addTrip, getTrip, type StoredTrip } from '@/lib/tripStore';
+import type { TripFinances } from '@/types/trip';
 import {
   ACTIVATED_MARK,
   COMPLETED_MARK,
@@ -31,6 +32,28 @@ import {
 const propsOf = (name: string): EventProps[] =>
   readEvents().filter((e) => e.name === name).map((e) => e.props);
 
+/** `TripFinances` inteiro a partir dos quatro números que o `budget.closed_under` lê. As
+ *  categorias zeradas existem só para satisfazer o tipo — nenhum evento olha para elas. */
+const finances = (over: Partial<TripFinances> = {}): TripFinances => {
+  const zero = { planned: 0, confirmed: 0, bidding: 0 };
+  return {
+    total: 10000,
+    confirmed: 0,
+    planned: 0,
+    bidding: 0,
+    available: 10000,
+    categories: {
+      flights: { ...zero },
+      accommodation: { ...zero },
+      tours: { ...zero },
+      food: { ...zero },
+      transport: { ...zero },
+      shopping: { ...zero },
+    },
+    ...over,
+  };
+};
+
 const trip = (over: Partial<StoredTrip> = {}): StoredTrip => ({
   id: 'trip-a',
   status: 'draft',
@@ -45,7 +68,7 @@ const trip = (over: Partial<StoredTrip> = {}): StoredTrip => ({
   priorities: [],
   progress: 0,
   days: [],
-  finances: { total: 10000, confirmed: 0, planned: 0, bidding: 0, available: 10000 },
+  finances: finances(),
   checklist: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   ...over,
@@ -193,7 +216,7 @@ describe('budget.closed_under', () => {
       id: 'barata',
       status: 'completed',
       endDate: '2026-08-01T00:00:00.000Z',
-      finances: { total: 10000, confirmed: 6000, planned: 1500, bidding: 0, available: 2500 } as any,
+      finances: finances({ confirmed: 6000, planned: 1500, available: 2500 }),
     }));
 
     sweepCompletedTrips(HOJE);
@@ -208,7 +231,7 @@ describe('budget.closed_under', () => {
       id: 'estourada',
       status: 'completed',
       endDate: '2026-08-01T00:00:00.000Z',
-      finances: { total: 10000, confirmed: 12000, planned: 0, bidding: 0, available: 0 } as any,
+      finances: finances({ confirmed: 12000, available: 0 }),
     }));
 
     sweepCompletedTrips(HOJE);

@@ -16,6 +16,17 @@
 // viagem, mas o motor não pode depender da higiene do emissor: a tabela é append-only e um
 // dispositivo antigo, um F5 no meio de uma entrega ou uma migração futura podem deixar duas
 // linhas do mesmo `trip.completed`. Uma viagem conta uma vez, aconteça o que acontecer.
+//
+// A CAMADA LOCAL (§4) mora no `localAchievements.ts` e entra aqui só como lista. O catálogo
+// deixou de ser uma constante de doze linhas: são 12 fixos + 5 por cidade classificada, e
+// quantas cidades existem é pergunta para o arquivo gerado, não para este.
+import {
+  catalogIdOf,
+  LOCAL_ACHIEVEMENTS,
+  LOCAL_CITIES,
+  resolveCity,
+  splitList,
+} from '@/lib/localAchievements';
 
 /** Uma linha da tabela `events`, reduzida ao que o catálogo lê. */
 export interface AchievementEvent {
@@ -31,6 +42,9 @@ export interface Achievement {
   /** O critério em UMA linha, para o troféu bloqueado dizer o que falta. */
   criterion: string;
   emoji: string;
+  /** Quanto vale. Ausente = `XP.achievement`, que é o da Camada Mundo inteira; a Camada Local
+   *  varia por molde (§4: Coração e Segredo valem 50, os outros três 25). */
+  xp?: number;
   /** Merecido AGORA, olhando só o histórico. Nunca lança. */
   earned: (index: EventIndex) => boolean;
 }
@@ -68,6 +82,14 @@ interface ConfirmedItems {
 export interface EventIndex {
   /** trip_id -> dados da conclusão. Uma entrada por viagem, mesmo com linhas repetidas. */
   completed: Map<string, CompletedTrip>;
+  /** Cidades CANÔNICAS com pelo menos uma viagem concluída. É o Carimbo do §4. */
+  completedCities: Set<string>;
+  /**
+   * Cidade canônica -> ids do catálogo que a pessoa VIVEU, somados entre todas as viagens
+   * àquela cidade. É sobre este conjunto que os quatro moldes de item decidem, e é por ele
+   * que 3 essenciais numa viagem + 2 em outra fazem um Coração.
+   */
+  livedByCity: Map<string, Set<string>>;
   /** trip_id -> crianças na ativação. `trip.completed` não carrega `children`; a ativação sim. */
   activated: Map<string, number>;
   /** trip_ids criados pelo KINU AI. */
@@ -78,15 +100,28 @@ export interface EventIndex {
   items: Map<string, ConfirmedItems>;
 }
 
+/** O que um `trip.checkin` disse sobre uma viagem. */
+interface CheckIn {
+  /** Como veio no evento — pode não resolver para cidade nenhuma. */
+  city: string;
+  /** Ids do catálogo, já extraídos do `day-N-`. */
+  ids: Set<string>;
+}
+
 /** Monta o índice. Evento torto entra sem `trip_id` e é ignorado — nunca lança. */
 export function indexEvents(events: AchievementEvent[]): EventIndex {
   const index: EventIndex = {
     completed: new Map(),
+    completedCities: new Set(),
+    livedByCity: new Map(),
     activated: new Map(),
     createdByAi: new Set(),
     underBudget: new Set(),
     items: new Map(),
   };
+
+  /** trip_id -> check-in. Fora do índice: é insumo da vivência, não fato público dela. */
+  const checkins = new Map<string, CheckIn>();
 
   for (const event of Array.isArray(events) ? events : []) {
     const props = (event?.props ?? {}) as Record<string, unknown>;
@@ -104,6 +139,19 @@ export function indexEvents(events: AchievementEvent[]): EventIndex {
           days: num(props.days),
         });
         break;
+
+      case 'trip.checkin': {
+        // Duas linhas do mesmo check-in (F5 no envio) UNEM os ids em vez de a última vencer:
+        // um reenvio parcial não pode apagar o que a pessoa já tinha declarado ter vivido.
+        const entry = checkins.get(tripId) ?? { city: '', ids: new Set<string>() };
+        entry.city = str(props.city) || entry.city;
+        for (const raw of splitList(props.lived_ids)) {
+          const id = catalogIdOf(raw);
+          if (id) entry.ids.add(id);
+        }
+        checkins.set(tripId, entry);
+        break;
+      }
 
       case 'trip.activated':
         index.activated.set(tripId, num(props.children));
@@ -131,6 +179,44 @@ export function indexEvents(events: AchievementEvent[]): EventIndex {
       default:
         break;
     }
+  }
+
+  // --- Segunda passada: a vivência por cidade -------------------------------
+  //
+  // Só aqui porque ela CRUZA eventos: a cidade de um item confirmado só existe no
+  // `trip.completed` da mesma viagem, e a precedência do check-in só se decide depois de
+  // saber quais viagens têm um.
+
+  for (const trip of index.completed.values()) {
+    const city = resolveCity(trip.destination);
+    if (city) index.completedCities.add(city);
+  }
+
+  const remember = (city: string, ids: Iterable<string>): void => {
+    const lived = index.livedByCity.get(city) ?? new Set<string>();
+    for (const id of ids) lived.add(id);
+    index.livedByCity.set(city, lived);
+  };
+
+  // O CHECK-IN SUBSTITUI, NÃO SOMA. Se a pessoa disse o que viveu, é isso que ela viveu — o
+  // item confirmado e depois cancelado não volta pela porta dos fundos. Somar os dois apagaria
+  // justamente a diferença promessa-vs-entrega que o §2 do desenho quer medir (é o que o
+  // `skipped` do evento conta).
+  for (const [tripId, checkin] of checkins) {
+    // Check-in é pós-viagem por construção: ele NÃO exige `trip.completed`. A cidade sai do
+    // próprio evento e, se ela vier vazia ou desconhecida, do destino da conclusão.
+    const city = resolveCity(checkin.city) ?? resolveCity(index.completed.get(tripId)?.destination);
+    if (city) remember(city, checkin.ids);
+  }
+
+  // O fallback do §2: item confirmado em viagem CONCLUÍDA. Confirmar sem viajar é planejar.
+  for (const [tripId, trip] of index.completed) {
+    if (checkins.has(tripId)) continue;
+    const city = resolveCity(trip.destination);
+    if (!city) continue;
+    const activities = index.items.get(tripId)?.activities;
+    if (!activities) continue;
+    remember(city, [...activities].map(catalogIdOf).filter(Boolean));
   }
 
   return index;
@@ -248,9 +334,22 @@ export const WORLD_ACHIEVEMENTS: Achievement[] = [
   },
 ];
 
-/** O troféu de uma chave, quando ela é do catálogo. */
+// ---------------------------------------------------------------------------
+// O catálogo inteiro — Mundo fixo + Local gerado
+// ---------------------------------------------------------------------------
+
+/**
+ * Os troféus que existem. Mundo primeiro, Local na ordem das cidades do arquivo gerado.
+ *
+ * DINÂMICO de propósito: quantos existem é resposta do catálogo curado, não uma constante
+ * escrita aqui. Cidade classificada no banco amanhã entra sozinha, e nenhum número neste
+ * arquivo precisa ser corrigido.
+ */
+export const ALL_ACHIEVEMENTS: Achievement[] = [...WORLD_ACHIEVEMENTS, ...LOCAL_ACHIEVEMENTS];
+
+/** O troféu de uma chave, quando ela é do catálogo — das duas camadas. */
 export function achievementOf(key: string): Achievement | undefined {
-  return WORLD_ACHIEVEMENTS.find((a) => a.key === key);
+  return ALL_ACHIEVEMENTS.find((a) => a.key === key);
 }
 
 // ---------------------------------------------------------------------------
@@ -299,8 +398,11 @@ export interface Progress {
   xp: number;
   /** As chaves merecidas, na ordem do catálogo. */
   unlocked: string[];
-  /** Quantos troféus existem na Camada Mundo. */
+  /** Quantos troféus existem nas duas camadas. */
   total: number;
+  /** As cidades canônicas em que a pessoa já esteve — é o que a UI abre em "Por destino".
+   *  Na ordem do catálogo curado, não na de visitação. */
+  visitedCities: string[];
   level: Level;
   nextLevel: Level | null;
   /** Quanto XP falta para a próxima faixa. `0` no topo. */
@@ -309,17 +411,20 @@ export interface Progress {
   ratio: number;
 }
 
-/** As chaves merecidas por este histórico, na ordem do catálogo. */
-export function unlockedKeys(events: AchievementEvent[]): string[] {
-  const index = indexEvents(events);
-  return WORLD_ACHIEVEMENTS.filter((a) => {
+/** Os troféus merecidos por este índice. Critério que lança não leva os outros junto. */
+function earnedIn(index: EventIndex): Achievement[] {
+  return ALL_ACHIEVEMENTS.filter((a) => {
     try {
       return a.earned(index);
     } catch {
-      // Um critério que lança não pode levar os outros onze junto.
       return false;
     }
-  }).map((a) => a.key);
+  });
+}
+
+/** As chaves merecidas por este histórico, na ordem do catálogo. */
+export function unlockedKeys(events: AchievementEvent[]): string[] {
+  return earnedIn(indexEvents(events)).map((a) => a.key);
 }
 
 /**
@@ -330,29 +435,33 @@ export function unlockedKeys(events: AchievementEvent[]): string[] {
  */
 export function computeProgress(events: AchievementEvent[]): Progress {
   const index = indexEvents(events);
-  const unlocked = WORLD_ACHIEVEMENTS.filter((a) => {
-    try {
-      return a.earned(index);
-    } catch {
-      return false;
-    }
-  }).map((a) => a.key);
+  const earned = earnedIn(index);
+  const unlocked = earned.map((a) => a.key);
+
+  // SOMA dos valores, não contagem × 25: a Camada Local tem molde de 50 (§4). A Mundo não
+  // declara `xp` e continua valendo `XP.achievement` — nada muda para ela.
+  const trophyXp = earned.reduce((sum, a) => sum + (a.xp ?? XP.achievement), 0);
 
   const xp =
     index.completed.size * XP.completedTrip
     + distinct(index, 'country').size * XP.newCountry
     + distinct(index, 'continent').size * XP.newContinent
     + index.underBudget.size * XP.underBudget
-    + unlocked.length * XP.achievement;
+    + trophyXp;
 
   const level = levelOf(xp);
   const nextLevel = nextLevelOf(xp);
   const span = nextLevel ? nextLevel.min - level.min : 0;
 
+  // Cidade em que a pessoa concluiu viagem OU fez check-in. As duas, porque o check-in pode
+  // chegar antes da varredura de conclusão e a seção não pode aparecer vazia por um dia.
+  const visited = new Set([...index.completedCities, ...index.livedByCity.keys()]);
+
   return {
     xp,
     unlocked,
-    total: WORLD_ACHIEVEMENTS.length,
+    total: ALL_ACHIEVEMENTS.length,
+    visitedCities: LOCAL_CITIES.filter((city) => visited.has(city)),
     level,
     nextLevel,
     toNext: nextLevel ? nextLevel.min - xp : 0,
