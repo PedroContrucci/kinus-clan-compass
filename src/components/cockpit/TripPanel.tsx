@@ -861,6 +861,17 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       animate={{ opacity: 1, y: 0 }}
       className="space-y-4"
     >
+      {/* Pós-viagem: o convite (ou o registro) do check-in */}
+      <CheckinBanner trip={trip as any} onOpen={() => setCheckinOpen(true)} />
+      {checkinOpen && (
+        <TripCheckinDrawer
+          trip={trip as any}
+          open={checkinOpen}
+          onOpenChange={setCheckinOpen}
+          onSaved={(stored) => onUpdateTrip?.(() => stored)}
+        />
+      )}
+
       {/* Agora no KINU — single most relevant next item */}
       {!dismissedNow && (
         <div className="relative flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500/10 to-transparent border border-border border-l-4 border-l-emerald-500">
