@@ -46,6 +46,7 @@ import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
 import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
 import { HintBalloon } from '@/components/onboarding/HintBalloon';
+import { CheckinBanner } from '@/components/checkin/CheckinBanner';
 import { HotelPlanBlock } from '@/components/hotel/HotelPlanBlock';
 import { applyHotelSwap } from '@/lib/hotelSwap';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -1558,8 +1559,17 @@ const Viagens = () => {
                 }, 0);
 
                 return (
+                  <div key={trip.id} className="space-y-0">
+                  <CheckinBanner
+                    trip={trip as any}
+                    compact
+                    onOpen={() => {
+                      setSelectedTrip(trip);
+                      setSelectedDay(1);
+                      setActiveTab('painel');
+                    }}
+                  />
                   <button
-                    key={trip.id}
                     onClick={() => {
                       setSelectedTrip(trip);
                       setSelectedDay(1);
@@ -1603,6 +1613,7 @@ const Viagens = () => {
                     </div>
                     {!isSidebar && <p className="text-xs text-[#94a3b8] mt-1">{confirmedActivities} de {totalActivities} itens fechados</p>}
                   </button>
+                  </div>
                 );
               })}
             </div>

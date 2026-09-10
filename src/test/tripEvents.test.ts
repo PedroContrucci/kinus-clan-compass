@@ -193,7 +193,7 @@ describe('budget.closed_under', () => {
       id: 'barata',
       status: 'completed',
       endDate: '2026-08-01T00:00:00.000Z',
-      finances: { total: 10000, confirmed: 6000, planned: 1500, bidding: 0, available: 2500 },
+      finances: { total: 10000, confirmed: 6000, planned: 1500, bidding: 0, available: 2500 } as any,
     }));
 
     sweepCompletedTrips(HOJE);
@@ -208,7 +208,7 @@ describe('budget.closed_under', () => {
       id: 'estourada',
       status: 'completed',
       endDate: '2026-08-01T00:00:00.000Z',
-      finances: { total: 10000, confirmed: 12000, planned: 0, bidding: 0, available: 0 },
+      finances: { total: 10000, confirmed: 12000, planned: 0, bidding: 0, available: 0 } as any,
     }));
 
     sweepCompletedTrips(HOJE);
