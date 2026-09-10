@@ -1612,6 +1612,7 @@ const Viagens = () => {
                     </div>
                     {!isSidebar && <p className="text-xs text-[#94a3b8] mt-1">{confirmedActivities} de {totalActivities} itens fechados</p>}
                   </button>
+                  </div>
                 );
               })}
             </div>
