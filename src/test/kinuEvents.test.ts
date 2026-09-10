@@ -119,10 +119,38 @@ describe('falha de gravação — o anel é a rede, não a decoração', () => {
     trackEvent('e3');
     await tick();
 
-    // Cada emissão tentou de novo o MESMO evento mais antigo. `e2` e `e3` nunca foram
-    // tentados antes dele: a ordem cronológica da tabela é a razão do `break`.
-    expect(db.state.inserted.map((r) => r.name)).toEqual(['e1', 'e1', 'e1']);
+    // O MESMO evento mais antigo em toda tentativa: `e2` e `e3` nunca foram tentados antes
+    // dele, e a ordem cronológica da tabela é a razão do `break`. Duas tentativas e não
+    // três porque as emissões de `e2` e `e3` caíram na drenagem que já estava no ar — elas
+    // pediram a volta extra em vez de abrirem uma drenagem paralela cada uma.
+    expect(db.state.inserted.map((r) => r.name)).toEqual(['e1', 'e1']);
     expect(readEvents().filter((e) => !e.sent)).toHaveLength(3);
+  });
+});
+
+describe('uma drenagem por vez', () => {
+  // O bug de produção: `hotel.swapped` gravou DUAS linhas idênticas a 10ms. O anel tinha
+  // UMA entrada — quem dobrou foi a entrega. A troca emite, a drenagem sai com o `swapped`
+  // pendente, o re-render emite `reasons_viewed`, uma segunda drenagem lê a MESMA fila
+  // (o `sent: true` da primeira só é gravado depois dos inserts) e reenvia o `swapped`.
+  it('evento seguido de outro no mesmo tick não é entregue duas vezes', async () => {
+    trackEvent('hotel.swapped', { from: 'Casa Lola', to: 'Sofitel', surface: 'detail' });
+    trackEvent('hotel.reasons_viewed', { hotel: 'Sofitel' });
+    await tick();
+
+    expect(db.state.inserted.map((r) => r.name)).toEqual(['hotel.swapped', 'hotel.reasons_viewed']);
+    expect(readEvents().every((e) => e.sent)).toBe(true);
+  });
+
+  it('o evento que chega no meio da drenagem não fica esperando a próxima emissão', async () => {
+    trackEvent('a');
+    await Promise.resolve(); // a drenagem de `a` já está no ar, ainda sem resolver
+    trackEvent('b');
+    await tick();
+
+    // `b` não abriu drenagem própria; foi a de `a` que voltou para a fila por ele.
+    expect(db.state.inserted.map((r) => r.name)).toEqual(['a', 'b']);
+    expect(readEvents().filter((e) => !e.sent)).toHaveLength(0);
   });
 });
 
@@ -142,6 +170,32 @@ describe('dedupe no emissor', () => {
     await tick();
 
     expect(readEvents()).toHaveLength(2);
+  });
+
+  it('duas emissões idênticas no MESMO tick viram uma — o dedupe não espera o storage', async () => {
+    // Dois cliques no mesmo botão acontecem antes de qualquer re-render. A referência do
+    // dedupe é a última emissão ACEITA (memória), não a última que o anel devolveu.
+    trackEvent('hotel.swapped', { from: 'Casa Lola', to: 'Sofitel', surface: 'swap' });
+    trackEvent('hotel.swapped', { from: 'Casa Lola', to: 'Sofitel', surface: 'swap' });
+    await tick();
+
+    expect(readEvents()).toHaveLength(1);
+    expect(db.state.inserted).toHaveLength(1);
+  });
+
+  it('com o storage bloqueado o dedupe continua de pé — é o caminho sem anel', async () => {
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError');
+    });
+
+    trackEvent('hotel.swapped', { from: 'A', to: 'B', surface: 'swap' });
+    trackEvent('hotel.swapped', { from: 'A', to: 'B', surface: 'swap' });
+    await tick();
+    spy.mockRestore();
+
+    // Sem anel para comparar, a memória é a ÚNICA guarda: sem ela, o envio direto manda
+    // as duas. Uma linha, e o dedupe não desligou junto com o storage.
+    expect(db.state.inserted).toHaveLength(1);
   });
 
   it('o mesmo evento separado por outro NÃO é duplicata', async () => {

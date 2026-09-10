@@ -76,6 +76,20 @@ function writeEvents(events: KinuEvent[]): boolean {
 /** Identidade de uma entrada para o read-modify-write da drenagem. */
 const keyOf = (e: KinuEvent) => `${e.ts}|${e.name}`;
 
+/** A identidade de um evento para o dedupe: nome + props + dono. */
+const signatureOf = (name: string, props: EventProps, userId?: string) =>
+  JSON.stringify([name, props, userId ?? null]);
+
+/**
+ * A última emissão ACEITA nesta sessão — em memória, não no anel.
+ *
+ * O anel não serve como única referência do dedupe por dois motivos medidos: ele pode nem
+ * receber a emissão (storage bloqueado devolve `enqueued: false` e o evento vai direto),
+ * e depender de um round-trip pelo localStorage para saber o que acabou de sair é frágil
+ * justamente no caso que importa, o de duas emissões no MESMO tick.
+ */
+let lastAccepted: { signature: string; enqueued: boolean } | null = null;
+
 /**
  * Dedupe no EMISSOR, não em cada tela.
  *
@@ -83,11 +97,19 @@ const keyOf = (e: KinuEvent) => `${e.ts}|${e.name}`;
  * `hotel.reasons_viewed` viraria 50 cópias e o anel de 50 morreria no nascimento. A regra
  * é estreita de propósito — só o evento IDÊNTICO ao último é descartado. Dois eventos
  * iguais separados por qualquer outro são dois eventos de verdade.
+ *
+ * A memória manda quando existe; o anel é a referência só na PRIMEIRA emissão da sessão,
+ * que é quando a memória ainda não sabe nada e o rastro do carregamento anterior é o único
+ * que existe (o remonte depois de um F5 emite o mesmo `reasons_viewed`).
  */
-function isDuplicateOfLast(events: KinuEvent[], name: string, props: EventProps, userId?: string): boolean {
+function isDuplicate(events: KinuEvent[], signature: string): boolean {
+  // Anel vazio depois de uma emissão que ENTROU nele = alguém limpou o storage por fora
+  // (outra aba, DevTools, o `beforeEach` de um teste). A memória virou lixo; o anel manda.
+  if (lastAccepted?.enqueued && events.length === 0) lastAccepted = null;
+  if (lastAccepted) return lastAccepted.signature === signature;
+
   const last = events[events.length - 1];
-  if (!last || last.name !== name || last.userId !== userId) return false;
-  return JSON.stringify(last.props) === JSON.stringify(props);
+  return Boolean(last) && signatureOf(last.name, last.props, last.userId) === signature;
 }
 
 /** O uid da sessão, quando quem emite não sabe quem é o usuário. Nunca lança. */
@@ -116,15 +138,13 @@ async function insertOne(event: KinuEvent, fallbackUid?: string): Promise<boolea
 }
 
 /**
- * Manda os pendentes para o kinu-beta, do mais antigo para o mais novo.
+ * Uma passada pela fila. Nunca lança.
  *
  * Read-modify-write na marcação: a fila é relida DEPOIS dos inserts, porque uma emissão
  * nova pode ter entrado no anel enquanto o request estava no ar — reescrever a lista antiga
  * apagaria esse evento.
- *
- * Exportada para o teste. Nunca lança.
  */
-export async function flushEvents(): Promise<void> {
+async function drainOnce(): Promise<void> {
   try {
     const pending = readEvents().filter((e) => !e.sent).slice(0, DRAIN_LIMIT);
     if (pending.length === 0) return;
@@ -146,6 +166,46 @@ export async function flushEvents(): Promise<void> {
   }
 }
 
+/** A drenagem em curso, quando há uma. */
+let draining: Promise<void> | null = null;
+/** Chegou evento novo enquanto a drenagem estava no ar? Ela dá mais uma volta. */
+let drainAgain = false;
+
+/**
+ * Manda os pendentes para o kinu-beta, UMA DRENAGEM POR VEZ.
+ *
+ * O `pending` é lido do anel e o `sent: true` só é gravado DEPOIS dos inserts — então duas
+ * drenagens no ar ao mesmo tempo leem a mesma fila e entregam a mesma linha duas vezes.
+ * Foi assim que uma troca de hotel virou duas linhas idênticas a 10ms na tabela `events`:
+ * o `hotel.swapped` abriu uma drenagem, o `hotel.reasons_viewed` do re-render abriu outra
+ * antes da primeira terminar, e a segunda reenviou o `swapped` que ainda estava pendente.
+ * Não era emissão dobrada — era entrega dobrada, com UMA entrada no anel.
+ *
+ * Serializar não pode custar evento: quem chega no meio marca `drainAgain` e a drenagem
+ * em curso volta para a fila em vez de deixar o último evento esperando a próxima emissão.
+ *
+ * Exportada para o teste. Nunca lança.
+ */
+export function flushEvents(): Promise<void> {
+  if (draining) {
+    drainAgain = true;
+    return draining;
+  }
+
+  draining = (async () => {
+    try {
+      do {
+        drainAgain = false;
+        await drainOnce();
+      } while (drainAgain);
+    } finally {
+      draining = null;
+    }
+  })();
+
+  return draining;
+}
+
 /**
  * Registra um evento. Fire-and-forget: grava no anel, tenta o kinu-beta por fora e volta
  * na hora. NUNCA LANÇA e nunca espera rede — quem chama é uma tela.
@@ -154,16 +214,21 @@ export async function flushEvents(): Promise<void> {
  */
 export function trackEvent(name: string, props: EventProps = {}, userId?: string): void {
   const entry: KinuEvent = { ts: new Date().toISOString(), name, props, userId, sent: false };
+  const signature = signatureOf(name, props, userId);
   let enfileirado = false;
 
   try {
     const events = readEvents();
-    if (isDuplicateOfLast(events, name, props, userId)) return;
+    if (isDuplicate(events, signature)) return;
     events.push(entry);
     enfileirado = writeEvents(events);
   } catch {
     /* cai no envio direto abaixo */
   }
+
+  // Registrada ANTES do envio: o dedupe da próxima emissão não pode depender de rede nem
+  // de storage — dois cliques no mesmo botão acontecem no mesmo tick, antes de qualquer um.
+  lastAccepted = { signature, enqueued: enfileirado };
 
   // Storage bloqueado (navegador privado, cota) não pode significar telemetria zero: sem
   // fila para drenar, o evento vai direto. Sem rede aí ele se perde de verdade — é o

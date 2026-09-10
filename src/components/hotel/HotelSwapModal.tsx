@@ -19,7 +19,7 @@ import {
   type RankedHotel,
   type SwapTripLike,
 } from '@/lib/hotelSwap';
-import { trackEvent } from '@/lib/kinuEvents';
+import { trackHotelSwap } from '@/lib/hotelSwapEvent';
 
 const brl = (n: number) => `R$ ${Math.round(n).toLocaleString('pt-BR')}`;
 
@@ -53,14 +53,16 @@ export const HotelSwapModal = ({ open, onClose, trip, onSelect, onOpenOffers, on
 
   const impact = pending && trip ? previewSwapImpact(trip, pending) : null;
 
-  /** `from` é lido ANTES da troca — depois dela o nome atual já é o novo. */
+  /**
+   * `from` é lido ANTES da troca — depois dela o nome atual já é o novo.
+   *
+   * Este é o ÚNICO emissor desta superfície, e vale para os dois caminhos que chegam aqui:
+   * o modal aberto pelo bloco do roteiro e o aberto pelo stepper/TripPanel, que passam por
+   * `handlePick` e `confirmPending`. Quem só apresenta a linha (o bloco, o painel) não
+   * emite nada — a troca é um evento do modal.
+   */
   const trackSwap = (hotel: CuratedHotel) => {
-    trackEvent('hotel.swapped', {
-      from: currentName,
-      to: hotel.name,
-      city,
-      surface: 'modal',
-    });
+    trackHotelSwap({ from: currentName, to: hotel.name, city, surface: 'swap' });
   };
 
   const handlePick = (hotel: CuratedHotel) => {

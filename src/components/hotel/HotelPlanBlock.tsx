@@ -25,6 +25,7 @@ import {
   type SwapTripLike,
 } from '@/lib/hotelSwap';
 import { trackEvent } from '@/lib/kinuEvents';
+import { trackHotelSwap } from '@/lib/hotelSwapEvent';
 import { HotelSwapModal } from '@/components/hotel/HotelSwapModal';
 import { HotelDetailDrawer } from '@/components/hotel/HotelDetailDrawer';
 
@@ -185,6 +186,9 @@ export const HotelPlanBlock = ({ trip, onSelectHotel, onOpenOffers }: HotelPlanB
         open={view === 'swap'}
         onClose={() => setView('none')}
         trip={trip ?? null}
+        // Sem telemetria aqui: o `hotel.swapped` desta superfície é emitido DENTRO do
+        // modal (handlePick/confirmPending). Emitir também no caminho de volta é como a
+        // mesma troca vira duas linhas.
         onSelect={(hotel) => onSelectHotel?.(hotel)}
         onOpenOffers={onOpenOffers}
         onOpenDetail={(hotel) => openDetail(hotel, 'swap')}
@@ -201,13 +205,9 @@ export const HotelPlanBlock = ({ trip, onSelectHotel, onOpenOffers }: HotelPlanB
           onSelectHotel
             ? (hotel) => {
                 // `hotel.swapped` sai daqui e do HotelSwapModal, nunca dos dois no mesmo
-                // clique: a ficha aberta pelo modal fecha o modal antes de escolher.
-                trackEvent('hotel.swapped', {
-                  from: currentName,
-                  to: hotel.name,
-                  city,
-                  surface: 'detail',
-                });
+                // clique: a ficha aberta pelo modal fecha o modal antes de escolher
+                // (`view` é uma posição só), então o `handlePick` de lá não roda.
+                trackHotelSwap({ from: currentName, to: hotel.name, city, surface: 'detail' });
                 onSelectHotel(hotel);
                 setView('none');
                 setDetailHotel(null);
