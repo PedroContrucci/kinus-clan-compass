@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion';
 import { Check, FileText, ChevronDown, ChevronUp, MapPin, ExternalLink, X } from 'lucide-react';
 import { HintBalloon } from '@/components/onboarding/HintBalloon';
+import { CheckinBanner } from '@/components/checkin/CheckinBanner';
+import { TripCheckinDrawer } from '@/components/checkin/TripCheckinDrawer';
 import { WeatherBadge } from './WeatherBadge';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
@@ -421,6 +423,7 @@ function getTripCurrency(dest: string): string {
 
 export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAuction, onNavigateTab, pendingConfirmRequest, onPendingConfirmHandled, exporterName }: TripPanelProps) => {
   const summaryHeaderRef = useRef<HTMLDivElement | null>(null);
+  const [checkinOpen, setCheckinOpen] = useState(false);
   const [showAllActions, setShowAllActions] = useState(false);
   const [dismissedNow, setDismissedNow] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
