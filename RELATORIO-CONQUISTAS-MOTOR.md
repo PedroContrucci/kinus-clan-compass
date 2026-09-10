@@ -194,3 +194,11 @@ $ git push
 To https://github.com/PedroContrucci/kinus-clan-compass
    ad0bf8f..8b0a4f5  main -> main
 ```
+
+E o push deste relatório, no commit `docs:` separado:
+
+```
+$ git push
+To https://github.com/PedroContrucci/kinus-clan-compass
+   8b0a4f5..fb2282d  main -> main
+```
