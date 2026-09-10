@@ -195,6 +195,14 @@ To https://github.com/PedroContrucci/kinus-clan-compass
    3d0b447..01ba151  main -> main
 ```
 
+E o push deste relatório, no commit `docs:` separado:
+
+```
+$ git push
+To https://github.com/PedroContrucci/kinus-clan-compass
+   01ba151..9c51c9a  main -> main
+```
+
 ---
 
 ## 7. O que não foi tocado
