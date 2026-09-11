@@ -69,3 +69,11 @@ $ git push origin main
 To https://github.com/PedroContrucci/kinus-clan-compass
    ba98afc..b3c5629  main -> main
 ```
+
+E o push deste próprio relatório:
+
+```
+$ git push origin main
+To https://github.com/PedroContrucci/kinus-clan-compass
+   b3c5629..b79415a  main -> main
+```
