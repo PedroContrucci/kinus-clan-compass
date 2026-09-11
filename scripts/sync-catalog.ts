@@ -20,6 +20,12 @@
  * runtime não fala com o banco. O arquivo gerado é a ponte, e é a ÚNICA: nenhum outro
  * lugar do app conhece o tier.
  *
+ * **E emite `src/data/generated/coords.ts`**, pelo mesmo motivo e com a mesma forma:
+ * `lat`/`lng` são geometria, não campo de roteiro, e `SuggestedActivity` é intocável.
+ * Este é o único lugar do sync que também lê `curated_hotels` — o mapa de coordenadas
+ * é um só, por id, e `curatedHotels.ts` continua sendo escrito só pelo `sync-hotels.ts`.
+ * As colunas são preenchidas pelo enrich; ver `supabase-beta/ENRICH-COORDS.md`.
+ *
  * Uso:
  *   npx tsx scripts/sync-catalog.ts            # dry-run: imprime o plano, não escreve
  *   npx tsx scripts/sync-catalog.ts --apply    # escreve, valida, e restaura se falhar
@@ -43,7 +49,14 @@ const ROOT = resolve(__dirname, '..');
 const ENV_FILE = resolve(ROOT, '.env.sync');
 const CATALOG_FILE = resolve(ROOT, 'src/data/destinationActivities.ts');
 const TIERS_FILE = resolve(ROOT, 'src/data/generated/landmarkTiers.ts');
+const COORDS_FILE = resolve(ROOT, 'src/data/generated/coords.ts');
 const TSCONFIG = 'tsconfig.app.json';
+
+/** O SQL que cria as colunas de coordenada. Aparece na mensagem de erro quando elas faltam. */
+const COORDS_SQL = `alter table curated_activities add column if not exists lat double precision;
+   alter table curated_activities add column if not exists lng double precision;
+   alter table curated_hotels     add column if not exists lat double precision;
+   alter table curated_hotels     add column if not exists lng double precision;`;
 
 /** Aborta se uma cidade vier com menos que esta fração da contagem atual do arquivo. */
 const FLOOR_RATIO = 0.8;
@@ -99,10 +112,19 @@ interface DbRow {
   tips: string[] | null;
   style_tags: string[] | null;
   landmark_tier: string | null;
+  lat: number | string | null;
+  lng: number | string | null;
+}
+
+/** O mínimo que o mapa de coordenadas precisa saber sobre um hotel curado. */
+interface HotelCoordRow {
+  id: string;
+  lat: number | string | null;
+  lng: number | string | null;
 }
 
 const SELECT =
-  'id,city,name,category,neighborhood,rating,google_rating,estimated_cost_brl,duration_hours,tips,style_tags,landmark_tier';
+  'id,city,name,category,neighborhood,rating,google_rating,estimated_cost_brl,duration_hours,tips,style_tags,landmark_tier,lat,lng';
 
 // ---------------------------------------------------------------------------
 // Utilidades
@@ -181,6 +203,22 @@ const headers = {
 // 2) Busca — todas as cidades, paginada, com conferência do total
 // ---------------------------------------------------------------------------
 
+/**
+ * Traduz o 400 do PostgREST quando `lat`/`lng` ainda não existem.
+ *
+ * É o erro mais provável do primeiro run deste script depois do arco das coordenadas, e a
+ * mensagem crua (`column curated_activities.lat does not exist`) não diz o que fazer.
+ */
+function dieIfCoordColumnMissing(table: string, body: string): void {
+  if (!body.includes('42703') && !body.includes('does not exist')) return;
+  die(
+    `a tabela '${table}' ainda não tem as colunas de coordenada. Rode no kinu-beta:\n\n` +
+      `   ${COORDS_SQL}\n\n` +
+      `   Detalhe: ${body.slice(0, 200)}\n` +
+      `   (passo a passo em supabase-beta/ENRICH-COORDS.md). Nada foi escrito.`
+  );
+}
+
 async function fetchAllPublished(): Promise<DbRow[]> {
   const rows: DbRow[] = [];
   let total: number | null = null;
@@ -193,7 +231,9 @@ async function fetchAllPublished(): Promise<DbRow[]> {
       headers: { ...headers, Range: `${offset}-${offset + PAGE - 1}`, Prefer: 'count=exact' },
     });
     if (!res.ok && res.status !== 206) {
-      die(`Falha na consulta REST (HTTP ${res.status}): ${(await res.text()).slice(0, 300)}`);
+      const body = await res.text();
+      dieIfCoordColumnMissing('curated_activities', body);
+      die(`Falha na consulta REST (HTTP ${res.status}): ${body.slice(0, 300)}`);
     }
     // content-range: "0-999/893"
     const cr = res.headers.get('content-range') ?? '';
@@ -219,6 +259,36 @@ async function fetchAllPublished(): Promise<DbRow[]> {
   const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
   if (dupes.length) die(`ids duplicados no banco: ${[...new Set(dupes)].join(', ')}`);
 
+  return rows;
+}
+
+/**
+ * Os hotéis publicados, só id e coordenada.
+ *
+ * É a ÚNICA leitura de `curated_hotels` neste script, e ela não escreve em
+ * `src/data/curatedHotels.ts` — esse arquivo continua sendo do `sync-hotels.ts`. O mapa de
+ * coordenadas é um só porque o consumidor faz um lookup só, por id.
+ */
+async function fetchHotelCoords(): Promise<HotelCoordRow[]> {
+  const rows: HotelCoordRow[] = [];
+  for (let offset = 0; ; offset += PAGE) {
+    const url = `${baseUrl}/rest/v1/curated_hotels?select=id,lat,lng&status=eq.published&order=id.asc`;
+    const res = await fetch(url, {
+      headers: { ...headers, Range: `${offset}-${offset + PAGE - 1}` },
+    });
+    if (!res.ok && res.status !== 206) {
+      const body = await res.text();
+      dieIfCoordColumnMissing('curated_hotels', body);
+      die(`Falha na consulta de hotéis (HTTP ${res.status}): ${body.slice(0, 300)}`);
+    }
+    const page = (await res.json()) as HotelCoordRow[];
+    if (!Array.isArray(page)) die(`Resposta inesperada em curated_hotels (esperava um array).`);
+    rows.push(...page);
+    if (page.length < PAGE) break;
+  }
+  const ids = rows.map((r) => r.id);
+  const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
+  if (dupes.length) die(`ids de hotel duplicados no banco: ${[...new Set(dupes)].join(', ')}`);
   return rows;
 }
 
@@ -418,6 +488,100 @@ ${blocks.join('\n')}
 }
 
 // ---------------------------------------------------------------------------
+// 4c) O artefato de coordenadas — a ponte entre `lat`/`lng` e a Rota do Dia
+// ---------------------------------------------------------------------------
+
+interface CoordEntry {
+  id: string;
+  lat: number;
+  lng: number;
+}
+
+/**
+ * Aceita uma coordenada, ou aborta o run.
+ *
+ * Devolve `null` quando a linha simplesmente ainda não foi enriquecida (os dois campos nulos) —
+ * isso é o estado normal e não é erro. Aborta quando o par existe e está errado: metade
+ * preenchida, valor não-numérico, fora da faixa, ou `0,0` (o "null island" que um enrich
+ * confuso grava quando não acha o lugar — no golfo da Guiné, longe de qualquer cidade curada).
+ */
+function coordOf(id: string, lat: unknown, lng: unknown): CoordEntry | null {
+  const missing = (v: unknown) => v === null || v === undefined || v === '';
+  if (missing(lat) && missing(lng)) return null;
+  if (missing(lat) || missing(lng)) {
+    die(`'${id}': coordenada pela metade (lat=${lat}, lng=${lng}). Meia coordenada é erro, não ausência.`);
+  }
+  const la = Number(lat);
+  const ln = Number(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(ln)) die(`'${id}': coordenada não numérica (${lat}, ${lng}).`);
+  if (la < -90 || la > 90) die(`'${id}': lat ${la} fora de [-90, 90].`);
+  if (ln < -180 || ln > 180) die(`'${id}': lng ${ln} fora de [-180, 180].`);
+  if (la === 0 && ln === 0) die(`'${id}': coordenada 0,0 — o enrich não achou o lugar e gravou zero.`);
+  return { id, lat: la, lng: ln };
+}
+
+/**
+ * Gera `src/data/generated/coords.ts`.
+ *
+ * **Sem guarda de piso, de propósito.** A cobertura nasceu em 0 e cresce a cada lote de enrich;
+ * um piso de 80% como o do catálogo abortaria todo run legítimo do começo. O que substitui a
+ * guarda é a contagem impressa: cobertura é número visto, não suposição.
+ */
+function renderCoords(
+  rows: DbRow[],
+  hotels: HotelCoordRow[]
+): { content: string; acts: CoordEntry[]; hotelCoords: CoordEntry[] } {
+  const byId = (a: CoordEntry, b: CoordEntry) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const acts = rows.map((r) => coordOf(r.id, r.lat, r.lng)).filter((c): c is CoordEntry => c !== null).sort(byId);
+  const hotelCoords = hotels
+    .map((h) => coordOf(h.id, h.lat, h.lng))
+    .filter((c): c is CoordEntry => c !== null)
+    .sort(byId);
+
+  // Um id em duas tabelas viraria um hotel servindo de atividade (ou o contrário) em silêncio.
+  const actIds = new Set(acts.map((c) => c.id));
+  const clash = hotelCoords.filter((c) => actIds.has(c.id)).map((c) => c.id);
+  if (clash.length) die(`id(s) presentes em curated_activities E curated_hotels: ${clash.join(', ')}. Nada foi escrito.`);
+
+  const line = (c: CoordEntry) => `  ${q(c.id)}: { lat: ${c.lat}, lng: ${c.lng} },`;
+  const body =
+    (acts.length ? `  // ── atividades ──\n${acts.map(line).join('\n')}\n` : '') +
+    (hotelCoords.length ? `  // ── hotéis ──\n${hotelCoords.map(line).join('\n')}\n` : '');
+
+  const content = `// GERADO por scripts/sync-catalog.ts --apply — não edite à mão.
+//
+// A coordenada de um lugar curado vive nas colunas \`lat\`/\`lng\` de \`curated_activities\` e
+// \`curated_hotels\`, no kinu-beta, preenchidas pelo enrich a partir do Google Places (ver
+// \`supabase-beta/ENRICH-COORDS.md\`). O mapa da Rota do Dia roda no cliente, sem falar com o
+// banco. Este arquivo é a ponte — e é a única.
+//
+// POR QUE UM ARQUIVO GERADO E NÃO UM CAMPO EM \`SuggestedActivity\`: coordenada não é campo de
+// roteiro, é geometria — a mesma razão pela qual \`landmark_tier\` mora em \`landmarkTiers.ts\`. E
+// \`SuggestedActivity\` é intocável: \`lat:\` dentro do literal de \`destinationActivities.ts\` seria
+// erro de excess-property no \`tsc\`, não "campo por fora do tipo".
+//
+// ATIVIDADES E HOTÉIS NO MESMO MAPA. O consumidor (\`src/lib/routeCoords.ts\`) faz um lookup só,
+// por id, e os prefixos não colidem (\`for-h-gran-marquise\` vs \`for-mercado-peixes\`). O script
+// aborta se algum dia colidirem, em vez de deixar um hotel virar atividade em silêncio.
+//
+// NASCE VAZIO E CRESCE. Não há guarda de piso aqui: a cobertura era 0 no dia em que o arquivo
+// entrou e sobe a cada lote de enrich. O \`--apply\` imprime a contagem para a cobertura ser um
+// número visto, não uma suposição. A trava de deriva é \`src/test/routeCoords.test.ts\`.
+
+export interface CuratedCoord {
+  lat: number;
+  lng: number;
+}
+
+/** Chaveado pelo id do catálogo (\`for-mercado-peixes\`) ou do hotel (\`for-h-gran-marquise\`). */
+export const CURATED_COORDS: Record<string, CuratedCoord> = {
+${body}};
+`;
+
+  return { content, acts, hotelCoords };
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -427,6 +591,7 @@ async function main(): Promise<void> {
   );
 
   const rows = await fetchAllPublished();
+  const hotels = await fetchHotelCoords();
   const original = readFileSync(CATALOG_FILE, 'utf8');
   const registry = readRegistry(original);
   const constNames = readConstNames(original);
@@ -536,6 +701,17 @@ async function main(): Promise<void> {
       `${CURATED_CITIES.length} cidades — ${tiersBefore === null ? 'ARQUIVO NOVO' : tiersChanged ? 'muda' : 'sem mudança'}\n`
   );
 
+  // Idem para as coordenadas: coordenada torta aborta aqui, com os arquivos intactos no disco.
+  const coords = renderCoords(rows, hotels);
+  const coordsBefore = existsSync(COORDS_FILE) ? readFileSync(COORDS_FILE, 'utf8') : null;
+  const coordsChanged = coordsBefore !== coords.content;
+  const pct = (n: number, d: number) => (d === 0 ? '0' : ((n / d) * 100).toFixed(0));
+  console.log(
+    `coords.ts: ${coords.acts.length}/${rows.length} atividades (${pct(coords.acts.length, rows.length)}%), ` +
+      `${coords.hotelCoords.length}/${hotels.length} hotéis (${pct(coords.hotelCoords.length, hotels.length)}%) ` +
+      `com coordenada — ${coordsBefore === null ? 'ARQUIVO NOVO' : coordsChanged ? 'muda' : 'sem mudança'}\n`
+  );
+
   if (!apply) {
     console.log(`Dry-run — nada foi escrito. Para aplicar:\n\n   npx tsx scripts/sync-catalog.ts --apply\n`);
     return;
@@ -558,12 +734,14 @@ async function main(): Promise<void> {
   // a deriva que a trava do teste existe para pegar — e ela pegaria DEPOIS do commit.
   mkdirSync(dirname(TIERS_FILE), { recursive: true });
   writeFileSync(TIERS_FILE, tiersContent, 'utf8');
+  writeFileSync(COORDS_FILE, coords.content, 'utf8');
 
-  // Restaura os DOIS. Meio-caminho é o pior estado possível: o app compila com um catálogo
-  // e classifica com o outro.
+  // Restaura os TRÊS. Meio-caminho é o pior estado possível: o app compila com um catálogo,
+  // classifica com o outro e desenha o mapa com um terceiro.
   const restore = () => {
     writeFileSync(CATALOG_FILE, original, 'utf8');
     if (tiersBefore !== null) writeFileSync(TIERS_FILE, tiersBefore, 'utf8');
+    if (coordsBefore !== null) writeFileSync(COORDS_FILE, coordsBefore, 'utf8');
   };
 
   // --- Revalidação a partir do arquivo escrito ---
@@ -584,6 +762,9 @@ async function main(): Promise<void> {
 
   console.log(`   • ${tAfter} entradas escritas em ${plans.length} consts`);
   console.log(`   • src/data/generated/landmarkTiers.ts — ${tiersContent.length} bytes`);
+  console.log(
+    `   • src/data/generated/coords.ts — ${coords.acts.length + coords.hotelCoords.length} coordenadas`
+  );
   console.log(`   • rodando type-check (tsc -p ${TSCONFIG} --noEmit)…`);
   try {
     execSync(`npx tsc -p ${TSCONFIG} --noEmit`, { cwd: ROOT, stdio: 'inherit' });

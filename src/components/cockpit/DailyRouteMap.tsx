@@ -2,6 +2,7 @@ import { memo, useEffect, useState, useRef, useCallback, useMemo, Component, Err
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
+import { curatedCoordOf, resolveStopCoord } from '@/lib/routeCoords';
 import { DayMapLink } from './DayMapLink';
 
 class MapErrorBoundary extends Component<
@@ -28,8 +29,14 @@ export interface RouteLeg {
 
 interface DailyRouteMapProps {
   destination: string;
-  activities: { name: string; time?: string; category?: string }[];
+  // `id` é o id do item de roteiro (`day-N-<id do catálogo>`) — é por ele que a coordenada
+  // curada é encontrada, antes de qualquer busca por nome. Opcional: itens sintéticos do
+  // gerador (`free-morning`, `ambient-walk`) não têm par no catálogo e caem no geocoding.
+  activities: { id?: string; name: string; time?: string; category?: string }[];
   hotelNeighborhood?: string;
+  /** `accommodation.curatedHotelId`. Com ele o pino do hotel usa a coordenada curada do hotel
+   *  em vez de geocodificar o nome do bairro — que é onde o Gran Marquise se perdia. */
+  hotelId?: string;
   focusActivityName?: string | null;
   // Pre-assigned activity numbers (activity name -> number), computed once by
   // the day list from the chronological non-logistics activities. Pins render
@@ -146,7 +153,7 @@ interface RouteSegment {
   toName: string;
 }
 
-export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood, focusActivityName, stopNumbers, onLegsChange }: DailyRouteMapProps) => {
+export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood, hotelId, focusActivityName, stopNumbers, onLegsChange }: DailyRouteMapProps) => {
   const [points, setPoints] = useState<GeoPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [segments, setSegments] = useState<RouteSegment[]>([]);
@@ -157,7 +164,9 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
     .slice()
     .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 
-  const geocode = useCallback(async (name: string, dest: string): Promise<{ lat: number; lng: number } | null> => {
+  // A cadeia por NOME: mapa manual (exato, depois parcial) e, no fim, Nominatim. Ela é o
+  // fallback de `resolveStopCoord` — só roda para quem não tem coordenada curada por id.
+  const geocodeByName = useCallback(async (name: string, dest: string): Promise<{ lat: number; lng: number } | null> => {
     const key = `${name}|${dest}`;
     const cached = geocodeCache.get(key);
     if (cached) return cached;
@@ -237,15 +246,19 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
 
     (async () => {
       const results: GeoPoint[] = [];
-      if (hotelNeighborhood) {
-        const hotelCoords = await geocode(hotelNeighborhood, destination);
-        if (hotelCoords) {
-          results.push({ name: `Hotel (${hotelNeighborhood})`, ...hotelCoords, isHotel: true });
-        }
+      // O hotel curado tem coordenada própria; o bairro é o que sobra quando ele não tem.
+      const hotelCoords = curatedCoordOf(hotelId)
+        ?? (hotelNeighborhood ? await geocodeByName(hotelNeighborhood, destination) : null);
+      if (hotelCoords) {
+        results.push({
+          name: hotelNeighborhood ? `Hotel (${hotelNeighborhood})` : 'Hotel',
+          ...hotelCoords,
+          isHotel: true,
+        });
       }
       for (const act of filteredActivities) {
         if (abortRef.current) return;
-        const coords = await geocode(act.name, destination);
+        const coords = await resolveStopCoord(act, destination, geocodeByName);
         if (coords) {
           results.push({ name: act.name, time: act.time, ...coords });
         }
@@ -258,7 +271,7 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
 
     return () => { abortRef.current = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destination, hotelNeighborhood, JSON.stringify(filteredActivities.map(a => a.name)), geocode]);
+  }, [destination, hotelNeighborhood, hotelId, JSON.stringify(filteredActivities.map(a => `${a.id ?? ''}|${a.name}`)), geocodeByName]);
 
   // Fetch real walking routes from OSRM between consecutive points
   useEffect(() => {

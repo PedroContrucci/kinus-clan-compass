@@ -48,7 +48,7 @@ import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
 import { HintBalloon } from '@/components/onboarding/HintBalloon';
 import { CheckinBanner } from '@/components/checkin/CheckinBanner';
 import { HotelPlanBlock } from '@/components/hotel/HotelPlanBlock';
-import { applyHotelSwap } from '@/lib/hotelSwap';
+import { applyHotelSwap, type AccommodationLike } from '@/lib/hotelSwap';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 
@@ -2177,6 +2177,7 @@ const Viagens = () => {
                         destination={selectedTrip.destination}
                         activities={currentDay.activities}
                         hotelNeighborhood={selectedTrip.accommodation?.neighborhood}
+                        hotelId={(selectedTrip.accommodation as AccommodationLike | undefined)?.curatedHotelId}
                         focusActivityName={focusMapActivity}
                         stopNumbers={stopNumbers}
                         onLegsChange={handleRouteLegsChange}
