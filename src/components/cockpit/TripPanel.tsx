@@ -919,7 +919,18 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       <div ref={summaryHeaderRef} className="relative overflow-hidden rounded-2xl border border-border">
         {/* Hero banner image */}
         <div className="relative h-[150px] overflow-hidden bg-gradient-to-br from-[#0f172a] to-[#1e293b]">
-          <DestinationImage destination={trip.destination} query={`${trip.destination} travel landmark`} className="absolute inset-0 w-full h-full object-cover" alt={trip.destination} />
+          <DestinationImage
+            resetKey={trip.id}
+            storedUrl={(trip as any).coverImageUrl || null}
+            onResolved={(url) => {
+              if ((trip as any).coverImageUrl === url) return;
+              onUpdateTrip?.((t: any) => ({ ...t, coverImageUrl: url }));
+            }}
+            destination={trip.destination}
+            query={`${trip.destination} travel landmark`}
+            className="absolute inset-0 w-full h-full object-cover"
+            alt={trip.destination}
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/60 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-5">
             <h2 className="text-xl font-bold text-foreground font-['Outfit'] drop-shadow-lg">
