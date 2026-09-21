@@ -83,24 +83,51 @@ export function DestinationImage({
 
     let cancelled = false;
 
+    // Frases muito específicas (ex.: "Fortaleza Ceara Beira Mar beach") voltam ZERO
+    // resultados do Unsplash — era esse o hero vazio. Tentamos do mais específico
+    // ao mais simples até vir foto.
+    const candidates = Array.from(
+      new Set(
+        [effectiveQuery, query, destination?.trim(), `${destination?.trim() || query} city`]
+          .map((c) => (c || "").trim())
+          .filter(Boolean),
+      ),
+    );
+
+    async function searchOnce(term: string): Promise<string | null> {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/unsplash?query=${encodeURIComponent(term)}&per_page=1&orientation=landscape`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      if (!res.ok) throw new Error(`unsplash ${res.status}`);
+      const data = await res.json();
+      const photoUrl = data.photos?.[0]?.urls?.regular as string | undefined;
+      return isUsableUrl(photoUrl) ? photoUrl : null;
+    }
+
     async function fetchImage() {
       try {
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/unsplash?query=${encodeURIComponent(effectiveQuery)}&per_page=1&orientation=landscape`;
-        const res = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-        });
-        if (!res.ok) throw new Error("Failed to fetch image");
-        const data = await res.json();
-        const photoUrl = data.photos?.[0]?.urls?.regular as string | undefined;
-        if (isUsableUrl(photoUrl) && !cancelled) {
+        for (const term of candidates) {
+          if (cancelled) return;
+          let photoUrl: string | null = null;
+          try {
+            photoUrl = await searchOnce(term);
+          } catch {
+            photoUrl = null;
+          }
+          if (!photoUrl) {
+            console.log(`[hero] fallback: no photo for "${term}", tentando termo mais simples`);
+            continue;
+          }
+          if (cancelled) return;
           cache.set(effectiveQuery, photoUrl);
+          cache.set(term, photoUrl);
           setSrc(photoUrl);
           onResolved?.(photoUrl);
+          return;
         }
-      } catch {
-        // leave src as null
       } finally {
         if (!cancelled) setLoading(false);
       }
