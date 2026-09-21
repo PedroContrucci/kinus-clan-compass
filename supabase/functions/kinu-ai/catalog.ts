@@ -666,7 +666,7 @@ export const CATALOG: Record<string, CatalogCity> = {
         "category": "lunch",
         "neighborhood": "Meireles",
         "costBRL": 180,
-        "tip": "Frutos do mar de décadas na divisa Meireles/Aldeota — peixada e camarão no coco"
+        "tip": "Frutos do mar de décadas na Beira-Mar do Meireles — peixada e camarão no coco"
       },
       {
         "name": "Coco Bambu Beira-Mar",
