@@ -93,6 +93,21 @@ describe('curatedCoordOf — o id do hotel curado passa inteiro', () => {
   });
 });
 
+// Viagem nascida do HOTEL_RECOMMENDATIONS não tem `curatedHotelId`. O nome puro ainda casa.
+describe('resolveHotelCoord — id, depois nome, depois Nominatim', () => {
+  const { resolveHotelCoord } = await import('@/lib/routeCoords');
+
+  it('casa o hotel do fallback pelo nome contra os curados da cidade', () => {
+    expect(resolveHotelCoord(undefined, 'Gran Marquise — Mucuripe, Fortaleza', 'Fortaleza'))
+      .toEqual({ lat: -3.7284, lng: -38.4869 });
+  });
+
+  it('hotel sem par curado devolve null — o chamador cai no Nominatim', () => {
+    expect(resolveHotelCoord(undefined, 'Pousada do Zé — Praia de Iracema, Fortaleza', 'Fortaleza'))
+      .toBeNull();
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Trava de deriva do artefato — sem mock, lendo o arquivo real do disco
 // ---------------------------------------------------------------------------
