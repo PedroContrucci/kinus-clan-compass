@@ -18,6 +18,8 @@
 // `catalogIdOf`, que só corta o prefixo `day-N-`.
 import { CURATED_COORDS, type CuratedCoord } from '@/data/generated/coords';
 import { catalogIdOf } from '@/lib/localAchievements';
+import { getCuratedHotelsForCity } from '@/lib/hotelSwap';
+import { normalizePlaceName } from '@/lib/placeIdentity';
 
 export type { CuratedCoord };
 
@@ -26,6 +28,41 @@ export function curatedCoordOf(itemId: unknown): CuratedCoord | null {
   const id = catalogIdOf(itemId);
   if (!id) return null;
   return CURATED_COORDS[id] ?? null;
+}
+
+/** O nome puro da hospedagem: sem o sufixo " — bairro, cidade" que a UI acrescenta. */
+function baseAccommodationName(name: string | undefined | null): string {
+  return String(name ?? '').split('—')[0].split(',')[0].trim();
+}
+
+/**
+ * A coordenada do pino do hotel, do mais confiável para o menos:
+ *   1. `curatedHotelId` — casamento por id, como todo o resto deste arquivo.
+ *   2. nome do hotel × hotéis curados da cidade — viagens nascidas do
+ *      HOTEL_RECOMMENDATIONS não têm id, mas às vezes são a mesma casa curada.
+ *   3. `null` — o chamador cai no Nominatim/bairro, como antes.
+ *
+ * O degrau 2 existe porque sem ele o Gran Marquise de Fortaleza, escolhido pelo
+ * fallback e portanto sem id, voltava a ser geocodificado por texto e aterrissava
+ * longe da Beira-Mar.
+ */
+export function resolveHotelCoord(
+  hotelId: string | undefined | null,
+  hotelName: string | undefined | null,
+  city: string | undefined | null
+): CuratedCoord | null {
+  const byId = curatedCoordOf(hotelId);
+  if (byId) return byId;
+
+  const base = normalizePlaceName(baseAccommodationName(hotelName));
+  if (!base) return null;
+  for (const hotel of getCuratedHotelsForCity(city)) {
+    if (normalizePlaceName(hotel.name) === base) {
+      const coord = CURATED_COORDS[hotel.id];
+      if (coord) return coord;
+    }
+  }
+  return null;
 }
 
 /**

@@ -19,7 +19,7 @@ vi.mock('@/data/generated/coords', () => ({
   },
 }));
 
-const { curatedCoordOf, resolveStopCoord } = await import('@/lib/routeCoords');
+const { curatedCoordOf, resolveStopCoord, resolveHotelCoord } = await import('@/lib/routeCoords');
 
 const ARTIFACT = resolve(__dirname, '../data/generated/coords.ts');
 const CURADA = { lat: -3.716, lng: -38.479 };
@@ -90,6 +90,19 @@ describe('curatedCoordOf — o id do hotel curado passa inteiro', () => {
     expect(curatedCoordOf('')).toBeNull();
     expect(curatedCoordOf(7)).toBeNull();
     expect(curatedCoordOf('for-h-vila-gale')).toBeNull();
+  });
+});
+
+// Viagem nascida do HOTEL_RECOMMENDATIONS não tem `curatedHotelId`. O nome puro ainda casa.
+describe('resolveHotelCoord — id, depois nome, depois Nominatim', () => {
+  it('casa o hotel do fallback pelo nome contra os curados da cidade', () => {
+    expect(resolveHotelCoord(undefined, 'Gran Marquise — Mucuripe, Fortaleza', 'Fortaleza'))
+      .toEqual({ lat: -3.7284, lng: -38.4869 });
+  });
+
+  it('hotel sem par curado devolve null — o chamador cai no Nominatim', () => {
+    expect(resolveHotelCoord(undefined, 'Pousada do Zé — Praia de Iracema, Fortaleza', 'Fortaleza'))
+      .toBeNull();
   });
 });
 
