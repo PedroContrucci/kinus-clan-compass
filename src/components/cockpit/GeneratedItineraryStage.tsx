@@ -735,6 +735,21 @@ export function generateItinerary(
     // Middle days: Full exploration with 5-6 activities
     else {
       const explorationDay = i - explorationStart;
+      // Índice seguro: `explorationDay` pode ser NEGATIVO quando o voo diz que chegou no
+      // mesmo dia do calendário mas a rota cruza a meia-noite (arrivalDayIndex=0 com
+      // sameDayArrival=false ⇒ explorationStart=2, i=1). `lista[-1]` é undefined e o
+      // `.icon` derrubava a página inteira. Também cobre lista vazia.
+      const FALLBACK_THEME: DestinationTheme = {
+        title: 'Exploração',
+        icon: '🗺️',
+        activities: ['', '', ''],
+        restaurants: { lunch: '', dinner: '' },
+      };
+      const pickTheme = (list: DestinationTheme[], idx: number): DestinationTheme => {
+        if (!list.length || !Number.isFinite(idx)) return FALLBACK_THEME;
+        const safe = ((Math.trunc(idx) % list.length) + list.length) % list.length;
+        return list[safe] ?? FALLBACK_THEME;
+      };
       // Weighted theme sequence: cycle preferred themes; fall back to otherThemes only if we run out.
       let dayTheme: DestinationTheme;
       if (preferredThemes.length > 0 && explorationDay >= preferredThemes.length && otherThemes.length > 0) {
@@ -742,10 +757,10 @@ export function generateItinerary(
         const overflow = explorationDay - preferredThemes.length;
         // Alternate: preferred (cycled) most of the time, otherThemes occasionally
         dayTheme = overflow % 3 === 2
-          ? otherThemes[Math.floor(overflow / 3) % otherThemes.length]
-          : baseThemes[explorationDay % baseThemes.length];
+          ? pickTheme(otherThemes, Math.floor(overflow / 3))
+          : pickTheme(baseThemes, explorationDay);
       } else {
-        dayTheme = baseThemes[explorationDay % baseThemes.length];
+        dayTheme = pickTheme(baseThemes, explorationDay);
       }
       // Focus day: first exploration day uses top-ranked theme
       if (explorationDay === 0 && rawInterests.length > 0) {
