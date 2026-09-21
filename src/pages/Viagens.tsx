@@ -2178,6 +2178,7 @@ const Viagens = () => {
                         activities={currentDay.activities}
                         hotelNeighborhood={selectedTrip.accommodation?.neighborhood}
                         hotelId={(selectedTrip.accommodation as AccommodationLike | undefined)?.curatedHotelId}
+                        hotelName={selectedTrip.accommodation?.name}
                         focusActivityName={focusMapActivity}
                         stopNumbers={stopNumbers}
                         onLegsChange={handleRouteLegsChange}

@@ -274,7 +274,7 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
 
     return () => { abortRef.current = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destination, hotelNeighborhood, hotelId, JSON.stringify(filteredActivities.map(a => `${a.id ?? ''}|${a.name}`)), geocodeByName]);
+  }, [destination, hotelNeighborhood, hotelId, hotelName, JSON.stringify(filteredActivities.map(a => `${a.id ?? ''}|${a.name}`)), geocodeByName]);
 
   // Fetch real walking routes from OSRM between consecutive points
   useEffect(() => {
