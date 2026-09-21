@@ -921,7 +921,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         <div className="relative h-[150px] overflow-hidden bg-gradient-to-br from-[#0f172a] to-[#1e293b]">
           <DestinationImage
             resetKey={trip.id}
-            storedUrl={(trip as any).coverImageUrl || null}
+            storedUrl={(trip as any).coverImageUrl}
             onResolved={(url) => {
               if ((trip as any).coverImageUrl === url) return;
               onUpdateTrip?.((t: any) => ({ ...t, coverImageUrl: url }));
