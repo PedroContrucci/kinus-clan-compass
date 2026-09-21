@@ -19,7 +19,7 @@ vi.mock('@/data/generated/coords', () => ({
   },
 }));
 
-const { curatedCoordOf, resolveStopCoord } = await import('@/lib/routeCoords');
+const { curatedCoordOf, resolveStopCoord, resolveHotelCoord } = await import('@/lib/routeCoords');
 
 const ARTIFACT = resolve(__dirname, '../data/generated/coords.ts');
 const CURADA = { lat: -3.716, lng: -38.479 };
@@ -95,8 +95,6 @@ describe('curatedCoordOf — o id do hotel curado passa inteiro', () => {
 
 // Viagem nascida do HOTEL_RECOMMENDATIONS não tem `curatedHotelId`. O nome puro ainda casa.
 describe('resolveHotelCoord — id, depois nome, depois Nominatim', () => {
-  const { resolveHotelCoord } = await import('@/lib/routeCoords');
-
   it('casa o hotel do fallback pelo nome contra os curados da cidade', () => {
     expect(resolveHotelCoord(undefined, 'Gran Marquise — Mucuripe, Fortaleza', 'Fortaleza'))
       .toEqual({ lat: -3.7284, lng: -38.4869 });
