@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsGate } from "../_shared/http.ts";
 import { shadowIdentify, shadowHeader } from "../_shared/verifyKinuBetaJwt.ts";
-import { recordRequest } from "../_shared/telemetry.ts";
+import { checkRate } from "../_shared/telemetry.ts";
 // Catálogo curado das 21 cidades, gerado por scripts/build-kinu-catalog.ts e
 // deployado junto com esta function. É o que permite responder sobre uma cidade
 // curada sem viagem ativa e sem o front ter adivinhado a cidade na mensagem.
