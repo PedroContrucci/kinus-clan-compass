@@ -57,6 +57,8 @@ export interface KinuTripContext {
   todayDate?: string;
   todayPlan?: KinuTodayStop[];
   todayHotel?: { name: string; neighborhood?: string; lat?: number; lng?: number };
+  /** Id da viagem ativa — só para telemetria do modo durante. */
+  tripId?: string;
   destination?: string;
   country?: string;
   startDate?: string;
