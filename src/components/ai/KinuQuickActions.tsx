@@ -24,8 +24,12 @@ export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
 
   if (tripContext?.destination) {
     if (isDuringTrip) {
-      // DURING TRIP — Emergency & utility actions
+      // DURANTE — o agente é companhia de rua: as perguntas são sobre HOJE.
       actions.push(
+        { id: 'agora', icon: '🧭', label: 'O que fazer agora?', prompt: 'O que vem agora no meu dia de hoje?' },
+        { id: 'chuva', icon: '🌧️', label: 'Choveu — e agora?', prompt: 'Começou a chover aqui. O que dá pra trocar no resto do dia de hoje?' },
+        { id: 'perto', icon: '📍', label: 'Perto de mim', prompt: 'O que tem de bom perto de onde eu estou agora?' },
+        { id: 'ajusta', icon: '🔀', label: 'Ajusta o resto do dia', prompt: 'Ajusta o resto do dia de hoje pra mim.' },
         { id: 'emergency', icon: '🆘', label: 'Emergência', prompt: `Preciso de ajuda em ${tripContext.destination}. Números de emergência e onde ir?` },
         { id: 'pharmacy', icon: '💊', label: 'Farmácia', prompt: `Farmácia aberta agora perto de mim em ${tripContext.destination}?` },
         { id: 'hospital', icon: '🏥', label: 'Hospital', prompt: `Hospital para turistas em ${tripContext.destination}?` },
