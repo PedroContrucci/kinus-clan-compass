@@ -47,7 +47,7 @@ import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer'
 import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
 import { HintBalloon } from '@/components/onboarding/HintBalloon';
 import { CheckinBanner } from '@/components/checkin/CheckinBanner';
-import { ClaLine } from '@/components/cla/ClaLine';
+import { ClaProof } from '@/components/cla/ClaProof';
 import { catalogIdOf } from '@/lib/localAchievements';
 import { HotelPlanBlock } from '@/components/hotel/HotelPlanBlock';
 import { applyHotelSwap, type AccommodationLike } from '@/lib/hotelSwap';

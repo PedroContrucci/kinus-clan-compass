@@ -4,7 +4,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@
 import { usePlaceDetails, PlaceDetails } from '@/hooks/usePlaceDetails';
 import { destinationActivities, type SuggestedActivity } from '@/data/destinationActivities';
 import type { TripActivity } from '@/types/trip';
-import { ClaLine } from '@/components/cla/ClaLine';
+import { ClaProof } from '@/components/cla/ClaProof';
 import { catalogIdOf } from '@/lib/localAchievements';
 
 interface ActivityDetailDrawerProps {
