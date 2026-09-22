@@ -642,6 +642,51 @@ serve(async (req) => {
       const flightDur = sanitizeText(ctx.flightDuration, 20);
       if (flightDur) parts.push(`Duração do voo: ${flightDur}`);
 
+      // Arco DURANTE: a fase é calculada no app a partir de hoje e vem pronta aqui.
+      // Sem fase, nada muda — este bloco é puramente aditivo.
+      const phase = sanitizeText(ctx.tripPhase, 10).toLowerCase();
+      if (phase === 'durante') {
+        const dayIdx = sanitizeNumber(ctx.currentDayIndex, 0, 60) ?? 0;
+        const totalDays = Array.isArray(ctx.itineraryDays) ? (ctx.itineraryDays as unknown[]).length : 0;
+        const todayDate = sanitizeText(ctx.todayDate, 10);
+        parts.push(
+          `FASE DA VIAGEM: DURANTE — dia ${dayIdx + 1}${totalDays ? ` de ${totalDays}` : ''}${todayDate ? `, hoje ${todayDate}` : ''}.`
+        );
+        if (Array.isArray(ctx.todayPlan)) {
+          const stops = (ctx.todayPlan as unknown[])
+            .slice(0, 20)
+            .filter((s): s is Record<string, unknown> => typeof s === 'object' && s !== null)
+            .map((s) => {
+              const name = sanitizeText(s.name, 120);
+              if (!name) return '';
+              const time = sanitizeText(s.time, 10);
+              const status = sanitizeText(s.status, 20);
+              const hood = sanitizeText(s.neighborhood, 80);
+              const lat = sanitizeNumber(s.lat, -90, 90);
+              const lng = sanitizeNumber(s.lng, -180, 180);
+              return [time, name, status, hood, lat !== null && lng !== null ? `${lat},${lng}` : '']
+                .filter((p) => String(p).length > 0)
+                .join(' · ');
+            })
+            .filter((l) => l.length > 0);
+          if (stops.length > 0) parts.push(`PLANO DE HOJE:\n- ${stops.join('\n- ')}`);
+        }
+        const th = ctx.todayHotel as Record<string, unknown> | undefined;
+        if (th && typeof th === 'object') {
+          const hname = sanitizeText(th.name, 150);
+          const hhood = sanitizeText(th.neighborhood, 80);
+          const hlat = sanitizeNumber(th.lat, -90, 90);
+          const hlng = sanitizeNumber(th.lng, -180, 180);
+          if (hname) {
+            parts.push(
+              `HOTEL: ${[hname, hhood, hlat !== null && hlng !== null ? `${hlat},${hlng}` : ''].filter((p) => String(p).length > 0).join(' · ')}`
+            );
+          }
+        }
+      } else if (phase === 'antes' || phase === 'depois') {
+        parts.push(`FASE DA VIAGEM: ${phase.toUpperCase()}`);
+      }
+
       if (parts.length > 0) {
         // O bloco é rotulado como vindo do APP: sem isso ele chega dentro da mensagem
         // do usuário e o agente o repete como se tivesse sido dito por ele. A linha da
