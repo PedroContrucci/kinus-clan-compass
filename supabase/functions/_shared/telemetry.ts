@@ -151,3 +151,89 @@ export function recordRequest(req: Request, fn: string, who: ShadowVerdict | nul
     console.error("[5e] recordRequest quebrou:", err instanceof Error ? err.message : String(err));
   }
 }
+
+// ---------------------------------------------------------------------------
+// Arco 5.f — a sombra vira porta. Mesma chave, mesmo RPC; a diferença é que
+// AGORA o retorno (`hits` da hora corrente) é lido e comparado com um teto.
+// ---------------------------------------------------------------------------
+
+const CHECK_TIMEOUT_MS = 1_500;
+
+/** Teto por hora. O balde `ip:unknown` é servidor→servidor: nunca limitado. */
+export const RATE_LIMIT_USER = 30;
+export const RATE_LIMIT_IP = 15;
+
+export interface RateDecision {
+  allowed: boolean;
+  hits: number | null;
+  limit: number;
+  key: string;
+}
+
+async function postRpcHits(fn: string, outcome: string, key: string): Promise<number | null> {
+  const url = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !serviceKey) {
+    if (!warnedMissingEnv) {
+      warnedMissingEnv = true;
+      console.error("[5f] limite desligado: SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY ausentes");
+    }
+    return null;
+  }
+
+  const res = await fetch(`${url.replace(/\/+$/, "")}${RPC_PATH}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+    },
+    body: JSON.stringify({ p_fn: fn, p_outcome: outcome, p_key: key }),
+    signal: AbortSignal.timeout(CHECK_TIMEOUT_MS),
+  });
+
+  if (!res.ok) {
+    console.error(`[5f] record_request respondeu ${res.status}`);
+    try {
+      await res.text();
+    } catch {
+      /* irrelevante */
+    }
+    return null;
+  }
+
+  const raw = (await res.text()).trim();
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Conta a requisição e decide. FAIL-OPEN: qualquer erro, timeout ou contador
+ * ilegível devolve `allowed: true` — nunca punir o usuário pela nossa infra.
+ */
+export async function checkRate(
+  req: Request,
+  fn: string,
+  who: ShadowVerdict | null,
+): Promise<RateDecision> {
+  let key = "ip:unknown";
+  try {
+    const safeFn = safeLabel(fn, "unknown");
+    const outcome = who?.identified ? "identified" : safeLabel(who?.reason, "unknown");
+    key = await bucketKey(req, who);
+
+    const isUser = key.startsWith("user:");
+    const limit = isUser ? RATE_LIMIT_USER : RATE_LIMIT_IP;
+
+    const hits = await postRpcHits(safeFn, outcome, key);
+
+    // Balde servidor→servidor: registra, nunca bloqueia (todos caem nele juntos).
+    if (key === "ip:unknown") return { allowed: true, hits, limit, key };
+
+    const allowed = hits === null ? true : hits <= limit;
+    return { allowed, hits, limit, key };
+  } catch (err) {
+    console.error("[5f] checkRate falhou (fail-open):", err instanceof Error ? err.message : String(err));
+    return { allowed: true, hits: null, limit: key.startsWith("user:") ? RATE_LIMIT_USER : RATE_LIMIT_IP, key };
+  }
+}
