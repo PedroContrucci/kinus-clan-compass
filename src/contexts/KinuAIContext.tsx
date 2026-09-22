@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from "react";
-import { KinuMessage, KinuTripContext, KinuInsight, EMERGENCY_KEYWORDS, ProposedAction, ProposedActionType } from "@/types/kinuAI";
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from "react";
+import { KinuMessage, KinuTripContext, KinuInsight, EMERGENCY_KEYWORDS, ProposedAction, ProposedActionType, TripPhase, KinuTodayStop } from "@/types/kinuAI";
+import { curatedCoordOf, resolveHotelCoord } from "@/lib/routeCoords";
+import { trackEvent } from "@/lib/kinuEvents";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CURATED_CITIES } from "@/lib/curatedCities";
