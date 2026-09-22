@@ -516,13 +516,33 @@ serve(async (req) => {
   // desta function sem tocar em nenhuma delas — e só existe quando o chamador
   // mandou token (ver shadowHeader). Ver RELATORIO-F3-ARCO5D.md §2.
   const who = await shadowIdentify(req, "kinu-ai");
-  const corsHeaders = { ...gate.headers, ...shadowHeader(who) };
 
-  // Arco 5.e — SÓ REGISTRA: persiste o veredicto da sombra e conta a requisição
-  // por chave (user:<sub> se identificado, senão ip:<hash>). Fire-and-forget: não
-  // é aguardada, não lança, e uma falha de telemetria não atrasa nem derruba a
-  // resposta. NENHUM limite é aplicado aqui — o aperto é o 5.f.
-  recordRequest(req, "kinu-ai", who);
+  // Arco 5.f — a sombra vira porta: conta a requisição E lê o contador da hora
+  // antes de qualquer chamada à Anthropic. FAIL-OPEN: erro de infra nunca vira
+  // bloqueio. `ip:unknown` (servidor→servidor) é registrado e nunca limitado.
+  const rate = await checkRate(req, "kinu-ai", who);
+  const rateKind = rate.key === "ip:unknown" ? "unknown" : rate.key.startsWith("user:") ? "user" : "ip";
+  console.log(
+    `[5f] fn=kinu-ai key=${rateKind} hits=${rate.hits ?? "n/a"} limit=${rate.limit} allowed=${rate.allowed}`,
+  );
+
+  const corsHeaders = {
+    ...gate.headers,
+    ...shadowHeader(who),
+    "x-kinu-rate": `${rate.hits ?? "n/a"}/${rate.limit}`,
+  };
+
+  if (!rate.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: "Você está indo rápido demais — o KINU AI aceita até 30 mensagens por hora. Respira e volta em alguns minutos. 🌿",
+      }),
+      {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "900" },
+      },
+    );
+  }
 
   try {
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
