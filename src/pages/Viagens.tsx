@@ -2372,6 +2372,14 @@ const Viagens = () => {
                             {/* Google Places Info */}
                             <PlaceInfoCard activityName={activity.name} destination={selectedTrip.destination} />
 
+                            {/* Clã — sinal da comunidade nesta atividade */}
+                            {activity.category !== 'voo' && activity.category !== 'hotel' && (
+                              <ClaLine
+                                activityId={catalogIdOf(activity.id)}
+                                city={selectedTrip.destination}
+                              />
+                            )}
+
                             {/* Actions — max 2 buttons: Confirmar + Ver Ofertas */}
                             {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (
                               <div
