@@ -200,6 +200,20 @@ const Viagens = () => {
         hotelConfirmed: selectedTrip.accommodation?.status === 'confirmed',
         interests: (selectedTrip as any).travelInterests,
         flightDuration: selectedTrip.flights?.outbound?.duration,
+        tripId: selectedTrip.id,
+        // Cru, para o modo DURANTE montar o plano de hoje (horário, status, bairro, coord).
+        itineraryActivities: (selectedTrip.days || []).slice(0, 12).map((d) => ({
+          day: d.day,
+          date: d.date || '',
+          activities: (d.activities || []).slice(0, 20).map((a) => ({
+            id: a.id,
+            time: a.time,
+            name: a.name,
+            category: a.category,
+            status: a.status,
+            neighborhood: (a as { neighborhood?: string }).neighborhood,
+          })),
+        })),
         itineraryDays: (selectedTrip.days || []).slice(0, 12).map((d) => ({
           day: d.day,
           date: selectedTrip.startDate
