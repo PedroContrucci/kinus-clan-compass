@@ -58,23 +58,33 @@ function hotelKey(name: string): string {
  * fallback e portanto sem id, voltava a ser geocodificado por texto e aterrissava
  * longe da Beira-Mar.
  */
+export function resolveHotelPin(
+  hotelId: string | undefined | null,
+  hotelName: string | undefined | null,
+  city: string | undefined | null
+): { coord: CuratedCoord; source: 'curated' | 'name-match' } | null {
+  const byId = curatedCoordOf(hotelId);
+  if (byId) return { coord: byId, source: 'curated' };
+
+  const base = hotelKey(baseAccommodationName(hotelName));
+  if (!base) return null;
+  for (const hotel of getCuratedHotelsForCity(city)) {
+    const key = hotelKey(hotel.name);
+    if (!key) continue;
+    if (key === base || base.includes(key) || key.includes(base)) {
+      const coord = CURATED_COORDS[hotel.id];
+      if (coord) return { coord, source: 'name-match' };
+    }
+  }
+  return null;
+}
+
 export function resolveHotelCoord(
   hotelId: string | undefined | null,
   hotelName: string | undefined | null,
   city: string | undefined | null
 ): CuratedCoord | null {
-  const byId = curatedCoordOf(hotelId);
-  if (byId) return byId;
-
-  const base = normalizePlaceName(baseAccommodationName(hotelName));
-  if (!base) return null;
-  for (const hotel of getCuratedHotelsForCity(city)) {
-    if (normalizePlaceName(hotel.name) === base) {
-      const coord = CURATED_COORDS[hotel.id];
-      if (coord) return coord;
-    }
-  }
-  return null;
+  return resolveHotelPin(hotelId, hotelName, city)?.coord ?? null;
 }
 
 /**
