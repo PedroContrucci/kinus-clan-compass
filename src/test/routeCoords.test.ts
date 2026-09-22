@@ -100,6 +100,12 @@ describe('resolveHotelCoord — id, depois nome, depois Nominatim', () => {
       .toEqual({ lat: -3.7284, lng: -38.4869 });
   });
 
+  // O genérico "Hotel" vem do HOTEL_RECOMMENDATIONS; o curado é gravado sem ele.
+  it('casa mesmo com o prefixo genérico "Hotel" no nome da hospedagem', () => {
+    expect(resolveHotelCoord(undefined, 'Hotel Gran Marquise — Meireles, Fortaleza', 'Fortaleza'))
+      .toEqual({ lat: -3.7284, lng: -38.4869 });
+  });
+
   it('hotel sem par curado devolve null — o chamador cai no Nominatim', () => {
     expect(resolveHotelCoord(undefined, 'Pousada do Zé — Praia de Iracema, Fortaleza', 'Fortaleza'))
       .toBeNull();
