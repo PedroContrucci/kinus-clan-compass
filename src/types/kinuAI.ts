@@ -24,7 +24,39 @@ export interface KinuMessage {
   proposedActions?: ProposedAction[];
 }
 
+/** Onde a viagem está no tempo — calculado da data de hoje, nunca guardado na viagem. */
+export type TripPhase = 'antes' | 'durante' | 'depois';
+
+/** Uma parada do dia como o agente precisa ver: horário, nome, status e, quando curada, coordenada. */
+export interface KinuTodayStop {
+  time?: string;
+  name: string;
+  category?: string;
+  status?: string;
+  neighborhood?: string;
+  lat?: number;
+  lng?: number;
+}
+
+/** Atividade crua de um dia do roteiro, enviada pela tela para o contexto do agente. */
+export interface KinuDayActivity {
+  id?: string;
+  time?: string;
+  name: string;
+  category?: string;
+  status?: string;
+  neighborhood?: string;
+}
+
 export interface KinuTripContext {
+  /** Dias com atividades detalhadas — base do PLANO DE HOJE no modo DURANTE. */
+  itineraryActivities?: Array<{ day: number; date: string; activities: KinuDayActivity[] }>;
+  /** Calculados no envio (KinuAIContext), nunca setados pela tela. */
+  tripPhase?: TripPhase;
+  currentDayIndex?: number;
+  todayDate?: string;
+  todayPlan?: KinuTodayStop[];
+  todayHotel?: { name: string; neighborhood?: string; lat?: number; lng?: number };
   destination?: string;
   country?: string;
   startDate?: string;
