@@ -20,7 +20,7 @@ export function useClaCity(city?: string) {
     async (force = false) => {
       if (!city) return;
       setLoading(true);
-      const [s, l, r] = await Promise.all([claStats(city, force), hasLivedCity(city), myReactions(city)]);
+      const [s, l, r] = await Promise.all([claStats(city, force), hasLivedCity(city), myReactions(city, force)]);
       setStats(s);
       setLived(l);
       setMine(new Map((r as MyReaction[]).map((x) => [x.activity_id, x.kind])));
