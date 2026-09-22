@@ -1,7 +1,7 @@
-// Aba Clã — Clã Vivo v1. O clã sinaliza, o KINU cura.
+// Aba Clã — Clã Vivo v1.1. O clã sinaliza, o KINU cura.
 //
-// Anônimo por desenho: nenhum nome de usuário, nenhum ranking de pessoas. Só o que a
-// comunidade amou, o que sugeriu e o que VOCÊ contribuiu.
+// Anônimo por desenho: nenhum nome de usuário, nenhum ranking de pessoas. Votar é assunto
+// do check-in pós-viagem; aqui só se sugere e se lê o que a comunidade amou.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Sparkles, ThumbsUp, ThumbsDown } from 'lucide-react';
@@ -13,17 +13,14 @@ import { CURATED_CITIES } from '@/lib/curatedCities';
 import { getDestinationActivities } from '@/data/destinationActivities';
 import {
   claStats,
-  hasLivedCity,
-  myReactions,
   mySuggestions,
   suggestionsPublic,
   CLA_CATEGORIES,
   type ClaStat,
   type ClaSuggestionPublic,
-  type MyReaction,
   type MySuggestion,
 } from '@/lib/cla';
-import { SuggestPlaceSheet } from '@/components/cla/SuggestPlaceSheet';
+import { SuggestClaForm } from '@/components/cla/SuggestClaForm';
 import {
   Select,
   SelectContent,
@@ -34,9 +31,9 @@ import {
 import kinuLogo from '@/assets/KINU_logo.png';
 
 const STATUS_PILL: Record<string, { label: string; className: string }> = {
-  pending: { label: 'em curadoria', className: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
-  accepted: { label: 'no catálogo', className: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
-  rejected: { label: 'não entrou', className: 'bg-muted text-muted-foreground border-border' },
+  pending: { label: 'pendente', className: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
+  accepted: { label: 'aceita', className: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+  rejected: { label: 'recusada', className: 'bg-muted text-muted-foreground border-border' },
 };
 
 const categoryLabel = (value: string) =>
@@ -58,11 +55,8 @@ const Cla = () => {
 
   const [stats, setStats] = useState<Map<string, ClaStat>>(new Map());
   const [suggestions, setSuggestions] = useState<ClaSuggestionPublic[]>([]);
-  const [reactions, setReactions] = useState<MyReaction[]>([]);
   const [mySugs, setMySugs] = useState<MySuggestion[]>([]);
-  const [lived, setLived] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [sheetOpen, setSheetOpen] = useState(false);
 
   // Cidade padrão: a da viagem ativa (ou a mais recente) quando for curada.
   useEffect(() => {
@@ -79,18 +73,14 @@ const Cla = () => {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [s, pub, mine, sugs, liv] = await Promise.all([
+    const [s, pub, sugs] = await Promise.all([
       claStats(city),
       suggestionsPublic(city),
-      myReactions(city),
-      mySuggestions(city),
-      hasLivedCity(city),
+      mySuggestions(),
     ]);
     setStats(s);
     setSuggestions(pub);
-    setReactions(mine);
     setMySugs(sugs);
-    setLived(liv);
     setLoading(false);
   }, [city]);
 
@@ -136,9 +126,7 @@ const Cla = () => {
             <img src={kinuLogo} alt="KINU" className="h-8 w-8 object-contain" />
             <div>
               <h1 className="font-bold text-xl font-['Outfit'] text-foreground">Clã Vivo 🌿</h1>
-              <p className="text-xs text-muted-foreground">
-                Quem viveu, sinaliza. O KINU cura.
-              </p>
+              <p className="text-xs text-muted-foreground">Quem viveu, sinaliza. O KINU cura.</p>
             </div>
           </div>
 
@@ -167,31 +155,46 @@ const Cla = () => {
         <HintBalloon
           area="cla"
           arrow="up"
-          text="O Clã é a sabedoria coletiva — vote e sugira depois de viver a cidade."
+          text="O Clã é a sabedoria coletiva — sugira lugares e veja o que a comunidade amou."
         />
 
-        {/* Sugerir */}
+        {/* a) Sugira ao clã */}
         <section className="bg-card border border-border rounded-2xl p-4">
-          <p className="text-sm text-foreground font-['Outfit'] font-semibold mb-1">
-            Conhece um lugar em {city}?
-          </p>
-          {lived ? (
-            <>
-              <p className="text-xs text-muted-foreground mb-3">
-                Vai pra curadoria do KINU — se entrar no catálogo, você ganha o crédito.
+          <h2 className="text-sm text-foreground font-['Outfit'] font-semibold mb-3">
+            💡 Sugira ao clã
+          </h2>
+          <SuggestClaForm defaultCity={city} onSent={() => void load()} />
+
+          <div className="mt-5 pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground font-medium mb-2">Suas sugestões</p>
+            {mySugs.length === 0 ? (
+              <p className="text-xs text-muted-foreground/70">
+                Você ainda não sugeriu nenhum lugar.
               </p>
-              <button
-                onClick={() => setSheetOpen(true)}
-                className="w-full py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-sm font-semibold font-['Outfit']"
-              >
-                + Sugerir um lugar ao clã
-              </button>
-            </>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Vote e sugira depois de viver {city}.
-            </p>
-          )}
+            ) : (
+              <div className="space-y-2">
+                {mySugs.map((s, i) => {
+                  const pill = STATUS_PILL[s.status] ?? STATUS_PILL.pending;
+                  return (
+                    <div
+                      key={`${s.city}-${s.name}-${i}`}
+                      className="flex items-center justify-between gap-2 bg-background border border-border rounded-xl px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm text-foreground truncate">{s.name}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {s.city} · {categoryLabel(s.category)}
+                        </p>
+                      </div>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border shrink-0 ${pill.className}`}>
+                        {pill.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </section>
 
         {loading ? (
@@ -200,14 +203,14 @@ const Cla = () => {
           </div>
         ) : (
           <>
-            {/* Mais amados */}
+            {/* b) Mais amados */}
             <section>
               <h2 className="font-semibold text-lg text-foreground font-['Outfit'] flex items-center gap-2 mb-3">
-                <Sparkles size={16} className="text-emerald-400" /> Mais amados pelo clã
+                <Sparkles size={16} className="text-emerald-400" /> Mais amados pelo clã · {city}
               </h2>
               {loved.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  Ninguém sinalizou nada em {city} ainda. Pode ser você o primeiro.
+                  Ninguém sinalizou nada em {city} ainda. Pode ser você o primeiro, no check-in.
                 </p>
               ) : (
                 <div className="space-y-2">
@@ -239,15 +242,13 @@ const Cla = () => {
               )}
             </section>
 
-            {/* Sugestões do clã */}
+            {/* c) Sugestões do clã */}
             <section>
               <h2 className="font-semibold text-lg text-foreground font-['Outfit'] mb-3">
-                💡 Sugestões do clã
+                🌱 Sugestões do clã · {city}
               </h2>
               {suggestions.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Nenhuma sugestão para {city} ainda.
-                </p>
+                <p className="text-xs text-muted-foreground">Nenhuma sugestão para {city} ainda.</p>
               ) : (
                 <div className="space-y-2">
                   {suggestions.map((s, i) => {
@@ -269,59 +270,9 @@ const Cla = () => {
                 </div>
               )}
             </section>
-
-            {/* Suas contribuições */}
-            <section>
-              <h2 className="font-semibold text-lg text-foreground font-['Outfit'] mb-3">
-                🌱 Suas contribuições
-              </h2>
-              {reactions.length === 0 && mySugs.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Você ainda não contribuiu em {city}.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {reactions.map((r) => (
-                    <div
-                      key={r.activity_id}
-                      className="flex items-center gap-2 bg-card border border-border rounded-xl p-3"
-                    >
-                      <span>{r.kind === 'up' ? '👍' : '👎'}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground truncate">
-                          {namesById.get(r.activity_id) || r.activity_id}
-                        </p>
-                        {r.note && <p className="text-[11px] text-muted-foreground truncate">“{r.note}”</p>}
-                      </div>
-                    </div>
-                  ))}
-                  {mySugs.map((s, i) => {
-                    const pill = STATUS_PILL[s.status] ?? STATUS_PILL.pending;
-                    return (
-                      <div key={`${s.name}-${i}`} className="bg-card border border-border rounded-xl p-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm text-foreground truncate">💡 {s.name}</p>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${pill.className}`}>
-                            {pill.label}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{categoryLabel(s.category)}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
           </>
         )}
       </main>
-
-      <SuggestPlaceSheet
-        city={city}
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        onSent={() => void load()}
-      />
 
       <BottomNav />
     </div>
