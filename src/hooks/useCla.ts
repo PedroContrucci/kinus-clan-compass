@@ -9,6 +9,20 @@ import {
   type ReactionKind,
 } from '@/lib/cla';
 
+/** Só as estatísticas da cidade (prova social do roteiro). Cache por sessão no lib. */
+export function useClaStats(city?: string) {
+  const [stats, setStats] = useState<Map<string, ClaStat>>(new Map());
+
+  useEffect(() => {
+    let alive = true;
+    if (!city) { setStats(new Map()); return; }
+    void claStats(city).then((s) => { if (alive) setStats(s); });
+    return () => { alive = false; };
+  }, [city]);
+
+  return stats;
+}
+
 /** Stats do clã da cidade + as reações do próprio usuário. Nunca bloqueia a renderização. */
 export function useClaCity(city?: string) {
   const [stats, setStats] = useState<Map<string, ClaStat>>(new Map());
