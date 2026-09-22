@@ -271,6 +271,8 @@ export async function suggestPlace(params: {
   name: string;
   category: string;
   note?: string;
+  /** O usuário viveu esta cidade? Sinal de peso para a curadoria. */
+  lived?: boolean;
 }): Promise<boolean> {
   const userId = getCurrentUserId();
   const name = params.name.trim();
@@ -283,11 +285,66 @@ export async function suggestPlace(params: {
       category: params.category,
       note: (params.note ?? '').slice(0, SUGGESTION_NOTE_MAX) || null,
       status: 'pending',
+      lived: Boolean(params.lived),
     } as never);
     if (error) return false;
-    trackEvent('cla.suggestion', { city: params.city, category: params.category });
+    trackEvent('cla.suggestion', {
+      city: params.city,
+      category: params.category,
+      lived: Boolean(params.lived),
+    });
     return true;
   } catch {
     return false;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Reações do check-in — o único lugar onde o clã vota
+// ---------------------------------------------------------------------------
+
+export interface CheckinReaction {
+  /** Id do catálogo (sem o prefixo `day-N-`). */
+  activityId: string;
+  kind: ReactionKind;
+  note?: string;
+}
+
+/**
+ * Grava as reações marcadas no check-in: um upsert por atividade em `cla_reactions`
+ * e um evento `cla.reaction` por reação gravada. Nunca lança e nunca bloqueia o
+ * check-in — falhou, registra uma vez no console e segue.
+ */
+export async function submitCheckinReactions(
+  city: string,
+  items: CheckinReaction[]
+): Promise<number> {
+  const userId = getCurrentUserId();
+  if (!userId || !city || !items.length) return 0;
+  let saved = 0;
+  try {
+    for (const item of items) {
+      if (!item?.activityId) continue;
+      const { error } = await kinuBeta.from('cla_reactions').upsert(
+        {
+          user_id: userId,
+          activity_id: item.activityId,
+          city,
+          kind: item.kind,
+          note: (item.note ?? '').slice(0, NOTE_MAX) || null,
+        } as never,
+        { onConflict: 'user_id,activity_id' }
+      );
+      if (error) continue;
+      saved += 1;
+      trackEvent('cla.reaction', { activity_id: item.activityId, city, kind: item.kind });
+    }
+    if (saved > 0) {
+      statsCache.delete(city);
+      reactionsCache.clear();
+    }
+  } catch (err) {
+    console.error('cla: check-in reactions failed', err);
+  }
+  return saved;
 }
