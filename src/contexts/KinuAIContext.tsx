@@ -167,6 +167,21 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
   const stickyCuratedCityRef = useRef<string | null>(null);
 
 
+  // Abertura do chat com a viagem acontecendo: um evento por dia por viagem.
+  // A guarda vive no localStorage porque o fato é "já contei hoje", não estado de tela.
+  useEffect(() => {
+    if (!isOpen || !tripContext) return;
+    const durante = buildDuranteContext(tripContext);
+    if (!durante || durante.tripPhase !== 'durante') return;
+    const tripId = tripContext.tripId ?? tripContext.destination ?? 'sem-id';
+    const key = `kinu_durante_opened:${tripId}:${durante.todayDate}`;
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, '1');
+    } catch { /* storage indisponível: melhor contar duas vezes que quebrar o chat */ }
+    trackEvent('kinu_ai.durante_opened', { trip_id: tripId, day: durante.currentDayIndex });
+  }, [isOpen, tripContext]);
+
   const checkForEmergency = useCallback((text: string): boolean => {
     const lowerText = text.toLowerCase();
     return EMERGENCY_KEYWORDS.some(keyword => lowerText.includes(keyword));
