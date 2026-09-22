@@ -275,6 +275,16 @@ export const ActivityDetailDrawer = ({
             )}
           </div>
 
+          {!skip && (
+            <div className="pt-2 border-t border-border">
+              <ClaLine
+                activityId={curated?.id || catalogIdOf(activity.id)}
+                city={destination}
+                withSuggest
+              />
+            </div>
+          )}
+
           {onFocusOnMap && !skip && (
             <button
               onClick={() => {
