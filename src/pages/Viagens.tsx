@@ -47,6 +47,8 @@ import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer'
 import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
 import { HintBalloon } from '@/components/onboarding/HintBalloon';
 import { CheckinBanner } from '@/components/checkin/CheckinBanner';
+import { ClaLine } from '@/components/cla/ClaLine';
+import { catalogIdOf } from '@/lib/localAchievements';
 import { HotelPlanBlock } from '@/components/hotel/HotelPlanBlock';
 import { applyHotelSwap, type AccommodationLike } from '@/lib/hotelSwap';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -2371,6 +2373,14 @@ const Viagens = () => {
                             
                             {/* Google Places Info */}
                             <PlaceInfoCard activityName={activity.name} destination={selectedTrip.destination} />
+
+                            {/* Clã — sinal da comunidade nesta atividade */}
+                            {activity.category !== 'voo' && activity.category !== 'hotel' && (
+                              <ClaLine
+                                activityId={catalogIdOf(activity.id)}
+                                city={selectedTrip.destination}
+                              />
+                            )}
 
                             {/* Actions — max 2 buttons: Confirmar + Ver Ofertas */}
                             {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (

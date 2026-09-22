@@ -4,6 +4,8 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@
 import { usePlaceDetails, PlaceDetails } from '@/hooks/usePlaceDetails';
 import { destinationActivities, type SuggestedActivity } from '@/data/destinationActivities';
 import type { TripActivity } from '@/types/trip';
+import { ClaLine } from '@/components/cla/ClaLine';
+import { catalogIdOf } from '@/lib/localAchievements';
 
 interface ActivityDetailDrawerProps {
   activity: TripActivity | null;
@@ -272,6 +274,16 @@ export const ActivityDetailDrawer = ({
               <p className="text-sm text-emerald-400 font-medium">Grátis</p>
             )}
           </div>
+
+          {!skip && (
+            <div className="pt-2 border-t border-border">
+              <ClaLine
+                activityId={curated?.id || catalogIdOf(activity.id)}
+                city={destination}
+                withSuggest
+              />
+            </div>
+          )}
 
           {onFocusOnMap && !skip && (
             <button
