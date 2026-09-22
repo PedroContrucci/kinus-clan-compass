@@ -277,10 +277,9 @@ export const ActivityDetailDrawer = ({
 
           {!skip && (
             <div className="pt-2 border-t border-border">
-              <ClaLine
+              <ClaProof
                 activityId={curated?.id || catalogIdOf(activity.id)}
                 city={destination}
-                withSuggest
               />
             </div>
           )}

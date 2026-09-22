@@ -2376,7 +2376,7 @@ const Viagens = () => {
 
                             {/* Clã — sinal da comunidade nesta atividade */}
                             {activity.category !== 'voo' && activity.category !== 'hotel' && (
-                              <ClaLine
+                              <ClaProof
                                 activityId={catalogIdOf(activity.id)}
                                 city={selectedTrip.destination}
                               />
