@@ -244,7 +244,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         headers: await kinuAuthHeaders(),
         body: {
           message: content,
-          context: tripContext,
+          // O recorte "durante" é calculado no envio: fase, dia corrente e plano de hoje.
+          context: tripContext ? { ...tripContext, ...(buildDuranteContext(tripContext) ?? {}) } : tripContext,
           history,
           isEmergency,
           curatedCityNames: CURATED_CITIES,
