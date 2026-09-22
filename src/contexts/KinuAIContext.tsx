@@ -50,6 +50,69 @@ function buildCuratedHotels(city: string) {
   }));
 }
 
+/** A data de hoje em ISO local (não UTC — a virada do dia é a do usuário, não a de Greenwich). */
+function isoToday(d = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+/** A fase é derivada da data, nunca guardada: antes < início ≤ durante ≤ fim < depois. */
+export function computeTripPhase(
+  startDate?: string,
+  endDate?: string,
+  today: string = isoToday()
+): TripPhase | undefined {
+  const start = (startDate ?? '').slice(0, 10);
+  const end = (endDate ?? '').slice(0, 10);
+  if (!start || !end) return undefined;
+  if (today < start) return 'antes';
+  if (today > end) return 'depois';
+  return 'durante';
+}
+
+function daysBetween(fromIso: string, toIso: string): number {
+  const a = new Date(`${fromIso}T00:00:00`);
+  const b = new Date(`${toIso}T00:00:00`);
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000);
+}
+
+/**
+ * O recorte "durante": fase, dia corrente (0-based), plano de hoje e hotel.
+ * Coordenada só quando curada (casamento por id, como no mapa) — nunca geocoding aqui.
+ */
+export function buildDuranteContext(ctx: KinuTripContext | null, today: string = isoToday()) {
+  if (!ctx) return null;
+  const phase = computeTripPhase(ctx.startDate, ctx.endDate, today);
+  if (!phase) return null;
+  if (phase !== 'durante') return { tripPhase: phase } as Partial<KinuTripContext>;
+
+  const currentDayIndex = Math.max(0, daysBetween(String(ctx.startDate).slice(0, 10), today));
+  const day = (ctx.itineraryActivities ?? []).find((d) => d.day === currentDayIndex + 1);
+  const todayPlan: KinuTodayStop[] = (day?.activities ?? []).slice(0, 20).map((a) => {
+    const coord = curatedCoordOf(a.id);
+    return {
+      time: a.time,
+      name: a.name,
+      category: a.category,
+      status: a.status,
+      neighborhood: a.neighborhood,
+      ...(coord ? { lat: coord.lat, lng: coord.lng } : {}),
+    };
+  });
+
+  let todayHotel: KinuTripContext['todayHotel'];
+  if (ctx.hotelName) {
+    const coord = resolveHotelCoord(undefined, ctx.hotelName, ctx.destination);
+    todayHotel = {
+      name: ctx.hotelName,
+      neighborhood: ctx.hotelNeighborhood,
+      ...(coord ? { lat: coord.lat, lng: coord.lng } : {}),
+    };
+  }
+
+  return { tripPhase: phase, currentDayIndex, todayDate: today, todayPlan, todayHotel } as Partial<KinuTripContext>;
+}
+
 function detectCuratedCity(message: string, activeDestination?: string): string | null {
   if (activeDestination && CURATED_CITIES.some((c) => c.toLowerCase() === activeDestination.toLowerCase())) {
     const match = CURATED_CITIES.find((c) => c.toLowerCase() === activeDestination.toLowerCase());
