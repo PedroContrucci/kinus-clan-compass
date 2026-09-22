@@ -2,7 +2,7 @@ import { memo, useEffect, useState, useRef, useCallback, useMemo, Component, Err
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
-import { resolveHotelCoord, resolveStopCoord } from '@/lib/routeCoords';
+import { resolveHotelPin, resolveStopCoord } from '@/lib/routeCoords';
 import { DayMapLink } from './DayMapLink';
 
 class MapErrorBoundary extends Component<
