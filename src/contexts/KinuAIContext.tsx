@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from "react";
-import { KinuMessage, KinuTripContext, KinuInsight, EMERGENCY_KEYWORDS, ProposedAction, ProposedActionType } from "@/types/kinuAI";
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from "react";
+import { KinuMessage, KinuTripContext, KinuInsight, EMERGENCY_KEYWORDS, ProposedAction, ProposedActionType, TripPhase, KinuTodayStop } from "@/types/kinuAI";
+import { curatedCoordOf, resolveHotelCoord } from "@/lib/routeCoords";
+import { trackEvent } from "@/lib/kinuEvents";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CURATED_CITIES } from "@/lib/curatedCities";
@@ -46,6 +48,69 @@ function buildCuratedHotels(city: string) {
     priceRangeBRL: h.priceRangeBRL,
     tips: h.tips.slice(0, 2),
   }));
+}
+
+/** A data de hoje em ISO local (não UTC — a virada do dia é a do usuário, não a de Greenwich). */
+function isoToday(d = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+/** A fase é derivada da data, nunca guardada: antes < início ≤ durante ≤ fim < depois. */
+export function computeTripPhase(
+  startDate?: string,
+  endDate?: string,
+  today: string = isoToday()
+): TripPhase | undefined {
+  const start = (startDate ?? '').slice(0, 10);
+  const end = (endDate ?? '').slice(0, 10);
+  if (!start || !end) return undefined;
+  if (today < start) return 'antes';
+  if (today > end) return 'depois';
+  return 'durante';
+}
+
+function daysBetween(fromIso: string, toIso: string): number {
+  const a = new Date(`${fromIso}T00:00:00`);
+  const b = new Date(`${toIso}T00:00:00`);
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000);
+}
+
+/**
+ * O recorte "durante": fase, dia corrente (0-based), plano de hoje e hotel.
+ * Coordenada só quando curada (casamento por id, como no mapa) — nunca geocoding aqui.
+ */
+export function buildDuranteContext(ctx: KinuTripContext | null, today: string = isoToday()) {
+  if (!ctx) return null;
+  const phase = computeTripPhase(ctx.startDate, ctx.endDate, today);
+  if (!phase) return null;
+  if (phase !== 'durante') return { tripPhase: phase } as Partial<KinuTripContext>;
+
+  const currentDayIndex = Math.max(0, daysBetween(String(ctx.startDate).slice(0, 10), today));
+  const day = (ctx.itineraryActivities ?? []).find((d) => d.day === currentDayIndex + 1);
+  const todayPlan: KinuTodayStop[] = (day?.activities ?? []).slice(0, 20).map((a) => {
+    const coord = curatedCoordOf(a.id);
+    return {
+      time: a.time,
+      name: a.name,
+      category: a.category,
+      status: a.status,
+      neighborhood: a.neighborhood,
+      ...(coord ? { lat: coord.lat, lng: coord.lng } : {}),
+    };
+  });
+
+  let todayHotel: KinuTripContext['todayHotel'];
+  if (ctx.hotelName) {
+    const coord = resolveHotelCoord(undefined, ctx.hotelName, ctx.destination);
+    todayHotel = {
+      name: ctx.hotelName,
+      neighborhood: ctx.hotelNeighborhood,
+      ...(coord ? { lat: coord.lat, lng: coord.lng } : {}),
+    };
+  }
+
+  return { tripPhase: phase, currentDayIndex, todayDate: today, todayPlan, todayHotel } as Partial<KinuTripContext>;
 }
 
 function detectCuratedCity(message: string, activeDestination?: string): string | null {
@@ -101,6 +166,21 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
   // deixava de ser injetado e o agente perdia a fonte da verdade no meio do papo.
   const stickyCuratedCityRef = useRef<string | null>(null);
 
+
+  // Abertura do chat com a viagem acontecendo: um evento por dia por viagem.
+  // A guarda vive no localStorage porque o fato é "já contei hoje", não estado de tela.
+  useEffect(() => {
+    if (!isOpen || !tripContext) return;
+    const durante = buildDuranteContext(tripContext);
+    if (!durante || durante.tripPhase !== 'durante') return;
+    const tripId = tripContext.tripId ?? tripContext.destination ?? 'sem-id';
+    const key = `kinu_durante_opened:${tripId}:${durante.todayDate}`;
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, '1');
+    } catch { /* storage indisponível: melhor contar duas vezes que quebrar o chat */ }
+    trackEvent('kinu_ai.durante_opened', { trip_id: tripId, day: durante.currentDayIndex });
+  }, [isOpen, tripContext]);
 
   const checkForEmergency = useCallback((text: string): boolean => {
     const lowerText = text.toLowerCase();
@@ -179,7 +259,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         headers: await kinuAuthHeaders(),
         body: {
           message: content,
-          context: tripContext,
+          // O recorte "durante" é calculado no envio: fase, dia corrente e plano de hoje.
+          context: tripContext ? { ...tripContext, ...(buildDuranteContext(tripContext) ?? {}) } : tripContext,
           history,
           isEmergency,
           curatedCityNames: CURATED_CITIES,
