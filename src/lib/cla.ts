@@ -101,6 +101,7 @@ export function livedCities(): Promise<Set<string>> {
 export function resetClaCache(): void {
   livedPromise = null;
   statsCache.clear();
+  reactionsCache.clear();
 }
 
 /** Viveu esta cidade? Casa pelo nome canônico, como o motor de conquistas. */
@@ -154,8 +155,21 @@ export function claStats(city: string, force = false): Promise<Map<string, ClaSt
 // Reações
 // ---------------------------------------------------------------------------
 
-/** As reações do usuário (cidade opcional). Nunca lança. */
-export async function myReactions(city?: string): Promise<MyReaction[]> {
+const reactionsCache = new Map<string, Promise<MyReaction[]>>();
+
+/** As reações do usuário na cidade, cacheadas por sessão (um card por atividade não pode virar
+ *  um request por card). Nunca lança. */
+export function myReactions(city = '', force = false): Promise<MyReaction[]> {
+  if (force) reactionsCache.delete(city);
+  let cached = reactionsCache.get(city);
+  if (!cached) {
+    cached = readMyReactions(city);
+    reactionsCache.set(city, cached);
+  }
+  return cached;
+}
+
+async function readMyReactions(city?: string): Promise<MyReaction[]> {
   const userId = getCurrentUserId();
   if (!userId) return [];
   try {
@@ -193,6 +207,7 @@ export async function react(params: {
         .eq('activity_id', activityId);
       if (error) return { ok: false, kind: current };
       statsCache.delete(city);
+      reactionsCache.clear();
       return { ok: true, kind: null };
     }
 
@@ -211,6 +226,7 @@ export async function react(params: {
     if (error) return { ok: false, kind: current ?? null };
 
     statsCache.delete(city);
+    reactionsCache.clear();
     trackEvent('cla.reaction', { activity_id: activityId, city, kind });
     return { ok: true, kind };
   } catch {
