@@ -2,7 +2,7 @@ import { memo, useEffect, useState, useRef, useCallback, useMemo, Component, Err
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { ATTRACTION_COORDS } from '@/data/attractionCoordinates';
-import { resolveHotelCoord, resolveStopCoord } from '@/lib/routeCoords';
+import { resolveHotelPin, resolveStopCoord } from '@/lib/routeCoords';
 import { DayMapLink } from './DayMapLink';
 
 class MapErrorBoundary extends Component<
@@ -250,8 +250,12 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
     (async () => {
       const results: GeoPoint[] = [];
       // O hotel curado tem coordenada própria; o bairro é o que sobra quando ele não tem.
-      const hotelCoords = resolveHotelCoord(hotelId, hotelName, destination)
+      const pin = resolveHotelPin(hotelId, hotelName, destination);
+      const hotelCoords = pin?.coord
         ?? (hotelNeighborhood ? await geocodeByName(hotelNeighborhood, destination) : null);
+      if (hotelCoords) {
+        console.log(`[hotel-pin] source: ${pin?.source ?? 'nominatim'}`);
+      }
       if (hotelCoords) {
         results.push({
           name: hotelNeighborhood ? `Hotel (${hotelNeighborhood})` : 'Hotel',
