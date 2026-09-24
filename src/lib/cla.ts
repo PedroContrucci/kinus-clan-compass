@@ -439,3 +439,93 @@ export async function submitCheckinReactions(
   }
   return saved;
 }
+
+// ---------------------------------------------------------------------------
+// Roteiros compartilhados (cla_shared_trips + RPC cla_shared_trips_public)
+// ---------------------------------------------------------------------------
+
+export interface SharedItineraryDay {
+  day: number;
+  items: { id: string; name: string; category: string }[];
+}
+
+export interface SharedTripRow {
+  user_id: string;
+  trip_id: string;
+  city: string;
+  days: number;
+  travelers: number;
+  children: number;
+  itinerary: SharedItineraryDay[];
+  lived_ids: string[];
+  title: string | null;
+}
+
+export interface SharedTripPublic {
+  id?: string;
+  city: string;
+  days: number;
+  travelers: number;
+  children: number;
+  itinerary: SharedItineraryDay[];
+  lived_ids: string[];
+  title: string | null;
+  created_at?: string;
+}
+
+/** Compartilha (anônimo para o clã). Única por viagem — conflito vira sucesso silencioso. */
+export async function shareTrip(row: Omit<SharedTripRow, 'user_id'>): Promise<boolean> {
+  const userId = getCurrentUserId();
+  if (!userId) return false;
+  try {
+    const { error } = await kinuBeta.from('cla_shared_trips').insert({ ...row, user_id: userId });
+    if (error && error.code !== '23505') {
+      console.error('cla: share trip failed', error);
+      return false;
+    }
+    trackEvent('cla.trip_shared', { city: row.city, days: row.days });
+    return true;
+  } catch (err) {
+    console.error('cla: share trip failed', err);
+    return false;
+  }
+}
+
+export async function unshareTrip(tripId: string): Promise<boolean> {
+  const userId = getCurrentUserId();
+  if (!userId) return false;
+  try {
+    const { error } = await kinuBeta.from('cla_shared_trips').delete().eq('user_id', userId).eq('trip_id', tripId);
+    if (error) { console.error('cla: unshare failed', error); return false; }
+    return true;
+  } catch (err) {
+    console.error('cla: unshare failed', err);
+    return false;
+  }
+}
+
+export async function mySharedTripIds(): Promise<Set<string>> {
+  const userId = getCurrentUserId();
+  if (!userId) return new Set();
+  try {
+    const { data, error } = await kinuBeta.from('cla_shared_trips').select('trip_id').eq('user_id', userId);
+    if (error || !data) return new Set();
+    return new Set((data as { trip_id: string }[]).map((r) => r.trip_id));
+  } catch {
+    return new Set();
+  }
+}
+
+export async function sharedTripsPublic(city: string): Promise<SharedTripPublic[]> {
+  try {
+    const { data, error } = await kinuBeta.rpc('cla_shared_trips_public', { p_city: city });
+    if (error || !Array.isArray(data)) return [];
+    return (data as SharedTripPublic[]).map((r) => ({
+      ...r,
+      itinerary: Array.isArray(r.itinerary) ? r.itinerary : [],
+      lived_ids: Array.isArray(r.lived_ids) ? r.lived_ids : [],
+    }));
+  } catch {
+    return [];
+  }
+}
