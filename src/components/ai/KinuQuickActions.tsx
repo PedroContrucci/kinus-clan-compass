@@ -69,7 +69,7 @@ export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
     );
   }
 
-  const visibleActions = actions.slice(0, isDuringTrip ? 5 : 4);
+  const visibleActions = actions.slice(0, isDuringTrip ? 6 : 4);
 
   return (
     <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[#334155]">
