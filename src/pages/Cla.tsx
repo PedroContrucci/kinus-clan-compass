@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- tipos legados dos cards comunitários restaurados */
 // Aba Clã — Comunidade KINU reestruturada com filtros robustos
 import { useCallback, useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
