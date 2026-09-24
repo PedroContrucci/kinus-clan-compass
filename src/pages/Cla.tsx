@@ -371,7 +371,10 @@ const Cla = () => {
 
   // Determine what content to show based on category
   const showItineraries = selectedCategory === 'all' || selectedCategory === 'itinerary';
-  const showActivities = selectedCategory === 'all' || selectedCategory !== 'itinerary';
+  const showActivities = selectedCategory === 'all' ||
+    (selectedCategory !== 'itinerary' && selectedCategory !== 'hotel' && selectedCategory !== 'michelin');
+  const showHotels = selectedCategory === 'hotel' || (searchQuery !== '' && selectedCategory === 'all' && filteredCityHotels.length > 0);
+  const showMichelin = selectedCategory === 'michelin' || (searchQuery !== '' && selectedCategory === 'all' && filteredCityMichelin.length > 0);
 
   return (
     <div className="min-h-screen bg-background pb-36 lg:pb-24">
