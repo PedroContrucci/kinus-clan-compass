@@ -35,6 +35,8 @@ import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { clearTrips, deleteTrip, getTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
+import { addCatalogActivityToDay, applyTripPlannedCostDelta, calculateTripProgress } from '@/lib/tripItineraryOps';
+import { ViagensVividas } from '@/components/viagens/ViagensVividas';
 import { itemKindOf, trackTripActivated, trackTripItemConfirmed } from '@/lib/tripEvents';
 import { buildOfferLinks } from '@/lib/offersLinks';
 import { supabase } from '@/integrations/supabase/client';
@@ -275,33 +277,7 @@ const Viagens = () => {
     }, 150);
   };
 
-  const calculateProgress = (trip: SavedTrip) => {
-    if (!trip?.days || !Array.isArray(trip.days)) return 0;
-
-    let total = 0;
-    let confirmed = 0;
-
-    if (trip.flights?.outbound) {
-      total++;
-      if (trip.flights.outbound.status === 'confirmed') confirmed++;
-    }
-
-    if (trip.accommodation) {
-      total++;
-      if (trip.accommodation.status === 'confirmed') confirmed++;
-    }
-
-    trip.days.forEach((day) => {
-      if (day?.activities && Array.isArray(day.activities)) {
-        day.activities.forEach((act) => {
-          if (act.category === 'voo' || act.category === 'hotel') return;
-          total++;
-          if (act.status === 'confirmed') confirmed++;
-        });
-      }
-    });
-    return total > 0 ? Math.round((confirmed / total) * 100) : 0;
-  };
+  const calculateProgress = calculateTripProgress;
 
   const getStatusIcon = (status: ActivityStatus) => {
     switch (status) {
@@ -866,19 +842,7 @@ const Viagens = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTrip?.id]);
 
-  const applyPlannedCostDelta = (trip: SavedTrip, activity: TripActivity, delta: number) => {
-    // Only planned (not confirmed/bidding) contributes to finances.planned
-    if (activity.status === 'confirmed' || activity.status === 'bidding') return;
-    if (!delta) return;
-    const cat = (activity.category as string) || '';
-    const bucket: 'food' | 'tours' =
-      ['comida', 'breakfast', 'lunch', 'dinner', 'café', 'cafe'].includes(cat.toLowerCase())
-        ? 'food'
-        : 'tours';
-    trip.finances.planned = Math.max(0, trip.finances.planned + delta);
-    trip.finances.categories[bucket].planned = Math.max(0, (trip.finances.categories[bucket].planned || 0) + delta);
-    trip.finances.available = trip.finances.total - trip.finances.planned - trip.finances.confirmed - trip.finances.bidding;
-  };
+  const applyPlannedCostDelta = applyTripPlannedCostDelta;
 
   const findActivityLocation = (trip: SavedTrip, activityId: string): { dayIdx: number; actIdx: number } | null => {
     for (let d = 0; d < (trip.days || []).length; d++) {
@@ -953,27 +917,7 @@ const Viagens = () => {
   const handleAddActivity = (dia: number, suggested: SuggestedActivity, horario: string) => {
     if (!selectedTrip) return;
     const trip: SavedTrip = JSON.parse(JSON.stringify(selectedTrip));
-    const dayIdx = trip.days.findIndex(d => d.day === dia);
-    const day = dayIdx >= 0 ? trip.days[dayIdx] : trip.days[dia - 1];
-    if (!day) return;
-    const travelers = Math.max(1, trip.travelers || 1);
-    const cost = suggested.estimatedCostBRL || 0;
-    const newAct: TripActivity = {
-      id: `${suggested.id}-${Date.now()}`,
-      time: horario,
-      name: suggested.name,
-      description: suggested.tips?.[0] || '',
-      duration: suggested.durationHours ? `${suggested.durationHours}h` : '',
-      cost,
-      type: suggested.category || 'activity',
-      status: 'planned',
-      category: suggested.category as TripActivity['category'],
-      edited: true,
-    };
-    day.activities.push(newAct);
-    day.activities.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-    applyPlannedCostDelta(trip, newAct, cost * travelers);
-    trip.progress = calculateProgress(trip);
+    if (!addCatalogActivityToDay(trip, dia, suggested, horario)) return;
     persistTrip(trip);
     toast({ title: '➕ Atividade adicionada', description: suggested.name });
   };
@@ -1645,6 +1589,8 @@ const Viagens = () => {
               </button>
             </div>
           )}
+
+          {!isSidebar && <ViagensVividas trips={trips as StoredTrip[]} />}
 
           {trips.length > 0 && !isSidebar && (
             <div className="mt-8 pt-6 border-t border-[#334155]">

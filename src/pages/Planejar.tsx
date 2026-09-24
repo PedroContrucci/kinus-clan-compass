@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 import {
@@ -110,6 +111,14 @@ export default function Planejar() {
     });
     setWizardActive(true);
   };
+
+  // Vindo do Clã ("Planejar uma viagem para <cidade>"): abre o wizard já com o destino.
+  const location = useLocation();
+  const openWizardFor = (location.state as { openWizardFor?: string } | null)?.openWizardFor;
+  useEffect(() => {
+    if (openWizardFor) handleSelectCity(openWizardFor);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openWizardFor]);
 
   const handleWizardCancel = () => {
     setWizardActive(false);
