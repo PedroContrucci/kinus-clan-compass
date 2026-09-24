@@ -23,7 +23,7 @@ const fmtDate = (iso?: string | null) => {
 };
 
 /** Só itens do catálogo verificado: id + nome + categoria. Sem preço, nota ou nome de gente. */
-export function buildSharedItinerary(trip: StoredTrip, city: string): SharedItineraryDay[] {
+function buildSharedItinerary(trip: StoredTrip, city: string): SharedItineraryDay[] {
   const catalog = new Map(getDestinationActivities(city).map((a) => [a.id, a]));
   return (trip.days || []).map((d, i) => ({
     day: d.day ?? i + 1,

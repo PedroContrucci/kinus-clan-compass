@@ -22,7 +22,7 @@ export type AddTarget =
 
 const norm = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
-export function tripMatchesCity(trip: StoredTrip, city: string): boolean {
+function tripMatchesCity(trip: StoredTrip, city: string): boolean {
   const d = norm(String(trip.destination || ''));
   return !!d && d.includes(norm(city));
 }
