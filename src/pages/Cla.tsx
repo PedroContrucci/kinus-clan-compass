@@ -191,8 +191,8 @@ const Cla = () => {
   const { data: allActivities, isLoading: activitiesLoading } = useCommunityActivities({
     countryId: selectedCountry !== 'all' ? selectedCountry : undefined,
     cityId: selectedCity !== 'all' ? selectedCity : undefined,
-    category: selectedCategory !== 'all' && selectedCategory !== 'itinerary'
-      ? selectedCategory as 'flight' | 'hotel' | 'experience' | 'restaurant' | 'transport' | 'other' 
+    category: selectedCategory !== 'all' && !['itinerary', 'hotel', 'michelin'].includes(selectedCategory)
+      ? selectedCategory as 'flight' | 'hotel' | 'experience' | 'restaurant' | 'transport' | 'other'
       : undefined,
   });
 
