@@ -981,6 +981,14 @@ const Cla = () => {
         </SheetContent>
       </Sheet>
 
+      {/* Hotel Detail Drawer */}
+      <HotelDetailDrawer
+        open={!!selectedHotel}
+        onClose={() => setSelectedHotel(null)}
+        hotel={selectedHotel}
+        city={city}
+      />
+
       {/* Bottom Navigation */}
       <BottomNav />
     </div>
