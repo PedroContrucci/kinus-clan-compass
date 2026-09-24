@@ -742,6 +742,79 @@ const Cla = () => {
               </section>
             )}
 
+            {/* Hotéis curados da cidade */}
+            {showHotels && (
+              <section className="px-4">
+                <h2 className="font-semibold text-lg text-foreground font-['Outfit'] mb-4 flex items-center gap-2">
+                  🏨 Hotéis curados em {city}
+                  <span className="text-xs text-muted-foreground font-normal">({filteredCityHotels.length})</span>
+                </h2>
+                {filteredCityHotels.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Ainda sem hotéis curados nesta cidade.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredCityHotels.map((hotel) => (
+                      <button
+                        key={hotel.id}
+                        onClick={() => setSelectedHotel(hotel)}
+                        className="w-full rounded-xl border border-border bg-card p-3 text-left hover:border-primary/30 transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{hotel.name}</p>
+                          {hotel.rating > 0 && (
+                            <span className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground">
+                              <Star size={11} className="fill-amber-400 text-amber-400" />
+                              Google {hotel.rating.toFixed(1).replace('.', ',')}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          {hotel.zone} · {TIER_LABEL[hotel.tier] ?? hotel.tier} · {hotel.priceRangeBRL}
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          {(hotel.personaTags ?? []).map((persona) => (
+                            <span key={persona} className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] text-sky-300">
+                              {PERSONA_LABEL[persona] ?? persona}
+                            </span>
+                          ))}
+                        </div>
+                        {hotel.tips[0] && (
+                          <p className="mt-1.5 line-clamp-1 text-[11px] text-muted-foreground/80">💡 {hotel.tips[0]}</p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* Guia Michelin da cidade */}
+            {showMichelin && (
+              <section className="px-4">
+                <h2 className="font-semibold text-lg text-foreground font-['Outfit'] mb-4 flex items-center gap-2">
+                  ⭐ Guia Michelin em {city}
+                  <span className="text-xs text-muted-foreground font-normal">({filteredCityMichelin.length})</span>
+                </h2>
+                {filteredCityMichelin.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Nenhum restaurante Michelin catalogado nesta cidade.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredCityMichelin.map((restaurant: MichelinRestaurant) => (
+                      <div key={restaurant.name} className="rounded-xl border border-border bg-card p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{restaurant.name}</p>
+                          <span className="shrink-0 text-[11px] text-amber-400">{'⭐'.repeat(restaurant.stars)}</span>
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          {restaurant.cuisine}{restaurant.neighborhood ? ` · ${restaurant.neighborhood}` : ''} · {restaurant.priceRange}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
             {/* Activities Grid */}
             {showActivities && (
               <section className="px-4">
