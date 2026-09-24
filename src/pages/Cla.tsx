@@ -2,7 +2,7 @@
 // Aba Clã — Comunidade KINU reestruturada com filtros robustos
 import { useCallback, useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { List, Loader2, MapPin, MapPinPlus, Search, X } from 'lucide-react';
+import { List, Loader2, MapPin, MapPinPlus, Search, Star, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   useCommunityActivities, 
@@ -37,6 +37,10 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { CURATED_CITIES } from '@/lib/curatedCities';
 import { getDestinationActivities } from '@/data/destinationActivities';
+import { getCuratedHotels, type CuratedHotel } from '@/data/curatedHotels';
+import { MICHELIN_RESTAURANTS, type MichelinRestaurant } from '@/lib/michelinData';
+import { HotelDetailDrawer } from '@/components/hotel/HotelDetailDrawer';
+import { TIER_LABEL, PERSONA_LABEL } from '@/lib/hotelSwap';
 import {
   claStats,
   confirmSuggestion,
@@ -57,6 +61,7 @@ const CATEGORY_CHIPS = [
   { value: 'itinerary', label: 'Roteiros', icon: '📍' },
   { value: 'restaurant', label: 'Restaurantes', icon: '🍜' },
   { value: 'hotel', label: 'Hotéis', icon: '🏨' },
+  { value: 'michelin', label: 'Michelin', icon: '⭐' },
   { value: 'experience', label: 'Experiências', icon: '🎭' },
   { value: 'transport', label: 'Praias', icon: '🏖️' },
   { value: 'other', label: 'Dicas', icon: '💡' },
@@ -177,6 +182,7 @@ const Cla = () => {
   // Modal states
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
   const [selectedItinerary, setSelectedItinerary] = useState<any>(null);
+  const [selectedHotel, setSelectedHotel] = useState<CuratedHotel | null>(null);
 
   // Fetch data
   const { data: countries, isLoading: countriesLoading } = useCountries();
@@ -185,8 +191,8 @@ const Cla = () => {
   const { data: allActivities, isLoading: activitiesLoading } = useCommunityActivities({
     countryId: selectedCountry !== 'all' ? selectedCountry : undefined,
     cityId: selectedCity !== 'all' ? selectedCity : undefined,
-    category: selectedCategory !== 'all' && selectedCategory !== 'itinerary'
-      ? selectedCategory as 'flight' | 'hotel' | 'experience' | 'restaurant' | 'transport' | 'other' 
+    category: selectedCategory !== 'all' && !['itinerary', 'hotel', 'michelin'].includes(selectedCategory)
+      ? selectedCategory as 'flight' | 'hotel' | 'experience' | 'restaurant' | 'transport' | 'other'
       : undefined,
   });
 
@@ -255,11 +261,40 @@ const Cla = () => {
     return allActivities?.filter(a => a.is_top_pick) || [];
   }, [allActivities]);
 
+  // Catálogo curado da cidade selecionada: hotéis e Michelin (read-only)
+  const cityHotels = useMemo(() => getCuratedHotels(city) ?? [], [city]);
+  const cityMichelin = useMemo(
+    () => MICHELIN_RESTAURANTS[city.toLowerCase()] ?? [],
+    [city]
+  );
+
+  const filteredCityHotels = useMemo(() => {
+    if (!searchQuery) return cityHotels;
+    const query = searchQuery.toLowerCase();
+    return cityHotels.filter((hotel) =>
+      hotel.name.toLowerCase().includes(query) ||
+      hotel.zone.toLowerCase().includes(query) ||
+      hotel.tips.some((tip) => tip.toLowerCase().includes(query))
+    );
+  }, [cityHotels, searchQuery]);
+
+  const filteredCityMichelin = useMemo(() => {
+    if (!searchQuery) return cityMichelin;
+    const query = searchQuery.toLowerCase();
+    return cityMichelin.filter((restaurant) =>
+      restaurant.name.toLowerCase().includes(query) ||
+      restaurant.cuisine.toLowerCase().includes(query) ||
+      restaurant.neighborhood?.toLowerCase().includes(query)
+    );
+  }, [cityMichelin, searchQuery]);
+
   // Category counts
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { 
       all: (filteredActivities.length || 0) + (filteredItineraries.length || 0),
       itinerary: filteredItineraries.length || 0,
+      hotel: filteredCityHotels.length,
+      michelin: filteredCityMichelin.length,
     };
     filteredActivities.forEach(a => {
       if (a.category) {
@@ -267,7 +302,7 @@ const Cla = () => {
       }
     });
     return counts;
-  }, [filteredActivities, filteredItineraries]);
+  }, [filteredActivities, filteredItineraries, filteredCityHotels, filteredCityMichelin]);
 
   const categoryChipsWithCounts = CATEGORY_CHIPS.map(cat => ({
     ...cat,
@@ -336,7 +371,10 @@ const Cla = () => {
 
   // Determine what content to show based on category
   const showItineraries = selectedCategory === 'all' || selectedCategory === 'itinerary';
-  const showActivities = selectedCategory === 'all' || selectedCategory !== 'itinerary';
+  const showActivities = selectedCategory === 'all' ||
+    (selectedCategory !== 'itinerary' && selectedCategory !== 'hotel' && selectedCategory !== 'michelin');
+  const showHotels = selectedCategory === 'hotel' || (searchQuery !== '' && selectedCategory === 'all' && filteredCityHotels.length > 0);
+  const showMichelin = selectedCategory === 'michelin' || (searchQuery !== '' && selectedCategory === 'all' && filteredCityMichelin.length > 0);
 
   return (
     <div className="min-h-screen bg-background pb-36 lg:pb-24">
@@ -704,6 +742,79 @@ const Cla = () => {
               </section>
             )}
 
+            {/* Hotéis curados da cidade */}
+            {showHotels && (
+              <section className="px-4">
+                <h2 className="font-semibold text-lg text-foreground font-['Outfit'] mb-4 flex items-center gap-2">
+                  🏨 Hotéis curados em {city}
+                  <span className="text-xs text-muted-foreground font-normal">({filteredCityHotels.length})</span>
+                </h2>
+                {filteredCityHotels.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Ainda sem hotéis curados nesta cidade.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredCityHotels.map((hotel) => (
+                      <button
+                        key={hotel.id}
+                        onClick={() => setSelectedHotel(hotel)}
+                        className="w-full rounded-xl border border-border bg-card p-3 text-left hover:border-primary/30 transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{hotel.name}</p>
+                          {hotel.rating > 0 && (
+                            <span className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground">
+                              <Star size={11} className="fill-amber-400 text-amber-400" />
+                              Google {hotel.rating.toFixed(1).replace('.', ',')}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          {hotel.zone} · {TIER_LABEL[hotel.tier] ?? hotel.tier} · {hotel.priceRangeBRL}
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          {(hotel.personaTags ?? []).map((persona) => (
+                            <span key={persona} className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] text-sky-300">
+                              {PERSONA_LABEL[persona] ?? persona}
+                            </span>
+                          ))}
+                        </div>
+                        {hotel.tips[0] && (
+                          <p className="mt-1.5 line-clamp-1 text-[11px] text-muted-foreground/80">💡 {hotel.tips[0]}</p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* Guia Michelin da cidade */}
+            {showMichelin && (
+              <section className="px-4">
+                <h2 className="font-semibold text-lg text-foreground font-['Outfit'] mb-4 flex items-center gap-2">
+                  ⭐ Guia Michelin em {city}
+                  <span className="text-xs text-muted-foreground font-normal">({filteredCityMichelin.length})</span>
+                </h2>
+                {filteredCityMichelin.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Nenhum restaurante Michelin catalogado nesta cidade.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredCityMichelin.map((restaurant: MichelinRestaurant) => (
+                      <div key={restaurant.name} className="rounded-xl border border-border bg-card p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{restaurant.name}</p>
+                          <span className="shrink-0 text-[11px] text-amber-400">{'⭐'.repeat(restaurant.stars)}</span>
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          {restaurant.cuisine}{restaurant.neighborhood ? ` · ${restaurant.neighborhood}` : ''} · {restaurant.priceRange}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
             {/* Activities Grid */}
             {showActivities && (
               <section className="px-4">
@@ -869,6 +980,14 @@ const Cla = () => {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Hotel Detail Drawer */}
+      <HotelDetailDrawer
+        open={!!selectedHotel}
+        onClose={() => setSelectedHotel(null)}
+        hotel={selectedHotel}
+        city={city}
+      />
 
       {/* Bottom Navigation */}
       <BottomNav />
