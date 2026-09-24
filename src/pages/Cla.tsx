@@ -2,14 +2,12 @@
 // Aba Clã — Comunidade KINU reestruturada com filtros robustos
 import { useCallback, useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { List, Loader2, MapPin, MapPinPlus, Search, Star, X } from 'lucide-react';
+import { List, Loader2, MapPinPlus, Search, Star, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  useCommunityActivities, 
-  useCommunityItineraries, 
+import {
+  useCommunityActivities,
+  useCommunityItineraries,
   useCommunityPhotos,
-  useCountries,
-  useCities 
 } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/hooks/useAuth';
 import { BottomNav } from '@/components/shared/BottomNav';
@@ -77,17 +75,16 @@ const TRAVEL_STYLES = [
   { value: 'family', label: '👨‍👩‍👧‍👦 Família' },
 ];
 
-function getClanInsight(trip: any): string {
-  const dest = (trip.destination || '').toLowerCase();
-  const interests = trip.travelInterests || [];
+function getClanInsight(destination: string, interests: string[] = []): string {
+  const dest = destination.toLowerCase();
   if (dest.includes('bangkok') || dest.includes('phuket')) {
     if (interests.includes('gastronomy')) return 'O Cla avaliou restaurantes na Tailandia. Os mais bem avaliados sao street food — confira!';
-    return 'A comunidade tem dicas incriveis sobre templos, mercados e praias na Tailandia. Filtre por pais!';
+    return 'A comunidade tem dicas incriveis sobre templos, mercados e praias na Tailandia. Explore as indicacoes!';
   }
   if (dest.includes('paris') || dest.includes('roma') || dest.includes('barcelona') || dest.includes('lisboa')) {
-    return `Viajantes do Cla compartilharam roteiros detalhados para ${trip.destination}. Veja restaurantes e experiencias avaliadas!`;
+    return `Viajantes do Cla compartilharam roteiros detalhados para ${destination}. Veja restaurantes e experiencias avaliadas!`;
   }
-  return `Explore o que a comunidade diz sobre ${trip.destination}. Dicas reais de quem ja foi!`;
+  return `Explore o que a comunidade diz sobre ${destination}. Dicas reais de quem ja foi!`;
 }
 
 const STATUS_PILL: Record<string, { label: string; className: string }> = {
