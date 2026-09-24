@@ -2,7 +2,7 @@
 // Aba Clã — Comunidade KINU reestruturada com filtros robustos
 import { useCallback, useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { List, Loader2, MapPin, MapPinPlus, Search, X } from 'lucide-react';
+import { List, Loader2, MapPin, MapPinPlus, Search, Star, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   useCommunityActivities, 
@@ -37,6 +37,10 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { CURATED_CITIES } from '@/lib/curatedCities';
 import { getDestinationActivities } from '@/data/destinationActivities';
+import { getCuratedHotels, type CuratedHotel } from '@/data/curatedHotels';
+import { MICHELIN_RESTAURANTS, type MichelinRestaurant } from '@/lib/michelinData';
+import { HotelDetailDrawer } from '@/components/hotel/HotelDetailDrawer';
+import { TIER_LABEL, PERSONA_LABEL } from '@/lib/hotelSwap';
 import {
   claStats,
   confirmSuggestion,
@@ -57,6 +61,7 @@ const CATEGORY_CHIPS = [
   { value: 'itinerary', label: 'Roteiros', icon: '📍' },
   { value: 'restaurant', label: 'Restaurantes', icon: '🍜' },
   { value: 'hotel', label: 'Hotéis', icon: '🏨' },
+  { value: 'michelin', label: 'Michelin', icon: '⭐' },
   { value: 'experience', label: 'Experiências', icon: '🎭' },
   { value: 'transport', label: 'Praias', icon: '🏖️' },
   { value: 'other', label: 'Dicas', icon: '💡' },
