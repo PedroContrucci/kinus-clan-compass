@@ -52,6 +52,8 @@ import {
   type MySuggestion,
 } from '@/lib/cla';
 import { openClaSuggest } from '@/components/cla/ClaSuggestHost';
+import { AddToTripSheet, type AddTarget } from '@/components/cla/AddToTripSheet';
+import { sharedTripsPublic, type SharedTripPublic } from '@/lib/cla';
 
 // Category chips configuration
 const CATEGORY_CHIPS = [
@@ -108,7 +110,9 @@ const Cla = () => {
   
   // Active trip from localStorage
   const [activeTrip, setActiveTrip] = useState<any>(null);
-  const [myTrips, setMyTrips] = useState<any[]>([]);
+  const [addTarget, setAddTarget] = useState<AddTarget | null>(null);
+  const [sharedTrips, setSharedTrips] = useState<SharedTripPublic[]>([]);
+  const [openShared, setOpenShared] = useState<number | null>(null);
   const [city, setCity] = useState(CURATED_CITIES[0]);
   const [cityTouched, setCityTouched] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
@@ -122,7 +126,6 @@ const Cla = () => {
   useEffect(() => {
     const loadTrips = () => {
       const trips = listTrips();
-      setMyTrips(trips.filter((trip) => trip.days && trip.days.length > 0));
       const current = getActiveTrip();
       setActiveTrip(current);
       if (!cityTouched) {
@@ -153,6 +156,19 @@ const Cla = () => {
   useEffect(() => {
     void loadCla();
   }, [loadCla]);
+
+  useEffect(() => {
+    let alive = true;
+    setOpenShared(null);
+    void sharedTripsPublic(city).then((rows) => { if (alive) setSharedTrips(rows); });
+    return () => { alive = false; };
+  }, [city]);
+
+  const catalogById = useMemo(() => new Map(getDestinationActivities(city).map((a) => [a.id, a])), [city]);
+  const addActivityById = (id: string) => {
+    const activity = catalogById.get(id);
+    if (activity) setAddTarget({ kind: 'activity', activity });
+  };
 
   useEffect(() => {
     const reload = () => void loadCla();
@@ -476,70 +492,11 @@ const Cla = () => {
           />
         </div>
 
-        {/* My Shared Itineraries */}
-        {myTrips.length > 0 && (
-          <section className="px-4 pt-4">
-            <h2 className="font-semibold text-lg text-foreground font-['Outfit'] flex items-center gap-2 mb-3">
-              📋 Meus Roteiros
-            </h2>
-            <div className="space-y-3">
-              {myTrips.map((trip, i) => (
-                <button
-                  key={i}
-                  onClick={() => navigate('/viagens')}
-                  className="w-full bg-card border border-border rounded-xl p-3 text-left hover:border-primary/30 transition-colors"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-2xl">{trip.emoji || '✈️'}</span>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm text-foreground font-['Outfit'] truncate">{trip.destination}</h3>
-                      <p className="text-[10px] text-muted-foreground">
-                        {trip.days?.length || 0} dias · {trip.days?.reduce((s: number, d: any) => s + (d.activities?.length || 0), 0) || 0} atividades
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-[10px] px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">Meu roteiro</span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const text = `✈️ Confira meu roteiro para ${trip.destination} — ${trip.days?.length || 0} dias de viagem!\nPlanejado com KINU Travel OS 🧭`;
-                          if (navigator.share) {
-                            navigator.share({ title: `Roteiro: ${trip.destination}`, text });
-                          } else {
-                            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                          }
-                        }}
-                        className="text-[10px] px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
-                      >
-                        📤 Compartilhar
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {trip.days?.flatMap((d: any) => d.activities || [])
-                      .filter((a: any) => a.category === 'passeio' || a.category === 'comida')
-                      .slice(0, 4)
-                      .map((a: any, j: number) => (
-                        <span key={j} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                          {a.name?.replace(/^(Jantar|Almoço|Café):\s*/i, '').substring(0, 25)}
-                        </span>
-                      ))
-                    }
-                  </div>
-                  <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border">
-                    <span className="text-[10px] text-primary font-medium">Ver roteiro completo →</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Top Roteiros Curados — always visible */}
         {!searchQuery && selectedCategory === 'all' && (
           <section className="px-4 pt-4">
             <h2 className="font-semibold text-lg text-foreground font-['Outfit'] flex items-center gap-2 mb-3">
-              🏆 Top Roteiros Curados
+              🧭 Roteiros do KINU
             </h2>
             <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2" style={{ scrollSnapType: 'x mandatory' }}>
               {[
@@ -624,7 +581,8 @@ const Cla = () => {
                 ) : (
                   <div className="space-y-2">
                     {rankedCuratedActivities.map((activity, index) => (
-                      <div key={activity.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+                      <div key={activity.id} className="rounded-xl border border-border bg-card p-3">
+                      <div className="flex items-center gap-3">
                         <span className="w-4 text-xs text-muted-foreground">{index + 1}</span>
                         <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{activity.name}</p>
                         <div className="flex shrink-0 items-center gap-2 text-[11px]">
@@ -635,6 +593,10 @@ const Cla = () => {
                             <span className="text-emerald-400">Clã 👍 {activity.ups}</span>
                           )}
                         </div>
+                      </div>
+                      <button onClick={() => addActivityById(activity.id)} className="mt-1.5 pl-7 text-[11px] text-primary hover:underline">
+                        ➕ Adicionar à minha viagem
+                      </button>
                       </div>
                     ))}
                   </div>
@@ -663,24 +625,56 @@ const Cla = () => {
               </section>
             )}
 
-            {/* Itineraries Section */}
-            {showItineraries && filteredItineraries.length > 0 && (
+            {/* Roteiros do Clã — compartilhados por quem viveu (anônimos) */}
+            {showItineraries && (
               <section className="px-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-semibold text-lg text-foreground font-['Outfit'] flex items-center gap-2">
-                    📍 Roteiros do Clã
-                    <span className="text-xs text-muted-foreground font-normal">({filteredItineraries.length})</span>
-                  </h2>
-                </div>
-                <div className="grid gap-4">
-                  {filteredItineraries.slice(0, selectedCategory === 'itinerary' ? 20 : 5).map((itinerary: any) => (
-                    <ItineraryCard
-                      key={itinerary.id}
-                      itinerary={itinerary}
-                      onClick={() => setSelectedItinerary(itinerary)}
-                    />
-                  ))}
-                </div>
+                <h2 className="font-semibold text-lg text-foreground font-['Outfit'] mb-4 flex items-center gap-2">
+                  📍 Roteiros do Clã
+                  <span className="text-xs text-muted-foreground font-normal">({sharedTrips.length})</span>
+                </h2>
+                {sharedTrips.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Ninguém do clã compartilhou um roteiro de {city} ainda.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {sharedTrips.map((trip, index) => {
+                      const open = openShared === index;
+                      return (
+                        <div key={trip.id ?? index} className="rounded-xl border border-border bg-card p-3">
+                          <p className="text-sm font-medium text-foreground">{trip.title || `Roteiro de ${trip.days} dias em ${trip.city}`}</p>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            {trip.days} dias · {trip.travelers} {trip.travelers === 1 ? 'viajante' : 'viajantes'}
+                            {trip.children > 0 ? ` · ${trip.children} ${trip.children === 1 ? 'criança' : 'crianças'}` : ''}
+                            {` · ${trip.lived_ids.length} lugares vividos`}
+                          </p>
+                          <button onClick={() => setOpenShared(open ? null : index)} className="mt-2 text-xs text-primary hover:underline">
+                            {open ? 'Fechar roteiro' : 'Ver roteiro'}
+                          </button>
+                          {open && (
+                            <div className="mt-2 space-y-2">
+                              {trip.itinerary.map((day) => (
+                                <div key={day.day}>
+                                  <p className="text-[11px] font-semibold text-foreground">Dia {day.day}</p>
+                                  {day.items.map((item) => (
+                                    <div key={`${day.day}-${item.id}`} className="flex items-center justify-between gap-2 py-0.5">
+                                      <span className="min-w-0 truncate text-[11px] text-muted-foreground">
+                                        {trip.lived_ids.includes(item.id) ? '✓ ' : ''}{item.name}
+                                      </span>
+                                      {catalogById.has(item.id) && (
+                                        <button onClick={() => addActivityById(item.id)} className="shrink-0 text-[10px] text-primary hover:underline">
+                                          ➕ Adicionar à minha viagem
+                                        </button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </section>
             )}
 
@@ -696,8 +690,8 @@ const Cla = () => {
                 ) : (
                   <div className="space-y-2">
                     {filteredCityHotels.map((hotel) => (
+                      <div key={hotel.id} className="space-y-1">
                       <button
-                        key={hotel.id}
                         onClick={() => setSelectedHotel(hotel)}
                         className="w-full rounded-xl border border-border bg-card p-3 text-left hover:border-primary/30 transition-colors"
                       >
@@ -724,6 +718,10 @@ const Cla = () => {
                           <p className="mt-1.5 line-clamp-1 text-[11px] text-muted-foreground/80">💡 {hotel.tips[0]}</p>
                         )}
                       </button>
+                      <button onClick={() => setAddTarget({ kind: 'hotel', hotel })} className="px-3 text-[11px] text-primary hover:underline">
+                        🏨 Usar este hotel
+                      </button>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -930,6 +928,8 @@ const Cla = () => {
         hotel={selectedHotel}
         city={city}
       />
+
+      <AddToTripSheet target={addTarget} city={city} onClose={() => setAddTarget(null)} />
 
       {/* Bottom Navigation */}
       <BottomNav />
