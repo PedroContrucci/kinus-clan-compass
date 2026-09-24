@@ -2,14 +2,12 @@
 // Aba Clã — Comunidade KINU reestruturada com filtros robustos
 import { useCallback, useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { List, Loader2, MapPin, MapPinPlus, Search, Star, X } from 'lucide-react';
+import { List, Loader2, MapPinPlus, Search, Star, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  useCommunityActivities, 
-  useCommunityItineraries, 
+import {
+  useCommunityActivities,
+  useCommunityItineraries,
   useCommunityPhotos,
-  useCountries,
-  useCities 
 } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/hooks/useAuth';
 import { BottomNav } from '@/components/shared/BottomNav';
@@ -77,17 +75,16 @@ const TRAVEL_STYLES = [
   { value: 'family', label: '👨‍👩‍👧‍👦 Família' },
 ];
 
-function getClanInsight(trip: any): string {
-  const dest = (trip.destination || '').toLowerCase();
-  const interests = trip.travelInterests || [];
+function getClanInsight(destination: string, interests: string[] = []): string {
+  const dest = destination.toLowerCase();
   if (dest.includes('bangkok') || dest.includes('phuket')) {
     if (interests.includes('gastronomy')) return 'O Cla avaliou restaurantes na Tailandia. Os mais bem avaliados sao street food — confira!';
-    return 'A comunidade tem dicas incriveis sobre templos, mercados e praias na Tailandia. Filtre por pais!';
+    return 'A comunidade tem dicas incriveis sobre templos, mercados e praias na Tailandia. Explore as indicacoes!';
   }
   if (dest.includes('paris') || dest.includes('roma') || dest.includes('barcelona') || dest.includes('lisboa')) {
-    return `Viajantes do Cla compartilharam roteiros detalhados para ${trip.destination}. Veja restaurantes e experiencias avaliadas!`;
+    return `Viajantes do Cla compartilharam roteiros detalhados para ${destination}. Veja restaurantes e experiencias avaliadas!`;
   }
-  return `Explore o que a comunidade diz sobre ${trip.destination}. Dicas reais de quem ja foi!`;
+  return `Explore o que a comunidade diz sobre ${destination}. Dicas reais de quem ja foi!`;
 }
 
 const STATUS_PILL: Record<string, { label: string; className: string }> = {
@@ -173,8 +170,6 @@ const Cla = () => {
   };
 
   // Filters state
-  const [selectedCountry, setSelectedCountry] = useState<string>('all');
-  const [selectedCity, setSelectedCity] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStyle, setSelectedStyle] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -185,20 +180,13 @@ const Cla = () => {
   const [selectedHotel, setSelectedHotel] = useState<CuratedHotel | null>(null);
 
   // Fetch data
-  const { data: countries, isLoading: countriesLoading } = useCountries();
-  const { data: cities } = useCities(selectedCountry !== 'all' ? selectedCountry : undefined);
-  
   const { data: allActivities, isLoading: activitiesLoading } = useCommunityActivities({
-    countryId: selectedCountry !== 'all' ? selectedCountry : undefined,
-    cityId: selectedCity !== 'all' ? selectedCity : undefined,
     category: selectedCategory !== 'all' && !['itinerary', 'hotel', 'michelin'].includes(selectedCategory)
       ? selectedCategory as 'flight' | 'hotel' | 'experience' | 'restaurant' | 'transport' | 'other'
       : undefined,
   });
 
-  const { data: itineraries, isLoading: itinerariesLoading } = useCommunityItineraries({
-    countryId: selectedCountry !== 'all' ? selectedCountry : undefined,
-  });
+  const { data: itineraries, isLoading: itinerariesLoading } = useCommunityItineraries({});
 
   // Fetch photos for activities
   const activityIds = useMemo(() => allActivities?.map(a => a.id) || [], [allActivities]);
@@ -309,23 +297,15 @@ const Cla = () => {
     count: categoryCounts[cat.value] || 0,
   }));
 
-  // Handle country change
-  const handleCountryChange = (value: string) => {
-    setSelectedCountry(value);
-    setSelectedCity('all');
-  };
-
   // Clear all filters
   const clearFilters = () => {
-    setSelectedCountry('all');
-    setSelectedCity('all');
     setSelectedCategory('all');
     setSelectedStyle('all');
     setSearchQuery('');
   };
 
-  const hasActiveFilters = selectedCountry !== 'all' || selectedCity !== 'all' || 
-    selectedCategory !== 'all' || selectedStyle !== 'all' || searchQuery;
+  const hasActiveFilters =
+    selectedCategory !== 'all' || selectedStyle !== 'all' || searchQuery !== '';
 
   const rankedCuratedActivities = useMemo(() =>
     getDestinationActivities(city)
@@ -421,65 +401,29 @@ const Cla = () => {
             </Button>
           </div>
 
-          {/* Search */}
-          <div className="relative mb-3">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar destinos, restaurantes, experiências..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-card border-border"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
-
-          {/* Filter Dropdowns Row */}
+          {/* Search + Style */}
           <div className="flex gap-2 mb-3">
-            {/* Country Dropdown */}
-            <Select value={selectedCountry} onValueChange={handleCountryChange}>
-              <SelectTrigger className="flex-1 bg-card border-border h-9 text-sm">
-                <div className="flex items-center gap-1.5">
-                  <MapPin size={12} className="text-muted-foreground" />
-                  <SelectValue placeholder="País" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">🌍 Todos os países</SelectItem>
-                {countries?.map((country) => (
-                  <SelectItem key={country.id} value={country.id}>
-                    {country.name_pt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar destinos, restaurantes, experiências..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-card border-border"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
 
-            {/* City Dropdown - only when country selected */}
-            {selectedCountry !== 'all' && cities && cities.length > 0 && (
-              <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="flex-1 bg-card border-border h-9 text-sm">
-                  <SelectValue placeholder="Cidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as cidades</SelectItem>
-                  {cities.map((city: any) => (
-                    <SelectItem key={city.id} value={city.id}>
-                      {city.name_pt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            {/* Style Dropdown */}
+            {/* Style Dropdown — compact, next to search */}
             <Select value={selectedStyle} onValueChange={setSelectedStyle}>
-              <SelectTrigger className="flex-1 bg-card border-border h-9 text-sm">
+              <SelectTrigger className="w-[130px] shrink-0 bg-card border-border h-10 text-sm">
                 <SelectValue placeholder="Estilo" />
               </SelectTrigger>
               <SelectContent>
@@ -511,18 +455,16 @@ const Cla = () => {
         </div>
       </header>
 
-      {/* Agent Insight Banner */}
-      {activeTrip?.destination && (
-        <div className="mx-4 mt-4 p-3 bg-gradient-to-r from-sky-500/10 to-cyan-500/10 border border-sky-500/20 rounded-xl">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm">🦅</span>
-            <span className="text-xs font-semibold text-sky-400 font-['Outfit']">Icaro recomenda para {activeTrip.destination}</span>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {getClanInsight(activeTrip)}
-          </p>
+      {/* Agent Insight Banner — segue a cidade selecionada */}
+      <div className="mx-4 mt-4 p-3 bg-gradient-to-r from-sky-500/10 to-cyan-500/10 border border-sky-500/20 rounded-xl">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-sm">🦅</span>
+          <span className="text-xs font-semibold text-sky-400 font-['Outfit']">Icaro recomenda para {city}</span>
         </div>
-      )}
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {getClanInsight(city, activeTrip?.travelInterests)}
+        </p>
+      </div>
 
       {/* Main Content */}
       <main className="space-y-6">
