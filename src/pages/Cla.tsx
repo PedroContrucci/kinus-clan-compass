@@ -401,65 +401,29 @@ const Cla = () => {
             </Button>
           </div>
 
-          {/* Search */}
-          <div className="relative mb-3">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar destinos, restaurantes, experiências..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-card border-border"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
-
-          {/* Filter Dropdowns Row */}
+          {/* Search + Style */}
           <div className="flex gap-2 mb-3">
-            {/* Country Dropdown */}
-            <Select value={selectedCountry} onValueChange={handleCountryChange}>
-              <SelectTrigger className="flex-1 bg-card border-border h-9 text-sm">
-                <div className="flex items-center gap-1.5">
-                  <MapPin size={12} className="text-muted-foreground" />
-                  <SelectValue placeholder="País" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">🌍 Todos os países</SelectItem>
-                {countries?.map((country) => (
-                  <SelectItem key={country.id} value={country.id}>
-                    {country.name_pt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar destinos, restaurantes, experiências..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-card border-border"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
 
-            {/* City Dropdown - only when country selected */}
-            {selectedCountry !== 'all' && cities && cities.length > 0 && (
-              <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="flex-1 bg-card border-border h-9 text-sm">
-                  <SelectValue placeholder="Cidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as cidades</SelectItem>
-                  {cities.map((city: any) => (
-                    <SelectItem key={city.id} value={city.id}>
-                      {city.name_pt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            {/* Style Dropdown */}
+            {/* Style Dropdown — compact, next to search */}
             <Select value={selectedStyle} onValueChange={setSelectedStyle}>
-              <SelectTrigger className="flex-1 bg-card border-border h-9 text-sm">
+              <SelectTrigger className="w-[130px] shrink-0 bg-card border-border h-10 text-sm">
                 <SelectValue placeholder="Estilo" />
               </SelectTrigger>
               <SelectContent>
