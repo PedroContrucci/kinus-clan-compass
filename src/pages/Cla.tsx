@@ -455,18 +455,16 @@ const Cla = () => {
         </div>
       </header>
 
-      {/* Agent Insight Banner */}
-      {activeTrip?.destination && (
-        <div className="mx-4 mt-4 p-3 bg-gradient-to-r from-sky-500/10 to-cyan-500/10 border border-sky-500/20 rounded-xl">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm">🦅</span>
-            <span className="text-xs font-semibold text-sky-400 font-['Outfit']">Icaro recomenda para {activeTrip.destination}</span>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {getClanInsight(activeTrip)}
-          </p>
+      {/* Agent Insight Banner — segue a cidade selecionada */}
+      <div className="mx-4 mt-4 p-3 bg-gradient-to-r from-sky-500/10 to-cyan-500/10 border border-sky-500/20 rounded-xl">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-sm">🦅</span>
+          <span className="text-xs font-semibold text-sky-400 font-['Outfit']">Icaro recomenda para {city}</span>
         </div>
-      )}
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {getClanInsight(city, activeTrip?.travelInterests)}
+        </p>
+      </div>
 
       {/* Main Content */}
       <main className="space-y-6">
