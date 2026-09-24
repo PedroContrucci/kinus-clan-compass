@@ -26,6 +26,7 @@ import { startTripAdoption } from "@/lib/tripAdoption";
 import { startTripHydration } from "@/lib/tripHydration";
 import { startTripCompletion } from "@/lib/tripEvents";
 import { startAchievements } from "@/lib/achievementEngine";
+import { ClaSuggestHost } from "@/components/cla/ClaSuggestHost";
 import { AchievementCelebration } from "@/components/conquistas/AchievementCelebration";
 
 // Boot, no escopo do módulo: roda uma vez na avaliação de App.tsx, portanto ANTES do
@@ -121,6 +122,7 @@ const App = () => (
           <BetaFeedbackWrapper />
           <TripAdoptionDialog />
           <AchievementCelebration />
+          <ClaSuggestHost />
           <div className="min-h-screen bg-background">
             <div className="lg:max-w-5xl xl:max-w-6xl lg:mx-auto">
             <Routes>

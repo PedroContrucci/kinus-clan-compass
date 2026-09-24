@@ -1,4 +1,5 @@
 import { useKinuAI } from "@/contexts/KinuAIContext";
+import { openClaSuggest } from "@/components/cla/ClaSuggestHost";
 
 interface KinuQuickActionsProps {
   disabled?: boolean;
@@ -29,6 +30,7 @@ export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
         { id: 'agora', icon: '🧭', label: 'O que fazer agora?', prompt: 'O que vem agora no meu dia de hoje?' },
         { id: 'chuva', icon: '🌧️', label: 'Choveu — e agora?', prompt: 'Começou a chover aqui. O que dá pra trocar no resto do dia de hoje?' },
         { id: 'perto', icon: '📍', label: 'Perto de mim', prompt: 'O que tem de bom perto de onde eu estou agora?' },
+        { id: 'indicar', icon: '🌿', label: 'Indicar este lugar', prompt: '' },
         { id: 'ajusta', icon: '🔀', label: 'Ajusta o resto do dia', prompt: 'Ajusta o resto do dia de hoje pra mim.' },
         { id: 'emergency', icon: '🆘', label: 'Emergência', prompt: `Preciso de ajuda em ${tripContext.destination}. Números de emergência e onde ir?` },
         { id: 'pharmacy', icon: '💊', label: 'Farmácia', prompt: `Farmácia aberta agora perto de mim em ${tripContext.destination}?` },
@@ -67,14 +69,18 @@ export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
     );
   }
 
-  const visibleActions = actions.slice(0, isDuringTrip ? 5 : 4);
+  const visibleActions = actions.slice(0, isDuringTrip ? 6 : 4);
 
   return (
     <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[#334155]">
       {visibleActions.map((action) => (
         <button
           key={action.id}
-          onClick={() => sendMessage(action.prompt)}
+          onClick={() =>
+            action.id === 'indicar'
+              ? openClaSuggest({ city: tripContext?.destination, preferGps: true })
+              : sendMessage(action.prompt)
+          }
           disabled={disabled}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#334155] hover:bg-[#475569] text-xs font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
