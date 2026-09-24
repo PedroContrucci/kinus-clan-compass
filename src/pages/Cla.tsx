@@ -4,7 +4,7 @@
 // do check-in pós-viagem; aqui só se sugere e se lê o que a comunidade amou.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Sparkles, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Loader2, Sparkles, ThumbsUp, MapPinPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { HintBalloon } from '@/components/onboarding/HintBalloon';
@@ -13,6 +13,9 @@ import { CURATED_CITIES } from '@/lib/curatedCities';
 import { getDestinationActivities } from '@/data/destinationActivities';
 import {
   claStats,
+  confirmSuggestion,
+  hasLivedCity,
+  myConfirmations,
   mySuggestions,
   suggestionsPublic,
   CLA_CATEGORIES,
@@ -20,7 +23,7 @@ import {
   type ClaSuggestionPublic,
   type MySuggestion,
 } from '@/lib/cla';
-import { SuggestClaForm } from '@/components/cla/SuggestClaForm';
+import { openClaSuggest } from '@/components/cla/ClaSuggestHost';
 import {
   Select,
   SelectContent,
@@ -57,6 +60,8 @@ const Cla = () => {
   const [suggestions, setSuggestions] = useState<ClaSuggestionPublic[]>([]);
   const [mySugs, setMySugs] = useState<MySuggestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmed, setConfirmed] = useState<Set<string>>(new Set());
+  const [livedHere, setLivedHere] = useState(false);
 
   // Cidade padrão: a da viagem ativa (ou a mais recente) quando for curada.
   useEffect(() => {
@@ -81,6 +86,8 @@ const Cla = () => {
     setStats(s);
     setSuggestions(pub);
     setMySugs(sugs);
+    setConfirmed(await myConfirmations(pub.map((p) => p.id).filter(Boolean)));
+    setLivedHere(await hasLivedCity(city));
     setLoading(false);
   }, [city]);
 
@@ -88,21 +95,36 @@ const Cla = () => {
     void load();
   }, [load]);
 
-  /** id do catálogo -> nome, para dar rosto às estatísticas. */
-  const namesById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const a of getDestinationActivities(city)) map.set(a.id, a.name);
+  // Indicação enviada pelo sheet global (inclusive vindo do chat) recarrega a aba.
+  useEffect(() => {
+    const on = () => void load();
+    window.addEventListener('kinu:cla-suggested', on);
+    return () => window.removeEventListener('kinu:cla-suggested', on);
+  }, [load]);
+
+  const alsoWent = async (id: string) => {
+    const ok = await confirmSuggestion(id, city);
+    if (ok) {
+      setConfirmed((prev) => new Set(prev).add(id));
+      setSuggestions((prev) => prev.map((x) => (x.id === id ? { ...x, confirmations: x.confirmations + 1 } : x)));
+    }
+  };
+
+  /** id do catálogo -> nome + nota Google, para dar rosto às estatísticas. */
+  const catalogById = useMemo(() => {
+    const map = new Map<string, { name: string; rating?: number }>();
+    for (const a of getDestinationActivities(city)) map.set(a.id, { name: a.name, rating: a.rating });
     return map;
   }, [city]);
 
   const loved = useMemo(
     () =>
       [...stats.values()]
-        .map((s) => ({ ...s, name: namesById.get(s.activity_id) }))
+        .map((s) => ({ ...s, name: catalogById.get(s.activity_id)?.name, rating: catalogById.get(s.activity_id)?.rating }))
         .filter((s) => s.ups + s.downs > 0)
         .sort((a, b) => b.ups - b.downs - (a.ups - a.downs))
         .slice(0, 10),
-    [stats, namesById]
+    [stats, catalogById]
   );
 
   if (authLoading) {
@@ -158,120 +180,130 @@ const Cla = () => {
           text="O Clã é a sabedoria coletiva — sugira lugares e veja o que a comunidade amou."
         />
 
-        {/* a) Sugira ao clã */}
-        <section className="bg-card border border-border rounded-2xl p-4">
-          <h2 className="text-sm text-foreground font-['Outfit'] font-semibold mb-3">
-            💡 Sugira ao clã
-          </h2>
-          <SuggestClaForm defaultCity={city} onSent={() => void load()} />
-
-          <div className="mt-5 pt-4 border-t border-border">
-            <p className="text-xs text-muted-foreground font-medium mb-2">Suas sugestões</p>
-            {mySugs.length === 0 ? (
-              <p className="text-xs text-muted-foreground/70">
-                Você ainda não sugeriu nenhum lugar.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {mySugs.map((s, i) => {
-                  const pill = STATUS_PILL[s.status] ?? STATUS_PILL.pending;
-                  return (
-                    <div
-                      key={`${s.city}-${s.name}-${i}`}
-                      className="flex items-center justify-between gap-2 bg-background border border-border rounded-xl px-3 py-2"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm text-foreground truncate">{s.name}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {s.city} · {categoryLabel(s.category)}
-                        </p>
-                      </div>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full border shrink-0 ${pill.className}`}>
-                        {pill.label}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+        {/* A) CONTRIBUA COM O CATÁLOGO */}
+        <section className="space-y-4">
+          <div>
+            <p className="text-[11px] tracking-widest text-emerald-400 font-semibold">CONTRIBUA COM O CATÁLOGO</p>
+            <p className="text-xs text-muted-foreground">Conhece um lugar que o KINU ainda não tem? Indique — a curadoria decide.</p>
           </div>
+          <button
+            onClick={() => openClaSuggest({ city })}
+            className="w-full py-4 rounded-2xl bg-emerald-500 text-background font-semibold font-['Outfit'] flex items-center justify-center gap-2"
+          >
+            <MapPinPlus size={18} /> Indicar um lugar ao clã
+          </button>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 size={24} className="animate-spin text-primary" />
+            </div>
+          ) : (
+            <>
+              <div>
+                <h2 className="font-semibold text-base text-foreground font-['Outfit'] mb-2">Indicações do clã em {city}</h2>
+                {suggestions.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Nenhuma indicação para {city} ainda.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {suggestions.map((s) => {
+                      const pill = STATUS_PILL[s.status] ?? STATUS_PILL.pending;
+                      const canConfirm = livedHere && s.status === 'pending' && !confirmed.has(s.id);
+                      return (
+                        <div key={s.id} className="bg-card border border-border rounded-xl p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm text-foreground font-['Outfit'] truncate">{s.name}</p>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full border shrink-0 ${pill.className}`}>{pill.label}</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {categoryLabel(s.category)}{s.neighborhood ? ` · ${s.neighborhood}` : ''}
+                          </p>
+                          <div className="flex items-center flex-wrap gap-2 mt-2">
+                            <span className="text-[11px] text-muted-foreground">🤝 {s.confirmations} confirmaram</span>
+                            {s.google_status && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full border border-border text-muted-foreground">
+                                {s.google_status === 'found' || s.google_status === 'ok' ? 'no Google' : 'sem ficha no Google'}
+                              </span>
+                            )}
+                            {confirmed.has(s.id) && <span className="text-[11px] text-emerald-400">✓ você confirmou</span>}
+                            {canConfirm && (
+                              <button
+                                onClick={() => void alsoWent(s.id)}
+                                className="ml-auto px-3 py-1 rounded-full text-xs border bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+                              >
+                                Também fui
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <h2 className="font-semibold text-base text-foreground font-['Outfit'] mb-2">Suas indicações</h2>
+                {mySugs.length === 0 ? (
+                  <p className="text-xs text-muted-foreground/70">Você ainda não indicou nenhum lugar.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {mySugs.map((s, i) => {
+                      const pill = STATUS_PILL[s.status] ?? STATUS_PILL.pending;
+                      return (
+                        <div key={s.id ?? `${s.city}-${s.name}-${i}`} className="bg-background border border-border rounded-xl px-3 py-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm text-foreground truncate">{s.name}</p>
+                              <p className="text-[11px] text-muted-foreground">{s.city} · {categoryLabel(s.category)}</p>
+                            </div>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full border shrink-0 ${pill.className}`}>{pill.label}</span>
+                          </div>
+                          {s.curator_note && (
+                            <p className="text-[11px] text-muted-foreground mt-1 italic">KINU: {s.curator_note}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </section>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 size={28} className="animate-spin text-primary" />
+        {/* B) O QUE O CLÃ VIVEU */}
+        <section className="space-y-3 pt-4 border-t border-border">
+          <div>
+            <p className="text-[11px] tracking-widest text-amber-400 font-semibold">O QUE O CLÃ VIVEU</p>
+            <p className="text-xs text-muted-foreground">Você avalia depois de viver — no check-in da viagem.</p>
           </div>
-        ) : (
-          <>
-            {/* b) Mais amados */}
-            <section>
-              <h2 className="font-semibold text-lg text-foreground font-['Outfit'] flex items-center gap-2 mb-3">
-                <Sparkles size={16} className="text-emerald-400" /> Mais amados pelo clã · {city}
-              </h2>
-              {loved.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Ninguém sinalizou nada em {city} ainda. Pode ser você o primeiro, no check-in.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {loved.map((item, i) => (
-                    <div
-                      key={item.activity_id}
-                      className="flex items-center gap-3 bg-card border border-border rounded-xl p-3"
-                    >
-                      <span className="text-xs text-muted-foreground w-4">{i + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground font-['Outfit'] truncate">
-                          {item.name || item.activity_id}
-                        </p>
-                        {item.notes > 0 && (
-                          <p className="text-[10px] text-muted-foreground">
-                            {item.notes} nota{item.notes > 1 ? 's' : ''} do clã
-                          </p>
-                        )}
-                      </div>
-                      <span className="text-xs text-emerald-400 flex items-center gap-1">
-                        <ThumbsUp size={11} /> {item.ups}
-                      </span>
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <ThumbsDown size={11} /> {item.downs}
-                      </span>
-                    </div>
-                  ))}
+          <h2 className="font-semibold text-base text-foreground font-['Outfit'] flex items-center gap-2">
+            <Sparkles size={16} className="text-emerald-400" /> Mais amados pelo clã · {city}
+          </h2>
+          {loading ? null : loved.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Ninguém avaliou nada em {city} ainda. Pode ser você, no check-in.</p>
+          ) : (
+            <div className="space-y-2">
+              {loved.map((item, i) => (
+                <div key={item.activity_id} className="flex items-center gap-3 bg-card border border-border rounded-xl p-3">
+                  <span className="text-xs text-muted-foreground w-4">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground font-['Outfit'] truncate">{item.name || item.activity_id}</p>
+                    {item.notes > 0 && (
+                      <p className="text-[10px] text-muted-foreground">{item.notes} nota{item.notes > 1 ? 's' : ''} do clã</p>
+                    )}
+                  </div>
+                  {typeof item.rating === 'number' && item.rating > 0 && (
+                    <span className="text-[11px] text-muted-foreground">Google {item.rating.toFixed(1).replace('.', ',')}</span>
+                  )}
+                  <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+                    Clã <ThumbsUp size={11} /> {item.ups}
+                  </span>
                 </div>
-              )}
-            </section>
-
-            {/* c) Sugestões do clã */}
-            <section>
-              <h2 className="font-semibold text-lg text-foreground font-['Outfit'] mb-3">
-                🌱 Sugestões do clã · {city}
-              </h2>
-              {suggestions.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Nenhuma sugestão para {city} ainda.</p>
-              ) : (
-                <div className="space-y-2">
-                  {suggestions.map((s, i) => {
-                    const pill = STATUS_PILL[s.status] ?? STATUS_PILL.pending;
-                    return (
-                      <div key={`${s.name}-${i}`} className="bg-card border border-border rounded-xl p-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm text-foreground font-['Outfit'] truncate">{s.name}</p>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${pill.className}`}>
-                            {pill.label}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                          {categoryLabel(s.category)} · {s.apoios ?? 0} apoio{(s.apoios ?? 0) === 1 ? '' : 's'}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          </>
-        )}
+              ))}
+            </div>
+          )}
+        </section>
       </main>
 
       <BottomNav />
