@@ -182,6 +182,7 @@ const Cla = () => {
   // Modal states
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
   const [selectedItinerary, setSelectedItinerary] = useState<any>(null);
+  const [selectedHotel, setSelectedHotel] = useState<CuratedHotel | null>(null);
 
   // Fetch data
   const { data: countries, isLoading: countriesLoading } = useCountries();
@@ -260,11 +261,40 @@ const Cla = () => {
     return allActivities?.filter(a => a.is_top_pick) || [];
   }, [allActivities]);
 
+  // Catálogo curado da cidade selecionada: hotéis e Michelin (read-only)
+  const cityHotels = useMemo(() => getCuratedHotels(city) ?? [], [city]);
+  const cityMichelin = useMemo(
+    () => MICHELIN_RESTAURANTS[city.toLowerCase()] ?? [],
+    [city]
+  );
+
+  const filteredCityHotels = useMemo(() => {
+    if (!searchQuery) return cityHotels;
+    const query = searchQuery.toLowerCase();
+    return cityHotels.filter((hotel) =>
+      hotel.name.toLowerCase().includes(query) ||
+      hotel.zone.toLowerCase().includes(query) ||
+      hotel.tips.some((tip) => tip.toLowerCase().includes(query))
+    );
+  }, [cityHotels, searchQuery]);
+
+  const filteredCityMichelin = useMemo(() => {
+    if (!searchQuery) return cityMichelin;
+    const query = searchQuery.toLowerCase();
+    return cityMichelin.filter((restaurant) =>
+      restaurant.name.toLowerCase().includes(query) ||
+      restaurant.cuisine.toLowerCase().includes(query) ||
+      restaurant.neighborhood?.toLowerCase().includes(query)
+    );
+  }, [cityMichelin, searchQuery]);
+
   // Category counts
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { 
       all: (filteredActivities.length || 0) + (filteredItineraries.length || 0),
       itinerary: filteredItineraries.length || 0,
+      hotel: filteredCityHotels.length,
+      michelin: filteredCityMichelin.length,
     };
     filteredActivities.forEach(a => {
       if (a.category) {
@@ -272,7 +302,7 @@ const Cla = () => {
       }
     });
     return counts;
-  }, [filteredActivities, filteredItineraries]);
+  }, [filteredActivities, filteredItineraries, filteredCityHotels, filteredCityMichelin]);
 
   const categoryChipsWithCounts = CATEGORY_CHIPS.map(cat => ({
     ...cat,
