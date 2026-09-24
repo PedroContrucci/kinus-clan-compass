@@ -170,8 +170,6 @@ const Cla = () => {
   };
 
   // Filters state
-  const [selectedCountry, setSelectedCountry] = useState<string>('all');
-  const [selectedCity, setSelectedCity] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStyle, setSelectedStyle] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -182,20 +180,13 @@ const Cla = () => {
   const [selectedHotel, setSelectedHotel] = useState<CuratedHotel | null>(null);
 
   // Fetch data
-  const { data: countries, isLoading: countriesLoading } = useCountries();
-  const { data: cities } = useCities(selectedCountry !== 'all' ? selectedCountry : undefined);
-  
   const { data: allActivities, isLoading: activitiesLoading } = useCommunityActivities({
-    countryId: selectedCountry !== 'all' ? selectedCountry : undefined,
-    cityId: selectedCity !== 'all' ? selectedCity : undefined,
     category: selectedCategory !== 'all' && !['itinerary', 'hotel', 'michelin'].includes(selectedCategory)
       ? selectedCategory as 'flight' | 'hotel' | 'experience' | 'restaurant' | 'transport' | 'other'
       : undefined,
   });
 
-  const { data: itineraries, isLoading: itinerariesLoading } = useCommunityItineraries({
-    countryId: selectedCountry !== 'all' ? selectedCountry : undefined,
-  });
+  const { data: itineraries, isLoading: itinerariesLoading } = useCommunityItineraries({});
 
   // Fetch photos for activities
   const activityIds = useMemo(() => allActivities?.map(a => a.id) || [], [allActivities]);
@@ -306,23 +297,15 @@ const Cla = () => {
     count: categoryCounts[cat.value] || 0,
   }));
 
-  // Handle country change
-  const handleCountryChange = (value: string) => {
-    setSelectedCountry(value);
-    setSelectedCity('all');
-  };
-
   // Clear all filters
   const clearFilters = () => {
-    setSelectedCountry('all');
-    setSelectedCity('all');
     setSelectedCategory('all');
     setSelectedStyle('all');
     setSearchQuery('');
   };
 
-  const hasActiveFilters = selectedCountry !== 'all' || selectedCity !== 'all' || 
-    selectedCategory !== 'all' || selectedStyle !== 'all' || searchQuery;
+  const hasActiveFilters =
+    selectedCategory !== 'all' || selectedStyle !== 'all' || searchQuery !== '';
 
   const rankedCuratedActivities = useMemo(() =>
     getDestinationActivities(city)
