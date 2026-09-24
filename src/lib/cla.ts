@@ -27,10 +27,14 @@ export interface ClaStat {
 }
 
 export interface ClaSuggestionPublic {
+  id: string;
   name: string;
   category: string;
+  neighborhood: string | null;
   status: 'pending' | 'accepted' | 'rejected';
-  apoios: number;
+  confirmations: number;
+  google_status: string | null;
+  created_at: string;
 }
 
 export interface MyReaction {
@@ -41,11 +45,14 @@ export interface MyReaction {
 }
 
 export interface MySuggestion {
+  id: string;
   city: string;
   name: string;
   category: string;
-  note: string | null;
+  neighborhood: string | null;
   status: 'pending' | 'accepted' | 'rejected';
+  curator_note: string | null;
+  created_at: string;
 }
 
 /** As seis categorias que o clã pode sugerir. */
@@ -235,8 +242,27 @@ export async function react(params: {
 }
 
 // ---------------------------------------------------------------------------
-// Sugestões
+// Sugestões (v2 — modo Waze: estruturadas, geolocalizadas, governadas)
 // ---------------------------------------------------------------------------
+
+export type CoordSource = 'gps' | 'pin' | 'none';
+export type PriceRange = 'gratis' | 'ate50' | '50a150' | '150a300' | '300mais';
+export type BestTime = 'manha' | 'tarde' | 'noite' | 'qualquer';
+
+export const PRICE_RANGES: { value: PriceRange; label: string }[] = [
+  { value: 'gratis', label: 'Grátis' },
+  { value: 'ate50', label: 'até R$50' },
+  { value: '50a150', label: 'R$50–150' },
+  { value: '150a300', label: 'R$150–300' },
+  { value: '300mais', label: 'R$300+' },
+];
+
+export const BEST_TIMES: { value: BestTime; label: string }[] = [
+  { value: 'manha', label: 'Manhã' },
+  { value: 'tarde', label: 'Tarde' },
+  { value: 'noite', label: 'Noite' },
+  { value: 'qualquer', label: 'Qualquer hora' },
+];
 
 /** Sugestões públicas da cidade (RPC). Nunca lança. */
 export async function suggestionsPublic(city: string): Promise<ClaSuggestionPublic[]> {
@@ -244,18 +270,25 @@ export async function suggestionsPublic(city: string): Promise<ClaSuggestionPubl
   try {
     const { data, error } = await kinuBeta.rpc('cla_suggestions_public', { p_city: city });
     if (error || !Array.isArray(data)) return [];
-    return data as ClaSuggestionPublic[];
+    return (data as ClaSuggestionPublic[]).map((r) => ({
+      ...r,
+      confirmations: Number(r.confirmations) || 0,
+    }));
   } catch {
     return [];
   }
 }
 
-/** As sugestões do próprio usuário. Nunca lança. */
+/** As indicações do próprio usuário. Nunca lança. */
 export async function mySuggestions(city?: string): Promise<MySuggestion[]> {
   const userId = getCurrentUserId();
   if (!userId) return [];
   try {
-    let query = kinuBeta.from('cla_suggestions').select('city, name, category, note, status').eq('user_id', userId);
+    let query = kinuBeta
+      .from('cla_suggestions')
+      .select('id, city, name, category, neighborhood, status, curator_note, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
     if (city) query = query.eq('city', city);
     const { data, error } = await query;
     if (error || !Array.isArray(data)) return [];
@@ -265,33 +298,91 @@ export async function mySuggestions(city?: string): Promise<MySuggestion[]> {
   }
 }
 
-/** Manda um lugar para a curadoria. Nunca lança. */
-export async function suggestPlace(params: {
+/** Ids das indicações que este usuário já confirmou ("Também fui"). Nunca lança. */
+export async function myConfirmations(ids: string[]): Promise<Set<string>> {
+  const userId = getCurrentUserId();
+  if (!userId || !ids.length) return new Set();
+  try {
+    const { data, error } = await kinuBeta
+      .from('cla_confirmations')
+      .select('suggestion_id')
+      .eq('user_id', userId)
+      .in('suggestion_id', ids);
+    if (error || !Array.isArray(data)) return new Set();
+    return new Set((data as { suggestion_id: string }[]).map((r) => r.suggestion_id));
+  } catch {
+    return new Set();
+  }
+}
+
+/** "Também fui". Conflito de unicidade conta como sucesso silencioso. Nunca lança. */
+export async function confirmSuggestion(suggestionId: string, city: string): Promise<boolean> {
+  const userId = getCurrentUserId();
+  if (!userId || !suggestionId) return false;
+  try {
+    const { error } = await kinuBeta
+      .from('cla_confirmations')
+      .insert({ suggestion_id: suggestionId, user_id: userId } as never);
+    if (error && (error as { code?: string }).code !== '23505') return false;
+    if (!error) trackEvent('cla.confirmation', { suggestion_id: suggestionId, city });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export interface SuggestPlaceInput {
   city: string;
   name: string;
   category: string;
-  note?: string;
+  neighborhood?: string;
+  lat?: number | null;
+  lng?: number | null;
+  coordSource: CoordSource;
+  tip?: string;
+  priceRange?: PriceRange | null;
+  bestTime?: BestTime | null;
+  familyOk?: boolean;
   /** O usuário viveu esta cidade? Sinal de peso para a curadoria. */
   lived?: boolean;
-}): Promise<boolean> {
+}
+
+/** Monta a linha exata de `cla_suggestions`. Pura — exportada para teste. */
+export function buildSuggestionRow(userId: string, p: SuggestPlaceInput) {
+  const hasCoord =
+    p.coordSource !== 'none' && Number.isFinite(p.lat) && Number.isFinite(p.lng);
+  return {
+    user_id: userId,
+    city: p.city.trim(),
+    name: p.name.trim(),
+    category: p.category,
+    neighborhood: (p.neighborhood ?? '').trim().slice(0, 80) || null,
+    lat: hasCoord ? (p.lat as number) : null,
+    lng: hasCoord ? (p.lng as number) : null,
+    coord_source: hasCoord ? p.coordSource : ('none' as CoordSource),
+    tip: (p.tip ?? '').trim().slice(0, SUGGESTION_NOTE_MAX) || null,
+    price_range: p.priceRange ?? null,
+    best_time: p.bestTime ?? null,
+    family_ok: Boolean(p.familyOk),
+    status: 'pending' as const,
+    lived: Boolean(p.lived),
+  };
+}
+
+/** Manda um lugar para a curadoria. Nunca lança. */
+export async function suggestPlace(p: SuggestPlaceInput): Promise<boolean> {
   const userId = getCurrentUserId();
-  const name = params.name.trim();
-  if (!userId || !params.city || name.length < 3 || name.length > 80) return false;
+  const name = p.name.trim();
+  if (!userId || !p.city || name.length < 3 || name.length > 80) return false;
   try {
-    const { error } = await kinuBeta.from('cla_suggestions').insert({
-      user_id: userId,
-      city: params.city,
-      name,
-      category: params.category,
-      note: (params.note ?? '').slice(0, SUGGESTION_NOTE_MAX) || null,
-      status: 'pending',
-      lived: Boolean(params.lived),
-    } as never);
+    const row = buildSuggestionRow(userId, p);
+    const { error } = await kinuBeta.from('cla_suggestions').insert(row as never);
     if (error) return false;
     trackEvent('cla.suggestion', {
-      city: params.city,
-      category: params.category,
-      lived: Boolean(params.lived),
+      city: row.city,
+      category: row.category,
+      coord_source: row.coord_source,
+      lived: row.lived,
     });
     return true;
   } catch {
