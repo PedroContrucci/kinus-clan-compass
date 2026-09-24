@@ -15,7 +15,6 @@ import { HintBalloon } from '@/components/onboarding/HintBalloon';
 import { getActiveTrip, listTrips, subscribeTrips } from '@/lib/tripStore';
 import { 
   TopPicksCarousel, 
-  ItineraryCard, 
   ActivityCard,
   ActivityDetailModal,
   FilterChips,
@@ -295,8 +294,8 @@ const Cla = () => {
   // Category counts
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { 
-      all: (filteredActivities.length || 0) + (filteredItineraries.length || 0),
-      itinerary: filteredItineraries.length || 0,
+      all: (filteredActivities.length || 0) + sharedTrips.length,
+      itinerary: sharedTrips.length,
       hotel: filteredCityHotels.length,
       michelin: filteredCityMichelin.length,
     };
@@ -306,7 +305,7 @@ const Cla = () => {
       }
     });
     return counts;
-  }, [filteredActivities, filteredItineraries, filteredCityHotels, filteredCityMichelin]);
+  }, [filteredActivities, sharedTrips, filteredCityHotels, filteredCityMichelin]);
 
   const categoryChipsWithCounts = CATEGORY_CHIPS.map(cat => ({
     ...cat,
