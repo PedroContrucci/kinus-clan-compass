@@ -194,7 +194,6 @@ export const ActivityDetailDrawer = ({
           {catalogImageQuery ? (
             <DestinationImage
               query={catalogImageQuery}
-              destination={destination}
               resetKey={`${destination}:${catalogImageQuery}`}
               alt={activity.name}
               className="h-48 w-full rounded-xl object-cover"
@@ -210,6 +209,14 @@ export const ActivityDetailDrawer = ({
 
           {activity.description && (
             <p className="text-sm text-muted-foreground">{activity.description}</p>
+          )}
+
+          {curated && curated.rating > 0 && (
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <span className="flex items-center gap-1 font-medium text-amber-400">
+                <Star size={14} className="fill-amber-400" /> Google {curated.rating.toFixed(1).replace('.', ',')}
+              </span>
+            </div>
           )}
 
           {loading && (

@@ -267,8 +267,16 @@ const Cla = () => {
       ...ranked.beaches.map((activity) => ({ kind: 'activity' as const, activity })),
       ...ranked.tips.map((tip) => ({ kind: 'tip' as const, ...tip })),
     ];
-    return topOnly ? all.sort((a, b) => cardRating(b) - cardRating(a)).slice(0, 5) : all;
-  }, [ranked, selectedCategory, topOnly]);
+    return topOnly ? all.sort((left, right) => {
+      const a = cardSocialScore(left, stats);
+      const b = cardSocialScore(right, stats);
+      const aVoice = a.reactions >= 5;
+      const bVoice = b.reactions >= 5;
+      if (aVoice !== bVoice) return aVoice ? -1 : 1;
+      if (aVoice && bVoice && a.clan !== b.clan) return b.clan - a.clan;
+      return b.google - a.google;
+    }).slice(0, 5) : all;
+  }, [ranked, selectedCategory, stats, topOnly]);
 
   const visibleCards = cards.slice(0, visibleCount);
   const showRoteiros = selectedCategory === 'itinerary' || selectedCategory === 'all';
@@ -395,6 +403,13 @@ function cardRating(card: CatalogCard): number {
   if (card.kind === 'hotel') return card.hotel.rating;
   if (card.kind === 'michelin') return card.restaurant.stars;
   return card.activity.rating;
+}
+
+function cardSocialScore(card: CatalogCard, stats: Map<string, ClaStat>) {
+  if (card.kind === 'activity') return scoreFor(card.activity.id, card.activity.rating, stats);
+  if (card.kind === 'hotel') return scoreFor(card.hotel.id, card.hotel.rating, stats);
+  if (card.kind === 'tip') return scoreFor(card.activity.id, card.activity.rating, stats);
+  return { reactions: 0, ups: 0, clan: 0, google: cardRating(card) };
 }
 
 function cardKey(card: CatalogCard): string {
