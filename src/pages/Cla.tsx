@@ -382,10 +382,30 @@ const Cla = () => {
               </section>
             )}
 
-            {selectedCategory === 'michelin' && ranked.michelin.length === 0 ? <p className="py-10 text-center text-sm text-muted-foreground">{city} ainda não tem casas com selo Michelin</p> : null}
-            {selectedCategory !== 'itinerary' && visibleCards.length === 0 && !(selectedCategory === 'michelin' && ranked.michelin.length === 0) ? <p className="py-10 text-center text-sm text-muted-foreground">Nenhum item encontrado em {city}.</p> : null}
+            {selectedCategory === 'gastronomy' && (
+              <div className="flex items-center gap-2">
+                <Button type="button" size="sm" variant={onlyMichelin ? 'default' : 'outline'} className="h-8 rounded-full px-3 text-xs" aria-pressed={onlyMichelin} onClick={() => setOnlyMichelin((v) => !v)}>⭐ Só Michelin</Button>
+              </div>
+            )}
 
-            {selectedCategory !== 'itinerary' && visibleCards.length > 0 && (
+            {showTips && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="font-['Outfit'] text-lg font-semibold text-foreground">Dicas do clã em {city}</h2>
+                  <Button size="sm" onClick={openNewTip}>Deixar uma dica</Button>
+                </div>
+                {filtered.tips.length === 0 ? <p className="text-sm text-muted-foreground">Ninguém deixou dica de {city} ainda — seja o primeiro.</p> : (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {(topOnly ? [...filtered.tips].sort((a, b) => b.confirmations - a.confirmations).slice(0, 5) : filtered.tips).map((tip) => <ClaTipCard key={tip.id} tip={tip} placeName={tip.activity_id ? placeNames.get(tip.activity_id) : undefined} myVote={tipVotes.get(tip.id) ?? null} onVoted={onTipVoted} onChanged={openChangedTip} />)}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {selectedCategory === 'gastronomy' && onlyMichelin && filtered.michelin.length === 0 ? <p className="py-10 text-center text-sm text-muted-foreground">{city} ainda não tem casas com selo Michelin</p> : null}
+            {!showTips && selectedCategory !== 'itinerary' && visibleCards.length === 0 && !(selectedCategory === 'gastronomy' && onlyMichelin) ? <p className="py-10 text-center text-sm text-muted-foreground">Nenhum item encontrado em {city}.</p> : null}
+
+            {!showTips && selectedCategory !== 'itinerary' && visibleCards.length > 0 && (
               <section>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {visibleCards.map((card) => <CatalogCardView key={cardKey(card)} card={card} city={city} stats={stats} onActivity={setSelectedActivity} onHotel={setSelectedHotel} onMichelin={setSelectedMichelin} onAdd={setAddTarget} />)}
