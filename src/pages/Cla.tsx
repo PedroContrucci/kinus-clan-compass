@@ -194,13 +194,21 @@ const Cla = () => {
     setClaLoading(false);
   }, [city]);
 
+  const loadTips = useCallback(async () => {
+    const tips = await tipsPublic(city);
+    setClanTips(tips);
+    setTipVotes(await myTipVotes(tips.map((t) => t.id)));
+  }, [city]);
+
   useEffect(() => { void loadCla(); }, [loadCla]);
+  useEffect(() => { void loadTips(); }, [loadTips]);
   useEffect(() => {
     const reload = () => void loadCla();
     window.addEventListener('kinu:cla-suggested', reload);
     return () => window.removeEventListener('kinu:cla-suggested', reload);
   }, [loadCla]);
-  useEffect(() => { setVisibleCount(12); }, [city, selectedCategory, selectedStyle, searchQuery, topOnly]);
+  useEffect(() => { setVisibleCount(12); }, [city, selectedCategory, selectedStyle, searchQuery, topOnly, onlyMichelin]);
+  useEffect(() => { setOnlyMichelin(false); }, [city, selectedCategory]);
 
   const cityData = useMemo(() => {
     const activities = getDestinationActivities(city);
