@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { List, Loader2, MapPinPlus, Search, Star, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/shared/BottomNav';
