@@ -349,9 +349,9 @@ const Cla = () => {
             </Select>
           </div>
           <div className="flex flex-wrap gap-2" aria-label="Categorias do catálogo">
-            {CATEGORY_CHIPS.map((chip) => (
+            {chips.map((chip) => (
               <Button key={chip.value} type="button" size="sm" variant={selectedCategory === chip.value ? 'default' : 'outline'} className="h-8 rounded-full px-3 text-xs" onClick={() => setSelectedCategory(chip.value)}>
-                {chip.label} <span className="opacity-70">{counts[chip.value]}</span>
+                {chip.label} <span className="opacity-70">{counts[chip.value] ?? 0}</span>
               </Button>
             ))}
             <Button type="button" size="sm" variant={topOnly ? 'default' : 'outline'} className="h-8 rounded-full px-3 text-xs" aria-pressed={topOnly} onClick={() => setTopOnly((current) => !current)}>⭐ Top</Button>
@@ -437,11 +437,13 @@ const Cla = () => {
         </SheetContent>
       </Sheet>
 
-      <ActivityDetailDrawer activity={selectedActivity ? asTripActivity(selectedActivity) : null} destination={city} open={!!selectedActivity} onClose={() => setSelectedActivity(null)} catalogImageQuery={selectedActivity?.name} onAddToTrip={selectedActivity ? () => { setAddTarget({ kind: 'activity', activity: selectedActivity }); setSelectedActivity(null); } : undefined} />
+      <ActivityDetailDrawer activity={selectedActivity ? asTripActivity(selectedActivity) : null} destination={city} open={!!selectedActivity} onClose={() => setSelectedActivity(null)} catalogImageQuery={selectedActivity?.name} onAddToTrip={selectedActivity ? () => { setAddTarget({ kind: 'activity', activity: selectedActivity }); setSelectedActivity(null); } : undefined}
+        claTipsSlot={drawerTips.length > 0 ? <div className="space-y-2"><p className="text-xs font-semibold text-foreground font-['Outfit']">🤝 Dicas do clã</p>{drawerTips.map((tip) => <ClaTipCard key={tip.id} tip={tip} myVote={tipVotes.get(tip.id) ?? null} onVoted={onTipVoted} onChanged={(t) => { setSelectedActivity(null); openChangedTip(t); }} />)}</div> : undefined} />
       <HotelDetailDrawer open={!!selectedHotel} onClose={() => setSelectedHotel(null)} hotel={selectedHotel} city={city} showPhoto onSelect={(hotel) => { setAddTarget({ kind: 'hotel', hotel }); setSelectedHotel(null); }} />
       <MichelinDetailDrawer open={!!selectedMichelin} onClose={() => setSelectedMichelin(null)} restaurant={selectedMichelin} />
       <ItineraryDrawer itinerary={selectedItinerary} onClose={() => setSelectedItinerary(null)} />
       <AddToTripSheet target={addTarget} city={city} onClose={() => setAddTarget(null)} />
+      <ClaTipSheet open={tipSheetOpen} city={city} places={placeOptions} draft={tipDraft} onClose={() => setTipSheetOpen(false)} onSaved={() => void loadTips()} />
       <BottomNav />
     </div>
   );
@@ -450,40 +452,64 @@ const Cla = () => {
 function cardRating(card: CatalogCard): number {
   if (card.kind === 'activity') return card.activity.rating;
   if (card.kind === 'hotel') return card.hotel.rating;
-  if (card.kind === 'michelin') return card.restaurant.stars;
-  return card.activity.rating;
+  return card.restaurant.stars;
 }
 
 function cardSocialScore(card: CatalogCard, stats: Map<string, ClaStat>) {
   if (card.kind === 'activity') return scoreFor(card.activity.id, card.activity.rating, stats);
   if (card.kind === 'hotel') return scoreFor(card.hotel.id, card.hotel.rating, stats);
-  if (card.kind === 'tip') return scoreFor(card.activity.id, card.activity.rating, stats);
   return { reactions: 0, ups: 0, clan: 0, google: cardRating(card) };
 }
 
 function cardKey(card: CatalogCard): string {
   if (card.kind === 'activity') return `activity:${card.activity.id}`;
   if (card.kind === 'hotel') return `hotel:${card.hotel.id}`;
-  if (card.kind === 'michelin') return `michelin:${card.restaurant.name}`;
-  return card.id;
+  return `michelin:${card.restaurant.name}`;
+}
+
+/** Corpo comum: foto, nome, descrição de uma linha, 📍 local, notas e ação. */
+function CardShell({ name, city, tone, description, location, mapHref, meta, onOpen, action }: {
+  name: string; city: string; tone: string; description?: string; location: string; mapHref: string;
+  meta: React.ReactNode; onOpen: () => void; action?: React.ReactNode;
+}) {
+  return (
+    <article className="flex flex-col overflow-hidden rounded-lg border border-border bg-card">
+      <button type="button" onClick={onOpen} className="block w-full text-left">
+        <ClaLazyImage name={name} city={city} tone={tone as never} className="aspect-[16/9] overflow-hidden" />
+      </button>
+      <div className="flex-1 space-y-2 p-4">
+        <button type="button" onClick={onOpen} className="block w-full text-left">
+          <h3 className="font-['Outfit'] font-semibold text-foreground">{name}</h3>
+          {description && <p className="mt-1 truncate text-xs text-muted-foreground">{description}</p>}
+        </button>
+        <a href={mapHref} target="_blank" rel="noopener noreferrer" className="inline-block text-xs text-muted-foreground hover:text-primary" aria-label={`Ver ${name} no mapa`}>📍 {location || city}</a>
+        <div className="flex flex-wrap gap-2 text-[11px]">{meta}</div>
+      </div>
+      {action && <div className="border-t border-border px-4 py-3">{action}</div>}
+    </article>
+  );
 }
 
 function CatalogCardView({ card, city, stats, onActivity, onHotel, onMichelin, onAdd }: { card: CatalogCard; city: string; stats: Map<string, ClaStat>; onActivity: (activity: SuggestedActivity) => void; onHotel: (hotel: CuratedHotel) => void; onMichelin: (restaurant: MichelinRestaurant) => void; onAdd: (target: AddTarget) => void }) {
   if (card.kind === 'activity') {
-    const social = scoreFor(card.activity.id, card.activity.rating, stats);
-    const cardCategory = categoryOf(card.activity);
-    const tone = cardCategory === 'restaurant' ? 'food' : cardCategory === 'beach' ? 'beach' : 'culture';
-    return <article className="overflow-hidden rounded-lg border border-border bg-card"><button type="button" onClick={() => onActivity(card.activity)} className="block w-full text-left"><ClaLazyImage name={card.activity.name} city={city} tone={tone} className="aspect-[16/9] overflow-hidden" /><div className="space-y-2 p-4"><h3 className="font-['Outfit'] font-semibold text-foreground">{card.activity.name}</h3><p className="text-xs text-muted-foreground">{card.activity.neighborhood}</p><div className="flex flex-wrap gap-2 text-[11px]"><span className="rounded-full bg-muted px-2 py-1 text-muted-foreground">{cardCategory === 'restaurant' ? 'Restaurante' : cardCategory === 'beach' ? 'Praia' : 'Experiência'}</span><span className="text-muted-foreground">Google {rating(card.activity.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}<span className="text-foreground">{brl(card.activity.estimatedCostBRL)}</span></div></div></button><div className="border-t border-border px-4 py-3"><Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-primary" onClick={() => onAdd({ kind: 'activity', activity: card.activity })}>➕ Adicionar à minha viagem</Button></div></article>;
+    const a = card.activity;
+    const social = scoreFor(a.id, a.rating, stats);
+    const cat = categoryOf(a);
+    const tone = cat === 'restaurant' ? 'food' : cat === 'beach' ? 'beach' : 'culture';
+    return <CardShell name={a.name} city={city} tone={tone} description={a.tips[0]} location={a.neighborhood} mapHref={mapsLink(a.id, a.name, city)} onOpen={() => onActivity(a)}
+      meta={<><span className="text-muted-foreground">Google {rating(a.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}<span className="text-foreground">{brl(a.estimatedCostBRL)}</span></>}
+      action={<Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-primary" onClick={() => onAdd({ kind: 'activity', activity: a })}>➕ Adicionar à minha viagem</Button>} />;
   }
   if (card.kind === 'hotel') {
-    const social = scoreFor(card.hotel.id, card.hotel.rating, stats);
-    return <article className="overflow-hidden rounded-lg border border-border bg-card"><button type="button" onClick={() => onHotel(card.hotel)} className="block w-full text-left"><ClaLazyImage name={card.hotel.name} city={city} tone="hotel" className="aspect-[16/9] overflow-hidden" /><div className="space-y-2 p-4"><h3 className="font-['Outfit'] font-semibold text-foreground">{card.hotel.name}</h3><p className="text-xs text-muted-foreground">{card.hotel.zone} · {TIER_LABEL[card.hotel.tier] ?? card.hotel.tier}</p><div className="flex flex-wrap gap-2 text-[11px]"><span className="text-muted-foreground">Google {rating(card.hotel.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}<span className="text-foreground">{card.hotel.priceRangeBRL}</span></div></div></button><div className="border-t border-border px-4 py-3"><Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-primary" onClick={() => onAdd({ kind: 'hotel', hotel: card.hotel })}>Usar este hotel</Button></div></article>;
+    const h = card.hotel;
+    const social = scoreFor(h.id, h.rating, stats);
+    return <CardShell name={h.name} city={city} tone="hotel" description={h.tips[0]} location={`${h.zone} · ${TIER_LABEL[h.tier] ?? h.tier}`} mapHref={mapsLink(h.id, h.name, city)} onOpen={() => onHotel(h)}
+      meta={<><span className="text-muted-foreground">Google {rating(h.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}<span className="text-foreground">{h.priceRangeBRL}</span></>}
+      action={<Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-primary" onClick={() => onAdd({ kind: 'hotel', hotel: h })}>Usar este hotel</Button>} />;
   }
-  if (card.kind === 'michelin') {
-    return <button type="button" onClick={() => onMichelin(card.restaurant)} className="overflow-hidden rounded-lg border border-border bg-card text-left transition-colors hover:border-primary/40"><ClaLazyImage name={card.restaurant.name} city={city} tone="food" className="aspect-[16/9] overflow-hidden" /><div className="space-y-2 p-4"><h3 className="font-['Outfit'] font-semibold text-foreground">{card.restaurant.name}</h3><p className="text-xs text-muted-foreground">{card.restaurant.neighborhood || 'Bairro não informado'} · {card.restaurant.cuisine}</p><div className="flex gap-2 text-[11px] text-amber-400"><span>{'⭐'.repeat(card.restaurant.stars)} Michelin</span><span className="text-muted-foreground">{card.restaurant.priceRange}</span></div></div></button>;
-  }
-  const social = scoreFor(card.activity.id, card.activity.rating, stats);
-  return <article className="overflow-hidden rounded-lg border border-border bg-card"><button type="button" onClick={() => onActivity(card.activity)} className="block w-full text-left"><ClaLazyImage name={card.activity.name} city={city} tone="tip" className="aspect-[16/9] overflow-hidden" /><div className="space-y-2 p-4"><p className="text-xs font-medium text-primary">Dica de {card.activity.name}</p><h3 className="font-['Outfit'] text-sm font-semibold leading-relaxed text-foreground">{card.tip}</h3><p className="text-xs text-muted-foreground">{card.activity.neighborhood}</p><div className="flex gap-2 text-[11px]"><span className="text-muted-foreground">Google {rating(card.activity.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}</div></div></button></article>;
+  const r = card.restaurant;
+  return <CardShell name={r.name} city={city} tone="food" description={r.cuisine} location={r.neighborhood || city} mapHref={mapsLink('', r.name, city)} onOpen={() => onMichelin(r)}
+    meta={<><span className="text-amber-400">{'⭐'.repeat(r.stars)} Michelin</span><span className="text-muted-foreground">{r.priceRange}</span></>} />;
 }
 
 function ItineraryCard({ itinerary, city, onOpen }: { itinerary: Destination; city: string; onOpen: () => void }) {
