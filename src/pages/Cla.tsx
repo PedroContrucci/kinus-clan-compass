@@ -215,16 +215,7 @@ const Cla = () => {
     const hotels = getCuratedHotels(city) ?? [];
     const michelin = MICHELIN_RESTAURANTS[normalize(city)] ?? [];
     const kinuItinerary = cityItinerary(city);
-    return {
-      activities,
-      restaurants: activities.filter(isFood),
-      beaches: activities.filter(isBeach),
-      experiences: activities.filter((activity) => !isFood(activity) && !isBeach(activity)),
-      tips: activities.flatMap((activity) => activity.tips.map((tip, index) => ({ id: `${activity.id}:tip:${index}`, tip, activity }))),
-      hotels,
-      michelin,
-      kinuItinerary,
-    };
+    return { activities, hotels, michelin, kinuItinerary };
   }, [city]);
 
   const filtered = useMemo(() => {
@@ -235,48 +226,58 @@ const Cla = () => {
     const itineraryMatch = (itinerary?: Destination) => itinerary && selectedStyle === 'all' && (!query || [itinerary.name, itinerary.country, itinerary.highlight, ...itinerary.tags].some((value) => normalize(value).includes(query)));
     const shared = selectedStyle === 'all' ? sharedTrips.filter((trip) => !query || normalize(trip.title || `Roteiro de ${trip.days} dias em ${trip.city}`).includes(query) || trip.itinerary.some((day) => day.items.some((item) => normalize(item.name).includes(query)))) : [];
     return {
-      restaurants: cityData.restaurants.filter(activityMatch),
-      beaches: cityData.beaches.filter(activityMatch),
-      experiences: cityData.experiences.filter(activityMatch),
-      tips: cityData.tips.filter(({ activity, tip }) => matchesStyle(activity, selectedStyle) && (!query || [activity.name, activity.neighborhood, tip].some((value) => normalize(value).includes(query)))),
-      hotels: cityData.hotels.filter(hotelMatch),
-      michelin: cityData.michelin.filter(michelinMatch),
+      activities: sortByVoice(cityData.activities.filter(activityMatch), (a) => scoreFor(a.id, a.rating, stats)),
+      hotels: sortByVoice(cityData.hotels.filter(hotelMatch), (h) => scoreFor(h.id, h.rating, stats)),
+      michelin: cityData.michelin.filter(michelinMatch).sort((a, b) => b.stars - a.stars),
       kinuItinerary: itineraryMatch(cityData.kinuItinerary) ? cityData.kinuItinerary : undefined,
       sharedTrips: shared,
+      tips: clanTips.filter((t) => !query || normalize(t.text).includes(query)),
     };
-  }, [cityData, searchQuery, selectedStyle, sharedTrips]);
+  }, [cityData, searchQuery, selectedStyle, sharedTrips, stats, clanTips]);
 
-  const ranked = useMemo(() => ({
-    restaurants: sortByVoice(filtered.restaurants, (activity) => scoreFor(activity.id, activity.rating, stats)),
-    beaches: sortByVoice(filtered.beaches, (activity) => scoreFor(activity.id, activity.rating, stats)),
-    experiences: sortByVoice(filtered.experiences, (activity) => scoreFor(activity.id, activity.rating, stats)),
-    tips: sortByVoice(filtered.tips, ({ activity }) => scoreFor(activity.id, activity.rating, stats)),
-    hotels: sortByVoice(filtered.hotels, (hotel) => scoreFor(hotel.id, hotel.rating, stats)),
-    michelin: [...filtered.michelin].sort((a, b) => b.stars - a.stars),
-  }), [filtered, stats]);
+  /** Chips de prioridade visíveis: escondidos quando a cidade não tem nenhum lugar. */
+  const priorityChips = useMemo(() => PRIORITY_CHIPS.filter((chip) =>
+    cityData.activities.some((a) => matchesPriority(a, chip.id)) || (chip.id === 'gastronomy' && cityData.michelin.length > 0)
+  ), [cityData]);
 
-  const counts: Record<CategoryKey, number> = useMemo(() => {
+  const chips = useMemo(() => [
+    { value: 'all', label: 'Todos' },
+    { value: 'itinerary', label: 'Roteiros' },
+    { value: 'hotel', label: '🏨 Hotéis' },
+    ...priorityChips.map((c) => ({ value: c.id, label: c.label })),
+    { value: 'tips', label: '🤝 Dicas do clã' },
+  ], [priorityChips]);
+
+  const priorityLists = useMemo(() => {
+    const out: Record<string, SuggestedActivity[]> = {};
+    for (const chip of priorityChips) out[chip.id] = filtered.activities.filter((a) => matchesPriority(a, chip.id));
+    return out;
+  }, [filtered, priorityChips]);
+
+  const counts: Record<string, number> = useMemo(() => {
     const itineraryCount = (filtered.kinuItinerary ? 1 : 0) + filtered.sharedTrips.length;
-    const all = filtered.restaurants.length + filtered.hotels.length + filtered.michelin.length + filtered.experiences.length + filtered.beaches.length + filtered.tips.length + itineraryCount;
-    return { all, itinerary: itineraryCount, restaurant: filtered.restaurants.length, hotel: filtered.hotels.length, michelin: filtered.michelin.length, experience: filtered.experiences.length, beach: filtered.beaches.length, tip: filtered.tips.length };
-  }, [filtered]);
+    const out: Record<string, number> = {
+      all: filtered.activities.length + filtered.hotels.length + filtered.michelin.length + itineraryCount + filtered.tips.length,
+      itinerary: itineraryCount,
+      hotel: filtered.hotels.length,
+      tips: filtered.tips.length,
+    };
+    for (const [id, list] of Object.entries(priorityLists)) out[id] = list.length;
+    // Gastronomia conta o que exibe: com "Só Michelin" a lista é a Michelin.
+    if ('gastronomy' in out && onlyMichelin) out.gastronomy = filtered.michelin.length;
+    return out;
+  }, [filtered, priorityLists, onlyMichelin]);
 
   const cards = useMemo<CatalogCard[]>(() => {
     const limit = <T,>(items: T[]) => topOnly ? items.slice(0, 5) : items;
-    if (selectedCategory === 'restaurant') return limit(ranked.restaurants).map((activity) => ({ kind: 'activity', activity }));
-    if (selectedCategory === 'hotel') return limit(ranked.hotels).map((hotel) => ({ kind: 'hotel', hotel }));
-    if (selectedCategory === 'michelin') return limit(ranked.michelin).map((restaurant) => ({ kind: 'michelin', restaurant }));
-    if (selectedCategory === 'experience') return limit(ranked.experiences).map((activity) => ({ kind: 'activity', activity }));
-    if (selectedCategory === 'beach') return limit(ranked.beaches).map((activity) => ({ kind: 'activity', activity }));
-    if (selectedCategory === 'tip') return limit(ranked.tips).map((tip) => ({ kind: 'tip', ...tip }));
-    if (selectedCategory === 'itinerary') return [];
+    if (selectedCategory === 'itinerary' || selectedCategory === 'tips') return [];
+    if (selectedCategory === 'hotel') return limit(filtered.hotels).map((hotel) => ({ kind: 'hotel', hotel }));
+    if (selectedCategory === 'gastronomy' && onlyMichelin) return limit(filtered.michelin).map((restaurant) => ({ kind: 'michelin', restaurant }));
+    if (selectedCategory !== 'all') return limit(priorityLists[selectedCategory] ?? []).map((activity) => ({ kind: 'activity', activity }));
     const all: CatalogCard[] = [
-      ...ranked.restaurants.map((activity) => ({ kind: 'activity' as const, activity })),
-      ...ranked.hotels.map((hotel) => ({ kind: 'hotel' as const, hotel })),
-      ...ranked.michelin.map((restaurant) => ({ kind: 'michelin' as const, restaurant })),
-      ...ranked.experiences.map((activity) => ({ kind: 'activity' as const, activity })),
-      ...ranked.beaches.map((activity) => ({ kind: 'activity' as const, activity })),
-      ...ranked.tips.map((tip) => ({ kind: 'tip' as const, ...tip })),
+      ...filtered.activities.map((activity) => ({ kind: 'activity' as const, activity })),
+      ...filtered.hotels.map((hotel) => ({ kind: 'hotel' as const, hotel })),
+      ...filtered.michelin.map((restaurant) => ({ kind: 'michelin' as const, restaurant })),
     ];
     return topOnly ? all.sort((left, right) => {
       const a = cardSocialScore(left, stats);
@@ -287,11 +288,28 @@ const Cla = () => {
       if (aVoice && bVoice && a.clan !== b.clan) return b.clan - a.clan;
       return b.google - a.google;
     }).slice(0, 5) : all;
-  }, [ranked, selectedCategory, stats, topOnly]);
+  }, [filtered, priorityLists, selectedCategory, stats, topOnly, onlyMichelin]);
+
+  useEffect(() => { if (!chips.some((c) => c.value === selectedCategory)) setSelectedCategory('all'); }, [chips, selectedCategory]);
 
   const visibleCards = cards.slice(0, visibleCount);
   const showRoteiros = selectedCategory === 'itinerary' || selectedCategory === 'all';
+  const showTips = selectedCategory === 'tips';
   const insight = CITY_INSIGHTS[city];
+  const placeNames = useMemo(() => new Map(cityData.activities.map((a) => [a.id, a.name])), [cityData]);
+  const placeOptions = useMemo(() => cityData.activities.map((a) => ({ id: a.id, name: a.name })).sort((a, b) => a.name.localeCompare(b.name)), [cityData]);
+  const drawerTips = selectedActivity ? clanTips.filter((t) => t.scope === 'place' && t.activity_id === selectedActivity.id) : [];
+
+  const onTipVoted = (tipId: string, vote: TipVote | null, prev: TipVote | null) => {
+    setTipVotes((m) => { const n = new Map(m); if (vote) n.set(tipId, vote); else n.delete(tipId); return n; });
+    setClanTips((list) => list.map((t) => {
+      if (t.id !== tipId) return t;
+      const delta = (vote === 'confirm' ? 1 : 0) - (prev === 'confirm' ? 1 : 0);
+      return { ...t, confirmations: Math.max(0, t.confirmations + delta), last_confirmed_at: vote === 'confirm' ? new Date().toISOString() : t.last_confirmed_at };
+    }));
+  };
+  const openNewTip = () => { setTipDraft(null); setTipSheetOpen(true); };
+  const openChangedTip = (tip: ClaTip) => { setTipDraft({ scope: tip.scope, activityId: tip.activity_id, kind: tip.kind, text: tip.text, supersedesId: tip.id }); setTipSheetOpen(true); };
 
   const alsoWent = async (id: string) => {
     const ok = await confirmSuggestion(id, city);
