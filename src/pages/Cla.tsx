@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { List, Loader2, MapPinPlus, Search, Star, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/shared/BottomNav';
@@ -37,24 +37,22 @@ import {
   type SharedTripPublic,
 } from '@/lib/cla';
 import type { TripActivity } from '@/types/trip';
+import { CURATED_COORDS } from '@/data/generated/coords';
+import { PRIORITY_CHIPS, matchesPriority } from '@/lib/claChips';
+import { myTipVotes, tipsPublic, type ClaTip, type TipVote } from '@/lib/claTips';
+import { ClaTipCard, ClaTipSheet, type TipDraft } from '@/components/cla/ClaTips';
 
-type CategoryKey = 'all' | 'itinerary' | 'restaurant' | 'hotel' | 'michelin' | 'experience' | 'beach' | 'tip';
+type CategoryKey = string; // 'all' | 'itinerary' | 'hotel' | 'tips' | id de prioridade do wizard
 type CatalogCard =
   | { kind: 'activity'; activity: SuggestedActivity }
   | { kind: 'hotel'; hotel: CuratedHotel }
-  | { kind: 'michelin'; restaurant: MichelinRestaurant }
-  | { kind: 'tip'; id: string; tip: string; activity: SuggestedActivity };
+  | { kind: 'michelin'; restaurant: MichelinRestaurant };
 
-const CATEGORY_CHIPS: { value: CategoryKey; label: string }[] = [
-  { value: 'all', label: 'Todos' },
-  { value: 'itinerary', label: 'Roteiros' },
-  { value: 'restaurant', label: 'Restaurantes' },
-  { value: 'hotel', label: 'Hotéis' },
-  { value: 'michelin', label: 'Michelin' },
-  { value: 'experience', label: 'Experiências' },
-  { value: 'beach', label: 'Praias' },
-  { value: 'tip', label: 'Dicas' },
-];
+function mapsLink(id: string, name: string, city: string): string {
+  const c = CURATED_COORDS[id];
+  const q = c ? `${c.lat},${c.lng}` : `${name}, ${city}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
 
 const TRAVEL_STYLES = [
   { value: 'all', label: 'Todos os Estilos' },
@@ -89,7 +87,7 @@ const matchesStyle = (activity: SuggestedActivity, style: string) => {
   const aliases: Record<string, string[]> = { relaxed: ['relaxed', 'relax', 'relaxation', 'nature'] };
   return (aliases[style] || [style]).some((tag) => activity.styleTags.map(normalize).includes(tag));
 };
-const categoryOf = (activity: SuggestedActivity): CategoryKey => isFood(activity) ? 'restaurant' : isBeach(activity) ? 'beach' : 'experience';
+const categoryOf = (activity: SuggestedActivity) => isFood(activity) ? 'restaurant' : isBeach(activity) ? 'beach' : 'experience';
 const brl = (value: number) => value > 0 ? `R$ ${value.toLocaleString('pt-BR')}` : 'Grátis';
 const rating = (value: number) => value.toFixed(1).replace('.', ',');
 const categoryLabel = (value: string) => CLA_CATEGORIES.find((item) => item.value === value)?.label ?? value;
@@ -160,6 +158,11 @@ const Cla = () => {
   const [selectedHotel, setSelectedHotel] = useState<CuratedHotel | null>(null);
   const [selectedMichelin, setSelectedMichelin] = useState<MichelinRestaurant | null>(null);
   const [selectedItinerary, setSelectedItinerary] = useState<Destination | null>(null);
+  const [onlyMichelin, setOnlyMichelin] = useState(false);
+  const [clanTips, setClanTips] = useState<ClaTip[]>([]);
+  const [tipVotes, setTipVotes] = useState<Map<string, TipVote>>(new Map());
+  const [tipDraft, setTipDraft] = useState<TipDraft | null>(null);
+  const [tipSheetOpen, setTipSheetOpen] = useState(false);
   const [addTarget, setAddTarget] = useState<AddTarget | null>(null);
 
   useEffect(() => {
@@ -191,29 +194,28 @@ const Cla = () => {
     setClaLoading(false);
   }, [city]);
 
+  const loadTips = useCallback(async () => {
+    const tips = await tipsPublic(city);
+    setClanTips(tips);
+    setTipVotes(await myTipVotes(tips.map((t) => t.id)));
+  }, [city]);
+
   useEffect(() => { void loadCla(); }, [loadCla]);
+  useEffect(() => { void loadTips(); }, [loadTips]);
   useEffect(() => {
     const reload = () => void loadCla();
     window.addEventListener('kinu:cla-suggested', reload);
     return () => window.removeEventListener('kinu:cla-suggested', reload);
   }, [loadCla]);
-  useEffect(() => { setVisibleCount(12); }, [city, selectedCategory, selectedStyle, searchQuery, topOnly]);
+  useEffect(() => { setVisibleCount(12); }, [city, selectedCategory, selectedStyle, searchQuery, topOnly, onlyMichelin]);
+  useEffect(() => { setOnlyMichelin(false); }, [city, selectedCategory]);
 
   const cityData = useMemo(() => {
     const activities = getDestinationActivities(city);
     const hotels = getCuratedHotels(city) ?? [];
     const michelin = MICHELIN_RESTAURANTS[normalize(city)] ?? [];
     const kinuItinerary = cityItinerary(city);
-    return {
-      activities,
-      restaurants: activities.filter(isFood),
-      beaches: activities.filter(isBeach),
-      experiences: activities.filter((activity) => !isFood(activity) && !isBeach(activity)),
-      tips: activities.flatMap((activity) => activity.tips.map((tip, index) => ({ id: `${activity.id}:tip:${index}`, tip, activity }))),
-      hotels,
-      michelin,
-      kinuItinerary,
-    };
+    return { activities, hotels, michelin, kinuItinerary };
   }, [city]);
 
   const filtered = useMemo(() => {
@@ -224,48 +226,58 @@ const Cla = () => {
     const itineraryMatch = (itinerary?: Destination) => itinerary && selectedStyle === 'all' && (!query || [itinerary.name, itinerary.country, itinerary.highlight, ...itinerary.tags].some((value) => normalize(value).includes(query)));
     const shared = selectedStyle === 'all' ? sharedTrips.filter((trip) => !query || normalize(trip.title || `Roteiro de ${trip.days} dias em ${trip.city}`).includes(query) || trip.itinerary.some((day) => day.items.some((item) => normalize(item.name).includes(query)))) : [];
     return {
-      restaurants: cityData.restaurants.filter(activityMatch),
-      beaches: cityData.beaches.filter(activityMatch),
-      experiences: cityData.experiences.filter(activityMatch),
-      tips: cityData.tips.filter(({ activity, tip }) => matchesStyle(activity, selectedStyle) && (!query || [activity.name, activity.neighborhood, tip].some((value) => normalize(value).includes(query)))),
-      hotels: cityData.hotels.filter(hotelMatch),
-      michelin: cityData.michelin.filter(michelinMatch),
+      activities: sortByVoice(cityData.activities.filter(activityMatch), (a) => scoreFor(a.id, a.rating, stats)),
+      hotels: sortByVoice(cityData.hotels.filter(hotelMatch), (h) => scoreFor(h.id, h.rating, stats)),
+      michelin: cityData.michelin.filter(michelinMatch).sort((a, b) => b.stars - a.stars),
       kinuItinerary: itineraryMatch(cityData.kinuItinerary) ? cityData.kinuItinerary : undefined,
       sharedTrips: shared,
+      tips: clanTips.filter((t) => !query || normalize(t.text).includes(query)),
     };
-  }, [cityData, searchQuery, selectedStyle, sharedTrips]);
+  }, [cityData, searchQuery, selectedStyle, sharedTrips, stats, clanTips]);
 
-  const ranked = useMemo(() => ({
-    restaurants: sortByVoice(filtered.restaurants, (activity) => scoreFor(activity.id, activity.rating, stats)),
-    beaches: sortByVoice(filtered.beaches, (activity) => scoreFor(activity.id, activity.rating, stats)),
-    experiences: sortByVoice(filtered.experiences, (activity) => scoreFor(activity.id, activity.rating, stats)),
-    tips: sortByVoice(filtered.tips, ({ activity }) => scoreFor(activity.id, activity.rating, stats)),
-    hotels: sortByVoice(filtered.hotels, (hotel) => scoreFor(hotel.id, hotel.rating, stats)),
-    michelin: [...filtered.michelin].sort((a, b) => b.stars - a.stars),
-  }), [filtered, stats]);
+  /** Chips de prioridade visíveis: escondidos quando a cidade não tem nenhum lugar. */
+  const priorityChips = useMemo(() => PRIORITY_CHIPS.filter((chip) =>
+    cityData.activities.some((a) => matchesPriority(a, chip.id)) || (chip.id === 'gastronomy' && cityData.michelin.length > 0)
+  ), [cityData]);
 
-  const counts: Record<CategoryKey, number> = useMemo(() => {
+  const chips = useMemo(() => [
+    { value: 'all', label: 'Todos' },
+    { value: 'itinerary', label: 'Roteiros' },
+    { value: 'hotel', label: '🏨 Hotéis' },
+    ...priorityChips.map((c) => ({ value: c.id, label: c.label })),
+    { value: 'tips', label: '🤝 Dicas do clã' },
+  ], [priorityChips]);
+
+  const priorityLists = useMemo(() => {
+    const out: Record<string, SuggestedActivity[]> = {};
+    for (const chip of priorityChips) out[chip.id] = filtered.activities.filter((a) => matchesPriority(a, chip.id));
+    return out;
+  }, [filtered, priorityChips]);
+
+  const counts: Record<string, number> = useMemo(() => {
     const itineraryCount = (filtered.kinuItinerary ? 1 : 0) + filtered.sharedTrips.length;
-    const all = filtered.restaurants.length + filtered.hotels.length + filtered.michelin.length + filtered.experiences.length + filtered.beaches.length + filtered.tips.length + itineraryCount;
-    return { all, itinerary: itineraryCount, restaurant: filtered.restaurants.length, hotel: filtered.hotels.length, michelin: filtered.michelin.length, experience: filtered.experiences.length, beach: filtered.beaches.length, tip: filtered.tips.length };
-  }, [filtered]);
+    const out: Record<string, number> = {
+      all: filtered.activities.length + filtered.hotels.length + filtered.michelin.length + itineraryCount + filtered.tips.length,
+      itinerary: itineraryCount,
+      hotel: filtered.hotels.length,
+      tips: filtered.tips.length,
+    };
+    for (const [id, list] of Object.entries(priorityLists)) out[id] = list.length;
+    // Gastronomia conta o que exibe: com "Só Michelin" a lista é a Michelin.
+    if ('gastronomy' in out && onlyMichelin) out.gastronomy = filtered.michelin.length;
+    return out;
+  }, [filtered, priorityLists, onlyMichelin]);
 
   const cards = useMemo<CatalogCard[]>(() => {
     const limit = <T,>(items: T[]) => topOnly ? items.slice(0, 5) : items;
-    if (selectedCategory === 'restaurant') return limit(ranked.restaurants).map((activity) => ({ kind: 'activity', activity }));
-    if (selectedCategory === 'hotel') return limit(ranked.hotels).map((hotel) => ({ kind: 'hotel', hotel }));
-    if (selectedCategory === 'michelin') return limit(ranked.michelin).map((restaurant) => ({ kind: 'michelin', restaurant }));
-    if (selectedCategory === 'experience') return limit(ranked.experiences).map((activity) => ({ kind: 'activity', activity }));
-    if (selectedCategory === 'beach') return limit(ranked.beaches).map((activity) => ({ kind: 'activity', activity }));
-    if (selectedCategory === 'tip') return limit(ranked.tips).map((tip) => ({ kind: 'tip', ...tip }));
-    if (selectedCategory === 'itinerary') return [];
+    if (selectedCategory === 'itinerary' || selectedCategory === 'tips') return [];
+    if (selectedCategory === 'hotel') return limit(filtered.hotels).map((hotel) => ({ kind: 'hotel', hotel }));
+    if (selectedCategory === 'gastronomy' && onlyMichelin) return limit(filtered.michelin).map((restaurant) => ({ kind: 'michelin', restaurant }));
+    if (selectedCategory !== 'all') return limit(priorityLists[selectedCategory] ?? []).map((activity) => ({ kind: 'activity', activity }));
     const all: CatalogCard[] = [
-      ...ranked.restaurants.map((activity) => ({ kind: 'activity' as const, activity })),
-      ...ranked.hotels.map((hotel) => ({ kind: 'hotel' as const, hotel })),
-      ...ranked.michelin.map((restaurant) => ({ kind: 'michelin' as const, restaurant })),
-      ...ranked.experiences.map((activity) => ({ kind: 'activity' as const, activity })),
-      ...ranked.beaches.map((activity) => ({ kind: 'activity' as const, activity })),
-      ...ranked.tips.map((tip) => ({ kind: 'tip' as const, ...tip })),
+      ...filtered.activities.map((activity) => ({ kind: 'activity' as const, activity })),
+      ...filtered.hotels.map((hotel) => ({ kind: 'hotel' as const, hotel })),
+      ...filtered.michelin.map((restaurant) => ({ kind: 'michelin' as const, restaurant })),
     ];
     return topOnly ? all.sort((left, right) => {
       const a = cardSocialScore(left, stats);
@@ -276,11 +288,28 @@ const Cla = () => {
       if (aVoice && bVoice && a.clan !== b.clan) return b.clan - a.clan;
       return b.google - a.google;
     }).slice(0, 5) : all;
-  }, [ranked, selectedCategory, stats, topOnly]);
+  }, [filtered, priorityLists, selectedCategory, stats, topOnly, onlyMichelin]);
+
+  useEffect(() => { if (!chips.some((c) => c.value === selectedCategory)) setSelectedCategory('all'); }, [chips, selectedCategory]);
 
   const visibleCards = cards.slice(0, visibleCount);
   const showRoteiros = selectedCategory === 'itinerary' || selectedCategory === 'all';
+  const showTips = selectedCategory === 'tips';
   const insight = CITY_INSIGHTS[city];
+  const placeNames = useMemo(() => new Map(cityData.activities.map((a) => [a.id, a.name])), [cityData]);
+  const placeOptions = useMemo(() => cityData.activities.map((a) => ({ id: a.id, name: a.name })).sort((a, b) => a.name.localeCompare(b.name)), [cityData]);
+  const drawerTips = selectedActivity ? clanTips.filter((t) => t.scope === 'place' && t.activity_id === selectedActivity.id) : [];
+
+  const onTipVoted = (tipId: string, vote: TipVote | null, prev: TipVote | null) => {
+    setTipVotes((m) => { const n = new Map(m); if (vote) n.set(tipId, vote); else n.delete(tipId); return n; });
+    setClanTips((list) => list.map((t) => {
+      if (t.id !== tipId) return t;
+      const delta = (vote === 'confirm' ? 1 : 0) - (prev === 'confirm' ? 1 : 0);
+      return { ...t, confirmations: Math.max(0, t.confirmations + delta), last_confirmed_at: vote === 'confirm' ? new Date().toISOString() : t.last_confirmed_at };
+    }));
+  };
+  const openNewTip = () => { setTipDraft(null); setTipSheetOpen(true); };
+  const openChangedTip = (tip: ClaTip) => { setTipDraft({ scope: tip.scope, activityId: tip.activity_id, kind: tip.kind, text: tip.text, supersedesId: tip.id }); setTipSheetOpen(true); };
 
   const alsoWent = async (id: string) => {
     const ok = await confirmSuggestion(id, city);
@@ -320,9 +349,9 @@ const Cla = () => {
             </Select>
           </div>
           <div className="flex flex-wrap gap-2" aria-label="Categorias do catálogo">
-            {CATEGORY_CHIPS.map((chip) => (
+            {chips.map((chip) => (
               <Button key={chip.value} type="button" size="sm" variant={selectedCategory === chip.value ? 'default' : 'outline'} className="h-8 rounded-full px-3 text-xs" onClick={() => setSelectedCategory(chip.value)}>
-                {chip.label} <span className="opacity-70">{counts[chip.value]}</span>
+                {chip.label} <span className="opacity-70">{counts[chip.value] ?? 0}</span>
               </Button>
             ))}
             <Button type="button" size="sm" variant={topOnly ? 'default' : 'outline'} className="h-8 rounded-full px-3 text-xs" aria-pressed={topOnly} onClick={() => setTopOnly((current) => !current)}>⭐ Top</Button>
@@ -353,10 +382,30 @@ const Cla = () => {
               </section>
             )}
 
-            {selectedCategory === 'michelin' && ranked.michelin.length === 0 ? <p className="py-10 text-center text-sm text-muted-foreground">{city} ainda não tem casas com selo Michelin</p> : null}
-            {selectedCategory !== 'itinerary' && visibleCards.length === 0 && !(selectedCategory === 'michelin' && ranked.michelin.length === 0) ? <p className="py-10 text-center text-sm text-muted-foreground">Nenhum item encontrado em {city}.</p> : null}
+            {selectedCategory === 'gastronomy' && (
+              <div className="flex items-center gap-2">
+                <Button type="button" size="sm" variant={onlyMichelin ? 'default' : 'outline'} className="h-8 rounded-full px-3 text-xs" aria-pressed={onlyMichelin} onClick={() => setOnlyMichelin((v) => !v)}>⭐ Só Michelin</Button>
+              </div>
+            )}
 
-            {selectedCategory !== 'itinerary' && visibleCards.length > 0 && (
+            {showTips && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="font-['Outfit'] text-lg font-semibold text-foreground">Dicas do clã em {city}</h2>
+                  <Button size="sm" onClick={openNewTip}>Deixar uma dica</Button>
+                </div>
+                {filtered.tips.length === 0 ? <p className="text-sm text-muted-foreground">Ninguém deixou dica de {city} ainda — seja o primeiro.</p> : (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {(topOnly ? [...filtered.tips].sort((a, b) => b.confirmations - a.confirmations).slice(0, 5) : filtered.tips).map((tip) => <ClaTipCard key={tip.id} tip={tip} placeName={tip.activity_id ? placeNames.get(tip.activity_id) : undefined} myVote={tipVotes.get(tip.id) ?? null} onVoted={onTipVoted} onChanged={openChangedTip} />)}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {selectedCategory === 'gastronomy' && onlyMichelin && filtered.michelin.length === 0 ? <p className="py-10 text-center text-sm text-muted-foreground">{city} ainda não tem casas com selo Michelin</p> : null}
+            {!showTips && selectedCategory !== 'itinerary' && visibleCards.length === 0 && !(selectedCategory === 'gastronomy' && onlyMichelin) ? <p className="py-10 text-center text-sm text-muted-foreground">Nenhum item encontrado em {city}.</p> : null}
+
+            {!showTips && selectedCategory !== 'itinerary' && visibleCards.length > 0 && (
               <section>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {visibleCards.map((card) => <CatalogCardView key={cardKey(card)} card={card} city={city} stats={stats} onActivity={setSelectedActivity} onHotel={setSelectedHotel} onMichelin={setSelectedMichelin} onAdd={setAddTarget} />)}
@@ -388,11 +437,13 @@ const Cla = () => {
         </SheetContent>
       </Sheet>
 
-      <ActivityDetailDrawer activity={selectedActivity ? asTripActivity(selectedActivity) : null} destination={city} open={!!selectedActivity} onClose={() => setSelectedActivity(null)} catalogImageQuery={selectedActivity?.name} onAddToTrip={selectedActivity ? () => { setAddTarget({ kind: 'activity', activity: selectedActivity }); setSelectedActivity(null); } : undefined} />
+      <ActivityDetailDrawer activity={selectedActivity ? asTripActivity(selectedActivity) : null} destination={city} open={!!selectedActivity} onClose={() => setSelectedActivity(null)} catalogImageQuery={selectedActivity?.name} onAddToTrip={selectedActivity ? () => { setAddTarget({ kind: 'activity', activity: selectedActivity }); setSelectedActivity(null); } : undefined}
+        claTipsSlot={drawerTips.length > 0 ? <div className="space-y-2"><p className="text-xs font-semibold text-foreground font-['Outfit']">🤝 Dicas do clã</p>{drawerTips.map((tip) => <ClaTipCard key={tip.id} tip={tip} myVote={tipVotes.get(tip.id) ?? null} onVoted={onTipVoted} onChanged={(t) => { setSelectedActivity(null); openChangedTip(t); }} />)}</div> : undefined} />
       <HotelDetailDrawer open={!!selectedHotel} onClose={() => setSelectedHotel(null)} hotel={selectedHotel} city={city} showPhoto onSelect={(hotel) => { setAddTarget({ kind: 'hotel', hotel }); setSelectedHotel(null); }} />
       <MichelinDetailDrawer open={!!selectedMichelin} onClose={() => setSelectedMichelin(null)} restaurant={selectedMichelin} />
       <ItineraryDrawer itinerary={selectedItinerary} onClose={() => setSelectedItinerary(null)} />
       <AddToTripSheet target={addTarget} city={city} onClose={() => setAddTarget(null)} />
+      <ClaTipSheet open={tipSheetOpen} city={city} places={placeOptions} draft={tipDraft} onClose={() => setTipSheetOpen(false)} onSaved={() => void loadTips()} />
       <BottomNav />
     </div>
   );
@@ -401,40 +452,64 @@ const Cla = () => {
 function cardRating(card: CatalogCard): number {
   if (card.kind === 'activity') return card.activity.rating;
   if (card.kind === 'hotel') return card.hotel.rating;
-  if (card.kind === 'michelin') return card.restaurant.stars;
-  return card.activity.rating;
+  return card.restaurant.stars;
 }
 
 function cardSocialScore(card: CatalogCard, stats: Map<string, ClaStat>) {
   if (card.kind === 'activity') return scoreFor(card.activity.id, card.activity.rating, stats);
   if (card.kind === 'hotel') return scoreFor(card.hotel.id, card.hotel.rating, stats);
-  if (card.kind === 'tip') return scoreFor(card.activity.id, card.activity.rating, stats);
   return { reactions: 0, ups: 0, clan: 0, google: cardRating(card) };
 }
 
 function cardKey(card: CatalogCard): string {
   if (card.kind === 'activity') return `activity:${card.activity.id}`;
   if (card.kind === 'hotel') return `hotel:${card.hotel.id}`;
-  if (card.kind === 'michelin') return `michelin:${card.restaurant.name}`;
-  return card.id;
+  return `michelin:${card.restaurant.name}`;
+}
+
+/** Corpo comum: foto, nome, descrição de uma linha, 📍 local, notas e ação. */
+function CardShell({ name, city, tone, description, location, mapHref, meta, onOpen, action }: {
+  name: string; city: string; tone: string; description?: string; location: string; mapHref: string;
+  meta: React.ReactNode; onOpen: () => void; action?: React.ReactNode;
+}) {
+  return (
+    <article className="flex flex-col overflow-hidden rounded-lg border border-border bg-card">
+      <button type="button" onClick={onOpen} className="block w-full text-left">
+        <ClaLazyImage name={name} city={city} tone={tone as never} className="aspect-[16/9] overflow-hidden" />
+      </button>
+      <div className="flex-1 space-y-2 p-4">
+        <button type="button" onClick={onOpen} className="block w-full text-left">
+          <h3 className="font-['Outfit'] font-semibold text-foreground">{name}</h3>
+          {description && <p className="mt-1 truncate text-xs text-muted-foreground">{description}</p>}
+        </button>
+        <a href={mapHref} target="_blank" rel="noopener noreferrer" className="inline-block text-xs text-muted-foreground hover:text-primary" aria-label={`Ver ${name} no mapa`}>📍 {location || city}</a>
+        <div className="flex flex-wrap gap-2 text-[11px]">{meta}</div>
+      </div>
+      {action && <div className="border-t border-border px-4 py-3">{action}</div>}
+    </article>
+  );
 }
 
 function CatalogCardView({ card, city, stats, onActivity, onHotel, onMichelin, onAdd }: { card: CatalogCard; city: string; stats: Map<string, ClaStat>; onActivity: (activity: SuggestedActivity) => void; onHotel: (hotel: CuratedHotel) => void; onMichelin: (restaurant: MichelinRestaurant) => void; onAdd: (target: AddTarget) => void }) {
   if (card.kind === 'activity') {
-    const social = scoreFor(card.activity.id, card.activity.rating, stats);
-    const cardCategory = categoryOf(card.activity);
-    const tone = cardCategory === 'restaurant' ? 'food' : cardCategory === 'beach' ? 'beach' : 'culture';
-    return <article className="overflow-hidden rounded-lg border border-border bg-card"><button type="button" onClick={() => onActivity(card.activity)} className="block w-full text-left"><ClaLazyImage name={card.activity.name} city={city} tone={tone} className="aspect-[16/9] overflow-hidden" /><div className="space-y-2 p-4"><h3 className="font-['Outfit'] font-semibold text-foreground">{card.activity.name}</h3><p className="text-xs text-muted-foreground">{card.activity.neighborhood}</p><div className="flex flex-wrap gap-2 text-[11px]"><span className="rounded-full bg-muted px-2 py-1 text-muted-foreground">{cardCategory === 'restaurant' ? 'Restaurante' : cardCategory === 'beach' ? 'Praia' : 'Experiência'}</span><span className="text-muted-foreground">Google {rating(card.activity.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}<span className="text-foreground">{brl(card.activity.estimatedCostBRL)}</span></div></div></button><div className="border-t border-border px-4 py-3"><Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-primary" onClick={() => onAdd({ kind: 'activity', activity: card.activity })}>➕ Adicionar à minha viagem</Button></div></article>;
+    const a = card.activity;
+    const social = scoreFor(a.id, a.rating, stats);
+    const cat = categoryOf(a);
+    const tone = cat === 'restaurant' ? 'food' : cat === 'beach' ? 'beach' : 'culture';
+    return <CardShell name={a.name} city={city} tone={tone} description={a.tips[0]} location={a.neighborhood} mapHref={mapsLink(a.id, a.name, city)} onOpen={() => onActivity(a)}
+      meta={<><span className="text-muted-foreground">Google {rating(a.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}<span className="text-foreground">{brl(a.estimatedCostBRL)}</span></>}
+      action={<Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-primary" onClick={() => onAdd({ kind: 'activity', activity: a })}>➕ Adicionar à minha viagem</Button>} />;
   }
   if (card.kind === 'hotel') {
-    const social = scoreFor(card.hotel.id, card.hotel.rating, stats);
-    return <article className="overflow-hidden rounded-lg border border-border bg-card"><button type="button" onClick={() => onHotel(card.hotel)} className="block w-full text-left"><ClaLazyImage name={card.hotel.name} city={city} tone="hotel" className="aspect-[16/9] overflow-hidden" /><div className="space-y-2 p-4"><h3 className="font-['Outfit'] font-semibold text-foreground">{card.hotel.name}</h3><p className="text-xs text-muted-foreground">{card.hotel.zone} · {TIER_LABEL[card.hotel.tier] ?? card.hotel.tier}</p><div className="flex flex-wrap gap-2 text-[11px]"><span className="text-muted-foreground">Google {rating(card.hotel.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}<span className="text-foreground">{card.hotel.priceRangeBRL}</span></div></div></button><div className="border-t border-border px-4 py-3"><Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-primary" onClick={() => onAdd({ kind: 'hotel', hotel: card.hotel })}>Usar este hotel</Button></div></article>;
+    const h = card.hotel;
+    const social = scoreFor(h.id, h.rating, stats);
+    return <CardShell name={h.name} city={city} tone="hotel" description={h.tips[0]} location={`${h.zone} · ${TIER_LABEL[h.tier] ?? h.tier}`} mapHref={mapsLink(h.id, h.name, city)} onOpen={() => onHotel(h)}
+      meta={<><span className="text-muted-foreground">Google {rating(h.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}<span className="text-foreground">{h.priceRangeBRL}</span></>}
+      action={<Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-primary" onClick={() => onAdd({ kind: 'hotel', hotel: h })}>Usar este hotel</Button>} />;
   }
-  if (card.kind === 'michelin') {
-    return <button type="button" onClick={() => onMichelin(card.restaurant)} className="overflow-hidden rounded-lg border border-border bg-card text-left transition-colors hover:border-primary/40"><ClaLazyImage name={card.restaurant.name} city={city} tone="food" className="aspect-[16/9] overflow-hidden" /><div className="space-y-2 p-4"><h3 className="font-['Outfit'] font-semibold text-foreground">{card.restaurant.name}</h3><p className="text-xs text-muted-foreground">{card.restaurant.neighborhood || 'Bairro não informado'} · {card.restaurant.cuisine}</p><div className="flex gap-2 text-[11px] text-amber-400"><span>{'⭐'.repeat(card.restaurant.stars)} Michelin</span><span className="text-muted-foreground">{card.restaurant.priceRange}</span></div></div></button>;
-  }
-  const social = scoreFor(card.activity.id, card.activity.rating, stats);
-  return <article className="overflow-hidden rounded-lg border border-border bg-card"><button type="button" onClick={() => onActivity(card.activity)} className="block w-full text-left"><ClaLazyImage name={card.activity.name} city={city} tone="tip" className="aspect-[16/9] overflow-hidden" /><div className="space-y-2 p-4"><p className="text-xs font-medium text-primary">Dica de {card.activity.name}</p><h3 className="font-['Outfit'] text-sm font-semibold leading-relaxed text-foreground">{card.tip}</h3><p className="text-xs text-muted-foreground">{card.activity.neighborhood}</p><div className="flex gap-2 text-[11px]"><span className="text-muted-foreground">Google {rating(card.activity.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}</div></div></button></article>;
+  const r = card.restaurant;
+  return <CardShell name={r.name} city={city} tone="food" description={r.cuisine} location={r.neighborhood || city} mapHref={mapsLink('', r.name, city)} onOpen={() => onMichelin(r)}
+    meta={<><span className="text-amber-400">{'⭐'.repeat(r.stars)} Michelin</span><span className="text-muted-foreground">{r.priceRange}</span></>} />;
 }
 
 function ItineraryCard({ itinerary, city, onOpen }: { itinerary: Destination; city: string; onOpen: () => void }) {

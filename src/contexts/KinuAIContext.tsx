@@ -1,3 +1,4 @@
+import { tipsForAgent } from '@/lib/claTips';
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from "react";
 import { KinuMessage, KinuTripContext, KinuInsight, EMERGENCY_KEYWORDS, ProposedAction, ProposedActionType, TripPhase, KinuTodayStop } from "@/types/kinuAI";
 import { curatedCoordOf, resolveHotelCoord } from "@/lib/routeCoords";
@@ -225,6 +226,9 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       const curatedCity = detectedCity ?? (hasActiveTrip ? null : stickyCuratedCityRef.current);
       const curatedCatalog = curatedCity ? buildCuratedCatalog(curatedCity) : null;
       const curatedHotelList = curatedCity ? buildCuratedHotels(curatedCity) : null;
+      // Dicas vivas do clã: cidade detectada ou da viagem ativa. Cache por sessão; nunca lança.
+      const tipsCity = curatedCity ?? detectCuratedCity(tripContext?.destination ?? '', tripContext?.destination);
+      const claTips = tipsCity ? (await tipsForAgent(tipsCity)).slice(0, 40) : [];
 
       // Build compact itineraryDays, cap total payload ~4000 chars
       let itineraryDays: Array<{ day: number; date: string; items: string[] }> | undefined;
@@ -268,6 +272,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
             ? { city: curatedCity, items: curatedCatalog, hotels: curatedHotelList ?? undefined }
             : undefined,
           itineraryDays,
+          claTips: claTips.length > 0 ? claTips : undefined,
         },
       });
 
