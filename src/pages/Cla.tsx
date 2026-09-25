@@ -38,23 +38,17 @@ import {
 } from '@/lib/cla';
 import type { TripActivity } from '@/types/trip';
 
-type CategoryKey = 'all' | 'itinerary' | 'restaurant' | 'hotel' | 'michelin' | 'experience' | 'beach' | 'tip';
+type CategoryKey = string; // 'all' | 'itinerary' | 'hotel' | 'tips' | id de prioridade do wizard
 type CatalogCard =
   | { kind: 'activity'; activity: SuggestedActivity }
   | { kind: 'hotel'; hotel: CuratedHotel }
-  | { kind: 'michelin'; restaurant: MichelinRestaurant }
-  | { kind: 'tip'; id: string; tip: string; activity: SuggestedActivity };
+  | { kind: 'michelin'; restaurant: MichelinRestaurant };
 
-const CATEGORY_CHIPS: { value: CategoryKey; label: string }[] = [
-  { value: 'all', label: 'Todos' },
-  { value: 'itinerary', label: 'Roteiros' },
-  { value: 'restaurant', label: 'Restaurantes' },
-  { value: 'hotel', label: 'Hotéis' },
-  { value: 'michelin', label: 'Michelin' },
-  { value: 'experience', label: 'Experiências' },
-  { value: 'beach', label: 'Praias' },
-  { value: 'tip', label: 'Dicas' },
-];
+function mapsLink(id: string, name: string, city: string): string {
+  const c = CURATED_COORDS[id];
+  const q = c ? `${c.lat},${c.lng}` : `${name}, ${city}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
 
 const TRAVEL_STYLES = [
   { value: 'all', label: 'Todos os Estilos' },
