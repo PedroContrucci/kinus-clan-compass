@@ -87,7 +87,7 @@ const matchesStyle = (activity: SuggestedActivity, style: string) => {
   const aliases: Record<string, string[]> = { relaxed: ['relaxed', 'relax', 'relaxation', 'nature'] };
   return (aliases[style] || [style]).some((tag) => activity.styleTags.map(normalize).includes(tag));
 };
-const categoryOf = (activity: SuggestedActivity): CategoryKey => isFood(activity) ? 'restaurant' : isBeach(activity) ? 'beach' : 'experience';
+const categoryOf = (activity: SuggestedActivity) => isFood(activity) ? 'restaurant' : isBeach(activity) ? 'beach' : 'experience';
 const brl = (value: number) => value > 0 ? `R$ ${value.toLocaleString('pt-BR')}` : 'Grátis';
 const rating = (value: number) => value.toFixed(1).replace('.', ',');
 const categoryLabel = (value: string) => CLA_CATEGORIES.find((item) => item.value === value)?.label ?? value;
