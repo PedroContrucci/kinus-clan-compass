@@ -74,6 +74,8 @@ ESCOPO DA CONVERSA: Se houver uma viagem ativa, ela é CONTEXTO para enriquecer 
 
 ⚠️ MODO DURANTE: quando o <trip_context> trouxer FASE DA VIAGEM: DURANTE, você deixa de ser planejador e vira companhia de rua. Responda PRIMEIRO sobre HOJE — "o que vem agora", "o que está perto" —, usando o bloco PLANO DE HOJE e o HOTEL como referência de onde a pessoa está. Alternativas saem EXCLUSIVAMENTE do CATÁLOGO CURADO da mesma cidade (a REGRA ABSOLUTA DE VERACIDADE continua valendo integralmente: nada de lugar inventado) e, quando houver coordenadas, prefira as mais próximas da parada atual ou da próxima. Chuva, fechamento, cansaço ou atraso: proponha UMA troca concreta para o horário afetado com a ferramenta trocar_atividade, usando o dia correspondente ao currentDayIndex informado. NÃO replaneje outros dias a menos que peçam. Respostas CURTAS — é celular, na rua, andando — e no máximo UMA pergunta, como sempre.
 
+⚠️ REGRA DAS DICAS DO CLÃ: o bloco 🤝 DICAS VIVAS DO CLÃ traz fatos confirmados pela comunidade (quem viajou), não pela curadoria. Pode citá-los com o frescor informado ("confirmado há 2 semanas pelo clã"), sobretudo em preço e horário, mas NUNCA os apresente como verificação do catálogo KINU. Nomes de lugares continuam valendo só do CATÁLOGO CURADO.
+
 ⚠️ REGRA DE TRANSPARÊNCIA DE CONTEXTO: o bloco <trip_context> vem do APP, não da boca do usuário — ele pode nunca ter dito nada daquilo, e o dado pode estar desatualizado. Na PRIMEIRA vez que você usar um dado do <trip_context> numa resposta (destino, datas, viajantes, orçamento, estilo, hotel, interesses), declare de onde veio e abra a porta para correção, numa frase curta e leve: "considerando os 2 viajantes e o orçamento de R$ 8 mil que estão na sua viagem — me corrige se mudou". Declarado uma vez na conversa, pode usar à vontade sem repetir o aviso. É PROIBIDO apresentar dado do contexto como se o usuário tivesse dito ("você me falou que...", "como você disse..."), e é PROIBIDO afirmar dado que não esteja NEM no <trip_context> NEM na conversa.
 
 CIDADE DE PARTIDA: você NÃO recebe a cidade de origem do usuário — ela não existe no <trip_context> nem em nenhum outro lugar. NUNCA afirme, assuma ou insinue de onde ele sai: nada de "saindo de São Paulo", nada de preço de voo "de SP", nada de duração de voo calculada a partir de uma origem que você escolheu. Se a origem importar para responder, PERGUNTE — "de qual cidade você sairia?" — e essa pergunta é a sua ÚNICA pergunta da mensagem, conforme a REGRA ABSOLUTA E INEGOCIÁVEL DE CONVERSA.
@@ -327,6 +329,7 @@ interface ChatMessage {
 
 interface RequestBody {
   message: string;
+  claTips?: unknown;
   context?: {
     destination?: string;
     country?: string;
@@ -754,6 +757,33 @@ serve(async (req) => {
 
           catalogBlock = renderCuratedCatalog(city, items, hotels);
         }
+      }
+    }
+
+    // 🤝 Dicas vivas do clã — anônimas, confirmadas pela comunidade (máx 40).
+    if (catalogBlock && Array.isArray(body.claTips)) {
+      const KINDS = new Set(["levar", "lembrar", "custo", "horario", "familia", "geral"]);
+      const nowMs = Date.now();
+      const tips = (body.claTips as unknown[])
+        .slice(0, 40)
+        .filter((t): t is Record<string, unknown> => typeof t === "object" && t !== null)
+        .map((t) => {
+          const text = sanitizeText(t.text, 280);
+          const kind = typeof t.kind === "string" && KINDS.has(t.kind) ? t.kind : "geral";
+          const scope = t.scope === "place" ? "place" : "city";
+          const activityId = sanitizeText(t.activity_id, 80);
+          const confirmations = typeof t.confirmations === "number" && t.confirmations > 0 ? Math.floor(t.confirmations) : 0;
+          const last = typeof t.last_confirmed_at === "string" ? Date.parse(t.last_confirmed_at) : NaN;
+          const days = Number.isFinite(last) ? Math.max(0, Math.floor((nowMs - last) / 86400000)) : null;
+          const fresh = confirmations > 0 && days !== null
+            ? `confirmada há ${days} dia${days === 1 ? "" : "s"} por ${confirmations}`
+            : "ainda sem confirmação";
+          return { text, kind, scope, activityId, fresh };
+        })
+        .filter((t) => t.text.length >= 10);
+      if (tips.length > 0) {
+        const lines = tips.map((t) => `- [${t.kind}${t.scope === "place" && t.activityId ? ` · lugar ${t.activityId}` : " · cidade"}] ${t.text} (${t.fresh})`);
+        catalogBlock += `\n\n🤝 DICAS VIVAS DO CLÃ (confirmadas pela comunidade — cite a data quando falar de preço/horário)\n${lines.join("\n")}`;
       }
     }
 
