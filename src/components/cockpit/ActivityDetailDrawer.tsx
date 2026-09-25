@@ -23,6 +23,8 @@ interface ActivityDetailDrawerProps {
   usedActivityNames?: string[];
   catalogImageQuery?: string;
   onAddToTrip?: () => void;
+  /** Dicas vivas do clã para este lugar, renderizadas sob as dicas do catálogo. */
+  claTipsSlot?: React.ReactNode;
 }
 
 function normalize(s: string): string {
