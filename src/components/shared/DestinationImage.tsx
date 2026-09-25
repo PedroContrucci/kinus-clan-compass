@@ -3,6 +3,27 @@ import { DESTINATION_PHOTO_HINTS } from "@/hooks/useUnsplash";
 
 const cache = new Map<string, string>();
 
+function sessionKey(query: string): string {
+  return `kinu:destination-image:${query.toLowerCase()}`;
+}
+
+function readSession(query: string): string | null {
+  try {
+    const value = window.sessionStorage.getItem(sessionKey(query));
+    return isUsableUrl(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSession(query: string, url: string): void {
+  try {
+    window.sessionStorage.setItem(sessionKey(query), url);
+  } catch {
+    // A imagem continua disponível no cache em memória quando o storage está bloqueado.
+  }
+}
+
 function isUsableUrl(value: unknown): value is string {
   if (typeof value !== "string") return false;
   const trimmed = value.trim();
@@ -69,8 +90,9 @@ export function DestinationImage({
     else if (!storedUrl.trim()) logOnce("cover field is empty string");
     else logOnce(`cover field is not an http(s) URL: ${storedUrl.slice(0, 60)}`);
 
-    const cached = cache.get(effectiveQuery);
+    const cached = cache.get(effectiveQuery) || readSession(effectiveQuery);
     if (cached) {
+      cache.set(effectiveQuery, cached);
       setSrc(cached);
       setLoading(false);
       onResolved?.(cached);
@@ -124,6 +146,7 @@ export function DestinationImage({
           if (cancelled) return;
           cache.set(effectiveQuery, photoUrl);
           cache.set(term, photoUrl);
+          writeSession(effectiveQuery, photoUrl);
           setSrc(photoUrl);
           onResolved?.(photoUrl);
           return;
@@ -150,6 +173,7 @@ export function DestinationImage({
     <img
       src={src}
       alt={alt}
+      loading="lazy"
       className={className}
       onError={() => {
         cache.delete(effectiveQuery);

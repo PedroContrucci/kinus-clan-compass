@@ -6,6 +6,8 @@ import { destinationActivities, type SuggestedActivity } from '@/data/destinatio
 import type { TripActivity } from '@/types/trip';
 import { ClaProof } from '@/components/cla/ClaProof';
 import { catalogIdOf } from '@/lib/localAchievements';
+import { DestinationImage } from '@/components/shared/DestinationImage';
+import { Button } from '@/components/ui/button';
 
 interface ActivityDetailDrawerProps {
   activity: TripActivity | null;
@@ -19,6 +21,8 @@ interface ActivityDetailDrawerProps {
   onRemoveActivity?: (activityId: string) => void;
   usedActivityIds?: string[];
   usedActivityNames?: string[];
+  catalogImageQuery?: string;
+  onAddToTrip?: () => void;
 }
 
 function normalize(s: string): string {
@@ -76,6 +80,8 @@ export const ActivityDetailDrawer = ({
   onRemoveActivity,
   usedActivityIds = [],
   usedActivityNames = [],
+  catalogImageQuery,
+  onAddToTrip,
 }: ActivityDetailDrawerProps) => {
   const { searchPlace } = usePlaceDetails();
   const [place, setPlace] = useState<PlaceDetails | null>(null);
@@ -185,7 +191,14 @@ export const ActivityDetailDrawer = ({
         </DrawerHeader>
 
         <div className="px-4 pb-6 space-y-4 overflow-y-auto">
-          {place?.photoUrl && (
+          {catalogImageQuery ? (
+            <DestinationImage
+              query={catalogImageQuery}
+              resetKey={`${destination}:${catalogImageQuery}`}
+              alt={activity.name}
+              className="h-48 w-full rounded-xl object-cover"
+            />
+          ) : place?.photoUrl && (
             <img
               src={place.photoUrl}
               alt={place.name || activity.name}
@@ -196,6 +209,14 @@ export const ActivityDetailDrawer = ({
 
           {activity.description && (
             <p className="text-sm text-muted-foreground">{activity.description}</p>
+          )}
+
+          {curated && curated.rating > 0 && (
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <span className="flex items-center gap-1 font-medium text-amber-400">
+                <Star size={14} className="fill-amber-400" /> Google {curated.rating.toFixed(1).replace('.', ',')}
+              </span>
+            </div>
           )}
 
           {loading && (
@@ -282,6 +303,21 @@ export const ActivityDetailDrawer = ({
                 city={destination}
               />
             </div>
+          )}
+
+          {!skip && (
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${cleanName}, ${destination}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/15 py-3 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25 font-['Outfit']"
+            >
+              <MapPin size={16} /> Ver no mapa
+            </a>
+          )}
+
+          {onAddToTrip && (
+            <Button className="w-full" onClick={onAddToTrip}>➕ Adicionar à minha viagem</Button>
           )}
 
           {onFocusOnMap && !skip && (

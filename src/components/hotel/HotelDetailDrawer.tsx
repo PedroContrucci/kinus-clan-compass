@@ -11,6 +11,8 @@
 import { Hotel, MapPin, Star, Check, X } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
 import type { CuratedHotel } from '@/data/curatedHotels';
+import { DestinationImage } from '@/components/shared/DestinationImage';
+import { ClaProof } from '@/components/cla/ClaProof';
 import {
   parsePriceRangeBRL,
   hotelMapsUrl,
@@ -29,6 +31,7 @@ export interface HotelDetailContentProps {
   /** É o hotel da viagem? Então o botão de escolher não tem o que fazer. */
   isCurrent?: boolean;
   onSelect?: (hotel: CuratedHotel) => void;
+  showPhoto?: boolean;
 }
 
 export const HotelDetailContent = ({
@@ -37,12 +40,21 @@ export const HotelDetailContent = ({
   reasons = [],
   isCurrent = false,
   onSelect,
+  showPhoto = false,
 }: HotelDetailContentProps) => {
   const price = parsePriceRangeBRL(hotel.priceRangeBRL);
   const personas = (hotel.personaTags ?? []).map((p) => PERSONA_LABEL[p] ?? p).join(' · ');
 
   return (
     <div className="px-4 pb-6 space-y-4">
+      {showPhoto && (
+        <DestinationImage
+          query={`${hotel.name} ${city}`}
+          resetKey={`${city}:${hotel.id}`}
+          alt={hotel.name}
+          className="h-48 w-full rounded-xl object-cover"
+        />
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
           {TIER_LABEL[hotel.tier] ?? hotel.tier}
@@ -118,6 +130,8 @@ export const HotelDetailContent = ({
         <MapPin size={16} /> Ver {hotel.zone || city} no mapa
       </a>
 
+      {showPhoto && <ClaProof activityId={hotel.id} city={city} />}
+
       {onSelect && (
         <button
           type="button"
@@ -144,6 +158,7 @@ export interface HotelDetailDrawerProps {
   reasons?: HotelReason[];
   isCurrent?: boolean;
   onSelect?: (hotel: CuratedHotel) => void;
+  showPhoto?: boolean;
 }
 
 export const HotelDetailDrawer = ({
@@ -154,6 +169,7 @@ export const HotelDetailDrawer = ({
   reasons,
   isCurrent,
   onSelect,
+  showPhoto,
 }: HotelDetailDrawerProps) => {
   if (!hotel) return null;
 
@@ -184,6 +200,7 @@ export const HotelDetailDrawer = ({
             reasons={reasons}
             isCurrent={isCurrent}
             onSelect={onSelect}
+            showPhoto={showPhoto}
           />
         </div>
       </DrawerContent>
