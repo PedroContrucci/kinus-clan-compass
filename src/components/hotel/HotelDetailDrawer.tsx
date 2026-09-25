@@ -130,7 +130,7 @@ export const HotelDetailContent = ({
         <MapPin size={16} /> Ver {hotel.zone || city} no mapa
       </a>
 
-      <ClaProof activityId={hotel.id} city={city} />
+      {showPhoto && <ClaProof activityId={hotel.id} city={city} />}
 
       {onSelect && (
         <button
