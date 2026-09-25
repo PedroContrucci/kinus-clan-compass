@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Star, Clock, MapPin, X, RefreshCw, Timer, Trash2, Pencil } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
 import { usePlaceDetails, PlaceDetails } from '@/hooks/usePlaceDetails';
@@ -84,6 +84,7 @@ export const ActivityDetailDrawer = ({
   usedActivityNames = [],
   catalogImageQuery,
   onAddToTrip,
+  claTipsSlot,
 }: ActivityDetailDrawerProps) => {
   const { searchPlace } = usePlaceDetails();
   const [place, setPlace] = useState<PlaceDetails | null>(null);
@@ -281,6 +282,9 @@ export const ActivityDetailDrawer = ({
               </ul>
             </div>
           )}
+
+          {claTipsSlot}
+
 
           <div className="pt-2 border-t border-border">
             <p className="text-xs font-semibold text-foreground font-['Outfit'] mb-1">Custo</p>
