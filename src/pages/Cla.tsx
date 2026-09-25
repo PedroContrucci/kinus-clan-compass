@@ -158,6 +158,11 @@ const Cla = () => {
   const [selectedHotel, setSelectedHotel] = useState<CuratedHotel | null>(null);
   const [selectedMichelin, setSelectedMichelin] = useState<MichelinRestaurant | null>(null);
   const [selectedItinerary, setSelectedItinerary] = useState<Destination | null>(null);
+  const [onlyMichelin, setOnlyMichelin] = useState(false);
+  const [clanTips, setClanTips] = useState<ClaTip[]>([]);
+  const [tipVotes, setTipVotes] = useState<Map<string, TipVote>>(new Map());
+  const [tipDraft, setTipDraft] = useState<TipDraft | null>(null);
+  const [tipSheetOpen, setTipSheetOpen] = useState(false);
   const [addTarget, setAddTarget] = useState<AddTarget | null>(null);
 
   useEffect(() => {
