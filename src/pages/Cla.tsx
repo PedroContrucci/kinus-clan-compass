@@ -37,6 +37,10 @@ import {
   type SharedTripPublic,
 } from '@/lib/cla';
 import type { TripActivity } from '@/types/trip';
+import { CURATED_COORDS } from '@/data/generated/coords';
+import { PRIORITY_CHIPS, matchesPriority } from '@/lib/claChips';
+import { myTipVotes, tipsPublic, type ClaTip, type TipVote } from '@/lib/claTips';
+import { ClaTipCard, ClaTipSheet, type TipDraft } from '@/components/cla/ClaTips';
 
 type CategoryKey = string; // 'all' | 'itinerary' | 'hotel' | 'tips' | id de prioridade do wizard
 type CatalogCard =
