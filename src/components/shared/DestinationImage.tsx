@@ -33,8 +33,12 @@ function isUsableUrl(value: unknown): value is string {
 
 interface DestinationImageProps {
   query: string;
+  /** Consultas adicionais, tentadas em ordem depois da consulta principal. */
+  fallbackQueries?: string[];
   destination?: string;
   className?: string;
+  /** Aparência mantida enquanto carrega ou quando nenhuma consulta retorna foto. */
+  fallbackClassName?: string;
   alt?: string;
   /** Identidade da entidade dona da imagem (ex.: trip.id). Troca de id = reset do estado. */
   resetKey?: string;
@@ -46,8 +50,10 @@ interface DestinationImageProps {
 
 export function DestinationImage({
   query,
+  fallbackQueries = [],
   destination,
   className = "",
+  fallbackClassName = "bg-gradient-to-br from-[#0f172a] to-[#1e293b]",
   alt = "",
   resetKey,
   storedUrl,
@@ -55,6 +61,7 @@ export function DestinationImage({
 }: DestinationImageProps) {
   const destKey = (destination || "").trim().toLowerCase();
   const effectiveQuery = DESTINATION_PHOTO_HINTS[destKey] || query;
+  const fallbackQueryKey = fallbackQueries.join("\u0000");
 
   const [src, setSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,6 +82,17 @@ export function DestinationImage({
 
   useEffect(() => {
     const usableStored = !ignoreStored && isUsableUrl(storedUrl);
+    const configuredFallbacks = fallbackQueryKey ? fallbackQueryKey.split("\u0000") : [];
+    const candidates = Array.from(
+      new Set(
+        (configuredFallbacks.length > 0
+          ? [effectiveQuery, query, ...configuredFallbacks]
+          : [effectiveQuery, query, destination?.trim(), `${destination?.trim() || query} city`]
+        )
+          .map((candidate) => (candidate || "").trim())
+          .filter(Boolean),
+      ),
+    );
 
     if (usableStored) {
       setSrc((storedUrl as string).trim());
@@ -90,7 +108,9 @@ export function DestinationImage({
     else if (!storedUrl.trim()) logOnce("cover field is empty string");
     else logOnce(`cover field is not an http(s) URL: ${storedUrl.slice(0, 60)}`);
 
-    const cached = cache.get(effectiveQuery) || readSession(effectiveQuery);
+    const cached = candidates
+      .map((candidate) => cache.get(candidate) || readSession(candidate))
+      .find((candidate): candidate is string => Boolean(candidate));
     if (cached) {
       cache.set(effectiveQuery, cached);
       setSrc(cached);
@@ -108,14 +128,6 @@ export function DestinationImage({
     // Frases muito específicas (ex.: "Fortaleza Ceara Beira Mar beach") voltam ZERO
     // resultados do Unsplash — era esse o hero vazio. Tentamos do mais específico
     // ao mais simples até vir foto.
-    const candidates = Array.from(
-      new Set(
-        [effectiveQuery, query, destination?.trim(), `${destination?.trim() || query} city`]
-          .map((c) => (c || "").trim())
-          .filter(Boolean),
-      ),
-    );
-
     async function searchOnce(term: string): Promise<string | null> {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/unsplash?query=${encodeURIComponent(term)}&per_page=1&orientation=landscape`;
       const res = await fetch(url, {
@@ -147,6 +159,7 @@ export function DestinationImage({
           cache.set(effectiveQuery, photoUrl);
           cache.set(term, photoUrl);
           writeSession(effectiveQuery, photoUrl);
+           writeSession(term, photoUrl);
           setSrc(photoUrl);
           onResolved?.(photoUrl);
           return;
@@ -163,10 +176,10 @@ export function DestinationImage({
     };
     // onResolved é fire-and-forget; não entra nas deps para não refazer o fetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [effectiveQuery, storedUrl, resetKey, ignoreStored]);
+  }, [effectiveQuery, storedUrl, resetKey, ignoreStored, fallbackQueryKey]);
 
   if (loading || !src) {
-    return <div className={`bg-gradient-to-br from-[#0f172a] to-[#1e293b] ${className}`} />;
+    return <div className={`${fallbackClassName} ${className}`} />;
   }
 
   return (

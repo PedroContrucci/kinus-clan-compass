@@ -88,6 +88,17 @@ const matchesStyle = (activity: SuggestedActivity, style: string) => {
   return (aliases[style] || [style]).some((tag) => activity.styleTags.map(normalize).includes(tag));
 };
 const categoryOf = (activity: SuggestedActivity) => isFood(activity) ? 'restaurant' : isBeach(activity) ? 'beach' : 'experience';
+const photoKeyword = (activity: SuggestedActivity): string => {
+  const searchable = normalize([activity.name, activity.category, ...activity.styleTags].join(' '));
+  if (searchable.includes('sorvet')) return 'sorveteria';
+  if (isBeach(activity)) return 'praia';
+  if (/museu|museum/.test(searchable)) return 'museu';
+  if (isFood(activity) || searchable.includes('gastronom')) return 'restaurante';
+  if (/nature|natureza|aventura|trilha|parque/.test(searchable)) return 'natureza';
+  if (/night|noite/.test(searchable)) return 'vida noturna';
+  if (/arte|cultur|historia|histor/.test(searchable)) return 'museu';
+  return 'experiência';
+};
 const brl = (value: number) => value > 0 ? `R$ ${value.toLocaleString('pt-BR')}` : 'Grátis';
 const rating = (value: number) => value.toFixed(1).replace('.', ',');
 const categoryLabel = (value: string) => CLA_CATEGORIES.find((item) => item.value === value)?.label ?? value;
@@ -468,14 +479,14 @@ function cardKey(card: CatalogCard): string {
 }
 
 /** Corpo comum: foto, nome, descrição de uma linha, 📍 local, notas e ação. */
-function CardShell({ name, city, tone, description, location, mapHref, meta, onOpen, action }: {
-  name: string; city: string; tone: string; description?: string; location: string; mapHref: string;
+function CardShell({ name, city, categoryKeyword, tone, description, location, mapHref, meta, onOpen, action }: {
+  name: string; city: string; categoryKeyword: string; tone: string; description?: string; location: string; mapHref: string;
   meta: React.ReactNode; onOpen: () => void; action?: React.ReactNode;
 }) {
   return (
     <article className="flex flex-col overflow-hidden rounded-lg border border-border bg-card">
       <button type="button" onClick={onOpen} className="block w-full text-left">
-        <ClaLazyImage name={name} city={city} tone={tone as never} className="aspect-[16/9] overflow-hidden" />
+        <ClaLazyImage name={name} city={city} categoryKeyword={categoryKeyword} tone={tone as never} className="aspect-[16/9] overflow-hidden" />
       </button>
       <div className="flex-1 space-y-2 p-4">
         <button type="button" onClick={onOpen} className="block w-full text-left">
@@ -496,24 +507,24 @@ function CatalogCardView({ card, city, stats, onActivity, onHotel, onMichelin, o
     const social = scoreFor(a.id, a.rating, stats);
     const cat = categoryOf(a);
     const tone = cat === 'restaurant' ? 'food' : cat === 'beach' ? 'beach' : 'culture';
-    return <CardShell name={a.name} city={city} tone={tone} description={a.tips[0]} location={a.neighborhood} mapHref={mapsLink(a.id, a.name, city)} onOpen={() => onActivity(a)}
+    return <CardShell name={a.name} city={city} categoryKeyword={photoKeyword(a)} tone={tone} description={a.tips[0]} location={a.neighborhood} mapHref={mapsLink(a.id, a.name, city)} onOpen={() => onActivity(a)}
       meta={<><span className="text-muted-foreground">Google {rating(a.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}<span className="text-foreground">{brl(a.estimatedCostBRL)}</span></>}
       action={<Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-primary" onClick={() => onAdd({ kind: 'activity', activity: a })}>➕ Adicionar à minha viagem</Button>} />;
   }
   if (card.kind === 'hotel') {
     const h = card.hotel;
     const social = scoreFor(h.id, h.rating, stats);
-    return <CardShell name={h.name} city={city} tone="hotel" description={h.tips[0]} location={`${h.zone} · ${TIER_LABEL[h.tier] ?? h.tier}`} mapHref={mapsLink(h.id, h.name, city)} onOpen={() => onHotel(h)}
+    return <CardShell name={h.name} city={city} categoryKeyword="hotel" tone="hotel" description={h.tips[0]} location={`${h.zone} · ${TIER_LABEL[h.tier] ?? h.tier}`} mapHref={mapsLink(h.id, h.name, city)} onOpen={() => onHotel(h)}
       meta={<><span className="text-muted-foreground">Google {rating(h.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}<span className="text-foreground">{h.priceRangeBRL}</span></>}
       action={<Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-primary" onClick={() => onAdd({ kind: 'hotel', hotel: h })}>Usar este hotel</Button>} />;
   }
   const r = card.restaurant;
-  return <CardShell name={r.name} city={city} tone="food" description={r.cuisine} location={r.neighborhood || city} mapHref={mapsLink('', r.name, city)} onOpen={() => onMichelin(r)}
+  return <CardShell name={r.name} city={city} categoryKeyword="restaurante" tone="food" description={r.cuisine} location={r.neighborhood || city} mapHref={mapsLink('', r.name, city)} onOpen={() => onMichelin(r)}
     meta={<><span className="text-amber-400">{'⭐'.repeat(r.stars)} Michelin</span><span className="text-muted-foreground">{r.priceRange}</span></>} />;
 }
 
 function ItineraryCard({ itinerary, city, onOpen }: { itinerary: Destination; city: string; onOpen: () => void }) {
-  return <button type="button" onClick={onOpen} className="grid w-full overflow-hidden rounded-lg border border-border bg-card text-left md:grid-cols-[220px_1fr]"><ClaLazyImage name={`${city} roteiro`} city={city} className="aspect-[16/9] overflow-hidden md:aspect-auto" /><div className="p-4"><h3 className="font-['Outfit'] font-semibold text-foreground">Roteiro de {itinerary.duration} dias em {city}</h3><p className="mt-1 text-xs text-muted-foreground">{itinerary.highlight}</p><p className="mt-3 text-xs text-primary">Ver roteiro</p></div></button>;
+  return <button type="button" onClick={onOpen} className="grid w-full overflow-hidden rounded-lg border border-border bg-card text-left md:grid-cols-[220px_1fr]"><ClaLazyImage name={`${city} roteiro`} city={city} categoryKeyword="turismo" className="aspect-[16/9] overflow-hidden md:aspect-auto" /><div className="p-4"><h3 className="font-['Outfit'] font-semibold text-foreground">Roteiro de {itinerary.duration} dias em {city}</h3><p className="mt-1 text-xs text-muted-foreground">{itinerary.highlight}</p><p className="mt-3 text-xs text-primary">Ver roteiro</p></div></button>;
 }
 
 function SharedTripCard({ trip, open, onToggle, catalog, onAdd }: { trip: SharedTripPublic; open: boolean; onToggle: () => void; catalog: SuggestedActivity[]; onAdd: (target: AddTarget) => void }) {
