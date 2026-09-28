@@ -82,6 +82,17 @@ export function DestinationImage({
 
   useEffect(() => {
     const usableStored = !ignoreStored && isUsableUrl(storedUrl);
+    const configuredFallbacks = fallbackQueryKey ? fallbackQueryKey.split("\u0000") : [];
+    const candidates = Array.from(
+      new Set(
+        (configuredFallbacks.length > 0
+          ? [effectiveQuery, query, ...configuredFallbacks]
+          : [effectiveQuery, query, destination?.trim(), `${destination?.trim() || query} city`]
+        )
+          .map((candidate) => (candidate || "").trim())
+          .filter(Boolean),
+      ),
+    );
 
     if (usableStored) {
       setSrc((storedUrl as string).trim());
@@ -97,7 +108,9 @@ export function DestinationImage({
     else if (!storedUrl.trim()) logOnce("cover field is empty string");
     else logOnce(`cover field is not an http(s) URL: ${storedUrl.slice(0, 60)}`);
 
-    const cached = cache.get(effectiveQuery) || readSession(effectiveQuery);
+    const cached = candidates
+      .map((candidate) => cache.get(candidate) || readSession(candidate))
+      .find((candidate): candidate is string => Boolean(candidate));
     if (cached) {
       cache.set(effectiveQuery, cached);
       setSrc(cached);
@@ -115,14 +128,6 @@ export function DestinationImage({
     // Frases muito específicas (ex.: "Fortaleza Ceara Beira Mar beach") voltam ZERO
     // resultados do Unsplash — era esse o hero vazio. Tentamos do mais específico
     // ao mais simples até vir foto.
-    const candidates = Array.from(
-      new Set(
-        [effectiveQuery, query, ...fallbackQueryKey.split("\u0000"), destination?.trim(), `${destination?.trim() || query} city`]
-          .map((c) => (c || "").trim())
-          .filter(Boolean),
-      ),
-    );
-
     async function searchOnce(term: string): Promise<string | null> {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/unsplash?query=${encodeURIComponent(term)}&per_page=1&orientation=landscape`;
       const res = await fetch(url, {
@@ -154,6 +159,7 @@ export function DestinationImage({
           cache.set(effectiveQuery, photoUrl);
           cache.set(term, photoUrl);
           writeSession(effectiveQuery, photoUrl);
+           writeSession(term, photoUrl);
           setSrc(photoUrl);
           onResolved?.(photoUrl);
           return;
