@@ -61,6 +61,7 @@ export function DestinationImage({
 }: DestinationImageProps) {
   const destKey = (destination || "").trim().toLowerCase();
   const effectiveQuery = DESTINATION_PHOTO_HINTS[destKey] || query;
+  const fallbackQueryKey = fallbackQueries.join("\u0000");
 
   const [src, setSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -116,7 +117,7 @@ export function DestinationImage({
     // ao mais simples até vir foto.
     const candidates = Array.from(
       new Set(
-        [effectiveQuery, query, ...fallbackQueries, destination?.trim(), `${destination?.trim() || query} city`]
+        [effectiveQuery, query, ...fallbackQueryKey.split("\u0000"), destination?.trim(), `${destination?.trim() || query} city`]
           .map((c) => (c || "").trim())
           .filter(Boolean),
       ),
@@ -169,7 +170,7 @@ export function DestinationImage({
     };
     // onResolved é fire-and-forget; não entra nas deps para não refazer o fetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [effectiveQuery, storedUrl, resetKey, ignoreStored, fallbackQueries]);
+  }, [effectiveQuery, storedUrl, resetKey, ignoreStored, fallbackQueryKey]);
 
   if (loading || !src) {
     return <div className={`${fallbackClassName} ${className}`} />;
