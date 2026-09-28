@@ -33,8 +33,12 @@ function isUsableUrl(value: unknown): value is string {
 
 interface DestinationImageProps {
   query: string;
+  /** Consultas adicionais, tentadas em ordem depois da consulta principal. */
+  fallbackQueries?: string[];
   destination?: string;
   className?: string;
+  /** Aparência mantida enquanto carrega ou quando nenhuma consulta retorna foto. */
+  fallbackClassName?: string;
   alt?: string;
   /** Identidade da entidade dona da imagem (ex.: trip.id). Troca de id = reset do estado. */
   resetKey?: string;
@@ -46,8 +50,10 @@ interface DestinationImageProps {
 
 export function DestinationImage({
   query,
+  fallbackQueries = [],
   destination,
   className = "",
+  fallbackClassName = "bg-gradient-to-br from-[#0f172a] to-[#1e293b]",
   alt = "",
   resetKey,
   storedUrl,
@@ -110,7 +116,7 @@ export function DestinationImage({
     // ao mais simples até vir foto.
     const candidates = Array.from(
       new Set(
-        [effectiveQuery, query, destination?.trim(), `${destination?.trim() || query} city`]
+        [effectiveQuery, query, ...fallbackQueries, destination?.trim(), `${destination?.trim() || query} city`]
           .map((c) => (c || "").trim())
           .filter(Boolean),
       ),
@@ -163,10 +169,10 @@ export function DestinationImage({
     };
     // onResolved é fire-and-forget; não entra nas deps para não refazer o fetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [effectiveQuery, storedUrl, resetKey, ignoreStored]);
+  }, [effectiveQuery, storedUrl, resetKey, ignoreStored, fallbackQueries]);
 
   if (loading || !src) {
-    return <div className={`bg-gradient-to-br from-[#0f172a] to-[#1e293b] ${className}`} />;
+    return <div className={`${fallbackClassName} ${className}`} />;
   }
 
   return (

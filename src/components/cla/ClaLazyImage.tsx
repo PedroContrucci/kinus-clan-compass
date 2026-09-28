@@ -4,6 +4,7 @@ import { DestinationImage } from '@/components/shared/DestinationImage';
 interface ClaLazyImageProps {
   name: string;
   city: string;
+  categoryKeyword?: string;
   className?: string;
   tone?: 'food' | 'hotel' | 'culture' | 'beach' | 'tip';
 }
@@ -16,7 +17,7 @@ const TONE_CLASS: Record<NonNullable<ClaLazyImageProps['tone']>, string> = {
   tip: 'from-emerald-500/25 via-card to-amber-500/15',
 };
 
-export function ClaLazyImage({ name, city, className = '', tone = 'culture' }: ClaLazyImageProps) {
+export function ClaLazyImage({ name, city, categoryKeyword, className = '', tone = 'culture' }: ClaLazyImageProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -40,9 +41,11 @@ export function ClaLazyImage({ name, city, className = '', tone = 'culture' }: C
       {visible && (
         <DestinationImage
           query={`${name} ${city}`}
+          fallbackQueries={categoryKeyword ? [`${categoryKeyword} ${city}`, city] : [city]}
           resetKey={`${city}:${name}`}
           alt={`${name}, ${city}`}
           className="h-full w-full object-cover"
+          fallbackClassName="bg-transparent"
         />
       )}
     </div>
