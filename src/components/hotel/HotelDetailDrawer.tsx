@@ -11,6 +11,7 @@
 import { Hotel, MapPin, Star, Check, X } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
 import type { CuratedHotel } from '@/data/curatedHotels';
+import { PlacePhoto, PlacePhotoCredit } from '@/components/shared/PlacePhoto';
 import { DestinationImage } from '@/components/shared/DestinationImage';
 import { ClaProof } from '@/components/cla/ClaProof';
 import {
@@ -48,12 +49,24 @@ export const HotelDetailContent = ({
   return (
     <div className="px-4 pb-6 space-y-4">
       {showPhoto && (
-        <DestinationImage
-          query={`${hotel.name} ${city}`}
-          resetKey={`${city}:${hotel.id}`}
-          alt={hotel.name}
-          className="h-48 w-full rounded-xl object-cover"
-        />
+        <div className="space-y-1">
+          <PlacePhoto
+            id={hotel.id}
+            name={hotel.name}
+            city={city}
+            tone="hotel"
+            className="h-48 w-full overflow-hidden rounded-xl"
+            fallback={
+              <DestinationImage
+                query={`${hotel.name} ${city}`}
+                resetKey={`${city}:${hotel.id}`}
+                alt={hotel.name}
+                className="h-48 w-full rounded-xl object-cover"
+              />
+            }
+          />
+          <PlacePhotoCredit id={hotel.id} />
+        </div>
       )}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300">

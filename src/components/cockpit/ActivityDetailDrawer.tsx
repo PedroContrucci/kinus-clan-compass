@@ -6,6 +6,7 @@ import { destinationActivities, type SuggestedActivity } from '@/data/destinatio
 import type { TripActivity } from '@/types/trip';
 import { ClaProof } from '@/components/cla/ClaProof';
 import { catalogIdOf } from '@/lib/localAchievements';
+import { PlacePhoto, PlacePhotoCredit } from '@/components/shared/PlacePhoto';
 import { DestinationImage } from '@/components/shared/DestinationImage';
 import { Button } from '@/components/ui/button';
 
@@ -194,7 +195,14 @@ export const ActivityDetailDrawer = ({
         </DrawerHeader>
 
         <div className="px-4 pb-6 space-y-4 overflow-y-auto">
-          {catalogImageQuery ? (
+          <div className="space-y-1">
+            <PlacePhoto
+              id={catalogIdOf(activity.id)}
+              name={activity.name}
+              city={destination}
+              className="h-48 w-full overflow-hidden rounded-xl"
+              fallback={
+                <>{catalogImageQuery ? (
             <DestinationImage
               query={catalogImageQuery}
               resetKey={`${destination}:${catalogImageQuery}`}
@@ -208,7 +216,11 @@ export const ActivityDetailDrawer = ({
               className="w-full h-48 rounded-xl object-cover"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
-          )}
+          )}</>
+              }
+            />
+            <PlacePhotoCredit id={catalogIdOf(activity.id)} />
+          </div>
 
           {activity.description && (
             <p className="text-sm text-muted-foreground">{activity.description}</p>

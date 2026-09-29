@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { HotelDetailDrawer } from '@/components/hotel/HotelDetailDrawer';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
 import { AddToTripSheet, type AddTarget } from '@/components/cla/AddToTripSheet';
+import { PlacePhoto } from '@/components/shared/PlacePhoto';
 import { ClaLazyImage } from '@/components/cla/ClaLazyImage';
 import { MichelinDetailDrawer } from '@/components/cla/MichelinDetailDrawer';
 import { openClaSuggest } from '@/components/cla/ClaSuggestHost';
@@ -479,14 +480,14 @@ function cardKey(card: CatalogCard): string {
 }
 
 /** Corpo comum: foto, nome, descrição de uma linha, 📍 local, notas e ação. */
-function CardShell({ name, city, categoryKeyword, tone, description, location, mapHref, meta, onOpen, action }: {
-  name: string; city: string; categoryKeyword: string; tone: string; description?: string; location: string; mapHref: string;
+function CardShell({ photoId, name, city, categoryKeyword, tone, description, location, mapHref, meta, onOpen, action }: {
+  photoId?: string; name: string; city: string; categoryKeyword: string; tone: string; description?: string; location: string; mapHref: string;
   meta: React.ReactNode; onOpen: () => void; action?: React.ReactNode;
 }) {
   return (
     <article className="flex flex-col overflow-hidden rounded-lg border border-border bg-card">
       <button type="button" onClick={onOpen} className="block w-full text-left">
-        <ClaLazyImage name={name} city={city} categoryKeyword={categoryKeyword} tone={tone as never} className="aspect-[16/9] overflow-hidden" />
+        <PlacePhoto id={photoId} name={name} city={city} categoryKeyword={categoryKeyword} tone={tone as never} className="aspect-[16/9] overflow-hidden" />
       </button>
       <div className="flex-1 space-y-2 p-4">
         <button type="button" onClick={onOpen} className="block w-full text-left">
@@ -507,14 +508,14 @@ function CatalogCardView({ card, city, stats, onActivity, onHotel, onMichelin, o
     const social = scoreFor(a.id, a.rating, stats);
     const cat = categoryOf(a);
     const tone = cat === 'restaurant' ? 'food' : cat === 'beach' ? 'beach' : 'culture';
-    return <CardShell name={a.name} city={city} categoryKeyword={photoKeyword(a)} tone={tone} description={a.tips[0]} location={a.neighborhood} mapHref={mapsLink(a.id, a.name, city)} onOpen={() => onActivity(a)}
+    return <CardShell photoId={a.id} name={a.name} city={city} categoryKeyword={photoKeyword(a)} tone={tone} description={a.tips[0]} location={a.neighborhood} mapHref={mapsLink(a.id, a.name, city)} onOpen={() => onActivity(a)}
       meta={<><span className="text-muted-foreground">Google {rating(a.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}<span className="text-foreground">{brl(a.estimatedCostBRL)}</span></>}
       action={<Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-primary" onClick={() => onAdd({ kind: 'activity', activity: a })}>➕ Adicionar à minha viagem</Button>} />;
   }
   if (card.kind === 'hotel') {
     const h = card.hotel;
     const social = scoreFor(h.id, h.rating, stats);
-    return <CardShell name={h.name} city={city} categoryKeyword="hotel" tone="hotel" description={h.tips[0]} location={`${h.zone} · ${TIER_LABEL[h.tier] ?? h.tier}`} mapHref={mapsLink(h.id, h.name, city)} onOpen={() => onHotel(h)}
+    return <CardShell photoId={h.id} name={h.name} city={city} categoryKeyword="hotel" tone="hotel" description={h.tips[0]} location={`${h.zone} · ${TIER_LABEL[h.tier] ?? h.tier}`} mapHref={mapsLink(h.id, h.name, city)} onOpen={() => onHotel(h)}
       meta={<><span className="text-muted-foreground">Google {rating(h.rating)}</span>{social.ups > 0 && <span className="text-emerald-400">Clã 👍 {social.ups}</span>}<span className="text-foreground">{h.priceRangeBRL}</span></>}
       action={<Button variant="ghost" size="sm" className="h-8 px-0 text-xs text-primary" onClick={() => onAdd({ kind: 'hotel', hotel: h })}>Usar este hotel</Button>} />;
   }
