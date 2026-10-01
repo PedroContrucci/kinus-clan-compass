@@ -16,16 +16,8 @@ import { TripCardWithPhoto } from '@/components/dashboard/TripCardWithPhoto';
 import { CountdownCard } from '@/components/dashboard/CountdownCard';
 import { exportTripPDF } from '@/lib/tripPdfExport';
 import { listTrips, subscribeTrips } from '@/lib/tripStore';
-import { WelcomeOverlay } from '@/components/onboarding/WelcomeOverlay';
-import { EmptyStateHero } from '@/components/onboarding/EmptyStateHero';
-import { type OnboardingStep } from '@/components/onboarding/OnboardingChecklist';
-import { OnboardingProgressStrip } from '@/components/onboarding/OnboardingProgressStrip';
-import {
-  fetchOnboardingPrefs,
-  readCachedPrefs,
-  setOnboardingPref,
-  trackOnboarding,
-} from '@/lib/onboarding';
+import { FirstTripFlow } from '@/components/onboarding/FirstTripFlow';
+import { fetchOnboardingPrefs, readCachedPrefs } from '@/lib/onboarding';
 
 
 const ApiStatus = lazy(() => import('@/components/debug/ApiStatus').then(m => ({ default: m.ApiStatus })));
@@ -85,100 +77,16 @@ const Dashboard = () => {
     navigate(`/viagens?trip=${tripId}`);
   };
 
-  // ===== Onboarding (primeira viagem) =====
+  // ===== Onboarding v2: conta sem viagens (ou "Rever o guia") vê só o fluxo guiado =====
   const hasNoTrips = allTrips.length === 0;
-  const firstDraft = draftTrips[0];
-  const stepCreated = allTrips.length > 0;
-  const stepReviewed = Boolean(
-    allTrips.find((t) => t.flightsSelected) || activeTrips.length > 0
-  );
-  const stepActivated = activeTrips.length > 0;
-
-  const [prefs, setPrefs] = useState(() => readCachedPrefs());
-  const [prefsLoaded, setPrefsLoaded] = useState(false);
-  const [welcomeOpen, setWelcomeOpen] = useState(false);
-  const [checklistHidden, setChecklistHidden] = useState(false);
-
+  const forceGuide = searchParams.get('guia') === '1';
+  const [prefs, setPrefs] = useState(() => readCachedPrefs() as Record<string, unknown>);
   useEffect(() => {
     if (!user) return;
     let alive = true;
-    fetchOnboardingPrefs(user.id).then((p) => {
-      if (!alive) return;
-      setPrefs(p);
-      setPrefsLoaded(true);
-    });
+    fetchOnboardingPrefs(user.id).then((p) => { if (alive) setPrefs(p as Record<string, unknown>); });
     return () => { alive = false; };
   }, [user?.id]);
-
-  // Welcome: só na primeira vez, só com zero viagens.
-  useEffect(() => {
-    if (!prefsLoaded || !user) return;
-    if (prefs.onboarding_welcome_seen || !hasNoTrips) return;
-    setWelcomeOpen(true);
-    trackOnboarding('onboarding.welcome_shown', user.id);
-  }, [prefsLoaded, prefs.onboarding_welcome_seen, hasNoTrips, user?.id]);
-
-  const markWelcomeSeen = useCallback(() => {
-    setWelcomeOpen(false);
-    setPrefs((p) => ({ ...p, onboarding_welcome_seen: true }));
-    if (user) void setOnboardingPref(user.id, { onboarding_welcome_seen: true });
-  }, [user?.id]);
-
-  const goWizard = useCallback((from: string) => {
-    trackOnboarding('onboarding.path_chosen', user?.id, { path: 'wizard', from });
-    markWelcomeSeen();
-    navigate('/planejar');
-  }, [markWelcomeSeen, navigate, user?.id]);
-
-  const goAI = useCallback((from: string) => {
-    trackOnboarding('onboarding.path_chosen', user?.id, { path: 'kinu_ai', from });
-    markWelcomeSeen();
-    setIsOpen(true);
-    void sendMessage(
-      'Quero montar minha primeira viagem com você. Pode começar me fazendo só a primeira pergunta?'
-    );
-  }, [markWelcomeSeen, setIsOpen, sendMessage, user?.id]);
-
-  // Checklist: some para sempre depois da primeira ativação.
-  useEffect(() => {
-    if (!prefsLoaded || !user) return;
-    if (!stepActivated || prefs.onboarding_checklist_done) return;
-    setPrefs((p) => ({ ...p, onboarding_checklist_done: true }));
-    void setOnboardingPref(user.id, { onboarding_checklist_done: true });
-    trackOnboarding('onboarding.checklist_done', user.id);
-  }, [prefsLoaded, stepActivated, prefs.onboarding_checklist_done, user?.id]);
-
-  const dismissChecklist = useCallback(() => {
-    setChecklistHidden(true);
-    trackOnboarding('onboarding.dismissed', user?.id, { surface: 'checklist' });
-  }, [user?.id]);
-
-  const showChecklist =
-    prefsLoaded && !prefs.onboarding_checklist_done && !stepActivated && !checklistHidden;
-
-  const onboardingSteps: OnboardingStep[] = [
-    {
-      id: 'create',
-      label: 'Criar a viagem',
-      done: stepCreated,
-      onClick: () => navigate('/planejar'),
-    },
-    {
-      id: 'review',
-      label: 'Revisar voo e hotel',
-      done: stepReviewed,
-      onClick: () =>
-        firstDraft ? navigate(`/viagens?trip=${firstDraft.id}`) : navigate('/planejar'),
-    },
-    {
-      id: 'activate',
-      label: 'Ativar',
-      done: stepActivated,
-      onClick: () =>
-        firstDraft ? navigate(`/viagens?trip=${firstDraft.id}`) : navigate('/viagens'),
-    },
-  ];
-
 
   if (authLoading) {
     return (
@@ -189,6 +97,15 @@ const Dashboard = () => {
   }
 
   if (!user) return null;
+
+  if (hasNoTrips || forceGuide) {
+    return (
+      <>
+        <FirstTripFlow userId={user.id} homeCity={prefs.home_city} />
+        <BottomNav />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-36 lg:pb-24">
@@ -220,14 +137,7 @@ const Dashboard = () => {
       )}
 
       <main className="px-4 py-6 space-y-6">
-        {/* Checklist da primeira viagem */}
-        {showChecklist && (
-          <OnboardingProgressStrip steps={onboardingSteps} onDismiss={dismissChecklist} />
-        )}
-
-        {hasNoTrips ? (
-          <EmptyStateHero onWizard={() => goWizard('empty_state')} onAI={() => goAI('empty_state')} />
-        ) : (
+        {(
           <>
             {/* CTA Button — Plan New Trip */}
             <motion.button
@@ -408,17 +318,6 @@ const Dashboard = () => {
       {/* Bottom Navigation */}
       <BottomNav />
 
-      {welcomeOpen && (
-        <WelcomeOverlay
-          name={user.name.split(' ')[0]}
-          onWizard={() => goWizard('welcome')}
-          onAI={() => goAI('welcome')}
-          onDismiss={() => {
-            trackOnboarding('onboarding.dismissed', user.id, { surface: 'welcome' });
-            markWelcomeSeen();
-          }}
-        />
-      )}
 
     </div>
   );
