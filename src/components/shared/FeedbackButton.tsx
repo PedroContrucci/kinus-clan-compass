@@ -18,6 +18,7 @@ export const FeedbackButton = () => {
   const [message, setMessage] = useState('');
   const [missingFeature, setMissingFeature] = useState('');
   const [improvement, setImprovement] = useState('');
+  const [wantedDestination, setWantedDestination] = useState('');
   const [page, setPage] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [activeTrip, setActiveTrip] = useState<any>(null);
@@ -70,6 +71,11 @@ export const FeedbackButton = () => {
       composedMessage += `\n\n[Deveria melhorar]: ${trimmedImprovement}`;
     }
 
+    const trimmedDestination = wantedDestination.trim().slice(0, 60);
+    if (trimmedDestination) {
+      trackEvent('cla.wanted_destination', { destination: trimmedDestination });
+    }
+
     const feedbackRecord = {
       id: `fb-${Date.now()}`,
       timestamp: new Date().toISOString(),
@@ -85,7 +91,7 @@ export const FeedbackButton = () => {
 
     let success = false;
     try {
-      const { error } = await supabase.from('beta_feedback').insert({
+      const baseRow = {
         tester_name: trimmedName,
         rating,
         category,
@@ -94,7 +100,20 @@ export const FeedbackButton = () => {
         user_agent: navigator.userAgent,
         screen_size: screenSize,
         app_version: appVersion,
+      };
+      let { error } = await supabase.from('beta_feedback').insert({
+        ...baseRow,
+        wanted_destination: trimmedDestination || null,
       });
+      // Se a coluna wanted_destination ainda não existe na tabela, nada se perde:
+      // o destino vai embutido na mensagem.
+      if (error && trimmedDestination && /wanted_destination/i.test(error.message ?? '')) {
+        const retry = await supabase.from('beta_feedback').insert({
+          ...baseRow,
+          message: `${composedMessage}\n\nDestino desejado: ${trimmedDestination}`,
+        });
+        error = retry.error;
+      }
       success = !error;
     } catch {
       success = false;
@@ -133,6 +152,7 @@ export const FeedbackButton = () => {
       setMessage('');
       setMissingFeature('');
       setImprovement('');
+      setWantedDestination('');
       setPage('');
     }, 1500);
   };
@@ -268,6 +288,18 @@ export const FeedbackButton = () => {
                   placeholder="Opcional"
                   rows={2}
                   className="w-full px-3 py-2 bg-background border border-border rounded-xl text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Qual destino você quer ver no KINU?</p>
+                <input
+                  type="text"
+                  value={wantedDestination}
+                  onChange={(e) => setWantedDestination(e.target.value.slice(0, 60))}
+                  placeholder="ex.: Recife, Buenos Aires, Punta Cana"
+                  maxLength={60}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
                 />
               </div>
 

@@ -1,0 +1,1 @@
+ALTER TABLE public.beta_feedback ADD COLUMN IF NOT EXISTS wanted_destination text;
