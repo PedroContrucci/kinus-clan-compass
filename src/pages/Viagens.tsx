@@ -139,6 +139,7 @@ const Viagens = () => {
   const { user, isLoading: authLoading } = useAuth();
   const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(null);
+  const [openFlightsSignal, setOpenFlightsSignal] = useState(0);
   const [activeTab, setActiveTab] = useState<'painel' | 'roteiro' | 'financeiro' | 'preparacao'>('painel');
   const [selectedDay, setSelectedDay] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -1485,6 +1486,7 @@ const Viagens = () => {
             trip={selectedTrip}
             onActivate={() => handleActivateDraft({ ...(selectedTrip as any) })}
             onUpdateTrip={handleUpdateTrip}
+            onOpenFlights={() => setOpenFlightsSignal((n) => n + 1)}
           />
         )}
         <div id="draft-cockpit">
@@ -1494,6 +1496,7 @@ const Viagens = () => {
             onActivate={handleActivateDraft}
             onClose={() => setSelectedTrip(null)}
             onUpdateTrip={handleUpdateTrip}
+            openFlightsSignal={openFlightsSignal}
           />
         </div>
       </>

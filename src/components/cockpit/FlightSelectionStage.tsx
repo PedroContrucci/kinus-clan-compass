@@ -46,6 +46,8 @@ export interface FlightOption {
 export interface SelectedFlight {
   option: FlightOption;
   date: Date;
+  /** De onde veio: estimativa do gerador, busca real ou reserva confirmada. */
+  source?: 'estimate' | 'amadeus' | 'confirmed';
 }
 
 interface FlightSelectionStageProps {

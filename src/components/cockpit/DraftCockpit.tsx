@@ -13,6 +13,7 @@ import { HotelPlanBlock } from '@/components/hotel/HotelPlanBlock';
 import { applyHotelSwap, type SwapTripLike, type AccommodationLike } from '@/lib/hotelSwap';
 import type { StoredTrip } from '@/lib/tripStore';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
+import { isKinuBuilt } from '@/lib/kinuBuilt';
 
 // Types
 interface DraftTrip {
@@ -51,6 +52,8 @@ interface DraftCockpitProps {
   onClose: () => void;
   /** Mesmo contrato do TripPanel: read-modify-write do storage, não da cópia React. */
   onUpdateTrip?: (updater: (t: StoredTrip) => StoredTrip) => void;
+  /** Incrementado por fora (card "O que o KINU fez") para abrir o passo Voo. */
+  openFlightsSignal?: number;
 }
 
 function getTravelers(trip: DraftTrip): number {
@@ -126,7 +129,38 @@ export function plannedFlightToSelected(flight: any, date: Date): SelectedFlight
     }],
   };
 
-  return { option, date };
+  return { option, date, source: 'estimate' };
+}
+
+/**
+ * Viagem montada pelo KINU sem voo escolhido: grava a estimativa do gerador como
+ * ida/volta selecionadas (source 'estimate') e sincroniza o orçamento de voos.
+ * Idempotente: viagem que já tem `outboundFlight` volta intacta (mesmo objeto).
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function applyEstimatedFlights<T extends Record<string, any>>(trip: T): T {
+  if (!isKinuBuilt(trip) || trip.outboundFlight || !trip.flights?.outbound || !trip.flights?.return) return trip;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updated: any = {
+    ...trip,
+    outboundFlight: plannedFlightToSelected(trip.flights.outbound, new Date(trip.startDate)),
+    returnFlight: plannedFlightToSelected(trip.flights.return, new Date(trip.endDate)),
+  };
+  if (updated.finances) {
+    updated.finances = {
+      ...updated.finances,
+      categories: { ...updated.finances.categories, flights: { ...updated.finances.categories?.flights } },
+    };
+  }
+  syncTripFlightPlannedFinances(updated);
+  return updated;
+}
+
+/** Estágio inicial do cockpit: Roteiro para viagens com voo escolhido ou montadas pelo KINU. */
+// eslint-disable-next-line react-refresh/only-export-components
+export function initialDraftStage(trip: { flightsSelected?: boolean; createdVia?: unknown }): 'flights' | 'itinerary' {
+  return trip.flightsSelected || isKinuBuilt(trip) ? 'itinerary' : 'flights';
 }
 
 // Get emoji from destination
@@ -243,7 +277,9 @@ function buildTrail(trip: DraftTrip, currentStage: StepperStageId): TrailPill[] 
   pills.push({
     id: 'flights',
     label: 'Voo',
-    subtitle: 'Escolha os voos de ida e volta',
+    subtitle: trip.outboundFlight?.source === 'estimate'
+      ? 'Voo estimado · toque para escolher o real'
+      : 'Escolha os voos de ida e volta',
     state: currentStage === 'itinerary' ? 'done' : 'current',
     stageId: 'flights',
   });
@@ -344,13 +380,25 @@ const DraftStepper = ({ trip, currentStage, onChange, onSwapHotel }: DraftSteppe
   );
 };
 
-export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip }: DraftCockpitProps) => {
-  // KINU-created trips arrive with a pre-generated itinerary, so we jump straight
-  // to the itinerary summary stage while keeping the flight stage reachable.
-  const isKinuCreated = (trip as any).createdVia === 'kinu';
+export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, openFlightsSignal }: DraftCockpitProps) => {
+  // KINU-built trips (KINU AI ou onboarding) arrive with a pre-generated itinerary and an
+  // estimated flight, so we jump straight to the itinerary stage; Voo stays reachable.
+  const isKinuCreated = isKinuBuilt(trip);
 
-  const [stage, setStage] = useState<'flights' | 'itinerary'>(() => 
-    (trip.flightsSelected || isKinuCreated) ? 'itinerary' : 'flights'
+  // Rascunho montado pelo KINU sem voo escolhido: grava a estimativa uma vez (idempotente).
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updated = applyEstimatedFlights(trip as any);
+    if (updated !== (trip as unknown)) onSave(updated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trip.id]);
+
+  // "trocar" do voo no card "O que o KINU fez" abre o passo Voo.
+  useEffect(() => {
+    if (openFlightsSignal) setStage('flights');
+  }, [openFlightsSignal]);
+
+  const [stage, setStage] = useState<'flights' | 'itinerary'>(() => initialDraftStage(trip)
   );
   
   const [selectedOutbound, setSelectedOutbound] = useState<SelectedFlight | undefined>(() => {
@@ -394,7 +442,9 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip }
   const destinationCode = trip.destinationAirportCode || inferAirportCode(trip.destination);
   const emoji = trip.emoji || getDestinationEmoji(trip.destination);
 
-  const handleFlightsSelected = useCallback((outbound: SelectedFlight, returnFlight: SelectedFlight) => {
+  const handleFlightsSelected = useCallback((pickedOut: SelectedFlight, pickedRet: SelectedFlight) => {
+    const outbound: SelectedFlight = { ...pickedOut, source: 'amadeus' };
+    const returnFlight: SelectedFlight = { ...pickedRet, source: 'amadeus' };
     setSelectedOutbound(outbound);
     setSelectedReturn(returnFlight);
 
