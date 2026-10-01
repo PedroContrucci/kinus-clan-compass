@@ -13,6 +13,7 @@ import { HotelPlanBlock } from '@/components/hotel/HotelPlanBlock';
 import { applyHotelSwap, type SwapTripLike, type AccommodationLike } from '@/lib/hotelSwap';
 import type { StoredTrip } from '@/lib/tripStore';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
+import { isKinuBuilt } from '@/lib/kinuBuilt';
 
 // Types
 interface DraftTrip {
@@ -126,7 +127,36 @@ export function plannedFlightToSelected(flight: any, date: Date): SelectedFlight
     }],
   };
 
-  return { option, date };
+  return { option, date, source: 'estimate' };
+}
+
+/**
+ * Viagem montada pelo KINU sem voo escolhido: grava a estimativa do gerador como
+ * ida/volta selecionadas (source 'estimate') e sincroniza o orçamento de voos.
+ * Idempotente: viagem que já tem `outboundFlight` volta intacta (mesmo objeto).
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function applyEstimatedFlights<T extends Record<string, any>>(trip: T): T {
+  if (!isKinuBuilt(trip) || trip.outboundFlight || !trip.flights?.outbound || !trip.flights?.return) return trip;
+  const updated: any = {
+    ...trip,
+    outboundFlight: plannedFlightToSelected(trip.flights.outbound, new Date(trip.startDate)),
+    returnFlight: plannedFlightToSelected(trip.flights.return, new Date(trip.endDate)),
+  };
+  if (updated.finances) {
+    updated.finances = {
+      ...updated.finances,
+      categories: { ...updated.finances.categories, flights: { ...updated.finances.categories?.flights } },
+    };
+  }
+  syncTripFlightPlannedFinances(updated);
+  return updated;
+}
+
+/** Estágio inicial do cockpit: Roteiro para viagens com voo escolhido ou montadas pelo KINU. */
+// eslint-disable-next-line react-refresh/only-export-components
+export function initialDraftStage(trip: { flightsSelected?: boolean; createdVia?: unknown }): 'flights' | 'itinerary' {
+  return trip.flightsSelected || isKinuBuilt(trip) ? 'itinerary' : 'flights';
 }
 
 // Get emoji from destination
@@ -243,7 +273,9 @@ function buildTrail(trip: DraftTrip, currentStage: StepperStageId): TrailPill[] 
   pills.push({
     id: 'flights',
     label: 'Voo',
-    subtitle: 'Escolha os voos de ida e volta',
+    subtitle: trip.outboundFlight?.source === 'estimate'
+      ? 'Voo estimado · toque para escolher o real'
+      : 'Escolha os voos de ida e volta',
     state: currentStage === 'itinerary' ? 'done' : 'current',
     stageId: 'flights',
   });
