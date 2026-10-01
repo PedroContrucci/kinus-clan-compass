@@ -35,6 +35,8 @@ import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { clearTrips, deleteTrip, getTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
+import { KinuDidCard } from '@/components/onboarding/KinuDidCard';
+import { trackEvent } from '@/lib/kinuEvents';
 import { addCatalogActivityToDay, applyTripPlannedCostDelta, calculateTripProgress } from '@/lib/tripItineraryOps';
 import { ViagensVividas } from '@/components/viagens/ViagensVividas';
 import { itemKindOf, trackTripActivated, trackTripItemConfirmed } from '@/lib/tripEvents';
@@ -1063,6 +1065,12 @@ const Viagens = () => {
     // grava a própria marca por dentro (outro `updateTrip`), então a `selectedTrip` do React
     // fica sem ela — não faz falta, nada renderiza a marca e toda escrita relê o storage.
     trackTripActivated(updatedTrip.id);
+
+    // Onboarding v2: idempotente pela marca na viagem, não pelo dedupe do emissor.
+    if (updatedTrip.onboardingFlow === 'v2' && !updatedTrip.onboardingActivatedAt) {
+      const marked = updateTrip(updatedTrip.id, (t) => ({ ...t, onboardingActivatedAt: new Date().toISOString() }));
+      if (marked) trackEvent('onboarding.activated', { trip_id: updatedTrip.id }, user?.id);
+    }
   };
 
   // DEBUG: temporary export of selected trip itinerary as a .txt file
@@ -1470,14 +1478,26 @@ const Viagens = () => {
 
   // Draft Trip → Flight Selection Flow
   if (selectedTrip && selectedTrip.status === 'draft') {
+    const fromOnboarding = (selectedTrip as any).onboardingFlow === 'v2';
     return (
-      <DraftCockpit
-        trip={selectedTrip as any}
-        onSave={handleSaveDraft}
-        onActivate={handleActivateDraft}
-        onClose={() => setSelectedTrip(null)}
-        onUpdateTrip={handleUpdateTrip}
-      />
+      <>
+        {fromOnboarding && (
+          <KinuDidCard
+            trip={selectedTrip}
+            onActivate={() => handleActivateDraft({ ...(selectedTrip as any) })}
+            onUpdateTrip={handleUpdateTrip}
+          />
+        )}
+        <div id="draft-cockpit">
+          <DraftCockpit
+            trip={selectedTrip as any}
+            onSave={handleSaveDraft}
+            onActivate={handleActivateDraft}
+            onClose={() => setSelectedTrip(null)}
+            onUpdateTrip={handleUpdateTrip}
+          />
+        </div>
+      </>
     );
   }
 
