@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Brain, Lightbulb, TrendingUp, Shield, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { RESERVE_RATE } from '@/lib/planTotals';
 import { TRAVEL_INTERESTS } from '@/components/wizard/types';
 
 interface KinuAnalysisCardProps {
@@ -17,6 +18,8 @@ interface KinuAnalysisCardProps {
   travelInterests?: string[];
   michelinCount?: number;
   jetLagSeverity?: string;
+  /** Reserva já embutida no envelope (RESERVE_RATE). Quando presente, o texto declara o valor. */
+  reserveAmount?: number;
 }
 
 interface AnalysisSection {
@@ -37,6 +40,7 @@ export const KinuAnalysisCard = ({
   travelInterests = [],
   michelinCount = 0,
   jetLagSeverity,
+  reserveAmount,
 }: KinuAnalysisCardProps) => {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -65,7 +69,9 @@ export const KinuAnalysisCard = ({
         title: isOverBudget ? 'Sem Folga no Orçamento' : 'Reserva de Segurança',
         content: isOverBudget
           ? 'O plano já excede o budget — considere uma reserva à parte para imprevistos.'
-          : `Guardei 15% do budget disponível para emergências e oportunidades de última hora.`,
+          : reserveAmount != null
+            ? `O orçamento inclui reserva de ${Math.round(RESERVE_RATE * 100)}% (R$ ${reserveAmount.toLocaleString('pt-BR')}) sobre o custo do plano, para imprevistos.`
+            : `Sobram R$ ${remainingBudget.toLocaleString('pt-BR')} além do custo estimado do plano.`,
       },
     ];
 
@@ -96,7 +102,7 @@ export const KinuAnalysisCard = ({
     }
 
     return sections;
-  }, [destination, departureDate, returnDate, budget, flightsCost, hotelCost, toursCost, foodCost, travelInterests, michelinCount, jetLagSeverity]);
+  }, [destination, departureDate, returnDate, budget, flightsCost, hotelCost, toursCost, foodCost, travelInterests, michelinCount, jetLagSeverity, reserveAmount]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
