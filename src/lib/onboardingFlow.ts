@@ -123,7 +123,7 @@ export function kinuDidLines(trip: any): KinuDidLines {
     ? Math.max(1, differenceInDays(new Date(trip.endDate), new Date(trip.startDate)))
     : Math.max(1, days.length - 1);
   const amount = Number(trip.budget) || 0;
-  const budget = `R$ ${amount.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} — estimativa para ${travelers} ${travelers === 1 ? 'pessoa' : 'pessoas'}, ${nights} noites, perfil ${tierLabel(trip.budgetType)}`;
+  const budget = `R$ ${amount.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} — estimativa para ${travelers} ${travelers === 1 ? 'pessoa' : 'pessoas'}, ${nights} noites, perfil ${tierLabel(trip.budgetType)}${realFlight ? '' : ' · fecha ao escolher o voo'}`;
 
   return { origin, hotel, flight, itinerary, budget };
 }
