@@ -100,15 +100,14 @@ export function inferAirportCode(city: string): string {
 
 // Convert a planned flight (as created by buildDraftTrip) into a SelectedFlight
 // so the itinerary summary stage can render for KINU-created trips.
-function plannedFlightToSelected(flight: any, date: Date): SelectedFlight {
+// eslint-disable-next-line react-refresh/only-export-components
+export function plannedFlightToSelected(flight: any, date: Date): SelectedFlight {
   const route = `${flight.origin} → ${flight.destination}`;
   const duration = flight.duration || '0h';
   const durationMinutes = (() => {
-    const m = duration.match(/(\d+)h\s*(\d+)?/);
+    const m = duration.match(/(\d+(?:\.\d+)?)\s*h/);
     if (!m) return 0;
-    const hours = parseInt(m[1], 10) || 0;
-    const minutes = parseInt(m[2], 10) || 0;
-    return hours * 60 + minutes;
+    return Math.round(parseFloat(m[1]) * 60);
   })();
 
   const option: FlightOption = {
