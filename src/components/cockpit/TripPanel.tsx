@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import { Check, FileText, ChevronDown, ChevronUp, MapPin, ExternalLink, X } from 'lucide-react';
-import { HintBalloon } from '@/components/onboarding/HintBalloon';
 import { CheckinBanner } from '@/components/checkin/CheckinBanner';
 import { TripCheckinDrawer } from '@/components/checkin/TripCheckinDrawer';
 import { WeatherBadge } from './WeatherBadge';
@@ -910,12 +909,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-4 mt-4">
           {/* 1. Header Premium with Hero Image */}
-      <HintBalloon
-        area="painel"
-        arrow="up"
-        anchorRef={summaryHeaderRef}
-        text="Seu centro de comando: tudo da viagem num lugar só."
-      />
       <div ref={summaryHeaderRef} className="relative overflow-hidden rounded-2xl border border-border">
         {/* Hero banner image */}
         <div className="relative h-[150px] overflow-hidden bg-gradient-to-br from-[#0f172a] to-[#1e293b]">

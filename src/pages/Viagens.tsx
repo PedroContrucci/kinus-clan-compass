@@ -49,7 +49,6 @@ import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
 import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
-import { HintBalloon } from '@/components/onboarding/HintBalloon';
 import { CheckinBanner } from '@/components/checkin/CheckinBanner';
 import { ClaProof } from '@/components/cla/ClaProof';
 import { catalogIdOf } from '@/lib/localAchievements';
@@ -1522,11 +1521,6 @@ const Viagens = () => {
 
           {trips.length > 0 ? (
             <div className="space-y-3">
-              <HintBalloon
-                area="viagens"
-                arrow="none"
-                text="Seus rascunhos e viagens ativas vivem aqui."
-              />
               {trips.map((trip) => {
                 const progress = calculateProgress(trip);
                 const days = trip?.days && Array.isArray(trip.days) ? trip.days : [];
@@ -1903,12 +1897,6 @@ const Viagens = () => {
                 })}
               />
 
-              <HintBalloon
-                area="roteiro"
-                arrow="up"
-                anchorRef={roteiroActionRef}
-                text="Confirmar marca o que você já reservou. Trocar sugere alternativas do catálogo."
-              />
 
 
               {/* Category Quick Filters */}
@@ -2430,11 +2418,6 @@ const Viagens = () => {
             <TabErrorBoundary tabName="Financeiro"><div className="animate-fade-in space-y-6">
               <AgentTip agent="hestia" variant="compact" message={getHestiaCambio(selectedTrip)} />
 
-              <HintBalloon
-                area="financeiro"
-                arrow="down"
-                text="O KINU acompanha seu orçamento em tempo real, em reais."
-              />
               
               {/* Budget Summary */}
               {(() => {
@@ -2584,12 +2567,6 @@ const Viagens = () => {
               <div className="animate-fade-in space-y-6">
                 <AgentTip agent="hermes" variant="compact" message={getHermesPacking(selectedTrip)} />
 
-                <HintBalloon
-                  area="preparacao"
-                  arrow="up"
-                  anchorRef={preparacaoHeaderRef}
-                  text="O KINU monta sua lista de preparação — documentos, malas e lembretes."
-                />
 
 
                 {/* Readiness Score */}
