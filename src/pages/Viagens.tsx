@@ -35,6 +35,8 @@ import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { clearTrips, deleteTrip, getTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
+import { KinuDidCard } from '@/components/onboarding/KinuDidCard';
+import { trackEvent } from '@/lib/kinuEvents';
 import { addCatalogActivityToDay, applyTripPlannedCostDelta, calculateTripProgress } from '@/lib/tripItineraryOps';
 import { ViagensVividas } from '@/components/viagens/ViagensVividas';
 import { itemKindOf, trackTripActivated, trackTripItemConfirmed } from '@/lib/tripEvents';
@@ -47,7 +49,6 @@ import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
 import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
-import { HintBalloon } from '@/components/onboarding/HintBalloon';
 import { CheckinBanner } from '@/components/checkin/CheckinBanner';
 import { ClaProof } from '@/components/cla/ClaProof';
 import { catalogIdOf } from '@/lib/localAchievements';
@@ -1063,6 +1064,12 @@ const Viagens = () => {
     // grava a própria marca por dentro (outro `updateTrip`), então a `selectedTrip` do React
     // fica sem ela — não faz falta, nada renderiza a marca e toda escrita relê o storage.
     trackTripActivated(updatedTrip.id);
+
+    // Onboarding v2: idempotente pela marca na viagem, não pelo dedupe do emissor.
+    if (updatedTrip.onboardingFlow === 'v2' && !updatedTrip.onboardingActivatedAt) {
+      const marked = updateTrip(updatedTrip.id, (t) => ({ ...t, onboardingActivatedAt: new Date().toISOString() }));
+      if (marked) trackEvent('onboarding.activated', { trip_id: updatedTrip.id }, user?.id);
+    }
   };
 
   // DEBUG: temporary export of selected trip itinerary as a .txt file
@@ -1470,14 +1477,26 @@ const Viagens = () => {
 
   // Draft Trip → Flight Selection Flow
   if (selectedTrip && selectedTrip.status === 'draft') {
+    const fromOnboarding = (selectedTrip as any).onboardingFlow === 'v2';
     return (
-      <DraftCockpit
-        trip={selectedTrip as any}
-        onSave={handleSaveDraft}
-        onActivate={handleActivateDraft}
-        onClose={() => setSelectedTrip(null)}
-        onUpdateTrip={handleUpdateTrip}
-      />
+      <>
+        {fromOnboarding && (
+          <KinuDidCard
+            trip={selectedTrip}
+            onActivate={() => handleActivateDraft({ ...(selectedTrip as any) })}
+            onUpdateTrip={handleUpdateTrip}
+          />
+        )}
+        <div id="draft-cockpit">
+          <DraftCockpit
+            trip={selectedTrip as any}
+            onSave={handleSaveDraft}
+            onActivate={handleActivateDraft}
+            onClose={() => setSelectedTrip(null)}
+            onUpdateTrip={handleUpdateTrip}
+          />
+        </div>
+      </>
     );
   }
 
@@ -1502,11 +1521,6 @@ const Viagens = () => {
 
           {trips.length > 0 ? (
             <div className="space-y-3">
-              <HintBalloon
-                area="viagens"
-                arrow="none"
-                text="Seus rascunhos e viagens ativas vivem aqui."
-              />
               {trips.map((trip) => {
                 const progress = calculateProgress(trip);
                 const days = trip?.days && Array.isArray(trip.days) ? trip.days : [];
@@ -1883,12 +1897,6 @@ const Viagens = () => {
                 })}
               />
 
-              <HintBalloon
-                area="roteiro"
-                arrow="up"
-                anchorRef={roteiroActionRef}
-                text="Confirmar marca o que você já reservou. Trocar sugere alternativas do catálogo."
-              />
 
 
               {/* Category Quick Filters */}
@@ -2410,11 +2418,6 @@ const Viagens = () => {
             <TabErrorBoundary tabName="Financeiro"><div className="animate-fade-in space-y-6">
               <AgentTip agent="hestia" variant="compact" message={getHestiaCambio(selectedTrip)} />
 
-              <HintBalloon
-                area="financeiro"
-                arrow="down"
-                text="O KINU acompanha seu orçamento em tempo real, em reais."
-              />
               
               {/* Budget Summary */}
               {(() => {
@@ -2564,12 +2567,6 @@ const Viagens = () => {
               <div className="animate-fade-in space-y-6">
                 <AgentTip agent="hermes" variant="compact" message={getHermesPacking(selectedTrip)} />
 
-                <HintBalloon
-                  area="preparacao"
-                  arrow="up"
-                  anchorRef={preparacaoHeaderRef}
-                  text="O KINU monta sua lista de preparação — documentos, malas e lembretes."
-                />
 
 
                 {/* Readiness Score */}

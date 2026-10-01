@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, User, HelpCircle, Star, Info, Loader2, Shield, Trash2, Compass } from 'lucide-react';
-import { HintBalloon } from '@/components/onboarding/HintBalloon';
-import { resetHints, trackOnboarding } from '@/lib/onboarding';
+import { trackOnboarding } from '@/lib/onboarding';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { toast } from '@/hooks/use-toast';
 import kinuLogo from '@/assets/KINU_logo.png';
@@ -91,18 +90,15 @@ const Conta = () => {
 
   if (!user) return null;
 
-  const handleGuideReset = async () => {
-    if (!user) return;
-    // Se a pessoa ainda não tem viagem ativa, a faixa de progresso volta também.
-    const hasActive = listTrips().some((t: any) => t.status === 'active');
-    await resetHints(user.id, hasActive ? {} : { onboarding_checklist_done: false });
-    trackOnboarding('onboarding.guide_reset', user.id, { hasActive });
-    toast({ title: 'Guia reativado — as dicas vão reaparecer conforme você navega.' });
+  // Onboarding v2: "Rever o guia" reabre o fluxo guiado de primeira viagem.
+  const handleGuideReset = () => {
+    trackOnboarding('onboarding.guide_reset', user.id, { flow: 'v2' });
+    navigate('/dashboard?guia=1');
   };
 
   const menuItems = [
     { icon: User, label: 'Editar Perfil', action: () => handleComingSoon('Edição de perfil') },
-    { icon: Compass, label: 'Rever o guia do KINU', action: () => { void handleGuideReset(); } },
+    { icon: Compass, label: 'Rever o guia do KINU', action: handleGuideReset },
     { icon: Star, label: 'Meus Favoritos', action: () => handleComingSoon('Favoritos') },
     { icon: HelpCircle, label: 'Ajuda e Suporte', action: () => handleComingSoon('Suporte') },
     { icon: Info, label: 'Sobre o KINU', action: () => {
@@ -165,11 +161,6 @@ const Conta = () => {
 
         {/* Menu */}
         <div className="space-y-2">
-          <HintBalloon
-            area="perfil"
-            arrow="none"
-            text="Suas conquistas, conta e privacidade."
-          />
           {menuItems.map((item, index) => (
             <button
               key={index}
