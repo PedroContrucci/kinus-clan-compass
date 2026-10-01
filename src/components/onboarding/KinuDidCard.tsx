@@ -12,9 +12,11 @@ interface Props {
   trip: any;
   onActivate: () => void;
   onUpdateTrip: (updater: (t: any) => any) => void;
+  /** Abre o passo Voo do DraftCockpit. */
+  onOpenFlights?: () => void;
 }
 
-export const KinuDidCard = ({ trip, onActivate, onUpdateTrip }: Props) => {
+export const KinuDidCard = ({ trip, onActivate, onUpdateTrip, onOpenFlights }: Props) => {
   const navigate = useNavigate();
   const [swapOpen, setSwapOpen] = useState(false);
   const l = kinuDidLines(trip);
@@ -23,7 +25,7 @@ export const KinuDidCard = ({ trip, onActivate, onUpdateTrip }: Props) => {
   const rows: { icon: string; text: string; action: () => void }[] = [
     { icon: '🛫', text: l.origin, action: () => navigate('/planejar') },
     { icon: '🏨', text: l.hotel, action: () => setSwapOpen(true) },
-    { icon: '✈️', text: l.flight, action: toCockpit },
+    { icon: '✈️', text: l.flight, action: () => { onOpenFlights?.(); toCockpit(); } },
     { icon: '🗺️', text: l.itinerary, action: toCockpit },
     { icon: '💰', text: l.budget, action: () => navigate('/planejar') },
   ];
@@ -38,7 +40,7 @@ export const KinuDidCard = ({ trip, onActivate, onUpdateTrip }: Props) => {
           <li key={r.icon} className="flex items-start gap-2 text-sm">
             <span>{r.icon}</span>
             <span className="flex-1 text-foreground">{r.text}</span>
-            <button onClick={r.action} className="shrink-0 text-primary text-xs underline-offset-2 hover:underline">trocar</button>
+            <button onClick={r.action} aria-label={`trocar ${r.icon}`} className="shrink-0 text-primary text-xs underline-offset-2 hover:underline">trocar</button>
           </li>
         ))}
       </ul>

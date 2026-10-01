@@ -1,7 +1,7 @@
 // Onboarding v2 — helpers puros do fluxo de primeira viagem (grade → 3 campos → rascunho).
 // Só LÊ dados curados; nada aqui escreve em src/data.
 
-import { addDays, addMonths, differenceInDays, startOfMonth } from 'date-fns';
+import { addDays, addMonths, differenceInDays, format, isValid, parseISO, startOfMonth } from 'date-fns';
 import { LANDMARKS } from '@/data/generated/landmarkTiers';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { BUDGET_TIERS } from '@/components/wizard/types';
@@ -100,15 +100,14 @@ export function kinuDidLines(trip: any): KinuDidLines {
     ? `${hotelName}: ${cur.reasons.map((r) => r.label).join(' · ')}`
     : `${hotelName}: melhor opção disponível para o seu perfil`;
 
-  const out = trip.flights?.outbound;
-  let flight = 'Voo a confirmar';
-  if (out?.departureTime) {
-    const d1 = out.departureDate ? new Date(out.departureDate) : null;
-    const d2 = out.arrivalDate ? new Date(out.arrivalDate) : null;
-    const lag = d1 && d2 ? Math.round((d2.getTime() - d1.getTime()) / 86400000) : 0;
-    const when = lag <= 0 ? 'chega no mesmo dia' : lag === 1 ? 'chega no dia seguinte' : `chega ${lag} dias depois`;
-    flight = `Saída ${out.departureTime} porque ${when}${out.arrivalTime ? ` (${out.arrivalTime})` : ''}`;
-  }
+  const ddmm = (v: unknown) => {
+    const d = parseISO(String(v ?? '').slice(0, 10));
+    return isValid(d) ? format(d, 'dd/MM') : '—';
+  };
+  const realFlight = Boolean(trip.outboundFlight && trip.outboundFlight.source !== 'estimate');
+  const flight = realFlight
+    ? `Voo escolhido · ida ${ddmm(trip.startDate)} · volta ${ddmm(trip.endDate)}`
+    : `Voo estimado · ida ${ddmm(trip.startDate)} · volta ${ddmm(trip.endDate)} · escolha o voo real para fechar o orçamento`;
 
   const days: any[] = Array.isArray(trip.days) ? trip.days : [];
   const cityTiers = LANDMARKS[trip.destination]?.tiers;

@@ -1485,6 +1485,7 @@ const Viagens = () => {
             trip={selectedTrip}
             onActivate={() => handleActivateDraft({ ...(selectedTrip as any) })}
             onUpdateTrip={handleUpdateTrip}
+            onOpenFlights={() => setOpenFlightsSignal((n) => n + 1)}
           />
         )}
         <div id="draft-cockpit">
@@ -1494,6 +1495,7 @@ const Viagens = () => {
             onActivate={handleActivateDraft}
             onClose={() => setSelectedTrip(null)}
             onUpdateTrip={handleUpdateTrip}
+            openFlightsSignal={openFlightsSignal}
           />
         </div>
       </>
