@@ -138,8 +138,10 @@ export function plannedFlightToSelected(flight: any, date: Date): SelectedFlight
  * Idempotente: viagem que já tem `outboundFlight` volta intacta (mesmo objeto).
  */
 // eslint-disable-next-line react-refresh/only-export-components
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function applyEstimatedFlights<T extends Record<string, any>>(trip: T): T {
   if (!isKinuBuilt(trip) || trip.outboundFlight || !trip.flights?.outbound || !trip.flights?.return) return trip;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updated: any = {
     ...trip,
     outboundFlight: plannedFlightToSelected(trip.flights.outbound, new Date(trip.startDate)),
@@ -385,6 +387,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
 
   // Rascunho montado pelo KINU sem voo escolhido: grava a estimativa uma vez (idempotente).
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updated = applyEstimatedFlights(trip as any);
     if (updated !== (trip as any)) onSave(updated);
     // eslint-disable-next-line react-hooks/exhaustive-deps
