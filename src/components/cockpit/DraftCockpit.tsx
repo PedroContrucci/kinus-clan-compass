@@ -52,6 +52,8 @@ interface DraftCockpitProps {
   onClose: () => void;
   /** Mesmo contrato do TripPanel: read-modify-write do storage, não da cópia React. */
   onUpdateTrip?: (updater: (t: StoredTrip) => StoredTrip) => void;
+  /** Incrementado por fora (card "O que o KINU fez") para abrir o passo Voo. */
+  openFlightsSignal?: number;
 }
 
 function getTravelers(trip: DraftTrip): number {
@@ -376,13 +378,24 @@ const DraftStepper = ({ trip, currentStage, onChange, onSwapHotel }: DraftSteppe
   );
 };
 
-export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip }: DraftCockpitProps) => {
-  // KINU-created trips arrive with a pre-generated itinerary, so we jump straight
-  // to the itinerary summary stage while keeping the flight stage reachable.
-  const isKinuCreated = (trip as any).createdVia === 'kinu';
+export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, openFlightsSignal }: DraftCockpitProps) => {
+  // KINU-built trips (KINU AI ou onboarding) arrive with a pre-generated itinerary and an
+  // estimated flight, so we jump straight to the itinerary stage; Voo stays reachable.
+  const isKinuCreated = isKinuBuilt(trip);
 
-  const [stage, setStage] = useState<'flights' | 'itinerary'>(() => 
-    (trip.flightsSelected || isKinuCreated) ? 'itinerary' : 'flights'
+  // Rascunho montado pelo KINU sem voo escolhido: grava a estimativa uma vez (idempotente).
+  useEffect(() => {
+    const updated = applyEstimatedFlights(trip as any);
+    if (updated !== (trip as any)) onSave(updated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trip.id]);
+
+  // "trocar" do voo no card "O que o KINU fez" abre o passo Voo.
+  useEffect(() => {
+    if (openFlightsSignal) setStage('flights');
+  }, [openFlightsSignal]);
+
+  const [stage, setStage] = useState<'flights' | 'itinerary'>(() => initialDraftStage(trip)
   );
   
   const [selectedOutbound, setSelectedOutbound] = useState<SelectedFlight | undefined>(() => {
@@ -426,7 +439,9 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip }
   const destinationCode = trip.destinationAirportCode || inferAirportCode(trip.destination);
   const emoji = trip.emoji || getDestinationEmoji(trip.destination);
 
-  const handleFlightsSelected = useCallback((outbound: SelectedFlight, returnFlight: SelectedFlight) => {
+  const handleFlightsSelected = useCallback((pickedOut: SelectedFlight, pickedRet: SelectedFlight) => {
+    const outbound: SelectedFlight = { ...pickedOut, source: 'amadeus' };
+    const returnFlight: SelectedFlight = { ...pickedRet, source: 'amadeus' };
     setSelectedOutbound(outbound);
     setSelectedReturn(returnFlight);
 

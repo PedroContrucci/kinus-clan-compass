@@ -446,7 +446,7 @@ export function generateItinerary(
       const outboundCost = flightsCost / 2; // Half of round trip
       activities.push({
         id: `day-${i}-flight-out`,
-        name: 'Voo de Ida',
+        name: outboundFlight.source === 'estimate' ? 'Voo de Ida (estimado)' : 'Voo de Ida',
         type: 'flight',
         timeSlot: 'flight',
         estimatedCost: outboundCost,
@@ -709,7 +709,7 @@ export function generateItinerary(
       const returnCost = flightsCost / 2;
       activities.push({
         id: `day-${i}-flight-return`,
-        name: 'Voo de Volta',
+        name: returnFlight.source === 'estimate' ? 'Voo de Volta (estimado)' : 'Voo de Volta',
         type: 'flight',
         timeSlot: 'flight',
         estimatedCost: returnCost,
