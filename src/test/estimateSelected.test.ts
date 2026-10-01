@@ -5,6 +5,7 @@ import { kinuDidLines } from '@/lib/onboardingFlow';
 import { isKinuBuilt } from '@/lib/kinuBuilt';
 
 async function onboardingDraft() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const trip: any = await buildDraftTrip({
     originCity: 'São Paulo', originAirportCode: 'GRU',
     destinationCity: 'Cartagena', destinationAirportCode: 'CTG',
