@@ -389,7 +389,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updated = applyEstimatedFlights(trip as any);
-    if (updated !== (trip as any)) onSave(updated);
+    if (updated !== (trip as unknown)) onSave(updated);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trip.id]);
 
