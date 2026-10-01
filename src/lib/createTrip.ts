@@ -643,6 +643,19 @@ function generateDays(
       });
     }
   }
+  // Colisão de id no MESMO dia: nunca sufixar o catalogId (quebraria catalogIdOf).
+  for (const d of days) {
+    const seen = new Set<string>();
+    let k = 0;
+    for (const a of d.activities) {
+      if (seen.has(a.id)) {
+        const dup = `day-${d.day}-slot-dup-${++k}`;
+        console.warn('[generateDays] id repetido no dia', d.day, a.id, '→', dup);
+        a.id = dup;
+      }
+      seen.add(a.id);
+    }
+  }
   return days;
 }
 
