@@ -1,6 +1,7 @@
 // FirstTripFlow — onboarding v2: grade das cidades curadas → 3 campos → rascunho.
 // Um toque escolhe o destino; um botão monta a viagem pelo mesmo buildDraftTrip do assistente.
 
+import { followPlanEnvelope } from '@/lib/planTotals';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -48,7 +49,7 @@ export const FirstTripFlow = ({ userId, homeCity }: Props) => {
     try {
       const origin = resolveOrigin(homeCity);
       const trip = await buildDraftTrip(buildFlowInput({ city, origin: origin.city, from, to, adults, children, tier }));
-      const stored = trip as StoredTrip;
+      const stored = followPlanEnvelope({ ...(trip as StoredTrip), budgetSource: 'plan' }) as StoredTrip;
       stored.childrenCount = children;
       stored.originSource = origin.source;
       stored.createdVia = stored.createdVia ?? 'onboarding';
