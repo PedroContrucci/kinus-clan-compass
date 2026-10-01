@@ -8,7 +8,7 @@ import { BUDGET_TIERS } from '@/components/wizard/types';
 import { calculateTripEstimate } from '@/lib/activityPricing';
 import { rankHotelsForTrip, type SwapTripLike } from '@/lib/hotelSwap';
 import { catalogIdOf } from '@/lib/localAchievements';
-import { planBreakdown, reserveFor } from '@/lib/planTotals';
+import { planBreakdown, reserveFor, RESERVE_RATE } from '@/lib/planTotals';
 import type { DraftTripInput } from '@/lib/createTrip';
 
 export const DEFAULT_ORIGIN = 'São Paulo';
@@ -131,6 +131,6 @@ export function kinuDidLines(trip: any): KinuDidLines {
   const budget = `${brl(amount)} — estimativa para ${travelers} ${travelers === 1 ? 'pessoa' : 'pessoas'}, ${nights} noites, perfil ${tierLabel(trip.budgetType)}${realFlight ? '' : ' · fecha ao escolher o voo'}`;
   const reserve = Math.max(0, amount - plan.total);
   const budgetDetail = `Custo estimado ${brl(plan.total)}: voo ${brl(plan.flights)} · hotel ${brl(plan.hotel)} · alimentação ${brl(plan.food)} · passeios ${brl(plan.tours)}`
-    + (reserve > 0 && reserve === reserveFor(plan.total) ? ` · inclui reserva de 15% (${brl(reserve)})` : '');
+    + (reserve > 0 && reserve === reserveFor(plan.total) ? ` · inclui reserva de ${Math.round(RESERVE_RATE * 100)}% (${brl(reserve)})` : '');
   return { origin, hotel, flight, itinerary, budget, budgetDetail };
 }

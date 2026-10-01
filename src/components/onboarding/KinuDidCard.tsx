@@ -19,6 +19,7 @@ interface Props {
 export const KinuDidCard = ({ trip, onActivate, onUpdateTrip, onOpenFlights }: Props) => {
   const navigate = useNavigate();
   const [swapOpen, setSwapOpen] = useState(false);
+  const [budgetOpen, setBudgetOpen] = useState(false);
   const l = kinuDidLines(trip);
   const toCockpit = () => document.getElementById('draft-cockpit')?.scrollIntoView({ behavior: 'smooth' });
 
@@ -39,7 +40,16 @@ export const KinuDidCard = ({ trip, onActivate, onUpdateTrip, onOpenFlights }: P
         {rows.map((r) => (
           <li key={r.icon} className="flex items-start gap-2 text-sm">
             <span>{r.icon}</span>
-            <span className="flex-1 text-foreground">{r.text}</span>
+            <span className="flex-1 text-foreground">
+              {r.icon === '💰' ? (
+                <button onClick={() => setBudgetOpen((v) => !v)} aria-expanded={budgetOpen} className="text-left">
+                  {r.text} <span className="text-muted-foreground text-xs">{budgetOpen ? '▲' : '▼'}</span>
+                </button>
+              ) : r.text}
+              {r.icon === '💰' && budgetOpen && (
+                <span className="block mt-1 text-xs text-muted-foreground">{l.budgetDetail}</span>
+              )}
+            </span>
             <button onClick={r.action} aria-label={`trocar ${r.icon}`} className="shrink-0 text-primary text-xs underline-offset-2 hover:underline">trocar</button>
           </li>
         ))}
