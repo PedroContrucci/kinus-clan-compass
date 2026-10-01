@@ -13,7 +13,6 @@ import { HotelPlanBlock } from '@/components/hotel/HotelPlanBlock';
 import { applyHotelSwap, type SwapTripLike, type AccommodationLike } from '@/lib/hotelSwap';
 import type { StoredTrip } from '@/lib/tripStore';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
-import { HintBalloon } from '@/components/onboarding/HintBalloon';
 
 // Types
 interface DraftTrip {
@@ -341,11 +340,6 @@ const DraftStepper = ({ trip, currentStage, onChange, onSwapHotel }: DraftSteppe
         })}
       </div>
       <div className="px-4 pb-3">
-        <HintBalloon
-          area="draft_cockpit"
-          arrow="up"
-          text="Sua trilha: toque numa etapa para voltar a ela."
-        />
       </div>
     </div>
   );
