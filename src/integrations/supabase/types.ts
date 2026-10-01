@@ -183,6 +183,7 @@ export type Database = {
           screen_size: string | null
           tester_name: string | null
           user_agent: string | null
+          wanted_destination: string | null
         }
         Insert: {
           app_version?: string | null
@@ -195,6 +196,7 @@ export type Database = {
           screen_size?: string | null
           tester_name?: string | null
           user_agent?: string | null
+          wanted_destination?: string | null
         }
         Update: {
           app_version?: string | null
@@ -207,6 +209,7 @@ export type Database = {
           screen_size?: string | null
           tester_name?: string | null
           user_agent?: string | null
+          wanted_destination?: string | null
         }
         Relationships: []
       }
