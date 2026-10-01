@@ -34,6 +34,7 @@ import { KinuAnalysisCard } from './KinuAnalysisCard';
 import { ItineraryDayWeather } from './ItineraryDayWeather';
 import { ItineraryExchangeRate } from './ItineraryExchangeRate';
 import { updateTrip } from '@/lib/tripStore';
+import { followPlanEnvelope, envelopeFor, reserveFor } from '@/lib/planTotals';
 import type { TripFinances } from '@/types/trip';
 
 // Types
@@ -105,6 +106,8 @@ interface GeneratedItineraryStageProps {
    * e reverteria a troca de hotel do usuário no mount.
    */
   hotelPlannedOverride?: number;
+  /** Envelope segue o plano (rascunho do fluxo guiado): Análise compara com custo + reserva. */
+  budgetFollowsPlan?: boolean;
 }
 
 // Convert previously-generated TripDay[] (from createTrip) into ItineraryDay[]
@@ -1058,6 +1061,7 @@ export const GeneratedItineraryStage = ({
   priceLevel: priceLevelProp,
   existingDays,
   hotelPlannedOverride,
+  budgetFollowsPlan = false,
 }: GeneratedItineraryStageProps) => {
   // SINGLE SOURCE OF TRUTH: the internal generator ALWAYS runs so trip-wide
   // no-repetition, Michelin cap and sunset rules apply. existingDays is ignored
@@ -1131,7 +1135,7 @@ export const GeneratedItineraryStage = ({
           const confirmed = prevFinances.confirmed || 0;
           const bidding = prevFinances.bidding || 0;
 
-          return {
+          return followPlanEnvelope({
             ...trip,
             finances: {
               total,
@@ -1148,7 +1152,7 @@ export const GeneratedItineraryStage = ({
                 shopping: cat('shopping'),
               },
             },
-          };
+          });
         });
       } catch (err) {
         console.warn('[GeneratedItineraryStage] finance recompute failed', err);
@@ -1341,7 +1345,8 @@ export const GeneratedItineraryStage = ({
           destination={destination}
           departureDate={departureDate}
           returnDate={returnDate}
-          budget={budget}
+          budget={budgetFollowsPlan ? envelopeFor(derivedFinances.totalPlanned) : budget}
+          reserveAmount={budgetFollowsPlan ? reserveFor(derivedFinances.totalPlanned) : undefined}
           flightsCost={derivedFinances.flightsPlanned}
           hotelCost={derivedFinances.hotelPlanned}
           toursCost={derivedFinances.toursPlanned}

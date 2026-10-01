@@ -2,6 +2,7 @@
 // Stage 1: Flight Selection → Stage 2: Generated Itinerary → Stage 3: Active Trip
 // UI stepper reflects the two in-cockpit stages: flights and itinerary.
 
+import { budgetFollowsPlan } from '@/lib/planTotals';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -667,6 +668,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
           onDaysGenerated={hasExistingDays ? undefined : setGeneratedDays}
           existingDays={hasExistingDays ? trip.days : undefined}
           hotelPlannedOverride={curatedHotelPlanned}
+          budgetFollowsPlan={budgetFollowsPlan(trip)}
         />
       </>
     );
