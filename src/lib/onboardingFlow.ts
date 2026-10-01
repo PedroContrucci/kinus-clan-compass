@@ -26,8 +26,11 @@ export function iconIdOf(city: string): string | null {
   return Object.keys(tiers).find((id) => tiers[id] === 'icon') ?? null;
 }
 
+const COUNTRY_FALLBACK: Record<string, string> = { 'Porto Seguro': 'Brasil' };
+
 export function countryOf(city: string): string {
-  return findCityInfo(city)?.country.country ?? '';
+  // Cidade curada fora do catálogo de destinos (ex.: Porto Seguro) cai num mapa local mínimo.
+  return findCityInfo(city)?.country.country ?? COUNTRY_FALLBACK[city] ?? '';
 }
 
 /** Próximo mês, 5 noites. */
