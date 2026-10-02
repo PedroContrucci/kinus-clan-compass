@@ -39,7 +39,6 @@ import type { TripFinances } from '@/types/trip';
 import {
   generateItinerary,
   computeBuckets as computeEngineBuckets,
-  convertToItineraryActivity,
   type ItineraryActivity,
   type ItineraryDay,
   type BudgetBreakdown,
@@ -270,30 +269,8 @@ export const GeneratedItineraryStage = ({
   // in-stage (before activation). Post-activation edits keep working on top.
   // Single source of truth for the finance buckets shown across all surfaces.
   // Matches EXACTLY what recomputeAndPersistFinances writes to trip.finances.
-  const computeBuckets = (currentDays: ItineraryDay[]) => {
-    const flightsPlanned = Math.round(breakdown.flights.amount || 0);
-    // Hotel curado manda: `hotelPlannedOverride` é a diária curada × noites da própria
-    // viagem. Sem ele (viagem sem hotel curado), a estimativa desta etapa, como antes.
-    const hotelPlanned = hotelPlannedOverride && hotelPlannedOverride > 0
-      ? Math.round(hotelPlannedOverride)
-      : Math.round(breakdown.hotel.amount || 0);
-    let foodPlanned = 0;
-    let toursPlanned = 0;
-    currentDays.forEach((day) => {
-      day.activities.forEach((act) => {
-        const cost = Math.round(act.estimatedCost || 0);
-        // Exclude flight/hotel/system items — their cost lives only in the
-        // planned flight/hotel totals from breakdown, never on day items.
-        if (['flight', 'hotel', 'checkin', 'checkout', 'transport'].includes(act.type)) return;
-        if (['breakfast', 'lunch', 'dinner'].includes(act.timeSlot)) {
-          foodPlanned += cost;
-        } else if (['morning', 'afternoon', 'night'].includes(act.timeSlot)) {
-          toursPlanned += cost;
-        }
-      });
-    });
-    const totalPlanned = flightsPlanned + hotelPlanned + foodPlanned + toursPlanned;
-    return { flightsPlanned, hotelPlanned, foodPlanned, toursPlanned, totalPlanned };
+  const computeBuckets = (currentDays: ItineraryDay[]) =>
+    computeEngineBuckets(currentDays, breakdown, hotelPlannedOverride);
   };
 
   const derivedFinances = useMemo(() => computeBuckets(days), [days, breakdown, hotelPlannedOverride]);
