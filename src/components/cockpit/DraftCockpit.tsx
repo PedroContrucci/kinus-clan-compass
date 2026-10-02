@@ -404,9 +404,11 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   const totalDaysExpected =
     trip.totalDays ||
     (Math.round((new Date(trip.endDate).getTime() - new Date(trip.startDate).getTime()) / 86400000) + 1);
+  // Rascunho salvo é mostrado como está (nunca regerado no open); "Regerar roteiro" é o único caminho.
+  void totalDaysExpected;
   const hasExistingDays = Array.isArray(trip.days)
-    && trip.days.length === totalDaysExpected
-    && trip.days.every((d: any) => Array.isArray(d?.activities) && d.activities.length > 0);
+    && trip.days.length > 0
+    && trip.days.some((d: any) => Array.isArray(d?.activities) && d.activities.length > 0);
 
   // Hospedagem curada manda no bucket de hospedagem. A etapa de roteiro recalcula as
   // finanças no mount a partir da SUA estimativa (getActivityPrice × noites) e, sem
@@ -472,7 +474,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     });
   }, [selectedOutbound, selectedReturn, confirmIfEdited, regenerateWith]);
 
-  const handleSave = useCallback((daysFromStage?: any[], bucketsFromStage?: { flightsPlanned: number; hotelPlanned: number; foodPlanned: number; toursPlanned: number; totalPlanned: number }) => {
+  const handleSave = useCallback((daysFromStage?: any[]) => {
     const nextDays = daysFromStage && daysFromStage.length > 0
       ? daysFromStage
       : (generatedDays && generatedDays.length > 0 ? generatedDays : trip.days);
@@ -522,7 +524,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   const effectiveReturn = selectedReturn
     || (canSkipFlightSelection ? buildPlaceholderFlight(new Date(trip.endDate), 'return') : undefined);
 
-  const handleActivate = useCallback((daysFromStage?: any[], bucketsFromStage?: { flightsPlanned: number; hotelPlanned: number; foodPlanned: number; toursPlanned: number; totalPlanned: number }) => {
+  const handleActivate = useCallback((daysFromStage?: any[]) => {
     if ((!effectiveOutbound || !effectiveReturn) && !canSkipFlightSelection) {
       toast({ 
         title: "Selecione os voos primeiro", 
@@ -563,13 +565,35 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   // Stage 1: Flight Selection
   // Troca de hotel no rascunho. Mesmo modal e mesma persistência da viagem ativa:
   // um só caminho de escrita para os dois estados da viagem.
+  const regenDialog = (
+    <AlertDialog open={!!pendingRegen} onOpenChange={(o) => { if (!o) setPendingRegen(null); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Refazer o roteiro?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Isso refaz o roteiro e desfaz {pendingRegen?.edits} {pendingRegen?.edits === 1 ? 'troca sua' : 'trocas suas'}. Continuar?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={() => { const run = pendingRegen?.run; setPendingRegen(null); run?.(); }}>
+            Continuar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
   const hotelSwapModal = (
+    <>
+    {regenDialog}
     <HotelSwapModal
       open={hotelSwapOpen}
       onClose={() => setHotelSwapOpen(false)}
       trip={trip as SwapTripLike}
       onSelect={(hotel) => onUpdateTrip?.((t) => applyHotelSwap(t, hotel))}
     />
+    </>
   );
 
   if (stage === 'flights') {
@@ -607,6 +631,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
           onSelectHotel={(hotel) => onUpdateTrip?.((t) => applyHotelSwap(t, hotel))}
         />
         <GeneratedItineraryStage
+          key={regenKey}
           tripId={trip.id}
           destination={trip.destination}
           origin={trip.origin || 'São Paulo'}
@@ -627,6 +652,10 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
           existingDays={hasExistingDays ? trip.days : undefined}
           hotelPlannedOverride={curatedHotelPlanned}
           budgetFollowsPlan={budgetFollowsPlan(trip)}
+          plannedFlights={(trip as { finances?: { categories?: { flights?: { planned?: number } } } }).finances?.categories?.flights?.planned}
+          plannedHotel={(trip as { finances?: { categories?: { accommodation?: { planned?: number } } } }).finances?.categories?.accommodation?.planned}
+          engineItemIds={(trip as { engineItemIds?: string[] }).engineItemIds}
+          onRegenerate={selectedOutbound && selectedReturn ? handleRegenerate : undefined}
         />
       </>
     );
