@@ -76,7 +76,7 @@ describe('ativação única', () => {
     addTrip({ ...t, id: 'c-4', outboundFlight: undefined } as StoredTrip);
     const r = activateDraft('c-4');
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.message).toContain('Escolha os voos de ida e volta');
+    if ('message' in r) expect(r.message).toContain('Escolha os voos de ida e volta');
     expect(src('components/cockpit/DraftCockpit.tsx')).not.toContain('buildPlaceholderFlight');
   });
 

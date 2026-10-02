@@ -1043,11 +1043,11 @@ const Viagens = () => {
   // Caminho único de ativação (card e cockpit): ativa o que está gravado, nunca gera dias.
   const handleActivateDraft = (tripId: string) => {
     const result = activateDraft(tripId, user?.id);
-    if (!result.ok) {
+    if ('message' in result) {
       toast({ title: 'Não deu para ativar', description: result.message, variant: 'destructive' });
       return;
     }
-    setSelectedTrip(result.trip);
+    if ('trip' in result) setSelectedTrip(result.trip);
     toast({ title: 'Viagem ativada! 🚀', description: 'Sua viagem está pronta para acompanhamento.' });
   };
 
