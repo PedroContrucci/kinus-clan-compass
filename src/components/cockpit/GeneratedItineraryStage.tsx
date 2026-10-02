@@ -36,6 +36,18 @@ import { ItineraryExchangeRate } from './ItineraryExchangeRate';
 import { updateTrip } from '@/lib/tripStore';
 import { followPlanEnvelope, envelopeFor, reserveFor } from '@/lib/planTotals';
 import type { TripFinances } from '@/types/trip';
+import {
+  generateItinerary,
+  computeBuckets as computeEngineBuckets,
+  convertToItineraryActivity,
+  type ItineraryActivity,
+  type ItineraryDay,
+  type BudgetBreakdown,
+} from '@/lib/itineraryEngine';
+
+// Reexport: o gerador mora no motor puro; quem importava daqui segue funcionando.
+export { generateItinerary };
+
 
 
 interface GeneratedItineraryStageProps {
