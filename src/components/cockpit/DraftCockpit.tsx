@@ -2,7 +2,7 @@
 // Stage 1: Flight Selection → Stage 2: Generated Itinerary → Stage 3: Active Trip
 // UI stepper reflects the two in-cockpit stages: flights and itinerary.
 
-import { budgetFollowsPlan } from '@/lib/planTotals';
+import { budgetFollowsPlan, planBreakdown } from '@/lib/planTotals';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -139,14 +139,9 @@ export function applyEstimatedFlights<T extends Record<string, any>>(trip: T): T
 /** Os 4 baldes de trip.finances (mesma leitura do card "O que o KINU fez"). */
 // eslint-disable-next-line react-refresh/only-export-components, @typescript-eslint/no-explicit-any
 export function financeBucketsOf(trip: any) {
-  const c = trip?.finances?.categories;
-  if (!c) return undefined;
-  const n = (v: unknown) => Math.round(Number(v) || 0);
-  const flightsPlanned = n(c.flights?.planned);
-  const hotelPlanned = n(c.accommodation?.planned);
-  const foodPlanned = n(c.food?.planned);
-  const toursPlanned = n(c.tours?.planned);
-  return { flightsPlanned, hotelPlanned, foodPlanned, toursPlanned, totalPlanned: flightsPlanned + hotelPlanned + foodPlanned + toursPlanned };
+  if (!trip?.finances?.categories) return undefined;
+  const p = planBreakdown(trip);
+  return { flightsPlanned: p.flights, hotelPlanned: p.hotel, foodPlanned: p.food, toursPlanned: p.tours, totalPlanned: p.total };
 }
 
 /** Estágio inicial do cockpit: Roteiro para viagens com voo escolhido ou montadas pelo KINU. */
