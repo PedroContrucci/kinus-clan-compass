@@ -7,7 +7,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
-import { FlightSelectionStage, FlightOption, SelectedFlight } from './FlightSelectionStage';
+import { FlightSelectionStage, SelectedFlight } from './FlightSelectionStage';
 import { GeneratedItineraryStage } from './GeneratedItineraryStage';
 import { HotelSwapModal } from '@/components/hotel/HotelSwapModal';
 import { HotelPlanBlock } from '@/components/hotel/HotelPlanBlock';

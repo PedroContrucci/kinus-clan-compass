@@ -271,7 +271,6 @@ export const GeneratedItineraryStage = ({
   // Convert current ItineraryDay[] into TripDay[] shape (matches buildDraftTrip
   // output) so the parent can persist EXACTLY what the user sees.
   // ItineraryDay[] → trip.days (mesmo mapeamento do motor; timeSlot/kind preservados).
-  const toTripDays = (source: ItineraryDay[]): any[] => itineraryToTripDays(source);
 
   const handleActivateWithFinances = () => onActivate();
   const handleSaveWithDays = () => onSave();
