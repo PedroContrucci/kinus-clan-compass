@@ -144,7 +144,12 @@ function normalizeTripDays(days: any[] = []): SavedTrip['days'] {
             status: normalizeActivityStatus(activity?.status),
             category,
             jetLagFriendly: isJetLagFriendlyActivity(activity),
-          };
+            // Campos do motor (fora do tipo): sem eles a tela reclassifica por hora e perde o hotel.
+            ...(activity?.timeSlot ? { timeSlot: activity.timeSlot } : {}),
+            ...(activity?.kind ? { kind: activity.kind } : {}),
+            ...(activity?.location ? { location: activity.location } : {}),
+            ...(activity?.edited ? { edited: true } : {}),
+          } as TripActivity;
         })
       : [];
 

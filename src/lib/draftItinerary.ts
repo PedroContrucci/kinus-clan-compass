@@ -19,7 +19,17 @@ import { followPlanEnvelope } from '@/lib/planTotals';
 export type EngineTripActivity = TripDay['activities'][number] & {
   timeSlot?: ItineraryActivity['timeSlot'];
   kind?: ItineraryActivity['type'];
+  location?: string;
 };
+
+/** Rótulo do hotel no check-in: nome + bairro, quando houver. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function hotelLabelFor(acc: any): string | undefined {
+  if (!acc?.name) return undefined;
+  const name = String(acc.name);
+  const zone = acc.neighborhood ? String(acc.neighborhood) : '';
+  return zone && !name.includes(zone) ? `${name} • ${zone}` : name;
+}
 
 const TIER_TO_PRICE: Record<string, PriceLevel> = {
   backpacker: 'budget', economic: 'budget', budget: 'budget',
@@ -78,6 +88,7 @@ export function itineraryToTripDays(source: ItineraryDay[]): TripDay[] {
         status: a.status === 'pending' ? 'cancelled' : 'planned',
         timeSlot: a.timeSlot,
         kind: a.type,
+        ...(a.location ? { location: a.location } : {}),
       };
       return item;
     }),
@@ -249,7 +260,7 @@ export function buildItineraryForTrip(
     interests: trip.travelInterests || [],
     jetLagSeverity,
     priceLevel: opts.priceLevel ?? priceLevelFor(trip),
-    hotel: acc?.name ? { label: String(acc.name) } : undefined,
+    hotel: hotelLabelFor(acc) ? { label: hotelLabelFor(acc)! } : undefined,
     hotelPlannedOverride,
   });
 
