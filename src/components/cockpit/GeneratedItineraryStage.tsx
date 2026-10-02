@@ -60,10 +60,10 @@ interface GeneratedItineraryStageProps {
   returnFlight: SelectedFlight;
   travelInterests?: string[];
   jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO';
-  onActivate: (days?: any[], financeBuckets?: { flightsPlanned: number; hotelPlanned: number; foodPlanned: number; toursPlanned: number; totalPlanned: number }) => void;
-  onSave: (days?: any[], financeBuckets?: { flightsPlanned: number; hotelPlanned: number; foodPlanned: number; toursPlanned: number; totalPlanned: number }) => void;
+  /** Lêem a viagem gravada — a etapa não passa dias nem baldes. */
+  onActivate: () => void;
+  onSave: () => void;
   onBack: () => void;
-  onDaysGenerated?: (days: ItineraryDay[]) => void;
   priceLevel?: PriceLevel;
   /** Existing generated days (TripDay[] shape from createTrip). If complete, they are used instead of running the internal generator. */
   existingDays?: any[];
@@ -147,7 +147,6 @@ export const GeneratedItineraryStage = ({
   onActivate,
   onSave,
   onBack,
-  onDaysGenerated,
   priceLevel: priceLevelProp,
   existingDays,
   hotelPlannedOverride,
@@ -188,11 +187,12 @@ export const GeneratedItineraryStage = ({
   const [days, setDays] = useState(initialDays);
   const [breakdown] = useState(initialBreakdown);
 
-  useEffect(() => {
-    if (onDaysGenerated && days.length > 0) {
-      onDaysGenerated(days);
-    }
-  }, [days, onDaysGenerated]);
+  // Toda edição manual (remover/trocar/adicionar) grava em trip.days na hora, pelo funil.
+  // Salvar e Ativar só leem a viagem; as finanças seguem pelo recompute abaixo.
+  const commitDays = (next: ItineraryDay[]) => {
+    setDays(next);
+    updateTrip(tripId, (t) => ({ ...t, days: itineraryToTripDays(next) }));
+  };
 
   // Recompute finances from the actual generated content and persist onto the
   // matching draft in localStorage so the Financeiro tab always reflects what
@@ -273,16 +273,8 @@ export const GeneratedItineraryStage = ({
   // ItineraryDay[] → trip.days (mesmo mapeamento do motor; timeSlot/kind preservados).
   const toTripDays = (source: ItineraryDay[]): any[] => itineraryToTripDays(source);
 
-  const handleActivateWithFinances = () => {
-    const tripDays = toTripDays(days);
-    const buckets = computeBuckets(days);
-    onActivate(tripDays, buckets);
-  };
-  const handleSaveWithDays = () => {
-    const tripDays = toTripDays(days);
-    const buckets = computeBuckets(days);
-    onSave(tripDays, buckets);
-  };
+  const handleActivateWithFinances = () => onActivate();
+  const handleSaveWithDays = () => onSave();
   const [selectedDay, setSelectedDay] = useState(1);
   const [addActivityModal, setAddActivityModal] = useState(false);
 
@@ -295,7 +287,7 @@ export const GeneratedItineraryStage = ({
       ...day,
       activities: day.activities.filter(act => act.id !== activityId),
     }));
-    setDays(updatedDays);
+    commitDays(updatedDays);
     toast({ title: "Atividade removida", description: "A atividade foi removida do roteiro." });
   };
 
@@ -355,7 +347,7 @@ export const GeneratedItineraryStage = ({
         activities: d.activities.map(a => (a.id === activityId ? newActivity : a)),
       };
     });
-    setDays(updatedDays);
+    commitDays(updatedDays);
     toast({ title: "Atividade trocada" });
   };
 
@@ -812,7 +804,7 @@ export const GeneratedItineraryStage = ({
                 };
                 const updatedDays = [...days];
                 updatedDays[selectedDay - 1].activities.push(newActivity);
-                setDays(updatedDays);
+                commitDays(updatedDays);
                 setAddActivityModal(false);
                 toast({ title: "Atividade adicionada!", description: "Edite os detalhes da atividade." });
               }}
