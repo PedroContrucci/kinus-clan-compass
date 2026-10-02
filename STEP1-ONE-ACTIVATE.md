@@ -7,8 +7,8 @@
    edições. O item 3 é pré-requisito do item 1, não limpeza.
 2. **O Ativar do card pula tudo** (Viagens:1487 → `handleActivateDraft({...selectedTrip})`): sem checagem de voo, sem
    toast, e cai no `generateBasicDays` se não houver dias. O do cockpit (DraftCockpit:534–563) checa voo, faz o toast,
-   e grava `outboundFlight: selectedOutbound` — que é `undefined` quando o voo é a estimativa salva? Não: a estimativa
-   já está em `trip.outboundFlight` desde o open (applyEstimatedFlights), mas o spread sobrescreve com o estado local.
+   e sobrescreve `outboundFlight/returnFlight` com o estado local `selectedOutbound/Return` (a estimativa salva no
+   open pode não estar nele).
    O caminho único lê sempre de `trip`, nunca do estado do cockpit.
 3. **Já existem 2 emissões de ativação**: handleActivateDraft:1067 e a promoção implícita (:356). `trackTripActivated`
    é idempotente pela marca na viagem (activatedEventAt). O eventWiring.test exige exatamente 2 `trackTripActivated(`
