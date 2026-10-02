@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildDraftTrip, type DraftTripInput } from '@/lib/createTrip';
 import { runItineraryEngine } from '@/lib/itineraryEngine';
-import { buildItineraryForTrip, countManualEdits, itemIdsOf, itineraryToTripDays, tripDaysToItinerary } from '@/lib/draftItinerary';
+import { hotelLabelFor, buildItineraryForTrip, countManualEdits, itemIdsOf, itineraryToTripDays, tripDaysToItinerary } from '@/lib/draftItinerary';
 import { kinuDidLines } from '@/lib/onboardingFlow';
 import type { SelectedFlight } from '@/lib/itineraryEngine';
 
@@ -27,7 +27,7 @@ describe('draft truth', () => {
         destination: city, origin: 'São Paulo', outboundFlight: t.outboundFlight, returnFlight: t.returnFlight,
         budget: 20000, travelers: 2, interests: ['gastronomy', 'culture'],
         jetLagSeverity: trip.jetLagSeverity as 'BAIXO', priceLevel: t.priceLevel,
-        hotel: { label: acc.name }, hotelPlannedOverride: acc.curatedHotelId ? acc.totalPrice : undefined,
+        hotel: { label: hotelLabelFor(acc)! }, hotelPlannedOverride: acc.curatedHotelId ? acc.totalPrice : undefined,
       });
       expect(trip.days).toEqual(itineraryToTripDays(r.days));
       const c = trip.finances.categories;

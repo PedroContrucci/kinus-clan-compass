@@ -80,6 +80,8 @@ interface GeneratedItineraryStageProps {
   /** Voo e hotel planejados lidos de trip.finances (quando existingDays vem da viagem). */
   plannedFlights?: number;
   plannedHotel?: number;
+  /** Os 4 baldes de trip.finances: o card da Análise e o bloco de orçamento leem só isto. */
+  financeBuckets?: { flightsPlanned: number; hotelPlanned: number; foodPlanned: number; toursPlanned: number; totalPlanned: number };
   /** Ids da última geração do motor — base da contagem de trocas manuais. */
   engineItemIds?: string[];
   /** "Regerar roteiro": recebe o número de trocas manuais na tela. */
@@ -152,6 +154,7 @@ export const GeneratedItineraryStage = ({
   budgetFollowsPlan = false,
   plannedFlights,
   plannedHotel,
+  financeBuckets,
   engineItemIds,
   onRegenerate,
 }: GeneratedItineraryStageProps) => {
@@ -200,7 +203,10 @@ export const GeneratedItineraryStage = ({
   const computeBuckets = (currentDays: ItineraryDay[]) =>
     computeEngineBuckets(currentDays, breakdown, hotelPlannedOverride);
 
-  const derivedFinances = useMemo(() => computeBuckets(days), [days, breakdown, hotelPlannedOverride]);
+  // Com finanças gravadas, a tela lê trip.finances (a etapa persiste os baldes a cada edição).
+  // Sem elas (viagem antiga sem dias), os baldes do motor sobre os dias gerados.
+  const computedFinances = useMemo(() => computeBuckets(days), [days, breakdown, hotelPlannedOverride]);
+  const derivedFinances = financeBuckets && financeBuckets.totalPlanned > 0 ? financeBuckets : computedFinances;
 
   const recomputeAndPersistFinances = useMemo(() => {
     return (currentDays: ItineraryDay[]) => {

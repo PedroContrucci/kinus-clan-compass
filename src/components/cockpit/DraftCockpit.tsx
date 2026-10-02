@@ -2,7 +2,7 @@
 // Stage 1: Flight Selection → Stage 2: Generated Itinerary → Stage 3: Active Trip
 // UI stepper reflects the two in-cockpit stages: flights and itinerary.
 
-import { budgetFollowsPlan } from '@/lib/planTotals';
+import { budgetFollowsPlan, planBreakdown } from '@/lib/planTotals';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -134,6 +134,14 @@ export function applyEstimatedFlights<T extends Record<string, any>>(trip: T): T
   }
   syncTripFlightPlannedFinances(updated);
   return updated;
+}
+
+/** Os 4 baldes de trip.finances (mesma leitura do card "O que o KINU fez"). */
+// eslint-disable-next-line react-refresh/only-export-components, @typescript-eslint/no-explicit-any
+export function financeBucketsOf(trip: any) {
+  if (!trip?.finances?.categories) return undefined;
+  const p = planBreakdown(trip);
+  return { flightsPlanned: p.flights, hotelPlanned: p.hotel, foodPlanned: p.food, toursPlanned: p.tours, totalPlanned: p.total };
 }
 
 /** Estágio inicial do cockpit: Roteiro para viagens com voo escolhido ou montadas pelo KINU. */
@@ -653,6 +661,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
           budgetFollowsPlan={budgetFollowsPlan(trip)}
           plannedFlights={(trip as { finances?: { categories?: { flights?: { planned?: number } } } }).finances?.categories?.flights?.planned}
           plannedHotel={(trip as { finances?: { categories?: { accommodation?: { planned?: number } } } }).finances?.categories?.accommodation?.planned}
+          financeBuckets={financeBucketsOf(trip)}
           engineItemIds={(trip as { engineItemIds?: string[] }).engineItemIds}
           onRegenerate={selectedOutbound && selectedReturn ? handleRegenerate : undefined}
         />
