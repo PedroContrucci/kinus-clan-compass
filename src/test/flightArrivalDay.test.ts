@@ -95,10 +95,10 @@ describe('buildDraftTrip — GRU → Cartagena (o caso da testadora-zero)', () =
   it('começa o roteiro no dia 1, com embarque e chegada juntos', async () => {
     const trip = await buildDraftTrip(draftInput());
     const dia1 = trip.days[0];
-    expect(dia1.title).toContain('Chegada');
+    // Motor único: o dia 1 de voo diurno é "Partida" com voo + check-in no mesmo dia.
+    expect(dia1.title).toContain('Partida');
     const nomes = dia1.activities.map(a => a.name);
     expect(nomes.some(n => n.startsWith('Voo '))).toBe(true);
-    expect(nomes.some(n => n.startsWith('Chegada em'))).toBe(true);
     expect(nomes.some(n => n === 'Check-in no hotel')).toBe(true);
     // E o dia 2 já é exploração — não pode ter sobrado uma segunda chegada.
     expect(trip.days[1].title).not.toContain('Chegada');
@@ -115,8 +115,8 @@ describe('buildDraftTrip — não-regressão dos voos que já estavam certos', (
   it('Tóquio (24h) mantém o dia de trânsito e chega no D3', async () => {
     const trip = await buildDraftTrip(draftInput({ destinationCity: 'Tóquio', destinationAirportCode: 'HND' }));
     expect(arrivalOffset(trip)).toBe(2);
-    expect(trip.days[0].title).toContain('Embarque');
-    expect(trip.days[1].title).toContain('Trânsito');
+    expect(trip.days[0].title).toContain('Partida');
+    expect(trip.days[1].title.toLowerCase()).toContain('trânsito');
     expect(trip.days[2].title).toContain('Chegada');
   });
 
@@ -124,7 +124,7 @@ describe('buildDraftTrip — não-regressão dos voos que já estavam certos', (
     const trip = await buildDraftTrip(draftInput({ destinationCity: 'Paris', destinationAirportCode: 'CDG' }));
     expect(trip.flights!.outbound!.departureTime).toBe('23:00');
     expect(arrivalOffset(trip)).toBe(1);
-    expect(trip.days[0].title).toContain('Embarque');
+    expect(trip.days[0].title).toContain('Partida');
     expect(trip.days[0].title).not.toContain('Chegada');
     expect(trip.days[1].title).toContain('Chegada');
   });
@@ -139,6 +139,6 @@ describe('buildDraftTrip — não-regressão dos voos que já estavam certos', (
   it('Buenos Aires (3h) chega no mesmo dia, como sempre deveria', async () => {
     const trip = await buildDraftTrip(draftInput({ destinationCity: 'Buenos Aires', destinationAirportCode: 'EZE' }));
     expect(arrivalOffset(trip)).toBe(0);
-    expect(trip.days[0].title).toContain('Chegada');
+    expect(trip.days[0].activities.some(a => a.name === 'Check-in no hotel')).toBe(true);
   });
 });

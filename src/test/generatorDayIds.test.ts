@@ -9,7 +9,7 @@ const CASES: [string, string, string[]][] = [
   ['Cartagena', 'CTG', []],
 ];
 
-describe('generateDays — ids no namespace day-N-', () => {
+describe('buildDraftTrip (motor único) — ids no namespace day-N-', () => {
   for (const [city, code, interests] of CASES) {
     it(`${city}: catálogo resolve, slot não resolve, sem duplicatas`, async () => {
       const trip = await buildDraftTrip({
@@ -28,7 +28,7 @@ describe('generateDays — ids no namespace day-N-', () => {
         if (id.startsWith('__free__')) continue;
         expect(id).toMatch(/^day-\d+-/);
         const cid = catalogIdOf(id);
-        if (cid.startsWith('slot-')) expect(catalog.has(cid)).toBe(false);
+        if (cid.startsWith('slot-') || cid.startsWith('michelin-')) expect(catalog.has(cid)).toBe(false);
         else { expect(catalog.has(cid)).toBe(true); catalogHits++; }
       }
       expect(catalogHits).toBeGreaterThan(0);

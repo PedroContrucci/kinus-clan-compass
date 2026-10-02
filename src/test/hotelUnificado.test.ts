@@ -150,7 +150,9 @@ describe('buildDraftTrip — cidade sem curadoria no tier: nada muda', () => {
     expect(acc.nightlyRate).toBe(800);
     expect(acc.totalPrice).toBe(5600);
     expect(trip.finances.categories.accommodation.planned).toBe(5600);
-    expect(trip.finances.planned).toBe(38720);
+    // Planejado = 4 baldes do motor único (voo da estimativa × viajantes; sem balde transport).
+    const c = trip.finances.categories;
+    expect(trip.finances.planned).toBe(c.flights.planned + c.accommodation.planned + c.food.planned + c.tours.planned);
   });
 });
 

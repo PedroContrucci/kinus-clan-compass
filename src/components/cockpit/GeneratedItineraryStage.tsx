@@ -34,6 +34,7 @@ import {
   type ItineraryDay,
   type BudgetBreakdown,
 } from '@/lib/itineraryEngine';
+import { tripDaysToItinerary, itineraryToTripDays, itemIdsOf, countManualEdits } from '@/lib/draftItinerary';
 
 // Reexport: o gerador mora no motor puro; quem importava daqui segue funcionando.
 // eslint-disable-next-line react-refresh/only-export-components
@@ -76,102 +77,14 @@ interface GeneratedItineraryStageProps {
   hotelPlannedOverride?: number;
   /** Envelope segue o plano (rascunho do fluxo guiado): Análise compara com custo + reserva. */
   budgetFollowsPlan?: boolean;
+  /** Voo e hotel planejados lidos de trip.finances (quando existingDays vem da viagem). */
+  plannedFlights?: number;
+  plannedHotel?: number;
+  /** Ids da última geração do motor — base da contagem de trocas manuais. */
+  engineItemIds?: string[];
+  /** "Regerar roteiro": recebe o número de trocas manuais na tela. */
+  onRegenerate?: (manualEdits: number) => void;
 }
-
-// Convert previously-generated TripDay[] (from createTrip) into ItineraryDay[]
-// for display in this stage. Also derives a minimal budget breakdown.
-function convertTripDaysToItinerary(
-  existingDays: any[],
-  departureDate: Date,
-  travelers: number,
-  budget: number
-): { days: ItineraryDay[]; breakdown: BudgetBreakdown; meta: { michelinCount: number } } {
-  const inferTimeSlot = (time: string | undefined, category?: string, type?: string): ItineraryActivity['timeSlot'] => {
-    const cat = (category || '').toLowerCase();
-    const t = (type || '').toLowerCase();
-    if (cat === 'voo' || t.includes('voo') || t.includes('flight')) return 'flight';
-    if (cat === 'hotel' || t.includes('hotel') || t.includes('check')) return 'hotel';
-    const h = parseInt((time || '12:00').split(':')[0], 10) || 12;
-    if (cat === 'comida') {
-      if (h < 10) return 'breakfast';
-      if (h < 15) return 'lunch';
-      return 'dinner';
-    }
-    if (h < 11) return 'morning';
-    if (h < 14) return 'lunch';
-    if (h < 17) return 'afternoon';
-    if (h < 21) return 'dinner';
-    return 'night';
-  };
-  const mapType = (category?: string, timeSlot?: ItineraryActivity['timeSlot']): ItineraryActivity['type'] => {
-    const c = (category || '').toLowerCase();
-    if (c === 'voo') return 'flight';
-    if (c === 'hotel') return 'hotel';
-    if (c === 'comida') return (timeSlot as any) || 'lunch';
-    if (c === 'transporte') return 'transport';
-    return 'experience';
-  };
-  const mapStatus = (s: string): ItineraryActivity['status'] => {
-    if (s === 'confirmed') return 'defined';
-    if (s === 'cancelled') return 'pending';
-    return 'suggestion';
-  };
-
-  const days: ItineraryDay[] = existingDays.map((d: any, idx: number) => {
-    const activities: ItineraryActivity[] = (d.activities || []).map((a: any) => {
-      const timeSlot = inferTimeSlot(a.time, a.category, a.type);
-      const cost = Number(a.cost) || 0;
-      return {
-        id: a.id || `existing-${idx}-${Math.random().toString(36).slice(2, 8)}`,
-        name: a.name || 'Atividade',
-        type: mapType(a.category, timeSlot),
-        timeSlot,
-        estimatedCost: cost,
-        costPerPerson: travelers > 0 ? cost / travelers : cost,
-        time: a.time,
-        duration: a.duration,
-        location: a.location,
-        status: mapStatus(a.status),
-        tips: a.description ? [a.description] : undefined,
-        source: 'kinu',
-      } as ItineraryActivity;
-    });
-    const totalCost = activities.reduce((s, a) => s + (a.estimatedCost || 0), 0);
-    const parsedDate = d.date ? new Date(d.date) : addDays(departureDate, idx);
-    return {
-      dayNumber: d.day ?? idx + 1,
-      date: isNaN(parsedDate.getTime()) ? addDays(departureDate, idx) : parsedDate,
-      label: d.title || `Dia ${idx + 1}`,
-      theme: [d.icon, d.title].filter(Boolean).join(' ').trim(),
-      activities,
-      totalCost,
-    };
-  });
-
-  const sumByPredicate = (pred: (a: ItineraryActivity) => boolean) =>
-    days.reduce((s, day) => s + day.activities.filter(pred).reduce((ss, a) => ss + (a.estimatedCost || 0), 0), 0);
-
-  const flightsAmt = sumByPredicate(a => a.type === 'flight');
-  const hotelAmt = sumByPredicate(a => a.type === 'hotel' || a.type === 'checkin' || a.type === 'checkout');
-  const foodAmt = sumByPredicate(a => a.type === 'breakfast' || a.type === 'lunch' || a.type === 'dinner');
-  const experiencesAmt = sumByPredicate(a => !['flight', 'hotel', 'checkin', 'checkout', 'breakfast', 'lunch', 'dinner'].includes(a.type));
-  const total = flightsAmt + hotelAmt + foodAmt + experiencesAmt;
-  const safeBudget = budget > 0 ? budget : total || 1;
-  const pct = (v: number) => Math.round((v / safeBudget) * 100);
-
-  const breakdown: BudgetBreakdown = {
-    flights: { amount: flightsAmt, percent: pct(flightsAmt), status: 'defined' },
-    hotel: { amount: hotelAmt, percent: pct(hotelAmt), status: 'estimated' },
-    experiences: { amount: experiencesAmt, percent: pct(experiencesAmt), status: 'estimated' },
-    food: { amount: foodAmt, percent: pct(foodAmt), status: 'estimated' },
-    total,
-    available: safeBudget - total,
-    trustZonePercent: Math.round((total / safeBudget) * 100),
-  };
-
-  return { days, breakdown, meta: { michelinCount: 0 } };
-}
-
 
 const activityIcons: Record<string, React.ReactNode> = {
   flight: <Plane size={18} />,
@@ -237,14 +150,37 @@ export const GeneratedItineraryStage = ({
   existingDays,
   hotelPlannedOverride,
   budgetFollowsPlan = false,
+  plannedFlights,
+  plannedHotel,
+  engineItemIds,
+  onRegenerate,
 }: GeneratedItineraryStageProps) => {
-  // SINGLE SOURCE OF TRUTH: the internal generator ALWAYS runs so trip-wide
-  // no-repetition, Michelin cap and sunset rules apply. existingDays is ignored
-  // as an itinerary source (kept in the prop only for backwards compatibility).
-  void existingDays;
+  // O rascunho É o roteiro: com dias salvos, a tela renderiza trip.days (cópia direta do
+  // motor) e não gera nada na montagem. Voo/hotel planejados vêm de trip.finances.
+  // Sem dias (viagem antiga), o motor roda como antes. Edições manuais se perdem ao
+  // regerar — preservar é passo futuro.
+  const hasSavedDays = Array.isArray(existingDays) && existingDays.length > 0;
   const { days: initialDays, breakdown: initialBreakdown, meta = { michelinCount: 0 } } = useMemo(() => {
+    if (hasSavedDays) {
+      const saved = tripDaysToItinerary(existingDays!, departureDate, travelers);
+      const f = Math.round(plannedFlights || 0);
+      const h = Math.round(plannedHotel || 0);
+      const est = (amount: number) => ({ amount, percent: 0, status: 'estimated' as const });
+      const bd: BudgetBreakdown = {
+        flights: { amount: f, percent: 0, status: 'defined' }, hotel: est(h), experiences: est(0), food: est(0),
+        total: 0, available: 0, trustZonePercent: 0,
+      };
+      const michelinCount = saved.reduce((n, d) => n + d.activities.filter((a) => /^day-\d+-michelin-/.test(a.id)).length, 0);
+      return { days: saved, breakdown: bd, meta: { michelinCount } };
+    }
     return generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp);
-  }, [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]);
+    // Dias salvos: só na montagem (o cockpit remonta a etapa ao regerar).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, hasSavedDays ? [] : [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]);
+
+  const handleRegenerate = () => {
+    onRegenerate?.(countManualEdits(engineItemIds, itemIdsOf(days)));
+  };
 
   const [days, setDays] = useState(initialDays);
   const [breakdown] = useState(initialBreakdown);
@@ -328,42 +264,8 @@ export const GeneratedItineraryStage = ({
 
   // Convert current ItineraryDay[] into TripDay[] shape (matches buildDraftTrip
   // output) so the parent can persist EXACTLY what the user sees.
-  const toTripDays = (source: ItineraryDay[]): any[] => {
-    const mapCat = (a: ItineraryActivity): string => {
-      const t = a.type;
-      if (t === 'flight') return 'voo';
-      if (t === 'hotel' || t === 'checkin') return 'hotel';
-      if (t === 'transport' || t === 'checkout') return 'transporte';
-      if (t === 'breakfast' || t === 'lunch' || t === 'dinner') return 'comida';
-      const slot = a.timeSlot;
-      if (slot === 'flight') return 'voo';
-      if (slot === 'hotel') return 'hotel';
-      if (slot === 'breakfast' || slot === 'lunch' || slot === 'dinner') return 'comida';
-      return 'passeio';
-    };
-    const mapStatus = (s: string): string =>
-      s === 'pending' ? 'cancelled' : 'planned';
-    return source.map((d) => ({
-      day: d.dayNumber,
-      date: d.date instanceof Date ? d.date.toISOString() : d.date,
-      title: d.label,
-      icon: (d.theme || '').split(' ')[0] || '',
-      activities: d.activities.map((a) => {
-        const cat = mapCat(a);
-        return {
-          id: a.id,
-          time: a.time || '',
-          name: a.name,
-          description: (a.tips && a.tips[0]) || '',
-          duration: a.duration || '',
-          cost: Math.round(a.estimatedCost || 0),
-          type: cat,
-          category: cat,
-          status: mapStatus(a.status),
-        };
-      }),
-    }));
-  };
+  // ItineraryDay[] → trip.days (mesmo mapeamento do motor; timeSlot/kind preservados).
+  const toTripDays = (source: ItineraryDay[]): any[] => itineraryToTripDays(source);
 
   const handleActivateWithFinances = () => {
     const tripDays = toTripDays(days);
@@ -473,6 +375,12 @@ export const GeneratedItineraryStage = ({
           </div>
           
           <div className="flex items-center gap-2">
+            {onRegenerate && (
+              <Button variant="outline" size="sm" onClick={handleRegenerate}>
+                <RefreshCw size={16} className="mr-1" />
+                Regerar roteiro
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handleSaveWithDays}>
               <Save size={16} className="mr-1" />
               Salvar

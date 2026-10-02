@@ -1,21 +1,18 @@
 // createTrip — shared draft trip builder used by wizard and KINU AI.
-// Logic extracted verbatim from NewPlanningWizard.handleGenerateDraft + generateDays.
+// Os dias e as finanças saem do motor único (itineraryEngine via draftItinerary).
 
-import { differenceInDays, differenceInCalendarDays, addDays, format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { getActivityPrice, calculateTripEstimate } from '@/lib/activityPricing';
+import { differenceInDays, differenceInCalendarDays, addDays } from 'date-fns';
+import { getActivityPrice } from '@/lib/activityPricing';
 import { getIdealHotelZone, getHotelRecommendation } from '@/lib/hotelZones';
 import { pickCuratedHotelForTrip, nightlyRateFor, curatedAccommodationFields } from '@/lib/hotelSwap';
-import { getDestinationThemes, getDestinationActivities } from '@/data/destinationActivities';
-import type { SuggestedActivity } from '@/data/destinationActivities';
-import { getTopMichelinForCity } from '@/lib/michelinData';
-import { createPlaceUsageTracker, pickReusableByGap } from '@/lib/placeIdentity';
 import type { PriceLevel } from '@/lib/activityPricing';
 import { defaultChecklist, FLIGHT_DURATION, calculateArrivalTime, calculateJetLagImpact } from '@/types/trip';
-import type { SavedTrip, TripDay, TripActivity, ActivityStatus, TripFinances } from '@/types/trip';
+import type { SavedTrip, ActivityStatus } from '@/types/trip';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { BUDGET_TIERS } from '@/components/wizard/types';
 import { newTripId } from '@/lib/tripStore';
+import { buildPlannedFlights, plannedFlightToSelected } from '@/lib/flightModel';
+import { buildItineraryForTrip, financesFromBuckets } from '@/lib/draftItinerary';
 
 export interface DraftTripInput {
   originCity: string;
@@ -56,7 +53,6 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
   const tzDiff = getTimezoneDiff(destinationCity);
   const jetLagImpact = calculateJetLagImpact(tzDiff);
   const jetLagMode = input.biologyAIEnabled || jetLagImpact.level !== 'BAIXO';
-  const jetLagSeverity = jetLagImpact.level;
 
   // Calculate flight duration
   const flightHours = getFlightDuration(input.originCity || 'São Paulo', destinationCity, tzDiff);
@@ -82,15 +78,6 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
   const arrivalDaysLater = Math.max(0, Math.min(3,
     differenceInCalendarDays(arrDate, input.departureDate)));
 
-  // Generate days
-  const days = generateDays(destinationCity, duration, input.departureDate, input.returnDate, priceLevel, jetLagMode, totalTravelers, tierMultiplier, jetLagSeverity, departureTime, arrivalTime, flightHours, input.travelInterests || [], arrivalDaysLater + 1);
-
-  // Calculate finances from generated days
-  const estimate = calculateTripEstimate(destinationCity, duration, totalTravelers, priceLevel);
-  const toursCost = sumCostsByCategory(days, 'passeio');
-  const foodCost = sumCostsByCategory(days, 'comida');
-  const transportCost = sumCostsByCategory(days, 'transporte');
-
   // O hotel da viagem sai da CURADORIA quando a cidade tem um curado do tier pedido
   // (33 das 84 células cidade×tier, medido). Antes deste ponto o gerador lia só
   // HOTEL_RECOMMENDATIONS e servia `Novotel Cartagena` com 10 curados ao lado — o
@@ -109,31 +96,8 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
   // sem curado, a estimativa de sempre.
   const baseHotelNightPrice = Math.round(getActivityPrice('hotel_night', destinationCity, priceLevel) * tierMultiplier);
   const hotelNightPrice = curatedHotel ? nightlyRateFor(curatedHotel, baseHotelNightPrice) : baseHotelNightPrice;
+  const budgetTotal = input.budgetAmount || 0;
 
-  // Só a hospedagem muda de fonte: o resto do planejado sai da mesma conta de antes e
-  // o delta é exatamente 0 quando não há curado — é isso que mantém as 51 células sem
-  // curadoria byte a byte iguais.
-  const baseHotelPlanned = Math.round(estimate.hotel * tierMultiplier);
-  const hotelPlanned = curatedHotel ? hotelNightPrice * totalNights : baseHotelPlanned;
-  const totalPlanned = Math.round((estimate.flights + estimate.hotel + toursCost + foodCost + transportCost) * tierMultiplier)
-    + (hotelPlanned - baseHotelPlanned);
-  const budgetTotal = input.budgetAmount || totalPlanned;
-
-  const finances: TripFinances = {
-    total: budgetTotal,
-    confirmed: 0,
-    bidding: 0,
-    planned: totalPlanned,
-    available: Math.max(0, budgetTotal - totalPlanned),
-    categories: {
-      flights: { planned: Math.round(estimate.flights * tierMultiplier), confirmed: 0, bidding: 0 },
-      accommodation: { planned: hotelPlanned, confirmed: 0, bidding: 0 },
-      tours: { planned: Math.round(toursCost * tierMultiplier), confirmed: 0, bidding: 0 },
-      food: { planned: Math.round(foodCost * tierMultiplier), confirmed: 0, bidding: 0 },
-      transport: { planned: Math.round(transportCost * tierMultiplier), confirmed: 0, bidding: 0 },
-      shopping: { planned: 0, confirmed: 0, bidding: 0 },
-    },
-  };
 
   const flightPrice = Math.round((getActivityPrice('flight', destinationCity, priceLevel) * tierMultiplier) / 2);
 
@@ -173,38 +137,19 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
     jetLagSeverity: jetLagImpact.level,
     jetLagDescription: jetLagImpact.description,
     travelInterests: input.travelInterests || [],
-    flights: {
-      outbound: {
-        id: 'flight-outbound',
-        airline: 'A confirmar',
-        flightNumber: '---',
-        origin: input.originAirportCode || 'GRU',
-        destination: input.destinationAirportCode || destinationCity,
-        departureDate: input.departureDate.toISOString(),
-        departureTime: departureTime,
-        arrivalDate: addDays(input.departureDate, arrivalDaysLater).toISOString(),
-        arrivalTime: arrivalTime,
-        duration: `${flightHours}h`,
-        stops: input.hasDirectFlight ? 0 : 1,
-        price: flightPrice,
-        status: 'planned' as ActivityStatus,
-      },
-      return: {
-        id: 'flight-return',
-        airline: 'A confirmar',
-        flightNumber: '---',
-        origin: input.destinationAirportCode || destinationCity,
-        destination: input.originAirportCode || 'GRU',
-        departureDate: input.returnDate.toISOString(),
-        departureTime: '14:00',
-        arrivalDate: input.returnDate.toISOString(),
-        arrivalTime: calculateArrivalTime('14:00', input.returnDate, flightHours, -tzDiff).arrivalTime,
-        duration: `${flightHours}h`,
-        stops: input.hasDirectFlight ? 0 : 1,
-        price: flightPrice,
-        status: 'planned' as ActivityStatus,
-      },
-    },
+    flights: buildPlannedFlights({
+      originCode: input.originAirportCode || 'GRU',
+      destinationCode: input.destinationAirportCode || destinationCity,
+      departureDate: input.departureDate,
+      returnDate: input.returnDate,
+      departureTime,
+      arrivalTime,
+      arrivalDaysLater,
+      flightHours,
+      tzDiff,
+      hasDirectFlight: input.hasDirectFlight,
+      legPrice: flightPrice,
+    }) as SavedTrip['flights'],
     // Hotel curado quando existe (nome puro, zona, tip e curatedHotelId vêm do mesmo
     // helper que a troca do usuário usa); senão o bloco de sempre. `curatedHotelId`
     // entra por fora do tipo, como `mealPlan` já entrava (recon §4.6).
@@ -236,13 +181,28 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
       totalPrice: hotelNightPrice * totalNights,
       status: 'planned' as ActivityStatus,
     } as SavedTrip['accommodation'],
-    days,
-    finances,
+    days: [],
+    finances: financesFromBuckets({ flightsPlanned: 0, hotelPlanned: 0, foodPlanned: 0, toursPlanned: 0, totalPlanned: 0 }, budgetTotal),
     checklist: defaultChecklist.map(item => ({ ...item })),
     createdAt: new Date().toISOString(),
   };
 
-  return trip;
+  // O rascunho É o roteiro: voos planejados → SelectedFlight (estimativa) → motor único.
+  const outboundFlight = plannedFlightToSelected(trip.flights.outbound, input.departureDate);
+  const returnFlight = plannedFlightToSelected(trip.flights.return, input.returnDate);
+  const built = buildItineraryForTrip(trip, { outbound: outboundFlight, return: returnFlight }, { priceLevel });
+
+  return {
+    ...trip,
+    budget: built.budget,
+    days: built.days,
+    finances: built.finances,
+    outboundFlight,
+    returnFlight,
+    flightsSelected: false,
+    priceLevel,
+    engineItemIds: built.engineItemIds,
+  } as SavedTrip;
 }
 
 // ─── Helper Functions ───
@@ -303,377 +263,4 @@ function getDestinationEmoji(destination: string): string {
     'Malé': '🏝️', 'Phuket': '🏖️',
   };
   return emojiMap[destination] || '✈️';
-}
-
-function sumCostsByCategory(days: TripDay[], category: string): number {
-  return days.reduce((total, day) => {
-    return total + day.activities
-      .filter(a => a.category === category)
-      .reduce((sum, a) => sum + (a.cost || 0), 0);
-  }, 0);
-}
-
-function generateDays(
-  city: string,
-  duration: number,
-  departureDate: Date,
-  returnDate: Date,
-  priceLevel: PriceLevel,
-  jetLagMode: boolean,
-  travelers: number = 1,
-  tierMultiplier: number = 1.0,
-  jetLagSeverity: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO' = 'BAIXO',
-  smartDepartureTime: string = '23:00',
-  smartArrivalTime: string = '11:00',
-  flightHours: number = 12,
-  travelInterests: string[] = [],
-  // Número do dia (1-based) em que o avião pousa. Derivado da chegada calculada
-  // em buildDraftTrip; 1 = chega no mesmo dia do embarque. O default 2 preserva
-  // o comportamento antigo para qualquer chamador que não passe o parâmetro.
-  arrivalDayNum: number = 2,
-): TripDay[] {
-  const days: TripDay[] = [];
-  // Trip-wide uniqueness keyed by normalized NAME, shared across categories.
-  // Per-category id Sets could not see that the same real venue is cataloged
-  // under two ids in two categories, and scheduled it twice in one trip.
-  // EXP (attraction) activities must NEVER repeat; restaurants may repeat only
-  // once no unseen name is left.
-  const usedPlaces = createPlaceUsageTracker();
-
-  // Nem todo nome vem do pool curado: os dias de chegada e de recuperação usam
-  // os restaurantes do tema, e um dia gastronômico pode promover uma casa
-  // Michelin. Esses nomes ocupam a viagem do mesmo jeito — registrá-los impede
-  // que o pool os reescale depois como se fossem inéditos.
-  const claim = (name: string, dayNum: number, role: 'lunch' | 'dinner'): string => {
-    usedPlaces.mark(name, dayNum, role);
-    return name;
-  };
-
-  const themeStyleMap: Record<string, string[]> = {
-    'Cultura': ['culture', 'history', 'art'],
-    'Gastronomia': ['gastronomy'],
-    'Passeios': ['nature', 'romantic', 'shopping'],
-    'Aventura': ['adventure', 'nature'],
-    'Descobertas': ['culture', 'shopping', 'art'],
-  };
-
-  type ExpPick = { activity: SuggestedActivity | null; isFreeSlot: boolean };
-
-  function pickExp(category: 'morning' | 'afternoon' | 'night', destination: string, themeName: string, dayNum: number): ExpPick {
-    const pool = getDestinationActivities(destination);
-    const targetTags = themeStyleMap[themeName] || [];
-    const isFresh = (a: SuggestedActivity) => !usedPlaces.isUsed(a.name);
-    let candidates = pool.filter(a =>
-      a.category === category &&
-      isFresh(a) &&
-      (targetTags.length === 0 || a.styleTags?.some(t => targetTags.includes(t)))
-    );
-    if (candidates.length === 0) {
-      candidates = pool.filter(a => a.category === category && isFresh(a));
-    }
-    if (candidates.length === 0) {
-      // Pool exhausted — never recycle EXP; return a curated free-slot marker.
-      const freeName = category === 'morning'
-        ? 'Manhã livre — explore por conta'
-        : category === 'afternoon'
-          ? 'Tarde livre — explore por conta'
-          : 'Fim de tarde livre — explore por conta';
-      const freeActivity = {
-        id: `__free__-${category}`,
-        name: freeName,
-        category,
-        description: 'Dia para revisitar o que amou ou descobrir o bairro do hotel no seu ritmo',
-        tips: ['Dia para revisitar o que amou ou descobrir o bairro do hotel no seu ritmo'],
-        styleTags: [],
-      } as unknown as SuggestedActivity;
-      return { activity: freeActivity, isFreeSlot: true };
-    }
-    const picked = candidates[0];
-    usedPlaces.mark(picked.name, dayNum, category);
-    return { activity: picked, isFreeSlot: false };
-  }
-
-  function pickRestaurant(category: 'breakfast' | 'lunch' | 'dinner', destination: string, themeName: string, dayNum: number): SuggestedActivity | null {
-    const pool = getDestinationActivities(destination);
-    const targetTags = themeStyleMap[themeName] || [];
-    const inCategory = pool.filter(a => a.category === category);
-    const isFresh = (a: SuggestedActivity) => !usedPlaces.isUsed(a.name);
-
-    // 1) themed, name unseen anywhere in the trip
-    let candidates = inCategory.filter(a =>
-      isFresh(a) &&
-      (targetTags.length === 0 || a.styleTags?.some(t => targetTags.includes(t)))
-    );
-    // 2) any unseen name
-    if (candidates.length === 0) {
-      candidates = inCategory.filter(isFresh);
-    }
-    // 3) every name used — degrade gracefully instead of emptying the slot
-    if (candidates.length === 0) {
-      candidates = pickReusableByGap(inCategory, usedPlaces, dayNum, category);
-    }
-    if (candidates.length === 0) return null;
-    const picked = candidates[0];
-    usedPlaces.mark(picked.name, dayNum, category);
-    return picked;
-  }
-
-  const [depH] = smartDepartureTime.split(':').map(Number);
-  const checkInH = Math.max(0, depH - (flightHours > 10 ? 3 : 2));
-  const checkInTime = `${checkInH.toString().padStart(2, '0')}:00`;
-
-  const [arrH, arrM] = smartArrivalTime.split(':').map(Number);
-  const transferFinishH = arrH + 2;
-  const checkInHotelH = transferFinishH + 1;
-
-  const fmtTime = (h: number, m = 0) => `${Math.min(23, Math.max(0, h)).toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-
-  for (let i = 0; i < duration; i++) {
-    const dayNum = i + 1;
-    const dayDate = addDays(departureDate, i);
-    const dateStr = format(dayDate, "dd/MM (EEEE)", { locale: ptBR });
-
-    // O dia de chegada agora vem da aritmética do voo (arrivalDayNum), não de uma
-    // constante. Quando o voo não cruza a meia-noite, arrivalDayNum é 1 e o dia 1
-    // é embarque E chegada — daí o isArrivalDay ser testado ANTES do dayNum === 1.
-    const isArrivalDay = dayNum === arrivalDayNum;
-    const isDepartureDay = dayNum === 1;
-    const isRecoveryDay = dayNum === arrivalDayNum + 1 && jetLagSeverity === 'SEVERO';
-
-    if (isDepartureDay && !isArrivalDay) {
-      days.push({
-        day: dayNum,
-        date: dateStr,
-        title: 'Embarque ✈️',
-        icon: '✈️',
-        activities: [
-          { ...makeActivity(`day-${dayNum}-slot-checkin-airport`, checkInTime, 'Check-in aeroporto', 'Apresentar documentação e despachar bagagem', '2h', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
-          { ...makeActivity(`day-${dayNum}-slot-flight-out`, smartDepartureTime, `Voo ${city}`, `Voo de ida para ${city}`, `${flightHours}h`, 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
-        ],
-      });
-    } else if (dayNum > 1 && dayNum < arrivalDayNum) {
-      days.push({
-        day: dayNum,
-        date: dateStr,
-        title: 'Em Trânsito ✈️',
-        icon: '✈️',
-        activities: [
-          { ...makeActivity(`day-${dayNum}-slot-flight-out`, '00:00', `Voo para ${city}`,
-            `Em voo — duração total: ${flightHours}h. Hidrate-se, levante a cada 2h e ajuste o relógio para o horário local.`,
-            `${flightHours}h`, 'voo', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
-        ],
-      });
-    } else if (isArrivalDay) {
-      const arrivalThemes = getDestinationThemes(city);
-      const arrivalTheme = arrivalThemes[0];
-      // Voo que não vira o dia: o embarque e a chegada moram no MESMO dia 1.
-      // Antes isto era inalcançável — o dia 1 devolvia só check-in + voo e o
-      // roteiro real só começava no dia seguinte, mesmo para um voo das 08:00.
-      const sameDayDeparture = isDepartureDay;
-      const arrivalDayTitle = sameDayDeparture ? 'Embarque e Chegada ✈️🛬' : 'Chegada 🛬';
-      const arrivalDayIcon = sameDayDeparture ? '✈️' : '🛬';
-      const departureLeg: TripActivity[] = sameDayDeparture
-        ? [
-            { ...makeActivity(`day-${dayNum}-slot-checkin-airport`, checkInTime, 'Check-in aeroporto', 'Apresentar documentação e despachar bagagem', '2h', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
-            { ...makeActivity(`day-${dayNum}-slot-flight-out`, smartDepartureTime, `Voo ${city}`, `Voo de ida para ${city}`, `${flightHours}h`, 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
-          ]
-        : [];
-      const activities: TripActivity[] = [
-        ...departureLeg,
-        { ...makeActivity(`day-${dayNum}-slot-arrival`, smartArrivalTime, `Chegada em ${city}`, 'Desembarque e imigração', '1h30', 'transporte', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
-        makeActivity(`day-${dayNum}-slot-transfer-hotel`, fmtTime(transferFinishH - 1, 30), 'Transfer para hotel', 'Transporte do aeroporto ao hotel', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
-        { ...makeActivity(`day-${dayNum}-slot-checkin-hotel`, fmtTime(checkInHotelH), 'Check-in no hotel', 'Acomodação e descanso', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
-      ];
-
-      if (checkInHotelH >= 22) {
-        activities.push(
-          makeActivity(`day-${dayNum}-slot-room-service`, fmtTime(Math.min(23, checkInHotelH + 1)), 'Room service — chegada tardia', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier, true),
-        );
-        days.push({ day: dayNum, date: dateStr, title: arrivalDayTitle, icon: arrivalDayIcon, activities });
-      } else if (jetLagSeverity === 'SEVERO') {
-        const restStartH = checkInHotelH + 1;
-        const dinnerH = Math.max(19, Math.min(22, restStartH + 2));
-        activities.push(
-          makeActivity(`day-${dayNum}-slot-rest-severe`, fmtTime(restStartH), 'Descanso obrigatório — fuso horário severo', `Diferença de fuso significativa. Seu corpo precisa de descanso completo.`, `${Math.max(1, dinnerH - restStartH)}h`, 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`day-${dayNum}-slot-room-service`, fmtTime(dinnerH), 'Room service ou restaurante do hotel', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier, true),
-        );
-        days.push({ day: dayNum, date: dateStr, title: arrivalDayTitle, icon: arrivalDayIcon, activities });
-      } else if (jetLagSeverity === 'ALTO') {
-        const restStartH = checkInHotelH + 1;
-        const dinnerH = Math.max(19, Math.min(22, restStartH + 3));
-        activities.push(
-          makeActivity(`day-${dayNum}-slot-rest-tz`, fmtTime(restStartH), 'Descanso e adaptação ao fuso', 'Descanso no hotel para adaptação ao novo fuso horário', '3h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`day-${dayNum}-slot-dinner-light`, fmtTime(dinnerH), `Jantar leve próximo ao hotel`, 'Refeição leve na região do hotel', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier, true),
-        );
-        days.push({ day: dayNum, date: dateStr, title: arrivalDayTitle, icon: arrivalDayIcon, activities });
-      } else if (jetLagMode) {
-        const actStartH = checkInHotelH + 1;
-        const dinnerH = Math.max(19, Math.min(22, actStartH + 2 + 1));
-        activities.push(
-          makeActivity(`day-${dayNum}-slot-arrival-theme`, fmtTime(actStartH, 30), arrivalTheme.activities[0], '', '2h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`day-${dayNum}-slot-dinner`, fmtTime(dinnerH), `Jantar: ${claim(arrivalTheme.restaurants.dinner, dayNum, 'dinner')}`, '', '1h30', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
-        );
-        days.push({ day: dayNum, date: dateStr, title: arrivalDayTitle, icon: arrivalDayIcon, activities });
-      } else {
-        const actStartH = checkInHotelH + 1;
-        const dinnerH = Math.max(19, Math.min(22, actStartH + 3 + 1));
-        activities.push(
-          makeActivity(`day-${dayNum}-slot-arrival-theme`, fmtTime(actStartH, 30), arrivalTheme.activities[0], '', '3h', 'passeio', city, 'museum', priceLevel, travelers, tierMultiplier),
-          makeActivity(`day-${dayNum}-slot-dinner`, fmtTime(dinnerH), `Jantar: ${claim(arrivalTheme.restaurants.dinner, dayNum, 'dinner')}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
-        );
-        days.push({ day: dayNum, date: dateStr, title: arrivalDayTitle, icon: arrivalDayIcon, activities });
-      }
-    } else if (dayNum === duration) {
-      days.push({
-        day: dayNum,
-        date: dateStr,
-        title: 'Retorno 🏠',
-        icon: '🏠',
-        activities: [
-          makeActivity(`day-${dayNum}-slot-breakfast`, '08:00', 'Café da manhã', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier),
-          { ...makeActivity(`day-${dayNum}-slot-checkout`, '10:00', 'Check-out do hotel', 'Liberar quarto e organizar bagagem', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier), isHeroItem: true },
-          makeActivity(`day-${dayNum}-slot-transfer-airport`, '11:00', 'Transfer para aeroporto', 'Transporte ao aeroporto', '1h', 'transporte', city, 'transfer', priceLevel, travelers, tierMultiplier),
-          { ...makeActivity(`day-${dayNum}-slot-flight-return`, '14:00', 'Voo de volta', 'Retorno para o Brasil', `${flightHours}h`, 'voo', city, 'flight', priceLevel, travelers, tierMultiplier), isHeroItem: true },
-        ],
-      });
-    } else if (isRecoveryDay) {
-      const themes = getDestinationThemes(city);
-      const theme = themes[0];
-      days.push({
-        day: dayNum,
-        date: dateStr,
-        title: `Recuperação 🌿`,
-        icon: '🌿',
-        activities: [
-          makeActivity(`day-${dayNum}-slot-breakfast`, '09:00', 'Café da manhã', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier),
-          makeActivity(`day-${dayNum}-slot-recovery-theme`, '10:30', theme.activities[0], 'Atividade leve — corpo em adaptação', '2h', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`day-${dayNum}-slot-lunch`, '13:00', `Almoço: ${claim(theme.restaurants.lunch, dayNum, 'lunch')}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
-          makeActivity(`day-${dayNum}-slot-rest-tz`, '15:00', 'Descanso — adaptação ao fuso', 'Intervalo de descanso recomendado pela KINU AI', '2h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`day-${dayNum}-slot-recovery-walk`, '17:30', theme.activities.length > 1 ? theme.activities[1] : 'Caminhada leve', 'Atividade leve ao pôr do sol', '1h30', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          makeActivity(`day-${dayNum}-slot-dinner`, '19:30', `Jantar: ${claim(theme.restaurants.dinner, dayNum, 'dinner')}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
-        ],
-      });
-    } else {
-      const themes = getDestinationThemes(city);
-
-      const interestToTheme: Record<string, string> = {
-        'gastronomy': 'Gastronomia', 'culture': 'Cultura', 'history': 'Cultura',
-        'art': 'Cultura', 'adventure': 'Aventura', 'nature': 'Aventura',
-        'beach': 'Passeios', 'relaxation': 'Passeios', 'shopping': 'Passeios',
-        'nightlife': 'Descobertas', 'family': 'Passeios', 'winter': 'Aventura',
-      };
-      const scoredThemes = themes.map(theme => {
-        const matchCount = travelInterests.filter(interest => interestToTheme[interest] === theme.title).length;
-        return { theme, score: matchCount };
-      });
-      scoredThemes.sort((a, b) => b.score - a.score);
-      const orderedThemes = scoredThemes.map(s => s.theme);
-
-      // Primeiro dia de exploração: o dia seguinte à chegada, mais um se o fuso é
-      // severo. Idêntico aos valores fixos antigos (chegada no 2 -> 3/4; chegada no
-      // 3 com trânsito -> 4/5), agora derivado do dia de chegada real.
-      const explorationStart = arrivalDayNum + (jetLagSeverity === 'SEVERO' ? 2 : 1);
-
-      const isArrivalRecoveryDay = (dayNum === explorationStart) &&
-        (jetLagSeverity === 'MODERADO' || jetLagSeverity === 'ALTO' || jetLagSeverity === 'SEVERO');
-
-      if (isArrivalRecoveryDay) {
-        days.push({
-          day: dayNum,
-          date: dateStr,
-          title: 'Chegada e Recuperação 🛬',
-          icon: '🛬',
-          activities: [
-            makeActivity(`day-${dayNum}-slot-checkin-hotel`, '15:00', 'Check-in no hotel', 'Acomodação e descanso após o voo', '1h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
-            makeActivity(`day-${dayNum}-slot-walk`, '17:00', 'Caminhada leve no bairro', 'Conheça os arredores do hotel sem pressa, ajuda a regular o relógio biológico', '1h30', 'passeio', city, 'free', priceLevel, travelers, tierMultiplier, true),
-            makeActivity(`day-${dayNum}-slot-dinner-light`, '19:30', 'Jantar leve perto do hotel', 'Refeição leve para não sobrecarregar o corpo. Evite álcool e comida pesada.', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier, true),
-            makeActivity(`day-${dayNum}-slot-rest-sleep`, '21:30', 'Descanso para regular o sono', 'Tente dormir no horário local mesmo se não estiver com sono. Resista o cochilo se for antes das 22h.', '0h', 'hotel', city, 'free', priceLevel, travelers, tierMultiplier, true),
-          ],
-        });
-        continue;
-      }
-
-      let themeIndex = (dayNum - explorationStart) % orderedThemes.length;
-      if (dayNum === explorationStart && travelInterests.length > 0) {
-        const focusThemeName = interestToTheme[travelInterests[0]];
-        const focusIdx = orderedThemes.findIndex(t => t.title === focusThemeName);
-        if (focusIdx >= 0) themeIndex = focusIdx;
-      }
-
-      let theme = orderedThemes[Math.max(0, themeIndex)];
-
-      const morning = pickExp('morning', city, theme.title, dayNum);
-      const afternoon = pickExp('afternoon', city, theme.title, dayNum);
-      const night = pickExp('night', city, theme.title, dayNum);
-      const lunchAct = pickRestaurant('lunch', city, theme.title, dayNum);
-      const dinnerAct = pickRestaurant('dinner', city, theme.title, dayNum);
-
-      let dinnerName = dinnerAct?.name || claim(theme.restaurants.dinner, dayNum, 'dinner');
-      if (travelInterests.includes('gastronomy') && theme.title === 'Gastronomia') {
-        // Sempre pegar michelin[0] repetia a mesma casa em todo dia com tema
-        // Gastronomia — escolher a melhor ainda não usada na viagem.
-        const michelin = getTopMichelinForCity(city, 3)
-          .filter(m => !usedPlaces.isUsed(m.name));
-        if (michelin.length > 0) {
-          claim(michelin[0].name, dayNum, 'dinner');
-          dinnerName = `${michelin[0].name} (⭐ Michelin)`;
-        }
-      }
-
-      const freeDesc = 'Dia para revisitar o que amou ou descobrir o bairro do hotel no seu ritmo';
-      // Ids no namespace do dia: catálogo → day-N-<catalogId>; livre → __free__-<cat>-N; resto → day-N-slot-<slug>.
-      const catId = (slug: string, a: SuggestedActivity | null | undefined, free = false): string =>
-        free && a ? `${a.id}-${dayNum}`
-          : a?.id ? `day-${dayNum}-${a.id}`
-          : `day-${dayNum}-slot-${slug}`;
-
-      days.push({
-        day: dayNum,
-        date: dateStr,
-        title: `${theme.title} ${theme.icon}`,
-        icon: theme.icon,
-        activities: [
-          makeActivity(`day-${dayNum}-slot-breakfast`, '08:00', 'Café da manhã', 'Incluso na diária do hotel', '1h', 'comida', city, 'free', priceLevel, travelers, tierMultiplier),
-          makeActivity(catId('morning', morning.activity, morning.isFreeSlot), '09:30', morning.activity?.name || theme.activities[0], morning.isFreeSlot ? freeDesc : (morning.activity?.tips?.[0] || ''), '2h30', 'passeio', city, morning.isFreeSlot ? 'free' : 'museum', priceLevel, travelers, tierMultiplier),
-          makeActivity(catId('lunch', lunchAct), '12:30', `Almoço: ${lunchAct?.name || claim(theme.restaurants.lunch, dayNum, 'lunch')}`, '', '1h30', 'comida', city, 'restaurant_lunch', priceLevel, travelers, tierMultiplier),
-          makeActivity(catId('afternoon', afternoon.activity, afternoon.isFreeSlot), '14:30', afternoon.activity?.name || theme.activities[1], afternoon.isFreeSlot ? freeDesc : (afternoon.activity?.tips?.[0] || ''), '2h30', 'passeio', city, afternoon.isFreeSlot ? 'free' : 'tour', priceLevel, travelers, tierMultiplier),
-          makeActivity(catId('night', night.activity, night.isFreeSlot), '17:30', night.activity?.name || theme.activities[2], night.isFreeSlot ? freeDesc : (night.activity?.tips?.[0] || ''), '1h30', 'passeio', city, night.isFreeSlot ? 'free' : 'museum', priceLevel, travelers, tierMultiplier),
-          makeActivity(catId('dinner', dinnerAct && dinnerName === dinnerAct.name ? dinnerAct : null), '19:30', `Jantar: ${dinnerName}`, '', '2h', 'comida', city, 'restaurant_dinner', priceLevel, travelers, tierMultiplier),
-        ],
-      });
-    }
-  }
-  // Colisão de id no MESMO dia: nunca sufixar o catalogId (quebraria catalogIdOf).
-  for (const d of days) {
-    const seen = new Set<string>();
-    let k = 0;
-    for (const a of d.activities) {
-      if (seen.has(a.id)) {
-        const dup = `day-${d.day}-slot-dup-${++k}`;
-        console.warn('[generateDays] id repetido no dia', d.day, a.id, '→', dup);
-        a.id = dup;
-      }
-      seen.add(a.id);
-    }
-  }
-  return days;
-}
-
-function makeActivity(
-  id: string, time: string, name: string, description: string,
-  duration: string, category: string, city: string,
-  pricingType: string, priceLevel: PriceLevel,
-  travelers = 1, tierMultiplier = 1.0, jetLagFriendly = false,
-): TripActivity {
-  const baseCost = pricingType === 'free' ? 0 : getActivityPrice(pricingType as any, city, priceLevel);
-  const sharedTypes = ['free', 'transfer'];
-  const isShared = sharedTypes.includes(pricingType) || category === 'hotel';
-  const cost = Math.round((isShared ? baseCost : baseCost * travelers) * tierMultiplier);
-  return {
-    id, time, name, description, duration, cost,
-    type: category,
-    status: 'planned' as ActivityStatus,
-    category: category as any,
-    jetLagFriendly: jetLagFriendly || undefined,
-  };
 }
