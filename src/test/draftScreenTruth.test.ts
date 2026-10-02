@@ -1,7 +1,7 @@
 // Tela == trip.finances, e o check-in mostra o hotel curado — mesmo após passar pelo storage.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { buildDraftTrip, type DraftTripInput } from '@/lib/createTrip';
-import { saveTrip, getTrip } from '@/lib/tripStore';
+import { addTrip, getTrip } from '@/lib/tripStore';
 import { financeBucketsOf } from '@/components/cockpit/DraftCockpit';
 import { planBreakdown } from '@/lib/planTotals';
 import { tripDaysToItinerary } from '@/lib/draftItinerary';
@@ -20,7 +20,7 @@ describe('tela do rascunho', () => {
   for (const [city, code] of CITIES) {
     it(`${city}: baldes da etapa === trip.finances (antes e depois do storage)`, async () => {
       const built = await buildDraftTrip(input(city, code));
-      saveTrip(built);
+      addTrip(built);
       const trip = getTrip(built.id)!;
       const card = planBreakdown(trip);
       const stage = financeBucketsOf(trip)!;
@@ -35,7 +35,7 @@ describe('tela do rascunho', () => {
 
   it('check-in mostra o hotel curado (Cartagena) com o bairro, após o storage', async () => {
     const built = await buildDraftTrip(input('Cartagena', 'CTG'));
-    saveTrip(built);
+    addTrip(built);
     const trip = getTrip(built.id)!;
     const acc = trip.accommodation as { name: string; neighborhood?: string; curatedHotelId?: string };
     expect(acc.curatedHotelId).toBeTruthy();
