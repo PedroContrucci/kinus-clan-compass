@@ -55,7 +55,8 @@ interface DraftTrip {
 interface DraftCockpitProps {
   trip: DraftTrip;
   onSave: (trip: DraftTrip) => void;
-  onActivate: (trip: DraftTrip) => void;
+  /** Caminho único (src/lib/activateDraft.ts): só o id; ativa o que está gravado. */
+  onActivate: (tripId: string) => void;
   onClose: () => void;
   /** Mesmo contrato do TripPanel: read-modify-write do storage, não da cópia React. */
   onUpdateTrip?: (updater: (t: StoredTrip) => StoredTrip) => void;
@@ -402,7 +403,6 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     }
     return undefined;
   });
-  const [generatedDays, setGeneratedDays] = useState<any[] | null>(null);
   const [hotelSwapOpen, setHotelSwapOpen] = useState(false);
 
   // If the trip already carries a complete generated itinerary (from the wizard /
@@ -481,86 +481,21 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     });
   }, [selectedOutbound, selectedReturn, confirmIfEdited, regenerateWith]);
 
-  const handleSave = useCallback((daysFromStage?: any[]) => {
-    const nextDays = daysFromStage && daysFromStage.length > 0
-      ? daysFromStage
-      : (generatedDays && generatedDays.length > 0 ? generatedDays : trip.days);
-    const updatedTrip: any = {
-      ...trip,
-      flightsSelected: stage === 'itinerary',
-      outboundFlight: selectedOutbound,
-      returnFlight: selectedReturn,
-      days: nextDays,
-    };
+  // Salvar e Ativar leem a viagem gravada: toda edição (remover/trocar/adicionar) já
+  // escreveu em trip.days via updateTrip, e voos/finanças são gravados na escolha/regeração.
+  const handleSave = useCallback(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updatedTrip: any = { ...trip };
     syncTripFlightPlannedFinances(updatedTrip);
-    // Finanças: trip.finances (baldes do motor, gravados pela etapa) — sem soma própria aqui.
     onSave(updatedTrip);
     toast({ title: "Rascunho salvo! 📝" });
-  }, [trip, stage, selectedOutbound, selectedReturn, generatedDays, onSave]);
+  }, [trip, onSave]);
 
-  // For KINU-created drafts (or drafts that already carry a full generated itinerary),
-  // the itinerary stage is reachable without a real Amadeus flight selection —
-  // we synthesize placeholder SelectedFlights from the trip's planned data.
-  const canSkipFlightSelection = isKinuCreated || hasExistingDays;
-
-  const buildPlaceholderFlight = useCallback((date: Date, direction: 'outbound' | 'return'): SelectedFlight => {
-    const isOutbound = direction === 'outbound';
-    const from = isOutbound ? originCode : destinationCode;
-    const to = isOutbound ? destinationCode : originCode;
-    const iso = date.toISOString();
-    const option: FlightOption = {
-      id: `placeholder-${direction}`,
-      airline: 'A definir',
-      route: `${from} → ${to}`,
-      isDirect: trip.hasDirectFlight ?? true,
-      duration: '0h',
-      durationMinutes: 0,
-      price: 0,
-      departureTime: '--:--',
-      arrivalTime: '--:--',
-      segments: [{
-        departure: { iataCode: from, at: iso },
-        arrival: { iataCode: to, at: iso },
-      }],
-    };
-    return { option, date };
-  }, [originCode, destinationCode, trip.hasDirectFlight]);
-
-  const effectiveOutbound = selectedOutbound
-    || (canSkipFlightSelection ? buildPlaceholderFlight(new Date(trip.startDate), 'outbound') : undefined);
-  const effectiveReturn = selectedReturn
-    || (canSkipFlightSelection ? buildPlaceholderFlight(new Date(trip.endDate), 'return') : undefined);
-
-  const handleActivate = useCallback((daysFromStage?: any[]) => {
-    if ((!effectiveOutbound || !effectiveReturn) && !canSkipFlightSelection) {
-      toast({ 
-        title: "Selecione os voos primeiro", 
-        description: "Você precisa definir ida e volta antes de ativar.",
-        variant: "destructive" 
-      });
-      return;
-    }
-
-    // Prefer the days the itinerary stage just displayed (source of truth),
-    // falling back to previously generated days, then the trip's own days.
-    const nextDays = daysFromStage && daysFromStage.length > 0
-      ? daysFromStage
-      : (generatedDays && generatedDays.length > 0 ? generatedDays : trip.days);
-
-    const updatedTrip: any = {
-      ...trip,
-      status: 'active',
-      flightsSelected: Boolean(selectedOutbound && selectedReturn),
-      outboundFlight: selectedOutbound,
-      returnFlight: selectedReturn,
-      days: nextDays,
-    };
-    syncTripFlightPlannedFinances(updatedTrip);
-    // Finanças: trip.finances (baldes do motor, gravados pela etapa) — sem soma própria aqui.
-
-    onActivate(updatedTrip as any);
-    toast({ title: "Viagem ativada! 🚀", description: "Sua viagem está pronta para acompanhamento." });
-  }, [trip, selectedOutbound, selectedReturn, effectiveOutbound, effectiveReturn, canSkipFlightSelection, generatedDays, onActivate]);
+  // O cockpit nunca inventa voo: sem ida e volta gravadas (a estimativa conta), a ativação
+  // é recusada pelo activateDraft com "Escolha os voos de ida e volta".
+  const handleActivate = useCallback(() => {
+    onActivate(trip.id);
+  }, [trip.id, onActivate]);
 
   const handleBackFromItinerary = useCallback(() => {
     setStage('flights');
@@ -626,7 +561,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   }
 
   // Stage 2: Generated Itinerary
-  if (stage === 'itinerary' && effectiveOutbound && effectiveReturn) {
+  if (stage === 'itinerary' && selectedOutbound && selectedReturn) {
     return (
       <>
         <DraftStepper trip={trip} currentStage={stage} onChange={setStage} onSwapHotel={() => setHotelSwapOpen(true)} />
@@ -647,15 +582,14 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
           returnDate={new Date(trip.endDate)}
           budget={trip.budget}
           travelers={getTravelers(trip)}
-          outboundFlight={effectiveOutbound}
-          returnFlight={effectiveReturn}
+          outboundFlight={selectedOutbound}
+          returnFlight={selectedReturn}
           travelInterests={trip.travelInterests}
           jetLagSeverity={trip.jetLagSeverity}
           priceLevel={chosenPriceLevel}
           onActivate={handleActivate}
           onSave={handleSave}
           onBack={handleBackFromItinerary}
-          onDaysGenerated={hasExistingDays ? undefined : setGeneratedDays}
           existingDays={hasExistingDays ? trip.days : undefined}
           hotelPlannedOverride={curatedHotelPlanned}
           budgetFollowsPlan={budgetFollowsPlan(trip)}
