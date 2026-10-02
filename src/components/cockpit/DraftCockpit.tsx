@@ -117,7 +117,6 @@ export { plannedFlightToSelected };
  * ida/volta selecionadas (source 'estimate') e sincroniza o orçamento de voos.
  * Idempotente: viagem que já tem `outboundFlight` volta intacta (mesmo objeto).
  */
-// eslint-disable-next-line react-refresh/only-export-components
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function applyEstimatedFlights<T extends Record<string, any>>(trip: T): T {
   if (!isKinuBuilt(trip) || trip.outboundFlight || !trip.flights?.outbound || !trip.flights?.return) return trip;
