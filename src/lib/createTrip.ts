@@ -1,18 +1,13 @@
 // createTrip — shared draft trip builder used by wizard and KINU AI.
-// Logic extracted verbatim from NewPlanningWizard.handleGenerateDraft + generateDays.
+// Os dias e as finanças saem do motor único (itineraryEngine via draftItinerary).
 
-import { differenceInDays, differenceInCalendarDays, addDays, format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { getActivityPrice, calculateTripEstimate } from '@/lib/activityPricing';
+import { differenceInDays, differenceInCalendarDays, addDays } from 'date-fns';
+import { getActivityPrice } from '@/lib/activityPricing';
 import { getIdealHotelZone, getHotelRecommendation } from '@/lib/hotelZones';
 import { pickCuratedHotelForTrip, nightlyRateFor, curatedAccommodationFields } from '@/lib/hotelSwap';
-import { getDestinationThemes, getDestinationActivities } from '@/data/destinationActivities';
-import type { SuggestedActivity } from '@/data/destinationActivities';
-import { getTopMichelinForCity } from '@/lib/michelinData';
-import { createPlaceUsageTracker, pickReusableByGap } from '@/lib/placeIdentity';
 import type { PriceLevel } from '@/lib/activityPricing';
 import { defaultChecklist, FLIGHT_DURATION, calculateArrivalTime, calculateJetLagImpact } from '@/types/trip';
-import type { SavedTrip, TripDay, TripActivity, ActivityStatus, TripFinances } from '@/types/trip';
+import type { SavedTrip, ActivityStatus } from '@/types/trip';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { BUDGET_TIERS } from '@/components/wizard/types';
 import { newTripId } from '@/lib/tripStore';
