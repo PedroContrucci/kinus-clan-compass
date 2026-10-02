@@ -49,7 +49,7 @@ describe('ativação única', () => {
 
   for (const [city, code] of CITIES) {
     it(`(b) ${city}: ativar não muda dias, finanças nem voos`, async () => {
-      const before = await stored(city, code, `b-${code}`);
+      const before = getTrip((await stored(city, code, `b-${code}`)).id)!;
       const r = activateDraft(before.id);
       expect(r.ok).toBe(true);
       const after = getTrip(before.id)!;
