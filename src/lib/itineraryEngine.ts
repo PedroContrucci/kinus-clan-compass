@@ -54,6 +54,89 @@ export interface SelectedFlight {
   source?: 'estimate' | 'amadeus' | 'confirmed';
 }
 
+
+export type JetLagSeverity = 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO';
+
+/** Severidade do jet lag → o dia de chegada vira dia de recuperação? Ajustável aqui. */
+export const RECOVERY_BY_SEVERITY: Record<JetLagSeverity, boolean> = {
+  BAIXO: false,
+  MODERADO: true,
+  ALTO: true,
+  SEVERO: true,
+};
+
+/**
+ * Hotel informado pela viagem. Ausente = comportamento atual (tabela de zonas).
+ * `label` é o texto exibido no item de check-in.
+ */
+export interface EngineHotel {
+  label: string;
+}
+
+/** Slug estável de um nome de lugar para compor ids (`day-N-michelin-<slug>`). */
+export function placeSlug(name: string): string {
+  return normalizePlaceName(name).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+/** Ids repetidos dentro do mesmo dia viram `day-N-slot-dup-<k>` (com aviso). Muta `days`. */
+export function resolveSameDayClashes(days: { dayNumber: number; activities: { id: string }[] }[]): void {
+  for (const day of days) {
+    const seen = new Set<string>();
+    let k = 0;
+    for (const act of day.activities) {
+      if (seen.has(act.id)) {
+        k += 1;
+        const prefix = act.id.match(/^day-\d+-/)?.[0] ?? `day-${day.dayNumber}-`;
+        const next = `${prefix}slot-dup-${k}`;
+        console.warn(`[itineraryEngine] id repetido no dia: ${act.id} → ${next}`);
+        act.id = next;
+      }
+      seen.add(act.id);
+    }
+  }
+}
+
+export interface FinanceBuckets {
+  flightsPlanned: number;
+  hotelPlanned: number;
+  foodPlanned: number;
+  toursPlanned: number;
+  totalPlanned: number;
+}
+
+/**
+ * Os baldes de custo do roteiro — fonte única do que o stage mostra e grava em trip.finances.
+ * `hotelPlannedOverride` (diária curada × noites) manda sobre a estimativa do breakdown.
+ */
+export function computeBuckets(
+  currentDays: ItineraryDay[],
+  breakdown: BudgetBreakdown,
+  hotelPlannedOverride?: number
+): FinanceBuckets {
+  const flightsPlanned = Math.round(breakdown.flights.amount || 0);
+  // Hotel curado manda: `hotelPlannedOverride` é a diária curada × noites da própria
+  // viagem. Sem ele (viagem sem hotel curado), a estimativa desta etapa, como antes.
+  const hotelPlanned = hotelPlannedOverride && hotelPlannedOverride > 0
+    ? Math.round(hotelPlannedOverride)
+    : Math.round(breakdown.hotel.amount || 0);
+  let foodPlanned = 0;
+  let toursPlanned = 0;
+  currentDays.forEach((day) => {
+    day.activities.forEach((act) => {
+      const cost = Math.round(act.estimatedCost || 0);
+      // Exclude flight/hotel/system items — their cost lives only in the
+      // planned flight/hotel totals from breakdown, never on day items.
+      if (['flight', 'hotel', 'checkin', 'checkout', 'transport'].includes(act.type)) return;
+      if (['breakfast', 'lunch', 'dinner'].includes(act.timeSlot)) {
+        foodPlanned += cost;
+      } else if (['morning', 'afternoon', 'night'].includes(act.timeSlot)) {
+        toursPlanned += cost;
+      }
+    });
+  });
+  const totalPlanned = flightsPlanned + hotelPlanned + foodPlanned + toursPlanned;
+  return { flightsPlanned, hotelPlanned, foodPlanned, toursPlanned, totalPlanned };
+
 // Types
 export interface ItineraryActivity {
   id: string;
@@ -142,7 +225,8 @@ export function generateItinerary(
   travelers: number = 1,
   travelInterests: string[] = [],
   jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO',
-  priceLevelProp?: PriceLevel
+  priceLevelProp?: PriceLevel,
+  hotel?: EngineHotel
 ): { days: ItineraryDay[]; breakdown: BudgetBreakdown; meta: { michelinCount: number } } {
   const totalDays = differenceInDays(returnDate, departureDate) + 1;
   const totalNights = totalDays - 1;
@@ -277,7 +361,7 @@ export function generateItinerary(
       ? 'Manhã livre — explore por conta'
       : 'Tarde livre — explore por conta';
     return {
-      id: `day-${dayIndex}-free-${slot}`,
+      id: `day-${dayIndex}-slot-free-${slot}`,
       name,
       type: 'experience',
       timeSlot: slot,
@@ -333,7 +417,7 @@ export function generateItinerary(
       theme = '✈️ Dia de Viagem';
       const outboundCost = flightsCost / 2; // Half of round trip
       activities.push({
-        id: `day-${i}-flight-out`,
+        id: `day-${i}-slot-flight-out`,
         name: outboundFlight.source === 'estimate' ? 'Voo de Ida (estimado)' : 'Voo de Ida',
         type: 'flight',
         timeSlot: 'flight',
@@ -350,9 +434,10 @@ export function generateItinerary(
       // Short flight + early arrival: complete the day with check-in + afternoon + dinner
       if (sameDayArrival) {
         activities.push({
-          id: `day-${i}-checkin`, name: 'Check-in no hotel', type: 'checkin', timeSlot: 'hotel',
+          id: `day-${i}-slot-checkin`, name: 'Check-in no hotel', type: 'checkin', timeSlot: 'hotel',
           estimatedCost: 0, costPerPerson: 0, time: '14:00',
           location: (() => {
+            if (hotel) return hotel.label;
             const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
             if (rec) return `${rec.name} ⭐ ${rec.stars}.0 • ${rec.neighborhood}`;
             return `Hotel em ${destination}`;
@@ -361,7 +446,7 @@ export function generateItinerary(
           tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem'],
         });
         activities.push({
-          id: `day-${i}-ambient-walk`,
+          id: `day-${i}-slot-ambient-walk`,
           name: 'Caminhada leve no bairro do hotel',
           type: 'experience',
           timeSlot: 'afternoon',
@@ -386,7 +471,7 @@ export function generateItinerary(
       label = 'Em trânsito';
       theme = 'Em trânsito ✈️';
       activities.push({
-        id: `day-${i}-transit`,
+        id: `day-${i}-slot-transit`,
         name: `Voo em andamento — descanse, hidrate-se e ajuste o relógio para o fuso de ${destination}`,
         type: 'flight',
         timeSlot: 'flight',
@@ -402,12 +487,12 @@ export function generateItinerary(
       label = `Chegada em ${destination}`;
       theme = '🛬 Dia de Chegada';
 
-      const isRecoveryDay = jetLagSeverity === 'MODERADO' || jetLagSeverity === 'ALTO' || jetLagSeverity === 'SEVERO';
+      const isRecoveryDay = jetLagSeverity ? RECOVERY_BY_SEVERITY[jetLagSeverity] : false;
 
       if (isRecoveryDay) {
         // Recovery day — light activities only (Biology AI active)
         activities.push({
-          id: `day-${i}-checkin`,
+          id: `day-${i}-slot-checkin`,
           name: 'Check-in no hotel',
           type: 'checkin',
           timeSlot: 'hotel',
@@ -416,6 +501,7 @@ export function generateItinerary(
           time: '15:00',
           duration: '1h',
           location: (() => {
+            if (hotel) return hotel.label;
             const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
             if (rec) return `${rec.name} ⭐ ${rec.stars}.0 • ${rec.neighborhood}`;
             return `Hotel em ${destination}`;
@@ -426,7 +512,7 @@ export function generateItinerary(
         });
 
         activities.push({
-          id: `day-${i}-walk`,
+          id: `day-${i}-slot-walk`,
           name: 'Caminhada leve no bairro',
           type: 'experience',
           timeSlot: 'afternoon',
@@ -449,7 +535,7 @@ export function generateItinerary(
         }
 
         activities.push({
-          id: `day-${i}-rest`,
+          id: `day-${i}-slot-rest`,
           name: 'Descanso para regular o sono',
           type: 'night',
           timeSlot: 'night',
@@ -465,7 +551,7 @@ export function generateItinerary(
       } else {
         // Normal arrival day — check-in + light exploration
         activities.push({
-          id: `day-${i}-checkin`,
+          id: `day-${i}-slot-checkin`,
           name: 'Check-in no hotel',
           type: 'checkin',
           timeSlot: 'hotel',
@@ -473,6 +559,7 @@ export function generateItinerary(
           costPerPerson: 0,
           time: '14:00',
           location: (() => {
+            if (hotel) return hotel.label;
             const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
             if (rec) return `${rec.name} ⭐ ${rec.stars}.0 • ${rec.neighborhood}`;
             return `Hotel em ${destination}`;
@@ -483,7 +570,7 @@ export function generateItinerary(
         });
 
         activities.push({
-          id: `day-${i}-ambient-walk`,
+          id: `day-${i}-slot-ambient-walk`,
           name: 'Caminhada leve no bairro do hotel',
           type: 'experience',
           timeSlot: 'afternoon',
@@ -534,7 +621,7 @@ export function generateItinerary(
       // Checkout — 30 min before transfer, capped so it is never later than 11:00
       const checkoutMinutes = Math.min(11 * 60, transferMinutes - 30);
       activities.push({
-        id: `day-${i}-checkout`,
+        id: `day-${i}-slot-checkout`,
         name: 'Check-out do hotel',
         type: 'transport',
         timeSlot: 'morning',
@@ -579,7 +666,7 @@ export function generateItinerary(
       
       // Transfer to airport (SHARED — not multiplied)
       activities.push({
-        id: `day-${i}-transfer`,
+        id: `day-${i}-slot-transfer`,
         name: 'Transfer para Aeroporto',
     type: 'transport',
         timeSlot: 'afternoon',
@@ -596,7 +683,7 @@ export function generateItinerary(
       // Return flight
       const returnCost = flightsCost / 2;
       activities.push({
-        id: `day-${i}-flight-return`,
+        id: `day-${i}-slot-flight-back`,
         name: returnFlight.source === 'estimate' ? 'Voo de Volta (estimado)' : 'Voo de Volta',
         type: 'flight',
         timeSlot: 'flight',
@@ -676,7 +763,7 @@ export function generateItinerary(
       } else {
         // Hotel breakfast — included in daily rate, cost is 0
         activities.push({
-          id: `day-${i}-breakfast-hotel`,
+          id: `day-${i}-slot-breakfast`,
           name: 'Café da manhã no hotel',
           type: 'breakfast',
           timeSlot: 'breakfast',
@@ -800,7 +887,7 @@ export function generateItinerary(
           const total = perPerson * travelers;
           const stars = '⭐'.repeat(availableMichelin.stars);
           activities.push({
-            id: `day-${i}-dinner-michelin`,
+            id: `day-${i}-michelin-${placeSlug(availableMichelin.name)}`,
             name: `${availableMichelin.name} ${stars} Michelin`,
             type: 'dinner',
             timeSlot: 'dinner',
@@ -880,5 +967,32 @@ export function generateItinerary(
     trustZonePercent: Math.round((totalEstimated / budget) * 100),
   };
 
+  resolveSameDayClashes(days);
   return { days, breakdown, meta: { michelinCount } };
+}
+
+export interface EngineInput {
+  departureDate: Date;
+  returnDate: Date;
+  destination: string;
+  origin: string;
+  outboundFlight: SelectedFlight;
+  returnFlight: SelectedFlight;
+  budget: number;
+  travelers?: number;
+  interests?: string[];
+  jetLagSeverity?: JetLagSeverity;
+  priceLevel?: PriceLevel;
+  hotel?: EngineHotel;
+  hotelPlannedOverride?: number;
+}
+
+/** Ponto de entrada do motor: dias + breakdown + baldes de custo. */
+export function runItineraryEngine(input: EngineInput) {
+  const r = generateItinerary(
+    input.departureDate, input.returnDate, input.destination, input.origin,
+    input.outboundFlight, input.returnFlight, input.budget, input.travelers ?? 1,
+    input.interests ?? [], input.jetLagSeverity, input.priceLevel, input.hotel
+  );
+  return { ...r, buckets: computeBuckets(r.days, r.breakdown, input.hotelPlannedOverride) };
 }
