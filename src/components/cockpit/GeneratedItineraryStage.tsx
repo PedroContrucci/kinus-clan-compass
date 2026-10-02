@@ -10,8 +10,8 @@ import {
   Plane, Hotel, MapPin, Sparkles, ChevronLeft, ChevronRight,
   Check, AlertCircle, Clock, Star, Lightbulb, Coffee, Utensils, Moon, Sun
 } from 'lucide-react';
-import { getActivityPrice, findBestPriceLevel, type PriceLevel } from '@/lib/activityPricing';
-import { format, addDays, differenceInDays, differenceInCalendarDays } from 'date-fns';
+import { getActivityPrice, type PriceLevel } from '@/lib/activityPricing';
+import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -19,17 +19,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import type { SelectedFlight } from './FlightSelectionStage';
-import { 
-   
-  getActivitiesByCategory,
-  getDestinationActivities,
-  getDestinationThemes,
-  type SuggestedActivity,
-  type DestinationTheme
-} from '@/data/destinationActivities';
-import { getTopMichelinForCity } from '@/lib/michelinData';
-import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '@/lib/placeIdentity';
-import { getHotelRecommendation } from '@/lib/hotelZones';
+import { getDestinationActivities, type SuggestedActivity } from '@/data/destinationActivities';
+import { normalizePlaceName } from '@/lib/placeIdentity';
 import { KinuAnalysisCard } from './KinuAnalysisCard';
 import { ItineraryDayWeather } from './ItineraryDayWeather';
 import { ItineraryExchangeRate } from './ItineraryExchangeRate';
@@ -45,6 +36,7 @@ import {
 } from '@/lib/itineraryEngine';
 
 // Reexport: o gerador mora no motor puro; quem importava daqui segue funcionando.
+// eslint-disable-next-line react-refresh/only-export-components
 export { generateItinerary };
 
 
