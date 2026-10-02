@@ -16,6 +16,11 @@ import type { StoredTrip } from '@/lib/tripStore';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
 import { isKinuBuilt } from '@/lib/kinuBuilt';
 import { plannedFlightToSelected } from '@/lib/flightModel';
+import { buildItineraryForTrip, countManualEdits, itemIdsOf } from '@/lib/draftItinerary';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Types
 interface DraftTrip {
@@ -417,30 +422,55 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   const destinationCode = trip.destinationAirportCode || inferAirportCode(trip.destination);
   const emoji = trip.emoji || getDestinationEmoji(trip.destination);
 
+  // Regerar: motor único com os voos dados → dias + finanças gravados no rascunho.
+  // A etapa de roteiro remonta (regenKey) para renderizar os dias novos.
+  const [regenKey, setRegenKey] = useState(0);
+  const [pendingRegen, setPendingRegen] = useState<{ edits: number; run: () => void } | null>(null);
+
+  const regenerateWith = useCallback((outbound: SelectedFlight, returnFlight: SelectedFlight, extra: Record<string, unknown> = {}) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const built = buildItineraryForTrip(trip as any, { outbound, return: returnFlight });
+    onSave({
+      ...trip,
+      ...extra,
+      outboundFlight: outbound,
+      returnFlight,
+      days: built.days,
+      budget: built.budget,
+      finances: built.finances,
+      engineItemIds: built.engineItemIds,
+    } as DraftTrip);
+    setRegenKey((k) => k + 1);
+  }, [trip, onSave]);
+
+  /** Só pergunta quando há trocas manuais; sem trocas, executa direto. */
+  const confirmIfEdited = useCallback((edits: number, run: () => void) => {
+    if (edits > 0) setPendingRegen({ edits, run });
+    else run();
+  }, []);
+
   const handleFlightsSelected = useCallback((pickedOut: SelectedFlight, pickedRet: SelectedFlight) => {
     const outbound: SelectedFlight = { ...pickedOut, source: 'amadeus' };
     const returnFlight: SelectedFlight = { ...pickedRet, source: 'amadeus' };
-    setSelectedOutbound(outbound);
-    setSelectedReturn(returnFlight);
-
-    // Update trip with selected flights + sync finances.planned so the flight
-    // anchor matches the actual Amadeus price shown in the hero card.
-    const updatedTrip: any = {
-      ...trip,
-      flightsSelected: true,
-      outboundFlight: outbound,
-      returnFlight: returnFlight,
-    };
-    syncTripFlightPlannedFinances(updatedTrip);
-
-    onSave(updatedTrip);
-    setStage('itinerary');
-    
-    toast({
-      title: "Voos selecionados! ✈️",
-      description: "Gerando seu roteiro inteligente...",
+    const edits = countManualEdits((trip as { engineItemIds?: unknown }).engineItemIds, itemIdsOf(trip.days));
+    confirmIfEdited(edits, () => {
+      setSelectedOutbound(outbound);
+      setSelectedReturn(returnFlight);
+      regenerateWith(outbound, returnFlight, { flightsSelected: true });
+      setStage('itinerary');
+      toast({ title: "Voos selecionados! ✈️", description: "Roteiro refeito com os horários do voo." });
     });
-  }, [trip, onSave]);
+  }, [trip, confirmIfEdited, regenerateWith]);
+
+  const handleRegenerate = useCallback((edits: number) => {
+    const out = selectedOutbound;
+    const ret = selectedReturn;
+    if (!out || !ret) return;
+    confirmIfEdited(edits, () => {
+      regenerateWith(out, ret);
+      toast({ title: "Roteiro refeito" });
+    });
+  }, [selectedOutbound, selectedReturn, confirmIfEdited, regenerateWith]);
 
   const handleSave = useCallback((daysFromStage?: any[], bucketsFromStage?: { flightsPlanned: number; hotelPlanned: number; foodPlanned: number; toursPlanned: number; totalPlanned: number }) => {
     const nextDays = daysFromStage && daysFromStage.length > 0
@@ -454,30 +484,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
       days: nextDays,
     };
     syncTripFlightPlannedFinances(updatedTrip);
-    if (bucketsFromStage) {
-      const prev = updatedTrip.finances || {};
-      const prevCats = prev.categories || {};
-      const keep = (n: string) => ({ confirmed: prevCats[n]?.confirmed || 0, bidding: prevCats[n]?.bidding || 0 });
-      const flightsPlanned = bucketsFromStage.flightsPlanned > 0
-        ? bucketsFromStage.flightsPlanned
-        : (prevCats.flights?.planned || 0);
-      const planned = flightsPlanned + bucketsFromStage.hotelPlanned + bucketsFromStage.toursPlanned + bucketsFromStage.foodPlanned;
-      const total = updatedTrip.budget || prev.total || planned;
-      const confirmed = prev.confirmed || 0;
-      const bidding = prev.bidding || 0;
-      updatedTrip.finances = {
-        total, confirmed, bidding, planned,
-        available: total - planned - confirmed,
-        categories: {
-          flights: { ...keep('flights'), planned: flightsPlanned },
-          accommodation: { ...keep('accommodation'), planned: bucketsFromStage.hotelPlanned },
-          tours: { ...keep('tours'), planned: bucketsFromStage.toursPlanned },
-          food: { ...keep('food'), planned: bucketsFromStage.foodPlanned },
-          transport: keep('transport'),
-          shopping: keep('shopping'),
-        },
-      };
-    }
+    // Finanças: trip.finances (baldes do motor, gravados pela etapa) — sem soma própria aqui.
     onSave(updatedTrip);
     toast({ title: "Rascunho salvo! 📝" });
   }, [trip, stage, selectedOutbound, selectedReturn, generatedDays, onSave]);
@@ -540,30 +547,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
       days: nextDays,
     };
     syncTripFlightPlannedFinances(updatedTrip);
-    if (bucketsFromStage) {
-      const prev = updatedTrip.finances || {};
-      const prevCats = prev.categories || {};
-      const keep = (n: string) => ({ confirmed: prevCats[n]?.confirmed || 0, bidding: prevCats[n]?.bidding || 0 });
-      const flightsPlanned = bucketsFromStage.flightsPlanned > 0
-        ? bucketsFromStage.flightsPlanned
-        : (prevCats.flights?.planned || 0);
-      const planned = flightsPlanned + bucketsFromStage.hotelPlanned + bucketsFromStage.toursPlanned + bucketsFromStage.foodPlanned;
-      const total = updatedTrip.budget || prev.total || planned;
-      const confirmed = prev.confirmed || 0;
-      const bidding = prev.bidding || 0;
-      updatedTrip.finances = {
-        total, confirmed, bidding, planned,
-        available: total - planned - confirmed,
-        categories: {
-          flights: { ...keep('flights'), planned: flightsPlanned },
-          accommodation: { ...keep('accommodation'), planned: bucketsFromStage.hotelPlanned },
-          tours: { ...keep('tours'), planned: bucketsFromStage.toursPlanned },
-          food: { ...keep('food'), planned: bucketsFromStage.foodPlanned },
-          transport: keep('transport'),
-          shopping: keep('shopping'),
-        },
-      };
-    }
+    // Finanças: trip.finances (baldes do motor, gravados pela etapa) — sem soma própria aqui.
 
     onActivate(updatedTrip as any);
     toast({ title: "Viagem ativada! 🚀", description: "Sua viagem está pronta para acompanhamento." });

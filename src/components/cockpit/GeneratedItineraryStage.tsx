@@ -34,7 +34,7 @@ import {
   type ItineraryDay,
   type BudgetBreakdown,
 } from '@/lib/itineraryEngine';
-import { tripDaysToItinerary, itemIdsOf, countManualEdits } from '@/lib/draftItinerary';
+import { tripDaysToItinerary, itineraryToTripDays, itemIdsOf, countManualEdits } from '@/lib/draftItinerary';
 
 // Reexport: o gerador mora no motor puro; quem importava daqui segue funcionando.
 // eslint-disable-next-line react-refresh/only-export-components
@@ -264,42 +264,8 @@ export const GeneratedItineraryStage = ({
 
   // Convert current ItineraryDay[] into TripDay[] shape (matches buildDraftTrip
   // output) so the parent can persist EXACTLY what the user sees.
-  const toTripDays = (source: ItineraryDay[]): any[] => {
-    const mapCat = (a: ItineraryActivity): string => {
-      const t = a.type;
-      if (t === 'flight') return 'voo';
-      if (t === 'hotel' || t === 'checkin') return 'hotel';
-      if (t === 'transport' || t === 'checkout') return 'transporte';
-      if (t === 'breakfast' || t === 'lunch' || t === 'dinner') return 'comida';
-      const slot = a.timeSlot;
-      if (slot === 'flight') return 'voo';
-      if (slot === 'hotel') return 'hotel';
-      if (slot === 'breakfast' || slot === 'lunch' || slot === 'dinner') return 'comida';
-      return 'passeio';
-    };
-    const mapStatus = (s: string): string =>
-      s === 'pending' ? 'cancelled' : 'planned';
-    return source.map((d) => ({
-      day: d.dayNumber,
-      date: d.date instanceof Date ? d.date.toISOString() : d.date,
-      title: d.label,
-      icon: (d.theme || '').split(' ')[0] || '',
-      activities: d.activities.map((a) => {
-        const cat = mapCat(a);
-        return {
-          id: a.id,
-          time: a.time || '',
-          name: a.name,
-          description: (a.tips && a.tips[0]) || '',
-          duration: a.duration || '',
-          cost: Math.round(a.estimatedCost || 0),
-          type: cat,
-          category: cat,
-          status: mapStatus(a.status),
-        };
-      }),
-    }));
-  };
+  // ItineraryDay[] → trip.days (mesmo mapeamento do motor; timeSlot/kind preservados).
+  const toTripDays = (source: ItineraryDay[]): any[] => itineraryToTripDays(source);
 
   const handleActivateWithFinances = () => {
     const tripDays = toTripDays(days);
