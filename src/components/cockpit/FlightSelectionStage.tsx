@@ -23,32 +23,9 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Types - Extended to support Amadeus data
-export interface FlightOption {
-  id: string;
-  airline: string;
-  airlineLogo?: string;
-  route: string;
-  isDirect: boolean;
-  connectionCity?: string;
-  duration: string;
-  durationMinutes: number;
-  price: number;
-  departureTime: string;
-  arrivalTime: string;
-  segments?: Array<{
-    departure: { iataCode: string; at: string };
-    arrival: { iataCode: string; at: string };
-  }>;
-  isBestPrice?: boolean;
-  isFastest?: boolean;
-}
-
-export interface SelectedFlight {
-  option: FlightOption;
-  date: Date;
-  /** De onde veio: estimativa do gerador, busca real ou reserva confirmada. */
-  source?: 'estimate' | 'amadeus' | 'confirmed';
-}
+// Tipos do voo moram no motor de roteiro (puro); reexportados para os imports existentes.
+import type { FlightOption, SelectedFlight } from '@/lib/itineraryEngine';
+export type { FlightOption, SelectedFlight };
 
 interface FlightSelectionStageProps {
   destination: string;
