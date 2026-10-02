@@ -15,6 +15,7 @@ import { applyHotelSwap, type SwapTripLike, type AccommodationLike } from '@/lib
 import type { StoredTrip } from '@/lib/tripStore';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
 import { isKinuBuilt } from '@/lib/kinuBuilt';
+import { plannedFlightToSelected } from '@/lib/flightModel';
 
 // Types
 interface DraftTrip {
@@ -102,36 +103,9 @@ export function inferAirportCode(city: string): string {
   return codeMap[city] || city.substring(0, 3).toUpperCase();
 }
 
-// Convert a planned flight (as created by buildDraftTrip) into a SelectedFlight
-// so the itinerary summary stage can render for KINU-created trips.
+// plannedFlightToSelected mora em src/lib/flightModel.ts; reexport para quem importava daqui.
 // eslint-disable-next-line react-refresh/only-export-components
-export function plannedFlightToSelected(flight: any, date: Date): SelectedFlight {
-  const route = `${flight.origin} → ${flight.destination}`;
-  const duration = flight.duration || '0h';
-  const durationMinutes = (() => {
-    const m = duration.match(/(\d+(?:\.\d+)?)\s*h/);
-    if (!m) return 0;
-    return Math.round(parseFloat(m[1]) * 60);
-  })();
-
-  const option: FlightOption = {
-    id: flight.id,
-    airline: flight.airline,
-    route,
-    isDirect: flight.stops === 0,
-    duration,
-    durationMinutes,
-    price: flight.price,
-    departureTime: flight.departureTime,
-    arrivalTime: flight.arrivalTime,
-    segments: [{
-      departure: { iataCode: flight.origin, at: flight.departureDate },
-      arrival: { iataCode: flight.destination, at: flight.arrivalDate },
-    }],
-  };
-
-  return { option, date, source: 'estimate' };
-}
+export { plannedFlightToSelected };
 
 /**
  * Viagem montada pelo KINU sem voo escolhido: grava a estimativa do gerador como
