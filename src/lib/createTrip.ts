@@ -53,7 +53,6 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
   const tzDiff = getTimezoneDiff(destinationCity);
   const jetLagImpact = calculateJetLagImpact(tzDiff);
   const jetLagMode = input.biologyAIEnabled || jetLagImpact.level !== 'BAIXO';
-  const jetLagSeverity = jetLagImpact.level;
 
   // Calculate flight duration
   const flightHours = getFlightDuration(input.originCity || 'São Paulo', destinationCity, tzDiff);
