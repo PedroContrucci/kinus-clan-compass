@@ -40,6 +40,7 @@ import { trackEvent } from '@/lib/kinuEvents';
 import { addCatalogActivityToDay, applyTripPlannedCostDelta, calculateTripProgress } from '@/lib/tripItineraryOps';
 import { ViagensVividas } from '@/components/viagens/ViagensVividas';
 import { itemKindOf, trackTripActivated, trackTripItemConfirmed } from '@/lib/tripEvents';
+import { activateDraft } from '@/lib/activateDraft';
 import { buildOfferLinks } from '@/lib/offersLinks';
 import { supabase } from '@/integrations/supabase/client';
 import { getDocsForDestination } from '@/data/destinationDocs';
@@ -1039,38 +1040,15 @@ const Viagens = () => {
     if (stored) setSelectedTrip(stored);
   };
 
-  const handleActivateDraft = (updatedTrip: any) => {
-    updatedTrip.status = 'active';
-
-    // The cockpit forwards the EXACT days the user just saw in the itinerary
-    // stage. Only fall back to a synthetic itinerary when no days arrived AND
-    // the trip has none of its own — never overwrite a live-generated set.
-    if (!updatedTrip.days || updatedTrip.days.length === 0) {
-      const duration = getTripDuration(updatedTrip);
-      updatedTrip.days = generateBasicDays(updatedTrip, duration);
+  // Caminho único de ativação (card e cockpit): ativa o que está gravado, nunca gera dias.
+  const handleActivateDraft = (tripId: string) => {
+    const result = activateDraft(tripId, user?.id);
+    if (!result.ok) {
+      toast({ title: 'Não deu para ativar', description: result.message, variant: 'destructive' });
+      return;
     }
-
-    // A `normalizeTrip` explícita PERMANECE, e não é redundante: o `updateTrip`
-    // normaliza a viagem que LÊ do storage e entrega ao updater, mas este updater
-    // ignora o argumento (o cockpit já montou a viagem inteira) e o store grava o
-    // retorno como veio. Sem a chamada, o que iria para o disco — e para a
-    // `selectedTrip` — seriam os dias crus recém-gerados, sem `icon`/`category`/ids
-    // e sem o `syncTripFlightPlannedFinances` que acerta `finances.planned` com o
-    // voo que o usuário acabou de escolher. É justamente o momento da ativação em
-    // que essa sincronia importa.
-    const stored = updateTrip(updatedTrip.id, () => normalizeTrip(updatedTrip));
-    if (stored) setSelectedTrip(stored);
-
-    // Depois da escrita: o evento descreve a viagem que está no disco. `trackTripActivated`
-    // grava a própria marca por dentro (outro `updateTrip`), então a `selectedTrip` do React
-    // fica sem ela — não faz falta, nada renderiza a marca e toda escrita relê o storage.
-    trackTripActivated(updatedTrip.id);
-
-    // Onboarding v2: idempotente pela marca na viagem, não pelo dedupe do emissor.
-    if (updatedTrip.onboardingFlow === 'v2' && !updatedTrip.onboardingActivatedAt) {
-      const marked = updateTrip(updatedTrip.id, (t) => ({ ...t, onboardingActivatedAt: new Date().toISOString() }));
-      if (marked) trackEvent('onboarding.activated', { trip_id: updatedTrip.id }, user?.id);
-    }
+    setSelectedTrip(result.trip);
+    toast({ title: 'Viagem ativada! 🚀', description: 'Sua viagem está pronta para acompanhamento.' });
   };
 
   // DEBUG: temporary export of selected trip itinerary as a .txt file
@@ -1157,313 +1135,6 @@ const Viagens = () => {
   };
 
   // Generate basic days for a trip - WITH CORRECT DAY LOGIC AND REALISTIC PRICES
-  // Day 1 = DEPARTURE (user is in transit, NO local activities)
-  // Day 2 = ARRIVAL (user arrives, check-in, light activities)
-  // Days 3-N-1 = EXPLORATION (full days)
-  // Day N = RETURN (check-out, flight home)
-  const generateBasicDays = (trip: SavedTrip, duration: number) => {
-    const days = [];
-    const travelers = trip.travelers || 1;
-    
-    // Smart tier: find best price level that fits the declared budget
-    const { level: priceLevel } = findBestPriceLevel(
-      trip.destination, duration, travelers, trip.budget
-    );
-    const destination = trip.destination?.toLowerCase() || '';
-    
-    // Per-person prices (will be multiplied by travelers where applicable)
-    const transferPricePP = getActivityPrice('transfer', trip.destination, priceLevel);
-    const lunchPricePP = getActivityPrice('restaurant_lunch', trip.destination, priceLevel);
-    const dinnerPricePP = getActivityPrice('restaurant_dinner', trip.destination, priceLevel);
-    const museumPricePP = getActivityPrice('museum', trip.destination, priceLevel);
-    const tourPricePP = getActivityPrice('tour', trip.destination, priceLevel);
-    
-    // Total prices: hotel/transfer shared, meals/entries/tours multiplied
-    const transferPrice = transferPricePP; // Shared (1 taxi for the group)
-    const lunchPrice = lunchPricePP * travelers;
-    const dinnerPrice = dinnerPricePP * travelers;
-    const museumPrice = museumPricePP * travelers;
-    const tourPrice = tourPricePP * travelers;
-    
-    // Trip-wide uniqueness keyed by normalized NAME, shared across categories:
-    // the same real venue exists in the catalog under distinct ids in distinct
-    // categories, so an id-keyed Set cannot tell it is already in the trip.
-    const usedPlaces = createPlaceUsageTracker();
-    function pickActivity(category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner', destination: string, themeName: string, dayIndex: number): SuggestedActivity | null {
-      const pool = getDestinationActivities(destination);
-      const themeStyleMap: Record<string, string[]> = {
-        'Cultura': ['culture', 'history', 'art'],
-        'Gastronomia': ['gastronomy'],
-        'Passeios': ['nature', 'romantic', 'shopping'],
-        'Aventura': ['adventure', 'nature'],
-        'Descobertas': ['culture', 'shopping', 'art'],
-      };
-      const targetTags = themeStyleMap[themeName] || [];
-      const inCategory = pool.filter(a => a.category === category);
-      const isFresh = (a: SuggestedActivity) => !usedPlaces.isUsed(a.name);
-      let candidates = inCategory.filter(a => isFresh(a) && (targetTags.length === 0 || a.styleTags?.some(t => targetTags.includes(t))));
-      if (candidates.length === 0) candidates = inCategory.filter(isFresh);
-      // Pool exhausted. Experiences never repeat; meals degrade with spacing
-      // rather than leaving the slot empty.
-      if (candidates.length === 0) {
-        if (category === 'morning' || category === 'afternoon' || category === 'night') return null;
-        candidates = pickReusableByGap(inCategory, usedPlaces, dayIndex, category);
-      }
-      if (candidates.length === 0) return null;
-      const picked = candidates[0];
-      usedPlaces.mark(picked.name, dayIndex, category);
-      return picked;
-    }
-
-    for (let i = 0; i < duration; i++) {
-      const dayNum = i + 1;
-      const isFirstDay = i === 0;
-      const isSecondDay = i === 1;
-      const isLastDay = i === duration - 1;
-      
-      let title = 'Exploração';
-      let icon = '🗺️';
-      let activities: TripActivity[] = [];
-      
-      if (isFirstDay) {
-        // DAY 1 = DEPARTURE - User is traveling, NOT at destination
-        title = 'Embarque';
-        icon = '✈️';
-        activities = [
-          {
-            id: `day${dayNum}-1`,
-            name: `Voo para ${trip.destination}`,
-            description: `Check-in 3h antes no aeroporto • Apresentar documentação e despachar bagagem`,
-            time: '22:00',
-            duration: trip.flights?.outbound?.duration || '12h',
-            type: 'transport',
-            category: 'voo',
-            cost: getActivityPrice('flight', trip.destination, priceLevel) * travelers,
-            status: 'planned' as ActivityStatus,
-          },
-        ];
-      } else if (isSecondDay && duration > 2) {
-        // DAY 2 = ARRIVAL - User arrives, jet lag, light day
-        title = 'Chegada';
-        icon = '🛬';
-        activities = [
-          {
-            id: `day${dayNum}-1`,
-            name: 'Chegada em ' + trip.destination,
-            description: 'Desembarque e imigração',
-            time: '11:00',
-            duration: '1h',
-            type: 'transport',
-            category: 'voo',
-            cost: 0, // No cost for arrival
-            status: 'planned' as ActivityStatus,
-          },
-          {
-            id: `day${dayNum}-2`,
-            name: 'Transfer para o hotel',
-            description: 'Táxi ou transporte público',
-            time: '12:30',
-            duration: '1h',
-            type: 'transport',
-            category: 'transporte',
-            cost: transferPrice,
-            status: 'planned' as ActivityStatus,
-          },
-          {
-            id: `day${dayNum}-3`,
-            name: 'Check-in no hotel',
-            description: 'Deixar bagagens e descansar (adaptação jet lag)',
-            time: '14:00',
-            duration: '2h',
-            type: 'relax',
-            category: 'hotel',
-            cost: 0, // Hotel cost already included in accommodation
-            status: 'planned' as ActivityStatus,
-            jetLagFriendly: true,
-          },
-          {
-            id: `day${dayNum}-4`,
-            name: 'Passeio leve pelo bairro',
-            description: 'Explorar a região do hotel',
-            time: '16:30',
-            duration: '2h',
-            type: 'walk',
-            category: 'passeio',
-            cost: 0, // Free walking activity
-            status: 'planned' as ActivityStatus,
-            jetLagFriendly: true,
-          },
-          {
-            id: `day${dayNum}-5`,
-            name: 'Jantar local',
-            description: travelers > 1 ? `Primeira refeição no destino (${travelers} pessoas)` : 'Primeira refeição no destino',
-            time: '19:30',
-            duration: '1h30',
-            type: 'food',
-            category: 'comida',
-            cost: dinnerPrice,
-            status: 'planned' as ActivityStatus,
-          },
-        ];
-      } else if (isLastDay) {
-        // LAST DAY = RETURN - Check-out and flight home
-        title = 'Retorno';
-        icon = '🏠';
-        activities = [
-          {
-            id: `day${dayNum}-1`,
-            name: 'Café da manhã',
-            description: 'Último café no hotel',
-            time: '08:00',
-            duration: '1h',
-            type: 'food',
-            category: 'comida',
-            cost: 0, // Included in hotel
-            status: 'planned' as ActivityStatus,
-          },
-          {
-            id: `day${dayNum}-2`,
-            name: 'Check-out do hotel',
-            description: 'Preparar bagagens',
-            time: '10:00',
-            duration: '1h',
-            type: 'relax',
-            category: 'hotel',
-            cost: 0,
-            status: 'planned' as ActivityStatus,
-          },
-          {
-            id: `day${dayNum}-3`,
-            name: 'Voo de retorno',
-            description: 'Volta para casa',
-            time: '14:00',
-            duration: '12h',
-            type: 'transport',
-            category: 'voo',
-            cost: getActivityPrice('flight', trip.destination, priceLevel) * travelers,
-            status: 'planned' as ActivityStatus,
-          },
-        ];
-      } else {
-        // First exploration day with significant jet lag = recovery day
-        const isArrivalRecoveryDay = (i === 2) && trip.jetLagMode &&
-          (trip.jetLagSeverity === 'MODERADO' || trip.jetLagSeverity === 'ALTO' || trip.jetLagSeverity === 'SEVERO');
-
-        if (isArrivalRecoveryDay) {
-          title = 'Chegada e Recuperação';
-          icon = '🛬';
-          activities = [
-            {
-              id: `day${dayNum}-1`, name: 'Check-in no hotel',
-              description: 'Acomodação e descanso após o voo', time: '15:00', duration: '1h',
-              type: 'relax', category: 'hotel', cost: 0, status: 'planned' as ActivityStatus, jetLagFriendly: true,
-            },
-            {
-              id: `day${dayNum}-2`, name: 'Caminhada leve no bairro',
-              description: 'Conheça os arredores do hotel sem pressa, ajuda a regular o relógio biológico', time: '17:00', duration: '1h30',
-              type: 'culture', category: 'passeio', cost: 0, status: 'planned' as ActivityStatus, jetLagFriendly: true,
-            },
-            {
-              id: `day${dayNum}-3`, name: 'Jantar leve perto do hotel',
-              description: 'Refeição leve para não sobrecarregar o corpo. Evite álcool e comida pesada.', time: '19:30', duration: '1h30',
-              type: 'food', category: 'comida', cost: lunchPrice, status: 'planned' as ActivityStatus, jetLagFriendly: true,
-            },
-            {
-              id: `day${dayNum}-4`, name: 'Descanso para regular o sono',
-              description: 'Tente dormir no horário local mesmo se não estiver com sono.', time: '21:30', duration: '0h',
-              type: 'relax', category: 'hotel', cost: 0, status: 'planned' as ActivityStatus, jetLagFriendly: true,
-            },
-          ];
-        } else {
-        // EXPLORATION DAYS - Full day activities with curated pool
-        const themes = [
-          { title: 'Cultura', icon: '🏛️' },
-          { title: 'Gastronomia', icon: '🍽️' },
-          { title: 'Passeios', icon: '🚶' },
-          { title: 'Descobertas', icon: '🎭' },
-          { title: 'Aventura', icon: '⭐' },
-        ];
-        const theme = themes[(i - 2) % themes.length];
-        title = theme.title;
-        icon = theme.icon;
-
-        const morningAct = pickActivity('morning', trip.destination, theme.title, i);
-        const afternoonAct = pickActivity('afternoon', trip.destination, theme.title, i);
-        const nightAct = pickActivity('night', trip.destination, theme.title, i);
-        const lunchAct = pickActivity('lunch', trip.destination, theme.title, i);
-        const dinnerAct = pickActivity('dinner', trip.destination, theme.title, i);
-
-        activities = [
-          {
-            id: `day${dayNum}-1`,
-            name: 'Café da manhã',
-            description: 'No hotel ou café local',
-            time: '08:30',
-            duration: '1h',
-            type: 'food',
-            category: 'comida',
-            cost: 0,
-            status: 'planned' as ActivityStatus,
-          },
-          {
-            id: `day${dayNum}-2`,
-            name: morningAct?.name || 'Atividade da manhã',
-            description: morningAct?.tips?.[0] || (travelers > 1 ? `Passeio cultural ou turístico (${travelers} pessoas)` : 'Passeio cultural ou turístico'),
-            time: '10:00',
-            duration: '2h30',
-            type: 'culture',
-            category: 'passeio',
-            cost: museumPrice,
-            status: 'planned' as ActivityStatus,
-          },
-          {
-            id: `day${dayNum}-3`,
-            name: lunchAct ? `Almoço: ${lunchAct.name}` : 'Almoço',
-            description: lunchAct?.tips?.[0] || (travelers > 1 ? `Restaurante local (${travelers} pessoas)` : 'Restaurante local'),
-            time: '13:00',
-            duration: '1h30',
-            type: 'food',
-            category: 'comida',
-            cost: lunchPrice,
-            status: 'planned' as ActivityStatus,
-          },
-          {
-            id: `day${dayNum}-4`,
-            name: afternoonAct?.name || 'Atividade da tarde',
-            description: afternoonAct?.tips?.[0] || (travelers > 1 ? `Exploração livre (${travelers} pessoas)` : 'Exploração livre'),
-            time: '15:00',
-            duration: '3h',
-            type: 'culture',
-            category: 'passeio',
-            cost: tourPrice,
-            status: 'planned' as ActivityStatus,
-          },
-          {
-            id: `day${dayNum}-5`,
-            name: dinnerAct ? `Jantar: ${dinnerAct.name}` : 'Jantar',
-            description: dinnerAct?.tips?.[0] || (travelers > 1 ? `Gastronomia local (${travelers} pessoas)` : 'Gastronomia local'),
-            time: '19:30',
-            duration: '2h',
-            type: 'food',
-            category: 'comida',
-            cost: dinnerPrice,
-            status: 'planned' as ActivityStatus,
-          },
-        ];
-        }
-      }
-      
-      days.push({
-        day: dayNum,
-        title,
-        icon,
-        activities,
-      });
-    }
-    
-    return days;
-  };
-
   // Enquanto a sessão não resolve, espera — não decide. Devolver null aqui
   // seria uma tela branca a cada reload; o guard acima é quem redireciona.
   if (authLoading) {
@@ -1484,7 +1155,7 @@ const Viagens = () => {
         {fromOnboarding && (
           <KinuDidCard
             trip={selectedTrip}
-            onActivate={() => handleActivateDraft({ ...(selectedTrip as any) })}
+            onActivate={() => handleActivateDraft(selectedTrip.id)}
             onUpdateTrip={handleUpdateTrip}
             onOpenFlights={() => setOpenFlightsSignal((n) => n + 1)}
           />
