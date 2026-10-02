@@ -136,6 +136,7 @@ export function computeBuckets(
   });
   const totalPlanned = flightsPlanned + hotelPlanned + foodPlanned + toursPlanned;
   return { flightsPlanned, hotelPlanned, foodPlanned, toursPlanned, totalPlanned };
+}
 
 // Types
 export interface ItineraryActivity {

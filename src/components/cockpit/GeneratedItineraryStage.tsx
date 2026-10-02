@@ -271,7 +271,6 @@ export const GeneratedItineraryStage = ({
   // Matches EXACTLY what recomputeAndPersistFinances writes to trip.finances.
   const computeBuckets = (currentDays: ItineraryDay[]) =>
     computeEngineBuckets(currentDays, breakdown, hotelPlannedOverride);
-  };
 
   const derivedFinances = useMemo(() => computeBuckets(days), [days, breakdown, hotelPlannedOverride]);
 
