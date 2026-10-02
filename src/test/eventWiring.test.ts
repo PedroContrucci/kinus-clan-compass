@@ -21,10 +21,12 @@ describe('os pontos de emissão continuam onde foram postos', () => {
     expect(src('contexts/KinuAIContext.tsx')).toContain("trackTripCreated(stored, 'kinu_ai')");
   });
 
-  it('`Viagens.tsx` emite a ativação nos dois caminhos — o botão e a promoção implícita', () => {
+  it('a ativação do rascunho emite em `activateDraft`; `Viagens.tsx` só na promoção implícita', () => {
+    expect(src('lib/activateDraft.ts').match(/trackTripActivated\(/g) ?? []).toHaveLength(1);
     const viagens = src('pages/Viagens.tsx');
-    expect(viagens.match(/trackTripActivated\(/g) ?? []).toHaveLength(2);
+    expect(viagens.match(/trackTripActivated\(/g) ?? []).toHaveLength(1);
     expect(viagens).toContain("statusAntes === 'draft'");
+    expect(viagens).toContain('activateDraft(tripId');
   });
 
   it('`Viagens.tsx` emite item confirmado na atividade e no voo/hotel', () => {
