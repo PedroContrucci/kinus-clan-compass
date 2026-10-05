@@ -3,8 +3,8 @@ import { Send, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { kinuBeta } from '@/integrations/kinu-beta/client';
 import { loadJson } from '@/lib/safeStorage';
-import { kinuAuthHeaders } from '@/lib/kinuAuthHeader';
 import { getActiveTrip, subscribeTrips } from '@/lib/tripStore';
 import { trackEvent } from '@/lib/kinuEvents';
 
