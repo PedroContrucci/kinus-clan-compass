@@ -50,7 +50,7 @@ export function plannedFlightToSelected(flight: any, date: Date): SelectedFlight
 
   const selected: SelectedFlight = { option, date, source: 'estimate' };
   // priceSource fora do tipo (index signature), como source.
-  if (flight.priceSource) (selected as Record<string, unknown>).priceSource = flight.priceSource;
+  if (flight.priceSource) (selected as unknown as Record<string, unknown>).priceSource = flight.priceSource;
   return selected;
 }
 

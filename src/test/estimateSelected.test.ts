@@ -43,7 +43,7 @@ describe('estimativa de voo como selecionada (onboarding)', () => {
     const trip = applyEstimatedFlights(await onboardingDraft());
     trip.startDate = '2026-11-10'; trip.endDate = '2026-11-15';
     const l = kinuDidLines(trip);
-    expect(l.flight).toBe('Voo estimado · ida 10/11 · volta 15/11 · escolha o voo real para fechar o orçamento');
+    expect(l.flight).toBe('Voo estimado · ida 10/11 · volta 15/11 · estimativa genérica · cotação real na etapa Voo');
     expect(l.budget.endsWith(' · fecha ao escolher o voo')).toBe(true);
     const real = { ...trip, outboundFlight: { ...trip.outboundFlight, source: 'amadeus' } };
     expect(kinuDidLines(real).budget).not.toContain('fecha ao escolher');
