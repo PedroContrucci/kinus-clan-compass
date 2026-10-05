@@ -59,7 +59,7 @@ async function enviarFeedback() {
     target: { value: 'Pedro' },
   });
   fireEvent.click(screen.getByText('🐛 Bug'));
-  fireEvent.click(screen.getByText('😕 Confuso').closest('button')!.parentElement!.querySelectorAll('button')[1]);
+  fireEvent.click(screen.getByText('😕 Confuso'));
   fireEvent.change(screen.getByRole('combobox'), { target: { value: '/cla' } });
   fireEvent.change(screen.getByPlaceholderText(/O botão de confirmar não apareceu/), {
     target: { value: 'o mapa não abriu' },
