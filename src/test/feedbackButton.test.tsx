@@ -129,8 +129,8 @@ describe('insert no kinu-beta, tabela feedback', () => {
     });
     fireEvent.click(screen.getByText('Enviar Feedback'));
 
-    await waitFor(() => expect(insert).toHaveBeenCalledTimes(1));
-    const row = insert.mock.calls[0][0] as Record<string, unknown>;
+    await waitFor(() => expect(feedbackRows()).toHaveLength(1));
+    const row = feedbackRows()[0];
     expect(row.rating).toBe(4);
     expect(row.wanted_destination).toBe('Recife');
   });
