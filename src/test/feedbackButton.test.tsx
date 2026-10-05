@@ -92,10 +92,9 @@ describe('insert no kinu-beta, tabela feedback', () => {
   it('vai para public.feedback do cliente kinu-beta, com as colunas do contrato', async () => {
     await enviarFeedback();
 
-    await waitFor(() => expect(insert).toHaveBeenCalledTimes(1));
-    expect(fromTable).toHaveBeenCalledWith('feedback');
+    await waitFor(() => expect(feedbackRows()).toHaveLength(1));
 
-    const row = insert.mock.calls[0][0] as Record<string, unknown>;
+    const row = feedbackRows()[0];
     expect(row.user_id).toBe('user-123');
     expect(row.tester_name).toBe('Pedro');
     // message = só o texto do usuário, sem os campos opcionais embutidos
