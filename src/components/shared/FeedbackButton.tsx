@@ -89,39 +89,53 @@ export const FeedbackButton = () => {
       appVersion,
     };
 
+    // Uma sessão só: dela saem o user_id do insert (kinu-beta, public.feedback) e o
+    // header do feedback-notify. Sem sessão, o insert falha por RLS e o notify sai
+    // sem header — mesmo comportamento de antes, sem bloquear nada.
+    let userId: string | null = null;
+    let kinuHeaders: Record<string, string> = {};
+    try {
+      const { data } = await kinuBeta.auth.getSession();
+      userId = data?.session?.user?.id ?? null;
+      const token = data?.session?.access_token;
+      if (token) kinuHeaders = { 'x-kinu-authorization': `Bearer ${token}` };
+    } catch {
+      // sessão indisponível: segue sem user_id e sem header
+    }
+
     let success = false;
     try {
-      const baseRow = {
+      // message = só o texto do usuário. "Sente falta"/"Deveria melhorar" e os
+      // metadados de tela/aparelho viram chaves do context jsonb.
+      const { error } = await kinuBeta.from('feedback').insert({
+        user_id: userId,
         tester_name: trimmedName,
-        rating,
-        category,
-        message: composedMessage,
-        page: pagePath,
-        user_agent: navigator.userAgent,
-        screen_size: screenSize,
-        app_version: appVersion,
-      };
-      let { error } = await supabase.from('beta_feedback').insert({
-        ...baseRow,
+        message: message.trim(),
+        rating: rating > 0 ? rating : null,
         wanted_destination: trimmedDestination || null,
-      });
-      // Se a coluna wanted_destination ainda não existe na tabela, nada se perde:
-      // o destino vai embutido na mensagem.
-      if (error && trimmedDestination && /wanted_destination/i.test(error.message ?? '')) {
-        const retry = await supabase.from('beta_feedback').insert({
-          ...baseRow,
-          message: `${composedMessage}\n\nDestino desejado: ${trimmedDestination}`,
-        });
-        error = retry.error;
+        context: {
+          category,
+          missing_feature: trimmedMissing || null,
+          improvement: trimmedImprovement || null,
+          page: pagePath,
+          trip_id: activeTrip?.id ?? null,
+          user_agent: navigator.userAgent,
+          screen_size: screenSize,
+          app_version: appVersion,
+        },
+      } as never);
+      if (error) {
+        console.warn('feedback insert failed', error);
       }
       success = !error;
-    } catch {
+    } catch (err) {
+      console.warn('feedback insert failed', err);
       success = false;
     }
 
     // Fire-and-forget instant notification (always send, even if table insert fails)
-    // Arco 5.d: o await é só do header (sessão em memória); o envio segue solto.
-    const kinuHeaders = await kinuAuthHeaders();
+    // Payload inalterado: o texto composto (com [Sente falta]/[Deveria melhorar])
+    // continua indo para o WhatsApp/e-mail como hoje.
     supabase.functions.invoke('feedback-notify', {
       headers: kinuHeaders,
       body: {
