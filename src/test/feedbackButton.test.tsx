@@ -44,11 +44,14 @@ const feedbackEvents = () => readEvents().filter((e) => e.name === 'cla.feedback
 beforeEach(() => {
   localStorage.clear();
   insert.mockReset();
-  fromTable.mockReset();
   invoke.mockReset();
   insert.mockResolvedValue({ error: null });
   invoke.mockResolvedValue({ data: null, error: null });
 });
+
+/** Só as linhas inseridas na tabela feedback (o trackEvent insere em outra tabela). */
+const feedbackRows = () =>
+  insert.mock.calls.filter(([table]) => table === 'feedback').map(([, row]) => row as Record<string, unknown>);
 
 /** Preenche o mínimo que o handler exige e clica em enviar. */
 async function enviarFeedback() {
