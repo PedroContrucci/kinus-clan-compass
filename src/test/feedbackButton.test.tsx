@@ -119,8 +119,9 @@ describe('insert no kinu-beta, tabela feedback', () => {
     fireEvent.change(screen.getByPlaceholderText(/O botão de confirmar não apareceu/), {
       target: { value: 'quero exportar em PDF' },
     });
-    // 4 estrelas
-    fireEvent.click(screen.getAllByRole('button').filter((b) => b.querySelector('svg'))[3]);
+    // 4 estrelas: os botões de estrela são os únicos com um svg Star dentro do grid de rating
+    const starButtons = screen.getAllByRole('button').filter((b) => b.className.includes('hover:scale-110'));
+    fireEvent.click(starButtons[3]);
     fireEvent.change(screen.getByPlaceholderText('ex.: Recife, Buenos Aires, Punta Cana'), {
       target: { value: 'Recife' },
     });
