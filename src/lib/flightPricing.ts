@@ -226,3 +226,66 @@ export function getFlightTip(
   
   return null;
 }
+
+// ─── Estimativa por rota para o rascunho (estrita) ───
+// Diferente de getFlightPriceEstimate (permissiva, inventa faixa regional quando a
+// rota falta), esta devolve null sem linha na tabela — e só aí o rascunho pode
+// dizer "estimativa por rota". Usada SOMENTE pelo buildDraftTrip.
+
+/**
+ * Rotas das cidades da grade de destinos ainda SEM linha em flight_price_estimates.
+ * Preços reais serão fornecidos pelo fundador (A.6) — não inventar. Ao inserir a
+ * linha GRU→<código>, remover daqui e reativar o teste de cobertura.
+ */
+export const ROUTES_PENDING_PRICE: Record<string, string> = {
+  'Fortaleza': 'FOR', 'Rio de Janeiro': 'GIG', 'Orlando': 'MCO', 'Salvador': 'SSA',
+  'Buenos Aires': 'EZE', 'Cartagena': 'CTG', 'Gramado': 'POA', 'Porto Seguro': 'BPS',
+  'Cidade do Cabo': 'CPT', 'Istambul': 'IST', 'Bangkok': 'BKK', 'Marrakech': 'RAK',
+  'Singapura': 'SIN',
+};
+
+export type FlightPriceSource = 'route' | 'tier';
+
+/** Estrita: só a linha da tabela, ou null (rota ausente ou erro). Nunca lança. */
+export async function lookupRouteEstimateStrict(
+  origin: string,
+  destination: string,
+): Promise<FlightPriceEstimate | null> {
+  if (!origin || !destination) return null;
+  try {
+    const { data, error } = await supabase
+      .from('flight_price_estimates')
+      .select('*')
+      .eq('origin_code', origin.toUpperCase())
+      .eq('destination_code', destination.toUpperCase())
+      .maybeSingle();
+    if (error || !data) return null;
+    const avg = Number(data.economy_avg);
+    if (!Number.isFinite(avg) || avg <= 0) return null;
+    return {
+      origin: data.origin_code,
+      destination: data.destination_code,
+      economyMin: Number(data.economy_min),
+      economyAvg: avg,
+      economyMax: Number(data.economy_max) || avg * 1.5,
+      businessAvg: Number(data.business_avg) || avg * 3,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Preço por perna, por pessoa: metade da ida+volta média da tabela, ajustada por
+ * dia da semana e temporada da data de cada perna (determinístico).
+ */
+export function legPricesFromEstimate(
+  estimate: FlightPriceEstimate,
+  departureDate: Date,
+  returnDate: Date,
+): { outbound: number; return: number } {
+  return {
+    outbound: Math.round(calculateDatePrice(estimate.economyAvg, departureDate) / 2),
+    return: Math.round(calculateDatePrice(estimate.economyAvg, returnDate) / 2),
+  };
+}

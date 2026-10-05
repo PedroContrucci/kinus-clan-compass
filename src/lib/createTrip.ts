@@ -13,6 +13,7 @@ import { BUDGET_TIERS } from '@/components/wizard/types';
 import { newTripId } from '@/lib/tripStore';
 import { buildPlannedFlights, plannedFlightToSelected } from '@/lib/flightModel';
 import { buildItineraryForTrip, financesFromBuckets } from '@/lib/draftItinerary';
+import { lookupRouteEstimateStrict, legPricesFromEstimate, type FlightPriceEstimate } from '@/lib/flightPricing';
 
 export interface DraftTripInput {
   originCity: string;
@@ -36,7 +37,12 @@ export interface DraftTripInput {
   biologyAIEnabled?: boolean;
 }
 
-export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> {
+export interface DraftTripDeps {
+  /** Consulta estrita da rota (null = rota sem linha). Injetável para testes. */
+  routeLookup?: (origin: string, destination: string) => Promise<FlightPriceEstimate | null>;
+}
+
+export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps = {}): Promise<SavedTrip> {
   if (!input.departureDate || !input.returnDate) throw new Error('Datas não definidas');
 
   const tripId = newTripId();
@@ -99,7 +105,14 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
   const budgetTotal = input.budgetAmount || 0;
 
 
+  // Preço do voo estimado: por ROTA quando a tabela tem a linha origem→destino
+  // (consulta estrita); senão o número genérico do perfil, marcado 'tier'.
   const flightPrice = Math.round((getActivityPrice('flight', destinationCity, priceLevel) * tierMultiplier) / 2);
+  const routeEstimate = input.destinationAirportCode
+    ? await (deps.routeLookup ?? lookupRouteEstimateStrict)(input.originAirportCode || 'GRU', input.destinationAirportCode)
+    : null;
+  const routeLegs = routeEstimate ? legPricesFromEstimate(routeEstimate, input.departureDate, input.returnDate) : null;
+  const priceSource: 'route' | 'tier' = routeLegs ? 'route' : 'tier';
 
   const cityInfo = findCityInfo(destinationCity);
 
@@ -148,7 +161,9 @@ export async function buildDraftTrip(input: DraftTripInput): Promise<SavedTrip> 
       flightHours,
       tzDiff,
       hasDirectFlight: input.hasDirectFlight,
-      legPrice: flightPrice,
+      legPrice: routeLegs ? routeLegs.outbound : flightPrice,
+      returnLegPrice: routeLegs ? routeLegs.return : flightPrice,
+      priceSource,
     }) as SavedTrip['flights'],
     // Hotel curado quando existe (nome puro, zona, tip e curatedHotelId vêm do mesmo
     // helper que a troca do usuário usa); senão o bloco de sempre. `curatedHotelId`
