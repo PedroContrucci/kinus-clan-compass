@@ -11,8 +11,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
+// O kinuBeta é compartilhado: o trackEvent também insere por ele (tabela de eventos).
+// Por isso o mock registra (tabela, row) e as asserções filtram por 'feedback'.
 const insert = vi.fn();
-const fromTable = vi.fn();
 const invoke = vi.fn();
 
 vi.mock('@/integrations/supabase/client', () => ({
@@ -23,10 +24,9 @@ vi.mock('@/integrations/supabase/client', () => ({
 
 vi.mock('@/integrations/kinu-beta/client', () => ({
   kinuBeta: {
-    from: (table: string) => {
-      fromTable(table);
-      return { insert: (row: unknown) => insert(row) };
-    },
+    from: (table: string) => ({
+      insert: (row: unknown) => insert(table, row),
+    }),
     auth: {
       getSession: async () => ({
         data: { session: { user: { id: 'user-123' }, access_token: 'tok' } },
