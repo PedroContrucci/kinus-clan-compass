@@ -48,7 +48,10 @@ export function plannedFlightToSelected(flight: any, date: Date): SelectedFlight
     }],
   };
 
-  return { option, date, source: 'estimate' };
+  const selected: SelectedFlight = { option, date, source: 'estimate' };
+  // priceSource fora do tipo (index signature), como source.
+  if (flight.priceSource) (selected as Record<string, unknown>).priceSource = flight.priceSource;
+  return selected;
 }
 
 export interface PlannedFlightsInput {
@@ -64,10 +67,14 @@ export interface PlannedFlightsInput {
   hasDirectFlight?: boolean;
   /** Preço por trecho, por pessoa. */
   legPrice: number;
+  /** Preço da volta, quando difere da ida (estimativa por rota). Default = legPrice. */
+  returnLegPrice?: number;
+  /** 'route' (tabela de rotas) | 'tier' (número genérico do perfil). */
+  priceSource?: 'route' | 'tier';
 }
 
 /** Ida e volta planejadas (estimativa). Horários vêm da regra de direção/duração + calculateArrivalTime. */
-export function buildPlannedFlights(i: PlannedFlightsInput): { outbound: PlannedFlight; return: PlannedFlight } {
+export function buildPlannedFlights(i: PlannedFlightsInput): { outbound: PlannedFlight & { priceSource?: string }; return: PlannedFlight & { priceSource?: string } } {
   const stops = i.hasDirectFlight ? 0 : 1;
   return {
     outbound: {
@@ -84,6 +91,7 @@ export function buildPlannedFlights(i: PlannedFlightsInput): { outbound: Planned
       stops,
       price: i.legPrice,
       status: 'planned',
+      ...(i.priceSource ? { priceSource: i.priceSource } : {}),
     },
     return: {
       id: 'flight-return',
@@ -97,8 +105,9 @@ export function buildPlannedFlights(i: PlannedFlightsInput): { outbound: Planned
       arrivalTime: calculateArrivalTime('14:00', i.returnDate, i.flightHours, -i.tzDiff).arrivalTime,
       duration: `${i.flightHours}h`,
       stops,
-      price: i.legPrice,
+      price: i.returnLegPrice ?? i.legPrice,
       status: 'planned',
+      ...(i.priceSource ? { priceSource: i.priceSource } : {}),
     },
   };
 }

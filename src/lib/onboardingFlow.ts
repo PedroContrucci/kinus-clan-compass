@@ -110,7 +110,7 @@ export function kinuDidLines(trip: any): KinuDidLines {
   const realFlight = Boolean(trip.outboundFlight && trip.outboundFlight.source !== 'estimate');
   const flight = realFlight
     ? `Voo escolhido · ida ${ddmm(trip.startDate)} · volta ${ddmm(trip.endDate)}`
-    : `Voo estimado · ida ${ddmm(trip.startDate)} · volta ${ddmm(trip.endDate)} · escolha o voo real para fechar o orçamento`;
+    : `Voo estimado · ida ${ddmm(trip.startDate)} · volta ${ddmm(trip.endDate)} · ${flightPriceLabel(trip)}`;
 
   const days: any[] = Array.isArray(trip.days) ? trip.days : [];
   const cityTiers = LANDMARKS[trip.destination]?.tiers;
@@ -130,7 +130,15 @@ export function kinuDidLines(trip: any): KinuDidLines {
   const plan = planBreakdown(trip);
   const budget = `${brl(amount)} — estimativa para ${travelers} ${travelers === 1 ? 'pessoa' : 'pessoas'}, ${nights} noites, perfil ${tierLabel(trip.budgetType)}${realFlight ? '' : ' · fecha ao escolher o voo'}`;
   const reserve = Math.max(0, amount - plan.total);
-  const budgetDetail = `Custo estimado ${brl(plan.total)}: voo ${brl(plan.flights)} · hotel ${brl(plan.hotel)} · alimentação ${brl(plan.food)} · passeios ${brl(plan.tours)}`
+  const budgetDetail = `Custo estimado ${brl(plan.total)}: voo ${brl(plan.flights)}${realFlight ? '' : ` (${trip.outboundFlight?.priceSource === 'route' ? 'estimativa por rota' : 'estimativa genérica'})`} · hotel ${brl(plan.hotel)} · alimentação ${brl(plan.food)} · passeios ${brl(plan.tours)}`
     + (reserve > 0 && reserve === reserveFor(plan.total) ? ` · inclui reserva de ${Math.round(RESERVE_RATE * 100)}% (${brl(reserve)})` : '');
   return { origin, hotel, flight, itinerary, budget, budgetDetail };
+}
+
+/** Rótulo do preço do voo estimado: por rota (tabela) ou genérico (perfil). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function flightPriceLabel(trip: any): string {
+  return trip?.outboundFlight?.priceSource === 'route'
+    ? 'estimativa por rota'
+    : 'estimativa genérica · cotação real na etapa Voo';
 }
