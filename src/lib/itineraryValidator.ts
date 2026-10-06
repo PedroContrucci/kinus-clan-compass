@@ -1,5 +1,10 @@
 import { destinationActivities, SuggestedActivity } from '@/data/destinationActivities';
 import { normalizePlaceName } from '@/lib/placeIdentity';
+import { catalogFor } from '@/lib/interestsFor';
+import { matchesPriority } from '@/lib/claChips';
+import { catalogIdOf } from '@/lib/localAchievements';
+import { curatedCoordOf } from '@/lib/routeCoords';
+import { getMichelinCountForCity } from '@/lib/michelinData';
 
 export interface ValidationResult {
   rule: string;
@@ -369,11 +374,6 @@ export function formatReport(tripLabel: string, results: ValidationResult[]): st
 // R13–R16 — regras de plano (WARN/SKIP, nunca FAIL por enquanto).
 // Item de catálogo é reconhecido pelo id (`day-N-<catalogId>`), nunca pelo nome.
 // ─────────────────────────────────────────────────────────────────────────────
-import { catalogFor } from '@/lib/interestsFor';
-import { matchesPriority } from '@/lib/claChips';
-import { catalogIdOf } from '@/lib/localAchievements';
-import { curatedCoordOf } from '@/lib/routeCoords';
-import { getMichelinCountForCity } from '@/lib/michelinData';
 
 export type PlanRuleStatus = 'PASS' | 'WARN' | 'SKIP';
 export interface PlanRuleResult {
@@ -435,6 +435,11 @@ export function catalogItemOf(item: PlanDayItem, index: Map<string, SuggestedAct
   if (!item?.id || isSlotOrSynthetic(item.id)) return null;
   const id = catalogIdOf(item.id);
   return id ? index.get(id) ?? null : null;
+}
+
+function toMinutes(t?: string): number {
+  const m = String(t ?? '').match(/^(\d{1,2}):(\d{2})/);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : -1;
 }
 
 const hhmm = (t?: string): number => {
