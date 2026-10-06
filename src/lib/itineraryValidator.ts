@@ -437,11 +437,6 @@ export function catalogItemOf(item: PlanDayItem, index: Map<string, SuggestedAct
   return id ? index.get(id) ?? null : null;
 }
 
-function toMinutes(t?: string): number {
-  const m = String(t ?? '').match(/^(\d{1,2}):(\d{2})/);
-  return m ? Number(m[1]) * 60 + Number(m[2]) : -1;
-}
-
 const hhmm = (t?: string): number => {
   const m = toMinutes(t);
   return m < 0 ? -1 : m / 60;
