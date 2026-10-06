@@ -515,6 +515,7 @@ export function validatePlanRules(days: PlanDay[], ctx: PlanRulesContext): PlanR
   }
 
   // R15 — itens 'daytrip' saem dos saltos e são relatados à parte; limite por cidade.
+  // Em dia de bate-volta, refeições ficam fora do stray e dos saltos (o jantar é perto do hotel).
   const maxHop = maxHopKmFor(ctx.destination);
   let worst = { km: 0, label: '' };
   let withCoords = 0, catalogTotal = 0;
@@ -530,7 +531,7 @@ export function validatePlanRules(days: PlanDay[], ctx: PlanRulesContext): PlanR
       daytripNotes.push(`bate-volta: ${trips.length} no dia ${d.day}`);
       const tripCoords = trips.map((t) => curatedCoordOf(t.a.id)).filter((c): c is { lat: number; lng: number } => !!c);
       for (const o of catStops) {
-        if (isDaytrip(o.cat)) continue;
+        if (isDaytrip(o.cat) || MEALS.has(o.cat.category)) continue;
         const c = curatedCoordOf(o.a.id);
         if (!c || tripCoords.length === 0) continue;
         const km = Math.min(...tripCoords.map((t) => haversineKm(t, c)));
@@ -539,6 +540,7 @@ export function validatePlanRules(days: PlanDay[], ctx: PlanRulesContext): PlanR
     }
     const stops = catStops
       .filter((x) => !isDaytrip(x.cat) && (x.cat.durationHours || 0) < DAY_TRIP_HOURS)
+      .filter((x) => trips.length === 0 || !MEALS.has(x.cat.category))
       .sort((x, y) => toMinutes(x.a.time) - toMinutes(y.a.time));
     let prev: { name: string; c: { lat: number; lng: number } } | null = null;
     for (const s of stops) {
