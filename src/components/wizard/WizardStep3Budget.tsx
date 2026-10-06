@@ -1,12 +1,13 @@
 // WizardStep3Budget — Budget Tier Cards, Priorities, Travel Interests
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, Reorder } from 'framer-motion';
 import { Wallet, GripVertical, Info, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { calculateTripEstimate } from '@/lib/activityPricing';
 import type { WizardData, TravelInterest } from './types';
-import { BUDGET_TIERS, PRIORITY_OPTIONS, TRAVEL_INTERESTS } from './types';
+import { BUDGET_TIERS, PRIORITY_OPTIONS } from './types';
+import { interestsFor, hasCatalog } from '@/lib/interestsFor';
 
 interface WizardStep3Props {
   data: WizardData;
@@ -55,6 +56,15 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
     const rest = data.priorities.filter((p) => p !== priorityId);
     onChange({ priorities: [priorityId, ...rest] as WizardData['priorities'] });
   };
+
+  // Só interesses que o catálogo curado da cidade oferece (≥5 itens); os demais não aparecem.
+  const offeredInterests = useMemo(() => interestsFor(data.destinationCity), [data.destinationCity]);
+  const cityHasCatalog = useMemo(() => hasCatalog(data.destinationCity), [data.destinationCity]);
+  useEffect(() => {
+    const current = data.travelInterests || [];
+    const kept = current.filter((i) => offeredInterests.some((c) => c.id === i));
+    if (kept.length !== current.length) onChange({ travelInterests: kept });
+  }, [offeredInterests, data.travelInterests, onChange]);
 
 
   const handleInterestToggle = (interest: TravelInterest) => {
@@ -115,7 +125,12 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
         </p>
         
         <div className="flex flex-wrap gap-2">
-          {TRAVEL_INTERESTS.map((interest) => {
+          {!cityHasCatalog && (
+            <p className="text-sm text-muted-foreground">ainda não temos catálogo curado para {data.destinationCity}</p>
+          )}
+          {offeredInterests.map((interest) => {
+            const icon = interest.label.split(' ')[0];
+            const label = interest.label.replace(/^\S+\s/, '');
             const isSelected = (data.travelInterests || []).includes(interest.id as TravelInterest);
             const isDisabled = !isSelected && (data.travelInterests || []).length >= 3;
             
@@ -135,8 +150,8 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
                     : 'bg-card border-border hover:border-primary/50'
                 )}
               >
-                <span>{interest.icon}</span>
-                <span>{interest.label}</span>
+                <span>{icon}</span>
+                <span>{label}</span>
               </motion.button>
             );
           })}
