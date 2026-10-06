@@ -10,6 +10,7 @@ import { rankHotelsForTrip, type SwapTripLike } from '@/lib/hotelSwap';
 import { catalogIdOf } from '@/lib/localAchievements';
 import { planBreakdown, reserveFor, RESERVE_RATE } from '@/lib/planTotals';
 import type { DraftTripInput } from '@/lib/createTrip';
+import { interestLabel, splitInterests } from '@/lib/interestsFor';
 
 export const DEFAULT_ORIGIN = 'São Paulo';
 export type OriginSource = 'profile' | 'default';
@@ -119,7 +120,11 @@ export function kinuDidLines(trip: any): KinuDidLines {
     const id = catalogIdOf(a?.id);
     if (/^day-\d+-/.test(String(a?.id ?? '')) && id && (!cityTiers || id.includes('-'))) ids.add(id);
   }
-  const itinerary = `${days.length} dias com ${ids.size} atividades do catálogo`;
+  const base = `${days.length} dias com ${ids.size} atividades do catálogo`;
+  const { used, ignored } = splitInterests(trip.destination, trip.travelInterests);
+  const itinerary = ignored.length
+    ? `${base} · montei ${used.length ? `por ${used.map(interestLabel).join(', ')}` : 'pelo catálogo da cidade'} — ${ignored.map(interestLabel).join(', ')} ${ignored.length === 1 ? 'não tem' : 'não têm'} catálogo em ${trip.destination}`
+    : base;
 
   const travelers = Number(trip.travelers) || 1;
   const nights = trip.startDate && trip.endDate
