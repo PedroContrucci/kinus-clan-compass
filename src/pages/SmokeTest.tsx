@@ -3,6 +3,7 @@ import { addDays, format } from 'date-fns';
 import { generateItinerary } from '@/components/cockpit/GeneratedItineraryStage';
 import type { SelectedFlight, FlightOption } from '@/components/cockpit/FlightSelectionStage';
 import { validateItinerary, validateOfferLinks, formatReport, type ValidationResult } from '@/lib/itineraryValidator';
+import { PlanRulesMatrix } from '@/components/smoke/PlanRulesMatrix';
 import { buildOfferLinks } from '@/lib/offersLinks';
 import type { PriceLevel } from '@/lib/activityPricing';
 import { toast } from '@/hooks/use-toast';
@@ -954,6 +955,8 @@ export default function SmokeTest() {
           Copiar relatório
         </button>
       </header>
+
+      <PlanRulesMatrix />
 
       <div className="grid gap-4 md:grid-cols-3">
         {outcomes.map((o) => {
