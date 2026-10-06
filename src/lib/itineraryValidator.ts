@@ -1,5 +1,10 @@
 import { destinationActivities, SuggestedActivity } from '@/data/destinationActivities';
 import { normalizePlaceName } from '@/lib/placeIdentity';
+import { catalogFor } from '@/lib/interestsFor';
+import { matchesPriority } from '@/lib/claChips';
+import { catalogIdOf } from '@/lib/localAchievements';
+import { curatedCoordOf } from '@/lib/routeCoords';
+import { getMichelinCountForCity } from '@/lib/michelinData';
 
 export interface ValidationResult {
   rule: string;
@@ -363,4 +368,191 @@ export function formatReport(tripLabel: string, results: ValidationResult[]): st
     lines.push(`  ${r.rule} [${r.status}]${r.detail ? `: ${r.detail}` : ''}`);
   }
   return lines.join('\n');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// R13–R16 — regras de plano (WARN/SKIP, nunca FAIL por enquanto).
+// Item de catálogo é reconhecido pelo id (`day-N-<catalogId>`), nunca pelo nome.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type PlanRuleStatus = 'PASS' | 'WARN' | 'SKIP';
+export interface PlanRuleResult {
+  rule: 'R13 PRIORIDADE' | 'R14 MICHELIN' | 'R15 GEO' | 'R16 TEMPO';
+  status: PlanRuleStatus;
+  detail: string;
+}
+
+export interface PlanDayItem {
+  id: string;
+  name: string;
+  time?: string;
+  duration?: string;
+  timeSlot?: string;
+  type?: string;
+}
+export interface PlanDay {
+  day: number;
+  date?: string;
+  title?: string;
+  activities: PlanDayItem[];
+}
+export interface PlanRulesContext {
+  destination: string;
+  /** Interesses já filtrados por interestsFor. */
+  interests: string[];
+  /** Chegada do voo de ida: data ISO (yyyy-mm-dd) e HH:mm. */
+  arrivalDate?: string;
+  arrivalTime?: string;
+  /** Partida do voo de volta (HH:mm). */
+  returnDepartureTime?: string;
+  domestic: boolean;
+}
+
+const MEALS = new Set(['breakfast', 'lunch', 'dinner']);
+const LOGISTIC_SLOTS = new Set(['flight', 'hotel']);
+const EXPLORE_SLOTS = new Set(['morning', 'afternoon', 'night']);
+export const MAX_HOP_KM = 8;
+export const DAY_TRIP_HOURS = 5;
+export const HOP_HOURS = 0.5;
+
+export function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const R = 6371;
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat);
+  const dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+const isSlotOrSynthetic = (id: string) => /^day-\d+-(slot|michelin)-/.test(id) || id.startsWith('__free__');
+
+function catalogIndex(destination: string): Map<string, SuggestedActivity> {
+  return new Map(catalogFor(destination).map((a) => [a.id, a]));
+}
+
+/** O item do catálogo por trás de um item do roteiro, ou null. */
+export function catalogItemOf(item: PlanDayItem, index: Map<string, SuggestedActivity>): SuggestedActivity | null {
+  if (!item?.id || isSlotOrSynthetic(item.id)) return null;
+  const id = catalogIdOf(item.id);
+  return id ? index.get(id) ?? null : null;
+}
+
+const hhmm = (t?: string): number => {
+  const m = toMinutes(t);
+  return m < 0 ? -1 : m / 60;
+};
+
+/** Janela do último dia: 08:00 até (partida − 3 h intl / − 2 h doméstico). */
+export function lastDayWindowHours(returnDepartureTime: string | undefined, domestic: boolean): number {
+  const dep = hhmm(returnDepartureTime);
+  if (dep < 0) return 0;
+  return Math.max(0, dep - (domestic ? 2 : 3) - 8);
+}
+
+function itemHours(item: PlanDayItem, cat: SuggestedActivity | null): number {
+  if (cat) return cat.durationHours || 0;
+  const m = String(item.duration ?? '').match(/(\d+(?:[.,]\d+)?)\s*h/);
+  return m ? parseFloat(m[1].replace(',', '.')) : 0;
+}
+
+const isLogistic = (a: PlanDayItem) =>
+  LOGISTIC_SLOTS.has(a.timeSlot ?? '') || LOGISTIC_SLOTS.has(a.type ?? '') || a.type === 'checkin' || a.type === 'checkout' || /transfer|aeroporto/i.test(a.name);
+
+const fmt = (n: number) => n.toFixed(1).replace('.', ',');
+
+export function validatePlanRules(days: PlanDay[], ctx: PlanRulesContext): PlanRuleResult[] {
+  const index = catalogIndex(ctx.destination);
+  const lastIdx = days.length - 1;
+  const arrivalIdx = (() => {
+    const i = ctx.arrivalDate ? days.findIndex((d) => String(d.date ?? '').slice(0, 10) === ctx.arrivalDate) : -1;
+    return i >= 0 ? i : 0;
+  })();
+  const isExploration = (i: number) =>
+    i > arrivalIdx && i < lastIdx && !/recupera|descanso|trânsito/i.test(days[i].title ?? '');
+
+  // R13
+  let r13: PlanRuleResult;
+  if (ctx.interests.length === 0) {
+    r13 = { rule: 'R13 PRIORIDADE', status: 'SKIP', detail: 'sem interesses oferecidos' };
+  } else {
+    let total = 0, hit = 0;
+    days.forEach((d, i) => {
+      if (!isExploration(i)) return;
+      for (const a of d.activities) {
+        if (!EXPLORE_SLOTS.has(a.timeSlot ?? '')) continue;
+        const cat = catalogItemOf(a, index);
+        if (!cat || MEALS.has(cat.category)) continue;
+        total++;
+        if (ctx.interests.some((p) => matchesPriority(cat, p))) hit++;
+      }
+    });
+    if (total === 0) r13 = { rule: 'R13 PRIORIDADE', status: 'SKIP', detail: 'sem itens de exploração do catálogo' };
+    else {
+      const ratio = hit / total;
+      r13 = { rule: 'R13 PRIORIDADE', status: ratio >= 0.5 ? 'PASS' : 'WARN', detail: `${hit}/${total} (${Math.round(ratio * 100)}%)` };
+    }
+  }
+
+  // R14 — limitação conhecida: Michelin que também está no catálogo entra como day-N-<id> e não conta.
+  let r14: PlanRuleResult;
+  const michelinCity = getMichelinCountForCity(ctx.destination);
+  if (!ctx.interests.includes('gastronomy')) r14 = { rule: 'R14 MICHELIN', status: 'SKIP', detail: 'sem gastronomia' };
+  else if (michelinCity === 0) r14 = { rule: 'R14 MICHELIN', status: 'SKIP', detail: 'cidade sem Michelin' };
+  else {
+    const count = days.reduce((s, d) => s + d.activities.filter((a) => /^day-\d+-michelin-/.test(a.id)).length, 0);
+    r14 = { rule: 'R14 MICHELIN', status: count >= 1 ? 'PASS' : 'WARN', detail: `count=${count}` };
+  }
+
+  // R15
+  let worst = { km: 0, label: '' };
+  let withCoords = 0, catalogTotal = 0;
+  for (const d of days) {
+    const stops = d.activities
+      .filter((a) => !isLogistic(a))
+      .map((a) => ({ a, cat: catalogItemOf(a, index) }))
+      .filter((x) => x.cat && (x.cat.durationHours || 0) < DAY_TRIP_HOURS)
+      .sort((x, y) => toMinutes(x.a.time) - toMinutes(y.a.time));
+    let prev: { name: string; c: { lat: number; lng: number } } | null = null;
+    for (const s of stops) {
+      catalogTotal++;
+      const c = curatedCoordOf(s.a.id);
+      if (!c) continue;
+      withCoords++;
+      if (prev) {
+        const km = haversineKm(prev.c, c);
+        if (km > worst.km) worst = { km, label: `dia ${d.day}: ${prev.name} → ${s.a.name}` };
+      }
+      prev = { name: s.a.name, c };
+    }
+  }
+  const semCoords = `sem coords ${catalogTotal - withCoords}/${catalogTotal}`;
+  const r15: PlanRuleResult = worst.label
+    ? { rule: 'R15 GEO', status: worst.km > MAX_HOP_KM ? 'WARN' : 'PASS', detail: `pior ${fmt(worst.km)} km ${worst.label} · ${semCoords}` }
+    : { rule: 'R15 GEO', status: 'SKIP', detail: `nenhum par com coords · ${semCoords}` };
+
+  // R16
+  let worstDay: { over: number; label: string } | null = null;
+  let measured = 0;
+  days.forEach((d, i) => {
+    let window: number;
+    if (i < arrivalIdx) return; // em trânsito
+    if (i === lastIdx) window = lastDayWindowHours(ctx.returnDepartureTime, ctx.domestic);
+    else if (i === arrivalIdx) {
+      const arr = hhmm(ctx.arrivalTime);
+      window = arr < 0 ? 14 : Math.max(0, 22 - arr);
+    } else window = 14;
+    const items = d.activities.filter((a) => !isLogistic(a));
+    const hours = items.reduce((s, a) => s + itemHours(a, catalogItemOf(a, index)), 0);
+    const used = hours + HOP_HOURS * Math.max(0, items.length - 1);
+    if (items.length === 0) return;
+    measured++;
+    const over = used - window;
+    if (!worstDay || over > worstDay.over) worstDay = { over, label: `dia ${d.day}: ${fmt(used)}/${fmt(window)} h` };
+  });
+  const wd = worstDay as { over: number; label: string } | null;
+  const r16: PlanRuleResult = !wd || measured === 0
+    ? { rule: 'R16 TEMPO', status: 'SKIP', detail: 'nenhum dia mensurável' }
+    : { rule: 'R16 TEMPO', status: wd.over > 0 ? 'WARN' : 'PASS', detail: `pior ${wd.label}` };
+
+  return [r13, r14, r15, r16];
 }
