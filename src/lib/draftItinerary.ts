@@ -257,7 +257,8 @@ export function buildItineraryForTrip(
     returnFlight: flights.return,
     budget: Number(trip.budget) || 1,
     travelers: Math.max(1, Number(trip.travelers) || 1),
-    interests: trip.travelInterests || [],
+    // Só os interesses que o catálogo da cidade oferece (interestsFor); o resto é ignorado.
+    interests: splitInterests(trip.destination, trip.travelInterests).used,
     jetLagSeverity,
     priceLevel: opts.priceLevel ?? priceLevelFor(trip),
     hotel: hotelLabelFor(acc) ? { label: hotelLabelFor(acc)! } : undefined,

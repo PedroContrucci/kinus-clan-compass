@@ -247,10 +247,8 @@ const Cla = () => {
     };
   }, [cityData, searchQuery, selectedStyle, sharedTrips, stats, clanTips]);
 
-  /** Chips de prioridade visíveis: escondidos quando a cidade não tem nenhum lugar. */
-  const priorityChips = useMemo(() => PRIORITY_CHIPS.filter((chip) =>
-    cityData.activities.some((a) => matchesPriority(a, chip.id)) || (chip.id === 'gastronomy' && cityData.michelin.length > 0)
-  ), [cityData]);
+  /** Chips de prioridade visíveis: só com ≥5 itens do catálogo na cidade (interestsFor). */
+  const priorityChips = useMemo(() => interestsFromActivities(cityData.activities), [cityData]);
 
   const chips = useMemo(() => [
     { value: 'all', label: 'Todos' },
