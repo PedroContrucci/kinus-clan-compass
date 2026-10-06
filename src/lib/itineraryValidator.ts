@@ -412,6 +412,17 @@ const MEALS = new Set(['breakfast', 'lunch', 'dinner']);
 const LOGISTIC_SLOTS = new Set(['flight', 'hotel']);
 const EXPLORE_SLOTS = new Set(['morning', 'afternoon', 'night']);
 export const MAX_HOP_KM = 8;
+/**
+ * Cidades espalhadas: atrações distantes entre si por natureza (parques,
+ * praias, serra, deserto), então o salto aceitável é maior que nas compactas.
+ */
+export const SPREAD_CITIES = ['Orlando', 'Dubai', 'Cidade do Cabo', 'Fortaleza', 'Salvador', 'Porto Seguro', 'Gramado'];
+export const SPREAD_MAX_HOP_KM = 20;
+/** Item de catálogo a mais disto de um bate-volta no mesmo dia é WARN. */
+export const DAYTRIP_STRAY_KM = 15;
+export const maxHopKmFor = (destination: string): number =>
+  SPREAD_CITIES.some((c) => destination.toLowerCase().includes(c.toLowerCase())) ? SPREAD_MAX_HOP_KM : MAX_HOP_KM;
+const isDaytrip = (cat: SuggestedActivity) => (cat.styleTags ?? []).some((t) => t.toLowerCase() === 'daytrip');
 export const DAY_TRIP_HOURS = 5;
 export const HOP_HOURS = 0.5;
 
@@ -503,14 +514,31 @@ export function validatePlanRules(days: PlanDay[], ctx: PlanRulesContext): PlanR
     r14 = { rule: 'R14 MICHELIN', status: count >= 1 ? 'PASS' : 'WARN', detail: `count=${count}` };
   }
 
-  // R15
+  // R15 — itens 'daytrip' saem dos saltos e são relatados à parte; limite por cidade.
+  const maxHop = maxHopKmFor(ctx.destination);
   let worst = { km: 0, label: '' };
   let withCoords = 0, catalogTotal = 0;
+  const daytripNotes: string[] = [];
+  const daytripStray: string[] = [];
   for (const d of days) {
-    const stops = d.activities
+    const catStops = d.activities
       .filter((a) => !isLogistic(a))
       .map((a) => ({ a, cat: catalogItemOf(a, index) }))
-      .filter((x) => x.cat && (x.cat.durationHours || 0) < DAY_TRIP_HOURS)
+      .filter((x): x is { a: PlanDayItem; cat: SuggestedActivity } => !!x.cat);
+    const trips = catStops.filter((x) => isDaytrip(x.cat));
+    if (trips.length > 0) {
+      daytripNotes.push(`bate-volta: ${trips.length} no dia ${d.day}`);
+      const tripCoords = trips.map((t) => curatedCoordOf(t.a.id)).filter((c): c is { lat: number; lng: number } => !!c);
+      for (const o of catStops) {
+        if (isDaytrip(o.cat)) continue;
+        const c = curatedCoordOf(o.a.id);
+        if (!c || tripCoords.length === 0) continue;
+        const km = Math.min(...tripCoords.map((t) => haversineKm(t, c)));
+        if (km > DAYTRIP_STRAY_KM) daytripStray.push(`dia ${d.day}: ${o.a.name} a ${fmt(km)} km do bate-volta`);
+      }
+    }
+    const stops = catStops
+      .filter((x) => !isDaytrip(x.cat) && (x.cat.durationHours || 0) < DAY_TRIP_HOURS)
       .sort((x, y) => toMinutes(x.a.time) - toMinutes(y.a.time));
     let prev: { name: string; c: { lat: number; lng: number } } | null = null;
     for (const s of stops) {
@@ -525,10 +553,20 @@ export function validatePlanRules(days: PlanDay[], ctx: PlanRulesContext): PlanR
       prev = { name: s.a.name, c };
     }
   }
-  const semCoords = `sem coords ${catalogTotal - withCoords}/${catalogTotal}`;
-  const r15: PlanRuleResult = worst.label
-    ? { rule: 'R15 GEO', status: worst.km > MAX_HOP_KM ? 'WARN' : 'PASS', detail: `pior ${fmt(worst.km)} km ${worst.label} · ${semCoords}` }
-    : { rule: 'R15 GEO', status: 'SKIP', detail: `nenhum par com coords · ${semCoords}` };
+  const extras = [
+    `limite ${maxHop} km`,
+    `sem coords ${catalogTotal - withCoords}/${catalogTotal}`,
+    ...daytripNotes,
+    ...daytripStray,
+  ].join(' · ');
+  const hopWarn = !!worst.label && worst.km > maxHop;
+  const r15: PlanRuleResult = worst.label || daytripNotes.length
+    ? {
+        rule: 'R15 GEO',
+        status: hopWarn || daytripStray.length > 0 ? 'WARN' : 'PASS',
+        detail: `${worst.label ? `pior ${fmt(worst.km)} km ${worst.label}` : 'nenhum par com coords'} · ${extras}`,
+      }
+    : { rule: 'R15 GEO', status: 'SKIP', detail: `nenhum par com coords · ${extras}` };
 
   // R16
   let worstDay: { over: number; label: string } | null = null;
