@@ -14,6 +14,7 @@ import {
   type SelectedFlight,
 } from '@/lib/itineraryEngine';
 import { followPlanEnvelope } from '@/lib/planTotals';
+import { splitInterests } from '@/lib/interestsFor';
 
 /** Item de trip.days com os campos do motor gravados por fora do tipo. */
 export type EngineTripActivity = TripDay['activities'][number] & {

@@ -1,12 +1,13 @@
 // WizardStep3Budget — Budget Tier Cards, Priorities, Travel Interests
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, Reorder } from 'framer-motion';
 import { Wallet, GripVertical, Info, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { calculateTripEstimate } from '@/lib/activityPricing';
 import type { WizardData, TravelInterest } from './types';
-import { BUDGET_TIERS, PRIORITY_OPTIONS, TRAVEL_INTERESTS } from './types';
+import { BUDGET_TIERS, PRIORITY_OPTIONS } from './types';
+import { interestsFor, hasCatalog } from '@/lib/interestsFor';
 
 interface WizardStep3Props {
   data: WizardData;
