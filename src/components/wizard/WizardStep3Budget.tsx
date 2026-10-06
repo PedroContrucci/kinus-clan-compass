@@ -150,8 +150,8 @@ export const WizardStep3Budget = ({ data, onChange }: WizardStep3Props) => {
                     : 'bg-card border-border hover:border-primary/50'
                 )}
               >
-                <span>{interest.icon}</span>
-                <span>{interest.label}</span>
+                <span>{icon}</span>
+                <span>{label}</span>
               </motion.button>
             );
           })}
