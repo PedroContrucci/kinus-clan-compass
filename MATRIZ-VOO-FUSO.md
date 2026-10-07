@@ -92,6 +92,7 @@ Exemplos: FOR = BAIXO · CTG = BAIXO · JFK (pernoite, −2) = MODERADO · LIS (
 | T2 | FOR, volta 14:00 | volta → 07:30 | último dia só café + check-out; atividades da manhã reencaixadas ou removidas **com aviso** |
 | T3 | NRT, ida 18:00 (D+2) | ida → 01:00 (chega 14:00 D+1) | ganha um dia; motor insere dia de exploração; orçamento de passeios sobe |
 | T4 | qualquer | troca com edições manuais no roteiro | confirmação "refaz o roteiro e desfaz N trocas" (já existe) |
+| T4b | qualquer (A.4) | troca de ida/volta com edições manuais no roteiro | edições preservadas; não encaixadas avisadas ("N itens seus não couberam: …"). "Desfaz N trocas" só no "Regerar roteiro" |
 
 ## 7. Prova de realidade (A.6) — a tabela que o Pedro preenche
 
