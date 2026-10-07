@@ -36,3 +36,14 @@ Não tenho acesso à saída do `/cost` (comando do CLI, fora das minhas ferramen
 To https://github.com/PedroContrucci/kinus-clan-compass
    2fe4e72..aa21423  main -> main
 ```
+
+## Adendo 1 — snapshot de Lisboa regravado (decisão do fundador)
+- Commit `3103a52` `test: snapshot Lisboa após tag daytrip em Sintra (2fe4e72)`: em `src/test/fixtures/itineraryEngine.before.json` só Lisboa muda. Dias 2, 5, 6, 7 e 8 foram regravados com ids novos, como a B.3 fez; os dias 1, 3 e 4 e as outras três cidades ficam idênticos.
+- Dia 2 vira bate-volta a Sintra e o dia 6 vira bate-volta a Cascais. O que ocupava esses dias desce em cascata (2→5→7, 6→8). Breakdown: total de 22338 → 22358. O diff dia a dia está no corpo do commit.
+- `npx vitest run`: **555 passaram**, 2 pulados, 1 todo (46/46 arquivos).
+
+Push (test):
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   2d25a1b..3103a52  main -> main
+```
