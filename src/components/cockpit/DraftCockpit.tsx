@@ -15,7 +15,9 @@ import { applyHotelSwap, type SwapTripLike, type AccommodationLike } from '@/lib
 import type { StoredTrip } from '@/lib/tripStore';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
 import { isKinuBuilt } from '@/lib/kinuBuilt';
-import { plannedFlightToSelected } from '@/lib/flightModel';
+import { plannedFlightToSelected, offerToSelected, writeFlightsThrough, estimateOf } from '@/lib/flightModel';
+import { pickBest, explainPick, flightSearchKey, shouldAutoSearch, type KinuFlightSearch } from '@/lib/flightRanking';
+import { useFlightSearch } from '@/hooks/useFlightSearch';
 import { buildItineraryForTrip, countManualEdits, itemIdsOf } from '@/lib/draftItinerary';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -50,6 +52,9 @@ interface DraftTrip {
   days?: any[];
   createdVia?: string;
   flights?: any;
+  status?: string;
+  /** Busca de referência gravada (D2): não repete a chamada a cada abertura. */
+  kinuFlightSearch?: KinuFlightSearch;
 }
 
 interface DraftCockpitProps {
@@ -265,9 +270,7 @@ function buildTrail(trip: DraftTrip, currentStage: StepperStageId): TrailPill[] 
   pills.push({
     id: 'flights',
     label: 'Voo',
-    subtitle: trip.outboundFlight?.source === 'estimate'
-      ? 'Voo estimado · toque para escolher o real'
-      : 'Escolha os voos de ida e volta',
+    subtitle: flightPillSubtitle(trip),
     state: currentStage === 'itinerary' ? 'done' : 'current',
     stageId: 'flights',
   });
@@ -280,6 +283,21 @@ function buildTrail(trip: DraftTrip, currentStage: StepperStageId): TrailPill[] 
   });
 
   return pills;
+}
+
+/** Chip 06 (Voo): diz quem escolheu e por quê; o toque abre a lista ("trocar"). */
+// eslint-disable-next-line react-refresh/only-export-components
+export function flightPillSubtitle(trip: { outboundFlight?: SelectedFlight; kinuFlightSearch?: KinuFlightSearch }): string {
+  const out = trip.outboundFlight;
+  if (out?.source === 'confirmed') return 'Voo confirmado';
+  if (out?.chosenBy === 'kinu' && out.kinuPick) return `KINU escolheu: ${explainPick(out)} · trocar`;
+  if (out?.chosenBy === 'user') return 'Voo escolhido por você · trocar';
+  if (trip.kinuFlightSearch?.pending) {
+    const best = pickBest(trip.kinuFlightSearch.outbound);
+    if (best) return `KINU encontrou: ${explainPick(best)} · aplicar`;
+  }
+  if (out?.source === 'estimate') return 'Voo estimado · toque para ver preços de referência';
+  return 'Escolha os voos de ida e volta';
 }
 
 interface DraftStepperProps {
@@ -437,13 +455,12 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   const [pendingRegen, setPendingRegen] = useState<{ edits: number; run: () => void } | null>(null);
 
   const regenerateWith = useCallback((outbound: SelectedFlight, returnFlight: SelectedFlight, extra: Record<string, unknown> = {}) => {
+    // Write-through (R-V12): outboundFlight/returnFlight, trip.flights.* e finanças do mesmo objeto.
+    const withFlights = writeFlightsThrough({ ...trip, ...extra } as DraftTrip & Record<string, unknown>, outbound, returnFlight);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const built = buildItineraryForTrip(trip as any, { outbound, return: returnFlight });
+    const built = buildItineraryForTrip(withFlights as any, { outbound, return: returnFlight });
     onSave({
-      ...trip,
-      ...extra,
-      outboundFlight: outbound,
-      returnFlight,
+      ...withFlights,
       days: built.days,
       budget: built.budget,
       finances: built.finances,
@@ -458,9 +475,74 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     else run();
   }, []);
 
+  // ─── Busca ao abrir o rascunho (D2) + escolha automática pelo ranking (D3) ───
+  const searchKey = flightSearchKey(originCode, destinationCode, trip.startDate, trip.endDate);
+  const needSearch = shouldAutoSearch(trip, searchKey);
+  const outQ = useFlightSearch(originCode, destinationCode, String(trip.startDate).slice(0, 10), 1, needSearch);
+  const retQ = useFlightSearch(destinationCode, originCode, String(trip.endDate).slice(0, 10), 1, needSearch);
+  const searchDone = useRef<string | null>(null);
+  useEffect(() => {
+    if (!needSearch || searchDone.current === searchKey) return;
+    if (!outQ.isSuccess || !retQ.isSuccess) return; // erro: não grava, tenta na próxima abertura
+    searchDone.current = searchKey;
+    const record: KinuFlightSearch = {
+      key: searchKey,
+      searchedAt: new Date().toISOString(),
+      outbound: (outQ.data || []).map(o => offerToSelected(o, { date: new Date(trip.startDate), fromCity: trip.origin || 'São Paulo', toCity: trip.destination })),
+      return: (retQ.data || []).map(o => offerToSelected(o, { date: new Date(trip.endDate), fromCity: trip.destination, toCity: trip.origin || 'São Paulo' })),
+    };
+    const pickOut = pickBest(record.outbound);
+    const pickRet = pickBest(record.return);
+    const curOut = trip.outboundFlight;
+    const curRet = trip.returnFlight;
+    if ((!pickOut && !pickRet) || !(pickOut ?? curOut) || !(pickRet ?? curRet)) {
+      onSave({ ...trip, kinuFlightSearch: record } as DraftTrip);
+      return;
+    }
+    const edits = countManualEdits((trip as { engineItemIds?: unknown }).engineItemIds, itemIdsOf(trip.days));
+    if (edits > 0) {
+      // Roteiro editado à mão: não aplica sozinho (R-V11); oferece "KINU encontrou · aplicar".
+      onSave({ ...trip, kinuFlightSearch: { ...record, pending: true } } as DraftTrip);
+      return;
+    }
+    const out = (pickOut ?? curOut) as SelectedFlight;
+    const ret = (pickRet ?? curRet) as SelectedFlight;
+    setSelectedOutbound(out);
+    setSelectedReturn(ret);
+    regenerateWith(out, ret, { kinuFlightSearch: record });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needSearch, searchKey, outQ.isSuccess, retQ.isSuccess]);
+
+  const applyPendingPick = useCallback(() => {
+    const rec = trip.kinuFlightSearch;
+    if (!rec) return;
+    const out = pickBest(rec.outbound) ?? trip.outboundFlight;
+    const ret = pickBest(rec.return) ?? trip.returnFlight;
+    if (!out || !ret) return;
+    const edits = countManualEdits((trip as { engineItemIds?: unknown }).engineItemIds, itemIdsOf(trip.days));
+    confirmIfEdited(edits, () => {
+      setSelectedOutbound(out);
+      setSelectedReturn(ret);
+      regenerateWith(out, ret, { kinuFlightSearch: { ...rec, pending: false } });
+      toast({ title: 'Voo do KINU aplicado ✈️', description: 'Roteiro refeito com os horários do voo.' });
+    });
+  }, [trip, confirmIfEdited, regenerateWith]);
+
+  // Ofertas para a lista: gravadas (sem nova chamada) ou em busca agora; senão o estágio busca.
+  const stageOffers = trip.kinuFlightSearch?.key === searchKey
+    ? { outbound: trip.kinuFlightSearch.outbound, return: trip.kinuFlightSearch.return }
+    : needSearch && !outQ.isError && !retQ.isError
+      ? { outbound: [], return: [], loading: outQ.isLoading || retQ.isLoading }
+      : undefined;
+  const stageEstimate = estimateOf(trip);
+  const stageCurrent = { outbound: trip.outboundFlight, return: trip.returnFlight };
+  const pendingPick = trip.kinuFlightSearch?.pending ? pickBest(trip.kinuFlightSearch.outbound) : null;
+
   const handleFlightsSelected = useCallback((pickedOut: SelectedFlight, pickedRet: SelectedFlight) => {
-    const outbound: SelectedFlight = { ...pickedOut, source: 'amadeus' };
-    const returnFlight: SelectedFlight = { ...pickedRet, source: 'amadeus' };
+    // A fonte é a do item escolhido: 'reference' (Travelpayouts) ou 'estimate' (estimativa
+    // do KINU / exemplo do legado). Nunca 'amadeus': o nome da fonte é o nome da fonte.
+    const outbound: SelectedFlight = { ...pickedOut, source: pickedOut.source ?? 'estimate', chosenBy: 'user' };
+    const returnFlight: SelectedFlight = { ...pickedRet, source: pickedRet.source ?? 'estimate', chosenBy: 'user' };
     const edits = countManualEdits((trip as { engineItemIds?: unknown }).engineItemIds, itemIdsOf(trip.days));
     confirmIfEdited(edits, () => {
       setSelectedOutbound(outbound);
@@ -529,6 +611,12 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   const hotelSwapModal = (
     <>
     {regenDialog}
+    {pendingPick && (
+      <div className="mx-4 mt-3 p-3 rounded-xl border border-primary/40 bg-primary/10 text-sm flex items-center justify-between gap-3">
+        <span className="text-foreground">KINU encontrou: {explainPick(pendingPick)}</span>
+        <button type="button" onClick={applyPendingPick} className="text-primary font-medium hover:underline shrink-0">aplicar</button>
+      </div>
+    )}
     <HotelSwapModal
       open={hotelSwapOpen}
       onClose={() => setHotelSwapOpen(false)}
@@ -544,6 +632,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
         <DraftStepper trip={trip} currentStage={stage} onChange={setStage} onSwapHotel={() => setHotelSwapOpen(true)} />
       {hotelSwapModal}
         <FlightSelectionStage
+          key={`${trip.outboundFlight?.option?.id ?? 'none'}|${trip.returnFlight?.option?.id ?? 'none'}`}
           destination={trip.destination}
           origin={trip.origin || 'São Paulo'}
           originCode={originCode}
@@ -555,6 +644,9 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
           onFlightsSelected={handleFlightsSelected}
           onSave={handleSave}
           onBack={onClose}
+          estimate={stageEstimate}
+          current={stageCurrent}
+          offers={stageOffers}
         />
       </>
     );
@@ -609,6 +701,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
       <DraftStepper trip={trip} currentStage={stage} onChange={setStage} onSwapHotel={() => setHotelSwapOpen(true)} />
       {hotelSwapModal}
       <FlightSelectionStage
+          key={`${trip.outboundFlight?.option?.id ?? 'none'}|${trip.returnFlight?.option?.id ?? 'none'}`}
         destination={trip.destination}
         origin={trip.origin || 'São Paulo'}
         originCode={originCode}
@@ -620,6 +713,9 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
         onFlightsSelected={handleFlightsSelected}
         onSave={handleSave}
         onBack={onClose}
+        estimate={stageEstimate}
+        current={stageCurrent}
+        offers={stageOffers}
       />
     </>
   );

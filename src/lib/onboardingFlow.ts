@@ -11,6 +11,7 @@ import { catalogIdOf } from '@/lib/localAchievements';
 import { planBreakdown, reserveFor, RESERVE_RATE } from '@/lib/planTotals';
 import type { DraftTripInput } from '@/lib/createTrip';
 import { interestLabel, splitInterests } from '@/lib/interestsFor';
+import { explainPick } from '@/lib/flightRanking';
 
 export const DEFAULT_ORIGIN = 'São Paulo';
 export type OriginSource = 'profile' | 'default';
@@ -109,9 +110,12 @@ export function kinuDidLines(trip: any): KinuDidLines {
     return isValid(d) ? format(d, 'dd/MM') : '—';
   };
   const realFlight = Boolean(trip.outboundFlight && trip.outboundFlight.source !== 'estimate');
-  const flight = realFlight
-    ? `Voo escolhido · ida ${ddmm(trip.startDate)} · volta ${ddmm(trip.endDate)}`
-    : `Voo estimado · ida ${ddmm(trip.startDate)} · volta ${ddmm(trip.endDate)} · ${flightPriceLabel(trip)}`;
+  const out = trip.outboundFlight;
+  const flight = out?.chosenBy === 'kinu' && out.kinuPick
+    ? `KINU escolheu: ${explainPick(out)} · trocar`
+    : realFlight
+      ? `Voo escolhido · ida ${ddmm(trip.startDate)} · volta ${ddmm(trip.endDate)}`
+      : `Voo estimado · ida ${ddmm(trip.startDate)} · volta ${ddmm(trip.endDate)} · ${flightPriceLabel(trip)}`;
 
   const days: any[] = Array.isArray(trip.days) ? trip.days : [];
   const cityTiers = LANDMARKS[trip.destination]?.tiers;

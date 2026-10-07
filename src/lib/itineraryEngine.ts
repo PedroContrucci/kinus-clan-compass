@@ -83,8 +83,17 @@ export interface FlightOption {
 export interface SelectedFlight {
   option: FlightOption;
   date: Date;
-  /** De onde veio: estimativa do gerador, busca real ou reserva confirmada. */
-  source?: 'estimate' | 'amadeus' | 'confirmed';
+  /**
+   * De onde veio: estimativa do gerador, preço de referência (Travelpayouts), reserva
+   * confirmada. 'amadeus' é legado (viagens gravadas antes da A.3); nada novo grava isso.
+   */
+  source?: 'estimate' | 'reference' | 'amadeus' | 'confirmed';
+  /** Fonte do preço: 'route'/'tier' (estimativa) ou 'travelpayouts' (preço de referência). */
+  priceSource?: 'route' | 'tier' | 'travelpayouts';
+  /** Quem escolheu este voo: o KINU pelo ranking (flightRanking) ou o usuário na lista. */
+  chosenBy?: 'kinu' | 'user';
+  /** Quando o KINU escolheu: base do "por quê" (média da perna, nº de ofertas, modo). */
+  kinuPick?: { averagePrice: number; offers: number; mode: 'kinu' | 'fastest' };
   /** false → fuso do destino desconhecido: hora de chegada "a confirmar" (R-V6). Ausente = conhecido. */
   tzKnown?: boolean;
   /** false → duração estimada sem base (fallback conservador): "duração a confirmar". */

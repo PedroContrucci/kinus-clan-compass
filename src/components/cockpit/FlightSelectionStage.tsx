@@ -1,5 +1,7 @@
 // FlightSelectionStage — Stage 1: Select outbound and return flights
-// Now uses Amadeus API for real flight data
+// Lista: índice 0 = estimativa do KINU ("Sugerido pelo KINU · estimado"); abaixo, preços de
+// referência (Travelpayouts, via function `amadeus-flights`) normalizados por offerToSelected
+// e ordenados pela regra escrita em src/lib/flightRanking.ts.
 
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,7 +10,7 @@ import {
   Calendar, Sparkles, ChevronDown, ChevronUp, Check, Lightbulb,
   Loader2, AlertCircle, Zap, RefreshCw
 } from 'lucide-react';
-import { format, addDays, subDays, differenceInCalendarDays } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -16,11 +18,12 @@ import { cn } from '@/lib/utils';
 import { 
   useFlightSearch, 
   useFlexibleFlightSearch,
-  FlightOffer as AmadeusFlightOffer,
   FlexibleDateResult,
   formatFlightPrice 
 } from '@/hooks/useFlightSearch';
 import { Skeleton } from '@/components/ui/skeleton';
+import { offerToSelected, flightDaysLater } from '@/lib/flightModel';
+import { rankFlights } from '@/lib/flightRanking';
 
 // Types - Extended to support Amadeus data
 // Tipos do voo moram no motor de roteiro (puro); reexportados para os imports existentes.
@@ -39,26 +42,15 @@ interface FlightSelectionStageProps {
   onFlightsSelected: (outbound: SelectedFlight, returnFlight: SelectedFlight) => void;
   onSave: () => void;
   onBack: () => void;
+  /** Estimativa do KINU: sempre o índice 0 da lista, rotulada "Sugerido pelo KINU · estimado". */
+  estimate?: { outbound?: SelectedFlight; return?: SelectedFlight };
+  /** Voos atuais da viagem (pré-seleção). Sem eles, pré-seleciona a estimativa. */
+  current?: { outbound?: SelectedFlight; return?: SelectedFlight };
+  /** Ofertas já normalizadas pelo cockpit (busca ao abrir o rascunho). Ausente = o estágio busca. */
+  offers?: { outbound: SelectedFlight[]; return: SelectedFlight[]; loading?: boolean };
 }
 
-// Convert Amadeus flight offer to our FlightOption format
-function convertToFlightOption(offer: AmadeusFlightOffer): FlightOption {
-  return {
-    id: offer.id,
-    airline: offer.airline,
-    route: offer.route,
-    isDirect: offer.isDirect,
-    connectionCity: offer.connectionCities?.[0],
-    duration: offer.duration,
-    durationMinutes: offer.durationMinutes,
-    price: offer.price,
-    departureTime: offer.departureTime,
-    arrivalTime: offer.arrivalTime,
-    segments: offer.segments,
-    isBestPrice: offer.isBestPrice,
-    isFastest: offer.isFastest,
-  };
-}
+type ListItem = SelectedFlight & { isEstimate?: boolean };
 
 // Fallback mock data when API fails or returns empty.
 // originCode/destinationCode are always the TRIP's origin and destination — the
@@ -151,9 +143,12 @@ export const FlightSelectionStage = ({
   onFlightsSelected,
   onSave,
   onBack,
+  estimate,
+  current,
+  offers,
 }: FlightSelectionStageProps) => {
-  const [selectedOutbound, setSelectedOutbound] = useState<SelectedFlight | null>(null);
-  const [selectedReturn, setSelectedReturn] = useState<SelectedFlight | null>(null);
+  const [selectedOutbound, setSelectedOutbound] = useState<SelectedFlight | null>(current?.outbound ?? estimate?.outbound ?? null);
+  const [selectedReturn, setSelectedReturn] = useState<SelectedFlight | null>(current?.return ?? estimate?.return ?? null);
   const [flexibleDatesModal, setFlexibleDatesModal] = useState<{
     type: 'outbound' | 'return';
     basePrice: number;
@@ -173,7 +168,7 @@ export const FlightSelectionStage = ({
     destinationCode,
     formatDateForAPI(departureDate),
     1,
-    true
+    offers === undefined
   );
 
   // Fetch return flights from Amadeus API
@@ -187,7 +182,7 @@ export const FlightSelectionStage = ({
     originCode,
     formatDateForAPI(returnDate),
     1,
-    true
+    offers === undefined
   );
 
   // Fetch flexible dates for outbound
@@ -210,55 +205,41 @@ export const FlightSelectionStage = ({
     !!flexibleDatesModal && flexibleDatesModal.type === 'return'
   );
 
-  // Convert API data to FlightOptions, with fallback
-  const outboundOptions: FlightOption[] = useMemo(() => {
-    if (outboundData && outboundData.length > 0) {
-      return outboundData.map(convertToFlightOption);
-    }
-    // Fallback to mock data if API returns empty
-    return generateFallbackFlightOptions(originCode, destinationCode, false);
-  }, [outboundData, originCode, destinationCode]);
+  // Ofertas de referência → SelectedFlight pelo MESMO modelo do voo (fuso, D+n, fonte).
+  const realOutbound: SelectedFlight[] = useMemo(() => offers
+    ? offers.outbound
+    : (outboundData || []).map(o => offerToSelected(o, { date: departureDate, fromCity: origin, toCity: destination })),
+  [offers, outboundData, departureDate, origin, destination]);
+  const realReturn: SelectedFlight[] = useMemo(() => offers
+    ? offers.return
+    : (returnData || []).map(o => offerToSelected(o, { date: returnDate, fromCity: destination, toCity: origin })),
+  [offers, returnData, returnDate, origin, destination]);
+  const outboundLoadingAll = offers ? !!offers.loading : outboundLoading;
+  const returnLoadingAll = offers ? !!offers.loading : returnLoading;
 
-  const returnOptions: FlightOption[] = useMemo(() => {
-    if (returnData && returnData.length > 0) {
-      return returnData.map(convertToFlightOption);
-    }
-    // Fallback to mock data if API returns empty
-    return generateFallbackFlightOptions(originCode, destinationCode, true);
-  }, [returnData, originCode, destinationCode]);
-
-  // Sort options and assign best-price / fastest badges to first occurrence only
-  const sortedOutboundOptions = useMemo(() => {
-    const sorted = [...outboundOptions].sort((a, b) =>
-      sortBy === 'price' ? a.price - b.price : a.durationMinutes - b.durationMinutes
-    );
-    if (sorted.length === 0) return sorted;
-    const minPrice = Math.min(...sorted.map(o => o.price));
-    const minDuration = Math.min(...sorted.map(o => o.durationMinutes));
-    const bestPriceIndex = sorted.findIndex(o => o.price === minPrice);
-    const fastestIndex = sorted.findIndex(o => o.durationMinutes === minDuration);
-    return sorted.map((o, i) => ({
-      ...o,
-      isBestPrice: i === bestPriceIndex,
-      isFastest: i === fastestIndex,
-    }));
-  }, [outboundOptions, sortBy]);
-
-  const sortedReturnOptions = useMemo(() => {
-    const sorted = [...returnOptions].sort((a, b) =>
-      sortBy === 'price' ? a.price - b.price : a.durationMinutes - b.durationMinutes
-    );
-    if (sorted.length === 0) return sorted;
-    const minPrice = Math.min(...sorted.map(o => o.price));
-    const minDuration = Math.min(...sorted.map(o => o.durationMinutes));
-    const bestPriceIndex = sorted.findIndex(o => o.price === minPrice);
-    const fastestIndex = sorted.findIndex(o => o.durationMinutes === minDuration);
-    return sorted.map((o, i) => ({
-      ...o,
-      isBestPrice: i === bestPriceIndex,
-      isFastest: i === fastestIndex,
-    }));
-  }, [returnOptions, sortBy]);
+  // Lista = estimativa (índice 0) + ofertas reais pelo ranking. Os mocks "Estimativa ·
+  // companhia a definir" (preço inventado) só aparecem no legado, sem estimativa e sem oferta.
+  const buildList = (real: SelectedFlight[], est: SelectedFlight | undefined, isReturn: boolean, date: Date): ListItem[] => {
+    const base: ListItem[] = real.length
+      ? rankFlights(real, sortBy === 'price' ? 'kinu' : 'fastest')
+      : est ? [] : generateFallbackFlightOptions(originCode, destinationCode, isReturn).map(option => ({ option, date }));
+    const minPrice = Math.min(...base.map(o => o.option.price));
+    const minDuration = Math.min(...base.map(o => o.option.durationMinutes));
+    const bp = base.findIndex(o => o.option.price === minPrice);
+    const fa = base.findIndex(o => o.option.durationMinutes === minDuration);
+    // Cópia: as ofertas podem vir das props do cockpit (nunca mutar).
+    const ranked = base.map((o, i) => ({ ...o, option: { ...o.option, isBestPrice: i === bp, isFastest: i === fa } }));
+    return est ? [{ ...est, isEstimate: true }, ...ranked] : ranked;
+  };
+  const sortedOutboundOptions = useMemo(
+    () => buildList(realOutbound, estimate?.outbound, false, departureDate),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [realOutbound, estimate?.outbound, sortBy, originCode, destinationCode, departureDate]);
+  const sortedReturnOptions = useMemo(
+    () => buildList(realReturn, estimate?.return, true, returnDate),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [realReturn, estimate?.return, sortBy, originCode, destinationCode, returnDate]);
+  const hasReference = realOutbound.length > 0 || realReturn.length > 0;
 
   // Flexible prices from API
   const flexiblePrices = useMemo(() => {
@@ -275,12 +256,15 @@ export const FlightSelectionStage = ({
   const totalFlightCost = (selectedOutbound?.option.price || 0) + (selectedReturn?.option.price || 0);
   const bothSelected = selectedOutbound && selectedReturn;
 
-  const handleSelectFlight = (option: FlightOption, type: 'outbound' | 'return', date: Date) => {
+  const handleSelectFlight = (item: ListItem, type: 'outbound' | 'return', date: Date) => {
+    // Escolha na lista é do usuário (chosenBy 'user'); a fonte segue a do item.
+    const { isEstimate, kinuPick, ...rest } = item;
+    const picked: SelectedFlight = { ...rest, date, chosenBy: 'user' };
     if (type === 'outbound') {
-      setSelectedOutbound({ option, date });
+      setSelectedOutbound(picked);
       setExpandedSection('return');
     } else {
-      setSelectedReturn({ option, date });
+      setSelectedReturn(picked);
       setExpandedSection(null);
     }
   };
@@ -288,8 +272,10 @@ export const FlightSelectionStage = ({
   const handleChangeDateAndSelect = (newDate: Date) => {
     if (!flexibleDatesModal) return;
     
-    const options = flexibleDatesModal.type === 'outbound' ? outboundOptions : returnOptions;
-    const bestPriceOption = options.find(o => o.isBestPrice) || options[0];
+    const options = flexibleDatesModal.type === 'outbound' ? sortedOutboundOptions : sortedReturnOptions;
+    const best = options.find(o => o.option.isBestPrice) || options[0];
+    if (!best) return;
+    const bestPriceOption = best.option;
     
     // Adjust price for the new date
     const dayOfWeek = newDate.getDay();
@@ -302,7 +288,7 @@ export const FlightSelectionStage = ({
       price: Math.round(bestPriceOption.price * (1 + variation)),
     };
     
-    handleSelectFlight(adjustedOption, flexibleDatesModal.type, newDate);
+    handleSelectFlight({ ...best, option: adjustedOption }, flexibleDatesModal.type, newDate);
     setFlexibleDatesModal(null);
   };
 
@@ -351,16 +337,15 @@ export const FlightSelectionStage = ({
     </div>
   );
 
-  const renderFlightOption = (option: FlightOption, type: 'outbound' | 'return', date: Date) => {
+  const renderFlightOption = (item: ListItem, type: 'outbound' | 'return', date: Date) => {
+    const option = item.option;
     const isSelected = type === 'outbound' 
       ? selectedOutbound?.option.id === option.id 
       : selectedReturn?.option.id === option.id;
+    const chosenByKinu = (type === 'outbound' ? current?.outbound : current?.return);
+    const isKinuPick = !item.isEstimate && chosenByKinu?.chosenBy === 'kinu' && chosenByKinu.option.id === option.id;
 
-    const firstAt = option.segments?.[0]?.departure?.at;
-    const lastAt = option.segments?.[option.segments.length - 1]?.arrival?.at;
-    const dayOffset = firstAt && lastAt
-      ? differenceInCalendarDays(new Date(lastAt), new Date(firstAt))
-      : 0;
+    const dayOffset = flightDaysLater(item);
 
     return (
       <motion.div
@@ -375,9 +360,21 @@ export const FlightSelectionStage = ({
           option.isBestPrice && !isSelected && 'border-amber-500/50',
           option.isFastest && !option.isBestPrice && !isSelected && 'border-sky-500/50'
         )}
-        onClick={() => handleSelectFlight(option, type, date)}
+        onClick={() => handleSelectFlight(item, type, date)}
       >
         <div className="flex items-center gap-2 mb-2">
+          {item.isEstimate && (
+            <div className="flex items-center gap-1 text-primary text-xs font-medium">
+              <Sparkles size={12} />
+              <span>Sugerido pelo KINU · estimado</span>
+            </div>
+          )}
+          {isKinuPick && (
+            <div className="flex items-center gap-1 text-primary text-xs font-medium">
+              <Sparkles size={12} />
+              <span>KINU escolheu</span>
+            </div>
+          )}
           {option.isBestPrice && (
             <div className="flex items-center gap-1 text-amber-500 text-xs font-medium">
               <Trophy size={12} />
@@ -409,7 +406,7 @@ export const FlightSelectionStage = ({
                 {option.duration}
               </span>
               <span>
-                {option.departureTime} → {option.arrivalTime}
+                {option.departureTime} → {item.tzKnown === false ? 'chegada a confirmar' : option.arrivalTime}
                 {dayOffset >= 1 && (
                   <span className="ml-1 text-xs" style={{ color: '#eab308' }}>+{dayOffset}</span>
                 )}
@@ -436,7 +433,7 @@ export const FlightSelectionStage = ({
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
+      <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button onClick={onBack} className="p-2 hover:bg-muted rounded-lg transition-colors">
@@ -463,7 +460,7 @@ export const FlightSelectionStage = ({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-4 py-6 pb-48 overflow-y-auto">
+      <main className="flex-1 px-4 py-6 pb-72 overflow-y-auto">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
             <Plane size={20} className="text-primary" />
@@ -520,7 +517,7 @@ export const FlightSelectionStage = ({
                 {/* Sort controls */}
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground font-medium">
-                    {outboundLoading ? 'BUSCANDO VOOS...' : `${sortedOutboundOptions.length} OPÇÕES ENCONTRADAS:`}
+                    {outboundLoadingAll ? 'BUSCANDO VOOS...' : `${sortedOutboundOptions.length} OPÇÕES ENCONTRADAS:`}
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -545,15 +542,16 @@ export const FlightSelectionStage = ({
                 </div>
                 
                 {/* Loading state */}
-                {outboundLoading && renderLoadingSkeleton()}
+                {hasReference && <p className="text-[11px] text-muted-foreground">preços de referência · Travelpayouts</p>}
+                {outboundLoadingAll && renderLoadingSkeleton()}
                 
                 {/* Error state — only when no offers loaded and not currently fetching */}
-                {outboundError && !outboundLoading && sortedOutboundOptions.length === 0 &&
+                {outboundError && !outboundLoadingAll && sortedOutboundOptions.length === 0 &&
                   renderError(outboundError as Error, refetchOutbound)}
                 
                 {/* Flight options */}
-                {!outboundLoading && sortedOutboundOptions.map(option => 
-                  renderFlightOption(option, 'outbound', departureDate)
+                {(!outboundLoadingAll || estimate?.outbound) && sortedOutboundOptions.map(item =>
+                  renderFlightOption(item, 'outbound', departureDate)
                 )}
 
                 {/* Flexible dates tip */}
@@ -568,7 +566,7 @@ export const FlightSelectionStage = ({
                       <button
                         onClick={() => setFlexibleDatesModal({
                           type: 'outbound',
-                          basePrice: sortedOutboundOptions.find(o => o.isBestPrice)?.price || sortedOutboundOptions[0]?.price || 4200,
+                          basePrice: sortedOutboundOptions.find(o => o.option.isBestPrice)?.option.price || sortedOutboundOptions[0]?.option.price || 4200,
                           baseDate: departureDate,
                         })}
                         className="mt-2 text-sm text-primary font-medium flex items-center gap-1 hover:underline"
@@ -633,7 +631,7 @@ export const FlightSelectionStage = ({
                 {/* Sort controls */}
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground font-medium">
-                    {returnLoading ? 'BUSCANDO VOOS...' : `${sortedReturnOptions.length} OPÇÕES ENCONTRADAS:`}
+                    {returnLoadingAll ? 'BUSCANDO VOOS...' : `${sortedReturnOptions.length} OPÇÕES ENCONTRADAS:`}
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -658,15 +656,16 @@ export const FlightSelectionStage = ({
                 </div>
                 
                 {/* Loading state */}
-                {returnLoading && renderLoadingSkeleton()}
+                {hasReference && <p className="text-[11px] text-muted-foreground">preços de referência · Travelpayouts</p>}
+                {returnLoadingAll && renderLoadingSkeleton()}
                 
                 {/* Error state — only when no offers loaded and not currently fetching */}
-                {returnError && !returnLoading && sortedReturnOptions.length === 0 &&
+                {returnError && !returnLoadingAll && sortedReturnOptions.length === 0 &&
                   renderError(returnError as Error, refetchReturn)}
                 
                 {/* Flight options */}
-                {!returnLoading && sortedReturnOptions.map(option => 
-                  renderFlightOption(option, 'return', returnDate)
+                {(!returnLoadingAll || estimate?.return) && sortedReturnOptions.map(item =>
+                  renderFlightOption(item, 'return', returnDate)
                 )}
 
                 {/* Flexible dates tip */}
@@ -681,7 +680,7 @@ export const FlightSelectionStage = ({
                       <button
                         onClick={() => setFlexibleDatesModal({
                           type: 'return',
-                          basePrice: sortedReturnOptions.find(o => o.isBestPrice)?.price || sortedReturnOptions[0]?.price || 4200,
+                          basePrice: sortedReturnOptions.find(o => o.option.isBestPrice)?.option.price || sortedReturnOptions[0]?.option.price || 4200,
                           baseDate: returnDate,
                         })}
                         className="mt-2 text-sm text-primary font-medium flex items-center gap-1 hover:underline"
@@ -699,7 +698,8 @@ export const FlightSelectionStage = ({
       </main>
 
       {/* Footer Summary */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border p-4">
+      {/* z-20: abaixo da trilha do rascunho (z-30); o pb-72 do main deixa o fim da lista visível. */}
+      <footer className="fixed bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur-lg border-t border-border p-4">
         <div className="mb-4 p-3 rounded-xl bg-card border border-border">
           <p className="text-xs text-muted-foreground mb-2">RESUMO DOS VOOS SELECIONADOS:</p>
           <div className="space-y-1 text-sm">

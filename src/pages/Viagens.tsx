@@ -658,6 +658,11 @@ const Viagens = () => {
         updatedTrip.finances.categories.flights.planned = 0;
         updatedTrip.finances.categories.flights.confirmed = amount;
 
+        // Confirmado é a fonte mais forte: card, lista, Financeiro e PDF leem 'confirmed'.
+        const legs = updatedTrip as unknown as Record<string, { source?: string } | undefined>;
+        for (const k of ['outboundFlight', 'returnFlight']) if (legs[k]) legs[k] = { ...legs[k], source: 'confirmed' };
+        const planned = updatedTrip.flights as unknown as Record<string, { source?: string } | undefined> | undefined;
+        for (const k of ['outbound', 'return']) if (planned?.[k]) planned[k] = { ...planned[k], source: 'confirmed' };
         const ob = (updatedTrip as any).outboundFlight?.option;
         if (flightDetails?.outbound && ob) {
           if (flightDetails.outbound.airline) ob.airline = flightDetails.outbound.airline;

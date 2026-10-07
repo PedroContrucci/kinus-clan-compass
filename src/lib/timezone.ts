@@ -7,6 +7,7 @@
 // R-V6: fuso desconhecido → { diff: 0, tzKnown: false } e a tela diz "a confirmar". Sem número de fallback.
 import { format } from 'date-fns';
 import { CITY_TIMEZONES } from '@/data/generated/cityTimezones';
+import { getAllCities, findCityInfo } from '@/data/destinationCatalog';
 
 /** Origem quando a viagem não declara uma (o padrão do app). */
 export const DEFAULT_ORIGIN_CITY = 'São Paulo';
@@ -26,6 +27,34 @@ export interface TimezoneDiff {
 export function cityTimezone(city: string | undefined | null): string | null {
   if (!city) return null;
   return CITY_TIMEZONES[city] ?? null;
+}
+
+/** Aeroportos de origem do wizard fora do catálogo (WizardStep1Logistics.ORIGIN_AIRPORTS). */
+const ORIGIN_AIRPORT_CITY: Record<string, string> = {
+  GRU: 'São Paulo', CGH: 'São Paulo', VCP: 'Campinas', CNF: 'Belo Horizonte',
+  BSB: 'Brasília', CWB: 'Curitiba', POA: 'Porto Alegre',
+};
+
+let airportCityCache: Record<string, { city: string; brazil: boolean }> | null = null;
+
+/** IATA → cidade (catálogo `airports[]` + origens do wizard) e se fica no Brasil. */
+export function airportCity(iata: string | undefined | null): { city: string; brazil: boolean } | null {
+  if (!iata) return null;
+  if (!airportCityCache) {
+    airportCityCache = {};
+    for (const [code, city] of Object.entries(ORIGIN_AIRPORT_CITY)) airportCityCache[code] = { city, brazil: true };
+    for (const c of getAllCities()) {
+      const brazil = findCityInfo(c.name)?.region === 'Brasil';
+      for (const a of c.airports) airportCityCache[a.toUpperCase()] ??= { city: c.name, brazil };
+    }
+  }
+  return airportCityCache[iata.toUpperCase()] ?? null;
+}
+
+/** IATA → IANA via aeroporto → cidade → cityTimezones (null = desconhecido). */
+export function airportTimezone(iata: string | undefined | null): string | null {
+  const a = airportCity(iata);
+  return a ? cityTimezone(a.city) : null;
 }
 
 /** Offset do fuso no instante dado, em minutos (UTC−3 → −180). */

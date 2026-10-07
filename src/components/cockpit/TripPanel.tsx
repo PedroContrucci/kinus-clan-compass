@@ -1175,7 +1175,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                 disabled={searchingFlights}
                 className="w-full text-[10px] font-medium py-1.5 rounded-lg border border-sky-500/30 text-sky-400 hover:bg-sky-500/10 transition-colors disabled:opacity-50"
               >
-                {searchingFlights ? '✈️ Buscando...' : '✈️ Voos Reais'}
+                {searchingFlights ? '✈️ Buscando...' : '✈️ Preços de referência · Travelpayouts'}
               </button>
               {flightSearchError && (
                 <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
@@ -1301,7 +1301,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </div>
       </div>
 
-      {/* Flight Results from Amadeus */}
+      {/* Preços de referência (Travelpayouts, via function amadeus-flights) */}
       {flightResults && flightResults.length > 0 && (
         <div className="bg-sky-500/5 border border-sky-500/20 rounded-xl p-3 space-y-2">
           <p className="text-xs font-semibold text-sky-400 font-['Outfit']">✈️ Voos encontrados:</p>
@@ -1316,7 +1316,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
               </span>
             </div>
           ))}
-          <p className="text-[9px] text-muted-foreground text-center">Preços via Amadeus (referência)</p>
+          <p className="text-[9px] text-muted-foreground text-center">preços de referência · Travelpayouts</p>
         </div>
       )}
 

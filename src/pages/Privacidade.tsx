@@ -44,7 +44,7 @@ const Privacidade = () => {
           <ul className="list-disc pl-5 space-y-1 text-muted-foreground font-['Plus_Jakarta_Sans']">
             <li><span className="text-foreground">Anthropic</span> — processa as mensagens que você envia ao KINU AI;</li>
             <li><span className="text-foreground">Google</span> — busca de lugares e mapas;</li>
-            <li><span className="text-foreground">Amadeus</span> — busca de voos;</li>
+            <li><span className="text-foreground">Travelpayouts</span> — preços de referência de voos;</li>
             <li><span className="text-foreground">Resend</span> — envio de e-mails;</li>
             <li>Parceiros de reserva quando você clica em uma oferta (Kiwi, Klook).</li>
           </ul>
