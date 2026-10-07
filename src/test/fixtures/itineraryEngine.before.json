@@ -8,7 +8,7 @@
     "theme": "✈️ Dia de Viagem",
     "activities": [
      {
-      "id": "day-0-flight-out",
+      "id": "day-0-slot-flight-out",
       "name": "Voo de Ida (estimado)",
       "type": "flight",
       "timeSlot": "flight",
@@ -21,36 +21,19 @@
       "source": "kinu"
      },
      {
-      "id": "day-0-checkin",
+      "id": "day-0-slot-checkin",
       "name": "Check-in no hotel",
       "type": "checkin",
       "timeSlot": "hotel",
       "estimatedCost": 0,
       "costPerPerson": 0,
-      "time": "14:00",
+      "time": "16:30",
       "location": "Novotel Cartagena ⭐ 3.0 • Centro",
       "status": "suggestion",
       "source": "kinu",
       "tips": [
        "7 noites (~R$ 800/noite)",
        "Custo já incluso no total da hospedagem"
-      ]
-     },
-     {
-      "id": "day-0-ambient-walk",
-      "name": "Caminhada leve no bairro do hotel",
-      "type": "experience",
-      "timeSlot": "afternoon",
-      "estimatedCost": 0,
-      "costPerPerson": 0,
-      "time": "16:00",
-      "duration": "2h",
-      "location": "Cartagena",
-      "status": "suggestion",
-      "source": "kinu",
-      "tips": [
-       "Conheça os arredores do hotel sem pressa",
-       "Ajuda a regular o relógio biológico"
       ]
      },
      {
@@ -710,11 +693,11 @@
       "type": "transport",
       "timeSlot": "afternoon",
       "estimatedCost": 132,
-      "time": "17:00",
+      "time": "18:00",
       "duration": "1h",
       "status": "suggestion",
       "tips": [
-       "Chegue com 3h de antecedência para voos internacionais"
+       "Saída 3h antes do voo internacional"
       ],
       "source": "kinu"
      },
@@ -773,7 +756,7 @@
     "theme": "✈️ Dia de Viagem",
     "activities": [
      {
-      "id": "day-0-flight-out",
+      "id": "day-0-slot-flight-out",
       "name": "Voo de Ida (estimado)",
       "type": "flight",
       "timeSlot": "flight",
@@ -786,36 +769,19 @@
       "source": "kinu"
      },
      {
-      "id": "day-0-checkin",
+      "id": "day-0-slot-checkin",
       "name": "Check-in no hotel",
       "type": "checkin",
       "timeSlot": "hotel",
       "estimatedCost": 0,
       "costPerPerson": 0,
-      "time": "14:00",
+      "time": "16:30",
       "location": "Hotel Lisboa Plaza ⭐ 4.0 • Avenida da Liberdade",
       "status": "suggestion",
       "source": "kinu",
       "tips": [
        "7 noites (~R$ 1.100/noite)",
        "Custo já incluso no total da hospedagem"
-      ]
-     },
-     {
-      "id": "day-0-ambient-walk",
-      "name": "Caminhada leve no bairro do hotel",
-      "type": "experience",
-      "timeSlot": "afternoon",
-      "estimatedCost": 0,
-      "costPerPerson": 0,
-      "time": "16:00",
-      "duration": "2h",
-      "location": "Lisboa",
-      "status": "suggestion",
-      "source": "kinu",
-      "tips": [
-       "Conheça os arredores do hotel sem pressa",
-       "Ajuda a regular o relógio biológico"
       ]
      },
      {
@@ -1453,11 +1419,11 @@
       "type": "transport",
       "timeSlot": "afternoon",
       "estimatedCost": 198,
-      "time": "17:00",
+      "time": "18:00",
       "duration": "1h",
       "status": "suggestion",
       "tips": [
-       "Chegue com 3h de antecedência para voos internacionais"
+       "Saída 3h antes do voo internacional"
       ],
       "source": "kinu"
      },
@@ -1516,7 +1482,7 @@
     "theme": "✈️ Dia de Viagem",
     "activities": [
      {
-      "id": "day-0-flight-out",
+      "id": "day-0-slot-flight-out",
       "name": "Voo de Ida (estimado)",
       "type": "flight",
       "timeSlot": "flight",
@@ -1529,36 +1495,19 @@
       "source": "kinu"
      },
      {
-      "id": "day-0-checkin",
+      "id": "day-0-slot-checkin",
       "name": "Check-in no hotel",
       "type": "checkin",
       "timeSlot": "hotel",
       "estimatedCost": 0,
       "costPerPerson": 0,
-      "time": "14:00",
+      "time": "16:30",
       "location": "Hotel Gracery Shinjuku ⭐ 3.0 • Shinjuku",
       "status": "suggestion",
       "source": "kinu",
       "tips": [
        "7 noites (~R$ 1.600/noite)",
        "Custo já incluso no total da hospedagem"
-      ]
-     },
-     {
-      "id": "day-0-ambient-walk",
-      "name": "Caminhada leve no bairro do hotel",
-      "type": "experience",
-      "timeSlot": "afternoon",
-      "estimatedCost": 0,
-      "costPerPerson": 0,
-      "time": "16:00",
-      "duration": "2h",
-      "location": "Tóquio",
-      "status": "suggestion",
-      "source": "kinu",
-      "tips": [
-       "Conheça os arredores do hotel sem pressa",
-       "Ajuda a regular o relógio biológico"
       ]
      },
      {
@@ -2180,11 +2129,11 @@
       "type": "transport",
       "timeSlot": "afternoon",
       "estimatedCost": 308,
-      "time": "17:00",
+      "time": "18:00",
       "duration": "1h",
       "status": "suggestion",
       "tips": [
-       "Chegue com 3h de antecedência para voos internacionais"
+       "Saída 3h antes do voo internacional"
       ],
       "source": "kinu"
      },
@@ -2243,7 +2192,7 @@
     "theme": "✈️ Dia de Viagem",
     "activities": [
      {
-      "id": "day-0-flight-out",
+      "id": "day-0-slot-flight-out",
       "name": "Voo de Ida (estimado)",
       "type": "flight",
       "timeSlot": "flight",
@@ -2256,36 +2205,19 @@
       "source": "kinu"
      },
      {
-      "id": "day-0-checkin",
+      "id": "day-0-slot-checkin",
       "name": "Check-in no hotel",
       "type": "checkin",
       "timeSlot": "hotel",
       "estimatedCost": 0,
       "costPerPerson": 0,
-      "time": "14:00",
+      "time": "16:30",
       "location": "Hotel Gran Marquise ⭐ 4.0 • Meireles",
       "status": "suggestion",
       "source": "kinu",
       "tips": [
        "7 noites (~R$ 1.500/noite)",
        "Custo já incluso no total da hospedagem"
-      ]
-     },
-     {
-      "id": "day-0-ambient-walk",
-      "name": "Caminhada leve no bairro do hotel",
-      "type": "experience",
-      "timeSlot": "afternoon",
-      "estimatedCost": 0,
-      "costPerPerson": 0,
-      "time": "16:00",
-      "duration": "2h",
-      "location": "Fortaleza",
-      "status": "suggestion",
-      "source": "kinu",
-      "tips": [
-       "Conheça os arredores do hotel sem pressa",
-       "Ajuda a regular o relógio biológico"
       ]
      },
      {
@@ -2952,11 +2884,11 @@
       "type": "transport",
       "timeSlot": "afternoon",
       "estimatedCost": 220,
-      "time": "17:00",
+      "time": "19:00",
       "duration": "1h",
       "status": "suggestion",
       "tips": [
-       "Chegue com 3h de antecedência para voos internacionais"
+       "Saída 2h antes do voo doméstico"
       ],
       "source": "kinu"
      },

@@ -47,9 +47,9 @@ function itemHoursOf(a: ItineraryActivity): number {
   const m = String(a.duration ?? '').match(/(\d+(?:[.,]\d+)?)\s*h/);
   return m ? parseFloat(m[1].replace(',', '.')) : 0;
 }
-/** Logística fica fora da janela (mesmo critério do R16). */
+/** Logística fica fora da janela (mesmo critério do R16; check-out pelo nome — o motor o grava como 'transport'). */
 const isLogisticAct = (a: ItineraryActivity) =>
-  a.timeSlot === 'flight' || a.timeSlot === 'hotel' || ['flight', 'hotel', 'checkin', 'checkout'].includes(a.type) || /transfer|aeroporto/i.test(a.name);
+  a.timeSlot === 'flight' || a.timeSlot === 'hotel' || ['flight', 'hotel', 'checkin', 'checkout'].includes(a.type) || /transfer|aeroporto|check-?out/i.test(a.name);
 /** Horas usadas no dia: Σ duração + 0,5 h por salto. */
 export function dayHoursUsed(activities: ItineraryActivity[]): number {
   const items = activities.filter((a) => !isLogisticAct(a));
@@ -59,6 +59,16 @@ const parseHour = (t?: string): number => {
   const m = String(t ?? '').match(/(\d{1,2}):(\d{2})/);
   return m ? Number(m[1]) + Number(m[2]) / 60 : -1;
 };
+
+export type ArrivalBand = 'afternoon' | 'dinner' | 'night';
+/** R-V9: chegada antes de 14 h → tarde leve; 14–20 h → só jantar; depois de 20 h → nada. Hora < 0 (desconhecida) = tarde leve. */
+export function arrivalBandFor(arrivalHour: number): ArrivalBand {
+  return arrivalHour < 14 ? 'afternoon' : arrivalHour < 20 ? 'dinner' : 'night';
+}
+/** Faixa R-V9 da chegada de uma perna (fuso desconhecido = tarde leve, R-V6). */
+export function flightArrivalBand(f: SelectedFlight): ArrivalBand {
+  return arrivalBandFor(f.tzKnown === false ? -1 : parseHour(f.option.arrivalTime));
+}
 
 export interface FlightOption {
   id: string;
@@ -575,6 +585,17 @@ export function generateItinerary(
     ? !returnFlight.international
     : findCityInfo(destination)?.region === 'Brasil';
   const lastWindow = lastDayWindowHours(returnFlight.option.departureTime, domestic);
+  // R-V9: faixa da chegada. Antes de 14 h → tarde leve; 14–20 h → só jantar; depois de 20 h → nada.
+  // Fuso desconhecido (R-V6) fica na tarde leve, como sempre.
+  const arrivalBand = arrivalBandFor(arrivalHour);
+  const hm = (mins: number) => `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+  const arrivalMinutes = Math.round(arrivalHour * 60);
+  // Check-in: hora de sempre na tarde leve; depois, 1 h após pousar (teto 23:59).
+  const arrivalCheckinTime = (base: string) =>
+    arrivalBand === 'afternoon' ? base : hm(Math.min(23 * 60 + 59, arrivalMinutes + 60));
+  // Jantar nunca antes de 1h30 após pousar.
+  const arrivalDinnerTime = arrivalBand === 'dinner' ? hm(Math.max(19 * 60 + 30, arrivalMinutes + 90)) : '19:30';
+  const NIGHT_ARRIVAL_TIP = 'Chegada noturna: descanse — o roteiro começa amanhã';
 
   let michelinCount = 0;
   let lastDaytripDay = -10;
@@ -615,7 +636,7 @@ export function generateItinerary(
         windowHours = arrivalWindow;
         activities.push({
           id: `day-${i}-slot-checkin`, name: 'Check-in no hotel', type: 'checkin', timeSlot: 'hotel',
-          estimatedCost: 0, costPerPerson: 0, time: '14:00',
+          estimatedCost: 0, costPerPerson: 0, time: arrivalCheckinTime('14:00'),
           location: (() => {
             if (hotel) return hotel.label;
             const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
@@ -623,9 +644,12 @@ export function generateItinerary(
             return `Hotel em ${destination}`;
           })(),
           status: 'suggestion', source: 'kinu',
-          tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem'],
+          tips: [
+            ...(arrivalBand === 'night' ? [NIGHT_ARRIVAL_TIP] : []),
+            `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem',
+          ],
         });
-        activities.push({
+        if (arrivalBand === 'afternoon') activities.push({
           id: `day-${i}-slot-ambient-walk`,
           name: 'Caminhada leve no bairro do hotel',
           type: 'experience',
@@ -639,9 +663,9 @@ export function generateItinerary(
           source: 'kinu',
           tips: ['Conheça os arredores do hotel sem pressa', 'Ajuda a regular o relógio biológico'],
         });
-        const dinnerActivity = pickArrivalDinner();
+        const dinnerActivity = arrivalBand !== 'night' ? pickArrivalDinner() : null;
         if (dinnerActivity) {
-          const act = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30', travelers);
+          const act = convertToItineraryActivity(dinnerActivity, i, 'dinner', arrivalDinnerTime, travelers);
           activities.push(act); dayTotal += act.estimatedCost;
         }
       }
@@ -679,7 +703,7 @@ export function generateItinerary(
           timeSlot: 'hotel',
           estimatedCost: 0,
           costPerPerson: 0,
-          time: '15:00',
+          time: arrivalCheckinTime('15:00'),
           duration: '1h',
           location: (() => {
             if (hotel) return hotel.label;
@@ -689,10 +713,10 @@ export function generateItinerary(
           })(),
           status: 'defined',
           source: 'kinu',
-          tips: ['Acomodação após o voo, sem pressa', `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem'],
+          tips: [...(arrivalBand === 'night' ? [NIGHT_ARRIVAL_TIP] : []), 'Acomodação após o voo, sem pressa', `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem'],
         });
 
-        activities.push({
+        if (arrivalBand === 'afternoon') activities.push({
           id: `day-${i}-slot-walk`,
           name: 'Caminhada leve no bairro',
           type: 'experience',
@@ -707,9 +731,9 @@ export function generateItinerary(
           tips: ['Conheça os arredores do hotel sem pressa', 'Ajuda a regular o relógio biológico'],
         });
 
-        const lightDinner = pickArrivalDinner();
+        const lightDinner = arrivalBand !== 'night' ? pickArrivalDinner() : null;
         if (lightDinner) {
-          const act = convertToItineraryActivity(lightDinner, i, 'dinner', '19:30', travelers);
+          const act = convertToItineraryActivity(lightDinner, i, 'dinner', arrivalDinnerTime, travelers);
           act.tips = ['Refeição leve. Evite álcool e comida pesada.', ...(act.tips || [])];
           activities.push(act);
           dayTotal += act.estimatedCost;
@@ -738,7 +762,7 @@ export function generateItinerary(
           timeSlot: 'hotel',
           estimatedCost: 0,
           costPerPerson: 0,
-          time: '14:00',
+          time: arrivalCheckinTime('14:00'),
           location: (() => {
             if (hotel) return hotel.label;
             const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
@@ -746,11 +770,14 @@ export function generateItinerary(
             return `Hotel em ${destination}`;
           })(),
           status: 'suggestion',
-          tips: [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem'],
+          tips: [
+            ...(arrivalBand === 'night' ? [NIGHT_ARRIVAL_TIP] : []),
+            `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem',
+          ],
           source: 'kinu',
         });
 
-        activities.push({
+        if (arrivalBand === 'afternoon') activities.push({
           id: `day-${i}-slot-ambient-walk`,
           name: 'Caminhada leve no bairro do hotel',
           type: 'experience',
@@ -765,9 +792,9 @@ export function generateItinerary(
           tips: ['Conheça os arredores do hotel sem pressa', 'Ajuda a regular o relógio biológico'],
         });
 
-        const dinnerActivity = pickArrivalDinner();
+        const dinnerActivity = arrivalBand !== 'night' ? pickArrivalDinner() : null;
         if (dinnerActivity) {
-          const activity = convertToItineraryActivity(dinnerActivity, i, 'dinner', '19:30', travelers);
+          const activity = convertToItineraryActivity(dinnerActivity, i, 'dinner', arrivalDinnerTime, travelers);
           activities.push(activity);
           dayTotal += activity.estimatedCost;
         }
@@ -783,15 +810,13 @@ export function generateItinerary(
       // Derive schedule backward from real return flight time
       const [depH, depM] = returnFlight.option.departureTime.split(':').map(Number);
       const depMinutes = depH * 60 + depM;
-      const transferMinutes = depMinutes - 4 * 60; // 1h transfer + 3h antecedência
-      const fmt = (mins: number) => {
-        const h = Math.floor(mins / 60);
-        const m = mins % 60;
-        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-      };
+      // R-V8: hora de ir para o aeroporto = saída − 3 h (internacional) / − 2 h (doméstico).
+      const transferMinutes = Math.max(0, depMinutes - (domestic ? 2 : 3) * 60);
+      const fmt = hm;
       const transferTime = fmt(transferMinutes);
       
-      // Breakfast — only if there's time before transfer
+      // Café do catálogo às 08:00 se dá tempo antes do aeroporto; senão (inclui saída < 10:00)
+      // só um café rápido no hotel, genérico, antes do check-out.
       if (transferMinutes >= 9 * 60) {
         const breakfastActivity = pickActivity('breakfast', 'Gastronomia', { near: last });
         if (breakfastActivity) {
@@ -800,10 +825,24 @@ export function generateItinerary(
           dayTotal += activity.estimatedCost;
           last = curatedCoordOf(breakfastActivity.id) ?? last;
         }
+      } else {
+        activities.push({
+          id: `day-${i}-slot-quick-breakfast`,
+          name: 'Café rápido no hotel',
+          type: 'breakfast',
+          timeSlot: 'breakfast',
+          estimatedCost: 0,
+          costPerPerson: 0,
+          time: fmt(Math.max(0, transferMinutes - 60)),
+          duration: '30min',
+          status: 'suggestion',
+          tips: ['Voo cedo: só café e check-out antes do aeroporto'],
+          source: 'kinu',
+        });
       }
       
       // Checkout — 30 min before transfer, capped so it is never later than 11:00
-      const checkoutMinutes = Math.min(11 * 60, transferMinutes - 30);
+      const checkoutMinutes = Math.max(0, Math.min(11 * 60, transferMinutes - 30));
       activities.push({
         id: `day-${i}-slot-checkout`,
         name: 'Check-out do hotel',
@@ -854,7 +893,7 @@ export function generateItinerary(
         time: transferTime,
         duration: '1h',
         status: 'suggestion',
-        tips: ['Chegue com 3h de antecedência para voos internacionais'],
+        tips: [domestic ? 'Saída 2h antes do voo doméstico' : 'Saída 3h antes do voo internacional'],
         source: 'kinu',
       });
       dayTotal += transferCost;

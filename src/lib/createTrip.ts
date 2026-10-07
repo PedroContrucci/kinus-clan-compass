@@ -189,6 +189,7 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
       legPrice: routeLegs ? routeLegs.outbound : flightPrice,
       returnLegPrice: routeLegs ? routeLegs.return : flightPrice,
       priceSource,
+      returnDepartureTime: routeEstimate?.typicalReturnDeparture,
     }) as SavedTrip['flights'],
     // Hotel curado quando existe (nome puro, zona, tip e curatedHotelId vêm do mesmo
     // helper que a troca do usuário usa); senão o bloco de sempre. `curatedHotelId`

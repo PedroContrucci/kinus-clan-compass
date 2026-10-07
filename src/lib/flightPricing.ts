@@ -10,6 +10,8 @@ export interface FlightPriceEstimate {
   economyAvg: number;
   economyMax: number;
   businessAvg: number;
+  /** Hora típica de saída da volta (HH:mm), quando a linha da tabela tiver. */
+  typicalReturnDeparture?: string;
 }
 
 // Day of week price variation
@@ -262,7 +264,10 @@ export async function lookupRouteEstimateStrict(
     if (error || !data) return null;
     const avg = Number(data.economy_avg);
     if (!Number.isFinite(avg) || avg <= 0) return null;
+    // Coluna opcional (pode ainda não existir no banco): só vale se vier HH:mm.
+    const typical = String((data as Record<string, unknown>).typical_return_departure ?? '').slice(0, 5);
     return {
+      ...(/^\d{2}:\d{2}$/.test(typical) ? { typicalReturnDeparture: typical } : {}),
       origin: data.origin_code,
       destination: data.destination_code,
       economyMin: Number(data.economy_min),

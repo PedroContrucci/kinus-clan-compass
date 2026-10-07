@@ -36,6 +36,7 @@ import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { clearTrips, deleteTrip, getTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
+import { retimeConfirmedLegs, unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
 import { KinuDidCard } from '@/components/onboarding/KinuDidCard';
 import { trackEvent } from '@/lib/kinuEvents';
 import { addCatalogActivityToDay, applyTripPlannedCostDelta, calculateTripProgress } from '@/lib/tripItineraryOps';
@@ -640,10 +641,14 @@ const Viagens = () => {
     // `previousFlightPlanned`/`previousFlightConfirmed` são a BASE das subtrações de
     // finanças. Lê-las da `selectedTrip` significaria estornar um valor que talvez já
     // não esteja mais no disco — daí a derivação inteira rodar dentro do updater.
+    let replan: { unplaced: UnplacedEdit[] } | null = null;
     const stored = updateTrip(selectedTrip.id, (trip) => {
-      const updatedTrip = { ...trip };
+      let updatedTrip = { ...trip };
 
       if (type === 'flight') {
+        // Pernas como estavam (cópia: o bloco abaixo muda `option` no lugar).
+        const legsOf = trip as unknown as Record<string, unknown>;
+        const legsBefore = JSON.parse(JSON.stringify({ outbound: legsOf.outboundFlight ?? null, return: legsOf.returnFlight ?? null }));
         const previousFlightPlanned = getFlightPlannedTotal(updatedTrip);
         const previousFlightConfirmed = updatedTrip.finances.categories.flights.confirmed || 0;
         if (updatedTrip.flights?.outbound) {
@@ -684,6 +689,12 @@ const Viagens = () => {
         if (flightDetails?.returnTime && rb && !flightDetails.return) {
           rb.departureTime = flightDetails.returnTime;
         }
+
+        // Hora de saída nova → chegada recalculada; se D+n / dia 1 / último dia mudam, o
+        // roteiro é replanejado preservando edições (R-V11) e avisado abaixo.
+        const retimed = retimeConfirmedLegs(updatedTrip, legsBefore);
+        updatedTrip = retimed.trip;
+        if (retimed.replanned) replan = { unplaced: retimed.unplaced };
       } else {
         if (updatedTrip.accommodation) {
           updatedTrip.accommodation.status = 'confirmed';
@@ -724,6 +735,11 @@ const Viagens = () => {
       title: type === 'flight' ? '✈️ Voo confirmado!' : '🏨 Hotel confirmado!',
       description: `R$ ${amount.toLocaleString('pt-BR')} registrado no FinOps.`,
     });
+    // Replanejado pelo horário confirmado: aviso, nunca silêncio.
+    if (replan) {
+      const { unplaced } = replan as { unplaced: UnplacedEdit[] };
+      toast(unplacedMessage(unplaced) ?? { title: 'Roteiro ajustado ao voo confirmado', description: 'Dia de chegada e último dia seguem os horários novos; suas edições foram mantidas.' });
+    }
   };
 
   // handleHeroUnconfirm — reverse a flight/hotel confirmation, moving amounts back to planned

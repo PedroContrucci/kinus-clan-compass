@@ -19,6 +19,7 @@ import { plannedFlightToSelected, offerToSelected, writeFlightsThrough, estimate
 import { pickBest, explainPick, flightSearchKey, shouldAutoSearch, type KinuFlightSearch } from '@/lib/flightRanking';
 import { useFlightSearch } from '@/hooks/useFlightSearch';
 import { buildItineraryForTrip, countManualEdits, itemIdsOf } from '@/lib/draftItinerary';
+import { replanTrip, unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -454,20 +455,34 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   const [regenKey, setRegenKey] = useState(0);
   const [pendingRegen, setPendingRegen] = useState<{ edits: number; run: () => void } | null>(null);
 
-  const regenerateWith = useCallback((outbound: SelectedFlight, returnFlight: SelectedFlight, extra: Record<string, unknown> = {}) => {
+  // `preserveEdits` (troca de perna, R-V11): edições reaplicadas; as que não cabem voltam
+  // para o aviso e ficam em `unplacedEdits`. Sem ele ("Regerar roteiro"), do zero.
+  const regenerateWith = useCallback((outbound: SelectedFlight, returnFlight: SelectedFlight, extra: Record<string, unknown> = {}, opts: { preserveEdits?: boolean } = {}): UnplacedEdit[] => {
     // Write-through (R-V12): outboundFlight/returnFlight, trip.flights.* e finanças do mesmo objeto.
     const withFlights = writeFlightsThrough({ ...trip, ...extra } as DraftTrip & Record<string, unknown>, outbound, returnFlight);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const built = buildItineraryForTrip(withFlights as any, { outbound, return: returnFlight });
+    const legs = { outbound, return: returnFlight };
+    const built = opts.preserveEdits
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? replanTrip(withFlights as any, legs)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      : { ...buildItineraryForTrip(withFlights as any, legs), unplaced: [] as UnplacedEdit[] };
     onSave({
       ...withFlights,
       days: built.days,
       budget: built.budget,
       finances: built.finances,
       engineItemIds: built.engineItemIds,
+      unplacedEdits: built.unplaced,
     } as DraftTrip);
     setRegenKey((k) => k + 1);
+    return built.unplaced;
   }, [trip, onSave]);
+
+  /** Aviso da troca de perna: o que não coube, nunca silêncio. */
+  const toastReplanned = useCallback((unplaced: UnplacedEdit[], title: string) => {
+    const msg = unplacedMessage(unplaced);
+    toast(msg ?? { title, description: 'Roteiro refeito com os horários do voo.' });
+  }, []);
 
   /** Só pergunta quando há trocas manuais; sem trocas, executa direto. */
   const confirmIfEdited = useCallback((edits: number, run: () => void) => {
@@ -519,14 +534,11 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     const out = pickBest(rec.outbound) ?? trip.outboundFlight;
     const ret = pickBest(rec.return) ?? trip.returnFlight;
     if (!out || !ret) return;
-    const edits = countManualEdits((trip as { engineItemIds?: unknown }).engineItemIds, itemIdsOf(trip.days));
-    confirmIfEdited(edits, () => {
-      setSelectedOutbound(out);
-      setSelectedReturn(ret);
-      regenerateWith(out, ret, { kinuFlightSearch: { ...rec, pending: false } });
-      toast({ title: 'Voo do KINU aplicado ✈️', description: 'Roteiro refeito com os horários do voo.' });
-    });
-  }, [trip, confirmIfEdited, regenerateWith]);
+    setSelectedOutbound(out);
+    setSelectedReturn(ret);
+    const unplaced = regenerateWith(out, ret, { kinuFlightSearch: { ...rec, pending: false } }, { preserveEdits: true });
+    toastReplanned(unplaced, 'Voo do KINU aplicado ✈️');
+  }, [trip, regenerateWith, toastReplanned]);
 
   // Ofertas para a lista: gravadas (sem nova chamada) ou em busca agora; senão o estágio busca.
   const stageOffers = trip.kinuFlightSearch?.key === searchKey
@@ -543,15 +555,13 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     // do KINU / exemplo do legado). Nunca 'amadeus': o nome da fonte é o nome da fonte.
     const outbound: SelectedFlight = { ...pickedOut, source: pickedOut.source ?? 'estimate', chosenBy: 'user' };
     const returnFlight: SelectedFlight = { ...pickedRet, source: pickedRet.source ?? 'estimate', chosenBy: 'user' };
-    const edits = countManualEdits((trip as { engineItemIds?: unknown }).engineItemIds, itemIdsOf(trip.days));
-    confirmIfEdited(edits, () => {
-      setSelectedOutbound(outbound);
-      setSelectedReturn(returnFlight);
-      regenerateWith(outbound, returnFlight, { flightsSelected: true });
-      setStage('itinerary');
-      toast({ title: "Voos selecionados! ✈️", description: "Roteiro refeito com os horários do voo." });
-    });
-  }, [trip, confirmIfEdited, regenerateWith]);
+    // Trocar perna replaneja sem apagar (R-V11): sem "desfaz N trocas" aqui.
+    setSelectedOutbound(outbound);
+    setSelectedReturn(returnFlight);
+    const unplaced = regenerateWith(outbound, returnFlight, { flightsSelected: true }, { preserveEdits: true });
+    setStage('itinerary');
+    toastReplanned(unplaced, 'Voos selecionados! ✈️');
+  }, [regenerateWith, toastReplanned]);
 
   const handleRegenerate = useCallback((edits: number) => {
     const out = selectedOutbound;

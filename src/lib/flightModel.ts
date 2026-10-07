@@ -87,19 +87,28 @@ export interface PlannedFlightsInput {
   durationKnown?: boolean;
   /** Destino fora do Brasil. */
   international?: boolean;
+  /** Hora típica de saída da volta na rota (tabela de rotas, opcional). Sem ela, 14:00 padrão. */
+  returnDepartureTime?: string;
 }
 
-type PlannedOut = PlannedFlight & { priceSource?: string; tzKnown?: boolean; durationKnown?: boolean; international?: boolean };
+type PlannedOut = PlannedFlight & {
+  priceSource?: string; tzKnown?: boolean; durationKnown?: boolean; international?: boolean;
+  /** Volta estimada: 'route' (hora típica da tabela de rotas) | 'default' (14:00). */
+  departureTimeSource?: 'route' | 'default';
+};
 
 /** Ida e volta planejadas (estimativa). Horários vêm da regra de direção/duração + computeArrival. */
 export function buildPlannedFlights(i: PlannedFlightsInput): { outbound: PlannedOut; return: PlannedOut } {
   const stops = i.hasDirectFlight ? 0 : 1;
-  // Volta: sai 14:00 no destino; chegada em UTC → local da origem (R-V1), D+n por data (R-V2).
+  // Volta: sai na hora típica da rota (quando a tabela tem) ou 14:00 padrão, marcada pela fonte;
+  // chegada em UTC → local da origem (R-V1), D+n por data (R-V2).
   // Sem um dos fusos, mesmo fuso nas duas pontas — o número existe, mas a tela diz "a confirmar".
+  const routeTime = /^\d{2}:\d{2}$/.test(i.returnDepartureTime ?? '') ? (i.returnDepartureTime as string) : null;
+  const returnTime = routeTime ?? '14:00';
   const homeTz = i.originTz || i.destinationTz || 'America/Sao_Paulo';
   const back = computeArrival({
     date: i.returnDate,
-    time: '14:00',
+    time: returnTime,
     durationMinutes: Math.round(i.flightHours * 60),
     originTz: i.tzKnown === false ? homeTz : (i.destinationTz || homeTz),
     destinationTz: homeTz,
@@ -134,7 +143,8 @@ export function buildPlannedFlights(i: PlannedFlightsInput): { outbound: Planned
       origin: i.destinationCode,
       destination: i.originCode,
       departureDate: i.returnDate.toISOString(),
-      departureTime: '14:00',
+      departureTime: returnTime,
+      departureTimeSource: routeTime ? 'route' : 'default',
       arrivalDate: addDays(i.returnDate, back.daysLater).toISOString(),
       arrivalTime: back.arrivalTime,
       duration: `${i.flightHours}h`,
@@ -239,6 +249,40 @@ export function flightDaysLater(sel: SelectedFlight): number {
   const b = String(segs?.[segs.length - 1]?.arrival?.at || '').slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(a) || !/^\d{4}-\d{2}-\d{2}$/.test(b)) return 0;
   return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
+}
+
+/**
+ * Mesma perna com outra hora de saída (ex.: confirmada em Viagens): chegada refeita por
+ * computeArrival (R-V1/R-V2) com os fusos dos aeroportos — saída nova nunca fica com chegada velha.
+ */
+export function retimeFlight(sel: SelectedFlight, departureTime: string, ctx: { fromCity?: string; toCity?: string } = {}): SelectedFlight {
+  const o = sel.option;
+  const segs = o.segments;
+  const fromCode = String(segs?.[0]?.departure?.iataCode || '').toUpperCase();
+  const toCode = String(segs?.[(segs?.length ?? 1) - 1]?.arrival?.iataCode || '').toUpperCase();
+  const segDate = String(segs?.[0]?.departure?.at || '').match(/^(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}(?::\d{2})?$/);
+  const depDate = segDate ? segDate[1] : dateKey(new Date(sel.date));
+  const originTz = cityTimezone(airportCity(fromCode)?.city) ?? cityTimezone(ctx.fromCity);
+  const destinationTz = cityTimezone(airportCity(toCode)?.city) ?? cityTimezone(ctx.toCity);
+  const tzKnown = !!(originTz && destinationTz);
+  const home = originTz || destinationTz || 'America/Sao_Paulo';
+  const arr = computeArrival({
+    date: depDate, time: departureTime, durationMinutes: Math.max(0, Math.round(Number(o.durationMinutes) || 0)),
+    originTz: home, destinationTz: tzKnown ? (destinationTz as string) : home,
+  });
+  return {
+    ...sel,
+    option: {
+      ...o,
+      departureTime,
+      arrivalTime: arr.arrivalTime,
+      segments: [{
+        departure: { iataCode: fromCode, at: `${depDate}T${departureTime}:00` },
+        arrival: { iataCode: toCode, at: `${arr.arrivalDate}T${arr.arrivalTime}:00` },
+      }],
+    },
+    tzKnown: sel.tzKnown === false ? false : tzKnown,
+  };
 }
 
 /** SelectedFlight → voo planejado (o formato de trip.flights.*), a partir do MESMO objeto. */
