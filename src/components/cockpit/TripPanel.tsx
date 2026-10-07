@@ -8,6 +8,7 @@ import { WeatherBadge } from './WeatherBadge';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
 import { differenceInDays, format } from 'date-fns';
+import { tripTimezone } from '@/lib/timezone';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { exportTripPDF } from '@/lib/tripPdfExport';
@@ -36,7 +37,9 @@ function CurationSources({ trip }: { trip: SavedTrip }) {
   const tierLabel = TIER_LABELS[trip.budgetType || 'comfort'] || 'Conforto';
   const tierDesc = TIER_DESCRIPTIONS[trip.budgetType || 'comfort'] || '';
   const hasGastronomy = interests.includes('gastronomy');
-  const jetLagHours = trip.timezone?.diff ? Math.abs(trip.timezone.diff) : 0;
+  // Fuso recalculado na data da viagem (não o gap gravado na criação); desconhecido = "a confirmar".
+  const tz = tripTimezone(trip);
+  const jetLagHours = Math.abs(tz.diff);
 
   const interestLabels: Record<string, string> = {
     gastronomy: 'Gastronomia', culture: 'Cultura', history: 'História',
@@ -69,11 +72,11 @@ function CurationSources({ trip }: { trip: SavedTrip }) {
           </p>
         </div>
       )}
-      {trip.jetLagMode && jetLagHours > 0 && (
+      {trip.jetLagMode && (jetLagHours > 0 || !tz.tzKnown) && (
         <div className="flex items-start gap-2">
           <div className="w-0.5 self-stretch rounded-full bg-purple-500 shrink-0" />
           <p className="text-xs text-muted-foreground">
-            <span className="text-purple-400 font-medium">Biology AI:</span> fuso de {jetLagHours}h adaptado
+            <span className="text-purple-400 font-medium">Biology AI:</span> {tz.tzKnown ? <>fuso de {String(jetLagHours).replace('.', ',')}h adaptado</> : <>fuso a confirmar</>}
           </p>
         </div>
       )}

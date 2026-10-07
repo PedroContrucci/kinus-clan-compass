@@ -1,9 +1,9 @@
 // flightModel — voos planejados (estimativa) e a conversão para SelectedFlight.
 // Puro: usado pelo buildDraftTrip (antes do motor rodar) e pelo DraftCockpit.
 import { addDays } from 'date-fns';
-import { calculateArrivalTime } from '@/types/trip';
 import type { ActivityStatus } from '@/types/trip';
 import type { FlightOption, SelectedFlight } from '@/lib/itineraryEngine';
+import { computeArrival } from '@/lib/timezone';
 
 export interface PlannedFlight {
   id: string;
@@ -51,6 +51,10 @@ export function plannedFlightToSelected(flight: any, date: Date): SelectedFlight
   const selected: SelectedFlight = { option, date, source: 'estimate' };
   // priceSource fora do tipo (index signature), como source.
   if (flight.priceSource) (selected as unknown as Record<string, unknown>).priceSource = flight.priceSource;
+  // Fuso/duração/internacional: só quando o planejado declara (viagens antigas não têm).
+  if (typeof flight.tzKnown === 'boolean') selected.tzKnown = flight.tzKnown;
+  if (typeof flight.durationKnown === 'boolean') selected.durationKnown = flight.durationKnown;
+  if (typeof flight.international === 'boolean') selected.international = flight.international;
   return selected;
 }
 
@@ -71,11 +75,38 @@ export interface PlannedFlightsInput {
   returnLegPrice?: number;
   /** 'route' (tabela de rotas) | 'tier' (número genérico do perfil). */
   priceSource?: 'route' | 'tier';
+  /** IANA da origem e do destino (null = desconhecido). A volta é calculada com eles. */
+  originTz?: string | null;
+  destinationTz?: string | null;
+  /** false → horário de chegada "a confirmar" (R-V6). */
+  tzKnown?: boolean;
+  /** false → duração "a confirmar" (estimativa conservadora, não medida). */
+  durationKnown?: boolean;
+  /** Destino fora do Brasil. */
+  international?: boolean;
 }
 
-/** Ida e volta planejadas (estimativa). Horários vêm da regra de direção/duração + calculateArrivalTime. */
-export function buildPlannedFlights(i: PlannedFlightsInput): { outbound: PlannedFlight & { priceSource?: string }; return: PlannedFlight & { priceSource?: string } } {
+type PlannedOut = PlannedFlight & { priceSource?: string; tzKnown?: boolean; durationKnown?: boolean; international?: boolean };
+
+/** Ida e volta planejadas (estimativa). Horários vêm da regra de direção/duração + computeArrival. */
+export function buildPlannedFlights(i: PlannedFlightsInput): { outbound: PlannedOut; return: PlannedOut } {
   const stops = i.hasDirectFlight ? 0 : 1;
+  // Volta: sai 14:00 no destino; chegada em UTC → local da origem (R-V1), D+n por data (R-V2).
+  // Sem um dos fusos, mesmo fuso nas duas pontas — o número existe, mas a tela diz "a confirmar".
+  const homeTz = i.originTz || i.destinationTz || 'America/Sao_Paulo';
+  const back = computeArrival({
+    date: i.returnDate,
+    time: '14:00',
+    durationMinutes: Math.round(i.flightHours * 60),
+    originTz: i.tzKnown === false ? homeTz : (i.destinationTz || homeTz),
+    destinationTz: homeTz,
+  });
+  const flags = {
+    ...(i.priceSource ? { priceSource: i.priceSource } : {}),
+    ...(typeof i.tzKnown === 'boolean' ? { tzKnown: i.tzKnown } : {}),
+    ...(typeof i.durationKnown === 'boolean' ? { durationKnown: i.durationKnown } : {}),
+    ...(typeof i.international === 'boolean' ? { international: i.international } : {}),
+  };
   return {
     outbound: {
       id: 'flight-outbound',
@@ -91,7 +122,7 @@ export function buildPlannedFlights(i: PlannedFlightsInput): { outbound: Planned
       stops,
       price: i.legPrice,
       status: 'planned',
-      ...(i.priceSource ? { priceSource: i.priceSource } : {}),
+      ...flags,
     },
     return: {
       id: 'flight-return',
@@ -101,13 +132,13 @@ export function buildPlannedFlights(i: PlannedFlightsInput): { outbound: Planned
       destination: i.originCode,
       departureDate: i.returnDate.toISOString(),
       departureTime: '14:00',
-      arrivalDate: i.returnDate.toISOString(),
-      arrivalTime: calculateArrivalTime('14:00', i.returnDate, i.flightHours, -i.tzDiff).arrivalTime,
+      arrivalDate: addDays(i.returnDate, back.daysLater).toISOString(),
+      arrivalTime: back.arrivalTime,
       duration: `${i.flightHours}h`,
       stops,
       price: i.returnLegPrice ?? i.legPrice,
       status: 'planned',
-      ...(i.priceSource ? { priceSource: i.priceSource } : {}),
+      ...flags,
     },
   };
 }

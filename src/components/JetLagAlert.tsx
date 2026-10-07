@@ -1,15 +1,19 @@
 import { Brain } from 'lucide-react';
+import { formatTzDiff } from '@/lib/timezone';
 
 interface JetLagAlertProps {
   destination: string;
   timezoneDiff: number;
+  /** false → fuso desconhecido: "a confirmar", nunca número (R-V6). */
+  tzKnown?: boolean;
   severity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO';
   isRecoveryDay?: boolean; // For days 2-3 on SEVERO
 }
 
-const JetLagAlert = ({ destination, timezoneDiff, severity, isRecoveryDay = false }: JetLagAlertProps) => {
-  const direction = timezoneDiff > 0 ? '+' : '';
+const JetLagAlert = ({ destination, timezoneDiff, tzKnown = true, severity, isRecoveryDay = false }: JetLagAlertProps) => {
+  const diffLabel = formatTzDiff({ diff: timezoneDiff, tzKnown });
   const absDiff = Math.abs(timezoneDiff);
+  const absLabel = tzKnown ? `${String(absDiff).replace('.', ',')}h` : 'a confirmar';
   
   // Determine effective severity
   const effectiveSeverity = severity || (absDiff <= 2 ? 'BAIXO' : absDiff <= 5 ? 'MODERADO' : absDiff <= 8 ? 'ALTO' : 'SEVERO');
@@ -25,7 +29,7 @@ const JetLagAlert = ({ destination, timezoneDiff, severity, isRecoveryDay = fals
           </p>
         </div>
         <p className="text-xs text-muted-foreground mt-1 ml-6">
-          Seu corpo ainda está se adaptando ao fuso de {direction}{timezoneDiff}h. Hoje terá pausas extras.
+          Seu corpo ainda está se adaptando ao fuso de {tzKnown ? diffLabel : 'destino (a confirmar)'}. Hoje terá pausas extras.
         </p>
       </div>
     );
@@ -43,10 +47,10 @@ const JetLagAlert = ({ destination, timezoneDiff, severity, isRecoveryDay = fals
               🧠 KINU AI — Alerta de Fuso Horário Severo
             </h4>
             <p className="text-xs text-muted-foreground mb-2">
-              {destination} está <span className="text-red-500 font-medium">{direction}{timezoneDiff}h</span> do Brasil
+              {tzKnown ? <>{destination} está <span className="text-red-500 font-medium">{diffLabel}</span> do Brasil</> : <>Fuso de {destination}: a confirmar</>}
             </p>
             <p className="text-sm text-foreground/90 font-['Plus_Jakarta_Sans']">
-              Diferença de {absDiff}h — seu corpo vai precisar de 2-3 dias para se adaptar completamente.
+              Diferença de {absLabel} — seu corpo vai precisar de 2-3 dias para se adaptar completamente.
             </p>
           </div>
         </div>
@@ -116,10 +120,10 @@ const JetLagAlert = ({ destination, timezoneDiff, severity, isRecoveryDay = fals
               🧠 KINU AI — Modo Adaptação Ativo
             </h4>
             <p className="text-xs text-muted-foreground mb-2">
-              {destination} está <span className="text-orange-500 font-medium">{direction}{timezoneDiff}h</span> do Brasil
+              {tzKnown ? <>{destination} está <span className="text-orange-500 font-medium">{diffLabel}</span> do Brasil</> : <>Fuso de {destination}: a confirmar</>}
             </p>
             <p className="text-sm text-foreground/90 font-['Plus_Jakarta_Sans']">
-              Fuso de {absDiff}h é significativo. Seu corpo precisa de 1 dia completo para ajustar.
+              Fuso de {absLabel} é significativo. Seu corpo precisa de 1 dia completo para ajustar.
             </p>
           </div>
         </div>
@@ -167,7 +171,7 @@ const JetLagAlert = ({ destination, timezoneDiff, severity, isRecoveryDay = fals
             🧠 KINU AI — Modo Adaptação Ativo
           </h4>
           <p className="text-xs text-muted-foreground mb-2">
-            {destination} está <span className="text-amber-500 font-medium">{direction}{timezoneDiff}h</span> do Brasil
+            {tzKnown ? <>{destination} está <span className="text-amber-500 font-medium">{diffLabel}</span> do Brasil</> : <>Fuso de {destination}: a confirmar</>}
           </p>
           <p className="text-sm text-foreground/90 font-['Plus_Jakarta_Sans']">
             "{randomTip}"

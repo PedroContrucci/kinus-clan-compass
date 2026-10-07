@@ -85,8 +85,23 @@ export interface SelectedFlight {
   date: Date;
   /** De onde veio: estimativa do gerador, busca real ou reserva confirmada. */
   source?: 'estimate' | 'amadeus' | 'confirmed';
+  /** false → fuso do destino desconhecido: hora de chegada "a confirmar" (R-V6). Ausente = conhecido. */
+  tzKnown?: boolean;
+  /** false → duração estimada sem base (fallback conservador): "duração a confirmar". */
+  durationKnown?: boolean;
+  /** Destino fora do Brasil. */
+  international?: boolean;
 }
 
+
+/** R-V6 / D4: o que não foi medido aparece como "a confirmar" no item do voo, nunca como número. */
+function flightUnknownTips(f: SelectedFlight): { tips?: string[] } {
+  const tips: string[] = [];
+  if (f.tzKnown === false) tips.push('Horário de chegada a confirmar (fuso do destino desconhecido)');
+  if (f.durationKnown === false) tips.push('duração a confirmar (estimativa conservadora, não medida)');
+  // Uma linha só: o rascunho exibe apenas a primeira dica do item (draftItinerary).
+  return tips.length ? { tips: [tips.join(' · ')] } : {};
+}
 
 export type JetLagSeverity = 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO';
 
@@ -289,7 +304,7 @@ export function generateItinerary(
   const crossesMidnight = (departureHour + flightHours) >= 24;
   // Quem decide se virou o dia é só a meia-noite. O antigo `durationMinutes < 240`
   // reprovava 08:00+9h (pousa 17:00 do mesmo dia) e excluía exatamente 4h no limite.
-  const sameDayArrival = !crossesMidnight;
+  let sameDayArrival = !crossesMidnight;
 
   // Compute real arrival day offset (supports multi-day flights)
   const lastSeg = (outboundFlight.option as any).segments?.[(outboundFlight.option as any).segments.length - 1];
@@ -297,7 +312,12 @@ export function generateItinerary(
   if (lastSeg?.arrival?.at) {
     const arrivalDate = new Date(lastSeg.arrival.at);
     const diff = differenceInCalendarDays(arrivalDate, departureDate);
-    if (diff >= 0 && diff <= 3) arrivalDayIndex = diff;
+    if (diff >= 0 && diff <= 3) {
+      arrivalDayIndex = diff;
+      // R-V2: a DATA local da chegada decide se virou o dia. A soma de horas no relógio da
+      // origem (acima) só vale sem segmento — GRU 13:00 +10h → LIS chega 02:00 de D+1.
+      sameDayArrival = diff === 0;
+    }
     else if (diff > 3) console.warn('[KINU] implausible flight arrival offset', diff, '— falling back to default');
   }
 
@@ -539,9 +559,12 @@ export function generateItinerary(
 
   // Janelas de tempo (R16): chegada → 22 h no dia de chegada; 08 h → aeroporto (−3 h intl / −2 h
   // doméstico) no último. Doméstico = destino no Brasil, como no smoke.
-  const arrivalHour = parseHour(outboundFlight.option.arrivalTime);
+  // Fuso desconhecido (R-V6): a hora de chegada não é medida → janela padrão, não a hora.
+  const arrivalHour = outboundFlight.tzKnown === false ? -1 : parseHour(outboundFlight.option.arrivalTime);
   const arrivalWindow = arrivalHour < 0 ? EXPLORATION_WINDOW_HOURS : Math.max(0, 22 - arrivalHour);
-  const domestic = findCityInfo(destination)?.region === 'Brasil';
+  const domestic = typeof returnFlight.international === 'boolean'
+    ? !returnFlight.international
+    : findCityInfo(destination)?.region === 'Brasil';
   const lastWindow = lastDayWindowHours(returnFlight.option.departureTime, domestic);
 
   let michelinCount = 0;
@@ -574,6 +597,7 @@ export function generateItinerary(
         location: outboundFlight.option.route + (travelers > 1 ? ` (${travelers} pax)` : ''),
         status: 'defined',
         source: 'kinu',
+        ...flightUnknownTips(outboundFlight),
       });
       dayTotal = outboundCost;
 
@@ -841,6 +865,7 @@ export function generateItinerary(
         location: returnFlight.option.route + (travelers > 1 ? ` (${travelers} pax)` : ''),
         status: 'defined',
         source: 'kinu',
+        ...flightUnknownTips(returnFlight),
       });
       dayTotal += returnCost;
 

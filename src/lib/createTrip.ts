@@ -1,18 +1,19 @@
 // createTrip — shared draft trip builder used by wizard and KINU AI.
 // Os dias e as finanças saem do motor único (itineraryEngine via draftItinerary).
 
-import { differenceInDays, differenceInCalendarDays, addDays } from 'date-fns';
+import { differenceInDays, addDays } from 'date-fns';
 import { getActivityPrice } from '@/lib/activityPricing';
 import { getIdealHotelZone, getHotelRecommendation } from '@/lib/hotelZones';
 import { pickCuratedHotelForTrip, nightlyRateFor, curatedAccommodationFields } from '@/lib/hotelSwap';
 import type { PriceLevel } from '@/lib/activityPricing';
-import { defaultChecklist, FLIGHT_DURATION, calculateArrivalTime, calculateJetLagImpact } from '@/types/trip';
+import { defaultChecklist, FLIGHT_DURATION, calculateJetLagImpact } from '@/types/trip';
 import type { SavedTrip, ActivityStatus } from '@/types/trip';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { BUDGET_TIERS } from '@/components/wizard/types';
 import { newTripId } from '@/lib/tripStore';
 import { buildPlannedFlights, plannedFlightToSelected } from '@/lib/flightModel';
 import { buildItineraryForTrip, financesFromBuckets } from '@/lib/draftItinerary';
+import { getTimezoneDiff, computeArrival } from '@/lib/timezone';
 import { lookupRouteEstimateStrict, legPricesFromEstimate, type FlightPriceEstimate } from '@/lib/flightPricing';
 
 export interface DraftTripInput {
@@ -47,6 +48,10 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
 
   const tripId = newTripId();
   const destinationCity = input.destinationCity;
+  const cityInfo = findCityInfo(destinationCity);
+  const international = cityInfo
+    ? cityInfo.region !== 'Brasil'
+    : (input.selectedCountry ? input.selectedCountry !== 'Brasil' : true);
   const duration = differenceInDays(input.returnDate, input.departureDate) + 1;
   const totalNights = Math.max(1, duration - 1);
   const totalTravelers = input.adults + input.children.length + input.infants;
@@ -56,12 +61,18 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
   const priceLevel: PriceLevel = tier.priceLevel;
   const tierMultiplier = tier.multiplier;
 
-  const tzDiff = getTimezoneDiff(destinationCity);
+  // Fuso na DATA da ida, origem e destino (R-V3/R-V7). Desconhecido → diff 0 + tzKnown false (R-V6).
+  const originCity = input.originCity || 'São Paulo';
+  const tz = getTimezoneDiff(originCity, destinationCity, input.departureDate);
+  const tzDiff = tz.diff;
   const jetLagImpact = calculateJetLagImpact(tzDiff);
   const jetLagMode = input.biologyAIEnabled || jetLagImpact.level !== 'BAIXO';
 
   // Calculate flight duration
-  const flightHours = getFlightDuration(input.originCity || 'São Paulo', destinationCity, tzDiff);
+  // Sem fuso, a faixa de duração cai no fallback internacional conservador (11h) — e o voo
+  // sai marcado durationKnown:false, para nenhuma tela mostrar isso como medido.
+  const { hours: flightHours, fromTable } = getFlightDuration(originCity, destinationCity, tz.tzKnown ? tzDiff : undefined);
+  const durationKnown = fromTable || tz.tzKnown;
   const isLongHaul = flightHours > 10;
   // O que faz um voo ser noturno é a DIREÇÃO, não só a duração. A regra antiga
   // (`> 6h => 21:00`) foi calibrada no transatlântico para leste — GRU→Lisboa sai
@@ -71,18 +82,25 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
   const isEastboundOvernight = tzDiff >= 3;
   const departureTime = isLongHaul ? '23:00' : (flightHours > 6 && isEastboundOvernight ? '21:00' : '08:00');
 
-  // Calculate arrival
-  const { arrivalTime, arrivalDate: arrDate } = calculateArrivalTime(
-    departureTime, input.departureDate, flightHours, tzDiff
-  );
-  // Dia de chegada = diferença de CALENDÁRIO entre a chegada calculada e a partida.
+  // Chegada em UTC → local do destino (R-V1). Sem fuso, mesmo fuso nas duas pontas: o número
+  // sai, mas tzKnown:false manda a tela dizer "a confirmar".
+  const homeTz = tz.originTz || 'America/Sao_Paulo';
+  const arrival = computeArrival({
+    date: input.departureDate,
+    time: departureTime,
+    durationMinutes: Math.round(flightHours * 60),
+    originTz: homeTz,
+    destinationTz: tz.tzKnown && tz.destinationTz ? tz.destinationTz : homeTz,
+  });
+  const arrivalTime = arrival.arrivalTime;
+  // Dia de chegada = diferença entre as DATAS LOCAIS de chegada e de partida (R-V2).
   // Vale 0 quando o voo não cruza a meia-noite — o caso que o antigo
   // `flightHours > 18 ? 2 : 1` tornava inexprimível, e que punha voo diurno curto
   // (GRU→Cartagena 08:00) chegando no D2 com a hora do D1. A resposta já vinha
-  // pronta de calculateArrivalTime; só não estava ligada.
+  // pronta da conta de chegada; só não estava ligada.
   // Clamp [0,3]: protege contra fuso extremo e duração absurda vinda da tabela.
   const arrivalDaysLater = Math.max(0, Math.min(3,
-    differenceInCalendarDays(arrDate, input.departureDate)));
+    arrival.daysLater));
 
   // O hotel da viagem sai da CURADORIA quando a cidade tem um curado do tier pedido
   // (33 das 84 células cidade×tier, medido). Antes deste ponto o gerador lia só
@@ -114,7 +132,6 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
   const routeLegs = routeEstimate ? legPricesFromEstimate(routeEstimate, input.departureDate, input.returnDate) : null;
   const priceSource: 'route' | 'tier' = routeLegs ? 'route' : 'tier';
 
-  const cityInfo = findCityInfo(destinationCity);
 
   const idealZone = getIdealHotelZone(destinationCity, input.travelInterests || []);
   const hotelRec = getHotelRecommendation(destinationCity, input.budgetTier, input.travelInterests || []);
@@ -141,11 +158,14 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
     travelers: totalTravelers,
     priorities: input.priorities,
     progress: 0,
+    // `tzKnown` entra por fora de TimezoneInfo (src/types/trip.ts é intocável); quem lê
+    // recalcula por tripTimezone(trip) — este valor é só o retrato da criação.
     timezone: {
-      origin: 'America/Sao_Paulo',
-      destination: input.destinationTimezoneId || input.destinationTimezone || 'Europe/Rome',
+      origin: homeTz,
+      destination: tz.destinationTz ?? '',
       diff: tzDiff,
-    },
+      tzKnown: tz.tzKnown,
+    } as SavedTrip['timezone'],
     jetLagMode,
     jetLagSeverity: jetLagImpact.level,
     jetLagDescription: jetLagImpact.description,
@@ -160,6 +180,11 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
       arrivalDaysLater,
       flightHours,
       tzDiff,
+      originTz: tz.originTz,
+      destinationTz: tz.destinationTz,
+      tzKnown: tz.tzKnown,
+      durationKnown,
+      international,
       hasDirectFlight: input.hasDirectFlight,
       legPrice: routeLegs ? routeLegs.outbound : flightPrice,
       returnLegPrice: routeLegs ? routeLegs.return : flightPrice,
@@ -222,38 +247,23 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
 
 // ─── Helper Functions ───
 
-function getFlightDuration(origin: string, destination: string, tzDiff?: number): number {
+function getFlightDuration(origin: string, destination: string, tzDiff?: number): { hours: number; fromTable: boolean } {
   const key1 = `São Paulo-${destination}`;
   const key2 = `Brasil-${destination}`;
-  if (FLIGHT_DURATION[key1]) return FLIGHT_DURATION[key1];
-  if (FLIGHT_DURATION[key2]) return FLIGHT_DURATION[key2];
+  if (FLIGHT_DURATION[key1]) return { hours: FLIGHT_DURATION[key1], fromTable: true };
+  if (FLIGHT_DURATION[key2]) return { hours: FLIGHT_DURATION[key2], fromTable: true };
   const key3 = `${origin}-${destination}`;
-  if (FLIGHT_DURATION[key3]) return FLIGHT_DURATION[key3];
+  if (FLIGHT_DURATION[key3]) return { hours: FLIGHT_DURATION[key3], fromTable: true };
 
-  const absDiff = Math.abs(tzDiff ?? 4);
-  if (absDiff <= 2) return 4;
-  if (absDiff <= 5) return 11;
-  if (absDiff <= 8) return 15;
-  if (absDiff <= 12) return 22;
-  return 24;
-}
-
-function getTimezoneDiff(city: string): number {
-  const cityInfo = findCityInfo(city);
-  if (!cityInfo) return 4;
-
-  const destTz = cityInfo.city.timezone;
-  const spTz = 'America/Sao_Paulo';
-
-  try {
-    const now = new Date();
-    const destTime = new Date(now.toLocaleString('en-US', { timeZone: destTz }));
-    const spTime = new Date(now.toLocaleString('en-US', { timeZone: spTz }));
-    const diffMs = destTime.getTime() - spTime.getTime();
-    return Math.round(diffMs / (1000 * 60 * 60));
-  } catch {
-    return 4;
-  }
+  // Fuso desconhecido → 11h: fallback internacional conservador (não medido; durationKnown:false).
+  if (tzDiff === undefined) return { hours: 11, fromTable: false };
+  const absDiff = Math.abs(tzDiff);
+  let hours = 24;
+  if (absDiff <= 2) hours = 4;
+  else if (absDiff <= 5) hours = 11;
+  else if (absDiff <= 8) hours = 15;
+  else if (absDiff <= 12) hours = 22;
+  return { hours, fromTable: false };
 }
 
 function getCountryForCity(city: string): string {

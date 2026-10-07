@@ -1,6 +1,7 @@
 // Agent Messages — Contextual messages with destination + interest intelligence
 
 import type { SavedTrip } from '@/types/trip';
+import { tripTimezone } from '@/lib/timezone';
 
 // ─── Ícaro (Explorador/Roteiro) ───
 
@@ -15,10 +16,11 @@ export function getIcarusRoteiro(trip: SavedTrip, dayNum: number): string {
 
   if (dayNum === 2 && trip.jetLagMode) {
     const severity = trip.jetLagSeverity || 'MODERADO';
-    const diff = Math.abs(trip.timezone?.diff || 0);
-    if (severity === 'SEVERO') return `Fuso de ${diff}h e severo. Hoje e so descanso — seu corpo precisa. Amanha comecaremos devagar.`;
-    if (severity === 'ALTO') return `Fuso de ${diff}h e significativo. Dia leve hoje: descanse ate 15h, passeio leve ao por do sol.`;
-    return `Fuso de ${diff}h. Dia de adaptacao leve — explore o bairro do hotel e jante cedo!`;
+    const tz = tripTimezone(trip);
+    const diff = tz.tzKnown ? `de ${String(Math.abs(tz.diff)).replace('.', ',')}h` : 'a confirmar';
+    if (severity === 'SEVERO') return `Fuso ${diff} e severo. Hoje e so descanso — seu corpo precisa. Amanha comecaremos devagar.`;
+    if (severity === 'ALTO') return `Fuso ${diff} e significativo. Dia leve hoje: descanse ate 15h, passeio leve ao por do sol.`;
+    return `Fuso ${diff}. Dia de adaptacao leve — explore o bairro do hotel e jante cedo!`;
   }
 
   if (dayNum === 3 && trip.jetLagSeverity === 'SEVERO') {
@@ -265,17 +267,18 @@ export function getHermesHotelInsight(trip: SavedTrip): string {
 
 export function getBiologyAIInsight(trip: SavedTrip): string {
   const severity = trip.jetLagSeverity;
-  const diff = Math.abs(trip.timezone?.diff || 0);
+  const tz = tripTimezone(trip);
+  const diff = tz.tzKnown ? `de ${String(Math.abs(tz.diff)).replace('.', ',')}h` : 'a confirmar';
   const dest = trip.destination || '';
 
   if (!severity || severity === 'BAIXO') {
     return `${dest} tem fuso similar ao Brasil. Sem necessidade de adaptacao — roteiro completo desde o dia 1!`;
   }
   if (severity === 'MODERADO') {
-    return `Fuso de ${diff}h para ${dest}. Impacto moderado — dia 1 sera leve, a partir do dia 2 roteiro completo.`;
+    return `Fuso ${diff} para ${dest}. Impacto moderado — dia 1 sera leve, a partir do dia 2 roteiro completo.`;
   }
   if (severity === 'ALTO') {
-    return `Fuso de ${diff}h para ${dest}. Impacto alto no corpo. Dias 1-2 com atividades reduzidas. Hidratacao e fundamental!`;
+    return `Fuso ${diff} para ${dest}. Impacto alto no corpo. Dias 1-2 com atividades reduzidas. Hidratacao e fundamental!`;
   }
-  return `Alerta: fuso de ${diff}h para ${dest}. Protocolo severo ativado: dia 1 = descanso total, dia 2 = leve, dia 3 = 70%. Seu corpo agradece!`;
+  return `Alerta: fuso ${diff} para ${dest}. Protocolo severo ativado: dia 1 = descanso total, dia 2 = leve, dia 3 = 70%. Seu corpo agradece!`;
 }

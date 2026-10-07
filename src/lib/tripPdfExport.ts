@@ -12,6 +12,7 @@ import { getExpandedCityData } from '@/data/destinationPdfData';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { getDocsForDestination } from '@/data/destinationDocs';
+import { tripTimezone, formatTzDiff, formatTzInfo } from '@/lib/timezone';
 
 // ── Branding colors (RGB) ──
 const B = {
@@ -952,16 +953,21 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
     // ── Flight summary on cover ──
     const flightDuration = trip.flights?.outbound?.duration || '';
     const flightDurNum = parseFloat(flightDuration) || 0;
-    const tzDiff = trip.timezone?.diff || 0;
+    // Fuso na data da viagem (não o gap gravado na criação, que podia ser o de "hoje").
+    const tz = tripTimezone(trip);
+    const tzDiff = tz.diff;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const durationKnown = (trip.flights?.outbound as any)?.durationKnown !== false;
+    const durLabel = durationKnown ? `~${flightDurNum || '?'}h` : 'duracao a confirmar';
     const originCity = trip.flights?.outbound?.origin || 'GRU';
     const destCity = trip.destination || '';
-    if (flightDurNum > 0 || Math.abs(tzDiff) > 0) {
+    if (flightDurNum > 0 || Math.abs(tzDiff) > 0 || !tz.tzKnown) {
       y += 6;
       checkPage(12);
       setC(B.horizon, false);
       doc.setFontSize(11.5);
       doc.setFont('helvetica', 'bold');
-      const flightLine = `Voo: ${originCity} > ${cleanText(destCity)}  |  ~${flightDurNum || '?'}h  |  Fuso: ${tzDiff > 0 ? '+' : ''}${tzDiff}h`;
+      const flightLine = `Voo: ${originCity} > ${cleanText(destCity)}  |  ${durLabel}  |  Fuso: ${formatTzDiff(tz)}`;
       doc.text(flightLine, 14, y);
       y += 5;
 
@@ -1507,7 +1513,8 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
     y += 8;
 
     const infoItems = [
-      { label: 'Fuso horario', value: destInfo.timezone },
+      // Fuso calculado na data (R-V7); a string fixa da tabela não é lida (R-V6 acima da tabela).
+      { label: 'Fuso horario', value: formatTzInfo(tripTimezone(trip)) },
       { label: 'Voltagem / Tomada', value: destInfo.voltage },
       { label: 'Idioma', value: destInfo.language },
       { label: 'Moeda', value: destInfo.currency },

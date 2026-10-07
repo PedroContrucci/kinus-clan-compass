@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { exportTripPDF } from '@/lib/tripPdfExport';
+import { tripTimezone } from '@/lib/timezone';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
@@ -1737,7 +1738,8 @@ const Viagens = () => {
               {showJetLagAlert && selectedTrip.timezone && (
                 <JetLagAlert
                   destination={selectedTrip.destination}
-                  timezoneDiff={selectedTrip.timezone.diff}
+                  timezoneDiff={tripTimezone(selectedTrip).diff}
+                  tzKnown={tripTimezone(selectedTrip).tzKnown}
                   severity={selectedTrip.jetLagSeverity}
                   isRecoveryDay={isRecoveryDay}
                 />
