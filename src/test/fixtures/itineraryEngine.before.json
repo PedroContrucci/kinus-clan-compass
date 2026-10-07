@@ -863,57 +863,21 @@
       ]
      },
      {
-      "id": "day-1-lis-castelo-sao-jorge",
-      "name": "Castelo de São Jorge",
+      "id": "day-1-lis2-sintra",
+      "name": "Bate-volta a Sintra (Palácio da Pena)",
       "type": "experience",
       "timeSlot": "morning",
-      "estimatedCost": 190,
-      "costPerPerson": 95,
-      "time": "10:00",
-      "duration": "2.5h",
-      "location": "Alfama (2 pax)",
-      "rating": 4.5,
+      "estimatedCost": 360,
+      "costPerPerson": 180,
+      "time": "09:00",
+      "duration": "8h",
+      "location": "Sintra (2 pax)",
+      "rating": 4.8,
       "status": "suggestion",
       "tips": [
-       "Vista panorâmica; subida íngreme — com crianças pequenas, considere tuk-tuk"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-1-lis-casa-alentejo",
-      "name": "Casa do Alentejo",
-      "type": "lunch",
-      "timeSlot": "lunch",
-      "estimatedCost": 220,
-      "costPerPerson": 110,
-      "time": "13:00",
-      "duration": "2h",
-      "location": "Baixa (2 pax)",
-      "rating": 4.5,
-      "status": "suggestion",
-      "tips": [
-       "Palácio neomourisco escondido atrás de uma porta discreta",
-       "Cozinha alentejana: açorda e carne de porco à alentejana",
-       "Suba a escadaria só para ver o pátio, mesmo sem comer"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-1-lis-museu-azulejo",
-      "name": "Museu Nacional do Azulejo",
-      "type": "experience",
-      "timeSlot": "afternoon",
-      "estimatedCost": 90,
-      "costPerPerson": 45,
-      "time": "15:00",
-      "duration": "2h",
-      "location": "Xabregas (2 pax)",
-      "rating": 4.7,
-      "status": "suggestion",
-      "tips": [
-       "A história de Portugal contada em azulejos",
-       "O painel panorâmico de Lisboa pré-terremoto é o destaque",
-       "Igreja barroca interna surpreendente"
+       "Bate-volta: ocupa o dia inteiro",
+       "Trem da Estação do Rossio (40 min) — o palácio de conto de fadas nas montanhas",
+       "Compre ingresso do Pena com antecedência e vá CEDO; Quinta da Regaleira na sequência"
       ],
       "source": "kinu"
      },
@@ -924,12 +888,13 @@
       "timeSlot": "dinner",
       "estimatedCost": 340,
       "costPerPerson": 170,
-      "time": "19:30",
+      "time": "20:00",
       "duration": "2h",
       "location": "Restauradores (2 pax)",
       "rating": 4.6,
       "status": "suggestion",
       "tips": [
+       "Perto do hotel, para a volta do bate-volta",
        "Clássico lisboeta de cozinha minhota e mariscos",
        "As paredes têm caricaturas de todos os famosos que passaram",
        "Reserve — é instituição da cidade"
@@ -937,7 +902,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 840
+    "totalCost": 700
    },
    {
     "dayNumber": 3,
@@ -1167,57 +1132,57 @@
       "source": "kinu"
      },
      {
-      "id": "day-4-lis-jeronimos",
-      "name": "Mosteiro dos Jerónimos",
+      "id": "day-4-lis-castelo-sao-jorge",
+      "name": "Castelo de São Jorge",
       "type": "experience",
       "timeSlot": "morning",
-      "estimatedCost": 150,
-      "costPerPerson": 75,
+      "estimatedCost": 190,
+      "costPerPerson": 95,
       "time": "10:00",
-      "duration": "2h",
-      "location": "Belém (2 pax)",
-      "rating": 4.4,
+      "duration": "2.5h",
+      "location": "Alfama (2 pax)",
+      "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "Compre ingresso online e chegue antes das 10h — a fila cresce rápido; fecha às segundas"
+       "Vista panorâmica; subida íngreme — com crianças pequenas, considere tuk-tuk"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-4-lis-ze-da-mouraria",
-      "name": "Zé da Mouraria",
+      "id": "day-4-lis-casa-alentejo",
+      "name": "Casa do Alentejo",
       "type": "lunch",
       "timeSlot": "lunch",
-      "estimatedCost": 170,
-      "costPerPerson": 85,
+      "estimatedCost": 220,
+      "costPerPerson": 110,
       "time": "13:00",
-      "duration": "1.5h",
-      "location": "Mouraria (2 pax)",
-      "rating": 4.6,
+      "duration": "2h",
+      "location": "Baixa (2 pax)",
+      "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "Tasca tradicional com doses fartas",
-       "O bacalhau assado é referência na cidade",
-       "Só almoço e fecha domingo — chegue antes das 13h"
+       "Palácio neomourisco escondido atrás de uma porta discreta",
+       "Cozinha alentejana: açorda e carne de porco à alentejana",
+       "Suba a escadaria só para ver o pátio, mesmo sem comer"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-4-lis-santa-justa-carmo",
-      "name": "Elevador de Santa Justa e Convento do Carmo",
+      "id": "day-4-lis-museu-azulejo",
+      "name": "Museu Nacional do Azulejo",
       "type": "experience",
       "timeSlot": "afternoon",
       "estimatedCost": 90,
       "costPerPerson": 45,
       "time": "15:00",
       "duration": "2h",
-      "location": "Baixa/Chiado (2 pax)",
-      "rating": 4.5,
+      "location": "Xabregas (2 pax)",
+      "rating": 4.7,
       "status": "suggestion",
       "tips": [
-       "O elevador de ferro de 1902 liga a Baixa ao Chiado",
-       "As ruínas góticas do Carmo a céu aberto são únicas",
-       "Suba pelo elevador e desça a pé pelo Chiado"
+       "A história de Portugal contada em azulejos",
+       "O painel panorâmico de Lisboa pré-terremoto é o destaque",
+       "Igreja barroca interna surpreendente"
       ],
       "source": "kinu"
      },
@@ -1241,7 +1206,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 750
+    "totalCost": 840
    },
    {
     "dayNumber": 6,
@@ -1266,58 +1231,21 @@
       ]
      },
      {
-      "id": "day-5-lis-gulbenkian",
-      "name": "Museu Calouste Gulbenkian",
+      "id": "day-5-lis2-cascais",
+      "name": "Bate-volta a Cascais + Boca do Inferno",
       "type": "experience",
       "timeSlot": "morning",
-      "estimatedCost": 120,
-      "costPerPerson": 60,
-      "time": "10:00",
-      "duration": "2.5h",
-      "location": "Avenidas Novas (2 pax)",
-      "rating": 4.7,
+      "estimatedCost": 240,
+      "costPerPerson": 120,
+      "time": "09:00",
+      "duration": "6h",
+      "location": "Cascais (2 pax)",
+      "rating": 4.6,
       "status": "suggestion",
       "tips": [
-       "Coleção de arte do Egito antigo a Monet",
-       "Os jardins do museu são um oásis na cidade",
-       "Domingo a partir das 14h é gratuito"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-5-lis-timeout-market",
-      "name": "Time Out Market (Mercado da Ribeira)",
-      "type": "lunch",
-      "timeSlot": "lunch",
-      "estimatedCost": 200,
-      "costPerPerson": 100,
-      "time": "13:00",
-      "duration": "1.5h",
-      "location": "Cais do Sodré (2 pax)",
-      "rating": 4.5,
-      "status": "suggestion",
-      "tips": [
-       "Os melhores chefs de Lisboa em bancas num mercado histórico",
-       "Cada um pede numa banca e senta junto nas mesas comunitárias",
-       "Vá fora do horário de pico — lota"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-5-lis2-maat",
-      "name": "MAAT — Museu de Arte, Arquitetura e Tecnologia",
-      "type": "experience",
-      "timeSlot": "afternoon",
-      "estimatedCost": 90,
-      "costPerPerson": 45,
-      "time": "15:00",
-      "duration": "2h",
-      "location": "Belém (2 pax)",
-      "rating": 4.4,
-      "status": "suggestion",
-      "tips": [
-       "O prédio-onda à beira do Tejo — arte contemporânea e telhado-mirante",
-       "Encaixa no dia de Belém, entre os Pastéis e a Torre"
+       "Bate-volta: ocupa o dia inteiro",
+       "Trem do Cais do Sodré pela costa — vila charmosa, praias e a falésia da Boca do Inferno",
+       "Sorvete na Santini original de Cascais fecha o passeio"
       ],
       "source": "kinu"
      },
@@ -1328,12 +1256,13 @@
       "timeSlot": "dinner",
       "estimatedCost": 320,
       "costPerPerson": 160,
-      "time": "19:30",
+      "time": "20:00",
       "duration": "2h",
       "location": "Cais do Sodré (Mercado da Ribeira) (2 pax)",
       "rating": 4.4,
       "status": "suggestion",
       "tips": [
+       "Perto do hotel, para a volta do bate-volta",
        "Clássico moderno da cozinha portuguesa no andar do mercado",
        "A açorda de marisco dá nome à casa",
        "A mousse de chocolate é servida da travessa, à moda antiga"
@@ -1341,7 +1270,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 730
+    "totalCost": 560
    },
    {
     "dayNumber": 7,
@@ -1366,58 +1295,57 @@
       ]
      },
      {
-      "id": "day-6-lis2-pavilhao",
-      "name": "Pavilhão do Conhecimento",
+      "id": "day-6-lis-jeronimos",
+      "name": "Mosteiro dos Jerónimos",
       "type": "experience",
       "timeSlot": "morning",
-      "estimatedCost": 120,
-      "costPerPerson": 60,
+      "estimatedCost": 150,
+      "costPerPerson": 75,
       "time": "10:00",
-      "duration": "2.5h",
-      "location": "Parque das Nações (2 pax)",
-      "rating": 4.6,
-      "status": "suggestion",
-      "tips": [
-       "Museu de ciência interativo — crianças não querem ir embora",
-       "Combina com Oceanário e teleférico no mesmo dia"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-6-lis-o-trevo",
-      "name": "O Trevo (bifanas)",
-      "type": "lunch",
-      "timeSlot": "lunch",
-      "estimatedCost": 80,
-      "costPerPerson": 40,
-      "time": "13:00",
-      "duration": "0.5h",
-      "location": "Chiado (2 pax)",
+      "duration": "2h",
+      "location": "Belém (2 pax)",
       "rating": 4.4,
       "status": "suggestion",
       "tips": [
-       "A bifana do Bourdain — sanduíche de porco no balcão",
-       "Rápido, barato e no coração do Chiado",
-       "Peça com mostarda e piri-piri"
+       "Compre ingresso online e chegue antes das 10h — a fila cresce rápido; fecha às segundas"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-6-lis-tram-28",
-      "name": "Elétrico 28 (Tram histórico)",
+      "id": "day-6-lis-ze-da-mouraria",
+      "name": "Zé da Mouraria",
+      "type": "lunch",
+      "timeSlot": "lunch",
+      "estimatedCost": 170,
+      "costPerPerson": 85,
+      "time": "13:00",
+      "duration": "1.5h",
+      "location": "Mouraria (2 pax)",
+      "rating": 4.6,
+      "status": "suggestion",
+      "tips": [
+       "Tasca tradicional com doses fartas",
+       "O bacalhau assado é referência na cidade",
+       "Só almoço e fecha domingo — chegue antes das 13h"
+      ],
+      "source": "kinu"
+     },
+     {
+      "id": "day-6-lis-santa-justa-carmo",
+      "name": "Elevador de Santa Justa e Convento do Carmo",
       "type": "experience",
       "timeSlot": "afternoon",
-      "estimatedCost": 40,
-      "costPerPerson": 20,
+      "estimatedCost": 90,
+      "costPerPerson": 45,
       "time": "15:00",
-      "duration": "1.5h",
-      "location": "Graça a Estrela (2 pax)",
+      "duration": "2h",
+      "location": "Baixa/Chiado (2 pax)",
       "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "O bonde amarelo atravessa os bairros históricos",
-       "Pegue no início da linha (Martim Moniz) para conseguir lugar",
-       "Atenção com carteiristas — é o ponto mais visado da cidade"
+       "O elevador de ferro de 1902 liga a Baixa ao Chiado",
+       "As ruínas góticas do Carmo a céu aberto são únicas",
+       "Suba pelo elevador e desça a pé pelo Chiado"
       ],
       "source": "kinu"
      },
@@ -1440,7 +1368,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 330
+    "totalCost": 500
    },
    {
     "dayNumber": 8,
@@ -1468,27 +1396,26 @@
       "source": "kinu"
      },
      {
-      "id": "day-7-lis-miradouros",
-      "name": "Miradouros: Senhora do Monte e Graça",
+      "id": "day-7-lis2-maat",
+      "name": "MAAT — Museu de Arte, Arquitetura e Tecnologia",
       "type": "experience",
       "timeSlot": "morning",
-      "estimatedCost": 0,
-      "costPerPerson": 0,
+      "estimatedCost": 90,
+      "costPerPerson": 45,
       "time": "10:00",
       "duration": "2h",
-      "location": "Graça (2 pax)",
-      "rating": 4.7,
+      "location": "Belém (2 pax)",
+      "rating": 4.4,
       "status": "suggestion",
       "tips": [
        "Aproveite as últimas horas!",
-       "Os dois miradouros mais bonitos, a 10 minutos um do outro",
-       "Fim de tarde tem a luz dourada sobre o casario",
-       "Leve uma ginjinha para brindar o pôr do sol"
+       "O prédio-onda à beira do Tejo — arte contemporânea e telhado-mirante",
+       "Encaixa no dia de Belém, entre os Pastéis e a Torre"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-7-checkout",
+      "id": "day-7-slot-checkout",
       "name": "Check-out do hotel",
       "type": "transport",
       "timeSlot": "morning",
@@ -1502,26 +1429,26 @@
       "source": "kinu"
      },
      {
-      "id": "day-7-lis-casa-alentejo",
-      "name": "Casa do Alentejo",
+      "id": "day-7-lis-timeout-market",
+      "name": "Time Out Market (Mercado da Ribeira)",
       "type": "lunch",
       "timeSlot": "lunch",
-      "estimatedCost": 220,
-      "costPerPerson": 110,
+      "estimatedCost": 200,
+      "costPerPerson": 100,
       "time": "12:30",
-      "duration": "2h",
-      "location": "Baixa (2 pax)",
+      "duration": "1.5h",
+      "location": "Cais do Sodré (2 pax)",
       "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "Palácio neomourisco escondido atrás de uma porta discreta",
-       "Cozinha alentejana: açorda e carne de porco à alentejana",
-       "Suba a escadaria só para ver o pátio, mesmo sem comer"
+       "Os melhores chefs de Lisboa em bancas num mercado histórico",
+       "Cada um pede numa banca e senta junto nas mesas comunitárias",
+       "Vá fora do horário de pico — lota"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-7-transfer",
+      "id": "day-7-slot-transfer",
       "name": "Transfer para Aeroporto",
       "type": "transport",
       "timeSlot": "afternoon",
@@ -1535,7 +1462,7 @@
       "source": "kinu"
      },
      {
-      "id": "day-7-flight-return",
+      "id": "day-7-slot-flight-back",
       "name": "Voo de Volta (estimado)",
       "type": "flight",
       "timeSlot": "flight",
@@ -1548,7 +1475,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 4488
+    "totalCost": 4558
    }
   ],
   "breakdown": {
@@ -1563,17 +1490,17 @@
     "status": "estimated"
    },
    "experiences": {
-    "amount": 1388,
-    "percent": 7,
+    "amount": 1708,
+    "percent": 9,
     "status": "estimated"
    },
    "food": {
-    "amount": 5250,
-    "percent": 26,
+    "amount": 4950,
+    "percent": 25,
     "status": "estimated"
    },
-   "total": 22338,
-   "available": -2338,
+   "total": 22358,
+   "available": -2358,
    "trustZonePercent": 112
   },
   "meta": {
