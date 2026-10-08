@@ -37,7 +37,6 @@ import type { SuggestedActivity } from '@/data/destinationActivities';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { clearTrips, deleteTrip, getTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
 import { retimeConfirmedLegs, unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
-import { KinuDidCard } from '@/components/onboarding/KinuDidCard';
 import { trackEvent } from '@/lib/kinuEvents';
 import { addCatalogActivityToDay, applyTripPlannedCostDelta, calculateTripProgress } from '@/lib/tripItineraryOps';
 import { ViagensVividas } from '@/components/viagens/ViagensVividas';
@@ -142,7 +141,6 @@ const Viagens = () => {
   const { user, isLoading: authLoading } = useAuth();
   const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(null);
-  const [openFlightsSignal, setOpenFlightsSignal] = useState(0);
   const [activeTab, setActiveTab] = useState<'painel' | 'roteiro' | 'financeiro' | 'preparacao'>('painel');
   const [selectedDay, setSelectedDay] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -1171,28 +1169,18 @@ const Viagens = () => {
 
   // Draft Trip → Flight Selection Flow
   if (selectedTrip && selectedTrip.status === 'draft') {
-    const fromOnboarding = (selectedTrip as any).onboardingFlow === 'v2';
+    // Todo rascunho (onboarding, wizard, KINU AI) é o mesmo cockpit: card + um só Ativar,
+    // que chama activateDraft pelo onActivate do cockpit.
     return (
-      <>
-        {fromOnboarding && (
-          <KinuDidCard
-            trip={selectedTrip}
-            onActivate={() => handleActivateDraft(selectedTrip.id)}
-            onUpdateTrip={handleUpdateTrip}
-            onOpenFlights={() => setOpenFlightsSignal((n) => n + 1)}
-          />
-        )}
-        <div id="draft-cockpit">
-          <DraftCockpit
-            trip={selectedTrip as any}
-            onSave={handleSaveDraft}
-            onActivate={handleActivateDraft}
-            onClose={() => setSelectedTrip(null)}
-            onUpdateTrip={handleUpdateTrip}
-            openFlightsSignal={openFlightsSignal}
-          />
-        </div>
-      </>
+      <div id="draft-cockpit">
+        <DraftCockpit
+          trip={selectedTrip as any}
+          onSave={handleSaveDraft}
+          onActivate={handleActivateDraft}
+          onClose={() => setSelectedTrip(null)}
+          onUpdateTrip={handleUpdateTrip}
+        />
+      </div>
     );
   }
 

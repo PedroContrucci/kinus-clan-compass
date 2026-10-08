@@ -10,7 +10,7 @@ import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
 import { differenceInDays, format } from 'date-fns';
 import { tripTimezone } from '@/lib/timezone';
 import { ptBR } from 'date-fns/locale';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { exportTripPDF } from '@/lib/tripPdfExport';
 import { getIcarusRoteiroInsight, getIcarusHeroFlight, getIcarusHeroHotel, getHermesHotelInsight } from '@/lib/agentMessages';
 import { DestinationImage } from '@/components/shared/DestinationImage';
@@ -1381,22 +1381,60 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       />
 
 
-      {/* Reservation Confirm Modal */}
-      <Dialog
+{/* Reservation Confirm — bottom-sheet (C.2): cabe em 390×660; Confirmar fixo no rodapé do
+          sheet (safe-area), alcançável com teclado aberto. Mesmo payload de sempre (onConfirm). */}
+      <Drawer
         open={!!confirmReservation}
         onOpenChange={(open) => { if (!open) setConfirmReservation(null); }}
       >
-        <DialogContent className="bg-[#1e293b] border-border max-w-sm mx-auto">
-          <DialogHeader>
-            <DialogTitle className="font-['Outfit'] text-foreground">
+        <DrawerContent className="z-[70] max-h-[85dvh] bg-[#1e293b] border-border" data-testid="confirm-sheet">
+          <DrawerHeader className="text-left pb-2">
+            <DrawerTitle className="font-['Outfit'] text-foreground">
               {confirmReservation?.type === 'flight' ? '✈️ Confirmar Voo Reservado' : '🏨 Confirmar Hotel Reservado'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-4">
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Valor pago (R$)</label>
+              <input
+                type="number"
+                inputMode="decimal"
+                value={confirmReservation?.amount ?? ''}
+                onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, amount: e.target.value } : prev)}
+                placeholder="0"
+                className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              />
+            </div>
             {confirmReservation?.type === 'flight' && (
-              <div className="space-y-4">
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold text-foreground font-['Outfit']">✈️ Ida</p>
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1.5">Horário da ida</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={confirmReservation?.outboundTime ?? ''}
+                      onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, outboundTime: e.target.value } : prev)}
+                      placeholder="14:00"
+                      className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1.5">Horário da volta</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={confirmReservation?.returnTime ?? ''}
+                      onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, returnTime: e.target.value } : prev)}
+                      placeholder="16:00"
+                      className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    />
+                  </div>
+                </div>
+                <details className="rounded-lg border border-border px-3 py-2">
+                  <summary className="text-xs text-muted-foreground cursor-pointer select-none">Detalhes ▸</summary>
+                  <div className="mt-3 space-y-3">
+                    <p className="text-xs font-semibold text-foreground font-['Outfit']">✈️ Ida</p>
                   <div>
                     <label className="block text-xs text-muted-foreground mb-1.5">Companhia</label>
                     <input
@@ -1417,19 +1455,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                       className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs text-muted-foreground mb-1.5">Horário</label>
-                    <input
-                      type="text"
-                      value={confirmReservation?.outboundTime ?? ''}
-                      onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, outboundTime: e.target.value } : prev)}
-                      placeholder="14:00"
-                      className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold text-foreground font-['Outfit']">🛬 Volta</p>
+                    <p className="text-xs font-semibold text-foreground font-['Outfit']">🛬 Volta</p>
                   <div>
                     <label className="block text-xs text-muted-foreground mb-1.5">Companhia</label>
                     <input
@@ -1451,17 +1477,18 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-muted-foreground mb-1.5">Horário</label>
+                    <label className="block text-xs text-muted-foreground mb-1.5">Link/Confirmação (opcional)</label>
                     <input
                       type="text"
-                      value={confirmReservation?.returnTime ?? ''}
-                      onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, returnTime: e.target.value } : prev)}
-                      placeholder="16:00"
+                      value={confirmReservation?.link ?? ''}
+                      onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, link: e.target.value } : prev)}
+                      placeholder="https://..."
                       className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                     />
                   </div>
-                </div>
-              </div>
+                  </div>
+                </details>
+              </>
             )}
             {confirmReservation?.type === 'hotel' && (
               <div className="space-y-3">
@@ -1496,35 +1523,29 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                 </div>
               </div>
             )}
-            <div>
-              <label className="block text-xs text-muted-foreground mb-1.5">Valor pago (R$)</label>
-              <input
-                type="number"
-                value={confirmReservation?.amount ?? ''}
-                onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, amount: e.target.value } : prev)}
-                placeholder="0"
-                className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-muted-foreground mb-1.5">Link/Confirmação (opcional)</label>
-              <input
-                type="text"
-                value={confirmReservation?.link ?? ''}
-                onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, link: e.target.value } : prev)}
-                placeholder="https://..."
-                className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-              />
-            </div>
+            {confirmReservation?.type === 'hotel' && (
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5">Link/Confirmação (opcional)</label>
+                <input
+                  type="text"
+                  value={confirmReservation?.link ?? ''}
+                  onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, link: e.target.value } : prev)}
+                  placeholder="https://..."
+                  className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                />
+              </div>
+            )}
+          </div>
+          <div className="shrink-0 border-t border-border px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             <button
               onClick={handleReservationConfirm}
-              className="w-full py-2.5 bg-emerald-500 text-emerald-950 rounded-lg font-semibold text-sm hover:bg-emerald-400 transition-colors"
+              className="w-full py-3 bg-emerald-500 text-emerald-950 rounded-lg font-semibold text-sm hover:bg-emerald-400 transition-colors"
             >
               Confirmar
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
         </CollapsibleContent>
       </Collapsible>
 

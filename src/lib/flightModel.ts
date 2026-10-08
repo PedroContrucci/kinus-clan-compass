@@ -242,6 +242,23 @@ export function offerToSelected(offer: ReferenceOffer, ctx: OfferContext): Selec
   };
 }
 
+/** Duração para a tela: minutos → "3h25" ("3h" redondo). Só apresentação — o gravado segue "N.NNh". */
+export function formatDurationHM(minutes: number): string {
+  const m = Math.max(0, Math.round(Number(minutes) || 0));
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  return r ? `${h}h${String(r).padStart(2, '0')}` : `${h}h`;
+}
+
+/** Minutos de uma duração gravada ("3.42h", "3h 25m", "3h25"); 0 quando ilegível. */
+export function durationTextToMinutes(text: unknown): number {
+  const s = String(text ?? '');
+  const hm = s.match(/(\d+)\s*h\s*(\d+)/);
+  if (hm) return Number(hm[1]) * 60 + Number(hm[2]);
+  const h = s.match(/(\d+(?:[.,]\d+)?)\s*h/);
+  return h ? Math.round(parseFloat(h[1].replace(',', '.')) * 60) : 0;
+}
+
 /** D+n de um SelectedFlight pelas datas locais dos segmentos (0 sem segmentos). */
 export function flightDaysLater(sel: SelectedFlight): number {
   const segs = sel.option.segments;

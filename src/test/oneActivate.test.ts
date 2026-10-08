@@ -34,9 +34,12 @@ beforeEach(() => localStorage.clear());
 describe('ativação única', () => {
   it('(a) card e cockpit chamam a mesma função e resultam em viagens idênticas', async () => {
     const viagens = src('pages/Viagens.tsx');
-    expect(viagens).toContain('onActivate={() => handleActivateDraft(selectedTrip.id)}');
+    // C.2: o card vive dentro do cockpit — o Ativar dele é o handleActivate → onActivate(trip.id).
     expect(viagens).toContain('onActivate={handleActivateDraft}');
-    expect(src('components/cockpit/DraftCockpit.tsx')).toContain('onActivate(trip.id)');
+    expect(viagens).not.toContain('<KinuDidCard');
+    const cockpitSrc = src('components/cockpit/DraftCockpit.tsx');
+    expect(cockpitSrc).toContain('onActivate(trip.id)');
+    expect(cockpitSrc).toMatch(/<KinuDidCard[\s\S]*?onActivate=\{handleActivate\}/);
 
     await stored('Cartagena', 'CTG', 'a-card');
     await stored('Cartagena', 'CTG', 'a-cockpit');

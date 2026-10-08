@@ -1,11 +1,10 @@
-// DraftCockpit — Draft trip editing interface with 3-stage flow:
-// Stage 1: Flight Selection → Stage 2: Generated Itinerary → Stage 3: Active Trip
-// UI stepper reflects the two in-cockpit stages: flights and itinerary.
+// DraftCockpit — o rascunho é uma lista de blocos (C.2): o card "O que o KINU fez" com uma
+// linha por escolha (ícone · porquê · ação). Hotel, voo e roteiro só aparecem ao tocar
+// "trocar"/"ver", como painel abaixo da linha; o Ativar do card é o único da tela.
 
-import { budgetFollowsPlan, planBreakdown } from '@/lib/planTotals';
+import { budgetFollowsPlan, planBreakdown, envelopeFor, reserveFor } from '@/lib/planTotals';
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { FlightSelectionStage, SelectedFlight } from './FlightSelectionStage';
 import { GeneratedItineraryStage } from './GeneratedItineraryStage';
@@ -20,6 +19,9 @@ import { pickBest, explainPick, flightSearchKey, shouldAutoSearch, type KinuFlig
 import { useFlightSearch } from '@/hooks/useFlightSearch';
 import { buildItineraryForTrip, countManualEdits, itemIdsOf } from '@/lib/draftItinerary';
 import { replanTrip, unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
+import { KinuDidCard, type KinuDidRow } from '@/components/onboarding/KinuDidCard';
+import { KinuAnalysisCard } from './KinuAnalysisCard';
+import { analysisSummary, tryPlaceUnplaced } from '@/lib/cockpitLines';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -66,7 +68,7 @@ interface DraftCockpitProps {
   onClose: () => void;
   /** Mesmo contrato do TripPanel: read-modify-write do storage, não da cópia React. */
   onUpdateTrip?: (updater: (t: StoredTrip) => StoredTrip) => void;
-  /** Incrementado por fora (card "O que o KINU fez") para abrir o passo Voo. */
+  /** Incrementado por fora para abrir o painel Voo. */
   openFlightsSignal?: number;
 }
 
@@ -183,109 +185,6 @@ function getDestinationEmoji(destination: string): string {
   return emojiMap[destination] || '✈️';
 }
 
-// Journey trail: wizard decisions (read-only, done) → hotel → in-cockpit stages.
-// Wizard steps in Planejar (NewPlanningWizard): Logística → Viajantes → Budget → Resumo.
-// Resumo is a review screen, not a decision — it is not rendered as a pill.
-type StepperStageId = 'flights' | 'itinerary';
-
-interface TrailPill {
-  id: string;
-  label: string;
-  subtitle: string;
-  state: 'done' | 'current' | 'upcoming';
-  stageId?: StepperStageId; // set only for in-cockpit stages (clickable)
-  /** Pílula que abre uma ação em vez de mudar de estágio (hoje: trocar hotel). */
-  action?: 'swap-hotel';
-}
-
-const BUDGET_TIER_LABELS: Record<string, string> = {
-  backpacker: 'Mochileiro',
-  economic: 'Econômico',
-  comfort: 'Conforto',
-  luxury: 'Luxo',
-};
-
-function formatShortDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-  return `${d.getUTCDate()} ${months[d.getUTCMonth()]}`;
-}
-
-function buildTrail(trip: DraftTrip, currentStage: StepperStageId): TrailPill[] {
-  const pills: TrailPill[] = [];
-
-  // Wizard: Destino
-  pills.push({
-    id: 'destino',
-    label: 'Destino',
-    subtitle: trip.destination || '—',
-    state: 'done',
-  });
-
-  // Wizard: Datas
-  const start = formatShortDate(trip.startDate);
-  const end = formatShortDate(trip.endDate);
-  pills.push({
-    id: 'datas',
-    label: 'Datas',
-    subtitle: start && end ? `${start} – ${end}` : '—',
-    state: 'done',
-  });
-
-  // Wizard: Viajantes
-  const t = getTravelers(trip);
-  pills.push({
-    id: 'viajantes',
-    label: 'Viajantes',
-    subtitle: `${t} ${t === 1 ? 'pessoa' : 'pessoas'}`,
-    state: 'done',
-  });
-
-  // Wizard: Budget
-  const tier = trip.budgetType ? BUDGET_TIER_LABELS[trip.budgetType] : null;
-  const budgetFmt = trip.budget
-    ? `R$ ${Math.round(trip.budget).toLocaleString('pt-BR')}`
-    : '';
-  pills.push({
-    id: 'budget',
-    label: 'Budget',
-    subtitle: [tier, budgetFmt].filter(Boolean).join(' · ') || '—',
-    state: 'done',
-  });
-
-  // Hotel: escolhido pelo KINU, mas agora com porta de saída — a pílula abre a
-  // troca pelos curados da cidade. Era o único ponto da trilha sem retorno.
-  const hotelName = (trip as any).accommodation?.name as string | undefined;
-  pills.push({
-    id: 'hotel',
-    label: 'Hotel',
-    subtitle: hotelName
-      ? `${hotelName.split('—')[0].trim()} · toque pra trocar`
-      : 'O KINU escolhe no roteiro',
-    state: hotelName ? 'done' : 'upcoming',
-    action: hotelName ? 'swap-hotel' : undefined,
-  });
-
-  // In-cockpit stages (unchanged behavior)
-  pills.push({
-    id: 'flights',
-    label: 'Voo',
-    subtitle: flightPillSubtitle(trip),
-    state: currentStage === 'itinerary' ? 'done' : 'current',
-    stageId: 'flights',
-  });
-  pills.push({
-    id: 'itinerary',
-    label: 'Roteiro',
-    subtitle: 'Revise o roteiro e ative a viagem',
-    state: currentStage === 'itinerary' ? 'current' : 'upcoming',
-    stageId: 'itinerary',
-  });
-
-  return pills;
-}
-
 /** Chip 06 (Voo): diz quem escolheu e por quê; o toque abre a lista ("trocar"). */
 // eslint-disable-next-line react-refresh/only-export-components
 export function flightPillSubtitle(trip: { outboundFlight?: SelectedFlight; kinuFlightSearch?: KinuFlightSearch }): string {
@@ -301,95 +200,9 @@ export function flightPillSubtitle(trip: { outboundFlight?: SelectedFlight; kinu
   return 'Escolha os voos de ida e volta';
 }
 
-interface DraftStepperProps {
-  trip: DraftTrip;
-  currentStage: StepperStageId;
-  onChange: (stage: StepperStageId) => void;
-  onSwapHotel?: () => void;
-}
-
-const DraftStepper = ({ trip, currentStage, onChange, onSwapHotel }: DraftStepperProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const currentPillRef = useRef<HTMLButtonElement>(null);
-  const trail = buildTrail(trip, currentStage);
-
-  useEffect(() => {
-    if (currentPillRef.current && containerRef.current) {
-      currentPillRef.current.scrollIntoView({
-        behavior: 'smooth',
-        inline: 'center',
-        block: 'nearest',
-      });
-    }
-  }, [currentStage]);
-
-  return (
-    <div
-      ref={containerRef}
-      className="sticky top-0 z-30 w-full overflow-x-auto bg-background/90 backdrop-blur-md border-b border-border"
-    >
-      <div className="flex items-center gap-2 px-4 py-3 min-w-max">
-        {trail.map((s, index) => {
-          const isDone = s.state === 'done';
-          const isCurrent = s.state === 'current';
-          const isUpcoming = s.state === 'upcoming';
-          // Estágios do cockpit seguem como estavam; a pílula de hotel ganha ação própria.
-          const clickable = (!!s.stageId && (isCurrent || isDone)) || (s.action === 'swap-hotel' && !!onSwapHotel);
-          // Wizard/hotel pills always show their value; stage pills when current.
-          const showSubtitle = !s.stageId || isCurrent;
-
-          return (
-            <button
-              key={s.id}
-              ref={isCurrent ? currentPillRef : null}
-              type="button"
-              disabled={!clickable}
-              onClick={() => {
-                if (!clickable) return;
-                if (s.action === 'swap-hotel') return onSwapHotel?.();
-                if (s.stageId) onChange(s.stageId);
-              }}
-              className={cn(
-                "relative flex flex-col items-center gap-0.5 px-3.5 py-2 rounded-full border transition-all",
-                "font-['Outfit'] text-sm font-medium",
-                isCurrent &&
-                  "bg-[hsl(45,93%,47%)] text-[hsl(222,47%,11%)] border-[hsl(45,93%,47%)] shadow-[0_0_12px_hsla(45,93%,47%,0.25)]",
-                isDone && s.stageId &&
-                  "bg-[hsl(160,84%,39%)]/15 text-[hsl(160,77%,67%)] border-[hsl(160,84%,39%)] hover:bg-[hsl(160,84%,39%)]/25",
-                isDone && !s.stageId && !s.action &&
-                  "bg-[hsl(160,84%,39%)]/10 text-[hsl(160,77%,67%)] border-[hsl(160,84%,39%)]/60 cursor-default",
-                isDone && !s.stageId && s.action &&
-                  "bg-[hsl(160,84%,39%)]/10 text-[hsl(160,77%,67%)] border-[hsl(160,84%,39%)]/60 hover:bg-[hsl(160,84%,39%)]/25",
-                isUpcoming &&
-                  "bg-muted/30 text-muted-foreground border-border cursor-not-allowed opacity-70"
-              )}
-            >
-              <span className="flex items-center gap-1.5 whitespace-nowrap">
-                {isDone ? (
-                  <Check size={14} className="text-[hsl(160,77%,67%)]" />
-                ) : (
-                  <span className="text-xs opacity-80">{String(index + 1).padStart(2, '0')}</span>
-                )}
-                {s.label}
-              </span>
-              {showSubtitle && (
-                <span className="text-[10px] leading-tight font-normal text-center max-w-[180px] opacity-90">
-                  {s.subtitle}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-      <div className="px-4 pb-3">
-      </div>
-    </div>
-  );
-};
-
 export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, openFlightsSignal }: DraftCockpitProps) => {
   // KINU-built trips (KINU AI ou onboarding) arrive with a pre-generated itinerary and an
-  // estimated flight, so we jump straight to the itinerary stage; Voo stays reachable.
+  // estimated flight; o card mostra as duas e os painéis abrem pela linha.
   const isKinuCreated = isKinuBuilt(trip);
 
   // Rascunho montado pelo KINU sem voo escolhido: grava a estimativa uma vez (idempotente).
@@ -400,14 +213,16 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trip.id]);
 
-  // "trocar" do voo no card "O que o KINU fez" abre o passo Voo.
+  // Nenhum estágio aberto ao entrar: o card é a tela; painéis abrem pela linha.
+  const [openRow, setOpenRow] = useState<KinuDidRow | null>(null);
+  const toggleRow = useCallback((row: KinuDidRow) => setOpenRow((cur) => (cur === row ? null : row)), []);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [unplacedOpen, setUnplacedOpen] = useState(false);
+
   useEffect(() => {
-    if (openFlightsSignal) setStage('flights');
+    if (openFlightsSignal) setOpenRow('flight');
   }, [openFlightsSignal]);
 
-  const [stage, setStage] = useState<'flights' | 'itinerary'>(() => initialDraftStage(trip)
-  );
-  
   const [selectedOutbound, setSelectedOutbound] = useState<SelectedFlight | undefined>(() => {
     if (trip.outboundFlight) return trip.outboundFlight;
     if (isKinuCreated && trip.flights?.outbound) {
@@ -559,7 +374,8 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     setSelectedOutbound(outbound);
     setSelectedReturn(returnFlight);
     const unplaced = regenerateWith(outbound, returnFlight, { flightsSelected: true }, { preserveEdits: true });
-    setStage('itinerary');
+    // Volta pro card com a linha do voo atualizada — nunca pra lista de Viagens.
+    setOpenRow(null);
     toastReplanned(unplaced, 'Voos selecionados! ✈️');
   }, [regenerateWith, toastReplanned]);
 
@@ -589,9 +405,20 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     onActivate(trip.id);
   }, [trip.id, onActivate]);
 
-  const handleBackFromItinerary = useCallback(() => {
-    setStage('flights');
-  }, []);
+  // "tentar encaixar": mesma janela R16 do motor; o que não cabe fica em unplacedEdits.
+  const handleTryPlace = useCallback(() => {
+    let res: ReturnType<typeof tryPlaceUnplaced> | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const apply = (t: any) => { res = tryPlaceUnplaced(t); return res.trip; };
+    if (onUpdateTrip) onUpdateTrip(apply as (t: StoredTrip) => StoredTrip);
+    else onSave(apply(trip) as DraftTrip);
+    const r = res as ReturnType<typeof tryPlaceUnplaced> | null;
+    if (!r) return;
+    if (r.placed.length) setRegenKey((k) => k + 1);
+    toast(r.left.length
+      ? { title: `${r.left.length} ${r.left.length === 1 ? 'item não coube' : 'itens não couberam'}`, description: `Fora da janela do dia: ${r.left.map((u) => u.name).join(', ')}.` }
+      : { title: 'Itens encaixados', description: `${r.placed.length} de volta ao roteiro.` });
+  }, [trip, onSave, onUpdateTrip]);
 
   const tierToPriceLevel = { backpacker: 'budget', economic: 'budget', comfort: 'midrange', luxury: 'luxury' } as const;
   const chosenPriceLevel = trip.budgetType ? tierToPriceLevel[trip.budgetType] : undefined;
@@ -636,98 +463,142 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     </>
   );
 
-  if (stage === 'flights') {
-    return (
-      <>
-        <DraftStepper trip={trip} currentStage={stage} onChange={setStage} onSwapHotel={() => setHotelSwapOpen(true)} />
-      {hotelSwapModal}
-        <FlightSelectionStage
-          key={`${trip.outboundFlight?.option?.id ?? 'none'}|${trip.returnFlight?.option?.id ?? 'none'}`}
-          destination={trip.destination}
-          origin={trip.origin || 'São Paulo'}
-          originCode={originCode}
-          destinationCode={destinationCode}
-          departureDate={new Date(trip.startDate)}
-          returnDate={new Date(trip.endDate)}
-          budget={trip.budget}
-          emoji={emoji}
-          onFlightsSelected={handleFlightsSelected}
-          onSave={handleSave}
-          onBack={onClose}
-          estimate={stageEstimate}
-          current={stageCurrent}
-          offers={stageOffers}
-        />
-      </>
-    );
-  }
+  const flightPanel = (
+    <FlightSelectionStage
+      embedded
+      key={`${trip.outboundFlight?.option?.id ?? 'none'}|${trip.returnFlight?.option?.id ?? 'none'}`}
+      destination={trip.destination}
+      origin={trip.origin || 'São Paulo'}
+      originCode={originCode}
+      destinationCode={destinationCode}
+      departureDate={new Date(trip.startDate)}
+      returnDate={new Date(trip.endDate)}
+      budget={trip.budget}
+      emoji={emoji}
+      onFlightsSelected={handleFlightsSelected}
+      onSave={handleSave}
+      onBack={() => setOpenRow(null)}
+      estimate={stageEstimate}
+      current={stageCurrent}
+      offers={stageOffers}
+    />
+  );
 
-  // Stage 2: Generated Itinerary
-  if (stage === 'itinerary' && selectedOutbound && selectedReturn) {
-    return (
-      <>
-        <DraftStepper trip={trip} currentStage={stage} onChange={setStage} onSwapHotel={() => setHotelSwapOpen(true)} />
-      {hotelSwapModal}
-        {/* O hotel no roteiro do rascunho: mesmo bloco da viagem ativa, com o porquê e a
-            porta de saída. Fica ACIMA do estágio de propósito — o gerador não é tocado. */}
-        <HotelPlanBlock
-          trip={trip as SwapTripLike}
-          onSelectHotel={(hotel) => onUpdateTrip?.((t) => applyHotelSwap(t, hotel))}
-        />
-        <GeneratedItineraryStage
-          key={regenKey}
-          tripId={trip.id}
-          destination={trip.destination}
-          origin={trip.origin || 'São Paulo'}
-          emoji={emoji}
-          departureDate={new Date(trip.startDate)}
-          returnDate={new Date(trip.endDate)}
-          budget={trip.budget}
-          travelers={getTravelers(trip)}
-          outboundFlight={selectedOutbound}
-          returnFlight={selectedReturn}
-          travelInterests={trip.travelInterests}
-          jetLagSeverity={trip.jetLagSeverity}
-          priceLevel={chosenPriceLevel}
-          onActivate={handleActivate}
-          onSave={handleSave}
-          onBack={handleBackFromItinerary}
-          existingDays={hasExistingDays ? trip.days : undefined}
-          hotelPlannedOverride={curatedHotelPlanned}
-          budgetFollowsPlan={budgetFollowsPlan(trip)}
-          plannedFlights={(trip as { finances?: { categories?: { flights?: { planned?: number } } } }).finances?.categories?.flights?.planned}
-          plannedHotel={(trip as { finances?: { categories?: { accommodation?: { planned?: number } } } }).finances?.categories?.accommodation?.planned}
-          financeBuckets={financeBucketsOf(trip)}
-          engineItemIds={(trip as { engineItemIds?: string[] }).engineItemIds}
-          onRegenerate={selectedOutbound && selectedReturn ? handleRegenerate : undefined}
-        />
-      </>
-    );
-  }
+  const itineraryPanel = selectedOutbound && selectedReturn ? (
+    <GeneratedItineraryStage
+      embedded
+      key={regenKey}
+      tripId={trip.id}
+      destination={trip.destination}
+      origin={trip.origin || 'São Paulo'}
+      emoji={emoji}
+      departureDate={new Date(trip.startDate)}
+      returnDate={new Date(trip.endDate)}
+      budget={trip.budget}
+      travelers={getTravelers(trip)}
+      outboundFlight={selectedOutbound}
+      returnFlight={selectedReturn}
+      travelInterests={trip.travelInterests}
+      jetLagSeverity={trip.jetLagSeverity}
+      priceLevel={chosenPriceLevel}
+      onActivate={handleActivate}
+      onSave={handleSave}
+      onBack={() => setOpenRow(null)}
+      existingDays={hasExistingDays ? trip.days : undefined}
+      hotelPlannedOverride={curatedHotelPlanned}
+      budgetFollowsPlan={budgetFollowsPlan(trip)}
+      plannedFlights={(trip as { finances?: { categories?: { flights?: { planned?: number } } } }).finances?.categories?.flights?.planned}
+      plannedHotel={(trip as { finances?: { categories?: { accommodation?: { planned?: number } } } }).finances?.categories?.accommodation?.planned}
+      financeBuckets={financeBucketsOf(trip)}
+      engineItemIds={(trip as { engineItemIds?: string[] }).engineItemIds}
+      onRegenerate={handleRegenerate}
+    />
+  ) : (
+    <p className="text-xs text-muted-foreground p-2">Escolha os voos de ida e volta para montar o roteiro.</p>
+  );
 
-  // Fallback to flights if no flights selected
-  return (
+  // O hotel no rascunho: mesmo bloco da viagem ativa, com o porquê e a porta de saída.
+  const hotelPanel = trip.accommodation?.name ? (
+    <HotelPlanBlock
+      trip={trip as SwapTripLike}
+      onSelectHotel={(hotel) => onUpdateTrip?.((t) => applyHotelSwap(t, hotel))}
+    />
+  ) : undefined;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const plan = planBreakdown(trip as any);
+  const follows = budgetFollowsPlan(trip);
+  const rawUnplaced = (trip as unknown as { unplacedEdits?: unknown }).unplacedEdits;
+  const unplacedList: UnplacedEdit[] = Array.isArray(rawUnplaced) ? rawUnplaced : [];
+
+  const extraRows = (
     <>
-      <DraftStepper trip={trip} currentStage={stage} onChange={setStage} onSwapHotel={() => setHotelSwapOpen(true)} />
-      {hotelSwapModal}
-      <FlightSelectionStage
-          key={`${trip.outboundFlight?.option?.id ?? 'none'}|${trip.returnFlight?.option?.id ?? 'none'}`}
-        destination={trip.destination}
-        origin={trip.origin || 'São Paulo'}
-        originCode={originCode}
-        destinationCode={destinationCode}
-        departureDate={new Date(trip.startDate)}
-        returnDate={new Date(trip.endDate)}
-        budget={trip.budget}
-        emoji={emoji}
-        onFlightsSelected={handleFlightsSelected}
-        onSave={handleSave}
-        onBack={onClose}
-        estimate={stageEstimate}
-        current={stageCurrent}
-        offers={stageOffers}
-      />
+      <div className="text-sm">
+        <button type="button" onClick={() => setAnalysisOpen((v) => !v)} aria-expanded={analysisOpen}
+          className="w-full flex items-start gap-2 text-left text-foreground">
+          <span>🧠</span>
+          <span className="flex-1">{analysisSummary(trip)}</span>
+          <span className="shrink-0 text-primary text-xs">{analysisOpen ? '▾' : '▸'}</span>
+        </button>
+        {analysisOpen && (
+          <div className="mt-2">
+            <KinuAnalysisCard
+              destination={trip.destination}
+              departureDate={new Date(trip.startDate)}
+              returnDate={new Date(trip.endDate)}
+              budget={follows ? envelopeFor(plan.total) : trip.budget}
+              reserveAmount={follows ? reserveFor(plan.total) : undefined}
+              flightsCost={plan.flights}
+              hotelCost={plan.hotel}
+              toursCost={plan.tours}
+              foodCost={plan.food}
+              travelInterests={trip.travelInterests}
+              jetLagSeverity={trip.jetLagSeverity}
+            />
+          </div>
+        )}
+      </div>
+      {unplacedList.length > 0 && (
+        <div className="text-sm" data-testid="unplaced-row">
+          <button type="button" onClick={() => setUnplacedOpen((v) => !v)} aria-expanded={unplacedOpen}
+            className="w-full flex items-start gap-2 text-left text-foreground">
+            <span>📌</span>
+            <span className="flex-1">{unplacedList.length} {unplacedList.length === 1 ? 'item seu não coube' : 'itens seus não couberam'}</span>
+            <span className="shrink-0 text-primary text-xs">{unplacedOpen ? '▾' : '▸'}</span>
+          </button>
+          {unplacedOpen && (
+            <div className="mt-2 ml-6 space-y-1">
+              <ul className="text-xs text-muted-foreground space-y-0.5">
+                {unplacedList.map((u) => <li key={`${u.id}-${u.day}`}>{u.name} · dia {u.day}</li>)}
+              </ul>
+              <button type="button" onClick={handleTryPlace} className="text-primary text-xs font-medium hover:underline">tentar encaixar</button>
+            </div>
+          )}
+        </div>
+      )}
     </>
+  );
+
+  return (
+    <div className="pb-[calc(7rem+env(safe-area-inset-bottom))]">
+      <div className="flex items-center gap-2 px-4 pt-3">
+        <button type="button" onClick={onClose} aria-label="voltar para Viagens" className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors">
+          <ArrowLeft size={20} className="text-foreground" />
+        </button>
+        <span className="text-xl">{emoji}</span>
+        <h1 className="font-bold text-lg font-['Outfit'] text-foreground">{trip.destination}</h1>
+      </div>
+      {hotelSwapModal}
+      <KinuDidCard
+        trip={trip}
+        onActivate={handleActivate}
+        onUpdateTrip={(u) => onUpdateTrip?.(u)}
+        panels={{ hotel: hotelPanel, flight: flightPanel, itinerary: itineraryPanel }}
+        openRow={openRow}
+        onToggleRow={toggleRow}
+        extraRows={extraRows}
+      />
+    </div>
   );
 };
 

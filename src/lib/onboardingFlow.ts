@@ -103,7 +103,7 @@ export function kinuDidLines(trip: any): KinuDidLines {
   const hotelName = trip.accommodation?.name ?? 'Hotel';
   const hotel = cur && cur.reasons.length
     ? `${hotelName}: ${cur.reasons.map((r) => r.label).join(' · ')}`
-    : `${hotelName}: melhor opção disponível para o seu perfil`;
+    : `${hotelName}: ${hotelTierZone(cur?.hotel, trip)}`;
 
   const ddmm = (v: unknown) => {
     const d = parseISO(String(v ?? '').slice(0, 10));
@@ -142,6 +142,16 @@ export function kinuDidLines(trip: any): KinuDidLines {
   const budgetDetail = `Custo estimado ${brl(plan.total)}: voo ${brl(plan.flights)}${realFlight ? '' : ` (${trip.outboundFlight?.priceSource === 'route' ? 'estimativa por rota' : 'estimativa genérica'})`} · hotel ${brl(plan.hotel)} · alimentação ${brl(plan.food)} · passeios ${brl(plan.tours)}`
     + (reserve > 0 && reserve === reserveFor(plan.total) ? ` · inclui reserva de ${Math.round(RESERVE_RATE * 100)}% (${brl(reserve)})` : '');
   return { origin, hotel, flight, itinerary, budget, budgetDetail };
+}
+
+const HOTEL_TIER_LABELS: Record<string, string> = { budget: 'Econômico', mid: 'Conforto', upscale: 'Alto padrão', luxury: 'Luxo' };
+
+/** Hotel sem reasons: "tier <X> · <zona>" — fatos do curado (ou da viagem), nunca um elogio genérico. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function hotelTierZone(curated: { tier?: string; zone?: string } | undefined, trip: any): string {
+  const tier = curated?.tier ? (HOTEL_TIER_LABELS[curated.tier] ?? curated.tier) : tierLabel(trip?.budgetType);
+  const zone = curated?.zone || trip?.accommodation?.neighborhood || '';
+  return [tier ? `tier ${tier}` : '', zone].filter(Boolean).join(' · ') || 'escolhido pelo seu perfil';
 }
 
 /** Rótulo do preço do voo estimado: por rota (tabela) ou genérico (perfil). */

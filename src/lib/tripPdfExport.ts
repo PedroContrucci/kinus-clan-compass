@@ -13,6 +13,7 @@ import { findCityInfo } from '@/data/destinationCatalog';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { getDocsForDestination } from '@/data/destinationDocs';
 import { tripTimezone, formatTzDiff, formatTzInfo } from '@/lib/timezone';
+import { formatDurationHM, durationTextToMinutes } from '@/lib/flightModel';
 
 // ── Branding colors (RGB) ──
 const B = {
@@ -958,7 +959,9 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
     const tzDiff = tz.diff;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const durationKnown = (trip.flights?.outbound as any)?.durationKnown !== false;
-    const durLabel = durationKnown ? `~${flightDurNum || '?'}h` : 'duracao a confirmar';
+    // "3h25", nunca "3.42h": o gravado segue decimal, a capa formata.
+    const flightDurMin = durationTextToMinutes(flightDuration);
+    const durLabel = durationKnown ? (flightDurMin > 0 ? `~${formatDurationHM(flightDurMin)}` : '~?h') : 'duracao a confirmar';
     const originCity = trip.flights?.outbound?.origin || 'GRU';
     const destCity = trip.destination || '';
     if (flightDurNum > 0 || Math.abs(tzDiff) > 0 || !tz.tzKnown) {

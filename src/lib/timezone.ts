@@ -33,6 +33,8 @@ export function cityTimezone(city: string | undefined | null): string | null {
 const ORIGIN_AIRPORT_CITY: Record<string, string> = {
   GRU: 'São Paulo', CGH: 'São Paulo', VCP: 'Campinas', CNF: 'Belo Horizonte',
   BSB: 'Brasília', CWB: 'Curitiba', POA: 'Porto Alegre',
+  // Códigos de cidade (metropolitanos) que a Travelpayouts devolve no lugar do aeroporto.
+  SAO: 'São Paulo', RIO: 'Rio de Janeiro', BHZ: 'Belo Horizonte',
 };
 
 let airportCityCache: Record<string, { city: string; brazil: boolean }> | null = null;

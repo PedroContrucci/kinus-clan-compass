@@ -22,7 +22,7 @@ import {
   formatFlightPrice 
 } from '@/hooks/useFlightSearch';
 import { Skeleton } from '@/components/ui/skeleton';
-import { offerToSelected, flightDaysLater } from '@/lib/flightModel';
+import { offerToSelected, flightDaysLater, formatDurationHM, durationTextToMinutes } from '@/lib/flightModel';
 import { rankFlights } from '@/lib/flightRanking';
 
 // Types - Extended to support Amadeus data
@@ -48,6 +48,8 @@ interface FlightSelectionStageProps {
   current?: { outbound?: SelectedFlight; return?: SelectedFlight };
   /** Ofertas já normalizadas pelo cockpit (busca ao abrir o rascunho). Ausente = o estágio busca. */
   offers?: { outbound: SelectedFlight[]; return: SelectedFlight[]; loading?: boolean };
+  /** Painel dentro do card do cockpit: sem header, sem tela cheia, rodapé no fluxo (não fixo). */
+  embedded?: boolean;
 }
 
 type ListItem = SelectedFlight & { isEstimate?: boolean };
@@ -146,6 +148,7 @@ export const FlightSelectionStage = ({
   estimate,
   current,
   offers,
+  embedded = false,
 }: FlightSelectionStageProps) => {
   const [selectedOutbound, setSelectedOutbound] = useState<SelectedFlight | null>(current?.outbound ?? estimate?.outbound ?? null);
   const [selectedReturn, setSelectedReturn] = useState<SelectedFlight | null>(current?.return ?? estimate?.return ?? null);
@@ -403,7 +406,7 @@ export const FlightSelectionStage = ({
             <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Clock size={12} />
-                {option.duration}
+                {(() => { const m = option.durationMinutes || durationTextToMinutes(option.duration); return m > 0 ? formatDurationHM(m) : option.duration; })()}
               </span>
               <span>
                 {option.departureTime} → {item.tzKnown === false ? 'chegada a confirmar' : option.arrivalTime}
@@ -431,8 +434,9 @@ export const FlightSelectionStage = ({
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className={embedded ? 'bg-background flex flex-col' : 'min-h-screen bg-background flex flex-col'}>
       {/* Header */}
+      {!embedded && (
       <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -458,9 +462,10 @@ export const FlightSelectionStage = ({
           <span>• Budget: R$ {budget.toLocaleString('pt-BR')}</span>
         </div>
       </header>
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 px-4 py-6 pb-72 overflow-y-auto">
+      <main className={embedded ? 'px-1 py-3' : 'flex-1 px-4 py-6 pb-72 overflow-y-auto'}>
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
             <Plane size={20} className="text-primary" />
@@ -699,7 +704,7 @@ export const FlightSelectionStage = ({
 
       {/* Footer Summary */}
       {/* z-20: abaixo da trilha do rascunho (z-30); o pb-72 do main deixa o fim da lista visível. */}
-      <footer className="fixed bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur-lg border-t border-border p-4">
+      <footer className={embedded ? 'border-t border-border pt-3' : 'fixed bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur-lg border-t border-border p-4'}>
         <div className="mb-4 p-3 rounded-xl bg-card border border-border">
           <p className="text-xs text-muted-foreground mb-2">RESUMO DOS VOOS SELECIONADOS:</p>
           <div className="space-y-1 text-sm">

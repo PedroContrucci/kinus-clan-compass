@@ -471,13 +471,38 @@ const isLogistic = (a: PlanDayItem) =>
 
 const fmt = (n: number) => n.toFixed(1).replace('.', ',');
 
+/** Dia da chegada no roteiro (pela data do voo de ida); 0 sem data. */
+function arrivalIndexOf(days: PlanDay[], ctx: PlanRulesContext): number {
+  const i = ctx.arrivalDate ? days.findIndex((d) => String(d.date ?? '').slice(0, 10) === ctx.arrivalDate) : -1;
+  return i >= 0 ? i : 0;
+}
+
+/**
+ * R16 de um dia: horas usadas (itens não logísticos + saltos) contra a janela do dia —
+ * chegada → 22 h, 14 h nos do meio, 08 h → aeroporto no último. `extra` entra na conta
+ * como se já estivesse no dia (o "tentar encaixar" do cockpit). null = dia em trânsito.
+ */
+export function dayWindowUsage(
+  days: PlanDay[], ctx: PlanRulesContext, i: number, extra: PlanDayItem[] = [],
+  index: Map<string, SuggestedActivity> = catalogIndex(ctx.destination),
+): { used: number; window: number; items: number } | null {
+  const arrivalIdx = arrivalIndexOf(days, ctx);
+  if (i < arrivalIdx || !days[i]) return null; // em trânsito
+  let window: number;
+  if (i === days.length - 1) window = lastDayWindowHours(ctx.returnDepartureTime, ctx.domestic);
+  else if (i === arrivalIdx) {
+    const arr = hhmm(ctx.arrivalTime);
+    window = arr < 0 ? 14 : Math.max(0, 22 - arr);
+  } else window = 14;
+  const items = [...days[i].activities, ...extra].filter((a) => !isLogistic(a));
+  const hours = items.reduce((s, a) => s + itemHours(a, catalogItemOf(a, index)), 0);
+  return { used: hours + HOP_HOURS * Math.max(0, items.length - 1), window, items: items.length };
+}
+
 export function validatePlanRules(days: PlanDay[], ctx: PlanRulesContext): PlanRuleResult[] {
   const index = catalogIndex(ctx.destination);
   const lastIdx = days.length - 1;
-  const arrivalIdx = (() => {
-    const i = ctx.arrivalDate ? days.findIndex((d) => String(d.date ?? '').slice(0, 10) === ctx.arrivalDate) : -1;
-    return i >= 0 ? i : 0;
-  })();
+  const arrivalIdx = arrivalIndexOf(days, ctx);
   const isExploration = (i: number) =>
     i > arrivalIdx && i < lastIdx && !/recupera|descanso|trânsito/i.test(days[i].title ?? '');
 
@@ -574,17 +599,9 @@ export function validatePlanRules(days: PlanDay[], ctx: PlanRulesContext): PlanR
   let worstDay: { over: number; label: string } | null = null;
   let measured = 0;
   days.forEach((d, i) => {
-    let window: number;
-    if (i < arrivalIdx) return; // em trânsito
-    if (i === lastIdx) window = lastDayWindowHours(ctx.returnDepartureTime, ctx.domestic);
-    else if (i === arrivalIdx) {
-      const arr = hhmm(ctx.arrivalTime);
-      window = arr < 0 ? 14 : Math.max(0, 22 - arr);
-    } else window = 14;
-    const items = d.activities.filter((a) => !isLogistic(a));
-    const hours = items.reduce((s, a) => s + itemHours(a, catalogItemOf(a, index)), 0);
-    const used = hours + HOP_HOURS * Math.max(0, items.length - 1);
-    if (items.length === 0) return;
+    const u = dayWindowUsage(days, ctx, i, [], index);
+    if (!u || u.items === 0) return;
+    const { used, window } = u;
     measured++;
     const over = used - window;
     if (!worstDay || over > worstDay.over) worstDay = { over, label: `dia ${d.day}: ${fmt(used)}/${fmt(window)} h` };

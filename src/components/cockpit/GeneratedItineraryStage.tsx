@@ -86,6 +86,8 @@ interface GeneratedItineraryStageProps {
   engineItemIds?: string[];
   /** "Regerar roteiro": recebe o número de trocas manuais na tela. */
   onRegenerate?: (manualEdits: number) => void;
+  /** Painel dentro do card do cockpit: sem voltar, sem Ativar (o do card é o único), sem Análise (vira linha no card). */
+  embedded?: boolean;
 }
 
 const activityIcons: Record<string, React.ReactNode> = {
@@ -156,6 +158,7 @@ export const GeneratedItineraryStage = ({
   financeBuckets,
   engineItemIds,
   onRegenerate,
+  embedded = false,
 }: GeneratedItineraryStageProps) => {
   // O rascunho É o roteiro: com dias salvos, a tela renderiza trip.days (cópia direta do
   // motor) e não gera nada na montagem. Voo/hotel planejados vêm de trip.finances.
@@ -356,14 +359,16 @@ export const GeneratedItineraryStage = ({
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className={embedded ? 'bg-background flex flex-col' : 'min-h-screen bg-background flex flex-col'}>
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
+      <header className={embedded ? 'border-b border-border px-1 py-3' : 'sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3'}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            {!embedded && (
             <button onClick={onBack} className="p-2 hover:bg-muted rounded-lg transition-colors">
               <ArrowLeft size={20} className="text-foreground" />
             </button>
+            )}
             <span className="text-2xl">{emoji}</span>
             <div>
               <h1 className="font-bold text-lg font-['Outfit'] text-foreground">{destination}</h1>
@@ -382,10 +387,12 @@ export const GeneratedItineraryStage = ({
               <Save size={16} className="mr-1" />
               Salvar
             </Button>
+            {!embedded && (
             <Button size="sm" onClick={handleActivateWithFinances}>
               <PlayCircle size={16} className="mr-1" />
               Ativar
             </Button>
+            )}
           </div>
         </div>
 
@@ -397,6 +404,7 @@ export const GeneratedItineraryStage = ({
       </header>
 
       {/* KINU Analysis Card */}
+      {!embedded && (
       <div className="px-4 pt-4">
         <KinuAnalysisCard
           destination={destination}
@@ -413,6 +421,7 @@ export const GeneratedItineraryStage = ({
           jetLagSeverity={jetLagSeverity}
         />
       </div>
+      )}
 
       {/* Info Strip: Weather + Exchange */}
       <div className="px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
@@ -559,7 +568,7 @@ export const GeneratedItineraryStage = ({
       </div>
 
       {/* Day Content */}
-      <main className="flex-1 px-4 py-6 pb-32 overflow-y-auto">
+      <main className={embedded ? 'px-1 py-4' : 'flex-1 px-4 py-6 pb-32 overflow-y-auto'}>
         <AnimatePresence mode="wait">
           <motion.div
             key={selectedDay}
@@ -733,6 +742,7 @@ export const GeneratedItineraryStage = ({
       </main>
 
       {/* Footer */}
+      {!embedded && (
       <footer className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border p-4">
         <Button
           className="w-full h-14"
@@ -746,6 +756,7 @@ export const GeneratedItineraryStage = ({
           Confirmar voos e iniciar gestão operacional
         </p>
       </footer>
+      )}
 
       {/* Add Activity Modal */}
       <Dialog open={addActivityModal} onOpenChange={setAddActivityModal}>
