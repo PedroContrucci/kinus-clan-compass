@@ -8,7 +8,10 @@ import { computeArrival, getTimezoneDiff, tripTimezone, formatTzDiff, formatTzIn
 import { CITY_TIMEZONES } from '@/data/generated/cityTimezones';
 import { getAllCities } from '@/data/destinationCatalog';
 import { buildDraftTrip, type DraftTripInput } from '@/lib/createTrip';
-import { plannedFlightToSelected } from '@/lib/flightModel';
+import { plannedFlightToSelected, offerToSelected, writeFlightsThrough, type ReferenceOffer } from '@/lib/flightModel';
+import { pickBest, explainPick, rankFlights } from '@/lib/flightRanking';
+import { planBreakdown } from '@/lib/planTotals';
+import { buildItineraryForTrip, tripDaysToItinerary } from '@/lib/draftItinerary';
 
 const TZ = {
   GRU: 'America/Sao_Paulo',
@@ -174,5 +177,56 @@ describe('buildDraftTrip — um voo, uma verdade', () => {
     const shown = (flightItem as unknown as { description?: string })?.description ?? '';
     expect(shown).toMatch(/chegada a confirmar/);
     expect(shown).toMatch(/duração a confirmar/);
+  });
+});
+
+// C.2.1 — janela de chegada filtra a sugestão; preço por pessoa e por perna.
+describe('C.2.1 — sugestão na janela, preço por pessoa/perna', () => {
+  // GRU→FOR 3h25 (mesmo fuso): 23:35 → 03:00 (+1); 17:40 → 21:05. FOR→GRU 12:00.
+  const leg = (id: string, from: string, to: string, at: string, price: number): ReferenceOffer => ({
+    id, airline: id.split('-')[0], route: `${from} → ${to}`, isDirect: true, duration: '3h 25m', durationMinutes: 205,
+    price, departureTime: '', arrivalTime: '', segments: [{ departure: { iataCode: from, at }, arrival: { iataCode: to, at } }],
+  });
+  const madrugada = offerToSelected(leg('Gol-0300', 'GRU', 'FOR', '2026-11-10T23:35', 631), { date: new Date(2026, 10, 10, 12) });
+  const noite = offerToSelected(leg('Azul-2105', 'GRU', 'FOR', '2026-11-10T17:40', 676), { date: new Date(2026, 10, 10, 12) });
+
+  it('631 às 03:00 (+1) doméstico fica fora; 676 às 21:05 é a sugestão; a lista mantém as duas', () => {
+    expect(madrugada.option.arrivalTime).toBe('03:00');
+    expect(noite.option.arrivalTime).toBe('21:05');
+    const best = pickBest([madrugada, noite])!;
+    expect(best.option.id).toBe('Azul-2105');
+    expect(rankFlights([madrugada, noite]).map(f => f.option.id)).toEqual(['Azul-2105', 'Gol-0300']);
+  });
+
+  it('só a das 03:00 → é ela, e o porquê termina em "nenhuma opção chega entre 06h e 22h"', () => {
+    const best = pickBest([madrugada])!;
+    expect(best.option.id).toBe('Gol-0300');
+    expect(explainPick(best)).toMatch(/ · nenhuma opção chega entre 06h e 22h$/);
+  });
+
+  it('explainPick: razão sem "média"; média só como ressalva acima de PRICE_TIE_PCT', () => {
+    const best = pickBest([madrugada, noite])!;
+    // 676 vs média 653,5 → 3,4%: dentro do empate, sem ressalva.
+    expect(explainPick(best)).toBe('direto · chega 21:05 · menor preço');
+    expect(explainPick(best)).not.toMatch(/média/);
+  });
+
+  it('2 pax, ida 636 + volta 897: Financeiro 3.066; item da ida 1.272 (636/pessoa), da volta 1.794', async () => {
+    const trip = await buildDraftTrip(draftInput({ destinationCity: 'Fortaleza', destinationAirportCode: 'FOR', adults: 2 }), noRoute);
+    const out = offerToSelected(leg('Azul-ida', 'GRU', 'FOR', '2026-11-10T07:47', 636), { date: new Date(2026, 10, 10, 12) });
+    const ret = offerToSelected(leg('Azul-volta', 'FOR', 'GRU', '2026-11-15T15:00', 897), { date: new Date(2026, 10, 15, 12) });
+    const next = writeFlightsThrough(trip as unknown as Record<string, unknown>, out, ret);
+    expect(planBreakdown(next as never).flights).toBe(3066);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const built = buildItineraryForTrip(next as any, { outbound: out, return: ret });
+    // Gravado: `cost` da perna × pax; a tela divide por travelers (tripDaysToItinerary) → /pessoa da perna.
+    const items = built.days.flatMap((d: { activities: Array<{ id: string; cost: number }> }) => d.activities);
+    const ida = items.find(a => a.id.endsWith('slot-flight-out'));
+    const volta = items.find(a => a.id.endsWith('slot-flight-back'));
+    expect(ida).toMatchObject({ cost: 1272 });
+    expect(volta).toMatchObject({ cost: 1794 });
+    const shown = tripDaysToItinerary(built.days, new Date(2026, 10, 10, 12), 2).flatMap(d => d.activities);
+    expect(shown.find(a => a.id.endsWith('slot-flight-out'))).toMatchObject({ estimatedCost: 1272, costPerPerson: 636 });
+    expect(shown.find(a => a.id.endsWith('slot-flight-back'))).toMatchObject({ estimatedCost: 1794, costPerPerson: 897 });
   });
 });

@@ -11,7 +11,7 @@ import { catalogIdOf } from '@/lib/localAchievements';
 import { planBreakdown, reserveFor, RESERVE_RATE } from '@/lib/planTotals';
 import type { DraftTripInput } from '@/lib/createTrip';
 import { interestLabel, splitInterests } from '@/lib/interestsFor';
-import { explainPick } from '@/lib/flightRanking';
+import { flightChoiceLine } from '@/lib/flightRanking';
 
 export const DEFAULT_ORIGIN = 'São Paulo';
 export type OriginSource = 'profile' | 'default';
@@ -111,8 +111,9 @@ export function kinuDidLines(trip: any): KinuDidLines {
   };
   const realFlight = Boolean(trip.outboundFlight && trip.outboundFlight.source !== 'estimate');
   const out = trip.outboundFlight;
-  const flight = out?.chosenBy === 'kinu' && out.kinuPick
-    ? `KINU escolheu: ${explainPick(out)} · trocar`
+  // Mesma linha para os dois sujeitos (KINU/Você); a ação "trocar ▸" é do card, não do texto.
+  const flight = out?.chosenBy === 'user' || (out?.chosenBy === 'kinu' && out.kinuPick)
+    ? flightChoiceLine(out)
     : realFlight
       ? `Voo escolhido · ida ${ddmm(trip.startDate)} · volta ${ddmm(trip.endDate)}`
       : `Voo estimado · ida ${ddmm(trip.startDate)} · volta ${ddmm(trip.endDate)} · ${flightPriceLabel(trip)}`;

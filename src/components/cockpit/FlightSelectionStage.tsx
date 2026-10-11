@@ -1,5 +1,6 @@
 // FlightSelectionStage — Stage 1: Select outbound and return flights
-// Lista: índice 0 = estimativa do KINU ("Sugerido pelo KINU · estimado"); abaixo, preços de
+// Lista: sem ofertas, índice 0 = estimativa do KINU ("Sugerido pelo KINU · estimado"); com
+// ofertas, a estimativa vira uma linha acima da lista (não selecionável). Preços de
 // referência (Travelpayouts, via function `amadeus-flights`) normalizados por offerToSelected
 // e ordenados pela regra escrita em src/lib/flightRanking.ts.
 
@@ -23,7 +24,7 @@ import {
 } from '@/hooks/useFlightSearch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { offerToSelected, flightDaysLater, formatDurationHM, durationTextToMinutes } from '@/lib/flightModel';
-import { rankFlights } from '@/lib/flightRanking';
+import { rankFlights, outsideWindowLabel } from '@/lib/flightRanking';
 
 // Types - Extended to support Amadeus data
 // Tipos do voo moram no motor de roteiro (puro); reexportados para os imports existentes.
@@ -50,6 +51,8 @@ interface FlightSelectionStageProps {
   offers?: { outbound: SelectedFlight[]; return: SelectedFlight[]; loading?: boolean };
   /** Painel dentro do card do cockpit: sem header, sem tela cheia, rodapé no fluxo (não fixo). */
   embedded?: boolean;
+  /** Toque numa opção grava na hora (cockpit: write-through, chosenBy 'user'). Ausente = só no rodapé. */
+  onPick?: (type: 'outbound' | 'return', flight: SelectedFlight) => void;
 }
 
 type ListItem = SelectedFlight & { isEstimate?: boolean };
@@ -149,9 +152,15 @@ export const FlightSelectionStage = ({
   current,
   offers,
   embedded = false,
+  onPick,
 }: FlightSelectionStageProps) => {
   const [selectedOutbound, setSelectedOutbound] = useState<SelectedFlight | null>(current?.outbound ?? estimate?.outbound ?? null);
   const [selectedReturn, setSelectedReturn] = useState<SelectedFlight | null>(current?.return ?? estimate?.return ?? null);
+  // A viagem mudou por fora (ex.: "Voltar à sugestão do KINU"): a seleção acompanha o gravado.
+  const curOutKey = `${current?.outbound?.option?.id ?? ''}|${current?.outbound?.chosenBy ?? ''}`;
+  const curRetKey = `${current?.return?.option?.id ?? ''}|${current?.return?.chosenBy ?? ''}`;
+  useEffect(() => { if (current?.outbound) setSelectedOutbound(current.outbound); }, [curOutKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (current?.return) setSelectedReturn(current.return); }, [curRetKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [flexibleDatesModal, setFlexibleDatesModal] = useState<{
     type: 'outbound' | 'return';
     basePrice: number;
@@ -220,7 +229,7 @@ export const FlightSelectionStage = ({
   const outboundLoadingAll = offers ? !!offers.loading : outboundLoading;
   const returnLoadingAll = offers ? !!offers.loading : returnLoading;
 
-  // Lista = estimativa (índice 0) + ofertas reais pelo ranking. Os mocks "Estimativa ·
+  // Lista = ofertas reais pelo ranking; sem elas, a estimativa (índice 0). Os mocks "Estimativa ·
   // companhia a definir" (preço inventado) só aparecem no legado, sem estimativa e sem oferta.
   const buildList = (real: SelectedFlight[], est: SelectedFlight | undefined, isReturn: boolean, date: Date): ListItem[] => {
     const base: ListItem[] = real.length
@@ -232,7 +241,7 @@ export const FlightSelectionStage = ({
     const fa = base.findIndex(o => o.option.durationMinutes === minDuration);
     // Cópia: as ofertas podem vir das props do cockpit (nunca mutar).
     const ranked = base.map((o, i) => ({ ...o, option: { ...o.option, isBestPrice: i === bp, isFastest: i === fa } }));
-    return est ? [{ ...est, isEstimate: true }, ...ranked] : ranked;
+    return est && !real.length ? [{ ...est, isEstimate: true }, ...ranked] : ranked;
   };
   const sortedOutboundOptions = useMemo(
     () => buildList(realOutbound, estimate?.outbound, false, departureDate),
@@ -263,6 +272,7 @@ export const FlightSelectionStage = ({
     // Escolha na lista é do usuário (chosenBy 'user'); a fonte segue a do item.
     const { isEstimate, kinuPick, ...rest } = item;
     const picked: SelectedFlight = { ...rest, date, chosenBy: 'user' };
+    onPick?.(type, picked);
     if (type === 'outbound') {
       setSelectedOutbound(picked);
       setExpandedSection('return');
@@ -300,6 +310,13 @@ export const FlightSelectionStage = ({
       onFlightsSelected(selectedOutbound, selectedReturn);
     }
   };
+
+  // Com ofertas reais, a estimativa não é opção: uma linha de referência acima da lista.
+  const renderEstimateLine = (est: SelectedFlight) => (
+    <p className="text-xs text-muted-foreground" data-testid="estimate-line">
+      {est.priceSource === 'route' ? 'estimativa por rota' : 'estimativa genérica'}: R$ {est.option.price.toLocaleString('pt-BR')}/pessoa · preços reais abaixo
+    </p>
+  );
 
   // Loading skeleton for flight options
   const renderLoadingSkeleton = () => (
@@ -349,6 +366,7 @@ export const FlightSelectionStage = ({
     const isKinuPick = !item.isEstimate && chosenByKinu?.chosenBy === 'kinu' && chosenByKinu.option.id === option.id;
 
     const dayOffset = flightDaysLater(item);
+    const outside = item.isEstimate ? null : outsideWindowLabel(item);
 
     return (
       <motion.div
@@ -390,6 +408,7 @@ export const FlightSelectionStage = ({
               <span>MAIS RÁPIDO</span>
             </div>
           )}
+          {outside && <span className="text-xs text-amber-500" data-testid="outside-window">{outside}</span>}
         </div>
         
         <div className="flex items-center justify-between">
@@ -419,7 +438,7 @@ export const FlightSelectionStage = ({
           
           <div className="text-right">
             <p className="font-bold text-lg text-foreground">
-              R$ {option.price.toLocaleString('pt-BR')}
+              R$ {option.price.toLocaleString('pt-BR')}<span className="text-xs font-normal text-muted-foreground">/pessoa</span>
             </p>
             {isSelected && (
               <div className="mt-1 flex items-center justify-end text-primary">
@@ -548,6 +567,7 @@ export const FlightSelectionStage = ({
                 
                 {/* Loading state */}
                 {hasReference && <p className="text-[11px] text-muted-foreground">preços de referência · Travelpayouts</p>}
+                {realOutbound.length > 0 && estimate?.outbound && renderEstimateLine(estimate?.outbound)}
                 {outboundLoadingAll && renderLoadingSkeleton()}
                 
                 {/* Error state — only when no offers loaded and not currently fetching */}
@@ -662,6 +682,7 @@ export const FlightSelectionStage = ({
                 
                 {/* Loading state */}
                 {hasReference && <p className="text-[11px] text-muted-foreground">preços de referência · Travelpayouts</p>}
+                {realReturn.length > 0 && estimate?.return && renderEstimateLine(estimate?.return)}
                 {returnLoadingAll && renderLoadingSkeleton()}
                 
                 {/* Error state — only when no offers loaded and not currently fetching */}
@@ -741,7 +762,7 @@ export const FlightSelectionStage = ({
         >
           <Sparkles size={20} className="mr-2" />
           <span className="font-['Outfit'] text-lg">
-            {bothSelected ? 'Gerar Roteiro Inteligente' : 'Selecione ida e volta'}
+            {bothSelected ? 'Usar estes voos' : 'Selecione ida e volta'}
           </span>
         </Button>
       </footer>

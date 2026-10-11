@@ -1,10 +1,13 @@
 // C.2 — cockpit = card + um só Ativar; sheet de confirmar voo; hotel sem reasons; SAO→FOR doméstico;
 // itens que não couberam; duração "3h25".
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+
+// Toda chamada do hook registra o `enabled` (5º arg): "nenhuma busca" = nenhum true.
+const searchEnabled = vi.hoisted(() => [] as unknown[]);
 
 vi.mock('@/integrations/kinu-beta/client', () => ({
   kinuBeta: {
@@ -13,7 +16,7 @@ vi.mock('@/integrations/kinu-beta/client', () => ({
   },
 }));
 vi.mock('@/hooks/useFlightSearch', () => ({
-  useFlightSearch: () => ({ isSuccess: false, isError: false, isLoading: false, data: [] }),
+  useFlightSearch: (...a: unknown[]) => { searchEnabled.push(a[4]); return { isSuccess: false, isError: false, isLoading: false, data: [] }; },
   useFlexibleFlightSearch: () => ({ isSuccess: false, isError: false, isLoading: false, data: [] }),
 }));
 // Casca do vaul por div (mesmo padrão do hotelSwapEvent.test): o Drawer não tem lógica.
@@ -31,7 +34,8 @@ import { addTrip, type StoredTrip } from '@/lib/tripStore';
 import { DraftCockpit } from '@/components/cockpit/DraftCockpit';
 import { TripPanel } from '@/components/cockpit/TripPanel';
 import { kinuDidLines } from '@/lib/onboardingFlow';
-import { offerToSelected, formatDurationHM, durationTextToMinutes } from '@/lib/flightModel';
+import { offerToSelected, formatDurationHM, durationTextToMinutes, writeFlightsThrough } from '@/lib/flightModel';
+import { pickBest, flightSearchKey } from '@/lib/flightRanking';
 import { buildItineraryForTrip } from '@/lib/draftItinerary';
 import { tryPlaceUnplaced } from '@/lib/cockpitLines';
 
@@ -142,5 +146,55 @@ describe('C.2 — hotel e voo', () => {
     expect(formatDurationHM(180)).toBe('3h');
     expect(formatDurationHM(durationTextToMinutes('3.42h'))).toBe('3h25');
     expect(durationTextToMinutes('3h 25m')).toBe(205);
+  });
+});
+
+describe('C.2.1 — escolha do usuário persiste', () => {
+  it('escolher ida → fechar pela linha → reabrir: mesma escolha, chosenBy user, nenhuma busca nova', async () => {
+    const base = await draft('Fortaleza', 'FOR', 'c21-persist');
+    const leg = (id: string, from: string, to: string, at: string, price: number, date: Date) => offerToSelected({
+      id, airline: id.split('-')[0], route: `${from} → ${to}`, isDirect: true, duration: '3h 25m', durationMinutes: 205,
+      price, departureTime: '', arrivalTime: '', segments: [{ departure: { iataCode: from, at }, arrival: { iataCode: to, at } }],
+    }, { date });
+    const d1 = new Date(2026, 10, 10, 12);
+    const outs = [leg('Gol-0300', 'GRU', 'FOR', '2026-11-10T23:35', 631, d1), leg('Azul-2105', 'GRU', 'FOR', '2026-11-10T17:40', 676, d1)];
+    const rets = [leg('Azul-volta', 'FOR', 'GRU', '2026-11-15T15:00', 897, new Date(2026, 10, 15, 12))];
+    const key = flightSearchKey('GRU', 'FOR', String(base.startDate), String(base.endDate));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const start: any = writeFlightsThrough({ ...base, kinuFlightSearch: { key, searchedAt: '', outbound: outs, return: rets } } as never, pickBest(outs)!, pickBest(rets)!);
+    expect(start.outboundFlight.option.id).toBe('Azul-2105');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const latest: { trip: any } = { trip: start };
+    const Host = () => {
+      const [t, setT] = useState(start);
+      latest.trip = t;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return <DraftCockpit trip={t} onSave={(n) => setT(n)} onActivate={() => {}} onClose={() => {}} onUpdateTrip={(u) => setT((p: any) => u(p))} />;
+    };
+    searchEnabled.length = 0;
+    wrap(<Host />);
+    const row = () => screen.getByRole('button', { name: 'trocar ✈️' });
+    const card = (id: string) => Array.from(document.querySelectorAll('div.cursor-pointer')).find(c => c.textContent?.includes(id)) as HTMLElement;
+
+    fireEvent.click(row());
+    expect(within(card('Gol')).getByTestId('outside-window').textContent).toBe('fora da janela · chega 03:00 (+1)');
+    fireEvent.click(card('Gol'));
+    // Gravou na hora, antes de fechar.
+    expect(latest.trip.outboundFlight).toMatchObject({ chosenBy: 'user', option: { id: 'Gol-0300' } });
+    expect(latest.trip.returnFlight).toMatchObject({ chosenBy: 'kinu', option: { id: 'Azul-volta' } });
+
+    fireEvent.click(row()); // fecha pela linha → replaneja
+    expect(document.querySelector('[data-panel="flight"]')).toBeNull();
+    expect(screen.getByText('Você escolheu: Gol · direto · chega 03:00 (+1) · R$ 631/pessoa')).toBeTruthy();
+
+    fireEvent.click(row()); // reabre
+    expect(latest.trip.outboundFlight).toMatchObject({ chosenBy: 'user', option: { id: 'Gol-0300', price: 631 } });
+    expect(within(card('Gol')).getByText('Selecionado')).toBeTruthy();
+    expect(screen.getByText('Voltar à sugestão do KINU')).toBeTruthy();
+    expect(searchEnabled.length).toBeGreaterThan(0);
+    expect(searchEnabled.some(Boolean)).toBe(false);
+
+    fireEvent.click(screen.getByText('Voltar à sugestão do KINU'));
+    expect(latest.trip.outboundFlight).toMatchObject({ chosenBy: 'kinu', option: { id: 'Azul-2105' } });
   });
 });

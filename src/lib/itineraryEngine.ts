@@ -79,6 +79,7 @@ export interface FlightOption {
   connectionCity?: string;
   duration: string;
   durationMinutes: number;
+  /** Preço por pessoa, por trecho (Travelpayouts devolve 1 adulto; a estimativa idem). Total = × travelers. */
   price: number;
   departureTime: string;
   arrivalTime: string;
@@ -345,10 +346,9 @@ export function generateItinerary(
   const returnLegPrice = Number(returnFlight?.option?.price) || 0;
 
   // Planned flight total (round-trip, per person) = the same source the flight
-  // hero card uses. Outbound and return line items each carry exactly half.
+  // hero card uses. Outbound and return line items each carry their own leg × travelers.
   const plannedFlightTotalPerPerson = outboundLegPrice + returnLegPrice;
   const flightsCost = plannedFlightTotalPerPerson * travelers;
-  const flightPerPerson = plannedFlightTotalPerPerson / 2;
   
   // Hotel is SHARED (not multiplied by travelers)
   const hotelPerNight = getActivityPrice('hotel_night', destination, priceLevel);
@@ -614,14 +614,15 @@ export function generateItinerary(
     if (i === 0) {
       label = 'Partida';
       theme = '✈️ Dia de Viagem';
-      const outboundCost = flightsCost / 2; // Half of round trip
+      // Cada perna carrega o próprio preço × pax (nunca metade de ida+volta).
+      const outboundCost = outboundLegPrice * travelers;
       activities.push({
         id: `day-${i}-slot-flight-out`,
         name: outboundFlight.source === 'estimate' ? 'Voo de Ida (estimado)' : 'Voo de Ida',
         type: 'flight',
         timeSlot: 'flight',
         estimatedCost: outboundCost,
-        costPerPerson: flightPerPerson,
+        costPerPerson: outboundLegPrice,
         time: outboundFlight.option.departureTime,
         duration: outboundFlight.option.duration,
         location: outboundFlight.option.route + (travelers > 1 ? ` (${travelers} pax)` : ''),
@@ -900,14 +901,14 @@ export function generateItinerary(
 
       
       // Return flight
-      const returnCost = flightsCost / 2;
+      const returnCost = returnLegPrice * travelers;
       activities.push({
         id: `day-${i}-slot-flight-back`,
         name: returnFlight.source === 'estimate' ? 'Voo de Volta (estimado)' : 'Voo de Volta',
         type: 'flight',
         timeSlot: 'flight',
         estimatedCost: returnCost,
-        costPerPerson: flightPerPerson,
+        costPerPerson: returnLegPrice,
         time: returnFlight.option.departureTime,
         duration: returnFlight.option.duration,
         location: returnFlight.option.route + (travelers > 1 ? ` (${travelers} pax)` : ''),

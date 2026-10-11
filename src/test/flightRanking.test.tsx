@@ -99,8 +99,8 @@ describe('rankFlights — regra escrita, determinística', () => {
     const best = pickBest(OUT)!;
     expect(best.option.id).toBe('A-direta-cara');
     expect(best).toMatchObject({ chosenBy: 'kinu', kinuPick: { averagePrice: 4430, offers: 5, mode: 'kinu' } });
-    // Honesto: a direta é a mais cara — o texto diz "acima da média".
-    expect(explainPick(best)).toBe('direto, R$ 1.570 acima da média, chega 12:00 (+1)');
+    // Honesto: a direta é a mais cara — a razão diz "entre os diretos" e a média vira ressalva no fim (C.2.1).
+    expect(explainPick(best)).toBe('direto · chega 12:00 (+1) · menor preço entre os diretos · R$ 1.570 acima da média');
   });
 });
 
@@ -132,10 +132,10 @@ describe('writeFlightsThrough — um objeto de voo para todo mundo (R-V12)', () 
     expect((trip as unknown as { flights: { outbound: { price: number } } }).flights.outbound.price).not.toBe(6000);
   });
 
-  it('card e chip 06 dizem "KINU escolheu: … · trocar"', async () => {
+  it('card e chip 06 dizem "KINU escolheu: …" (mesma linha, sem "· trocar" no texto)', async () => {
     const trip = await buildDraftTrip(draftInput(), { routeLookup: async () => null });
     const next = writeFlightsThrough(trip as unknown as Record<string, unknown>, pickBest(OUT)!, pickBest(OUT)!);
-    const line = 'KINU escolheu: direto, R$ 1.570 acima da média, chega 12:00 (+1) · trocar';
+    const line = 'KINU escolheu: Cia · direto · chega 12:00 (+1) · R$ 6.000/pessoa · menor preço entre os diretos · R$ 1.570 acima da média';
     expect(kinuDidLines(next).flight).toBe(line);
     expect(flightPillSubtitle(next as never)).toBe(line);
   });
@@ -154,8 +154,8 @@ describe('busca ao abrir o rascunho (D2)', () => {
   });
 });
 
-describe('FlightSelectionStage — estimativa sempre no índice 0', () => {
-  it('1º cartão = "Sugerido pelo KINU · estimado", pré-selecionado; ofertas reais abaixo, sem mocks', async () => {
+describe('FlightSelectionStage — estimativa fora da lista com ofertas (C.2.1)', () => {
+  it('com ofertas: estimativa vira linha acima, 1º cartão = oferta ranqueada, sem mocks', async () => {
     const trip = await buildDraftTrip(draftInput(), { routeLookup: async () => null });
     const est = estimateOf(trip);
     const { container } = render(
@@ -167,10 +167,10 @@ describe('FlightSelectionStage — estimativa sempre no índice 0', () => {
       />,
     );
     const cards = Array.from(container.querySelectorAll('div.cursor-pointer'));
-    expect(cards.length).toBe(6);
-    expect(cards[0].textContent).toMatch(/Sugerido pelo KINU · estimado/);
-    expect(cards[0].textContent).toMatch(/Selecionado/);
-    expect(cards[1].textContent).toMatch(/R\$ 6\.000/);
+    expect(cards.length).toBe(5);
+    expect(screen.queryByText(/Sugerido pelo KINU · estimado/)).toBeNull();
+    expect(screen.getByTestId('estimate-line').textContent).toMatch(/^estimativa genérica: R\$ [\d.]+\/pessoa · preços reais abaixo$/);
+    expect(cards[0].textContent).toMatch(/R\$ 6\.000\/pessoa/);
     expect(screen.queryByText(/companhia a definir/)).toBeNull();
     expect(screen.getAllByText('preços de referência · Travelpayouts').length).toBeGreaterThan(0);
   });

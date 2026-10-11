@@ -702,7 +702,7 @@ export const GeneratedItineraryStage = ({
                             </span>
                             {activity.costPerPerson && activity.costPerPerson !== activity.estimatedCost && (
                               <span className="text-xs text-muted-foreground">
-                                (R$ {activity.costPerPerson.toLocaleString('pt-BR')}/pessoa)
+                                {activity.type === 'flight' && travelers > 1 ? `· ${travelers} pax ` : ''}(R$ {activity.costPerPerson.toLocaleString('pt-BR')}/pessoa)
                               </span>
                             )}
                           </div>

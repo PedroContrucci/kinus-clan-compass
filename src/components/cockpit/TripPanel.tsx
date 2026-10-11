@@ -418,6 +418,10 @@ const DEST_CURRENCY_MAP: Record<string, string> = {
   'toronto': 'CAD', 'sydney': 'AUD', 'dubai': 'AED', 'seul': 'KRW',
 };
 
+/** iOS Safari: o vaul não reposiciona (repositionInputs={false}); o input focado vai pro centro do sheet. */
+const centerOnFocus = (e: React.FocusEvent<HTMLInputElement>) =>
+  e.currentTarget.scrollIntoView({ block: 'center', behavior: 'smooth' });
+
 function getTripCurrency(dest: string): string {
   const n = dest.toLowerCase().trim();
   return DEST_CURRENCY_MAP[n] || 'USD';
@@ -1386,6 +1390,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       <Drawer
         open={!!confirmReservation}
         onOpenChange={(open) => { if (!open) setConfirmReservation(null); }}
+        repositionInputs={false}
       >
         <DrawerContent className="z-[70] max-h-[85dvh] bg-[#1e293b] border-border" data-testid="confirm-sheet">
           <DrawerHeader className="text-left pb-2">
@@ -1401,6 +1406,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                 inputMode="decimal"
                 value={confirmReservation?.amount ?? ''}
                 onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, amount: e.target.value } : prev)}
+                onFocus={centerOnFocus}
                 placeholder="0"
                 className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
               />
@@ -1415,6 +1421,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                       inputMode="numeric"
                       value={confirmReservation?.outboundTime ?? ''}
                       onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, outboundTime: e.target.value } : prev)}
+                onFocus={centerOnFocus}
                       placeholder="14:00"
                       className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                     />
@@ -1426,6 +1433,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                       inputMode="numeric"
                       value={confirmReservation?.returnTime ?? ''}
                       onChange={(e) => setConfirmReservation((prev) => prev ? { ...prev, returnTime: e.target.value } : prev)}
+                onFocus={centerOnFocus}
                       placeholder="16:00"
                       className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                     />

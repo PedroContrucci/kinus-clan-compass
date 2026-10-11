@@ -15,7 +15,7 @@ import type { StoredTrip } from '@/lib/tripStore';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
 import { isKinuBuilt } from '@/lib/kinuBuilt';
 import { plannedFlightToSelected, offerToSelected, writeFlightsThrough, estimateOf } from '@/lib/flightModel';
-import { pickBest, explainPick, flightSearchKey, shouldAutoSearch, type KinuFlightSearch } from '@/lib/flightRanking';
+import { pickBest, explainPick, flightChoiceLine, flightSearchKey, shouldAutoSearch, type KinuFlightSearch } from '@/lib/flightRanking';
 import { useFlightSearch } from '@/hooks/useFlightSearch';
 import { buildItineraryForTrip, countManualEdits, itemIdsOf } from '@/lib/draftItinerary';
 import { replanTrip, unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
@@ -190,8 +190,7 @@ function getDestinationEmoji(destination: string): string {
 export function flightPillSubtitle(trip: { outboundFlight?: SelectedFlight; kinuFlightSearch?: KinuFlightSearch }): string {
   const out = trip.outboundFlight;
   if (out?.source === 'confirmed') return 'Voo confirmado';
-  if (out?.chosenBy === 'kinu' && out.kinuPick) return `KINU escolheu: ${explainPick(out)} · trocar`;
-  if (out?.chosenBy === 'user') return 'Voo escolhido por você · trocar';
+  if ((out?.chosenBy === 'kinu' && out.kinuPick) || out?.chosenBy === 'user') return flightChoiceLine(out);
   if (trip.kinuFlightSearch?.pending) {
     const best = pickBest(trip.kinuFlightSearch.outbound);
     if (best) return `KINU encontrou: ${explainPick(best)} · aplicar`;
@@ -335,8 +334,9 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
       onSave({ ...trip, kinuFlightSearch: { ...record, pending: true } } as DraftTrip);
       return;
     }
-    const out = (pickOut ?? curOut) as SelectedFlight;
-    const ret = (pickRet ?? curRet) as SelectedFlight;
+    // Perna escolhida pelo usuário nunca é trocada pelo ranking.
+    const out = (curOut?.chosenBy === 'user' ? curOut : pickOut ?? curOut) as SelectedFlight;
+    const ret = (curRet?.chosenBy === 'user' ? curRet : pickRet ?? curRet) as SelectedFlight;
     setSelectedOutbound(out);
     setSelectedReturn(ret);
     regenerateWith(out, ret, { kinuFlightSearch: record });
@@ -346,8 +346,10 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   const applyPendingPick = useCallback(() => {
     const rec = trip.kinuFlightSearch;
     if (!rec) return;
-    const out = pickBest(rec.outbound) ?? trip.outboundFlight;
-    const ret = pickBest(rec.return) ?? trip.returnFlight;
+    const keep = (cur: SelectedFlight | undefined, list: SelectedFlight[]) =>
+      cur?.chosenBy === 'user' ? cur : pickBest(list) ?? cur;
+    const out = keep(trip.outboundFlight, rec.outbound);
+    const ret = keep(trip.returnFlight, rec.return);
     if (!out || !ret) return;
     setSelectedOutbound(out);
     setSelectedReturn(ret);
@@ -365,19 +367,60 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   const stageCurrent = { outbound: trip.outboundFlight, return: trip.returnFlight };
   const pendingPick = trip.kinuFlightSearch?.pending ? pickBest(trip.kinuFlightSearch.outbound) : null;
 
-  const handleFlightsSelected = useCallback((pickedOut: SelectedFlight, pickedRet: SelectedFlight) => {
-    // A fonte é a do item escolhido: 'reference' (Travelpayouts) ou 'estimate' (estimativa
-    // do KINU / exemplo do legado). Nunca 'amadeus': o nome da fonte é o nome da fonte.
-    const outbound: SelectedFlight = { ...pickedOut, source: pickedOut.source ?? 'estimate', chosenBy: 'user' };
-    const returnFlight: SelectedFlight = { ...pickedRet, source: pickedRet.source ?? 'estimate', chosenBy: 'user' };
-    // Trocar perna replaneja sem apagar (R-V11): sem "desfaz N trocas" aqui.
-    setSelectedOutbound(outbound);
-    setSelectedReturn(returnFlight);
-    const unplaced = regenerateWith(outbound, returnFlight, { flightsSelected: true }, { preserveEdits: true });
-    // Volta pro card com a linha do voo atualizada — nunca pra lista de Viagens.
+  // Toque numa opção grava NA HORA (write-through, chosenBy 'user'), ida e volta independentes.
+  // O roteiro é replanejado quando o painel fecha (botão ou linha): nunca fica com voo velho.
+  const flightDirty = useRef(false);
+  const handlePick = useCallback((type: 'outbound' | 'return', picked: SelectedFlight) => {
+    const leg: SelectedFlight = { ...picked, source: picked.source ?? 'estimate', chosenBy: 'user' };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const apply = (t: any) => {
+      const out = type === 'outbound' ? leg : t.outboundFlight;
+      const ret = type === 'return' ? leg : t.returnFlight;
+      return out && ret ? writeFlightsThrough({ ...t, flightsSelected: true }, out, ret) : t;
+    };
+    flightDirty.current = true;
+    if (type === 'outbound') setSelectedOutbound(leg); else setSelectedReturn(leg);
+    if (onUpdateTrip) onUpdateTrip(apply as (t: StoredTrip) => StoredTrip);
+    else onSave(apply(trip) as DraftTrip);
+  }, [trip, onSave, onUpdateTrip]);
+
+  // "Usar estes voos": as escolhas já estão gravadas; só fecha o painel (e o fechamento replaneja).
+  const handleFlightsSelected = useCallback(() => {
+    flightDirty.current = true;
     setOpenRow(null);
+  }, []);
+
+  const prevRow = useRef<KinuDidRow | null>(openRow);
+  useEffect(() => {
+    const was = prevRow.current;
+    prevRow.current = openRow;
+    if (was !== 'flight' || openRow === 'flight' || !flightDirty.current) return;
+    flightDirty.current = false;
+    const out = trip.outboundFlight;
+    const ret = trip.returnFlight;
+    if (!out || !ret) return;
+    setSelectedOutbound(out);
+    setSelectedReturn(ret);
+    // Trocar perna replaneja sem apagar (R-V11): sem "desfaz N trocas" aqui.
+    const unplaced = regenerateWith(out, ret, { flightsSelected: true }, { preserveEdits: true });
     toastReplanned(unplaced, 'Voos selecionados! ✈️');
-  }, [regenerateWith, toastReplanned]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openRow]);
+
+  // "Voltar à sugestão do KINU": a escolha do ranking (busca gravada) ou a estimativa; chosenBy 'kinu'.
+  const revertToKinu = useCallback(() => {
+    const rec = trip.kinuFlightSearch?.key === searchKey ? trip.kinuFlightSearch : undefined;
+    const est = estimateOf(trip);
+    const out = (rec && pickBest(rec.outbound)) || (est.outbound && { ...est.outbound, chosenBy: 'kinu' as const });
+    const ret = (rec && pickBest(rec.return)) || (est.return && { ...est.return, chosenBy: 'kinu' as const });
+    if (!out || !ret) return;
+    flightDirty.current = false;
+    setSelectedOutbound(out);
+    setSelectedReturn(ret);
+    const unplaced = regenerateWith(out, ret, {}, { preserveEdits: true });
+    toastReplanned(unplaced, 'Voltou à sugestão do KINU ✈️');
+  }, [trip, searchKey, regenerateWith, toastReplanned]);
+  const userChoseFlight = trip.outboundFlight?.chosenBy === 'user' || trip.returnFlight?.chosenBy === 'user';
 
   const handleRegenerate = useCallback((edits: number) => {
     const out = selectedOutbound;
@@ -464,9 +507,14 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   );
 
   const flightPanel = (
+    <>
+    {userChoseFlight && (
+      <button type="button" onClick={revertToKinu} className="text-primary text-xs font-medium hover:underline px-1">
+        Voltar à sugestão do KINU
+      </button>
+    )}
     <FlightSelectionStage
       embedded
-      key={`${trip.outboundFlight?.option?.id ?? 'none'}|${trip.returnFlight?.option?.id ?? 'none'}`}
       destination={trip.destination}
       origin={trip.origin || 'São Paulo'}
       originCode={originCode}
@@ -476,12 +524,14 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
       budget={trip.budget}
       emoji={emoji}
       onFlightsSelected={handleFlightsSelected}
+      onPick={handlePick}
       onSave={handleSave}
       onBack={() => setOpenRow(null)}
       estimate={stageEstimate}
       current={stageCurrent}
       offers={stageOffers}
     />
+    </>
   );
 
   const itineraryPanel = selectedOutbound && selectedReturn ? (
