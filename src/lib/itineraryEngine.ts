@@ -26,10 +26,12 @@ import {
 import { getTopMichelinForCity } from '@/lib/michelinData';
 import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '@/lib/placeIdentity';
 import { getHotelRecommendation } from '@/lib/hotelZones';
-import { interestsFor } from '@/lib/interestsFor';
+import { interestsFor, catalogFor, splitInterests, interestLabel } from '@/lib/interestsFor';
 import { matchesPriority } from '@/lib/claChips';
 import { curatedCoordOf, resolveHotelCoord } from '@/lib/routeCoords';
-import { maxHopKmFor, haversineKm, HOP_HOURS, lastDayWindowHours } from '@/lib/itineraryValidator';
+import { maxHopKmFor, haversineKm, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
+import { catalogIdOf } from '@/lib/localAchievements';
+import { rulesContextOf } from '@/lib/cockpitLines';
 import { findCityInfo } from '@/data/destinationCatalog';
 
 type Coord = { lat: number; lng: number };
@@ -294,6 +296,132 @@ export function engineHotelCoord(destination: string, hotelName: string | undefi
   if (cs.length === 0) return null;
   const med = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
   return { lat: med(cs.map((c) => c.lat)), lng: med(cs.map((c) => c.lng)) };
+}
+
+// ── C.3a: trocar atividade, logística e check-in pós-meia-noite (puros; a tela deriva, nada é gravado) ──
+
+/** "HH:MM", ou "HH:MM (+1)" quando a soma cruza a meia-noite. */
+export function nextDayClock(mins: number): string {
+  const m = Math.max(0, Math.round(mins));
+  const c = m % (24 * 60);
+  const s = `${String(Math.floor(c / 60)).padStart(2, '0')}:${String(c % 60).padStart(2, '0')}`;
+  return m >= 24 * 60 ? `${s} (+1)` : s;
+}
+
+/** Minutos de "HH:MM" (com "(+1)" = dia seguinte), −1 sem hora. */
+function clockMinutes(t?: string): number {
+  const m = String(t ?? '').match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return -1;
+  return Number(m[1]) * 60 + Number(m[2]) + (/\(\+1\)/.test(String(t)) ? 24 * 60 : 0);
+}
+
+const roundTo5 = (n: number) => Math.max(5, Math.round(n / 5) * 5);
+
+/** "~N min a pé" (≤ 1,2 km, 5 km/h) ou "~N min de táxi" (20 km/h + 5 min). Sem coords numa ponta → nada. */
+export function logisticsLine(prev: Coord | null | undefined, curr: Coord | null | undefined): string | undefined {
+  if (!prev || !curr) return undefined;
+  const km = haversineKm(prev, curr);
+  return km <= 1.2 ? `~${roundTo5((km / 5) * 60)} min a pé` : `~${roundTo5((km / 20) * 60 + 5)} min de táxi`;
+}
+
+/** Coordenada real de um item do roteiro: catálogo pelo id; hotel só por casamento real (nunca a mediana). */
+export function itemCoord(item: { id?: string; name?: string; type?: string; timeSlot?: string; location?: string } | undefined, destination: string): Coord | null {
+  if (!item) return null;
+  const isHotel = item.type === 'checkin' || item.type === 'checkout' || /check-?(in|out)/i.test(item.name ?? '');
+  if (isHotel) return resolveHotelCoord(undefined, item.location, destination);
+  if (item.timeSlot === 'flight' || item.type === 'flight' || /transfer|aeroporto/i.test(item.name ?? '')) return null;
+  return curatedCoordOf(item.id);
+}
+
+export interface SwapCandidate {
+  activity: SuggestedActivity;
+  hours: number;
+  /** "interesse: gastronomia · cabe" ou "mesmo horário · cabe · perto de X". */
+  why: string;
+}
+
+/**
+ * Alternativas do catálogo para o ↻ de um item: mesma cidade, mesma categoria, fora do que a viagem já
+ * usa, com a duração PRÓPRIA. Só entra o que cabe: (a) R16 do dia com a troca feita — ou a troca não
+ * piora (candidata ≤ item atual); (b) o vão do slot até o próximo item com hora (e, no último dia, até
+ * a partida − 2 h/3 h); no dia da chegada, o slot não começa antes do pouso. Máx. 6.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function swapCandidates(trip: any, dayIndex: number, itemId: string): SwapCandidate[] {
+  const days: PlanDay[] = Array.isArray(trip?.days) ? trip.days : [];
+  const day = days[dayIndex];
+  const item = day?.activities?.find((a) => a.id === itemId);
+  const slot = item?.timeSlot;
+  if (!day || !item || !slot || slot === 'flight' || slot === 'hotel') return [];
+  const ctx = rulesContextOf(trip);
+  const pool = catalogFor(ctx.destination);
+  const index = new Map(pool.map((a) => [a.id, a]));
+
+  const usedIds = new Set<string>();
+  const usedNames = new Set<string>();
+  days.forEach((d) => (d.activities ?? []).forEach((a) => {
+    usedIds.add(catalogIdOf(a.id));
+    usedNames.add(normalizePlaceName(a.name));
+  }));
+
+  // Horas do item atual como o R16 conta; manual sem duração = 1h30.
+  const cur = catalogItemOf(item, index);
+  const curParsed = String(item.duration ?? '').match(/(\d+(?:[.,]\d+)?)\s*h/);
+  const curHours = cur ? cur.durationHours || 0 : curParsed ? parseFloat(curParsed[1].replace(',', '.')) : 1.5;
+
+  // Vão do slot.
+  const start = clockMinutes(item.time);
+  const pos = day.activities.findIndex((a) => a.id === item.id);
+  let limit = Infinity;
+  if (start >= 0) {
+    day.activities.forEach((a, k) => {
+      const t = clockMinutes(a.time);
+      if (k !== pos && (t > start || (t === start && k > pos))) limit = Math.min(limit, t);
+    });
+    if (dayIndex === days.length - 1) {
+      const dep = clockMinutes(ctx.returnDepartureTime);
+      if (dep >= 0) limit = Math.min(limit, dep - (ctx.domestic ? 2 : 3) * 60);
+    }
+    const arrivalIdx = ctx.arrivalDate ? days.findIndex((d) => String(d.date ?? '').slice(0, 10) === ctx.arrivalDate) : -1;
+    const arr = clockMinutes(ctx.arrivalTime);
+    if (dayIndex === (arrivalIdx >= 0 ? arrivalIdx : 0) && arr >= 0 && start < arr) return [];
+  }
+
+  const neighbors = [day.activities[pos - 1], day.activities[pos + 1]]
+    .map((a) => ({ a, c: itemCoord(a, ctx.destination) }))
+    .filter((n): n is { a: PlanDayItem; c: Coord } => !!n.c);
+
+  const { used } = splitInterests(ctx.destination, trip?.travelInterests ?? trip?.interests);
+  const top2 = used.slice(0, 2);
+
+  const fits = (a: SuggestedActivity): boolean => {
+    const h = a.durationHours || 0;
+    if (start >= 0 && start + h * 60 > limit) return false;
+    if (h <= curHours) return true;
+    const swapped = { id: `day-${dayIndex}-${a.id}`, name: a.name, time: item.time, timeSlot: slot, type: item.type, duration: `${h}h` };
+    const next = days.map((d, i) => (i !== dayIndex ? d : { ...d, activities: d.activities.map((x) => (x.id === item.id ? swapped : x)) }));
+    const u = dayWindowUsage(next, ctx, dayIndex, [], index);
+    return !u || u.used <= u.window;
+  };
+
+  return pool
+    .filter((a) => a.category === slot && !usedIds.has(a.id) && !usedNames.has(normalizePlaceName(a.name)) && fits(a))
+    .map((a) => {
+      const interest = top2.find((p) => matchesPriority({ category: a.category, styleTags: a.styleTags ?? [] }, p));
+      const c = curatedCoordOf(a.id);
+      let km = Infinity;
+      let near: string | undefined;
+      for (const n of neighbors) {
+        const d = c ? haversineKm(c, n.c) : Infinity;
+        if (d < km) { km = d; near = n.a.name; }
+      }
+      const why = [interest ? `interesse: ${interestLabel(interest).toLowerCase()}` : 'mesmo horário', 'cabe',
+        km <= 1.2 && near ? `perto de ${near}` : null].filter(Boolean).join(' · ');
+      return { activity: a, hours: a.durationHours || 0, why, rank: interest ? 0 : 1, km };
+    })
+    .sort((x, y) => x.rank - y.rank || x.km - y.km || x.activity.estimatedCostBRL - y.activity.estimatedCostBRL)
+    .slice(0, 6)
+    .map(({ activity, hours, why }) => ({ activity, hours, why }));
 }
 
 // Generate complete itinerary with multiple activities per day
@@ -590,9 +718,9 @@ export function generateItinerary(
   const arrivalBand = arrivalBandFor(arrivalHour);
   const hm = (mins: number) => `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
   const arrivalMinutes = Math.round(arrivalHour * 60);
-  // Check-in: hora de sempre na tarde leve; depois, 1 h após pousar (teto 23:59).
+  // Check-in: hora de sempre na tarde leve; depois, 1 h após pousar ("00:35 (+1)" se cruza a meia-noite).
   const arrivalCheckinTime = (base: string) =>
-    arrivalBand === 'afternoon' ? base : hm(Math.min(23 * 60 + 59, arrivalMinutes + 60));
+    arrivalBand === 'afternoon' ? base : nextDayClock(arrivalMinutes + 60);
   // Jantar nunca antes de 1h30 após pousar.
   const arrivalDinnerTime = arrivalBand === 'dinner' ? hm(Math.max(19 * 60 + 30, arrivalMinutes + 90)) : '19:30';
   const NIGHT_ARRIVAL_TIP = 'Chegada noturna: descanse — o roteiro começa amanhã';

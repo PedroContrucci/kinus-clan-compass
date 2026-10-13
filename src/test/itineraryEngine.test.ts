@@ -10,6 +10,9 @@ import {
   engineHotelCoord,
   EXPLORATION_WINDOW_HOURS,
   DAYTRIP_DINNER_KM,
+  swapCandidates,
+  logisticsLine,
+  nextDayClock,
   type JetLagSeverity,
   type SelectedFlight,
 } from '@/lib/itineraryEngine';
@@ -174,5 +177,104 @@ describe('itineraryEngine — B.3 interesse, tempo e dia', () => {
     const r = run('Lisboa', ['gastronomy', 'culture']);
     expect(r.meta.michelinCount).toBe(1);
     expect(r.days.flatMap((d) => d.activities).some((a) => /^day-\d+-michelin-/.test(a.id))).toBe(true);
+  });
+});
+
+describe('C.3a — trocar com duração do catálogo, logística real, check-in pós-meia-noite', () => {
+  // Fortaleza, doméstico, volta 18:00 → último dia até 16:00. Manhã às 10:00, check-out na hora dada.
+  const fortaleza = (checkout: string, morningId = 'for-parque-coco') => ({
+    destination: 'Fortaleza',
+    travelInterests: ['gastronomy', 'culture'],
+    outboundFlight: { option: { arrivalTime: '12:00' } },
+    returnFlight: { international: false, option: { departureTime: '18:00' } },
+    days: [
+      { day: 1, date: '2026-11-10', activities: [{ id: 'day-0-for-dragao-do-mar', name: 'Centro Dragão do Mar', time: '15:00', timeSlot: 'afternoon', duration: '3h' }] },
+      { day: 2, date: '2026-11-11', activities: [
+        { id: 'day-1-slot-breakfast', name: 'Café da manhã no hotel', time: '08:00', timeSlot: 'breakfast', type: 'breakfast', duration: '1h' },
+        { id: `day-1-${morningId}`, name: 'Parque do Cocó', time: '10:00', timeSlot: 'morning', type: 'experience', duration: '2h' },
+        { id: 'day-1-slot-checkout', name: 'Check-out do hotel', time: checkout, timeSlot: 'hotel', type: 'transport' },
+        { id: 'day-1-slot-transfer', name: 'Transfer para o aeroporto', time: '15:00', timeSlot: 'hotel', type: 'transport' },
+      ] },
+    ],
+  });
+
+  it('último dia, manhã 10:00 com check-out 11:00: Atlantiz (5h) fora; nada de 2h+ cabe em 1h', () => {
+    const c = swapCandidates(fortaleza('11:00'), 1, 'day-1-for-parque-coco');
+    expect(c.map((x) => x.activity.id)).not.toContain('for-barraca-atlantiz');
+    // O catálogo de Fortaleza não tem manhã ≤ 1h: o vão de 1h deixa a lista vazia (sem sorteio).
+    expect(c).toEqual([]);
+  });
+
+  it('check-out 12:00: só cabem as de ≤ 2h, cada uma com a PRÓPRIA duração; Atlantiz segue fora', () => {
+    const c = swapCandidates(fortaleza('12:00'), 1, 'day-1-for-parque-coco');
+    expect(c.length).toBeGreaterThan(0);
+    expect(c.length).toBeLessThanOrEqual(6);
+    expect(c.map((x) => x.activity.id)).not.toContain('for-barraca-atlantiz');
+    for (const x of c) {
+      expect(x.hours).toBe(x.activity.durationHours);
+      expect(x.hours).toBeLessThanOrEqual(2);
+      expect(x.why).toMatch(/cabe/);
+    }
+  });
+
+  it('candidatas: mesma categoria, nunca o que a viagem já usa (id nem nome)', () => {
+    const trip = fortaleza('16:00');
+    const c = swapCandidates(trip, 1, 'day-1-for-parque-coco');
+    expect(c.length).toBeGreaterThan(0);
+    for (const x of c) expect(x.activity.category).toBe('morning');
+    const ids = c.map((x) => x.activity.id);
+    expect(ids).not.toContain('for-parque-coco');
+    expect(ids).not.toContain('for-dragao-do-mar');
+    // Interesse top-2 primeiro (gastronomia/cultura batem por tag).
+    expect(c[0].why).toMatch(/^interesse: /);
+  });
+
+  it('nada cabe → lista vazia; logística e voo nunca têm alternativa', () => {
+    const trip = fortaleza('10:00');
+    expect(swapCandidates(trip, 1, 'day-1-for-parque-coco')).toEqual([]);
+    expect(swapCandidates(trip, 1, 'day-1-slot-checkout')).toEqual([]);
+  });
+
+  it('logisticsLine: 800 m → a pé; 6 km → táxi; uma ponta sem coords → undefined', () => {
+    const a = { lat: -3.7300, lng: -38.5000 };
+    const b800 = { lat: a.lat + 0.8 / 111.2, lng: a.lng };
+    const b6 = { lat: a.lat + 6 / 111.2, lng: a.lng };
+    expect(logisticsLine(a, b800)).toBe('~10 min a pé');
+    expect(logisticsLine(a, b6)).toBe('~25 min de táxi');
+    expect(logisticsLine(a, null)).toBeUndefined();
+    expect(logisticsLine(undefined, b6)).toBeUndefined();
+  });
+
+  it('check-in 23:35 + 1h → "00:35 (+1)", no mesmo dia, com a dica noturna', () => {
+    expect(nextDayClock(23 * 60 + 35 + 60)).toBe('00:35 (+1)');
+    expect(nextDayClock(22 * 60 + 10)).toBe('22:10');
+    const late: SelectedFlight = {
+      date: new Date('2026-11-10T12:00:00'), source: 'estimate',
+      option: { id: 'e', airline: 'A confirmar', route: 'GRU → FOR', isDirect: true, duration: '3h25', durationMinutes: 205, price: 900, departureTime: '20:10', arrivalTime: '23:35' },
+    };
+    const r = runItineraryEngine({
+      departureDate: new Date('2026-11-10T12:00:00'), returnDate: new Date('2026-11-15T12:00:00'),
+      destination: 'Fortaleza', origin: 'São Paulo', outboundFlight: late,
+      returnFlight: flight('2026-11-15T12:00:00', '18:00'), budget: 15000, travelers: 2, priceLevel: 'midrange',
+    });
+    const checkin = r.days[0].activities.find((a) => a.type === 'checkin');
+    expect(checkin?.time).toBe('00:35 (+1)');
+    expect(checkin?.tips?.[0]).toBe('Chegada noturna: descanse — o roteiro começa amanhã');
+    expect(r.days[1].activities.some((a) => a.type === 'checkin')).toBe(false);
+  });
+
+  it('nenhum texto fixo de logística sobrevive: motor e PDF', async () => {
+    for (const city of ['Lisboa', 'Fortaleza', 'Tóquio']) {
+      const r = runItineraryEngine({
+        departureDate: new Date('2026-11-10T12:00:00'), returnDate: new Date('2026-11-17T12:00:00'),
+        destination: city, origin: 'São Paulo',
+        outboundFlight: flight('2026-11-10T12:00:00', '08:00'), returnFlight: flight('2026-11-17T12:00:00', '21:00'),
+        budget: 20000, travelers: 2, priceLevel: 'midrange',
+      });
+      expect(JSON.stringify(r.days)).not.toMatch(/min de t[aá]xi|min a p[eé]|taxi\/transporte/);
+    }
+    const { readFileSync } = await import('node:fs');
+    const pdf = readFileSync('src/lib/tripPdfExport.ts', 'utf8');
+    expect(pdf).not.toMatch(/~10 min a pe|~20 min de taxi/);
   });
 });

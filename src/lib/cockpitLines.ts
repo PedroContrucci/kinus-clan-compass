@@ -39,7 +39,7 @@ export function analysisSummary(trip: any): string {
 
 /** Contexto R16 da viagem: chegada da ida, saída da volta e doméstico como o motor decide. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rulesContextOf(trip: any): PlanRulesContext {
+export function rulesContextOf(trip: any): PlanRulesContext {
   const out = trip?.outboundFlight;
   const ret = trip?.returnFlight;
   const segs = out?.option?.segments;

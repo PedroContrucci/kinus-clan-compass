@@ -19,8 +19,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import type { SelectedFlight } from './FlightSelectionStage';
-import { getDestinationActivities, type SuggestedActivity } from '@/data/destinationActivities';
-import { normalizePlaceName } from '@/lib/placeIdentity';
 import { flightRouteLabel, flightWhyLine } from '@/lib/flightRanking';
 import { KinuAnalysisCard } from './KinuAnalysisCard';
 import { ItineraryDayWeather } from './ItineraryDayWeather';
@@ -31,6 +29,11 @@ import type { TripFinances } from '@/types/trip';
 import {
   generateItinerary,
   computeBuckets as computeEngineBuckets,
+  convertToItineraryActivity,
+  swapCandidates,
+  logisticsLine,
+  itemCoord,
+  type SwapCandidate,
   type ItineraryActivity,
   type ItineraryDay,
   type BudgetBreakdown,
@@ -302,63 +305,24 @@ export const GeneratedItineraryStage = ({
     toast({ title: "Atividade removida", description: "A atividade foi removida do roteiro." });
   };
 
-  const handleSwapActivity = (dayNum: number, activityId: string) => {
-    const day = days.find(d => d.dayNumber === dayNum);
-    const activity = day?.activities.find(a => a.id === activityId);
-    if (!day || !activity) return;
-
-    // Names already in the trip. Keyed by normalized name, not id, so swapping
-    // cannot land on a venue the trip already has under another category's id.
-    const usedNames = new Set<string>();
-    days.forEach(d => d.activities.forEach(a => usedNames.add(normalizePlaceName(a.name))));
-
-    const category = activity.timeSlot;
-    if (category === 'flight' || category === 'hotel') return;
-
-    const themeName = day.theme || 'Descobertas';
-    const themeStyleMap: Record<string, string[]> = {
-      'Cultura': ['culture', 'history', 'art'],
-      'Gastronomia': ['gastronomy'],
-      'Passeios': ['nature', 'romantic', 'shopping'],
-      'Aventura': ['adventure', 'nature'],
-      'Descobertas': ['culture', 'shopping', 'art'],
-    };
-    const targetTags = themeStyleMap[themeName] || [];
-
-    const pool = getDestinationActivities(destination);
-    const isFresh = (a: SuggestedActivity) => !usedNames.has(normalizePlaceName(a.name));
-    let candidates = pool.filter(a =>
-      a.category === category &&
-      isFresh(a) &&
-      (targetTags.length === 0 || (a.styleTags && a.styleTags.some(t => targetTags.includes(t))))
-    );
-    if (candidates.length === 0) {
-      candidates = pool.filter(a => a.category === category && isFresh(a));
-    }
-    if (candidates.length === 0) {
-      toast({ title: "Sem outra opção curada para este horário" });
-      return;
-    }
-
-    const picked = candidates[0];
-    const dayIndex = day.dayNumber - 1;
-    const newActivity: ItineraryActivity = {
-      ...activity,
-      id: `day-${dayIndex}-${picked.id}`,
-      name: picked.name,
-      estimatedCost: picked.estimatedCostBRL * travelers,
-      costPerPerson: picked.estimatedCostBRL,
-      status: 'suggestion',
-    };
-
-    const updatedDays = days.map(d => {
-      if (d.dayNumber !== dayNum) return d;
-      return {
-        ...d,
-        activities: d.activities.map(a => (a.id === activityId ? newActivity : a)),
-      };
-    });
-    commitDays(updatedDays);
+  // ↻: painel com as alternativas do catálogo que cabem no slot (swapCandidates). Nada é sorteado;
+  // a troca entra com a duração da candidata, na hora do slot, sem empurrar o item seguinte.
+  const [swapOpenId, setSwapOpenId] = useState<string | null>(null);
+  const swapTrip = () => ({
+    destination, outboundFlight, returnFlight, travelInterests,
+    days: days.map(d => ({
+      day: d.dayNumber,
+      date: d.date instanceof Date && !Number.isNaN(d.date.getTime()) ? format(d.date, 'yyyy-MM-dd') : undefined,
+      activities: d.activities,
+    })),
+  });
+  const handlePickSwap = (dayNum: number, activity: ItineraryActivity, cand: SwapCandidate) => {
+    const newActivity = convertToItineraryActivity(cand.activity, dayNum - 1, activity.timeSlot, activity.time ?? '', travelers);
+    commitDays(days.map(d => d.dayNumber !== dayNum ? d : {
+      ...d,
+      activities: d.activities.map(a => (a.id === activity.id ? newActivity : a)),
+    }));
+    setSwapOpenId(null);
     toast({ title: "Atividade trocada" });
   };
 
@@ -624,13 +588,19 @@ export const GeneratedItineraryStage = ({
                   <p>Nenhuma atividade neste dia</p>
                 </div>
               ) : (
-                currentDay.activities.map((activity) => {
+                currentDay.activities.map((activity, actIdx) => {
                   // Perna de voo: rota, porquê e selo vêm do voo da viagem (as props), não do item.
                   const leg = /-slot-flight-out$/.test(activity.id) ? outboundFlight
                     : /-slot-flight-back$/.test(activity.id) ? returnFlight : undefined;
                   const badge = (leg && flightBadge(leg)) || statusBadges[activity.status];
                   const location = leg ? flightRouteLabel(leg.option) : activity.location;
                   const tips = leg?.chosenBy ? [flightWhyLine(leg)] : activity.tips;
+                  // Logística só com coords reais nas duas pontas (derivada aqui, nunca gravada).
+                  const hop = actIdx > 0
+                    ? logisticsLine(itemCoord(currentDay.activities[actIdx - 1], destination), itemCoord(activity, destination))
+                    : undefined;
+                  const swapOpen = swapOpenId === activity.id;
+                  const cands = swapOpen ? swapCandidates(swapTrip(), currentDay.dayNumber - 1, activity.id) : [];
                   return (
                   <motion.div
                     key={activity.id}
@@ -642,6 +612,7 @@ export const GeneratedItineraryStage = ({
                       activity.status === 'pending' && 'border-red-500/50 bg-red-500/5'
                     )}
                   >
+                    {hop && <p className="text-xs text-muted-foreground mb-2" data-testid="logistics-line">{hop} desde o anterior</p>}
                     {/* Status Badge */}
                     <div className="flex items-center justify-between mb-2">
                       <span className={cn(
@@ -653,12 +624,16 @@ export const GeneratedItineraryStage = ({
                       
                       {activity.status !== 'defined' && (
                         <div className="flex items-center gap-1">
+                          {activity.timeSlot !== 'flight' && activity.timeSlot !== 'hotel' && (
                           <button
-                            onClick={() => handleSwapActivity(currentDay.dayNumber, activity.id)}
+                            onClick={() => setSwapOpenId(swapOpen ? null : activity.id)}
                             className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+                            aria-label="Trocar atividade"
+                            aria-expanded={swapOpen}
                           >
                             <RefreshCw size={14} className="text-muted-foreground" />
                           </button>
+                          )}
                           <button 
                             onClick={() => handleRemoveActivity(activity.id)}
                             className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors"
@@ -668,6 +643,23 @@ export const GeneratedItineraryStage = ({
                         </div>
                       )}
                     </div>
+
+                    {swapOpen && (
+                      <div className="mb-3 rounded-lg border border-border bg-muted/30 p-2 space-y-1" data-testid="swap-panel">
+                        {cands.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Nenhuma alternativa do catálogo cabe neste horário</p>
+                        ) : cands.map(c => (
+                          <button
+                            key={c.activity.id}
+                            onClick={() => handlePickSwap(currentDay.dayNumber, activity, c)}
+                            className="w-full text-left p-2 rounded-md hover:bg-muted transition-colors"
+                          >
+                            <p className="text-sm text-foreground">{c.activity.name} · {String(c.hours).replace('.', ',')}h</p>
+                            <p className="text-xs text-muted-foreground">{c.why}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="flex items-start gap-3">
                       {/* Time Slot Emoji & Icon */}

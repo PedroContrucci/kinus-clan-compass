@@ -14,6 +14,7 @@ import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { getDocsForDestination } from '@/data/destinationDocs';
 import { tripTimezone, formatTzDiff, formatTzInfo } from '@/lib/timezone';
 import { formatDurationHM, durationTextToMinutes } from '@/lib/flightModel';
+import { logisticsLine, itemCoord } from '@/lib/itineraryEngine';
 
 // ── Branding colors (RGB) ──
 const B = {
@@ -1329,8 +1330,11 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
 
       const actIdx = (day.activities || []).indexOf(act);
       const nextAct = (day.activities || [])[actIdx + 1];
-      const hasDistanceHint = !isLogistics && nextAct && nextAct.category !== 'voo' && nextAct.category !== 'hotel' &&
-        !(nextAct.name || '').toLowerCase().includes('transfer');
+      // Logística real (coords nas duas pontas) ou nada — a mesma linha da tela do roteiro.
+      const distHint = !isLogistics && nextAct && nextAct.category !== 'voo' && nextAct.category !== 'hotel' &&
+        !(nextAct.name || '').toLowerCase().includes('transfer')
+        ? logisticsLine(itemCoord(act, trip.destination), itemCoord(nextAct, trip.destination)) : undefined;
+      const hasDistanceHint = !!distHint;
 
       const rawDescription = cleanText(act.description || '');
       const hasDescription = rawDescription && rawDescription !== cleanText(act.name || '') && !isLogistics && rawDescription.length > 5;
@@ -1391,9 +1395,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
         setC(B.gray500, false);
         doc.setFontSize(10.5);
         doc.setFont('helvetica', 'italic');
-        // Alternate between walking and taxi estimates
-        const distHint = actIdx % 2 === 0 ? '~10 min a pe' : '~20 min de taxi/transporte';
-        doc.text(distHint, 30, y);
+        doc.text(cleanText(distHint as string), 30, y);
         y += 4.8;
       }
 

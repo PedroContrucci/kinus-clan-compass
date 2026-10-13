@@ -15,6 +15,28 @@ vi.mock('@/integrations/kinu-beta/client', () => ({
     auth: { getSession: async () => ({ data: { session: null }, error: null }) },
   },
 }));
+// jsPDF de mentira: registra todo texto (C.3a/D4 — "00:35 (+1)" sem throw e sem NaN no PDF).
+const pdfTexts = vi.hoisted(() => [] as string[]);
+vi.mock('jspdf', () => {
+  class FakePdf {
+    constructor() {
+      const proxy: unknown = new Proxy(this, {
+        get(_t, p) {
+          if (p === 'then') return undefined;
+          if (p === 'internal') return { pageSize: { getWidth: () => 210, getHeight: () => 297, width: 210, height: 297 }, getNumberOfPages: () => 1 };
+          if (p === 'text') return (t: unknown) => { pdfTexts.push(Array.isArray(t) ? t.join(' ') : String(t)); return proxy; };
+          if (p === 'getTextWidth') return (t: unknown) => String(t).length * 2;
+          if (p === 'splitTextToSize') return (t: unknown) => [String(t)];
+          if (p === 'getNumberOfPages' || p === 'getFontSize') return () => 1;
+          return () => proxy;
+        },
+      });
+      return proxy as FakePdf;
+    }
+  }
+  return { default: FakePdf };
+});
+vi.mock('qrcode', () => ({ default: { toDataURL: async () => '' } }));
 vi.mock('@/hooks/useFlightSearch', () => ({
   useFlightSearch: (...a: unknown[]) => { searchEnabled.push(a[4]); return { isSuccess: false, isError: false, isLoading: false, data: [] }; },
   useFlexibleFlightSearch: () => ({ isSuccess: false, isError: false, isLoading: false, data: [] }),
@@ -38,6 +60,9 @@ import { offerToSelected, formatDurationHM, durationTextToMinutes, writeFlightsT
 import { pickBest, flightSearchKey } from '@/lib/flightRanking';
 import { buildItineraryForTrip } from '@/lib/draftItinerary';
 import { tryPlaceUnplaced } from '@/lib/cockpitLines';
+import { GeneratedItineraryStage } from '@/components/cockpit/GeneratedItineraryStage';
+import { normalizeTrip } from '@/lib/tripStore';
+import { exportTripPDF } from '@/lib/tripPdfExport';
 
 const input = (city: string, code: string): DraftTripInput => ({
   originCity: 'São Paulo', originAirportCode: 'GRU', destinationCity: city, destinationAirportCode: code,
@@ -204,5 +229,58 @@ describe('C.2.1 — escolha do usuário persiste', () => {
 
     fireEvent.click(screen.getByText('Voltar à sugestão do KINU'));
     expect(latest.trip.outboundFlight).toMatchObject({ chosenBy: 'kinu', option: { id: 'Azul-2105' } });
+  });
+});
+
+describe('C.3a — ↻ abre alternativas do catálogo; check-in "00:35 (+1)" renderiza', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const stage = (trip: any) => wrap(
+    <GeneratedItineraryStage
+      embedded tripId={trip.id} destination={trip.destination} origin="São Paulo" emoji="🏖️"
+      departureDate={new Date(trip.startDate)} returnDate={new Date(trip.endDate)} budget={trip.budget} travelers={2}
+      outboundFlight={trip.outboundFlight} returnFlight={trip.returnFlight} travelInterests={trip.travelInterests}
+      existingDays={trip.days} onActivate={() => {}} onSave={() => {}} onBack={() => {}}
+    />,
+  );
+
+  it('↻ abre o painel (sem sortear); tocar troca nome e duração pela candidata', async () => {
+    const trip = await draft('Fortaleza', 'FOR', 'c3a-swap');
+    stage(trip);
+    const swaps = screen.getAllByRole('button', { name: 'Trocar atividade' });
+    fireEvent.click(swaps[0]);
+    const panel = screen.getByTestId('swap-panel');
+    const options = within(panel).queryAllByRole('button');
+    expect(options.length).toBeGreaterThan(0);
+    expect(options.length).toBeLessThanOrEqual(6);
+    const [name, hours] = (options[0].querySelector('p')?.textContent ?? '').split(' · ');
+    fireEvent.click(options[0]);
+    expect(screen.queryByTestId('swap-panel')).toBeNull();
+    expect(screen.getByText(name)).toBeTruthy();
+    expect(screen.getAllByText(`Duração: ${hours.replace(',', '.')}`).length).toBeGreaterThan(0);
+  });
+
+  it('check-in "00:35 (+1)": tela, normalizeTrip e PDF sem throw e sem NaN', async () => {
+    const base = await draft('Fortaleza', 'FOR', 'c3a-midnight');
+    const trip = { ...base, days: base.days.map((d, i) => i !== 0 ? d : {
+      ...d, activities: [...d.activities.filter((a) => a.type !== 'checkin'),
+        { id: 'day-0-slot-checkin', name: 'Check-in no hotel', type: 'checkin', timeSlot: 'hotel', time: '00:35 (+1)',
+          status: 'planned', description: 'Chegada noturna: descanse — o roteiro começa amanhã', cost: 0 }],
+    }) };
+    const { container } = stage(trip);
+    expect(screen.getByText('00:35 (+1)')).toBeTruthy();
+    expect(container.textContent).not.toMatch(/NaN/);
+
+    const norm = normalizeTrip(trip);
+    expect(norm.days[0].activities.find((a) => a.type === 'checkin')?.time).toBe('00:35 (+1)');
+    expect(JSON.stringify(norm.days)).not.toMatch(/NaN/);
+
+    vi.stubGlobal('fetch', async () => { throw new Error('offline'); });
+    // Capa offline: a imagem falha na hora (jsdom nunca carrega e o PDF esperaria 22 s).
+    vi.stubGlobal('Image', class { onerror?: () => void; onload?: () => void; set src(_u: string) { setTimeout(() => this.onerror?.(), 0); } });
+    pdfTexts.length = 0;
+    await expect(exportTripPDF(norm as never)).resolves.toBeUndefined();
+    vi.unstubAllGlobals();
+    expect(pdfTexts.some((t) => t.includes('00:35 (+1)'))).toBe(true);
+    expect(pdfTexts.filter((t) => /NaN/.test(t))).toEqual([]);
   });
 });
