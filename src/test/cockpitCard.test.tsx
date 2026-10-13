@@ -123,6 +123,14 @@ describe('C.2 — hotel e voo', () => {
     expect(l.hotel).not.toMatch(/melhor opção/);
   });
 
+  it('hotel cujo nome já traz a zona não a repete (sem acento/caixa)', () => {
+    const l = kinuDidLines({
+      destination: 'Lisboa', budgetType: 'comfort', travelers: 2, days: [],
+      accommodation: { name: 'Hotel Gran Marquise — Meireles, Fortaleza', neighborhood: 'meirelés' },
+    });
+    expect(l.hotel).toBe('Hotel Gran Marquise — Meireles, Fortaleza: tier Conforto');
+  });
+
   it('SAO→FOR é doméstico e a ida pro aeroporto sai 2h antes da volta', async () => {
     const trip = await draft('Fortaleza', 'FOR', 'c2-sao');
     const offer = (from: string, to: string, at: string) => ({

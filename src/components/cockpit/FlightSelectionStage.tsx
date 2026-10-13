@@ -485,15 +485,18 @@ export const FlightSelectionStage = ({
 
       {/* Main Content */}
       <main className={embedded ? 'px-1 py-3' : 'flex-1 px-4 py-6 pb-72 overflow-y-auto'}>
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-            <Plane size={20} className="text-primary" />
+        {/* Embutido no cockpit: sem cabeçalho de wizard (o card já diz o que é). */}
+        {!embedded && (
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+              <Plane size={20} className="text-primary" />
+            </div>
+            <div>
+              <h2 className="font-bold text-foreground font-['Outfit']">Defina seus voos</h2>
+              <p className="text-sm text-muted-foreground">Primeiro, escolha os melhores trechos</p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-bold text-foreground font-['Outfit']">Defina seus voos</h2>
-            <p className="text-sm text-muted-foreground">Primeiro, escolha os melhores trechos</p>
-          </div>
-        </div>
+        )}
 
         {/* Outbound Flight Section */}
         <div className="mb-6">
@@ -726,33 +729,36 @@ export const FlightSelectionStage = ({
       {/* Footer Summary */}
       {/* z-20: abaixo da trilha do rascunho (z-30); o pb-72 do main deixa o fim da lista visível. */}
       <footer className={embedded ? 'border-t border-border pt-3' : 'fixed bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur-lg border-t border-border p-4'}>
-        <div className="mb-4 p-3 rounded-xl bg-card border border-border">
-          <p className="text-xs text-muted-foreground mb-2">RESUMO DOS VOOS SELECIONADOS:</p>
-          <div className="space-y-1 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Ida:</span>
-              <span className={selectedOutbound ? 'text-foreground' : 'text-muted-foreground italic'}>
-                {selectedOutbound 
-                  ? `${selectedOutbound.option.airline} • R$ ${selectedOutbound.option.price.toLocaleString('pt-BR')}`
-                  : '(não selecionado)'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Volta:</span>
-              <span className={selectedReturn ? 'text-foreground' : 'text-muted-foreground italic'}>
-                {selectedReturn 
-                  ? `${selectedReturn.option.airline} • R$ ${selectedReturn.option.price.toLocaleString('pt-BR')}`
-                  : '(não selecionado)'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between pt-2 border-t border-border">
-              <span className="font-medium text-foreground">Total voos:</span>
-              <span className="font-bold text-foreground">
-                R$ {totalFlightCost.toLocaleString('pt-BR')} / R$ {budget.toLocaleString('pt-BR')}
-              </span>
+        {/* Embutido: o card e o Financeiro já mostram o resumo. */}
+        {!embedded && (
+          <div className="mb-4 p-3 rounded-xl bg-card border border-border">
+            <p className="text-xs text-muted-foreground mb-2">RESUMO DOS VOOS SELECIONADOS:</p>
+            <div className="space-y-1 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Ida:</span>
+                <span className={selectedOutbound ? 'text-foreground' : 'text-muted-foreground italic'}>
+                  {selectedOutbound 
+                    ? `${selectedOutbound.option.airline} • R$ ${selectedOutbound.option.price.toLocaleString('pt-BR')}`
+                    : '(não selecionado)'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Volta:</span>
+                <span className={selectedReturn ? 'text-foreground' : 'text-muted-foreground italic'}>
+                  {selectedReturn 
+                    ? `${selectedReturn.option.airline} • R$ ${selectedReturn.option.price.toLocaleString('pt-BR')}`
+                    : '(não selecionado)'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <span className="font-medium text-foreground">Total voos:</span>
+                <span className="font-bold text-foreground">
+                  R$ {totalFlightCost.toLocaleString('pt-BR')} / R$ {budget.toLocaleString('pt-BR')}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <Button
           className="w-full h-14"

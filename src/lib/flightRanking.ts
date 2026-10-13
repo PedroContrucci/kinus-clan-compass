@@ -14,6 +14,7 @@
 // Desempate final: preço exato, depois id — nunca a ordem de chegada da API.
 import type { SelectedFlight } from '@/lib/itineraryEngine';
 import { flightDaysLater } from '@/lib/flightModel';
+import { airportCity } from '@/lib/timezone';
 
 /** Faixa de empate de preço: até 5% acima do menor conta como "mesmo preço". */
 export const PRICE_TIE_PCT = 0.05;
@@ -114,7 +115,7 @@ function arrivalText(f: SelectedFlight): string {
   return `chega ${f.option.arrivalTime}${n > 0 ? ` (+${n})` : ''}`;
 }
 
-/** Razão e ressalvas da escolha do KINU: "menor preço", "· R$ 45 acima da média", fora da janela. */
+/** Razão e ressalvas da escolha do KINU: "menor preço", "· R$ 45 acima da média" (nunca abaixo), fora da janela. */
 function pickReasons(f: SelectedFlight): string[] {
   const why = f.kinuPick as KinuPickWhy | undefined;
   if (!why) return [];
@@ -123,9 +124,9 @@ function pickReasons(f: SelectedFlight): string[] {
   else if (why.cheapest === true) out.push('menor preço');
   else if (why.cheapest === false) out.push(f.option.isDirect ? 'menor preço entre os diretos' : 'menor preço na janela');
   const avg = why.averagePrice;
-  if (avg && why.offers > 1 && Math.abs(avg - f.option.price) / avg > PRICE_TIE_PCT) {
-    const d = Math.round(f.option.price - avg);
-    out.push(`${brl(Math.abs(d))} ${d > 0 ? 'acima' : 'abaixo'} da média`);
+  // Só a ressalva: abaixo da média já está dito em "menor preço".
+  if (avg && why.offers > 1 && (f.option.price - avg) / avg > PRICE_TIE_PCT) {
+    out.push(`${brl(Math.round(f.option.price - avg))} acima da média`);
   }
   if (why.windowFallback) out.push(`nenhuma opção chega entre ${String(ARRIVAL_WINDOW.from).padStart(2, '0')}h e ${ARRIVAL_WINDOW.to}h`);
   return out;
@@ -151,6 +152,30 @@ export function flightChoiceLine(f: SelectedFlight): string {
     ...(f.chosenBy === 'user' ? [] : pickReasons(f)),
   ];
   return `${subject} escolheu: ${parts.join(' · ')}`;
+}
+
+/**
+ * O porquê do voo no item do roteiro: a linha da escolha sem sujeito e sem cia —
+ * "com escala · chega 23:35 · R$ 718/pessoa" (+ razões do KINU).
+ */
+export function flightWhyLine(f: SelectedFlight): string {
+  return [
+    f.option.isDirect ? 'direto' : 'com escala',
+    arrivalText(f),
+    `${brl(f.option.price)}/pessoa`,
+    ...(f.chosenBy === 'user' ? [] : pickReasons(f)),
+    ...(f.durationKnown === false ? ['duração a confirmar'] : []),
+  ].join(' · ');
+}
+
+/** "SAO → (1 conex.) → FOR" → "São Paulo → Fortaleza · 1 conexão" (código cru se não mapeado). */
+export function flightRouteLabel(option: { route: string; isDirect: boolean }): string {
+  const ends = option.route.split('→').map((p) => p.trim()).filter((p) => p && !p.startsWith('('));
+  const name = (code: string) => airportCity(code)?.city ?? code;
+  const path = ends.length >= 2 ? `${name(ends[0])} → ${name(ends[ends.length - 1])}` : option.route;
+  if (option.isDirect) return path;
+  const n = Number(option.route.match(/\((\d+)\s*conex/)?.[1]);
+  return `${path} · ${n > 1 ? `${n} conexões` : n === 1 ? '1 conexão' : 'com conexão'}`;
 }
 
 // ─── Busca ao abrir o rascunho (D2) ───

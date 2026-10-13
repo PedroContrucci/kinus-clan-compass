@@ -178,10 +178,11 @@ export const FeedbackButton = () => {
           inferior direita (bottom-44) e competia com o FAB do KINU AI.
           Largura tocável: line-height do text-sm (20px) + 12px de padding de cada
           lado = 44px, no mínimo do HIG. Em writing-mode vertical-rl o padding
-          horizontal é que define a largura. */}
+          horizontal é que define a largura. C.2.2: no meio da tela cobria as ações
+          do card do cockpit; desce para logo acima do FAB (bottom 6rem). */}
       <button
         onClick={() => setIsOpen(true)}
-        className="flex fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-amber-500 text-white shadow-lg shadow-amber-500/30 hover:bg-amber-600 transition-colors rounded-l-lg items-center justify-center font-semibold text-sm tracking-wide"
+        className="flex fixed right-0 bottom-[calc(10rem+env(safe-area-inset-bottom))] z-40 bg-amber-500 text-white shadow-lg shadow-amber-500/30 hover:bg-amber-600 transition-colors rounded-l-lg items-center justify-center font-semibold text-sm tracking-wide"
         style={{ writingMode: 'vertical-rl', padding: '12px' }}
         aria-label="Enviar feedback"
       >

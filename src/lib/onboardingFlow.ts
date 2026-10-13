@@ -103,7 +103,7 @@ export function kinuDidLines(trip: any): KinuDidLines {
   const hotelName = trip.accommodation?.name ?? 'Hotel';
   const hotel = cur && cur.reasons.length
     ? `${hotelName}: ${cur.reasons.map((r) => r.label).join(' · ')}`
-    : `${hotelName}: ${hotelTierZone(cur?.hotel, trip)}`;
+    : `${hotelName}: ${hotelTierZone(cur?.hotel, trip, hotelName)}`;
 
   const ddmm = (v: unknown) => {
     const d = parseISO(String(v ?? '').slice(0, 10));
@@ -149,9 +149,12 @@ const HOTEL_TIER_LABELS: Record<string, string> = { budget: 'Econômico', mid: '
 
 /** Hotel sem reasons: "tier <X> · <zona>" — fatos do curado (ou da viagem), nunca um elogio genérico. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function hotelTierZone(curated: { tier?: string; zone?: string } | undefined, trip: any): string {
+export function hotelTierZone(curated: { tier?: string; zone?: string } | undefined, trip: any, hotelName?: string): string {
   const tier = curated?.tier ? (HOTEL_TIER_LABELS[curated.tier] ?? curated.tier) : tierLabel(trip?.budgetType);
-  const zone = curated?.zone || trip?.accommodation?.neighborhood || '';
+  const rawZone = curated?.zone || trip?.accommodation?.neighborhood || '';
+  // Nome que já traz a zona ("Gran Marquise — Meireles, Fortaleza") não a repete.
+  const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const zone = rawZone && hotelName && norm(hotelName).includes(norm(rawZone)) ? '' : rawZone;
   return [tier ? `tier ${tier}` : '', zone].filter(Boolean).join(' · ') || 'escolhido pelo seu perfil';
 }
 

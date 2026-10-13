@@ -21,6 +21,7 @@ import { toast } from '@/hooks/use-toast';
 import type { SelectedFlight } from './FlightSelectionStage';
 import { getDestinationActivities, type SuggestedActivity } from '@/data/destinationActivities';
 import { normalizePlaceName } from '@/lib/placeIdentity';
+import { flightRouteLabel, flightWhyLine } from '@/lib/flightRanking';
 import { KinuAnalysisCard } from './KinuAnalysisCard';
 import { ItineraryDayWeather } from './ItineraryDayWeather';
 import { ItineraryExchangeRate } from './ItineraryExchangeRate';
@@ -132,6 +133,14 @@ const statusBadges: Record<string, { label: string; className: string }> = {
   suggestion: { label: '~ Sugestão', className: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
   pending: { label: '⚠️ Pendente', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
 };
+
+/** Selo do item de voo pela origem da escolha (lida do voo da viagem, não do item). */
+function flightBadge(f: SelectedFlight | undefined): { label: string; className: string } | null {
+  if (f?.source === 'confirmed') return { label: '✓ Confirmado', className: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' };
+  if (f?.chosenBy === 'kinu') return { label: 'Sugestão do KINU', className: 'bg-amber-500/20 text-amber-400 border-amber-500/30' };
+  if (f?.chosenBy === 'user') return { label: 'Escolhido por você', className: 'bg-primary/15 text-primary border-primary/30' };
+  return null;
+}
 
 export const GeneratedItineraryStage = ({
   tripId,
@@ -615,7 +624,14 @@ export const GeneratedItineraryStage = ({
                   <p>Nenhuma atividade neste dia</p>
                 </div>
               ) : (
-                currentDay.activities.map((activity) => (
+                currentDay.activities.map((activity) => {
+                  // Perna de voo: rota, porquê e selo vêm do voo da viagem (as props), não do item.
+                  const leg = /-slot-flight-out$/.test(activity.id) ? outboundFlight
+                    : /-slot-flight-back$/.test(activity.id) ? returnFlight : undefined;
+                  const badge = (leg && flightBadge(leg)) || statusBadges[activity.status];
+                  const location = leg ? flightRouteLabel(leg.option) : activity.location;
+                  const tips = leg?.chosenBy ? [flightWhyLine(leg)] : activity.tips;
+                  return (
                   <motion.div
                     key={activity.id}
                     layout
@@ -630,9 +646,9 @@ export const GeneratedItineraryStage = ({
                     <div className="flex items-center justify-between mb-2">
                       <span className={cn(
                         'px-2 py-0.5 rounded-full text-xs border',
-                        statusBadges[activity.status].className
+                        badge.className
                       )}>
-                        {statusBadges[activity.status].label}
+                        {badge.label}
                       </span>
                       
                       {activity.status !== 'defined' && (
@@ -672,8 +688,8 @@ export const GeneratedItineraryStage = ({
                           )}
                         </div>
                         
-                        {activity.location && (
-                          <p className="text-sm text-muted-foreground mt-0.5">{activity.location}</p>
+                        {location && (
+                          <p className="text-sm text-muted-foreground mt-0.5">{location}</p>
                         )}
                         
                         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
@@ -682,9 +698,9 @@ export const GeneratedItineraryStage = ({
                           )}
                         </div>
                         
-                        {activity.tips && activity.tips.length > 0 && (
+                        {tips && tips.length > 0 && (
                           <div className="mt-2 space-y-1">
-                            {activity.tips.map((tip, tipIdx) => (
+                            {tips.map((tip, tipIdx) => (
                               <div key={tipIdx} className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
                                 <p className="text-xs text-amber-400 flex items-start gap-1">
                                   <Lightbulb size={12} className="mt-0.5 flex-shrink-0" />
@@ -710,7 +726,8 @@ export const GeneratedItineraryStage = ({
                       </div>
                     </div>
                   </motion.div>
-                ))
+                  );
+                })
               )}
 
               {/* Day Total Summary */}

@@ -7,7 +7,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { offerToSelected, writeFlightsThrough, flightDaysLater, estimateOf, type ReferenceOffer } from '@/lib/flightModel';
-import { rankFlights, pickBest, explainPick, shouldAutoSearch, flightSearchKey, PRICE_TIE_PCT } from '@/lib/flightRanking';
+import { rankFlights, pickBest, explainPick, shouldAutoSearch, flightSearchKey, PRICE_TIE_PCT, flightRouteLabel, flightWhyLine } from '@/lib/flightRanking';
 import { buildDraftTrip, type DraftTripInput } from '@/lib/createTrip';
 import { kinuDidLines } from '@/lib/onboardingFlow';
 import { flightPillSubtitle } from '@/components/cockpit/DraftCockpit';
@@ -101,6 +101,28 @@ describe('rankFlights — regra escrita, determinística', () => {
     expect(best).toMatchObject({ chosenBy: 'kinu', kinuPick: { averagePrice: 4430, offers: 5, mode: 'kinu' } });
     // Honesto: a direta é a mais cara — a razão diz "entre os diretos" e a média vira ressalva no fim (C.2.1).
     expect(explainPick(best)).toBe('direto · chega 12:00 (+1) · menor preço entre os diretos · R$ 1.570 acima da média');
+  });
+});
+
+describe('C.2.2 — texto do voo', () => {
+  it('abaixo da média não vira ressalva ("menor preço" já diz); acima, sim', () => {
+    const best = pickBest(OUT.filter((f) => !f.option.isDirect))!;
+    const p = best.option.price;
+    const low = { ...best, kinuPick: { ...best.kinuPick!, averagePrice: p * 1.3 } };
+    const high = { ...best, kinuPick: { ...best.kinuPick!, averagePrice: p * 0.7 } };
+    expect(explainPick(low)).not.toMatch(/média/);
+    expect(explainPick(high)).toMatch(/acima da média$/);
+  });
+
+  it('rota legível: cidade pelo aeroporto, conexões por extenso, código cru se não mapeado', () => {
+    expect(flightRouteLabel({ route: 'SAO → (1 conex.) → FOR', isDirect: false })).toBe('São Paulo → Fortaleza · 1 conexão');
+    expect(flightRouteLabel({ route: 'GRU → (2 conex.) → LIS', isDirect: false })).toBe('São Paulo → Lisboa · 2 conexões');
+    expect(flightRouteLabel({ route: 'GRU → ZZZ', isDirect: true })).toBe('São Paulo → ZZZ');
+  });
+
+  it('porquê do item: a linha da escolha sem sujeito e sem cia', () => {
+    const user = { ...OUT[1], chosenBy: 'user' as const };
+    expect(flightWhyLine(user)).toBe('com escala · chega 12:00 (+1) · R$ 3.000/pessoa');
   });
 });
 
