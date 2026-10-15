@@ -6,7 +6,7 @@ import { buildFlowInput, type FlowTierId } from '@/lib/onboardingFlow';
 import { interestsFor } from '@/lib/interestsFor';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { CURATED_CITIES } from '@/lib/curatedCities';
-import { validatePlanRules, type PlanRuleResult, type PlanDay } from '@/lib/itineraryValidator';
+import { validatePlanRules, validateDaySequence, type PlanRuleResult, type PlanDay, type SequenceReport } from '@/lib/itineraryValidator';
 
 export interface SmokeProfile { id: string; label: string; interests: string[]; tier: FlowTierId }
 export const SMOKE_PROFILES: SmokeProfile[] = [
@@ -16,7 +16,7 @@ export const SMOKE_PROFILES: SmokeProfile[] = [
 ];
 export const SMOKE_NIGHTS = 7;
 
-export interface SmokeRow { city: string; profile: string; interestsUsed: string[]; results: PlanRuleResult[]; error?: string }
+export interface SmokeRow { city: string; profile: string; interestsUsed: string[]; results: PlanRuleResult[]; r19?: SequenceReport; error?: string }
 
 // Doméstico = destino no Brasil, por enquanto. O modelo de voo vai carregar uma flag explícita depois.
 export const isDomesticDestination = (city: string) => findCityInfo(city)?.region === 'Brasil';
@@ -30,15 +30,17 @@ export async function runSmokeCase(city: string, profile: SmokeProfile, from: Da
     const trip = await buildDraftTrip(input, deps);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const t = trip as any;
-    const results = validatePlanRules((t.days ?? []) as PlanDay[], {
+    const days = (t.days ?? []) as PlanDay[];
+    const ctx = {
       destination: city,
       interests: interestsUsed,
       arrivalDate: String(t.flights?.outbound?.arrivalDate ?? '').slice(0, 10),
       arrivalTime: t.flights?.outbound?.arrivalTime,
       returnDepartureTime: t.flights?.return?.departureTime,
       domestic: isDomesticDestination(city),
-    });
-    return { city, profile: profile.id, interestsUsed, results };
+    };
+    const results = validatePlanRules(days, ctx);
+    return { city, profile: profile.id, interestsUsed, results, r19: validateDaySequence(days, ctx) };
   } catch (e) {
     return { city, profile: profile.id, interestsUsed, results: [], error: String(e) };
   }
@@ -60,4 +62,12 @@ export function summarizeSmoke(rows: SmokeRow[]): string {
     const skip = all.filter((y) => y.status === 'SKIP').length;
     return `${r.split(' ')[0]} ${pass}/${pass + warn} PASS · ${warn} WARN · ${skip} SKIP`;
   }).join(' | ');
+}
+
+/** R19 em uma linha: dias PASS/WARN/FAIL somados e viagens com ao menos um dia FAIL. */
+export function summarizeR19(rows: SmokeRow[]): string {
+  const reps = rows.flatMap((r) => (r.r19 ? [r.r19] : []));
+  const sum = (k: 'pass' | 'warn' | 'fail') => reps.reduce((s, r) => s + r[k], 0);
+  const failTrips = reps.filter((r) => r.status === 'FAIL').length;
+  return `R19 dias ${sum('pass')} PASS · ${sum('warn')} WARN · ${sum('fail')} FAIL · viagens com FAIL ${failTrips}/${reps.length}`;
 }

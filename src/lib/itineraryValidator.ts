@@ -613,3 +613,150 @@ export function validatePlanRules(days: PlanDay[], ctx: PlanRulesContext): PlanR
 
   return [r13, r14, r15, r16];
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// R19 — sequência do dia (diagnóstico C.4). Fora de validatePlanRules: R13–R16 não mudam.
+// R16 soma horas; R19 olha a ordem — fim de um item contra o início do seguinte.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type SequenceCause = 'a' | 'b' | 'c' | 'd';
+export interface SequenceIssue {
+  day: number;
+  kind: 'overlap' | 'tight' | 'madrugada' | 'chegada' | 'partida';
+  status: 'WARN' | 'FAIL';
+  /** (a) item ≥ 4 h de manhã/tarde com refeição depois · (b) 00:00–05:59 inventado · (c) chegada/partida · (d) outro. */
+  cause: SequenceCause;
+  text: string;
+}
+export interface SequenceDay { day: number; status: 'PASS' | 'WARN' | 'FAIL'; issues: SequenceIssue[] }
+export interface SequenceReport {
+  rule: 'R19 SEQUÊNCIA';
+  status: 'PASS' | 'WARN' | 'FAIL';
+  days: SequenceDay[];
+  pass: number;
+  warn: number;
+  fail: number;
+  detail: string;
+}
+
+export const OVERLAP_TOLERANCE_MIN = 15;
+/** Decisão D1 (C.4-diag): check-in/check-out são 30 min, não 1 h. */
+const HOTEL_DESK_MIN = 30;
+
+const isFlightItem = (a: PlanDayItem) => a.timeSlot === 'flight' || a.type === 'flight' || a.type === 'voo';
+const isTransferItem = (a: PlanDayItem) => /transfer|aeroporto/i.test(a.name);
+const isCheckinItem = (a: PlanDayItem) => a.type === 'checkin' || /slot-checkin$/.test(a.id) || /check-?in/i.test(a.name);
+const isCheckoutItem = (a: PlanDayItem) => a.type === 'checkout' || /slot-checkout$/.test(a.id) || /check-?out/i.test(a.name);
+const isMealItem = (a: PlanDayItem, cat: SuggestedActivity | null) =>
+  MEALS.has(a.timeSlot ?? '') || MEALS.has(a.type ?? '') || (!!cat && MEALS.has(cat.category));
+const isLogisticItem = (a: PlanDayItem) =>
+  isFlightItem(a) || isTransferItem(a) || isCheckinItem(a) || isCheckoutItem(a) || a.timeSlot === 'hotel';
+
+/** Mesma conta de logisticsLine (itineraryEngine; importar dá ciclo): ≤ 1,2 km a pé a 5 km/h; senão táxi a 20 km/h + 5 min. */
+const hopMinutes = (a: { lat: number; lng: number } | null, b: { lat: number; lng: number } | null): number => {
+  if (!a || !b) return 0;
+  const km = haversineKm(a, b);
+  return km <= 1.2 ? (km / 5) * 60 : (km / 20) * 60 + 5;
+};
+
+const hm = (min: number) => {
+  const m = ((Math.round(min) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+};
+
+export function validateDaySequence(days: PlanDay[], ctx: PlanRulesContext): SequenceReport {
+  const index = catalogIndex(ctx.destination);
+  const lastIdx = days.length - 1;
+  const arrivalIdx = ctx.arrivalDate && ctx.arrivalTime ? arrivalIndexOf(days, ctx) : -1;
+  const arrivalMin = toMinutes(ctx.arrivalTime);
+  const returnMin = toMinutes(ctx.returnDepartureTime);
+  const earlyReturn = returnMin >= 0 && returnMin < 8 * 60;
+  const city = ctx.destination;
+
+  const out: SequenceDay[] = days.map((d, i) => {
+    const issues: SequenceIssue[] = [];
+    const items = d.activities
+      .filter((a) => toMinutes(a.time) >= 0)
+      .map((a) => {
+        const cat = catalogItemOf(a, index);
+        const start = toMinutes(a.time);
+        let mins = itemHours(a, cat) * 60;
+        if (isCheckinItem(a) || isCheckoutItem(a)) mins = HOTEL_DESK_MIN;
+        else if (mins <= 0) mins = isMealItem(a, cat) ? 90 : isLogisticItem(a) ? 60 : 90;
+        let end = start + mins;
+        if (isFlightItem(a) && /out/.test(a.id)) {
+          const sameDay = ctx.arrivalDate && String(d.date ?? '').slice(0, 10) === ctx.arrivalDate;
+          end = sameDay && arrivalMin >= start ? arrivalMin : 24 * 60;
+        }
+        return { a, cat, start, end, hours: mins / 60 };
+      })
+      .sort((x, y) => x.start - y.start);
+    const label = (x: (typeof items)[number]) => `${x.a.name} ${hm(x.start)}`;
+    const span = (x: (typeof items)[number]) => `${x.a.name} ${hm(x.start)}–${hm(x.end)}`;
+
+    // R19 — sobreposição / colado demais, contra o item de maior fim até aqui.
+    let lead: (typeof items)[number] | null = null;
+    for (const b of items) {
+      if (lead) {
+        const a = lead;
+        const pair = `${city} D${d.day}: ${span(a)} × ${label(b)}`;
+        const logisticPair = [a.a, b.a].some(isLogisticItem);
+        if (b.start < a.end - OVERLAP_TOLERANCE_MIN) {
+          const cause: SequenceCause =
+            a.hours >= 4 && ['morning', 'afternoon'].includes(a.a.timeSlot ?? '') && isMealItem(b.a, b.cat) ? 'a'
+            : logisticPair ? 'c' : 'd';
+          issues.push({ day: d.day, kind: 'overlap', status: 'FAIL', cause, text: pair });
+        } else {
+          const hop = hopMinutes(curatedCoordOf(a.a.id), curatedCoordOf(b.a.id));
+          if (b.start < a.end + hop) {
+            issues.push({ day: d.day, kind: 'tight', status: 'WARN', cause: logisticPair ? 'c' : 'd', text: `${pair} (deslocamento ~${Math.round(hop)} min)` });
+          }
+        }
+      }
+      if (!lead || b.end > lead.end) lead = b;
+    }
+
+    // R19b — madrugada inventada. Voo sempre isento (D2); transfer/check-out só com volta < 08:00 no último dia.
+    for (const x of items) {
+      if (x.start >= 6 * 60) continue;
+      if (isFlightItem(x.a)) continue;
+      if (i === lastIdx && earlyReturn && (isTransferItem(x.a) || isCheckoutItem(x.a))) continue;
+      issues.push({ day: d.day, kind: 'madrugada', status: 'FAIL', cause: 'b', text: `${city} D${d.day}: ${label(x)} (horário inventado)` });
+    }
+
+    // R19c — partida: tudo termina até o transfer; chegada: nada antes do pouso + 60 min.
+    if (i === lastIdx) {
+      const transfer = items.find((x) => isTransferItem(x.a));
+      if (transfer) {
+        for (const x of items) {
+          if (x === transfer || isFlightItem(x.a) || isTransferItem(x.a)) continue;
+          if (x.end > transfer.start) {
+            issues.push({ day: d.day, kind: 'partida', status: 'FAIL', cause: 'c', text: `${city} D${d.day}: ${span(x)} × ${label(transfer)}` });
+          }
+        }
+      }
+    }
+    if (i === arrivalIdx && arrivalMin >= 0) {
+      for (const x of items) {
+        if (isFlightItem(x.a) || isTransferItem(x.a) || isCheckinItem(x.a)) continue;
+        if (x.start < arrivalMin + 60) {
+          issues.push({ day: d.day, kind: 'chegada', status: 'FAIL', cause: 'c', text: `${city} D${d.day}: ${label(x)} antes do pouso ${hm(arrivalMin)} + 60 min` });
+        }
+      }
+    }
+
+    const status = issues.some((x) => x.status === 'FAIL') ? 'FAIL' : issues.length ? 'WARN' : 'PASS';
+    return { day: d.day, status, issues };
+  });
+
+  const pass = out.filter((x) => x.status === 'PASS').length;
+  const warn = out.filter((x) => x.status === 'WARN').length;
+  const fail = out.filter((x) => x.status === 'FAIL').length;
+  // D3: status da viagem = pior dia.
+  const status = fail ? 'FAIL' : warn ? 'WARN' : 'PASS';
+  const first = out.flatMap((x) => x.issues).find((x) => x.status === 'FAIL');
+  return {
+    rule: 'R19 SEQUÊNCIA', status, days: out, pass, warn, fail,
+    detail: `dias ${pass}P/${warn}W/${fail}F${first ? ` · ${first.text}` : ''}`,
+  };
+}
