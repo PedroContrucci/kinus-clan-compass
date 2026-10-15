@@ -156,7 +156,8 @@ describe('C.2 — hotel e voo', () => {
     expect(l.hotel).toBe('Hotel Gran Marquise — Meireles, Fortaleza: tier Conforto');
   });
 
-  it('SAO→FOR é doméstico e a ida pro aeroporto sai 2h antes da volta', async () => {
+  // C.4 R10: doméstico = no aeroporto 2h antes (16:00); o transfer sai 45 min antes disso.
+  it('SAO→FOR é doméstico: no aeroporto 2h antes da volta, transfer 45 min antes', async () => {
     const trip = await draft('Fortaleza', 'FOR', 'c2-sao');
     const offer = (from: string, to: string, at: string) => ({
       id: `${from}-${to}`, airline: 'LATAM', route: `${from} → ${to}`, isDirect: true, duration: '3h 25m', durationMinutes: 205,
@@ -171,7 +172,7 @@ describe('C.2 — hotel e voo', () => {
     const built = buildItineraryForTrip(trip as any, { outbound: out, return: ret });
     const lastDay = built.days[built.days.length - 1];
     const transfer = lastDay.activities.find((a: { name: string }) => a.name === 'Transfer para Aeroporto');
-    expect(transfer?.time).toBe('16:00');
+    expect(transfer?.time).toBe('15:15');
   });
 
   it('duração na tela: "3h25", nunca "3.42h"', () => {

@@ -29,7 +29,7 @@ import { getHotelRecommendation } from '@/lib/hotelZones';
 import { interestsFor, catalogFor, splitInterests, interestLabel } from '@/lib/interestsFor';
 import { matchesPriority } from '@/lib/claChips';
 import { curatedCoordOf, resolveHotelCoord } from '@/lib/routeCoords';
-import { maxHopKmFor, haversineKm, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
+import { maxHopKmFor, haversineKm, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, durationMinutesOf, defaultMinutesOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
 import { catalogIdOf } from '@/lib/localAchievements';
 import { rulesContextOf } from '@/lib/cockpitLines';
 import { findCityInfo } from '@/data/destinationCatalog';
@@ -333,6 +333,168 @@ export function itemCoord(item: { id?: string; name?: string; type?: string; tim
   return curatedCoordOf(item.id);
 }
 
+// ── C.4: scheduler — o dia é uma sequência; a hora é calculada (R1–R12 no RELATORIO-C4) ──
+
+/** R3: âncora (início mínimo) e início máximo por slot, em minutos. */
+export const SLOT_RULES: Record<string, { anchor: number; max: number }> = {
+  breakfast: { anchor: 8 * 60, max: 10 * 60 },
+  morning: { anchor: 9 * 60 + 30, max: 11 * 60 + 30 },
+  lunch: { anchor: 12 * 60 + 30, max: 14 * 60 + 30 },
+  afternoon: { anchor: 15 * 60, max: 17 * 60 },
+  dinner: { anchor: 19 * 60 + 30, max: 21 * 60 },
+  night: { anchor: 21 * 60 + 30, max: 22 * 60 + 30 },
+};
+export const SUNSET_RULE = { anchor: 17 * 60 + 30, max: 18 * 60 + 30 };
+/** Item da manhã que ocupa o dia (≥ 4 h, bate-volta): âncora 09:00. */
+export const LONG_ITEM_MINUTES = 4 * 60;
+export const LONG_ITEM_ANCHOR = 9 * 60;
+/** Deslocamento sem coords numa ponta: 15 min, nunca zero. */
+export const DEFAULT_HOP_MIN = 15;
+/** Hotel ↔ aeroporto (o catálogo não tem coord de aeroporto). */
+export const AIRPORT_HOP_MIN = 45;
+/** Máximo do jantar no dia de chegada (D5). */
+export const ARRIVAL_DINNER_MAX = 22 * 60;
+export const LUNCH_ON_SITE_TIP = 'Almoço no local';
+export const LUGGAGE_TIP = 'Malas na guarda do hotel até o transfer';
+/** R8: "Descanso para regular o sono" não é item — é a dica do jantar. */
+export const REST_DINNER_TIP = 'Jantar leve e cedo: evite álcool e tente dormir no horário local';
+const SUNSET_RE = /(p[ôo]r do sol|sunset)/i;
+
+export interface LayoutItem {
+  id: string;
+  name: string;
+  timeSlot?: string;
+  type?: string;
+  kind?: string;
+  time?: string;
+  duration?: string;
+  tips?: string[];
+  description?: string;
+}
+export interface LayoutOpts {
+  destination: string;
+  /** Nada flexível começa antes disto (dia de chegada: pouso + 60 + 45 min). */
+  startMin?: number;
+  /** Máximo do jantar (dia de chegada: 22:00). */
+  dinnerMax?: number;
+  /** Itens cuja hora gravada é a âncora (item do usuário no replan). */
+  anchorFromTime?: (item: LayoutItem) => boolean;
+  index?: Map<string, SuggestedActivity>;
+}
+
+const kindOf = (a: LayoutItem) => a.type ?? a.kind;
+const isFlightL = (a: LayoutItem) => a.timeSlot === 'flight' || kindOf(a) === 'flight';
+const isCheckinL = (a: LayoutItem) => kindOf(a) === 'checkin' || /-slot-checkin$/.test(a.id) || /check-?in/i.test(a.name);
+const isCheckoutL = (a: LayoutItem) => kindOf(a) === 'checkout' || /-slot-checkout$/.test(a.id) || /check-?out/i.test(a.name);
+const isTransferL = (a: LayoutItem) => /transfer|aeroporto/i.test(a.name);
+/** R2: voo, check-in, check-out e transfer têm hora própria. */
+const isFixedL = (a: LayoutItem) => isFlightL(a) || isCheckinL(a) || isCheckoutL(a) || isTransferL(a) || a.timeSlot === 'hotel';
+const MEAL_SLOT_SET = new Set(['breakfast', 'lunch', 'dinner']);
+
+/**
+ * Minutos de deslocamento: os do logisticsLine (arredondados para cima) com coords nas duas pontas;
+ * senão 15. Saindo de um bate-volta, 15: a duração do catálogo já inclui a volta.
+ */
+export function hopMinutes(a: LayoutItem | null | undefined, b: LayoutItem | null | undefined, index?: Map<string, SuggestedActivity>): number {
+  const fromTrip = a && index ? catalogItemOf(a as PlanDayItem, index) : null;
+  if (fromTrip && isDaytripTagged(fromTrip)) return DEFAULT_HOP_MIN;
+  const ca = a ? curatedCoordOf(a.id) : null;
+  const cb = b ? curatedCoordOf(b.id) : null;
+  if (!ca || !cb) return DEFAULT_HOP_MIN;
+  const km = haversineKm(ca, cb);
+  const raw = km <= 1.2 ? (km / 5) * 60 : (km / 20) * 60 + 5;
+  return Math.max(5, Math.ceil(raw / 5) * 5);
+}
+
+/** R5: catálogo pelo id → `duration` → defaults. */
+export function layoutMinutesOf(a: LayoutItem, index: Map<string, SuggestedActivity>): number {
+  if (isCheckinL(a) || isCheckoutL(a)) return 30;
+  if (isTransferL(a) && !isFlightL(a)) return AIRPORT_HOP_MIN;
+  const cat = catalogItemOf(a as PlanDayItem, index);
+  if (cat && cat.durationHours) return Math.round(cat.durationHours * 60);
+  const m = durationMinutesOf(a.duration);
+  return m >= 0 ? m : defaultMinutesOf({ ...a, type: kindOf(a) } as PlanDayItem);
+}
+
+/** Dica na frente (é a que a tela mostra). A do bate-volta não some: as duas viram uma linha. */
+function addTip<T extends LayoutItem>(item: T, tip: string): void {
+  const first = item.tips?.[0] ?? '';
+  if (first.includes(tip)) return;
+  const line = first.startsWith('Bate-volta') ? `${first} · ${tip}` : tip;
+  item.tips = first.startsWith('Bate-volta') ? [line, ...(item.tips ?? []).slice(1)] : [line, ...(item.tips ?? [])];
+  if ('description' in item) item.description = line;
+}
+
+/** R7: quem sai primeiro quando uma refeição estoura — noite > pôr do sol > tarde > manhã. */
+const sacrificeRank = (a: LayoutItem) =>
+  a.timeSlot === 'night' ? 0 : a.timeSlot === 'afternoon' && SUNSET_RE.test(a.name) ? 1 : a.timeSlot === 'afternoon' ? 2 : a.timeSlot === 'morning' ? 3 : 4;
+
+/**
+ * O scheduler: recebe os itens NA ORDEM do dia e devolve as horas calculadas (R1–R9).
+ * Fixos ficam; flexível começa em max(âncora, startMin, fim do anterior + deslocamento) e sai se
+ * passar do máximo do slot ou não couber antes do próximo fixo. Refeição é protegida (R7).
+ * Puro: devolve cópias; `dropped` traz o que não coube.
+ */
+export function layoutDay<T extends LayoutItem>(items: T[], opts: LayoutOpts): { items: T[]; dropped: T[] } {
+  const index = opts.index ?? new Map(catalogFor(opts.destination).map((a) => [a.id, a]));
+  const seq = items.map((a) => ({ ...a, tips: a.tips ? [...a.tips] : a.tips })) as T[];
+  const dropped = new Set<T>();
+  const mins = new Map<T, number>(seq.map((a) => [a, layoutMinutesOf(a, index)]));
+  const isLong = (a: T) => a.timeSlot === 'morning' && (mins.get(a) ?? 0) >= LONG_ITEM_MINUTES;
+
+  for (let guard = 0; guard <= seq.length; guard++) {
+    let cursor = -Infinity;
+    let prev: T | null = null;
+    let restart = false;
+    const live = seq.filter((a) => !dropped.has(a));
+    for (let k = 0; k < live.length; k++) {
+      const a = live[k];
+      const own = clockMinutes(a.time);
+      if (isFixedL(a)) {
+        if (own >= 0) { cursor = Math.max(cursor, own + (mins.get(a) ?? 0)); prev = a; }
+        continue;
+      }
+      const slot = a.timeSlot ?? '';
+      const rule = slot === 'afternoon' && SUNSET_RE.test(a.name) ? SUNSET_RULE : SLOT_RULES[slot] ?? { anchor: 0, max: Infinity };
+      const userAnchor = opts.anchorFromTime?.(a) && own >= 0;
+      const anchor = userAnchor ? own : isLong(a) ? LONG_ITEM_ANCHOR : rule.anchor;
+      const max = userAnchor ? Infinity : slot === 'dinner' && opts.dinnerMax ? opts.dinnerMax : rule.max;
+      const start = Math.max(anchor, opts.startMin ?? -Infinity, prev ? cursor + hopMinutes(prev, a, index) : -Infinity);
+      const end = start + (mins.get(a) ?? 0);
+      const nextFixed = live.slice(k + 1).find((x) => isFixedL(x) && clockMinutes(x.time) >= 0);
+      const fits = start <= max && (!nextFixed || end + hopMinutes(a, nextFixed, index) <= clockMinutes(nextFixed.time));
+      if (fits) {
+        a.time = nextDayClock(start);
+        cursor = end;
+        prev = a;
+        continue;
+      }
+      if (slot === 'lunch' || slot === 'dinner') {
+        // R7: refeição protegida. Item longo empurrando o almoço → o almoço sai, com a dica no longo.
+        const before = live.slice(0, k);
+        const lastMeal = before.map((x) => MEAL_SLOT_SET.has(x.timeSlot ?? '')).lastIndexOf(true);
+        const pushers = before.slice(lastMeal + 1).filter((x) => !isFixedL(x) && !MEAL_SLOT_SET.has(x.timeSlot ?? ''));
+        const long = slot === 'lunch' ? pushers.find(isLong) : undefined;
+        if (long) {
+          const pair = catalogIdOf(a.id) === `${catalogIdOf(long.id)}-almoco`;
+          addTip(long, pair ? `${LUNCH_ON_SITE_TIP}: ${a.name}` : LUNCH_ON_SITE_TIP);
+          dropped.add(a);
+        } else if (pushers.length > 0) {
+          const out = [...pushers].sort((x, y) => sacrificeRank(x) - sacrificeRank(y) || before.indexOf(y) - before.indexOf(x))[0];
+          dropped.add(out);
+        } else dropped.add(a);
+        restart = true;
+        break;
+      }
+      dropped.add(a);
+      restart = true;
+      break;
+    }
+    if (!restart) break;
+  }
+  return { items: seq.filter((a) => !dropped.has(a)), dropped: seq.filter((a) => dropped.has(a)) };
+}
+
 export interface SwapCandidate {
   activity: SuggestedActivity;
   hours: number;
@@ -342,9 +504,9 @@ export interface SwapCandidate {
 
 /**
  * Alternativas do catálogo para o ↻ de um item: mesma cidade, mesma categoria, fora do que a viagem já
- * usa, com a duração PRÓPRIA. Só entra o que cabe: (a) R16 do dia com a troca feita — ou a troca não
- * piora (candidata ≤ item atual); (b) o vão do slot até o próximo item com hora (e, no último dia, até
- * a partida − 2 h/3 h); no dia da chegada, o slot não começa antes do pouso. Máx. 6.
+ * usa, com a duração PRÓPRIA. Só entra o que cabe: (a) o scheduler (layoutDay) com a troca feita não
+ * derruba a candidata nem nenhum item que o dia mantinha (C.4); (b) R16 do dia com a troca — ou a
+ * troca não piora (candidata ≤ item atual); no dia da chegada, o slot não começa antes do pouso. Máx. 6.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function swapCandidates(trip: any, dayIndex: number, itemId: string): SwapCandidate[] {
@@ -369,23 +531,21 @@ export function swapCandidates(trip: any, dayIndex: number, itemId: string): Swa
   const curParsed = String(item.duration ?? '').match(/(\d+(?:[.,]\d+)?)\s*h/);
   const curHours = cur ? cur.durationHours || 0 : curParsed ? parseFloat(curParsed[1].replace(',', '.')) : 1.5;
 
-  // Vão do slot.
-  const start = clockMinutes(item.time);
+  // Dia da chegada: o slot não começa antes do pouso.
   const pos = day.activities.findIndex((a) => a.id === item.id);
-  let limit = Infinity;
-  if (start >= 0) {
-    day.activities.forEach((a, k) => {
-      const t = clockMinutes(a.time);
-      if (k !== pos && (t > start || (t === start && k > pos))) limit = Math.min(limit, t);
-    });
-    if (dayIndex === days.length - 1) {
-      const dep = clockMinutes(ctx.returnDepartureTime);
-      if (dep >= 0) limit = Math.min(limit, dep - (ctx.domestic ? 2 : 3) * 60);
-    }
-    const arrivalIdx = ctx.arrivalDate ? days.findIndex((d) => String(d.date ?? '').slice(0, 10) === ctx.arrivalDate) : -1;
-    const arr = clockMinutes(ctx.arrivalTime);
-    if (dayIndex === (arrivalIdx >= 0 ? arrivalIdx : 0) && arr >= 0 && start < arr) return [];
-  }
+  const arrivalIdx = ctx.arrivalDate ? days.findIndex((d) => String(d.date ?? '').slice(0, 10) === ctx.arrivalDate) : -1;
+  const isArrival = dayIndex === (arrivalIdx >= 0 ? arrivalIdx : 0);
+  const arr = clockMinutes(ctx.arrivalTime);
+  if (isArrival && arr >= 0 && clockMinutes(item.time) >= 0 && clockMinutes(item.time) < arr) return [];
+
+  // "Cabe" (C.4) = o scheduler com a candidata no lugar não derruba nada que o dia mantinha.
+  const layoutOpts: LayoutOpts = {
+    destination: ctx.destination,
+    index,
+    ...(isArrival && arr >= 0 ? { startMin: arr + 60 + AIRPORT_HOP_MIN, dinnerMax: ARRIVAL_DINNER_MAX } : {}),
+  };
+  const kept = new Set(layoutDay(day.activities, layoutOpts).items.map((a) => a.id));
+  kept.delete(item.id);
 
   const neighbors = [day.activities[pos - 1], day.activities[pos + 1]]
     .map((a) => ({ a, c: itemCoord(a, ctx.destination) }))
@@ -396,10 +556,12 @@ export function swapCandidates(trip: any, dayIndex: number, itemId: string): Swa
 
   const fits = (a: SuggestedActivity): boolean => {
     const h = a.durationHours || 0;
-    if (start >= 0 && start + h * 60 > limit) return false;
-    if (h <= curHours) return true;
     const swapped = { id: `day-${dayIndex}-${a.id}`, name: a.name, time: item.time, timeSlot: slot, type: item.type, duration: `${h}h` };
-    const next = days.map((d, i) => (i !== dayIndex ? d : { ...d, activities: d.activities.map((x) => (x.id === item.id ? swapped : x)) }));
+    const acts = day.activities.map((x) => (x.id === item.id ? swapped : x));
+    const laid = new Set(layoutDay(acts, layoutOpts).items.map((x) => x.id));
+    if (!laid.has(swapped.id) || [...kept].some((id) => !laid.has(id))) return false;
+    if (h <= curHours) return true;
+    const next = days.map((d, i) => (i !== dayIndex ? d : { ...d, activities: acts }));
     const u = dayWindowUsage(next, ctx, dayIndex, [], index);
     return !u || u.used <= u.window;
   };
@@ -724,6 +886,45 @@ export function generateItinerary(
   // Jantar nunca antes de 1h30 após pousar.
   const arrivalDinnerTime = arrivalBand === 'dinner' ? hm(Math.max(19 * 60 + 30, arrivalMinutes + 90)) : '19:30';
   const NIGHT_ARRIVAL_TIP = 'Chegada noturna: descanse — o roteiro começa amanhã';
+  // R12: no dia de chegada nada flexível começa antes de pouso + 60 min + aeroporto→hotel.
+  const arrivalStartMin = arrivalHour >= 0 ? arrivalMinutes + 60 + AIRPORT_HOP_MIN : undefined;
+  const layoutIndex = new Map(catalogFor(destination).map((a) => [a.id, a]));
+
+  // R10/R11: último dia de trás pra frente. T = partida − 2 h/3 h; transfer = T − 45 min;
+  // check-out = transfer − 30 min (teto 12:00, D1). Negativo = véspera (D2): vai para o penúltimo dia.
+  const returnDepMin = clockMinutes(returnFlight.option.departureTime) >= 0 ? clockMinutes(returnFlight.option.departureTime) : 14 * 60;
+  const lastTransferMin = returnDepMin - (domestic ? 2 : 3) * 60 - AIRPORT_HOP_MIN;
+  const lastCheckoutMin = Math.min(lastTransferMin - 30, 12 * 60);
+  const earlyExit = lastCheckoutMin < 6 * 60;
+  const clockOf = (m: number) => hm(m < 0 ? m + 24 * 60 : m);
+  const exitTip = lastTransferMin < 0
+    ? `Saída ${clockOf(lastTransferMin)} — jantar leve antes do check-out`
+    : `Saída ${clockOf(lastTransferMin)} — jantar leve, durma cedo`;
+  const checkoutItem = (dayIdx: number, mins: number): ItineraryActivity => ({
+    id: `day-${dayIdx}-slot-checkout`,
+    name: 'Check-out do hotel',
+    type: 'transport',
+    timeSlot: 'morning',
+    estimatedCost: 0,
+    costPerPerson: 0,
+    time: clockOf(mins),
+    duration: '0.5h',
+    status: 'suggestion',
+    tips: [mins < 0 ? 'Voo de madrugada: saída do hotel na véspera' : 'Logística de saída — sem custo adicional'],
+    source: 'kinu',
+  });
+  const transferItem = (dayIdx: number, mins: number): ItineraryActivity => ({
+    id: `day-${dayIdx}-slot-transfer`,
+    name: 'Transfer para Aeroporto',
+    type: 'transport',
+    timeSlot: 'afternoon',
+    estimatedCost: transferCost,
+    time: clockOf(mins),
+    duration: '0.75h',
+    status: 'suggestion',
+    tips: [domestic ? 'No aeroporto 2h antes do voo doméstico' : 'No aeroporto 3h antes do voo internacional'],
+    source: 'kinu',
+  });
 
   let michelinCount = 0;
   let lastDaytripDay = -10;
@@ -833,7 +1034,7 @@ export function generateItinerary(
           estimatedCost: 0,
           costPerPerson: 0,
           time: arrivalCheckinTime('15:00'),
-          duration: '1h',
+          duration: '0.5h',
           location: (() => {
             if (hotel) return hotel.label;
             const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
@@ -853,7 +1054,7 @@ export function generateItinerary(
           estimatedCost: 0,
           costPerPerson: 0,
           time: '17:00',
-          duration: '1h30',
+          duration: '1.5h',
           location: destination,
           status: 'defined',
           source: 'kinu',
@@ -863,25 +1064,11 @@ export function generateItinerary(
         const lightDinner = arrivalBand !== 'night' ? pickArrivalDinner() : null;
         if (lightDinner) {
           const act = convertToItineraryActivity(lightDinner, i, 'dinner', arrivalDinnerTime, travelers);
-          act.tips = ['Refeição leve. Evite álcool e comida pesada.', ...(act.tips || [])];
+          act.tips = [REST_DINNER_TIP, ...(act.tips || [])];
           activities.push(act);
           dayTotal += act.estimatedCost;
         }
 
-        activities.push({
-          id: `day-${i}-slot-rest`,
-          name: 'Descanso para regular o sono',
-          type: 'night',
-          timeSlot: 'night',
-          estimatedCost: 0,
-          costPerPerson: 0,
-          time: '21:30',
-          duration: '0h',
-          location: destination,
-          status: 'defined',
-          source: 'kinu',
-          tips: ['Tente dormir no horário local', 'Resista o cochilo se for antes das 22h'],
-        });
       } else {
         // Normal arrival day — check-in + light exploration
         activities.push({
@@ -935,99 +1122,95 @@ export function generateItinerary(
       theme = '✈️ Dia de Partida';
       windowHours = lastWindow;
       let last: Coord | null = hotelCoord;
-      
-      // Derive schedule backward from real return flight time
-      const [depH, depM] = returnFlight.option.departureTime.split(':').map(Number);
-      const depMinutes = depH * 60 + depM;
-      // R-V8: hora de ir para o aeroporto = saída − 3 h (internacional) / − 2 h (doméstico).
-      const transferMinutes = Math.max(0, depMinutes - (domestic ? 2 : 3) * 60);
-      const fmt = hm;
-      const transferTime = fmt(transferMinutes);
-      
-      // Café do catálogo às 08:00 se dá tempo antes do aeroporto; senão (inclui saída < 10:00)
-      // só um café rápido no hotel, genérico, antes do check-out.
-      if (transferMinutes >= 9 * 60) {
-        const breakfastActivity = pickActivity('breakfast', 'Gastronomia', { near: last });
-        if (breakfastActivity) {
-          const activity = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers);
-          activities.push(activity);
-          dayTotal += activity.estimatedCost;
-          last = curatedCoordOf(breakfastActivity.id) ?? last;
-        }
-      } else {
-        activities.push({
-          id: `day-${i}-slot-quick-breakfast`,
-          name: 'Café rápido no hotel',
-          type: 'breakfast',
-          timeSlot: 'breakfast',
-          estimatedCost: 0,
-          costPerPerson: 0,
-          time: fmt(Math.max(0, transferMinutes - 60)),
-          duration: '30min',
-          status: 'suggestion',
-          tips: ['Voo cedo: só café e check-out antes do aeroporto'],
-          source: 'kinu',
-        });
-      }
-      
-      // Checkout — 30 min before transfer, capped so it is never later than 11:00
-      const checkoutMinutes = Math.max(0, Math.min(11 * 60, transferMinutes - 30));
-      activities.push({
-        id: `day-${i}-slot-checkout`,
-        name: 'Check-out do hotel',
-        type: 'transport',
-        timeSlot: 'morning',
-        estimatedCost: 0,
-        costPerPerson: 0,
-        time: fmt(checkoutMinutes),
-        status: 'suggestion',
-        tips: ['Logística de saída — sem custo adicional'],
-        source: 'kinu',
-      });
+      const add = (act: ItineraryActivity) => { activities.push(act); dayTotal += act.estimatedCost; };
+      const dur = (a: SuggestedActivity) => Math.round((a.durationHours || 0) * 60);
+      const notLongDay = (a: SuggestedActivity) => a.dayOccupancy !== 'full' && a.dayOccupancy !== 'half';
 
-      
-      // Light morning activity — only if transfer is 12:15 or later
-      if (transferMinutes >= 12 * 60 + 15) {
-        const morningActivity = pickActivity('afternoon', 'Descobertas', {
-          near: last,
-          accept: (a) => a.dayOccupancy !== 'full' && a.dayOccupancy !== 'half',
-        });
-        if (morningActivity) {
-          last = curatedCoordOf(morningActivity.id) ?? last;
-          const activity = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers);
-          activity.tips = ['Aproveite as últimas horas!', ...(activity.tips || [])];
-          activities.push(activity);
-          dayTotal += activity.estimatedCost;
+      if (!earlyExit) {
+        // Café: do catálogo às 08:00 se o check-out é ≥ 09:00; senão café rápido 1 h antes do check-out.
+        let cursor = 8 * 60;
+        let prevItem: ItineraryActivity | null = null;
+        const candidate = (a: SuggestedActivity) => ({ id: `day-${i}-${a.id}`, name: a.name });
+        const startAfter = (a: SuggestedActivity, anchor: number) =>
+          Math.max(anchor, cursor + (prevItem ? hopMinutes(prevItem, candidate(a), layoutIndex) : DEFAULT_HOP_MIN));
+        if (lastCheckoutMin >= 9 * 60) {
+          const breakfastActivity = pickActivity('breakfast', 'Gastronomia', { near: last });
+          if (breakfastActivity) {
+            prevItem = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers);
+            add(prevItem);
+            last = curatedCoordOf(breakfastActivity.id) ?? last;
+            cursor = 8 * 60 + dur(breakfastActivity);
+          }
+        } else if (lastCheckoutMin >= 7 * 60 + 30) {
+          add({
+            id: `day-${i}-slot-quick-breakfast`,
+            name: 'Café rápido no hotel',
+            type: 'breakfast',
+            timeSlot: 'breakfast',
+            estimatedCost: 0,
+            costPerPerson: 0,
+            time: hm(lastCheckoutMin - 60),
+            duration: '0.5h',
+            status: 'suggestion',
+            tips: ['Voo cedo: só café e check-out antes do aeroporto'],
+            source: 'kinu',
+          });
         }
+
+        // Manhã: só o que termina (+ deslocamento) antes do check-out.
+        const morningStart = Math.max(SLOT_RULES.morning.anchor, cursor + DEFAULT_HOP_MIN);
+        const morningRoom = lastCheckoutMin - DEFAULT_HOP_MIN - morningStart;
+        if (morningRoom >= 60) {
+          const morningActivity = pickActivity('afternoon', 'Descobertas', {
+            near: last,
+            accept: (a) => notLongDay(a) && startAfter(a, SLOT_RULES.morning.anchor) + dur(a) + DEFAULT_HOP_MIN <= lastCheckoutMin,
+          });
+          if (morningActivity) {
+            last = curatedCoordOf(morningActivity.id) ?? last;
+            const activity = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers);
+            activity.tips = ['Aproveite as últimas horas!', ...(activity.tips || [])];
+            add(activity);
+          }
+        }
+
+        add(checkoutItem(i, lastCheckoutMin));
+        prevItem = null; // do hotel: sem coord → deslocamento padrão
+
+        // Depois do check-out (D1): almoço e tarde, se terminam (+ deslocamento) antes do transfer.
+        let after = lastCheckoutMin + 30;
+        const lunchStart = Math.max(SLOT_RULES.lunch.anchor, after + DEFAULT_HOP_MIN);
+        if (lunchStart + 90 + DEFAULT_HOP_MIN <= lastTransferMin) {
+          const lunchActivity = pickActivity('lunch', 'Gastronomia', {
+            near: last,
+            accept: (a) => lunchStart + dur(a) + DEFAULT_HOP_MIN <= lastTransferMin,
+          });
+          if (lunchActivity) {
+            prevItem = convertToItineraryActivity(lunchActivity, i, 'lunch', '12:30', travelers);
+            add(prevItem);
+            last = curatedCoordOf(lunchActivity.id) ?? last;
+            after = lunchStart + dur(lunchActivity);
+          }
+        }
+        const afternoonStart = Math.max(SLOT_RULES.afternoon.anchor, after + DEFAULT_HOP_MIN);
+        const afternoonRoom = lastTransferMin - DEFAULT_HOP_MIN - afternoonStart;
+        if (afternoonStart <= SLOT_RULES.afternoon.max && afternoonRoom >= 60) {
+          cursor = after;
+          const afternoonActivity = pickActivity('afternoon', 'Descobertas', {
+            near: last,
+            accept: (a) => {
+              const st = startAfter(a, SLOT_RULES.afternoon.anchor);
+              return notLongDay(a) && !SUNSET_RE.test(a.name) && st <= SLOT_RULES.afternoon.max && st + dur(a) + DEFAULT_HOP_MIN <= lastTransferMin;
+            },
+          });
+          if (afternoonActivity) add(convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00', travelers));
+        }
+      } else if (lastCheckoutMin >= 0) {
+        // R11: madrugada — o dia de volta só tem check-out, transfer e voo, com horas reais.
+        add(checkoutItem(i, lastCheckoutMin));
       }
 
-      
-      // Lunch — only if transfer is 14:00 or later
-      if (transferMinutes >= 14 * 60) {
-        const lunchActivity = pickActivity('lunch', 'Gastronomia', { near: last });
-        if (lunchActivity) {
-          const activity = convertToItineraryActivity(lunchActivity, i, 'lunch', '12:30', travelers);
-          activities.push(activity);
-          dayTotal += activity.estimatedCost;
-        }
-      }
-      
-      // Transfer to airport (SHARED — not multiplied)
-      activities.push({
-        id: `day-${i}-slot-transfer`,
-        name: 'Transfer para Aeroporto',
-    type: 'transport',
-        timeSlot: 'afternoon',
-        estimatedCost: transferCost,
-        time: transferTime,
-        duration: '1h',
-        status: 'suggestion',
-        tips: [domestic ? 'Saída 2h antes do voo doméstico' : 'Saída 3h antes do voo internacional'],
-        source: 'kinu',
-      });
-      dayTotal += transferCost;
+      if (lastTransferMin >= 0) add(transferItem(i, lastTransferMin));
 
-      
       // Return flight
       const returnCost = returnLegPrice * travelers;
       activities.push({
@@ -1045,15 +1228,6 @@ export function generateItinerary(
         ...flightUnknownTips(returnFlight),
       });
       dayTotal += returnCost;
-
-      // Sort this day's activities by time
-      activities.sort((a, b) => {
-        const [ha, ma] = (a.time || '').split(':').map(Number);
-        const [hb, mb] = (b.time || '').split(':').map(Number);
-        const minA = (ha || 0) * 60 + (ma || 0);
-        const minB = (hb || 0) * 60 + (mb || 0);
-        return minA - minB;
-      });
     }
 
     // Middle days: Full exploration with 5-6 activities
@@ -1150,7 +1324,7 @@ export function generateItinerary(
         activities.push(hotelBreakfast());
         const trip = place(morningActivity, 'morning', '09:00');
         trip.tips = ['Bate-volta: ocupa o dia inteiro', ...(trip.tips || [])];
-        const pairs = pairsOf(morningActivity.id);
+        const pairs = pairsOf(morningActivity.id).sort((a, b) => Number(a.id.endsWith('-jantar')) - Number(b.id.endsWith('-jantar')));
         for (const p of pairs) {
           usedPlaces.mark(p.name, i, p.category);
           place(p, p.id.endsWith('-jantar') ? 'dinner' : 'lunch', p.id.endsWith('-jantar') ? '19:30' : '13:00');
@@ -1163,7 +1337,7 @@ export function generateItinerary(
             near: hotelCoord, nearKm: DAYTRIP_DINNER_KM, accept: anyFits ? fitsDay : undefined,
           });
           if (dinner) {
-            const act = place(dinner, 'dinner', '20:00');
+            const act = place(dinner, 'dinner', '19:30');
             act.tips = ['Perto do hotel, para a volta do bate-volta', ...(act.tips || [])];
           }
         }
@@ -1191,6 +1365,8 @@ export function generateItinerary(
         }
 
         const morningOccupancy = morningActivity?.dayOccupancy;
+        // Regra 2 (C.4): manhã ≥ 4 h ocupa o dia como o bate-volta — sem tarde; almoço só se cabe até 14:30.
+        const longMorning = !!morningActivity && (morningActivity.durationHours || 0) * 60 >= LONG_ITEM_MINUTES;
         let afternoonOccupancy: 'full' | 'half' | undefined;
 
         if (morningActivity) {
@@ -1200,13 +1376,20 @@ export function generateItinerary(
           activities.push(buildFreeSlotActivity(i, 'morning', '10:00'));
         }
 
-        if (morningOccupancy === 'full') {
-          // CASE A: full-day morning activity consumes the day
-          // breakfast + full-day activity + dinner (no lunch, no afternoon, no night)
-        } else if (morningOccupancy === 'half') {
-          // CASE B: half-day morning activity + lunch + dinner (no afternoon, no night)
-          const lunchActivity = pickActivity('lunch', dayTheme.title, { near: last });
-          if (lunchActivity) place(lunchActivity, 'lunch', '13:00');
+        if (longMorning || morningOccupancy === 'full' || morningOccupancy === 'half') {
+          // Dia longo (CASE A/B unificados): café + longo + almoço se termina (+ desloc.) até 14:30 + jantar.
+          // Só escolhe almoço que o scheduler vai manter: fim real do longo + deslocamento até ele ≤ 14:30.
+          const morningAct = activities.find((a) => morningActivity && a.id === `day-${i}-${morningActivity.id}`);
+          const longLaid = morningAct && layoutDay(activities, { destination, index: layoutIndex }).items.find((a) => a.id === morningAct.id);
+          const longEnd = longLaid ? clockMinutes(longLaid.time) + layoutMinutesOf(longLaid, layoutIndex) : Infinity;
+          const lunchFits = (a: SuggestedActivity) =>
+            !!longLaid && longEnd + hopMinutes(longLaid, { id: `day-${i}-${a.id}`, name: a.name }, layoutIndex) <= SLOT_RULES.lunch.max;
+          if (pool.some((a) => a.category === 'lunch' && !usedPlaces.isUsed(a.name) && !isPairMeal(a) && lunchFits(a))) {
+            const lunchActivity = pickActivity('lunch', dayTheme.title, { near: last, accept: lunchFits });
+            if (lunchActivity) place(lunchActivity, 'lunch', '13:00');
+          } else if (morningAct && longMorning) {
+            morningAct.tips = [LUNCH_ON_SITE_TIP, ...(morningAct.tips || [])];
+          }
         } else {
           // CASE C: normal morning activity + lunch + afternoon + dinner + optional night.
           // A tarde nasce perto da manhã (é ela que pesa na cota); o almoço vem depois, perto das duas.
@@ -1215,7 +1398,8 @@ export function generateItinerary(
             !!a && typeof a.name === 'string' &&
             /(p[ôo]r do sol|sunset)/i.test(a.name);
           // Full/half-day activities must anchor the day from the morning, not the afternoon.
-          const notLong = (a: SuggestedActivity) => a.dayOccupancy !== 'full' && a.dayOccupancy !== 'half';
+          const notLong = (a: SuggestedActivity) =>
+            a.dayOccupancy !== 'full' && a.dayOccupancy !== 'half' && (a.durationHours || 0) * 60 < LONG_ITEM_MINUTES;
 
           let afternoonActivity = pickActivity('afternoon', dayTheme.title, { near: morningAt, quota: true, accept: notLong });
 
@@ -1279,8 +1463,8 @@ export function generateItinerary(
               timeSlot: 'dinner',
               estimatedCost: total,
               costPerPerson: perPerson,
-              time: '20:00',
-              duration: '2h30',
+              time: '19:30',
+              duration: '2.5h',
               location: availableMichelin.neighborhood || destination,
               status: 'defined',
               source: 'kinu',
@@ -1306,7 +1490,7 @@ export function generateItinerary(
           pool.some((a) => a.category === 'night' && !usedPlaces.isUsed(a.name) && !isPairMeal(a) && !isDaytripTagged(a) && interestNight(a));
         const shouldAddNightActivity = isNightlifeDay || wantsNightlife || hasInterestNight;
 
-        if (shouldAddNightActivity && morningOccupancy !== 'full' && morningOccupancy !== 'half' && afternoonOccupancy !== 'full' && afternoonOccupancy !== 'half') {
+        if (shouldAddNightActivity && !(earlyExit && i === totalDays - 2) && morningOccupancy !== 'full' && morningOccupancy !== 'half' && afternoonOccupancy !== 'full' && afternoonOccupancy !== 'half') {
           const nightActivity = pickActivity('night', dayTheme.title, {
             near: last, quota: true, accept: isNightlifeDay || wantsNightlife ? undefined : interestNight,
           });
@@ -1341,6 +1525,35 @@ export function generateItinerary(
         activities.splice(activities.indexOf(out), 1);
         dayTotal -= out.estimatedCost;
       }
+    }
+
+    // R11: saída de madrugada — a véspera perde a noite, recebe o check-out/transfer que caem antes
+    // de 00:00 (D2) e o jantar ganha a dica da saída.
+    if (earlyExit && i === totalDays - 2) {
+      for (const a of activities.filter((x) => x.timeSlot === 'night')) {
+        activities.splice(activities.indexOf(a), 1);
+        dayTotal -= a.estimatedCost;
+      }
+      if (lastCheckoutMin < 0) activities.push(checkoutItem(i, lastCheckoutMin));
+      if (lastTransferMin < 0) { activities.push(transferItem(i, lastTransferMin)); dayTotal += transferCost; }
+    }
+
+    // ⏰ Scheduler (C.4): a sequência vira horário; o que não cabe sai (R1–R9).
+    const isArrivalDay = (i === 0 && sameDayArrival) || (i === arrivalDayIndex && !sameDayArrival && i !== totalDays - 1);
+    const laid = layoutDay(activities, {
+      destination,
+      index: layoutIndex,
+      ...(isArrivalDay ? { startMin: arrivalStartMin, dinnerMax: ARRIVAL_DINNER_MAX } : {}),
+    });
+    for (const out of laid.dropped) dayTotal -= out.estimatedCost;
+    activities.splice(0, activities.length, ...laid.items);
+    if (earlyExit && i === totalDays - 2) {
+      const dinner = activities.find((a) => a.timeSlot === 'dinner');
+      if (dinner) dinner.tips = [exitTip, ...(dinner.tips || [])];
+    }
+    const checkout = activities.find((a) => /-slot-checkout$/.test(a.id));
+    if (checkout && i === totalDays - 1 && activities.some((a, k) => k > activities.indexOf(checkout) && !isFixedL(a))) {
+      checkout.tips = [LUGGAGE_TIP, ...(checkout.tips || [])];
     }
 
     days.push({

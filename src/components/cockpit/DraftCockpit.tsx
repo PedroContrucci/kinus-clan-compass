@@ -321,7 +321,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
       return: (retQ.data || []).map(o => offerToSelected(o, { date: new Date(trip.endDate), fromCity: trip.destination, toCity: trip.origin || 'São Paulo' })),
     };
     const pickOut = pickBest(record.outbound);
-    const pickRet = pickBest(record.return);
+    const pickRet = pickBest(record.return, 'kinu', 'return');
     const curOut = trip.outboundFlight;
     const curRet = trip.returnFlight;
     if ((!pickOut && !pickRet) || !(pickOut ?? curOut) || !(pickRet ?? curRet)) {
@@ -346,10 +346,10 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   const applyPendingPick = useCallback(() => {
     const rec = trip.kinuFlightSearch;
     if (!rec) return;
-    const keep = (cur: SelectedFlight | undefined, list: SelectedFlight[]) =>
-      cur?.chosenBy === 'user' ? cur : pickBest(list) ?? cur;
-    const out = keep(trip.outboundFlight, rec.outbound);
-    const ret = keep(trip.returnFlight, rec.return);
+    const keep = (cur: SelectedFlight | undefined, list: SelectedFlight[], leg: 'outbound' | 'return') =>
+      cur?.chosenBy === 'user' ? cur : pickBest(list, 'kinu', leg) ?? cur;
+    const out = keep(trip.outboundFlight, rec.outbound, 'outbound');
+    const ret = keep(trip.returnFlight, rec.return, 'return');
     if (!out || !ret) return;
     setSelectedOutbound(out);
     setSelectedReturn(ret);
@@ -412,7 +412,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     const rec = trip.kinuFlightSearch?.key === searchKey ? trip.kinuFlightSearch : undefined;
     const est = estimateOf(trip);
     const out = (rec && pickBest(rec.outbound)) || (est.outbound && { ...est.outbound, chosenBy: 'kinu' as const });
-    const ret = (rec && pickBest(rec.return)) || (est.return && { ...est.return, chosenBy: 'kinu' as const });
+    const ret = (rec && pickBest(rec.return, 'kinu', 'return')) || (est.return && { ...est.return, chosenBy: 'kinu' as const });
     if (!out || !ret) return;
     flightDirty.current = false;
     setSelectedOutbound(out);

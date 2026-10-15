@@ -10,6 +10,8 @@
 //      contam como empate;
 //   3. chegada local na janela antes de fora dela;
 //   4. menor duração.
+// Volta (leg 'return', C.4): além disso, só concorre quem PARTE entre DEPARTURE_WINDOW.from e .to
+// (06:00–22:00) — a volta das 02:30 só é sugerida se nenhuma sair dentro.
 // Modo 'fastest' (chip "Mais rápido"): direto > menor duração > menor preço (mesma faixa) > janela.
 // Desempate final: preço exato, depois id — nunca a ordem de chegada da API.
 import type { SelectedFlight } from '@/lib/itineraryEngine';
@@ -21,11 +23,26 @@ export const PRICE_TIE_PCT = 0.05;
 /** Janela de chegada confortável, hora local do destino [from, to]. */
 export const ARRIVAL_WINDOW = { from: 6, to: 22 } as const;
 
+/** Janela de partida da volta, hora local de saída [from, to]. */
+export const DEPARTURE_WINDOW = { from: 6, to: 22 } as const;
+
 export type RankMode = 'kinu' | 'fastest';
+export type FlightLeg = 'outbound' | 'return';
 
 function arrivalHour(f: SelectedFlight): number {
   const m = String(f.option.arrivalTime || '').match(/^(\d{1,2}):(\d{2})/);
   return m ? Number(m[1]) + Number(m[2]) / 60 : -1;
+}
+
+function departureHour(f: SelectedFlight): number {
+  const m = String(f.option.departureTime || '').match(/^(\d{1,2}):(\d{2})/);
+  return m ? Number(m[1]) + Number(m[2]) / 60 : -1;
+}
+
+/** Sai dentro da janela de partida (06:00–22:00)? */
+export function departsInWindow(f: SelectedFlight): boolean {
+  const h = departureHour(f);
+  return h >= DEPARTURE_WINDOW.from && h <= DEPARTURE_WINDOW.to;
 }
 
 /** Chega dentro da janela? Fuso desconhecido não prova nada → fora. */
@@ -35,23 +52,26 @@ export function arrivesInWindow(f: SelectedFlight): boolean {
   return h >= ARRIVAL_WINDOW.from && h <= ARRIVAL_WINDOW.to;
 }
 
-/** Pode ser sugestão do KINU: chega na janela e, em rota doméstica, no mesmo dia. */
-export function eligibleForKinu(f: SelectedFlight): boolean {
+/** Pode ser sugestão do KINU: chega na janela e, em rota doméstica, no mesmo dia; na volta, também parte na janela. */
+export function eligibleForKinu(f: SelectedFlight, leg: FlightLeg = 'outbound'): boolean {
+  if (leg === 'return' && !departsInWindow(f)) return false;
   return arrivesInWindow(f) && !(f.international === false && flightDaysLater(f) > 0);
 }
 
-/** Rótulo da oferta que não concorre à sugestão: "fora da janela · chega 03:00 (+1)" (null se concorre). */
-export function outsideWindowLabel(f: SelectedFlight): string | null {
-  if (f.tzKnown === false || eligibleForKinu(f)) return null;
+/** Rótulo da oferta que não concorre à sugestão: "fora da janela · chega 03:00 (+1)" / "fora da janela · sai 02:30" (null se concorre). */
+export function outsideWindowLabel(f: SelectedFlight, leg: FlightLeg = 'outbound'): string | null {
+  if (leg === 'return' && !departsInWindow(f)) return `fora da janela · sai ${f.option.departureTime}`;
+  if (f.tzKnown === false || eligibleForKinu(f, leg)) return null;
   const n = flightDaysLater(f);
   return `fora da janela · chega ${f.option.arrivalTime}${n > 0 ? ` (+${n})` : ''}`;
 }
 
 /** Ordena as ofertas pela regra do modo. Não muda a lista de entrada. */
-export function rankFlights(list: SelectedFlight[], mode: RankMode = 'kinu'): SelectedFlight[] {
+export function rankFlights(list: SelectedFlight[], mode: RankMode = 'kinu', leg: FlightLeg = 'outbound'): SelectedFlight[] {
+  const eligible = (f: SelectedFlight) => eligibleForKinu(f, leg);
   // Modo kinu: a faixa de preço é medida dentro do grupo que concorre (elegíveis × excluídas).
   const groupOf = (f: SelectedFlight) =>
-    `${mode === 'kinu' && eligibleForKinu(f) ? 'in' : 'out'}-${f.option.isDirect ? 'direct' : 'stops'}`;
+    `${mode === 'kinu' && eligible(f) ? 'in' : 'out'}-${f.option.isDirect ? 'direct' : 'stops'}`;
   const minPrice: Record<string, number> = {};
   for (const f of list) {
     const k = groupOf(f);
@@ -61,7 +81,7 @@ export function rankFlights(list: SelectedFlight[], mode: RankMode = 'kinu'): Se
     const min = minPrice[groupOf(f)];
     return f.option.price <= min * (1 + PRICE_TIE_PCT) ? min : f.option.price;
   };
-  const byEligible = (a: SelectedFlight, b: SelectedFlight) => Number(eligibleForKinu(b)) - Number(eligibleForKinu(a));
+  const byEligible = (a: SelectedFlight, b: SelectedFlight) => Number(eligible(b)) - Number(eligible(a));
   const byDirect = (a: SelectedFlight, b: SelectedFlight) => Number(b.option.isDirect) - Number(a.option.isDirect);
   const byBand = (a: SelectedFlight, b: SelectedFlight) => bandPrice(a) - bandPrice(b);
   const byWindow = (a: SelectedFlight, b: SelectedFlight) => Number(arrivesInWindow(b)) - Number(arrivesInWindow(a));
@@ -90,19 +110,23 @@ type KinuPickWhy = NonNullable<SelectedFlight['kinuPick']> & {
   cheapest?: boolean;
   /** Nenhuma oferta chegava na janela: a escolhida é a melhor de fora. */
   windowFallback?: boolean;
+  /** Perna ordenada (só gravada na volta): muda o texto do fallback. */
+  leg?: FlightLeg;
 };
 
 /** A melhor oferta pelo ranking, marcada como escolha do KINU (null sem ofertas). */
-export function pickBest(list: SelectedFlight[], mode: RankMode = 'kinu'): SelectedFlight | null {
-  const best = rankFlights(list, mode)[0];
+export function pickBest(list: SelectedFlight[], mode: RankMode = 'kinu', leg: FlightLeg = 'outbound'): SelectedFlight | null {
+  const best = rankFlights(list, mode, leg)[0];
   if (!best) return null;
-  const anyEligible = list.some(eligibleForKinu);
-  const competing = mode === 'kinu' && anyEligible ? list.filter(eligibleForKinu) : list;
+  const eligible = (f: SelectedFlight) => eligibleForKinu(f, leg);
+  const anyEligible = list.some(eligible);
+  const competing = mode === 'kinu' && anyEligible ? list.filter(eligible) : list;
   const min = Math.min(...competing.map((f) => f.option.price));
   const why: KinuPickWhy = {
     averagePrice: averagePrice(list), offers: list.length, mode,
     cheapest: best.option.price <= min * (1 + PRICE_TIE_PCT),
     ...(mode === 'kinu' && !anyEligible && best.tzKnown !== false ? { windowFallback: true } : {}),
+    ...(leg === 'return' ? { leg } : {}),
   };
   return { ...best, chosenBy: 'kinu', kinuPick: why };
 }
@@ -128,7 +152,8 @@ function pickReasons(f: SelectedFlight): string[] {
   if (avg && why.offers > 1 && (f.option.price - avg) / avg > PRICE_TIE_PCT) {
     out.push(`${brl(Math.round(f.option.price - avg))} acima da média`);
   }
-  if (why.windowFallback) out.push(`nenhuma opção chega entre ${String(ARRIVAL_WINDOW.from).padStart(2, '0')}h e ${ARRIVAL_WINDOW.to}h`);
+  if (why.windowFallback && why.leg === 'return') out.push(`nenhuma volta sai e chega entre ${String(DEPARTURE_WINDOW.from).padStart(2, '0')}h e ${DEPARTURE_WINDOW.to}h`);
+  else if (why.windowFallback) out.push(`nenhuma opção chega entre ${String(ARRIVAL_WINDOW.from).padStart(2, '0')}h e ${ARRIVAL_WINDOW.to}h`);
   return out;
 }
 

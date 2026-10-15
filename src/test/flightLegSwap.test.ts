@@ -39,14 +39,16 @@ const isLogistic = (a: Act) => ['flight', 'hotel'].includes(a.timeSlot ?? '') ||
 
 describe('R-V8 — último dia pela hora real da volta', () => {
   const out = leg('GRU', 'LIS', '2026-11-10', '23:00', 600, true);
-  it('internacional 22:00 → transfer 19:00; doméstico 14:00 → transfer 12:00', () => {
+  // C.4 R10: T = partida − 3 h/2 h é a hora NO aeroporto; transfer = T − 45 min; check-out = transfer − 30 (teto 12:00).
+  it('internacional 22:00 → transfer 18:15, check-out 12:00; doméstico 14:00 → transfer 11:15, check-out 10:45', () => {
     const lis = daysOf(build(tripFor('Lisboa'), out, leg('LIS', 'GRU', '2026-11-17', '22:00', 600, true)));
-    expect(lis.at(-1)!.activities.find((a) => /-slot-transfer$/.test(a.id))!.time).toBe('19:00');
+    expect(lis.at(-1)!.activities.find((a) => /-slot-transfer$/.test(a.id))!.time).toBe('18:15');
+    expect(lis.at(-1)!.activities.find((a) => /-slot-checkout$/.test(a.id))!.time).toBe('12:00');
     const fOut = leg('GRU', 'FOR', '2026-11-10', '08:00', 205, false);
     const fort = daysOf(build(tripFor('Fortaleza'), fOut, leg('FOR', 'GRU', '2026-11-17', '14:00', 205, false)));
     const last = fort.at(-1)!.activities;
-    expect(last.find((a) => /-slot-transfer$/.test(a.id))!.time).toBe('12:00');
-    expect(last.find((a) => /-slot-checkout$/.test(a.id))!.time).toBe('11:00');
+    expect(last.find((a) => /-slot-transfer$/.test(a.id))!.time).toBe('11:15');
+    expect(last.find((a) => /-slot-checkout$/.test(a.id))!.time).toBe('10:45');
   });
 });
 
@@ -96,7 +98,8 @@ describe('T2 — Fortaleza volta 14:00 → 07:30', () => {
   const out = leg('GRU', 'FOR', '2026-11-10', '08:00', 205, false);
   const before = build(tripFor('Fortaleza'), out, leg('FOR', 'GRU', '2026-11-17', '14:00', 205, false));
   const newRet = leg('FOR', 'GRU', '2026-11-17', '07:30', 205, false);
-  it('último dia só café + check-out; café trocado pelo usuário não cabe e é avisado', () => {
+  // C.4 R11: volta 07:30 doméstica → transfer 04:45, check-out 04:15 (< 06:00): sem café, horas reais.
+  it('último dia só check-out + transfer + voo; café trocado pelo usuário não cabe e é avisado', () => {
     const days = daysOf(before);
     const last = days.at(-1)!;
     const cafe = last.activities.find((a) => a.timeSlot === 'breakfast')!;
@@ -108,8 +111,8 @@ describe('T2 — Fortaleza volta 14:00 → 07:30', () => {
 
     const r = replanTrip(before, { outbound: out, return: newRet });
     const end = (r.days as unknown as Day[]).at(-1)!.activities;
-    expect(end.map((a) => a.id.replace(/^day-\d+-/, ''))).toEqual(['slot-quick-breakfast', 'slot-checkout', 'slot-transfer', 'slot-flight-back']);
-    expect(end.find((a) => /-slot-transfer$/.test(a.id))!.time).toBe('05:30');
+    expect(end.map((a) => a.id.replace(/^day-\d+-/, ''))).toEqual(['slot-checkout', 'slot-transfer', 'slot-flight-back']);
+    expect(end.find((a) => /-slot-transfer$/.test(a.id))!.time).toBe('04:45');
     expect(r.unplaced).toEqual([{ id: mine.id, name: mine.name, day: last.day }]);
     expect(unplacedMessage(r.unplaced)!.title).toBe('1 item seu não coube no novo horário');
     expect(unplacedMessage(r.unplaced)!.description).toContain('Café da Praia de Iracema');

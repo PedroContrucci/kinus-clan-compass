@@ -21,13 +21,30 @@ export interface SmokeRow { city: string; profile: string; interestsUsed: string
 // Doméstico = destino no Brasil, por enquanto. O modelo de voo vai carregar uma flag explícita depois.
 export const isDomesticDestination = (city: string) => findCityInfo(city)?.region === 'Brasil';
 
-export async function runSmokeCase(city: string, profile: SmokeProfile, from: Date, deps: DraftTripDeps = {}): Promise<SmokeRow> {
+export interface SmokeOpts {
+  /** Volta forçada (HH:mm) — a rodada de madrugada (SMOKE_RETURN=02:30). A página /smoke não passa. */
+  returnDeparture?: string;
+}
+
+/** Embrulha o routeLookup para a rota devolver `typicalReturnDeparture` = a volta pedida. */
+function withReturn(deps: DraftTripDeps, returnDeparture?: string): DraftTripDeps {
+  if (!returnDeparture) return deps;
+  return {
+    ...deps,
+    routeLookup: async (origin, destination) => {
+      const base = deps.routeLookup ? await deps.routeLookup(origin, destination) : null;
+      return { origin, destination, economyMin: 0, economyAvg: 0, economyMax: 0, businessAvg: 0, ...base, typicalReturnDeparture: returnDeparture };
+    },
+  };
+}
+
+export async function runSmokeCase(city: string, profile: SmokeProfile, from: Date, deps: DraftTripDeps = {}, opts: SmokeOpts = {}): Promise<SmokeRow> {
   const interestsUsed = profile.interests.filter((i) => interestsFor(city).some((c) => c.id === i));
   try {
     const input = buildFlowInput({ city, origin: 'São Paulo', from, to: addDays(from, SMOKE_NIGHTS), adults: 2, children: 0, tier: profile.tier });
     input.travelInterests = interestsUsed;
     input.priorities = interestsUsed;
-    const trip = await buildDraftTrip(input, deps);
+    const trip = await buildDraftTrip(input, withReturn(deps, opts.returnDeparture));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const t = trip as any;
     const days = (t.days ?? []) as PlanDay[];
@@ -46,9 +63,9 @@ export async function runSmokeCase(city: string, profile: SmokeProfile, from: Da
   }
 }
 
-export async function runSmokeMatrix(deps: DraftTripDeps = {}, from = addDays(startOfDay(new Date()), 30)): Promise<SmokeRow[]> {
+export async function runSmokeMatrix(deps: DraftTripDeps = {}, from = addDays(startOfDay(new Date()), 30), opts: SmokeOpts = {}): Promise<SmokeRow[]> {
   const rows: SmokeRow[] = [];
-  for (const city of CURATED_CITIES) for (const p of SMOKE_PROFILES) rows.push(await runSmokeCase(city, p, from, deps));
+  for (const city of CURATED_CITIES) for (const p of SMOKE_PROFILES) rows.push(await runSmokeCase(city, p, from, deps, opts));
   return rows;
 }
 

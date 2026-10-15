@@ -466,8 +466,33 @@ function itemHours(item: PlanDayItem, cat: SuggestedActivity | null): number {
   return m ? parseFloat(m[1].replace(',', '.')) : 0;
 }
 
+/** Minutos de uma duração gravada: "2h", "1.5h", "1,5h", "1h30", "45min"; −1 se não dá para ler. */
+export function durationMinutesOf(d: unknown): number {
+  const s = String(d ?? '');
+  const h = s.match(/(\d+(?:[.,]\d+)?)\s*h(?:\s*(\d{1,2}))?/);
+  if (h) return Math.round(parseFloat(h[1].replace(',', '.')) * 60) + (Number(h[2]) || 0);
+  const m = s.match(/(\d+)\s*min/);
+  return m ? Number(m[1]) : -1;
+}
+
+/** Defaults de quem não tem duração (os mesmos do R19 e do scheduler): refeição 1h30 · check-in/out 30 min · logística 1h · resto 1h30. */
+export function defaultMinutesOf(item: PlanDayItem): number {
+  if (item.type === 'checkin' || item.type === 'checkout' || /check-?(in|out)/i.test(item.name)) return 30;
+  if (MEALS.has(item.timeSlot ?? '') || MEALS.has(item.type ?? '')) return 90;
+  if (LOGISTIC_SLOTS.has(item.timeSlot ?? '') || LOGISTIC_SLOTS.has(item.type ?? '') || /transfer|aeroporto/i.test(item.name)) return 60;
+  return 90;
+}
+
+/** Horas do R16: catálogo → `duration` (h+min) → defaults. Fecha o achado do C.4-diag (item sem duração contava 0 h). */
+function planHours(item: PlanDayItem, cat: SuggestedActivity | null): number {
+  if (cat && cat.durationHours) return cat.durationHours;
+  const m = durationMinutesOf(item.duration);
+  return (m >= 0 ? m : defaultMinutesOf(item)) / 60;
+}
+
+// Check-out pelo nome também (o motor o grava como 'transport'), como no isLogisticAct do motor (C.4).
 const isLogistic = (a: PlanDayItem) =>
-  LOGISTIC_SLOTS.has(a.timeSlot ?? '') || LOGISTIC_SLOTS.has(a.type ?? '') || a.type === 'checkin' || a.type === 'checkout' || /transfer|aeroporto/i.test(a.name);
+  LOGISTIC_SLOTS.has(a.timeSlot ?? '') || LOGISTIC_SLOTS.has(a.type ?? '') || a.type === 'checkin' || a.type === 'checkout' || /transfer|aeroporto|check-?out/i.test(a.name);
 
 const fmt = (n: number) => n.toFixed(1).replace('.', ',');
 
@@ -495,7 +520,7 @@ export function dayWindowUsage(
     window = arr < 0 ? 14 : Math.max(0, 22 - arr);
   } else window = 14;
   const items = [...days[i].activities, ...extra].filter((a) => !isLogistic(a));
-  const hours = items.reduce((s, a) => s + itemHours(a, catalogItemOf(a, index)), 0);
+  const hours = items.reduce((s, a) => s + planHours(a, catalogItemOf(a, index)), 0);
   return { used: hours + HOP_HOURS * Math.max(0, items.length - 1), window, items: items.length };
 }
 
@@ -669,8 +694,6 @@ export function validateDaySequence(days: PlanDay[], ctx: PlanRulesContext): Seq
   const lastIdx = days.length - 1;
   const arrivalIdx = ctx.arrivalDate && ctx.arrivalTime ? arrivalIndexOf(days, ctx) : -1;
   const arrivalMin = toMinutes(ctx.arrivalTime);
-  const returnMin = toMinutes(ctx.returnDepartureTime);
-  const earlyReturn = returnMin >= 0 && returnMin < 8 * 60;
   const city = ctx.destination;
 
   const out: SequenceDay[] = days.map((d, i) => {
@@ -716,11 +739,11 @@ export function validateDaySequence(days: PlanDay[], ctx: PlanRulesContext): Seq
       if (!lead || b.end > lead.end) lead = b;
     }
 
-    // R19b — madrugada inventada. Voo sempre isento (D2); transfer/check-out só com volta < 08:00 no último dia.
+    // R19b — madrugada inventada. Voo, transfer e check-out isentos (C.4 D4); café e atividade não.
     for (const x of items) {
       if (x.start >= 6 * 60) continue;
       if (isFlightItem(x.a)) continue;
-      if (i === lastIdx && earlyReturn && (isTransferItem(x.a) || isCheckoutItem(x.a))) continue;
+      if (isTransferItem(x.a) || isCheckoutItem(x.a)) continue; // derivados do voo (R10/R11), nunca inventados
       issues.push({ day: d.day, kind: 'madrugada', status: 'FAIL', cause: 'b', text: `${city} D${d.day}: ${label(x)} (horário inventado)` });
     }
 

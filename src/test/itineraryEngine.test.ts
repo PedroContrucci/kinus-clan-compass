@@ -13,6 +13,10 @@ import {
   swapCandidates,
   logisticsLine,
   nextDayClock,
+  layoutDay,
+  hopMinutes,
+  REST_DINNER_TIP,
+  LUNCH_ON_SITE_TIP,
   type JetLagSeverity,
   type SelectedFlight,
 } from '@/lib/itineraryEngine';
@@ -22,9 +26,16 @@ import { matchesPriority } from '@/lib/claChips';
 import { curatedCoordOf } from '@/lib/routeCoords';
 import { haversineKm } from '@/lib/itineraryValidator';
 import { getHotelRecommendation } from '@/lib/hotelZones';
+import { addDays } from 'date-fns';
+import { buildDraftTrip } from '@/lib/createTrip';
+import { buildFlowInput } from '@/lib/onboardingFlow';
 
 // Snapshot capturado do generateItinerary ANTES da extração (GeneratedItineraryStage.tsx);
 // dias regravados na B.3 só onde geo/tempo/bate-volta mudaram a saída de propósito.
+// Adendo C.4: as 4 cidades regravadas pelo scheduler (layoutDay) — horas calculadas da sequência,
+// "Descanso" vira dica do jantar, último dia de trás pra frente (transfer = partida − 3 h − 45 min),
+// durações em hora decimal. Escolhas mudam onde a regra 2 tira tarde/almoço do dia longo, onde a
+// tarde passa a recusar item ≥ 4 h e onde o último dia ganha almoço/tarde depois do check-out (D1).
 const flight = (d: string, dep: string): SelectedFlight => ({
   date: new Date(d),
   source: 'estimate',
@@ -146,13 +157,14 @@ describe('itineraryEngine — B.3 interesse, tempo e dia', () => {
     }
   });
 
-  it('par <id>-almoco fica no dia do bate-volta; jantar a ≤ 5 km do hotel', () => {
+  // C.4 regra 2: Caraíva (8h) termina depois das 14:30 → o par vira "Almoço no local: <par>" no bate-volta.
+  it('par <id>-almoco que não cabe vira a dica do bate-volta (nunca item noutro dia); jantar a ≤ 5 km do hotel', () => {
     const r = run('Porto Seguro', ['culture']);
     const day = r.days.find((d) => d.activities.some((a) => /-ps5-caraiva$/.test(a.id)))!;
     expect(day).toBeDefined();
-    expect(day.activities.some((a) => /-ps5-caraiva-almoco$/.test(a.id))).toBe(true);
-    const caraivaAlmocoDays = r.days.filter((d) => d.activities.some((a) => /-ps5-caraiva-almoco$/.test(a.id)));
-    expect(caraivaAlmocoDays).toEqual([day]);
+    const trip = day.activities.find((a) => /-ps5-caraiva$/.test(a.id))!;
+    expect(trip.tips?.[0]).toMatch(/^Bate-volta: ocupa o dia inteiro · Almoço no local: /);
+    expect(r.days.some((d) => d.activities.some((a) => /-ps5-caraiva-almoco$/.test(a.id)))).toBe(false);
     const dinner = day.activities.find((a) => a.timeSlot === 'dinner')!;
     const hotel = engineHotelCoord('Porto Seguro', getHotelRecommendation('Porto Seguro', 'midrange', ['culture'])?.name)!;
     expect(haversineKm(hotel, curatedCoordOf(dinner.id)!)).toBeLessThanOrEqual(DAYTRIP_DINNER_KM);
@@ -276,5 +288,89 @@ describe('C.3a — trocar com duração do catálogo, logística real, check-in 
     const { readFileSync } = await import('node:fs');
     const pdf = readFileSync('src/lib/tripPdfExport.ts', 'utf8');
     expect(pdf).not.toMatch(/~10 min a pe|~20 min de taxi/);
+  });
+});
+
+// C.4 — scheduler: o dia é uma sequência (layoutDay). Mesmo caminho do smoke (buildDraftTrip, 2 pax, Conforto, 10/nov).
+describe('C.4 — layoutDay: a hora vem da sequência', () => {
+  type A = { id: string; name: string; time: string; duration: string; timeSlot?: string; description?: string };
+  type D = { day: number; activities: A[] };
+  const mins = (t: string) => { const m = t.match(/^(\d{2}):(\d{2})/)!; return Number(m[1]) * 60 + Number(m[2]); };
+  const dur = (a: A) => Math.round(parseFloat(a.duration) * 60);
+  const draft = async (city: string, interests: string[], returnDeparture?: string): Promise<D[]> => {
+    const from = new Date(2026, 10, 10);
+    const input = buildFlowInput({ city, origin: 'São Paulo', from, to: addDays(from, 7), adults: 2, children: 0, tier: 'comfort' });
+    input.travelInterests = interests;
+    input.priorities = interests;
+    const routeLookup = async (origin: string, destination: string) => returnDeparture
+      ? { origin, destination, economyMin: 0, economyAvg: 0, economyMax: 0, businessAvg: 0, typicalReturnDeparture: returnDeparture }
+      : null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return ((await buildDraftTrip(input, { routeLookup })) as any).days;
+  };
+  const GC = ['gastronomy', 'culture'];
+
+  it('Fortaleza gc D2: Crocobeach ocupa o dia — sem tarde; almoço depois do fim + deslocamento ou "no local"', async () => {
+    const d2 = (await draft('Fortaleza', GC))[1].activities;
+    const beach = d2.find((a) => /Crocobeach/.test(a.name))!;
+    expect(beach).toBeDefined();
+    expect(d2.filter((a) => a.timeSlot === 'afternoon')).toEqual([]);
+    const lunch = d2.find((a) => a.timeSlot === 'lunch');
+    if (lunch) expect(mins(lunch.time)).toBeGreaterThanOrEqual(mins(beach.time) + dur(beach) + 5);
+    else expect(beach.description).toMatch(new RegExp(LUNCH_ON_SITE_TIP));
+  });
+
+  it('Paris gc D2: Septime 19:30 é o último item; "Descanso" virou a dica do jantar', async () => {
+    const d2 = (await draft('Paris', GC))[1].activities;
+    const septime = d2.find((a) => a.name === 'Septime')!;
+    expect(septime.time).toBe('19:30');
+    expect(septime.description).toBe(REST_DINNER_TIP);
+    expect(d2.some((a) => /Descanso/.test(a.name))).toBe(false);
+    expect(d2.at(-1)).toBe(septime);
+  });
+
+  it('Rio gc D2: Aprazível (2,5 h) empurra a Mureta da Urca — começa no fim + deslocamento', async () => {
+    const d2 = (await draft('Rio de Janeiro', GC))[1].activities;
+    const lunch = d2.find((a) => a.name === 'Aprazível')!;
+    const mureta = d2.find((a) => a.name === 'Mureta da Urca')!;
+    expect(dur(lunch)).toBe(150);
+    const end = mins(lunch.time) + 150;
+    expect(mins(mureta.time)).toBe(Math.max(15 * 60, end + hopMinutes(lunch, mureta)));
+    expect(mins(mureta.time)).toBeGreaterThan(end);
+  });
+
+  it('volta 02:30 doméstica (Fortaleza): check-out 23:15 e transfer 23:45 na véspera, sem noite; o dia de volta é só o voo', async () => {
+    const days = await draft('Fortaleza', GC, '02:30');
+    const eve = days.at(-2)!.activities;
+    expect(eve.find((a) => /-slot-checkout$/.test(a.id))!.time).toBe('23:15');
+    expect(eve.find((a) => /-slot-transfer$/.test(a.id))!.time).toBe('23:45');
+    expect(eve.some((a) => a.timeSlot === 'night')).toBe(false);
+    expect(eve.find((a) => a.timeSlot === 'dinner')!.description).toBe('Saída 23:45 — jantar leve antes do check-out');
+    expect(days.at(-1)!.activities.map((a) => `${a.time} ${a.id.replace(/^day-\d+-/, '')}`)).toEqual(['02:30 slot-flight-back']);
+  });
+
+  it('volta 02:30 internacional (Paris): check-out 22:15, transfer 22:45 na véspera; nenhum 00:00 travado', async () => {
+    const days = await draft('Paris', GC, '02:30');
+    const eve = days.at(-2)!.activities;
+    expect(eve.find((a) => /-slot-checkout$/.test(a.id))!.time).toBe('22:15');
+    expect(eve.find((a) => /-slot-transfer$/.test(a.id))!.time).toBe('22:45');
+    expect(days.flatMap((d) => d.activities).filter((a) => a.time === '00:00')).toEqual([]);
+    const dinner = eve.find((a) => a.timeSlot === 'dinner')!;
+    expect(mins(dinner.time) + dur(dinner)).toBeLessThanOrEqual(mins('22:15'));
+  });
+
+  it('R7: jantar empurrado além das 21:00 → sai a tarde (não o jantar)', () => {
+    const items: { id: string; name: string; timeSlot: string; duration: string; time?: string }[] = [
+      { id: 'x-manha', name: 'Manhã', timeSlot: 'morning', duration: '2h' },
+      { id: 'x-almoco', name: 'Almoço', timeSlot: 'lunch', duration: '1.5h' },
+      { id: 'x-tarde', name: 'Tarde longa', timeSlot: 'afternoon', duration: '3h' },
+      // 18:15 cabe no pôr do sol (≤ 18:30), mas termina 21:15 → o jantar iria a 21:30 (> 21:00).
+      { id: 'x-tarde2', name: 'Pôr do sol no mirante', timeSlot: 'afternoon', duration: '3h' },
+      { id: 'x-jantar', name: 'Jantar', timeSlot: 'dinner', duration: '2h' },
+    ];
+    const r = layoutDay(items, { destination: 'Lisboa' });
+    expect(r.items.map((a) => a.id)).toEqual(['x-manha', 'x-almoco', 'x-tarde', 'x-jantar']);
+    expect(r.dropped.map((a) => a.id)).toEqual(['x-tarde2']);
+    expect(r.items.map((a) => a.time)).toEqual(['09:30', '12:30', '15:00', '19:30']);
   });
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { validateDaySequence, type PlanDay, type PlanRulesContext } from '@/lib/itineraryValidator';
+import { runSmokeMatrix, summarizeR19 } from '@/lib/smokeMatrix';
 
 // Ids sintéticos (fora do catálogo): duração vem do campo `duration`, sem coords.
 const ctx = (over: Partial<PlanRulesContext> = {}): PlanRulesContext => ({
@@ -46,4 +47,25 @@ describe('R19 — sequência do dia', () => {
     ])], ctx({ returnDepartureTime: '02:30' }));
     expect(r.days[1]).toMatchObject({ status: 'PASS', issues: [] });
   });
+
+  // C.4 D4: check-out e transfer são derivados do voo (R10/R11) — isentos sempre; café não.
+  it('check-out 05:15 e transfer 05:45 com volta 08:30 → PASS; café 05:00 no mesmo dia segue FAIL', () => {
+    const acts: PlanDay['activities'] = [
+      { id: 'day-1-slot-checkout', name: 'Check-out do hotel', time: '05:15', duration: '0.5h', timeSlot: 'morning', type: 'transport' },
+      { id: 'day-1-slot-transfer', name: 'Transfer para Aeroporto', time: '05:45', duration: '0.75h', timeSlot: 'afternoon', type: 'transport' },
+      { id: 'day-1-slot-flight-back', name: 'Voo de Volta', time: '08:30', duration: '3.2h', timeSlot: 'flight', type: 'voo' },
+    ];
+    expect(validateDaySequence([day(1, []), day(2, acts)], ctx({ returnDepartureTime: '08:30' })).days[1]).toMatchObject({ status: 'PASS', issues: [] });
+    const withCafe = [{ id: 'x-cafe', name: 'Café', time: '04:00', duration: '0.5h', timeSlot: 'breakfast' }, ...acts];
+    const r = validateDaySequence([day(1, []), day(2, withCafe)], ctx({ returnDepartureTime: '08:30' }));
+    expect(r.days[1].issues).toEqual([expect.objectContaining({ kind: 'madrugada', cause: 'b' })]);
+  });
+
+  // Aceite do C.4: R19 FAIL = 0 nas 63 viagens. SMOKE_RETURN=02:30 roda a rodada de madrugada.
+  it.runIf(process.env.SMOKE_FULL === '1')(`smoke 63 — R19 sem FAIL (volta ${process.env.SMOKE_RETURN || 'padrão'})`, async () => {
+    const rows = await runSmokeMatrix({ routeLookup: async () => null }, new Date(2026, 10, 10), { returnDeparture: process.env.SMOKE_RETURN || undefined });
+    console.log('R19 SUMMARY:', summarizeR19(rows));
+    const fails = rows.flatMap((r) => r.r19?.days.flatMap((d) => d.issues.filter((i) => i.status === 'FAIL').map((i) => i.text)) ?? []);
+    expect(fails).toEqual([]);
+  }, 180_000);
 });

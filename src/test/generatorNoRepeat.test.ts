@@ -58,6 +58,13 @@ function buildFlight(origin: string, destination: string, date: Date, departureT
 
 interface Placement { name: string; day: number; slot: string }
 
+// Par de bate-volta (`<âncora>-almoco/-jantar`) só existe no dia da âncora; o almoço que não cabe até
+// 14:30 vira "Almoço no local: <par>" (C.4, regra 2) — não é nome disponível para os outros dias.
+const isPairMeal = (city: string, id: string) => {
+  const m = id.match(/^(.*)-(almoco|jantar)$/);
+  return !!m && destinationActivities[city].activities.some((a) => a.id === m[1]);
+};
+
 function run(city: string, opts: { days: number; travelers?: number; priceLevel?: string; interests?: string[]; budget?: number }): Placement[] {
   const departure = addDays(new Date('2026-03-01T12:00:00'), 30);
   const returnDate = addDays(departure, opts.days - 1);
@@ -156,7 +163,7 @@ describe('gerador — não repetir o mesmo lugar na viagem', () => {
       const poolNames = (slot: string) =>
         new Set(
           destinationActivities[city].activities
-            .filter((a) => a.category === slot)
+            .filter((a) => a.category === slot && !isPairMeal(city, a.id))
             .map((a) => normalizePlaceName(a.name))
         );
       for (const cfg of MATRIX) {
@@ -216,7 +223,7 @@ describe('gerador — não repetir o mesmo lugar na viagem', () => {
       const poolSize = (slot: string) =>
         new Set(
           destinationActivities[city].activities
-            .filter((a) => a.category === slot)
+            .filter((a) => a.category === slot && !isPairMeal(city, a.id))
             .map((a) => normalizePlaceName(a.name))
         ).size;
       for (const cfg of MATRIX) {

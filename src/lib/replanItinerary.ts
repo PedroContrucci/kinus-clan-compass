@@ -3,7 +3,7 @@
 // remoções e itens confirmados) são reaplicadas onde ainda cabem. O que não cabe volta em
 // `unplaced` para o aviso — nada some em silêncio. "Regerar roteiro" continua sendo do zero.
 import type { TripDay } from '@/types/trip';
-import { flightArrivalBand, type SelectedFlight } from '@/lib/itineraryEngine';
+import { flightArrivalBand, layoutDay, AIRPORT_HOP_MIN, ARRIVAL_DINNER_MAX, type SelectedFlight } from '@/lib/itineraryEngine';
 import { lastDayWindowHours } from '@/lib/itineraryValidator';
 import { flightDaysLater, retimeFlight, selectedToPlanned } from '@/lib/flightModel';
 import { normalizePlaceName } from '@/lib/placeIdentity';
@@ -149,11 +149,28 @@ export function reapplyEdits(
 
 export interface ReplanResult extends DraftItineraryResult { unplaced: UnplacedEdit[] }
 
-/** Motor com os voos novos + edições reaplicadas. `engineItemIds` = saída pura do motor. */
+/**
+ * Motor com os voos novos + edições reaplicadas, e cada dia de novo pelo scheduler (C.4): o item
+ * do usuário guarda a própria hora como âncora; o que não cabe mais vai para `unplaced`.
+ * `engineItemIds` = saída pura do motor.
+ */
 export function replanTrip(trip: DraftLike, flights: { outbound: SelectedFlight; return: SelectedFlight }): ReplanResult {
   const built = buildItineraryForTrip(trip, flights);
   const { days, unplaced } = reapplyEdits(trip.days, trip.engineItemIds, built.days);
-  return { ...built, days, unplaced };
+  const engine = new Set(built.engineItemIds);
+  const arrival = flights.outbound.tzKnown === false ? -1 : minutesOf(flights.outbound.option.arrivalTime);
+  const laidDays = (days as unknown as Day[]).map((d) => {
+    // Dia de chegada = o que tem o check-in do motor.
+    const isArrival = d.activities.some((a) => /-slot-checkin$/.test(a.id));
+    const laid = layoutDay(d.activities, {
+      destination: trip.destination,
+      ...(isArrival ? { dinnerMax: ARRIVAL_DINNER_MAX, ...(arrival >= 0 ? { startMin: arrival + 60 + AIRPORT_HOP_MIN } : {}) } : {}),
+      anchorFromTime: (a) => !engine.has(a.id),
+    });
+    for (const a of laid.dropped) if (!engine.has(a.id)) unplaced.push({ id: a.id, name: a.name, day: Number(d.day) });
+    return { ...d, activities: laid.items };
+  });
+  return { ...built, days: laidDays as unknown as TripDay[], unplaced };
 }
 
 /**

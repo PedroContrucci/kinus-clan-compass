@@ -9,7 +9,7 @@ import { CITY_TIMEZONES } from '@/data/generated/cityTimezones';
 import { getAllCities } from '@/data/destinationCatalog';
 import { buildDraftTrip, type DraftTripInput } from '@/lib/createTrip';
 import { plannedFlightToSelected, offerToSelected, writeFlightsThrough, type ReferenceOffer } from '@/lib/flightModel';
-import { pickBest, explainPick, rankFlights } from '@/lib/flightRanking';
+import { pickBest, explainPick, rankFlights, outsideWindowLabel } from '@/lib/flightRanking';
 import { planBreakdown } from '@/lib/planTotals';
 import { buildItineraryForTrip, tripDaysToItinerary } from '@/lib/draftItinerary';
 
@@ -228,5 +228,31 @@ describe('C.2.1 — sugestão na janela, preço por pessoa/perna', () => {
     const shown = tripDaysToItinerary(built.days, new Date(2026, 10, 10, 12), 2).flatMap(d => d.activities);
     expect(shown.find(a => a.id.endsWith('slot-flight-out'))).toMatchObject({ estimatedCost: 1272, costPerPerson: 636 });
     expect(shown.find(a => a.id.endsWith('slot-flight-back'))).toMatchObject({ estimatedCost: 1794, costPerPerson: 897 });
+  });
+});
+
+// C.4 — a volta também tem janela: partida 06:00–22:00.
+describe('C.4 — janela de partida da volta', () => {
+  const back = (id: string, at: string, arrive: string, price: number): ReferenceOffer => ({
+    id, airline: id.split('-')[0], route: 'FOR → GRU', isDirect: true, duration: '3h 25m', durationMinutes: 205,
+    price, departureTime: '', arrivalTime: '', segments: [{ departure: { iataCode: 'FOR', at }, arrival: { iataCode: 'GRU', at: arrive } }],
+  });
+  const madrugada = offerToSelected(back('Gol-0230', '2026-11-15T02:30', '2026-11-15T05:55', 480), { date: new Date(2026, 10, 15, 12) });
+  const manha = offerToSelected(back('Azul-0900', '2026-11-15T09:00', '2026-11-15T12:25', 640), { date: new Date(2026, 10, 15, 12) });
+
+  it('volta 02:30 (mais barata) vs 09:00 → o KINU sugere a das 09:00; a 02:30 segue na lista com rótulo', () => {
+    expect(madrugada.option.departureTime).toBe('02:30');
+    expect(pickBest([madrugada, manha], 'kinu', 'return')!.option.id).toBe('Azul-0900');
+    expect(rankFlights([madrugada, manha], 'kinu', 'return').map((f) => f.option.id)).toEqual(['Azul-0900', 'Gol-0230']);
+    expect(outsideWindowLabel(madrugada, 'return')).toBe('fora da janela · sai 02:30');
+    expect(outsideWindowLabel(manha, 'return')).toBeNull();
+  });
+
+  it('só a das 02:30 → é ela, com a ressalva da volta; na ida a regra de partida não vale', () => {
+    const best = pickBest([madrugada], 'kinu', 'return')!;
+    expect(best.option.id).toBe('Gol-0230');
+    expect(explainPick(best)).toMatch(/ · nenhuma volta sai e chega entre 06h e 22h$/);
+    // Na ida o critério continua sendo a chegada (05:55, fora), não a partida.
+    expect(outsideWindowLabel(madrugada)).toBe('fora da janela · chega 05:55');
   });
 });

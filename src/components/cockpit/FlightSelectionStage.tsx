@@ -233,7 +233,7 @@ export const FlightSelectionStage = ({
   // companhia a definir" (preço inventado) só aparecem no legado, sem estimativa e sem oferta.
   const buildList = (real: SelectedFlight[], est: SelectedFlight | undefined, isReturn: boolean, date: Date): ListItem[] => {
     const base: ListItem[] = real.length
-      ? rankFlights(real, sortBy === 'price' ? 'kinu' : 'fastest')
+      ? rankFlights(real, sortBy === 'price' ? 'kinu' : 'fastest', isReturn ? 'return' : 'outbound')
       : est ? [] : generateFallbackFlightOptions(originCode, destinationCode, isReturn).map(option => ({ option, date }));
     const minPrice = Math.min(...base.map(o => o.option.price));
     const minDuration = Math.min(...base.map(o => o.option.durationMinutes));
@@ -366,7 +366,7 @@ export const FlightSelectionStage = ({
     const isKinuPick = !item.isEstimate && chosenByKinu?.chosenBy === 'kinu' && chosenByKinu.option.id === option.id;
 
     const dayOffset = flightDaysLater(item);
-    const outside = item.isEstimate ? null : outsideWindowLabel(item);
+    const outside = item.isEstimate ? null : outsideWindowLabel(item, type);
 
     return (
       <motion.div
