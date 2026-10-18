@@ -117,7 +117,8 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
   });
 
   // A diária do curado é o PONTO MÉDIO da faixa (a curadoria tem faixa, não número);
-  // sem curado, a estimativa de sempre.
+  // sem curado, a estimativa tier × cidade. C.4.2: esta é a ÚNICA origem da diária —
+  // gravada em acc.nightlyRate e lida por motor, Financeiro, card e PDF.
   const baseHotelNightPrice = Math.round(getActivityPrice('hotel_night', destinationCity, priceLevel) * tierMultiplier);
   const hotelNightPrice = curatedHotel ? nightlyRateFor(curatedHotel, baseHotelNightPrice) : baseHotelNightPrice;
   const budgetTotal = input.budgetAmount || 0;
@@ -218,6 +219,8 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
       checkIn: addDays(input.departureDate, arrivalDaysLater).toISOString(),
       checkOut: input.returnDate.toISOString(),
       nightlyRate: hotelNightPrice,
+      // Perfil da estimativa ("estimativa Conforto"), por fora do tipo como curatedHotelId.
+      rateTier: tier.label,
       totalNights,
       totalPrice: hotelNightPrice * totalNights,
       status: 'planned' as ActivityStatus,

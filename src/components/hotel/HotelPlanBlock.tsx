@@ -28,8 +28,8 @@ import { trackEvent } from '@/lib/kinuEvents';
 import { trackHotelSwap } from '@/lib/hotelSwapEvent';
 import { HotelSwapModal } from '@/components/hotel/HotelSwapModal';
 import { HotelDetailDrawer } from '@/components/hotel/HotelDetailDrawer';
+import { hotelRateLabel } from '@/lib/draftItinerary';
 
-const brl = (n: number) => `R$ ${Math.round(n).toLocaleString('pt-BR')}`;
 
 export interface HotelPlanBlockProps {
   trip: SwapTripLike | null | undefined;
@@ -105,11 +105,8 @@ export const HotelPlanBlock = ({ trip, onSelectHotel, onOpenOffers }: HotelPlanB
     ? `${nights} ${nights === 1 ? 'noite' : 'noites'}${outOnEve ? ' (saída na véspera do voo)' : ''}`
     : null;
 
-  const priceLabel = current?.hotel.priceRangeBRL
-    ? `${current.hotel.priceRangeBRL}/noite`
-    : acc?.nightlyRate
-      ? `${brl(Number(acc.nightlyRate))}/noite (estimativa)`
-      : null;
+  // C.4.2: a diária gravada (a mesma do Financeiro e do PDF) com a origem declarada.
+  const priceLabel = hotelRateLabel(acc, current?.hotel.priceRangeBRL);
 
   const zone = current?.hotel.zone || acc?.neighborhood || '';
 

@@ -136,11 +136,13 @@ export const RECOVERY_BY_SEVERITY: Record<JetLagSeverity, boolean> = {
 };
 
 /**
- * Hotel informado pela viagem. Ausente = comportamento atual (tabela de zonas).
+ * Hotel informado pela viagem. Sem `label` = rótulo da tabela de zonas no check-in.
  * `label` é o texto exibido no item de check-in.
  */
 export interface EngineHotel {
-  label: string;
+  label?: string;
+  /** Diária da viagem (`acc.nightlyRate`, gravada uma vez no createTrip). O motor só multiplica pelas noites. */
+  nightlyRate?: number;
 }
 
 /** Slug estável de um nome de lugar para compor ids (`day-N-michelin-<slug>`). */
@@ -656,8 +658,12 @@ export function generateItinerary(
   const flightsCost = plannedFlightTotalPerPerson * travelers;
   
   // Hotel is SHARED (not multiplied by travelers)
-  const hotelPerNight = getActivityPrice('hotel_night', destination, priceLevel);
+  // C.4.2: diária de fonte única — a da viagem; o motor não estima diária.
+  const hotelPerNight = Math.round(Number(hotel?.nightlyRate) || 0);
   const hotelTotal = hotelPerNight * totalNights;
+  const nightsTip = hotelPerNight > 0
+    ? [`${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem']
+    : [];
   
   // Transfer cost (shared)
   const transferCost = getActivityPrice('transfer', destination, priceLevel);
@@ -980,7 +986,7 @@ export function generateItinerary(
           id: `day-${i}-slot-checkin`, name: 'Check-in no hotel', type: 'checkin', timeSlot: 'hotel',
           estimatedCost: 0, costPerPerson: 0, time: arrivalCheckinTime('14:00'),
           location: (() => {
-            if (hotel) return hotel.label;
+            if (hotel?.label) return hotel.label;
             const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
             if (rec) return `${rec.name} ⭐ ${rec.stars}.0 • ${rec.neighborhood}`;
             return `Hotel em ${destination}`;
@@ -988,7 +994,7 @@ export function generateItinerary(
           status: 'suggestion', source: 'kinu',
           tips: [
             ...(arrivalBand === 'night' ? [NIGHT_ARRIVAL_TIP] : []),
-            `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem',
+            ...nightsTip,
           ],
         });
         if (arrivalBand === 'afternoon') activities.push({
@@ -1048,14 +1054,14 @@ export function generateItinerary(
           time: arrivalCheckinTime('15:00'),
           duration: '0.5h',
           location: (() => {
-            if (hotel) return hotel.label;
+            if (hotel?.label) return hotel.label;
             const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
             if (rec) return `${rec.name} ⭐ ${rec.stars}.0 • ${rec.neighborhood}`;
             return `Hotel em ${destination}`;
           })(),
           status: 'defined',
           source: 'kinu',
-          tips: [...(arrivalBand === 'night' ? [NIGHT_ARRIVAL_TIP] : []), 'Acomodação após o voo, sem pressa', `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem'],
+          tips: [...(arrivalBand === 'night' ? [NIGHT_ARRIVAL_TIP] : []), 'Acomodação após o voo, sem pressa', ...nightsTip],
         });
 
         if (arrivalBand === 'afternoon') activities.push({
@@ -1092,7 +1098,7 @@ export function generateItinerary(
           costPerPerson: 0,
           time: arrivalCheckinTime('14:00'),
           location: (() => {
-            if (hotel) return hotel.label;
+            if (hotel?.label) return hotel.label;
             const rec = getHotelRecommendation(destination, priceLevel, travelInterests);
             if (rec) return `${rec.name} ⭐ ${rec.stars}.0 • ${rec.neighborhood}`;
             return `Hotel em ${destination}`;
@@ -1100,7 +1106,7 @@ export function generateItinerary(
           status: 'suggestion',
           tips: [
             ...(arrivalBand === 'night' ? [NIGHT_ARRIVAL_TIP] : []),
-            `${totalNights} noites (~R$ ${hotelPerNight.toLocaleString('pt-BR')}/noite)`, 'Custo já incluso no total da hospedagem',
+            ...nightsTip,
           ],
           source: 'kinu',
         });

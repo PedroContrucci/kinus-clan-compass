@@ -250,14 +250,10 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     && trip.days.length > 0
     && trip.days.some((d: any) => Array.isArray(d?.activities) && d.activities.length > 0);
 
-  // Hospedagem curada manda no bucket de hospedagem. A etapa de roteiro recalcula as
-  // finanças no mount a partir da SUA estimativa (getActivityPrice × noites) e, sem
-  // este override, ela desfazia em silêncio tanto o hotel curado do gerador quanto o
-  // delta de uma troca feita pelo usuário — o "Trocar hotel" desfazendo a si mesmo.
-  // Portão no `curatedHotelId`: viagem sem hotel curado não muda um centavo.
-  const curatedHotelPlanned = trip.accommodation?.curatedHotelId
-    ? Math.round(Number(trip.accommodation.totalPrice) || 0) || undefined
-    : undefined;
+  // C.4.2: o balde de hospedagem é SEMPRE acc.totalPrice (curado, estimado ou confirmado) —
+  // a mesma diária × noites que o card e o PDF mostram. Sem ele, a etapa de roteiro
+  // recalcularia o balde no mount e desfaria a troca de hotel.
+  const hotelPlanned = Math.round(Number(trip.accommodation?.totalPrice) || 0) || undefined;
 
   // Infer airport codes
   const originCode = trip.originAirportCode || inferAirportCode(trip.origin || 'São Paulo');
@@ -556,7 +552,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
       onSave={handleSave}
       onBack={() => setOpenRow(null)}
       existingDays={hasExistingDays ? trip.days : undefined}
-      hotelPlannedOverride={curatedHotelPlanned}
+      hotelPlannedOverride={hotelPlanned}
       budgetFollowsPlan={budgetFollowsPlan(trip)}
       plannedFlights={(trip as { finances?: { categories?: { flights?: { planned?: number } } } }).finances?.categories?.flights?.planned}
       plannedHotel={(trip as { finances?: { categories?: { accommodation?: { planned?: number } } } }).finances?.categories?.accommodation?.planned}

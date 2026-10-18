@@ -124,7 +124,7 @@ describe('estado fallback — o bloco admite o que não sabe', () => {
     expect(screen.queryByText('Escolhido porque:')).not.toBeInTheDocument();
     expect(screen.queryByText('Sua escolha · combina porque:')).not.toBeInTheDocument();
     // Diária estimada, rotulada como estimativa — não é faixa de curadoria.
-    expect(screen.getByText(/R\$ 450\/noite \(estimativa\)/)).toBeInTheDocument();
+    expect(screen.getByText(/R\$ 450\/noite · estimativa/)).toBeInTheDocument();
   });
 
   it('cidade SEM curadoria: nomeia a cidade e oferece o caminho externo', () => {

@@ -26,6 +26,7 @@ import { matchesPriority } from '@/lib/claChips';
 import { curatedCoordOf } from '@/lib/routeCoords';
 import { haversineKm } from '@/lib/itineraryValidator';
 import { getHotelRecommendation } from '@/lib/hotelZones';
+import { getActivityPrice } from '@/lib/activityPricing';
 import { addDays } from 'date-fns';
 import { buildDraftTrip } from '@/lib/createTrip';
 import { buildFlowInput } from '@/lib/onboardingFlow';
@@ -77,6 +78,8 @@ describe('itineraryEngine — extração sem mudança de comportamento', () => {
         destination: city, origin: 'São Paulo',
         outboundFlight: flight('2026-11-10T12:00:00', '08:00'), returnFlight: flight('2026-11-17T12:00:00', '21:00'),
         budget: 20000, travelers: 2, interests: ['gastronomia', 'cultura'], jetLagSeverity: sev, priceLevel: 'midrange',
+        // C.4.2: a diária é input (acc.nightlyRate); o snapshot foi capturado com a da tabela midrange.
+        hotel: { nightlyRate: getActivityPrice('hotel_night', city, 'midrange') },
       });
       // C.4.1: meta ganhou hotelNights/checkoutOnEve (volta 21:00 → 7 noites, sem véspera); o snapshot segue o resto.
       expect(r.meta).toMatchObject({ hotelNights: 7, checkoutOnEve: false });

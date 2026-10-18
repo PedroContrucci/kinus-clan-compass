@@ -21,13 +21,14 @@ describe('draft truth', () => {
       const t = trip as typeof trip & { outboundFlight: SelectedFlight; returnFlight: SelectedFlight; priceLevel: 'midrange' };
       expect(t.outboundFlight.source).toBe('estimate');
       expect((trip as { flightsSelected?: boolean }).flightsSelected).toBe(false);
-      const acc = trip.accommodation as { name: string; curatedHotelId?: string; totalPrice: number };
+      const acc = trip.accommodation as { name: string; nightlyRate: number; totalPrice: number };
       const r = runItineraryEngine({
         departureDate: new Date(trip.startDate), returnDate: new Date(trip.endDate),
         destination: city, origin: 'São Paulo', outboundFlight: t.outboundFlight, returnFlight: t.returnFlight,
         budget: 20000, travelers: 2, interests: ['gastronomy', 'culture'],
         jetLagSeverity: trip.jetLagSeverity as 'BAIXO', priceLevel: t.priceLevel,
-        hotel: { label: hotelLabelFor(acc)! }, hotelPlannedOverride: acc.curatedHotelId ? acc.totalPrice : undefined,
+        // C.4.2: diária da viagem como input; o balde do hotel é sempre acc.totalPrice.
+        hotel: { label: hotelLabelFor(acc)!, nightlyRate: acc.nightlyRate }, hotelPlannedOverride: acc.totalPrice,
       });
       expect(trip.days).toEqual(itineraryToTripDays(r.days));
       const c = trip.finances.categories;

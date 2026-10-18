@@ -253,6 +253,31 @@ export function accommodationWithNights(acc: any, returnDate: Date, nights: numb
   return { ...acc, totalNights: n, totalPrice: Math.round(rate * n), checkOut };
 }
 
+export type HotelRateSource = 'confirmed' | 'curated' | 'estimate';
+
+/** Origem da diária, derivada (sem campo no tipo): confirmado > curado > estimativa. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function hotelRateSource(acc: any): HotelRateSource {
+  if (acc?.status === 'confirmed') return 'confirmed';
+  if (acc?.curatedHotelId) return 'curated';
+  return 'estimate';
+}
+
+/**
+ * Rótulo da diária no card: "R$ 1.100/noite · estimativa Conforto" / "· curado (faixa …)" /
+ * "· confirmado". Sem diária, nada — número sem origem não aparece.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function hotelRateLabel(acc: any, curatedRange?: string): string | null {
+  const rate = Math.round(Number(acc?.nightlyRate) || 0);
+  if (rate <= 0) return null;
+  const src = hotelRateSource(acc);
+  const origin = src === 'confirmed' ? 'confirmado'
+    : src === 'curated' ? (curatedRange ? `curado (faixa ${curatedRange})` : 'curado')
+    : acc?.rateTier ? `estimativa ${acc.rateTier}` : 'estimativa';
+  return `R$ ${rate.toLocaleString('pt-BR')}/noite · ${origin}`;
+}
+
 /** Motor + baldes + envelope para uma viagem com os voos dados. */
 export function buildItineraryForTrip(
   trip: DraftLike,
@@ -262,9 +287,6 @@ export function buildItineraryForTrip(
   const departureDate = new Date(trip.startDate);
   const returnDate = new Date(trip.endDate);
   const acc = trip.accommodation;
-  const hotelPlannedOverride = acc?.curatedHotelId
-    ? Math.round(Number(acc.totalPrice) || 0) || undefined
-    : undefined;
   const sev = trip.jetLagSeverity;
   const jetLagSeverity = sev === 'BAIXO' || sev === 'MODERADO' || sev === 'ALTO' || sev === 'SEVERO' ? sev : undefined;
 
@@ -281,15 +303,13 @@ export function buildItineraryForTrip(
     interests: splitInterests(trip.destination, trip.travelInterests).used,
     jetLagSeverity,
     priceLevel: opts.priceLevel ?? priceLevelFor(trip),
-    hotel: hotelLabelFor(acc) ? { label: hotelLabelFor(acc)! } : undefined,
-    hotelPlannedOverride,
+    hotel: hotelLabelFor(acc) ? { label: hotelLabelFor(acc)!, nightlyRate: Number(acc.nightlyRate) || 0 } : undefined,
   });
 
-  // R11 no dinheiro: noites do motor gravadas na hospedagem; o curado recalcula o balde com elas.
+  // R11 no dinheiro: noites do motor gravadas na hospedagem. C.4.2: o balde do hotel é SEMPRE
+  // acc.totalPrice (curado, estimado ou confirmado) — a mesma conta que card e PDF leem.
   const accommodation = accommodationWithNights(acc, returnDate, r.meta.hotelNights, r.meta.checkoutOnEve);
-  const buckets = hotelPlannedOverride && accommodation !== acc
-    ? computeBuckets(r.days, r.breakdown, Math.round(Number(accommodation.totalPrice) || 0) || undefined)
-    : r.buckets;
+  const buckets = computeBuckets(r.days, r.breakdown, Math.round(Number(accommodation?.totalPrice) || 0) || undefined);
 
   const days = itineraryToTripDays(r.days);
   const finances = financesFromBuckets(buckets, Number(trip.budget) || 0, trip.finances);
