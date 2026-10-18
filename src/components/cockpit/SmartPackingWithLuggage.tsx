@@ -38,13 +38,6 @@ interface Luggage {
   items: PackingItem[];
 }
 
-interface WeatherTip {
-  temperature: string;
-  icon: React.ReactNode;
-  recommended: string[];
-  notNeeded: string[];
-}
-
 interface SmartPackingWithLuggageProps {
   tripId: string;
   destination: string;
@@ -61,40 +54,6 @@ const categoryConfig = {
   higiene: { icon: '🧴', label: 'Higiene' },
   documentos: { icon: '📄', label: 'Documentos' },
   outros: { icon: '📦', label: 'Outros' },
-};
-
-// Weather tips based on destination
-const getWeatherTips = (destination: string, month: number = new Date().getMonth() + 1): WeatherTip => {
-  const isEurope = ['Paris', 'Roma', 'Lisboa', 'Barcelona', 'Londres', 'Amsterdã'].some(
-    city => destination.toLowerCase().includes(city.toLowerCase())
-  );
-  const isWinter = isEurope && (month >= 11 || month <= 3);
-  const isSummer = isEurope && (month >= 6 && month <= 8);
-  
-  if (isWinter) {
-    return {
-      temperature: '2-10°C',
-      icon: '❄️',
-      recommended: ['Casaco pesado', 'Cachecol', 'Luvas', 'Botas impermeáveis', 'Camadas térmicas'],
-      notNeeded: ['Roupa de banho', 'Shorts', 'Sandálias'],
-    };
-  }
-  
-  if (isSummer) {
-    return {
-      temperature: '20-30°C',
-      icon: '☀️',
-      recommended: ['Roupas leves', 'Protetor solar', 'Óculos de sol', 'Chapéu', 'Tênis confortável'],
-      notNeeded: ['Casaco pesado', 'Botas de neve', 'Muitas camadas'],
-    };
-  }
-  
-  return {
-    temperature: '15-25°C',
-    icon: '🌤️',
-    recommended: ['Jaqueta leve', 'Camadas', 'Guarda-chuva', 'Tênis confortável'],
-    notNeeded: ['Casaco muito pesado'],
-  };
 };
 
 // Suggested items to add
@@ -117,7 +76,6 @@ export const SmartPackingWithLuggage = ({
   tripId,
   destination,
   duration,
-  month,
   startDate,
   onUpdate,
 }: SmartPackingWithLuggageProps) => {
@@ -131,8 +89,6 @@ export const SmartPackingWithLuggage = ({
     weight: 0.3, 
     category: 'outros' as PackingItem['category'] 
   });
-
-  const weatherTips = useMemo(() => getWeatherTips(destination, month), [destination, month]);
 
   // Weather-aware tip from real forecast
   const { forecast: liveForecast, fetchWeather } = useWeather();
@@ -155,6 +111,21 @@ export const SmartPackingWithLuggage = ({
     
     return tips.length > 0 ? tips : null;
   }, [liveForecast]);
+
+  // Clima só com previsão real (function weather → OpenWeatherMap), com a origem declarada.
+  // Sem previsão, não há bloco — nunca uma faixa padrão.
+  const weatherAlertBlock = weatherAlertTip ? (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-sky-500/10 border border-sky-500/20 rounded-xl p-3 space-y-1"
+    >
+      {weatherAlertTip.map((tip, i) => (
+        <p key={i} className="text-sm text-foreground">{tip}</p>
+      ))}
+      <p className="text-[10px] text-muted-foreground">previsão · OpenWeather</p>
+    </motion.div>
+  ) : null;
 
   // Calculate totals for all luggages
   const luggageStats = useMemo(() => {
@@ -251,76 +222,18 @@ export const SmartPackingWithLuggage = ({
   // EMPTY STATE - No luggage yet
   if (luggages.length === 0) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        {/* Weather Alert Tips */}
-        {weatherAlertTip && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-sky-500/10 border border-sky-500/20 rounded-xl p-3 space-y-1"
-          >
-            {weatherAlertTip.map((tip, i) => (
-              <p key={i} className="text-sm text-foreground">{tip}</p>
-            ))}
-          </motion.div>
-        )}
-        {/* Empty State */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-card border-2 border-dashed border-border rounded-2xl p-8 text-center"
+      <div className="space-y-3 animate-fade-in">
+        {weatherAlertBlock}
+        {/* Bagagem vazia: uma linha que abre o fluxo de adicionar */}
+        <button
+          onClick={() => setShowAddLuggage(true)}
+          className="w-full flex items-center gap-2 p-3 bg-card border border-border rounded-xl text-sm text-left hover:border-primary/30 transition-colors"
         >
-          <div className="text-5xl mb-4">🧳</div>
-          <h3 className="font-semibold text-xl text-foreground mb-2">
-            Sua mala está vazia
-          </h3>
-          <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-            Adicione uma bagagem para começar a organizar seus itens para a viagem.
-          </p>
-          <button
-            onClick={() => setShowAddLuggage(true)}
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium flex items-center gap-2 mx-auto hover:bg-primary/90 transition-colors"
-          >
-            <Plus size={20} />
-            Adicionar Bagagem
-          </button>
-        </motion.div>
-
-        {/* KINU Weather Tips */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-primary/5 border border-primary/20 rounded-2xl p-4"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles size={18} className="text-primary" />
-            <h4 className="font-medium text-foreground">
-              KINU diz: {destination}
-            </h4>
-            <span className="ml-auto text-lg">{weatherTips.icon}</span>
-            <span className="text-sm text-muted-foreground">{weatherTips.temperature}</span>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-emerald-500 font-medium mb-1">✅ Recomendado:</p>
-              <ul className="space-y-0.5">
-                {weatherTips.recommended.slice(0, 4).map((item, i) => (
-                  <li key={i} className="text-muted-foreground">• {item}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="text-red-400 font-medium mb-1">❌ Não precisa:</p>
-              <ul className="space-y-0.5">
-                {weatherTips.notNeeded.map((item, i) => (
-                  <li key={i} className="text-muted-foreground">• {item}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </motion.div>
+          <span>🧳</span>
+          <span className="font-medium text-foreground">Bagagem</span>
+          <span className="text-muted-foreground flex-1">· nenhuma ainda</span>
+          <span className="text-primary font-medium">adicionar ▸</span>
+        </button>
 
         {/* Add Luggage Modal */}
         <AddLuggageModal
@@ -338,18 +251,7 @@ export const SmartPackingWithLuggage = ({
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Weather Alert Tips */}
-      {weatherAlertTip && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-sky-500/10 border border-sky-500/20 rounded-xl p-3 space-y-1"
-        >
-          {weatherAlertTip.map((tip, i) => (
-            <p key={i} className="text-sm text-foreground">{tip}</p>
-          ))}
-        </motion.div>
-      )}
+      {weatherAlertBlock}
       {/* Luggage Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {luggages.map((luggage) => {

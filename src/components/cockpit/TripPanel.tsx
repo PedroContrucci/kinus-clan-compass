@@ -16,6 +16,7 @@ import { getIcarusRoteiroInsight, getIcarusHeroFlight, getIcarusHeroHotel, getHe
 import { DestinationImage } from '@/components/shared/DestinationImage';
 import type { SavedTrip } from '@/types/trip';
 import { buildOfferLinks } from '@/lib/offersLinks';
+import { isPriceCheckComparable } from '@/lib/tripScope';
 import { OffersModal } from '@/components/cockpit/OffersModal';
 import { HotelSwapModal } from '@/components/hotel/HotelSwapModal';
 import { applyHotelSwap } from '@/lib/hotelSwap';
@@ -575,8 +576,10 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
 
   const nowOnKinu = useMemo(() => {
     // TOP PRIORITY: live flight price monitoring signal
+    // Só com real vs real da mesma fonte (isPriceCheckComparable); estimativa contra
+    // tarifa consultada é número sem origem e não vira alerta.
     const priceCheck: any = (trip as any).lastPriceCheck;
-    if (priceCheck && (Date.now() - priceCheck.checkedAt) < 24 * 3600 * 1000) {
+    if (priceCheck && isPriceCheckComparable(trip) && (Date.now() - priceCheck.checkedAt) < 24 * 3600 * 1000) {
       const anchor = getFlightPlannedTotal(trip);
       const deltaPct = anchor > 0 ? priceCheck.delta / anchor : 0;
       const fmtNum = (n: number) => Math.round(n).toLocaleString('pt-BR');

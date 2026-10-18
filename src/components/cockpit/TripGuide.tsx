@@ -30,6 +30,8 @@ interface CountryInfo {
 interface TripGuideProps {
   destinationCity: string;
   countryId?: string;
+  /** Título do bloco — some junto com o bloco quando não há guia. */
+  title?: string;
 }
 
 const COUNTRY_FALLBACK: Record<string, Partial<CountryInfo>> = {
@@ -79,7 +81,7 @@ const CITY_TO_COUNTRY: Record<string, string> = {
   'Cidade do Cabo': 'África do Sul',
 };
 
-export const TripGuide = ({ destinationCity, countryId }: TripGuideProps) => {
+export const TripGuide = ({ destinationCity, countryId, title }: TripGuideProps) => {
   const [countryInfo, setCountryInfo] = useState<CountryInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedSection, setExpandedSection] = useState<string | null>('visa');
@@ -129,21 +131,8 @@ export const TripGuide = ({ destinationCity, countryId }: TripGuideProps) => {
     }
   }, [loading, countryInfo, destinationCity]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
-
-  if (!countryInfo) {
-    return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p>Informações do país não disponíveis.</p>
-      </div>
-    );
-  }
+  // Carregando ou sem dados do país: o bloco não aparece (C.5a).
+  if (loading || !countryInfo) return null;
 
   const michelinCount = getMichelinCountForCity(destinationCity);
   const topMichelin = michelinCount > 0 ? getTopMichelinForCity(destinationCity, 5) : [];
@@ -315,6 +304,7 @@ export const TripGuide = ({ destinationCity, countryId }: TripGuideProps) => {
 
   return (
     <div className="space-y-3">
+      {title && <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit']">{title}</h3>}
       <div className="text-center mb-4">
         <h3 className="font-semibold text-foreground font-['Outfit'] flex items-center justify-center gap-2">
           📖 Guia de Viagem — {countryInfo.name_pt}

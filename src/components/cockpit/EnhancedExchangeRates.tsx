@@ -11,31 +11,8 @@ interface EnhancedExchangeRatesProps {
   destinationCurrency: string;
   baseCurrency?: string;
   budgetBRL?: number;
-}
-
-// Generate 3-month prediction based on statistics
-function generatePrediction(currentRate: number, trend: 'up' | 'down' | 'stable', trendPercent: number) {
-  const predictions: Array<{ month: string; min: number; max: number; confidence: number }> = [];
-  const today = new Date();
-  
-  const trendMultiplier = trend === 'up' ? 0.01 : trend === 'down' ? -0.01 : 0;
-  
-  for (let i = 1; i <= 3; i++) {
-    const date = new Date(today);
-    date.setMonth(date.getMonth() + i);
-    
-    const projectedChange = trendMultiplier * i;
-    const uncertainty = 0.03 * i;
-    
-    predictions.push({
-      month: date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
-      min: Math.round(currentRate * (1 + projectedChange - uncertainty) * 100) / 100,
-      max: Math.round(currentRate * (1 + projectedChange + uncertainty) * 100) / 100,
-      confidence: Math.max(50, 80 - i * 10),
-    });
-  }
-  
-  return predictions;
+  /** Bloco único fechado por padrão: uma linha "1 USD = R$ 5,09 · ver ▸". */
+  collapsible?: boolean;
 }
 
 const getCurrencySymbol = (currency: string): string => {
@@ -58,6 +35,7 @@ export const EnhancedExchangeRates = ({
   destinationCurrency,
   baseCurrency = 'BRL',
   budgetBRL = 0,
+  collapsible = false,
 }: EnhancedExchangeRatesProps) => {
   const { 
     rates, 
@@ -75,6 +53,7 @@ export const EnhancedExchangeRates = ({
   const [calcBRL, setCalcBRL] = useState<string>('1000');
   const [calcForeign, setCalcForeign] = useState<string>('100');
   const [alerts, setAlerts] = useState<{ threshold: number; enabled: boolean }[]>([]);
+  const [expanded, setExpanded] = useState(false);
 
   // Get current rate (inverted because API returns BRL per foreign currency)
   const currentRate = useMemo(() => {
@@ -128,12 +107,6 @@ export const EnhancedExchangeRates = ({
     };
   }, [statistics]);
 
-  // Predictions
-  const predictions = useMemo(() => {
-    if (!statistics) return [];
-    return generatePrediction(currentRate, trend.direction, trend.change);
-  }, [currentRate, trend, statistics]);
-
   // Initialize alerts based on current rate
   useMemo(() => {
     if (currentRate > 0 && alerts.length === 0) {
@@ -150,6 +123,25 @@ export const EnhancedExchangeRates = ({
   const trendColor = trend.direction === 'up' ? 'text-red-500' : trend.direction === 'down' ? 'text-emerald-500' : 'text-muted-foreground';
   const currencySymbol = getCurrencySymbol(destinationCurrency);
   
+  // Fechado: uma linha só. Sem cotação real, nada de número (o 5,88 é só fallback interno).
+  if (collapsible && !expanded) {
+    const hasRate = Number(rates[destinationCurrency]) > 0;
+    const rateLine = hasRate
+      ? `1 ${destinationCurrency} = R$ ${currentRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : loading ? 'carregando cotação…' : 'cotação indisponível';
+    return (
+      <button
+        onClick={() => setExpanded(true)}
+        className="w-full flex items-center gap-2 p-3 bg-card border border-border rounded-xl text-sm text-left hover:border-primary/30 transition-colors"
+      >
+        <span>💱</span>
+        <span className="font-medium text-foreground">Câmbio</span>
+        <span className="text-muted-foreground flex-1">· {rateLine}</span>
+        <span className="text-primary font-medium">ver ▸</span>
+      </button>
+    );
+  }
+
   // Show loading state
   if (loading && history.length === 0) {
     return (
@@ -178,6 +170,16 @@ export const EnhancedExchangeRates = ({
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {collapsible && (
+        <button
+          onClick={() => setExpanded(false)}
+          className="w-full flex items-center gap-2 text-sm text-left"
+        >
+          <span>💱</span>
+          <span className="font-medium text-foreground flex-1">Câmbio</span>
+          <span className="text-primary font-medium">fechar ▾</span>
+        </button>
+      )}
       {/* Current Rate Card */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -303,45 +305,6 @@ export const EnhancedExchangeRates = ({
           </div>
         )}
       </motion.div>
-      
-      {/* Prediction */}
-      {predictions.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-primary/5 border border-primary/20 rounded-2xl p-5"
-        >
-          <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
-            <Sparkles size={16} className="text-primary" />
-            🔮 Predição KINU (próximos 3 meses)
-          </h3>
-          
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-sm text-muted-foreground">Tendência:</span>
-              <span className={cn(
-                "font-medium",
-                trend.direction === 'up' ? 'text-red-500' : trend.direction === 'down' ? 'text-emerald-500' : 'text-foreground'
-              )}>
-                {trend.direction === 'up' ? '📈 ALTA' : trend.direction === 'down' ? '📉 BAIXA' : '➡️ ESTÁVEL'}
-              </span>
-            </div>
-            
-            {predictions.map((pred, i) => (
-              <div key={i} className="flex items-center justify-between p-2 bg-card rounded-lg">
-                <span className="text-sm text-foreground capitalize">{pred.month}</span>
-                <span className="font-medium text-foreground">
-                  R$ {pred.min.toFixed(2)} - R$ {pred.max.toFixed(2)}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {pred.confidence}% confiança
-                </span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
       
       {/* KINU Insight */}
       <motion.div

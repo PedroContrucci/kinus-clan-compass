@@ -16,7 +16,7 @@ import { Toaster } from '@/components/ui/toaster';
 import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
-import { DraftCockpit, TripGuide, ExchangeRates, EnhancedDayTimeline, SmartPackingWithLuggage, EnhancedExchangeRates } from '@/components/cockpit';
+import { DraftCockpit, TripGuide, ExchangeRates, EnhancedDayTimeline, SmartPackingWithLuggage } from '@/components/cockpit';
 import { inferAirportCode } from '@/components/cockpit/DraftCockpit';
 import OffersModal from '@/components/cockpit/OffersModal';
 import { TripPanel } from '@/components/cockpit/TripPanel';
@@ -43,6 +43,8 @@ import { ViagensVividas } from '@/components/viagens/ViagensVividas';
 import { itemKindOf, trackTripActivated, trackTripItemConfirmed } from '@/lib/tripEvents';
 import { activateDraft } from '@/lib/activateDraft';
 import { buildOfferLinks } from '@/lib/offersLinks';
+import { buildOfferCheckReply, formatTileBRL, isDomesticTrip, scopeChecklist } from '@/lib/tripScope';
+import { CambioBlock, ChecklistBlocks } from '@/components/viagens/TripScopeBlocks';
 import { supabase } from '@/integrations/supabase/client';
 import { getDocsForDestination } from '@/data/destinationDocs';
 
@@ -1024,20 +1026,14 @@ const Viagens = () => {
             endDate: endD,
             travelers: adults,
           }).find(l => l.partner === 'Kiwi')?.url || '';
-          const fmt = (n: number) => `R$ ${Math.round(n).toLocaleString('pt-BR')}`;
           const delta = anchor > 0 ? Math.round(comparable - anchor) : 0;
           persistTrip({
             ...selectedTrip,
             lastPriceCheck: { price: comparable, delta, checkedAt: Date.now() },
           } as SavedTrip);
-          if (anchor > 0 && comparable <= anchor * 0.95) {
-            const diff = anchor - comparable;
-            return `📉 Achei voo por ${fmt(comparable)} — ${fmt(diff)} abaixo do seu planejado (${fmt(anchor)}). Vale garantir: ${kiwiUrl}`;
-          }
-          if (anchor > 0 && comparable <= anchor * 1.05) {
-            return `➡️ Preços estáveis: melhor voo agora ${fmt(comparable)} vs ${fmt(anchor)} planejado. ${kiwiUrl}`;
-          }
-          return `📈 Voos subiram: melhor agora ${fmt(comparable)} vs ${fmt(anchor)} planejado. Se puder esperar, eu avisaria — quer que o robô do KINU monitore isso em breve? ${kiwiUrl}`;
+          // Tarifa só de ida × 2 contra um voo planejado de outra fonte não é comparação:
+          // sem real vs real, o agente não fala número (mesma regra do Painel).
+          return buildOfferCheckReply(selectedTrip, { price: comparable, delta }, anchor, kiwiUrl);
         } catch (err) {
           console.error('[verificar_ofertas] failed:', err);
           return 'Não consegui consultar os preços agora — tenta de novo em instantes.';
@@ -1373,6 +1369,7 @@ const Viagens = () => {
                 {selectedTrip.startDate && format(new Date(selectedTrip.startDate), "dd MMM", { locale: ptBR })} - {selectedTrip.endDate && format(new Date(selectedTrip.endDate), "dd MMM yyyy", { locale: ptBR })} • R$ {selectedTrip.budget.toLocaleString()}
               </p>
             </div>
+            {import.meta.env.DEV && (
             <button
               onClick={handleExportDebug}
               className="flex-shrink-0 text-[11px] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1e293b] border border-[#334155] text-[#94a3b8] hover:text-[#f8fafc] hover:border-[#10b981]/50 transition-colors"
@@ -1380,6 +1377,7 @@ const Viagens = () => {
             >
               📄 Exportar Roteiro (debug)
             </button>
+            )}
           </div>
 
           {/* Tabs */}
@@ -2124,20 +2122,20 @@ const Viagens = () => {
                           <Pencil size={14} />
                         </button>
                         <p className="text-xs text-[#94a3b8]">Orçamento</p>
-                        <p className="text-lg font-bold text-[#f8fafc] font-['Outfit']">R$ {(selectedTrip.budget / 1000).toFixed(0)}k</p>
+                        <p className="text-lg font-bold text-[#f8fafc] font-['Outfit']">{formatTileBRL(selectedTrip.budget)}</p>
                       </div>
                       <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
                         <p className="text-xs text-[#94a3b8]">Planejado (a confirmar)</p>
-                        <p className="text-lg font-bold text-[#eab308] font-['Outfit']">R$ {(pending / 1000).toFixed(1)}k</p>
+                        <p className="text-lg font-bold text-[#eab308] font-['Outfit']">{formatTileBRL(pending)}</p>
                       </div>
                       <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
                         <p className="text-xs text-[#94a3b8]">Confirmado</p>
-                        <p className="text-lg font-bold text-[#10b981] font-['Outfit']">R$ {(confirmed / 1000).toFixed(1)}k</p>
+                        <p className="text-lg font-bold text-[#10b981] font-['Outfit']">{formatTileBRL(confirmed)}</p>
                       </div>
                       <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
                         <p className="text-xs text-[#94a3b8]">Disponível</p>
                         <p className={`text-lg font-bold font-['Outfit'] ${available >= 0 ? 'text-[#0ea5e9]' : 'text-red-500'}`}>
-                          R$ {(available / 1000).toFixed(1)}k
+                          {formatTileBRL(available)}
                         </p>
                       </div>
                     </div>
@@ -2168,15 +2166,18 @@ const Viagens = () => {
                 const concentrated = maxInc > avgInc * 1.5;
                 const peakIdx = increments.indexOf(maxInc);
                 const insight = concentrated
-                  ? `📉 Seu gasto se concentra no Dia ${peakIdx + 1}`
-                  : '📊 Gasto distribuído ao longo da viagem';
+                  ? `concentra no Dia ${peakIdx + 1}`
+                  : 'distribuído ao longo da viagem';
 
                 return (
-                  <div>
-                    <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-1">📈 Gastos no destino (atividades e refeições)</h3>
-                    <p className="text-xs text-[#64748b] mb-2 font-['Outfit']">Voo e hotel não entram neste gráfico — veja o total no resumo acima.</p>
-                    <p className="text-xs text-[#94a3b8] mb-3 font-['Outfit']">{insight}</p>
-                    <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3">
+                  <details className="group bg-[#1e293b] border border-[#334155] rounded-xl">
+                    <summary className="list-none cursor-pointer p-3 flex items-center gap-2">
+                      <span className="text-sm font-semibold text-[#f8fafc] font-['Outfit']">📈 Gastos por dia</span>
+                      <span className="text-xs text-[#94a3b8] font-['Outfit'] flex-1 min-w-0 truncate">· {insight}</span>
+                      <ChevronRight size={14} className="text-[#94a3b8] transition-transform group-open:rotate-90" />
+                    </summary>
+                    <p className="text-xs text-[#64748b] px-3 font-['Outfit']">Atividades e refeições. Voo e hotel não entram — veja o total no resumo acima.</p>
+                    <div className="p-3">
                       <ResponsiveContainer width="100%" height={200}>
                         <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                           <defs>
@@ -2197,20 +2198,13 @@ const Viagens = () => {
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
-                  </div>
+                  </details>
                 );
               })()}
 
 
-              {/* Exchange Rates */}
-              <div>
-                <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">💱 Câmbio</h3>
-                <EnhancedExchangeRates
-                  destinationCurrency={getDestinationCurrency(selectedTrip.destination)}
-                  baseCurrency="BRL"
-                  budgetBRL={selectedTrip.budget}
-                />
-              </div>
+              {/* Câmbio — só viagem internacional, colapsado */}
+              <CambioBlock trip={selectedTrip} destinationCurrency={getDestinationCurrency(selectedTrip.destination)} />
 
             </div></TabErrorBoundary>
           )}
@@ -2243,7 +2237,10 @@ const Viagens = () => {
               return item;
             });
 
-            const visibleChecklist = checklist.filter((i) => !hiddenIds.has(i.id));
+            // Viagem doméstica: sem passaporte, câmbio, chip e aviso ao banco (recorte por id).
+            const scoped = scopeChecklist(checklist, isDomesticTrip(selectedTrip));
+            scoped.hiddenIds.forEach((id) => hiddenIds.add(id));
+            const visibleChecklist = scoped.items.filter((i) => !hiddenIds.has(i.id));
             const totalItems = visibleChecklist.length;
             const checkedItems = visibleChecklist.filter(i => i.checked).length;
             const readiness = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
@@ -2266,9 +2263,8 @@ const Viagens = () => {
                   <p className="text-xs text-[#94a3b8] mt-2">{checkedItems} de {totalItems} itens prontos</p>
                 </div>
 
-                {/* Smart Packing */}
+                {/* Bagagem — vazia vira uma linha */}
                 <div>
-                  <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">🧳 Smart Packing</h3>
                   <SmartPackingWithLuggage
                     tripId={selectedTrip.id}
                     destination={selectedTrip.destination}
@@ -2278,56 +2274,14 @@ const Viagens = () => {
                   />
                 </div>
 
-                {/* Checklist */}
+                {/* Checklist — um bloco por categoria, aberto só o primeiro incompleto */}
                 <div ref={preparacaoHeaderRef}>
                   <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">✅ Checklist</h3>
-                  <div className="space-y-4">
-                    {['documentos', 'reservas', 'packing', 'pre-viagem'].map((category) => {
-                      const items = visibleChecklist.filter((i) => i.category === category);
-                      if (items.length === 0) return null;
-                      const categoryLabels: Record<string, string> = {
-                        documentos: '📄 Documentos',
-                        reservas: '🎫 Reservas',
-                        packing: '🧳 Packing',
-                        'pre-viagem': '✈️ Pré-Viagem',
-                      };
-                      
-                      return (
-                        <div key={category} className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
-                          <h3 className="font-semibold text-[#f8fafc] mb-3 font-['Outfit']">{categoryLabels[category]}</h3>
-                          <div className="space-y-2">
-                            {items.map((item) => (
-                              <button
-                                key={item.id}
-                                onClick={() => handleToggleChecklist(item.id)}
-                                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
-                                  item.checked ? 'bg-[#10b981]/10' : 'bg-[#0f172a]'
-                                }`}
-                              >
-                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                  item.checked ? 'bg-[#10b981] border-[#10b981]' : 'border-[#334155]'
-                                }`}>
-                                  {item.checked && <Check size={14} className="text-white" />}
-                                </div>
-                                <span className={`text-sm font-['Plus_Jakarta_Sans'] ${
-                                  item.checked ? 'text-[#94a3b8] line-through' : 'text-[#f8fafc]'
-                                }`}>
-                                  {item.label}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <ChecklistBlocks items={visibleChecklist} onToggle={handleToggleChecklist} />
                 </div>
 
-                {/* Trip Guide */}
-                <div>
-                  <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">📖 Guia do Destino</h3>
-                  <TripGuide destinationCity={selectedTrip.destination} />
-                </div>
+                {/* Trip Guide — não renderiza vazio */}
+                <TripGuide destinationCity={selectedTrip.destination} title="📖 Guia do Destino" />
               </div>
             );
           })()}</TabErrorBoundary>
