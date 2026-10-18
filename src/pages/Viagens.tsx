@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback, useMemo, useRef, Fragment } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useKinuAI } from "@/contexts/KinuAIContext";
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Clock, Check, X, Tag, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Pencil, Loader2 } from 'lucide-react';
-import { format, differenceInDays, addDays } from 'date-fns';
+import { ArrowLeft, X, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Pencil, Loader2 } from 'lucide-react';
+import { format, differenceInDays, addDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,6 @@ import { inferAirportCode } from '@/components/cockpit/DraftCockpit';
 import OffersModal from '@/components/cockpit/OffersModal';
 import { TripPanel } from '@/components/cockpit/TripPanel';
 import { AgentTip } from '@/components/shared/AgentTip';
-import { DestinationImage } from '@/components/shared/DestinationImage';
 import { getIcarusRoteiro, getIcarusGuia, getIcarusLeilao, getHestiaFinOps, getHestiaCambio, getHestiaLeilao, getHermesChecklist, getHermesPacking } from '@/lib/agentMessages';
 import { analyzeTrip, AgentInsight } from '@/engines/agentIntelligence';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, contextualTips } from '@/types/trip';
@@ -49,8 +48,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { getDocsForDestination } from '@/data/destinationDocs';
 
 import { DailyRouteMap, RouteLeg } from '@/components/cockpit/DailyRouteMap';
-import { ItineraryDayWeather } from '@/components/cockpit/ItineraryDayWeather';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
+import { RoteiroDia, RoteiroLinha } from '@/components/cockpit/RoteiroDia';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
 import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
 import { CheckinBanner } from '@/components/checkin/CheckinBanner';
@@ -160,6 +159,9 @@ const Viagens = () => {
   const [resetModal, setResetModal] = useState(false);
   const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
   const [focusMapActivity, setFocusMapActivity] = useState<string | null>(null);
+  // C.5b: um item aberto por vez; mapa da rota montado só com o bloco aberto.
+  const [expandedActivityId, setExpandedActivityId] = useState<string | null>(null);
+  const [routeOpen, setRouteOpen] = useState(false);
   const mapAnchorRef = useRef<HTMLDivElement | null>(null);
   const roteiroActionRef = useRef<HTMLDivElement | null>(null);
   const preparacaoHeaderRef = useRef<HTMLDivElement | null>(null);
@@ -283,19 +285,6 @@ const Viagens = () => {
   };
 
   const calculateProgress = calculateTripProgress;
-
-  const getStatusIcon = (status: ActivityStatus) => {
-    switch (status) {
-      case 'confirmed':
-        return <span className="text-[#10b981]">🟢</span>;
-      case 'cancelled':
-        return <span className="text-red-500">🔴</span>;
-      case 'bidding':
-        return <span className="text-[#eab308] animate-pulse">🟡</span>;
-      default:
-        return <span className="text-[#64748b]">⚪</span>;
-    }
-  };
 
   const handleConfirmActivity = () => {
     if (!confirmModal || !selectedTrip) return;
@@ -611,17 +600,6 @@ const Viagens = () => {
   const getTripDuration = (trip: SavedTrip): number => {
     if (!trip.startDate || !trip.endDate) return 7;
     return differenceInDays(new Date(trip.endDate), new Date(trip.startDate)) + 1;
-  };
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'food': return '🍽️';
-      case 'culture': return '🏛️';
-      case 'transport': return '🚃';
-      case 'photo': return '📸';
-      case 'relax': return '🏨';
-      default: return '📍';
-    }
   };
 
   const getStatusLabel = (status: SavedTrip['status']) => {
@@ -1342,6 +1320,31 @@ const Viagens = () => {
       );
       return a?.id ?? null;
     })();
+    // C.5b — os mesmos caminhos de antes, só mudando de lugar: voo/hotel abre o sheet do
+    // TripPanel (aba Painel) como o `confirmar_item` do KINU AI já fazia.
+    const openAnchorConfirm = (tipo: 'voo' | 'hotel') => {
+      setActiveTab('painel');
+      setPendingConfirmRequest({ tipo, ts: Date.now() });
+    };
+    // Detalhe do item aberto: foto + nota + aberto/fechado (Places), Michelin, Clã.
+    const renderRoteiroDetail = (activity: TripActivity) => {
+      const isFoodActivity = activity.type === 'food' || activity.category === 'comida' || activity.name?.toLowerCase().includes('restaurante') || activity.name?.toLowerCase().includes('jantar') || activity.name?.toLowerCase().includes('almoço');
+      const michelinMatch = isFoodActivity ? findMichelinMatch(activity.name || '', selectedTrip.destination) : null;
+      return (
+        <>
+          {michelinMatch && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30 w-fit">
+              {getMichelinStarDisplay(michelinMatch.stars)} Michelin
+              {michelinMatch.stars > 1 && ` · ${michelinMatch.cuisine}`}
+            </span>
+          )}
+          <PlaceInfoCard activityName={activity.name} destination={selectedTrip.destination} />
+          {activity.category !== 'voo' && activity.category !== 'hotel' && (
+            <ClaProof activityId={catalogIdOf(activity.id)} city={selectedTrip.destination} />
+          )}
+        </>
+      );
+    };
     const tripSeverity = selectedTrip.jetLagSeverity || 'BAIXO';
     const showJetLagAlert = selectedTrip.jetLagMode && (
       (tripSeverity === 'MODERADO' && selectedDay === 2) ||
@@ -1632,65 +1635,31 @@ const Viagens = () => {
                         if (roteiroCategoryFilter === 'logistics') return act.category === 'transporte';
                         if (roteiroCategoryFilter === 'anchor') return ['voo', 'hotel'].includes(act.category);
                       })
-                      .map((activity, actIdx) => {
+                      .map((activity) => {
                         const realActIdx = day.activities.indexOf(activity);
-                        const isAnchor = roteiroCategoryFilter === 'anchor';
-                        const isAnchorHero = isAnchor && ['voo', 'hotel'].includes(activity.category);
                         const acc = selectedTrip.finances?.categories?.accommodation;
                         const hotelDisplay = (acc?.planned || 0) + (acc?.confirmed || 0);
+                        const showHotelTotal = roteiroCategoryFilter === 'anchor' && activity.category === 'hotel' && activity.cost === 0;
                         return (
-                          <div key={`${dayIdx}-${actIdx}`}
-                            onClick={() => setActivityDetailDrawer({ activity, open: true })}
-                            className={`flex gap-3 p-3 rounded-xl border cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all ${
-                            activity.status === 'confirmed'
-                              ? 'bg-emerald-500/10 border-emerald-500/30'
-                              : 'bg-card border-border'
-                          }`}>
-                            <div className="flex flex-col items-center gap-1 min-w-[50px]">
-                              <span className="text-[10px] text-muted-foreground font-bold">Dia {day.day}</span>
-                              <span className="text-lg">{getActivityIcon(activity.type)}</span>
-                              <span className="text-[10px] text-muted-foreground">{activity.time}</span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-sm text-foreground font-['Outfit'] truncate">{activity.name}</h4>
-                              {activity.description && (
-                                <p className="text-[10px] text-muted-foreground truncate">{activity.description}</p>
-                              )}
-                              <div className="flex items-center gap-3 mt-1">
-                                {activity.cost > 0 && (
-                                  <span className="text-xs text-muted-foreground">R$ {activity.cost.toLocaleString('pt-BR')}</span>
-                                )}
-                                {isAnchor && activity.category === 'hotel' && activity.cost === 0 && (
-                                  <span className="text-xs text-muted-foreground">R$ {hotelDisplay.toLocaleString('pt-BR')}</span>
-                                )}
-                                {!isAnchorHero && (
-                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                                    activity.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
-                                  }`}>
-                                    {activity.status === 'confirmed' ? '✅ Confirmado' : '⏳ Pendente'}
-                                  </span>
-                                )}
-                                {activity.edited && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-400 font-medium">
-                                    ✏️ ajustado
-                                  </span>
-                                )}
-                              </div>
-                              {isAnchorHero && (
-                                <p className="text-[10px] text-muted-foreground mt-1">📍 Gerenciado no Painel</p>
-                              )}
-                              {/* Google Places Info */}
-                              <PlaceInfoCard activityName={activity.name} destination={selectedTrip.destination} />
-                            </div>
-                            {activity.status !== 'confirmed' && !isAnchorHero && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setConfirmModal({ isOpen: true, activity, dayIndex: dayIdx, actIndex: realActIdx }); }}
-                                className="self-center px-3 py-1.5 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-colors whitespace-nowrap"
-                              >
-                                Confirmar
-                              </button>
-                            )}
-                          </div>
+                          <RoteiroLinha
+                            key={`${dayIdx}-${activity.id}`}
+                            activity={activity}
+                            prefix={`Dia ${day.day}`}
+                            priceBRL={showHotelTotal ? hotelDisplay : undefined}
+                            expanded={expandedActivityId === activity.id}
+                            onToggle={() => setExpandedActivityId(expandedActivityId === activity.id ? null : activity.id)}
+                            onCheck={() => setConfirmModal({ isOpen: true, activity, dayIndex: dayIdx, actIndex: realActIdx })}
+                            onOffers={() => setOffersModal({
+                              isOpen: true,
+                              activityName: activity.name,
+                              activityDate: String(day.date || '').slice(0, 10),
+                            })}
+                            onSwap={() => setSwapModal({ dayIndex: dayIdx, actIndex: realActIdx, activity })}
+                            onConfirmAnchor={() => openAnchorConfirm(activity.category === 'voo' ? 'voo' : 'hotel')}
+                            onOpenDetails={() => setActivityDetailDrawer({ activity, open: true })}
+                            renderDetail={renderRoteiroDetail}
+                            highlight={recentlyConfirmed === activity.id}
+                          />
                         );
                       })
                   )}
@@ -1752,80 +1721,50 @@ const Viagens = () => {
                 />
               )}
 
-              {/* Day Activities */}
+              {/* Day Activities — C.5b: uma linha por item, detalhe e ações só ao abrir */}
               {currentDay && (() => {
-                const isSkipPhoto = currentDay.title?.includes('Embarque') || currentDay.title?.includes('Retorno') || currentDay.title?.includes('Trânsito');
-                const mainActivity = currentDay.activities?.find(a => 
-                  a.category !== 'voo' && a.category !== 'hotel' && !a.name?.toLowerCase().includes('transfer') && !a.name?.toLowerCase().includes('check-')
-                );
-                const photoQuery = mainActivity?.name || currentDay.title || selectedTrip.destination;
-
-                // Numbering source of truth: the day's chronological list of
-                // non-logistics activities — first = 1, second = 2, etc.,
-                // assigned regardless of geocoding success. The list shows
-                // these badges for ALL non-logistics activities; the map
-                // receives the same numbering and renders pins only for the
-                // stops it actually geocoded (a failed stop 2 shows 1, 3, 4
-                // on the map while the list still shows 2).
+                // Numbering source of truth for the map pins: the day's chronological
+                // list of non-logistics activities (first = 1, second = 2…).
                 currentDayRef.current = currentDay.day;
-                const dayMapNumbers = new Map<string, number>();
                 const stopNumbers: Record<string, number> = {};
                 currentDay.activities
                   .filter(a => !isLogistics(a))
                   .slice()
                   .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'))
-                  .forEach((act, idx) => {
-                    dayMapNumbers.set(act.id, idx + 1);
-                    stopNumbers[act.name] = idx + 1;
-                  });
-                // OSRM leg times reported by the map (same data as its pills).
+                  .forEach((act, idx) => { stopNumbers[act.name] = idx + 1; });
+                // OSRM leg times reported by the map — real > estimated (legBetween).
                 const liveLegs = routeLegs && routeLegs.day === currentDay.day ? routeLegs.legs : null;
-                
+                const dayIndex = selectedTrip.days.findIndex((d) => d.day === currentDay.day);
+                const hasRoute = !currentDay.title.includes('Embarque') && !currentDay.title.includes('Retorno');
+                const dayDate = currentDay.date
+                  ? parseISO(String(currentDay.date).slice(0, 10))
+                  : selectedTrip.startDate
+                    ? addDays(parseISO(String(selectedTrip.startDate).slice(0, 10)), currentDay.day - 1)
+                    : undefined;
+
                 return (
                 <div
-                  className={`bg-card border border-border rounded-2xl overflow-hidden transition-all duration-200 ${
-                    isTransitioning 
+                  className={`transition-all duration-200 ${
+                    isTransitioning
                       ? slideDirection === 'left' ? 'opacity-0 -translate-x-3' : 'opacity-0 translate-x-3'
                       : 'opacity-100 translate-x-0'
                   }`}
                 >
-                  {/* Day banner image */}
-                  {!isSkipPhoto && (
-                    <div className="relative h-[80px] overflow-hidden">
-                      <DestinationImage query={photoQuery} className="absolute inset-0 w-full h-full object-cover" alt={photoQuery} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-card via-card/70 to-transparent" />
-                      <div className="absolute bottom-2 left-4 right-4">
-                        <h3 className="font-semibold text-lg text-foreground font-['Outfit'] flex items-center gap-2 drop-shadow-lg">
-                          <span>Dia {currentDay.day}: {currentDay.title}</span>
-                          {selectedTrip.startDate && (
-                            <ItineraryDayWeather
-                              destination={selectedTrip.destination}
-                              date={new Date(new Date(selectedTrip.startDate).getTime() + (currentDay.day - 1) * 86400000)}
-                              compact
-                            />
-                          )}
-                        </h3>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="p-4">
-                  {/* Day title fallback for Embarque/Retorno/Trânsito */}
-                  {isSkipPhoto && (
-                    <h3 className="font-semibold text-lg mb-4 text-foreground font-['Outfit'] flex items-center gap-2">
-                      <span>Dia {currentDay.day}: {currentDay.title}</span>
-                      {selectedTrip.startDate && (
-                        <ItineraryDayWeather
-                          destination={selectedTrip.destination}
-                          date={new Date(new Date(selectedTrip.startDate).getTime() + (currentDay.day - 1) * 86400000)}
-                          compact
-                        />
-                      )}
-                    </h3>
-                  )}
-                  {/* Daily route map — skip Embarque and Retorno days */}
-                  {!currentDay.title.includes('Embarque') && !currentDay.title.includes('Retorno') && (
-                    <div ref={mapAnchorRef}>
+                  <RoteiroDia
+                    dayNumber={currentDay.day}
+                    date={dayDate}
+                    activities={currentDay.activities}
+                    destination={selectedTrip.destination}
+                    liveLegs={liveLegs}
+                    expandedId={expandedActivityId}
+                    onExpand={setExpandedActivityId}
+                    routeOpen={routeOpen}
+                    onRouteToggle={() => setRouteOpen((o) => !o)}
+                    mapAnchorRef={mapAnchorRef}
+                    anchorActivityId={firstActionableActivityId}
+                    anchorRef={roteiroActionRef}
+                    highlightId={recentlyConfirmed}
+                    renderMap={hasRoute ? () => (
                       <DailyRouteMap
                         destination={selectedTrip.destination}
                         activities={currentDay.activities}
@@ -1836,258 +1775,18 @@ const Viagens = () => {
                         stopNumbers={stopNumbers}
                         onLegsChange={handleRouteLegsChange}
                       />
-                    </div>
-                  )}
-                  <div className="space-y-4">
-                    {currentDay.activities.map((activity, actIndex) => {
-                      const dayIndex = selectedTrip.days.findIndex((d) => d.day === currentDay.day);
-                      const pinNumber = dayMapNumbers.get(activity.id);
-                      // Per-leg travel data reported by DailyRouteMap (same OSRM
-                      // results as the map pills). Matched by stop names.
-                      const nextActivity = currentDay.activities[actIndex + 1];
-                      const legToNext = (liveLegs && nextActivity)
-                        ? liveLegs.find(l => l.fromName === activity.name && l.toName === nextActivity.name)
-                        : undefined;
-                      const legIsWalk = legToNext ? legToNext.durationMin <= 45 : false;
-                      const legMinutes = legToNext
-                        ? (legIsWalk ? legToNext.durationMin : Math.max(8, Math.round(parseFloat(legToNext.distanceKm) * 2.5)))
-                        : 0;
-                      const legConnector = legToNext ? (
-                        <div className="flex items-center gap-2 -mt-2 mb-1">
-                          <div className="w-7 flex justify-center flex-shrink-0">
-                            <div className="w-0.5 h-3 bg-[#334155]" />
-                          </div>
-                          <span className="text-[10px] text-muted-foreground font-['Outfit']">
-                            {legIsWalk ? '🚶' : '🚕'} ~{legMinutes} min · {legIsWalk ? 'a pé' : 'táxi'}
-                          </span>
-                        </div>
-                      ) : null;
-                      
-                      // Auto-detect logistics activities (flight/check-in/check-out/transfer)
-                      const isLogisticsActivity = activity.isHeroItem ||
-                        activity.category === 'voo' || 
-                        (activity.category === 'hotel' && (
-                          activity.name?.toLowerCase().includes('check-in') ||
-                          activity.name?.toLowerCase().includes('check-out')
-                        )) ||
-                        activity.name?.toLowerCase().includes('check-in aeroporto') ||
-                        activity.name?.toLowerCase().includes('transfer');
-
-                      // Hero items render as muted markers
-                      if (isLogisticsActivity) {
-                        return (
-                          <Fragment key={activity.id}>
-                          <div className="flex gap-3 opacity-40">
-                            <div className="flex flex-col items-center">
-                              <div className="text-xl">{getActivityIcon(activity.type)}</div>
-                              {actIndex < currentDay.activities.length - 1 && (
-                                <div className="w-0.5 flex-1 bg-[#334155] mt-2" />
-                              )}
-                            </div>
-                            <div className="flex-1 pb-4">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm text-[#64748b]">
-                                  <Clock size={14} className="inline mr-1" />
-                                  {activity.time}
-                                </span>
-                              </div>
-                              <h4 className="font-medium text-[#64748b] font-['Outfit'] text-sm">{activity.name}</h4>
-                              <p className="text-xs text-[#475569] mt-0.5">📍 Logística — gerenciado no Painel</p>
-                            </div>
-                          </div>
-                          {legConnector}
-                          </Fragment>
-                        );
-                      }
-
-                      return (
-                        <Fragment key={activity.id}>
-                        <div
-                          onClick={() => setActivityDetailDrawer({ activity, open: true })}
-                          className={`flex gap-3 transition-all duration-500 cursor-pointer hover:ring-1 hover:ring-primary/30 ${
-                          activity.status === 'confirmed' ? 'bg-[#10b981]/10 -mx-2 px-2 py-2 rounded-xl border border-[#10b981]/30' :
-                          activity.status === 'bidding' ? 'bg-[#eab308]/10 -mx-2 px-2 py-2 rounded-xl border border-[#eab308]/30' :
-                          activity.status === 'cancelled' ? 'opacity-50' : ''
-                        } ${recentlyConfirmed === activity.id ? 'ring-2 ring-emerald-400 ring-opacity-75' : ''}`}>
-                          <div className="flex flex-col items-center">
-                            {pinNumber ? (
-                              /* Same numbered badge as the map pin (DailyRouteMap createNumberedIcon):
-                                 solid emerald disc, white bold number */
-                              <div
-                                className="rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
-                                style={{
-                                  width: 22,
-                                  height: 22,
-                                  background: '#10b981',
-                                  fontSize: 11,
-                                  fontFamily: "'Outfit', sans-serif",
-                                  boxShadow: '0 0 10px rgba(16,185,129,0.6)',
-                                }}
-                              >
-                                {pinNumber}
-                              </div>
-                            ) : (
-                              <div className="text-xl">{getActivityIcon(activity.type)}</div>
-                            )}
-                            {actIndex < currentDay.activities.length - 1 && (
-                              <div className="w-0.5 flex-1 bg-[#334155] mt-2" />
-                            )}
-                          </div>
-                          <div className="flex-1 pb-4">
-                            <div className="flex items-center gap-2 mb-1">
-                              {getStatusIcon(activity.status)}
-                              <span className="text-sm text-[#94a3b8]">
-                                <Clock size={14} className="inline mr-1" />
-                                {activity.time}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {(() => {
-                                  const c = activity.category as string;
-                                  const t = activity.type as string;
-                                  if (c === 'breakfast' || c === 'café') return 'Café';
-                                  if (c === 'lunch') return 'Almoço';
-                                  if (c === 'dinner') return 'Jantar';
-                                  if (c === 'morning') return 'Manhã';
-                                  if (c === 'afternoon') return 'Tarde';
-                                  if (c === 'night') return 'Noite';
-                                  if (c === 'comida' || t === 'food') return 'Gastronomia';
-                                  if (c === 'cultura' || t === 'culture') return 'Cultura';
-                                  if (c === 'voo' || c === 'hotel' || c === 'transporte' || t === 'transport' || t === 'logistics') return 'Logística';
-                                  return 'Passeio';
-                                })()}
-                              </span>
-                              {/* Preço estimado */}
-                              {activity.cost > 0 && (
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${activity.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#334155] text-[#94a3b8]'}`}>
-                                  {activity.status === 'confirmed' ? '✓' : '~'}R$ {activity.cost.toLocaleString('pt-BR')}
-                                </span>
-                              )}
-                              {activity.edited && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-400 font-medium">
-                                  ✏️ ajustado
-                                </span>
-                              )}
-                              {/* Preço pago */}
-                              {activity.status === 'confirmed' && activity.paidAmount && (
-                                <span className="text-xs bg-[#10b981] text-white px-2 py-0.5 rounded-full font-medium">
-                                  ✓ R$ {activity.paidAmount.toLocaleString('pt-BR')}
-                                </span>
-                              )}
-                              {/* Badge grátis */}
-                              {activity.cost === 0 && activity.status !== 'confirmed' && 
-                               !['info', 'transport'].includes(activity.type) && 
-                               activity.category !== 'voo' && activity.category !== 'hotel' && (
-                                <span className="text-xs bg-[#334155]/50 text-[#64748b] px-2 py-0.5 rounded-full">
-                                  Grátis
-                                </span>
-                              )}
-                              {activity.jetLagFriendly && (
-                                <span className="text-xs bg-[#eab308]/20 text-[#eab308] px-2 py-0.5 rounded-full">
-                                  🧘 Jet Lag Friendly
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="font-medium text-[#f8fafc] font-['Outfit']">{activity.name}</h4>
-                              {activity.status === 'confirmed' && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-medium border border-emerald-500/20 animate-scale-in">
-                                  <Check size={10} className="animate-scale-in" /> Confirmado
-                                </span>
-                              )}
-                            </div>
-                            {/* Michelin Badge */}
-                            {(() => {
-                              const isFoodActivity = activity.type === 'food' || activity.category === 'comida' || activity.name?.toLowerCase().includes('restaurante') || activity.name?.toLowerCase().includes('jantar') || activity.name?.toLowerCase().includes('almoço');
-                              const michelinMatch = isFoodActivity ? findMichelinMatch(activity.name || '', selectedTrip.destination) : null;
-                              return michelinMatch ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30 mt-0.5 w-fit">
-                                  {getMichelinStarDisplay(michelinMatch.stars)} Michelin
-                                  {michelinMatch.stars > 1 && ` · ${michelinMatch.cuisine}`}
-                                </span>
-                              ) : null;
-                            })()}
-                            <p className="text-sm text-[#94a3b8]">{activity.description}</p>
-                            
-                            {/* Google Places Info */}
-                            <PlaceInfoCard activityName={activity.name} destination={selectedTrip.destination} />
-
-                            {/* Clã — sinal da comunidade nesta atividade */}
-                            {activity.category !== 'voo' && activity.category !== 'hotel' && (
-                              <ClaProof
-                                activityId={catalogIdOf(activity.id)}
-                                city={selectedTrip.destination}
-                              />
-                            )}
-
-                            {/* Actions — max 2 buttons: Confirmar + Ver Ofertas */}
-                            {activity.status !== 'confirmed' && activity.status !== 'cancelled' && (
-                              <div
-                                ref={activity.id === firstActionableActivityId ? roteiroActionRef : undefined}
-                                className="flex gap-2 mt-3 flex-wrap"
-                              >
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setConfirmModal({ isOpen: true, activity, dayIndex, actIndex }); }}
-                                  className="flex items-center gap-1 px-3 py-1.5 bg-[#10b981] rounded-lg text-xs text-white hover:bg-[#10b981]/80 transition-colors"
-                                >
-                                  <Check size={12} />
-                                  Confirmar
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setOffersModal({
-                                    isOpen: true,
-                                    activityName: activity.name,
-                                    activityDate: String(currentDay.date || '').slice(0, 10),
-                                  }); }}
-                                  className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-primary/50 transition-colors"
-                                >
-                                  <Tag size={12} />
-                                  Ver Ofertas
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setSwapModal({ dayIndex, actIndex, activity }); }}
-                                  className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] border border-[#334155] rounded-lg text-xs text-[#f8fafc] hover:border-primary/50 transition-colors"
-                                >
-                                  🔄 Trocar
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {legConnector}
-                        </Fragment>
-                      );
+                    ) : null}
+                    onCheck={(activity, actIndex) => setConfirmModal({ isOpen: true, activity, dayIndex, actIndex })}
+                    onOffers={(activity) => setOffersModal({
+                      isOpen: true,
+                      activityName: activity.name,
+                      activityDate: String(currentDay.date || '').slice(0, 10),
                     })}
-                  </div>
-
-                  {/* Subtotal do dia */}
-                  {(() => {
-                    const isLogistics = (a: any) => a.category === 'voo' || a.category === 'hotel';
-                    const dayTotal = currentDay.activities.filter(a => !isLogistics(a)).reduce((sum, a) => sum + (a.cost || 0), 0);
-                    const confirmedTotal = currentDay.activities
-                      .filter(a => !isLogistics(a) && a.status === 'confirmed')
-                      .reduce((sum, a) => sum + (a.paidAmount || 0), 0);
-                    
-                    if (dayTotal === 0 && confirmedTotal === 0) return null;
-                    
-                    return (
-                      <div className="mt-4 pt-3 border-t border-[#334155] flex justify-between items-center text-sm">
-                        <span className="text-[#94a3b8] font-['Outfit']">💰 Total do dia</span>
-                        <div className="flex items-center gap-3">
-                          {dayTotal > 0 && (
-                            <span className="text-[#f8fafc] font-medium font-['Outfit']">
-                              ~R$ {dayTotal.toLocaleString('pt-BR')}
-                            </span>
-                          )}
-                          {confirmedTotal > 0 && (
-                            <span className="text-[#10b981] font-medium">
-                              ✓ R$ {confirmedTotal.toLocaleString('pt-BR')}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                  </div> {/* close p-4 wrapper */}
+                    onSwap={(activity, actIndex) => setSwapModal({ dayIndex, actIndex, activity })}
+                    onConfirmAnchor={openAnchorConfirm}
+                    onOpenDetails={(activity) => setActivityDetailDrawer({ activity, open: true })}
+                    renderDetail={renderRoteiroDetail}
+                  />
                 </div>
                 );
               })()}
@@ -2623,6 +2322,7 @@ const Viagens = () => {
           onClose={() => setActivityDetailDrawer(null)}
           onFocusOnMap={(name) => {
             setFocusMapActivity(name);
+            setRouteOpen(true);
             setTimeout(() => {
               mapAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 100);
