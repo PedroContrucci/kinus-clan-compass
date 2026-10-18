@@ -285,6 +285,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
       days: built.days,
       budget: built.budget,
       finances: built.finances,
+      accommodation: built.accommodation ?? withFlights.accommodation,
       engineItemIds: built.engineItemIds,
       unplacedEdits: built.unplaced,
     } as DraftTrip);

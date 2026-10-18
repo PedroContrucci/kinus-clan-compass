@@ -61,6 +61,7 @@ import { pickBest, flightSearchKey } from '@/lib/flightRanking';
 import { buildItineraryForTrip } from '@/lib/draftItinerary';
 import { tryPlaceUnplaced } from '@/lib/cockpitLines';
 import { GeneratedItineraryStage } from '@/components/cockpit/GeneratedItineraryStage';
+import { durationLabel } from '@/lib/itemDisplay';
 import { normalizeTrip } from '@/lib/tripStore';
 import { exportTripPDF } from '@/lib/tripPdfExport';
 
@@ -257,7 +258,8 @@ describe('C.3a — ↻ abre alternativas do catálogo; check-in "00:35 (+1)" ren
     fireEvent.click(options[0]);
     expect(screen.queryByTestId('swap-panel')).toBeNull();
     expect(screen.getByText(name)).toBeTruthy();
-    expect(screen.getAllByText(`Duração: ${hours.replace(',', '.')}`).length).toBeGreaterThan(0);
+    // C.4.1: a tela mostra a duração legível ("1,5h" → "1h30"); o gravado segue decimal.
+    expect(screen.getAllByText(`Duração: ${durationLabel(hours.replace(',', '.'))}`).length).toBeGreaterThan(0);
   });
 
   it('check-in "00:35 (+1)": tela, normalizeTrip e PDF sem throw e sem NaN', async () => {
@@ -281,7 +283,9 @@ describe('C.3a — ↻ abre alternativas do catálogo; check-in "00:35 (+1)" ren
     pdfTexts.length = 0;
     await expect(exportTripPDF(norm as never)).resolves.toBeUndefined();
     vi.unstubAllGlobals();
-    expect(pdfTexts.some((t) => t.includes('00:35 (+1)'))).toBe(true);
+    // C.4.1: coluna só com a hora; "(+1)" junto ao nome.
+    expect(pdfTexts).toContain('00:35');
+    expect(pdfTexts.some((t) => /Check-in no hotel \(\+1\)/.test(t))).toBe(true);
     expect(pdfTexts.filter((t) => /NaN/.test(t))).toEqual([]);
   });
 });

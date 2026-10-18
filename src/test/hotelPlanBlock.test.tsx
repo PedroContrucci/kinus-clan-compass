@@ -202,3 +202,19 @@ describe('ficha do hotel', () => {
     expect(screen.getByText('faixa de preço indisponível')).toBeInTheDocument();
   });
 });
+
+// C.4.1: check-out gravado na véspera da data final → o card diz por quê são 4 noites (derivado).
+describe('HotelPlanBlock — saída na véspera do voo', () => {
+  it('checkOut 14/nov com fim 15/nov → "4 noites (saída na véspera do voo)"', () => {
+    const acc = { ...curada('kinu'), totalNights: 4, totalPrice: 3200, checkOut: new Date(2026, 10, 14, 12).toISOString() };
+    render(<HotelPlanBlock trip={{ ...tripWith(acc), endDate: new Date(2026, 10, 15, 12).toISOString() } as SwapTripLike} onSelectHotel={() => {}} />);
+    expect(screen.getByText(/4 noites \(saída na véspera do voo\)/)).toBeTruthy();
+  });
+
+  it('checkOut na data final → só "N noites"', () => {
+    const end = new Date(2026, 10, 15, 12).toISOString();
+    render(<HotelPlanBlock trip={{ ...tripWith({ ...curada('kinu'), totalNights: 5, checkOut: end }), endDate: end } as SwapTripLike} onSelectHotel={() => {}} />);
+    expect(screen.queryByText(/véspera do voo/)).toBeNull();
+    expect(screen.getByText(/5 noites/)).toBeTruthy();
+  });
+});

@@ -78,7 +78,9 @@ describe('itineraryEngine — extração sem mudança de comportamento', () => {
         outboundFlight: flight('2026-11-10T12:00:00', '08:00'), returnFlight: flight('2026-11-17T12:00:00', '21:00'),
         budget: 20000, travelers: 2, interests: ['gastronomia', 'cultura'], jetLagSeverity: sev, priceLevel: 'midrange',
       });
-      const now = JSON.parse(JSON.stringify({ days: r.days, breakdown: r.breakdown, meta: r.meta }));
+      // C.4.1: meta ganhou hotelNights/checkoutOnEve (volta 21:00 → 7 noites, sem véspera); o snapshot segue o resto.
+      expect(r.meta).toMatchObject({ hotelNights: 7, checkoutOnEve: false });
+      const now = JSON.parse(JSON.stringify({ days: r.days, breakdown: r.breakdown, meta: { michelinCount: r.meta.michelinCount } }));
       const expected = renameOld((before as Record<string, Out>)[city]);
       expect(now).toEqual(expected);
       expect(r.buckets).toEqual(computeBuckets(r.days, r.breakdown));

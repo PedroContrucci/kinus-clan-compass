@@ -352,6 +352,16 @@ export const LONG_ITEM_ANCHOR = 9 * 60;
 export const DEFAULT_HOP_MIN = 15;
 /** Hotel ↔ aeroporto (o catálogo não tem coord de aeroporto). */
 export const AIRPORT_HOP_MIN = 45;
+
+/**
+ * R11 no dinheiro: o check-out cai na véspera do voo de volta (transfer − 30 min < 00:00, mesma
+ * conta do R10/R11 do layout)? Então a última noite não é dormida — fonte única da regra de noites.
+ */
+export function checkoutOnEve(returnDepTime: string | undefined, domestic: boolean): boolean {
+  const dep = clockMinutes(returnDepTime);
+  const transfer = (dep >= 0 ? dep : 14 * 60) - (domestic ? 2 : 3) * 60 - AIRPORT_HOP_MIN;
+  return Math.min(transfer - 30, 12 * 60) < 0;
+}
 /** Máximo do jantar no dia de chegada (D5). */
 export const ARRIVAL_DINNER_MAX = 22 * 60;
 export const LUNCH_ON_SITE_TIP = 'Almoço no local';
@@ -600,9 +610,14 @@ export function generateItinerary(
   jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO',
   priceLevelProp?: PriceLevel,
   hotel?: EngineHotel
-): { days: ItineraryDay[]; breakdown: BudgetBreakdown; meta: { michelinCount: number } } {
+): { days: ItineraryDay[]; breakdown: BudgetBreakdown; meta: { michelinCount: number; hotelNights: number; checkoutOnEve: boolean } } {
   const totalDays = differenceInDays(returnDate, departureDate) + 1;
-  const totalNights = totalDays - 1;
+  const domestic = typeof returnFlight.international === 'boolean'
+    ? !returnFlight.international
+    : findCityInfo(destination)?.region === 'Brasil';
+  // R11: saída de madrugada = check-out na véspera → uma noite a menos (C.4.1).
+  const nightsOnEve = checkoutOnEve(returnFlight.option.departureTime, domestic);
+  const totalNights = Math.max(0, totalDays - 1 - (nightsOnEve ? 1 : 0));
   
   // Prefer the user-chosen budget tier; only recalculate when none was provided
   const priceLevel: PriceLevel = priceLevelProp ?? findBestPriceLevel(destination, totalDays, travelers, budget).level;
@@ -871,9 +886,6 @@ export function generateItinerary(
   // Fuso desconhecido (R-V6): a hora de chegada não é medida → janela padrão, não a hora.
   const arrivalHour = outboundFlight.tzKnown === false ? -1 : parseHour(outboundFlight.option.arrivalTime);
   const arrivalWindow = arrivalHour < 0 ? EXPLORATION_WINDOW_HOURS : Math.max(0, 22 - arrivalHour);
-  const domestic = typeof returnFlight.international === 'boolean'
-    ? !returnFlight.international
-    : findCityInfo(destination)?.region === 'Brasil';
   const lastWindow = lastDayWindowHours(returnFlight.option.departureTime, domestic);
   // R-V9: faixa da chegada. Antes de 14 h → tarde leve; 14–20 h → só jantar; depois de 20 h → nada.
   // Fuso desconhecido (R-V6) fica na tarde leve, como sempre.
@@ -1593,7 +1605,7 @@ export function generateItinerary(
   };
 
   resolveSameDayClashes(days);
-  return { days, breakdown, meta: { michelinCount } };
+  return { days, breakdown, meta: { michelinCount, hotelNights: totalNights, checkoutOnEve: nightsOnEve } };
 }
 
 export interface EngineInput {

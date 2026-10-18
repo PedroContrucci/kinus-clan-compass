@@ -1359,10 +1359,12 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
       setC(isLogistics ? B.gray500 : B.white, false);
       doc.setFontSize(11.5);
       doc.setFont('helvetica', isLogistics ? 'italic' : 'normal');
-      const timeStr = act.time || '     ';
+      // "00:35 (+1)": hora na coluna, "(+1)" junto ao nome (não invade a coluna).
+      const nextDay = /\(\+1\)/.test(String(act.time || ''));
+      const timeStr = String(act.time || '     ').replace(/\s*\(\+1\)/, '');
       doc.text(timeStr, 26, y);
 
-      doc.text(actName, 38, y);
+      doc.text(nextDay ? `${actName} (+1)` : actName, 38, y);
 
       const priceStr = act.cost > 0 ? `R$ ${fmt(act.cost)}` : '';
       if (priceStr) {

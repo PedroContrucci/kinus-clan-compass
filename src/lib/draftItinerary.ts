@@ -6,6 +6,7 @@ import { addDays } from 'date-fns';
 import type { PriceLevel } from '@/lib/activityPricing';
 import type { TripDay, TripFinances } from '@/types/trip';
 import {
+  computeBuckets,
   runItineraryEngine,
   type FinanceBuckets,
   type ItineraryActivity,
@@ -232,6 +233,24 @@ export interface DraftItineraryResult {
   buckets: FinanceBuckets;
   engineItemIds: string[];
   michelinCount: number;
+  /** Hospedagem com as noites do motor (R11: saída de madrugada = check-out na véspera). Persistir. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  accommodation?: any;
+}
+
+/**
+ * Aplica as noites do motor à hospedagem: totalNights, totalPrice = diária × noites e checkOut
+ * (véspera quando a saída é de madrugada). Mesmas noites → mesmo objeto. Ida e volta: trocar o voo
+ * de volta para o dia restaura as noites.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function accommodationWithNights(acc: any, returnDate: Date, nights: number, onEve: boolean): any {
+  if (!acc) return acc;
+  const n = Math.max(1, nights);
+  const checkOut = (onEve ? addDays(returnDate, -1) : returnDate).toISOString();
+  if (Number(acc.totalNights) === n && acc.checkOut === checkOut) return acc;
+  const rate = Number(acc.nightlyRate) || Math.round((Number(acc.totalPrice) || 0) / Math.max(1, Number(acc.totalNights) || 1));
+  return { ...acc, totalNights: n, totalPrice: Math.round(rate * n), checkOut };
 }
 
 /** Motor + baldes + envelope para uma viagem com os voos dados. */
@@ -266,15 +285,22 @@ export function buildItineraryForTrip(
     hotelPlannedOverride,
   });
 
+  // R11 no dinheiro: noites do motor gravadas na hospedagem; o curado recalcula o balde com elas.
+  const accommodation = accommodationWithNights(acc, returnDate, r.meta.hotelNights, r.meta.checkoutOnEve);
+  const buckets = hotelPlannedOverride && accommodation !== acc
+    ? computeBuckets(r.days, r.breakdown, Math.round(Number(accommodation.totalPrice) || 0) || undefined)
+    : r.buckets;
+
   const days = itineraryToTripDays(r.days);
-  const finances = financesFromBuckets(r.buckets, Number(trip.budget) || 0, trip.finances);
+  const finances = financesFromBuckets(buckets, Number(trip.budget) || 0, trip.finances);
   const followed = followPlanEnvelope({ ...trip, finances });
   return {
     days,
     finances: followed.finances,
     budget: Number(followed.budget) || finances.total,
-    buckets: r.buckets,
+    buckets,
     engineItemIds: itemIdsOf(days),
     michelinCount: r.meta.michelinCount,
+    accommodation,
   };
 }

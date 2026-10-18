@@ -238,6 +238,7 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
     budget: built.budget,
     days: built.days,
     finances: built.finances,
+    accommodation: built.accommodation ?? trip.accommodation,
     outboundFlight,
     returnFlight,
     flightsSelected: false,

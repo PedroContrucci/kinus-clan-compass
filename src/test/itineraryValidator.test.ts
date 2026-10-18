@@ -69,3 +69,14 @@ describe('R19 — sequência do dia', () => {
     expect(fails).toEqual([]);
   }, 180_000);
 });
+
+// C.4.1: deslocamento após bate-volta/longo = 15 min, como o motor (R4) — não a conta por coords.
+describe('R19 — deslocamento pós-bate-volta', () => {
+  it('bate-volta de 8 h seguido de jantar 15 min depois → sem WARN', () => {
+    const r = validateDaySequence(mid([
+      { id: 'x-jeri', name: 'Bate-volta', time: '09:00', duration: '8h', timeSlot: 'morning' },
+      { id: 'x-jantar', name: 'Jantar', time: '17:15', duration: '1.5h', timeSlot: 'dinner' },
+    ]), ctx());
+    expect(r.days[1]).toMatchObject({ status: 'PASS', issues: [] });
+  });
+});

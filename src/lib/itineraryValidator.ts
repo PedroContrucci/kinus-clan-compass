@@ -665,6 +665,8 @@ export interface SequenceReport {
 }
 
 export const OVERLAP_TOLERANCE_MIN = 15;
+/** Deslocamento após bate-volta/longo — o DEFAULT_HOP_MIN do motor (R4). */
+const DAYTRIP_HOP_MIN = 15;
 /** Decisão D1 (C.4-diag): check-in/check-out são 30 min, não 1 h. */
 const HOTEL_DESK_MIN = 30;
 
@@ -730,7 +732,9 @@ export function validateDaySequence(days: PlanDay[], ctx: PlanRulesContext): Seq
             : logisticPair ? 'c' : 'd';
           issues.push({ day: d.day, kind: 'overlap', status: 'FAIL', cause, text: pair });
         } else {
-          const hop = hopMinutes(curatedCoordOf(a.a.id), curatedCoordOf(b.a.id));
+          // R4 do motor: saindo de bate-volta/longo, 15 min — a duração do catálogo já inclui a volta.
+          const fromTrip = (!!a.cat && isDaytrip(a.cat)) || (a.hours >= 4 && a.a.timeSlot === 'morning');
+          const hop = fromTrip ? DAYTRIP_HOP_MIN : hopMinutes(curatedCoordOf(a.a.id), curatedCoordOf(b.a.id));
           if (b.start < a.end + hop) {
             issues.push({ day: d.day, kind: 'tight', status: 'WARN', cause: logisticPair ? 'c' : 'd', text: `${pair} (deslocamento ~${Math.round(hop)} min)` });
           }

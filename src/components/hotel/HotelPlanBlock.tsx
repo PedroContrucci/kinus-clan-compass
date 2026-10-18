@@ -97,7 +97,13 @@ export const HotelPlanBlock = ({ trip, onSelectHotel, onOpenOffers }: HotelPlanB
   };
 
   const nights = Number(acc?.totalNights) || 0;
-  const nightsLabel = nights > 0 ? `${nights} ${nights === 1 ? 'noite' : 'noites'}` : null;
+  // R11: check-out gravado antes da data final = saída de madrugada; derivado, nada gravado.
+  const endMs = new Date(String((trip as { endDate?: string } | null | undefined)?.endDate ?? '')).getTime();
+  const outMs = new Date(String(acc?.checkOut ?? '')).getTime();
+  const outOnEve = Number.isFinite(endMs) && Number.isFinite(outMs) && outMs <= endMs - 12 * 3600_000;
+  const nightsLabel = nights > 0
+    ? `${nights} ${nights === 1 ? 'noite' : 'noites'}${outOnEve ? ' (saída na véspera do voo)' : ''}`
+    : null;
 
   const priceLabel = current?.hotel.priceRangeBRL
     ? `${current.hotel.priceRangeBRL}/noite`

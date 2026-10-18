@@ -39,6 +39,7 @@ import {
   type BudgetBreakdown,
 } from '@/lib/itineraryEngine';
 import { tripDaysToItinerary, itineraryToTripDays, itemIdsOf, countManualEdits } from '@/lib/draftItinerary';
+import { isLogisticsItem, durationLabel } from '@/lib/itemDisplay';
 
 // Reexport: o gerador mora no motor puro; quem importava daqui segue funcionando.
 // eslint-disable-next-line react-refresh/only-export-components
@@ -665,7 +666,7 @@ export const GeneratedItineraryStage = ({
                       {/* Time Slot Emoji & Icon */}
                       <div className="flex flex-col items-center gap-1">
                         <span className="text-2xl">{timeSlotEmojis[activity.timeSlot] || '📍'}</span>
-                        <span className="text-xs text-muted-foreground">{categoryLabels[activity.timeSlot] || activity.type}</span>
+                        <span className="text-xs text-muted-foreground">{isLogisticsItem(activity) ? 'Logística' : categoryLabels[activity.timeSlot] || activity.type}</span>
                         <span className="text-xs text-muted-foreground font-medium">{activity.time}</span>
                       </div>
                       
@@ -686,7 +687,7 @@ export const GeneratedItineraryStage = ({
                         
                         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                           {activity.duration && (
-                            <span>Duração: {activity.duration}</span>
+                            <span>Duração: {durationLabel(activity.duration)}</span>
                           )}
                         </div>
                         
