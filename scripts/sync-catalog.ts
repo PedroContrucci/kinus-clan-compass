@@ -51,6 +51,7 @@ const CATALOG_FILE = resolve(ROOT, 'src/data/destinationActivities.ts');
 const TIERS_FILE = resolve(ROOT, 'src/data/generated/landmarkTiers.ts');
 const COORDS_FILE = resolve(ROOT, 'src/data/generated/coords.ts');
 const BOOKING_FILE = resolve(ROOT, 'src/data/generated/booking.ts');
+const DOW_FILE = resolve(ROOT, 'src/data/generated/daysOfWeek.ts');
 const TSCONFIG = 'tsconfig.app.json';
 
 /** O SQL que cria as colunas de coordenada. Aparece na mensagem de erro quando elas faltam. */
@@ -119,6 +120,8 @@ interface DbRow {
   booking_url: string | null;
   booking_phone: string | null;
   booking_note: string | null;
+  /** B.3.1 (R18): 0=dom…6=sáb; null = qualquer dia. */
+  days_of_week: (number | string)[] | null;
 }
 
 /** O mínimo que o mapa de coordenadas precisa saber sobre um hotel curado. */
@@ -129,7 +132,7 @@ interface HotelCoordRow {
 }
 
 const SELECT =
-  'id,city,name,category,neighborhood,rating,google_rating,estimated_cost_brl,duration_hours,tips,style_tags,landmark_tier,lat,lng,booking_mode,booking_url,booking_phone,booking_note';
+  'id,city,name,category,neighborhood,rating,google_rating,estimated_cost_brl,duration_hours,tips,style_tags,landmark_tier,lat,lng,booking_mode,booking_url,booking_phone,booking_note,days_of_week';
 
 // ---------------------------------------------------------------------------
 // Utilidades
@@ -640,6 +643,36 @@ ${entries.map((e) => e.line).join('\n')}${entries.length ? '\n' : ''}};
   return { content, counts };
 }
 
+/**
+ * Gera `src/data/generated/daysOfWeek.ts` — B.3.1 (R18): QUANDO o item existe (Caranguejada só
+ * na quinta). Arquivo próprio, não junto do booking: booking é como se fecha; isto é quando existe,
+ * e o consumidor é outro (motor e validador). Só entram linhas com `days_of_week` não vazio.
+ */
+function renderDaysOfWeek(rows: DbRow[]): { content: string; count: number } {
+  const entries = rows
+    .filter((r) => Array.isArray(r.days_of_week) && r.days_of_week.length > 0)
+    .map((r) => {
+      const days = [...new Set((r.days_of_week ?? []).map((d) => Number(d)))].sort((a, b) => a - b);
+      if (days.some((d) => !Number.isInteger(d) || d < 0 || d > 6)) {
+        die(`'${r.id}': days_of_week [${(r.days_of_week ?? []).join(',')}] fora de 0..6. Nada foi escrito.`);
+      }
+      return { id: r.id, line: `  ${q(r.id)}: [${days.join(', ')}],` };
+    })
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const content = `// GERADO por scripts/sync-catalog.ts --apply — não edite à mão.
+//
+// B.3.1 (R18) — em que dias da semana o item existe, da coluna \`days_of_week\` de
+// \`curated_activities\` no kinu-beta (0=dom…6=sáb). Id ausente = qualquer dia. Dado do catálogo,
+// nunca inferência. Mesma ponte de \`booking.ts\` (\`SuggestedActivity\` é intocável).
+// Consumidores: \`pickActivity\`/\`swapCandidates\` (motor) e \`validateDaysOfWeek\` (R18).
+
+/** Chaveado pelo id do catálogo (\`for-caranguejada-iate\`). */
+export const CURATED_DAYS_OF_WEEK: Record<string, number[]> = {
+${entries.map((e) => e.line).join('\n')}${entries.length ? '\n' : ''}};
+`;
+  return { content, count: entries.length };
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -782,6 +815,14 @@ async function main(): Promise<void> {
       `${bookingBefore === null ? 'ARQUIVO NOVO' : bookingChanged ? 'muda' : 'sem mudança'}\n`
   );
 
+  // E o dia da semana (R18): valor fora de 0..6 aborta aqui, com os arquivos intactos.
+  const dow = renderDaysOfWeek(rows);
+  const dowBefore = existsSync(DOW_FILE) ? readFileSync(DOW_FILE, 'utf8') : null;
+  console.log(
+    `daysOfWeek.ts: ${dow.count}/${rows.length} atividades com dia da semana — ` +
+      `${dowBefore === null ? 'ARQUIVO NOVO' : dowBefore !== dow.content ? 'muda' : 'sem mudança'}\n`
+  );
+
   if (!apply) {
     console.log(`Dry-run — nada foi escrito. Para aplicar:\n\n   npx tsx scripts/sync-catalog.ts --apply\n`);
     return;
@@ -806,8 +847,9 @@ async function main(): Promise<void> {
   writeFileSync(TIERS_FILE, tiersContent, 'utf8');
   writeFileSync(COORDS_FILE, coords.content, 'utf8');
   writeFileSync(BOOKING_FILE, booking.content, 'utf8');
+  writeFileSync(DOW_FILE, dow.content, 'utf8');
 
-  // Restaura os QUATRO. Meio-caminho é o pior estado possível: o app compila com um catálogo,
+  // Restaura os CINCO. Meio-caminho é o pior estado possível: o app compila com um catálogo,
   // classifica com o outro e desenha o mapa com um terceiro.
   const restore = () => {
     writeFileSync(CATALOG_FILE, original, 'utf8');
@@ -815,6 +857,8 @@ async function main(): Promise<void> {
     if (coordsBefore !== null) writeFileSync(COORDS_FILE, coordsBefore, 'utf8');
     if (bookingBefore !== null) writeFileSync(BOOKING_FILE, bookingBefore, 'utf8');
     else unlinkSync(BOOKING_FILE);
+    if (dowBefore !== null) writeFileSync(DOW_FILE, dowBefore, 'utf8');
+    else unlinkSync(DOW_FILE);
   };
 
   // --- Revalidação a partir do arquivo escrito ---
@@ -839,6 +883,7 @@ async function main(): Promise<void> {
     `   • src/data/generated/coords.ts — ${coords.acts.length + coords.hotelCoords.length} coordenadas`
   );
   console.log(`   • src/data/generated/booking.ts — ${bookingTotal} modos de reserva`);
+  console.log(`   • src/data/generated/daysOfWeek.ts — ${dow.count} itens com dia da semana`);
   console.log(`   • rodando type-check (tsc -p ${TSCONFIG} --noEmit)…`);
   try {
     execSync(`npx tsc -p ${TSCONFIG} --noEmit`, { cwd: ROOT, stdio: 'inherit' });

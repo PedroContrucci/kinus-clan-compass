@@ -2,7 +2,9 @@ import { destinationActivities, SuggestedActivity } from '@/data/destinationActi
 import { normalizePlaceName } from '@/lib/placeIdentity';
 import { catalogFor } from '@/lib/interestsFor';
 import { matchesPriority } from '@/lib/claChips';
-import { catalogIdOf } from '@/lib/localAchievements';
+import { catalogIdOf, resolveCity } from '@/lib/localAchievements';
+import { LANDMARKS } from '@/data/generated/landmarkTiers';
+import { CURATED_DAYS_OF_WEEK } from '@/data/generated/daysOfWeek';
 import { curatedCoordOf } from '@/lib/routeCoords';
 import { getMichelinCountForCity } from '@/lib/michelinData';
 
@@ -679,12 +681,9 @@ const isMealItem = (a: PlanDayItem, cat: SuggestedActivity | null) =>
 const isLogisticItem = (a: PlanDayItem) =>
   isFlightItem(a) || isTransferItem(a) || isCheckinItem(a) || isCheckoutItem(a) || a.timeSlot === 'hotel';
 
-/** Mesma conta de logisticsLine (itineraryEngine; importar dá ciclo): ≤ 1,2 km a pé a 5 km/h; senão táxi a 20 km/h + 5 min. */
-const hopMinutes = (a: { lat: number; lng: number } | null, b: { lat: number; lng: number } | null): number => {
-  if (!a || !b) return 0;
-  const km = haversineKm(a, b);
-  return km <= 1.2 ? (km / 5) * 60 : (km / 20) * 60 + 5;
-};
+/** Mesma conta de logisticsLine/hopMinutes do motor (importar o motor dá ciclo): `travelMinutes`. */
+const hopMinutes = (a: { lat: number; lng: number } | null, b: { lat: number; lng: number } | null): number =>
+  !a || !b ? 0 : travelMinutes(haversineKm(a, b)).minutes;
 
 const hm = (min: number) => {
   const m = ((Math.round(min) % 1440) + 1440) % 1440;
@@ -786,4 +785,111 @@ export function validateDaySequence(days: PlanDay[], ctx: PlanRulesContext): Seq
     rule: 'R19 SEQUÊNCIA', status, days: out, pass, warn, fail,
     detail: `dias ${pass}P/${warn}W/${fail}F${first ? ` · ${first.text}` : ''}`,
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B.3.1 — estrada, lanche, essenciais (R17) e dia da semana (R18). Fora de validatePlanRules
+// (R13–R16 não mudam); o smoke lê à parte, como o R19.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Acima disto o trecho é estrada (Águas Belas, Cumbuco): carro a ~60 km/h + 10 min, não táxi urbano. */
+export const ROAD_KM = 15;
+
+/**
+ * Fonte única do deslocamento (logisticsLine, hopMinutes do motor, R19): ≤ 1,2 km a pé (5 km/h) ·
+ * ≤ 15 km táxi (20 km/h + 5 min) · > 15 km carro (km + 10 min). Minutos crus, sem arredondar.
+ */
+export function travelMinutes(km: number): { mode: 'walk' | 'taxi' | 'car'; minutes: number } {
+  if (km <= 1.2) return { mode: 'walk', minutes: (km / 5) * 60 };
+  if (km <= ROAD_KM) return { mode: 'taxi', minutes: (km / 20) * 60 + 5 };
+  return { mode: 'car', minutes: km + 10 };
+}
+
+/** Lanche (sorvete, doce): tag `snack` do catálogo (kinu-beta → sync). Vai para o fim da tarde, como o pôr do sol. */
+export const isSnack = (a: Pick<SuggestedActivity, 'styleTags'> | null | undefined): boolean =>
+  !!a && (a.styleTags ?? []).includes('snack');
+
+/** R17: os essenciais da cidade = `icon` ∪ `essential` de landmarkTiers, todas as categorias. */
+export function essentialsOf(city: string): string[] {
+  const canon = resolveCity(city);
+  const tiers = canon ? LANDMARKS[canon]?.tiers ?? {} : {};
+  return Object.entries(tiers).filter(([, t]) => t === 'icon' || t === 'essential').map(([id]) => id).sort();
+}
+
+/** R17 só pesa em viagem com pelo menos isto de dias de exploração. */
+export const ESSENTIALS_MIN_DAYS = 3;
+
+/** R18: o item existe neste dia da semana (0=dom…6=sáb)? Sem registro = qualquer dia. */
+export function opensOn(catalogId: string, weekday: number): boolean {
+  const days = CURATED_DAYS_OF_WEEK[catalogId];
+  return !days || days.includes(weekday);
+}
+
+/** Dia da semana da data do roteiro, lida como yyyy-mm-dd em UTC (sem fuso). -1 sem data. */
+export function weekdayOf(date: unknown): number {
+  const iso = date instanceof Date
+    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    : String(date ?? '').slice(0, 10);
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() : -1;
+}
+
+export interface ExtraRuleResult {
+  rule: 'R17 ESSENCIAIS' | 'R18 DIA DA SEMANA';
+  status: 'PASS' | 'WARN' | 'FAIL' | 'SKIP';
+  detail: string;
+  /** R17: ids essenciais ausentes que cabiam. R18: ids fora do dia. */
+  ids?: string[];
+}
+
+const WEEKDAY_PT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+
+/** R18: item do catálogo num dia da semana em que não existe = FAIL. */
+export function validateDaysOfWeek(days: PlanDay[]): ExtraRuleResult {
+  const bad: string[] = [];
+  const notes: string[] = [];
+  for (const d of days) {
+    const wd = weekdayOf(d.date);
+    if (wd < 0) continue;
+    for (const a of d.activities) {
+      const id = catalogIdOf(a.id);
+      if (opensOn(id, wd)) continue;
+      bad.push(id);
+      notes.push(`dia ${d.day} (${WEEKDAY_PT[wd]}): ${a.name} só ${CURATED_DAYS_OF_WEEK[id].map((x) => WEEKDAY_PT[x]).join('/')}`);
+    }
+  }
+  return bad.length
+    ? { rule: 'R18 DIA DA SEMANA', status: 'FAIL', detail: notes.join(' · '), ids: bad }
+    : { rule: 'R18 DIA DA SEMANA', status: 'PASS', detail: 'nenhum item fora do dia' };
+}
+
+/**
+ * R17: essencial ausente + algum dia de exploração onde as horas dele cabem (dayWindowUsage com ele
+ * dentro) = WARN; ausente sem espaço = PASS com nota. Viagem com < 3 dias de exploração = SKIP.
+ */
+export function validateEssentials(days: PlanDay[], ctx: PlanRulesContext): ExtraRuleResult {
+  const index = catalogIndex(ctx.destination);
+  const lastIdx = days.length - 1;
+  const arrivalIdx = arrivalIndexOf(days, ctx);
+  const exploration = days.map((_, i) => i).filter((i) =>
+    i > arrivalIdx && i < lastIdx && !/recupera|descanso|trânsito/i.test(days[i].title ?? ''));
+  if (exploration.length < ESSENTIALS_MIN_DAYS) {
+    return { rule: 'R17 ESSENCIAIS', status: 'SKIP', detail: `${exploration.length} dia(s) de exploração` };
+  }
+  const essentials = essentialsOf(ctx.destination).filter((id) => index.has(id));
+  if (essentials.length === 0) return { rule: 'R17 ESSENCIAIS', status: 'SKIP', detail: 'cidade sem essenciais' };
+  const used = new Set(days.flatMap((d) => d.activities.map((a) => catalogIdOf(a.id))));
+  const usedNames = new Set(days.flatMap((d) => d.activities.map((a) => normalizePlaceName(a.name))));
+  const missing = essentials.filter((id) => !used.has(id) && !usedNames.has(normalizePlaceName(index.get(id)!.name)));
+  const fitting = missing.filter((id) => {
+    const cat = index.get(id)!;
+    const probe: PlanDayItem = { id: `day-x-${id}`, name: cat.name, timeSlot: cat.category };
+    return exploration.some((i) => {
+      const u = dayWindowUsage(days, ctx, i, [probe], index);
+      return !!u && u.used <= u.window;
+    });
+  });
+  const head = `${essentials.length - missing.length}/${essentials.length}`;
+  if (fitting.length) return { rule: 'R17 ESSENCIAIS', status: 'WARN', detail: `${head} · cabiam: ${fitting.join(', ')}`, ids: fitting };
+  return { rule: 'R17 ESSENCIAIS', status: 'PASS', detail: missing.length ? `${head} · sem espaço: ${missing.join(', ')}` : head };
 }

@@ -29,7 +29,7 @@ import { getHotelRecommendation } from '@/lib/hotelZones';
 import { interestsFor, catalogFor, splitInterests, interestLabel } from '@/lib/interestsFor';
 import { matchesPriority } from '@/lib/claChips';
 import { curatedCoordOf, resolveHotelCoord } from '@/lib/routeCoords';
-import { maxHopKmFor, haversineKm, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, durationMinutesOf, defaultMinutesOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
+import { maxHopKmFor, haversineKm, travelMinutes, isSnack, essentialsOf, opensOn, weekdayOf, ESSENTIALS_MIN_DAYS, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, durationMinutesOf, defaultMinutesOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
 import { catalogIdOf } from '@/lib/localAchievements';
 import { rulesContextOf } from '@/lib/cockpitLines';
 import { findCityInfo } from '@/data/destinationCatalog';
@@ -320,11 +320,20 @@ function clockMinutes(t?: string): number {
 
 const roundTo5 = (n: number) => Math.max(5, Math.round(n / 5) * 5);
 
-/** "~N min a pé" (≤ 1,2 km, 5 km/h) ou "~N min de táxi" (20 km/h + 5 min). Sem coords numa ponta → nada. */
+/** Estrada: arredonda a 30 min, mínimo 30 → "~30 min" · "~1h" · "~1h30". */
+function roadClock(min: number): string {
+  const m = Math.max(30, Math.round(min / 30) * 30);
+  const h = Math.floor(m / 60);
+  return h === 0 ? `~${m} min` : m % 60 ? `~${h}h${m % 60}` : `~${h}h`;
+}
+
+/** "~N min a pé" · "~N min de táxi" · "~1h de carro" (> 15 km) — travelMinutes. Sem coords numa ponta → nada. */
 export function logisticsLine(prev: Coord | null | undefined, curr: Coord | null | undefined): string | undefined {
   if (!prev || !curr) return undefined;
-  const km = haversineKm(prev, curr);
-  return km <= 1.2 ? `~${roundTo5((km / 5) * 60)} min a pé` : `~${roundTo5((km / 20) * 60 + 5)} min de táxi`;
+  const t = travelMinutes(haversineKm(prev, curr));
+  if (t.mode === 'walk') return `~${roundTo5(t.minutes)} min a pé`;
+  if (t.mode === 'taxi') return `~${roundTo5(t.minutes)} min de táxi`;
+  return `${roadClock(t.minutes)} de carro`;
 }
 
 /** Coordenada real de um item do roteiro: catálogo pelo id; hotel só por casamento real (nunca a mediana). */
@@ -405,7 +414,7 @@ const isFixedL = (a: LayoutItem) => isFlightL(a) || isCheckinL(a) || isCheckoutL
 const MEAL_SLOT_SET = new Set(['breakfast', 'lunch', 'dinner']);
 
 /**
- * Minutos de deslocamento: os do logisticsLine (arredondados para cima) com coords nas duas pontas;
+ * Minutos de deslocamento: os de travelMinutes (logisticsLine; arredondados para cima a 5) com coords nas duas pontas;
  * senão 15. Saindo de um bate-volta, 15: a duração do catálogo já inclui a volta.
  */
 export function hopMinutes(a: LayoutItem | null | undefined, b: LayoutItem | null | undefined, index?: Map<string, SuggestedActivity>): number {
@@ -414,8 +423,7 @@ export function hopMinutes(a: LayoutItem | null | undefined, b: LayoutItem | nul
   const ca = a ? curatedCoordOf(a.id) : null;
   const cb = b ? curatedCoordOf(b.id) : null;
   if (!ca || !cb) return DEFAULT_HOP_MIN;
-  const km = haversineKm(ca, cb);
-  const raw = km <= 1.2 ? (km / 5) * 60 : (km / 20) * 60 + 5;
+  const raw = travelMinutes(haversineKm(ca, cb)).minutes;
   return Math.max(5, Math.ceil(raw / 5) * 5);
 }
 
@@ -438,9 +446,13 @@ function addTip<T extends LayoutItem>(item: T, tip: string): void {
   if ('description' in item) item.description = line;
 }
 
-/** R7: quem sai primeiro quando uma refeição estoura — noite > pôr do sol > tarde > manhã. */
-const sacrificeRank = (a: LayoutItem) =>
-  a.timeSlot === 'night' ? 0 : a.timeSlot === 'afternoon' && SUNSET_RE.test(a.name) ? 1 : a.timeSlot === 'afternoon' ? 2 : a.timeSlot === 'morning' ? 3 : 4;
+/** Fim de tarde (17:30): pôr do sol pelo nome ou lanche (tag `snack`) pelo id do catálogo. */
+const isEveningL = (a: LayoutItem, index: Map<string, SuggestedActivity>) =>
+  a.timeSlot === 'afternoon' && (SUNSET_RE.test(a.name) || isSnack(catalogItemOf(a as PlanDayItem, index)));
+
+/** R7: quem sai primeiro quando uma refeição estoura — noite > pôr do sol/lanche > tarde > manhã. */
+const sacrificeRank = (a: LayoutItem, index: Map<string, SuggestedActivity>) =>
+  a.timeSlot === 'night' ? 0 : isEveningL(a, index) ? 1 : a.timeSlot === 'afternoon' ? 2 : a.timeSlot === 'morning' ? 3 : 4;
 
 /**
  * O scheduler: recebe os itens NA ORDEM do dia e devolve as horas calculadas (R1–R9).
@@ -468,7 +480,7 @@ export function layoutDay<T extends LayoutItem>(items: T[], opts: LayoutOpts): {
         continue;
       }
       const slot = a.timeSlot ?? '';
-      const rule = slot === 'afternoon' && SUNSET_RE.test(a.name) ? SUNSET_RULE : SLOT_RULES[slot] ?? { anchor: 0, max: Infinity };
+      const rule = isEveningL(a, index) ? SUNSET_RULE : SLOT_RULES[slot] ?? { anchor: 0, max: Infinity };
       const userAnchor = opts.anchorFromTime?.(a) && own >= 0;
       const anchor = userAnchor ? own : isLong(a) ? LONG_ITEM_ANCHOR : rule.anchor;
       const max = userAnchor ? Infinity : slot === 'dinner' && opts.dinnerMax ? opts.dinnerMax : rule.max;
@@ -493,7 +505,7 @@ export function layoutDay<T extends LayoutItem>(items: T[], opts: LayoutOpts): {
           addTip(long, pair ? `${LUNCH_ON_SITE_TIP}: ${a.name}` : LUNCH_ON_SITE_TIP);
           dropped.add(a);
         } else if (pushers.length > 0) {
-          const out = [...pushers].sort((x, y) => sacrificeRank(x) - sacrificeRank(y) || before.indexOf(y) - before.indexOf(x))[0];
+          const out = [...pushers].sort((x, y) => sacrificeRank(x, index) - sacrificeRank(y, index) || before.indexOf(y) - before.indexOf(x))[0];
           dropped.add(out);
         } else dropped.add(a);
         restart = true;
@@ -567,7 +579,11 @@ export function swapCandidates(trip: any, dayIndex: number, itemId: string): Swa
   const { used } = splitInterests(ctx.destination, trip?.travelInterests ?? trip?.interests);
   const top2 = used.slice(0, 2);
 
+  // R18: só o que existe no dia da semana deste dia.
+  const weekday = weekdayOf(day.date);
+
   const fits = (a: SuggestedActivity): boolean => {
+    if (weekday >= 0 && !opensOn(a.id, weekday)) return false;
     const h = a.durationHours || 0;
     const swapped = { id: `day-${dayIndex}-${a.id}`, name: a.name, time: item.time, timeSlot: slot, type: item.type, duration: `${h}h` };
     const acts = day.activities.map((x) => (x.id === item.id ? swapped : x));
@@ -710,6 +726,12 @@ export function generateItinerary(
   })();
   const pairsOf = (anchorId: string) => pool.filter((a) => a.id === `${anchorId}-almoco` || a.id === `${anchorId}-jantar`);
 
+  // R17: em viagem com ≥ 3 dias de exploração, os essenciais da cidade vêm logo depois do salto.
+  const explorationDayCount = Math.max(0, totalDays - 1 - explorationStart);
+  const essentials = new Set(explorationDayCount >= ESSENTIALS_MIN_DAYS ? essentialsOf(destination) : []);
+  // R18: o item existe no dia da semana do dia sendo montado.
+  const opensToday = (a: SuggestedActivity) => opensOn(a.id, addDays(departureDate, currentPickDayIndex).getDay());
+
   const hotelCoord = engineHotelCoord(destination, hotel?.label ?? getHotelRecommendation(destination, priceLevel, travelInterests)?.name);
 
   const themeStyleMap: Record<string, string[]> = {
@@ -753,7 +775,7 @@ export function generateItinerary(
 
     // Bate-volta só entra como âncora explícita; seus pares só junto dele.
     const eligible = (a: SuggestedActivity) => {
-      if (isPairMeal(a)) return false;
+      if (isPairMeal(a) || !opensToday(a)) return false;
       if (isDaytripAnchor(a)) return !!opts.daytripOk?.(a);
       return a.category === category && (!opts.accept || opts.accept(a));
     };
@@ -767,7 +789,7 @@ export function generateItinerary(
       // Restaurants: every name already used — degrade gracefully rather than
       // leave the slot empty. A repeated dinner beats a day with no dinner.
       candidates = pickReusableByGap(
-        pool.filter(a => a.category === category && !isPairMeal(a) && !isDaytripTagged(a)),
+        pool.filter(a => a.category === category && !isPairMeal(a) && !isDaytripTagged(a) && opensToday(a)),
         usedPlaces,
         currentPickDayIndex,
         category
@@ -778,7 +800,7 @@ export function generateItinerary(
 
     if (candidates.length === 0) return null;
     if (!forcedReuse) {
-      // Ordem: dentro do salto > interesse (só quando a cota pede) > tema > preço do tier.
+      // Ordem: dentro do salto > essencial (R17) > interesse (só quando a cota pede) > tema > preço do tier.
       // Sem interesse válido o critério de interesse some e sobra o comportamento anterior
       // (tema, depois preço), agora com a coesão geográfica na frente.
       const nearKm = opts.near ? (opts.nearKm ?? maxHop) : 0;
@@ -812,7 +834,8 @@ export function generateItinerary(
         if (priceLevel === 'luxury') return -p;
         return Math.abs(p - target);
       };
-      const keyed = candidates.map((a) => ({ a, k: [hopKey(a), interestKey(a), themeKey(a), dualKey(a), priceKey(a)] }));
+      const essentialKey = (a: SuggestedActivity) => (essentials.has(a.id) ? 0 : 1);
+      const keyed = candidates.map((a) => ({ a, k: [hopKey(a), essentialKey(a), interestKey(a), themeKey(a), dualKey(a), priceKey(a)] }));
       keyed.sort((x, y) => {
         for (let j = 0; j < x.k.length; j++) if (x.k[j] !== y.k[j]) return x.k[j] - y.k[j];
         return 0;
@@ -1413,9 +1436,10 @@ export function generateItinerary(
           // CASE C: normal morning activity + lunch + afternoon + dinner + optional night.
           // A tarde nasce perto da manhã (é ela que pesa na cota); o almoço vem depois, perto das duas.
           const morningAt = last;
+          // Fim de tarde (17:30): pôr do sol ou lanche (tag snack).
           const isSunsetActivity = (a: SuggestedActivity | null) =>
             !!a && typeof a.name === 'string' &&
-            /(p[ôo]r do sol|sunset)/i.test(a.name);
+            (/(p[ôo]r do sol|sunset)/i.test(a.name) || isSnack(a));
           // Full/half-day activities must anchor the day from the morning, not the afternoon.
           const notLong = (a: SuggestedActivity) =>
             a.dayOccupancy !== 'full' && a.dayOccupancy !== 'half' && (a.durationHours || 0) * 60 < LONG_ITEM_MINUTES;

@@ -37,6 +37,8 @@ import { buildFlowInput } from '@/lib/onboardingFlow';
 // "Descanso" vira dica do jantar, último dia de trás pra frente (transfer = partida − 3 h − 45 min),
 // durações em hora decimal. Escolhas mudam onde a regra 2 tira tarde/almoço do dia longo, onde a
 // tarde passa a recusar item ≥ 4 h e onde o último dia ganha almoço/tarde depois do check-out (D1).
+// Adendo B.3.1: as 4 cidades regravadas — R17 (essenciais icon ∪ essential na frente do interesse),
+// R18 (dia da semana do catálogo), lanche (tag snack) no fim da tarde e estrada > 15 km = carro (km + 10 min).
 const flight = (d: string, dep: string): SelectedFlight => ({
   date: new Date(d),
   source: 'estimate',
@@ -288,7 +290,8 @@ describe('C.3a — trocar com duração do catálogo, logística real, check-in 
         outboundFlight: flight('2026-11-10T12:00:00', '08:00'), returnFlight: flight('2026-11-17T12:00:00', '21:00'),
         budget: 20000, travelers: 2, priceLevel: 'midrange',
       });
-      expect(JSON.stringify(r.days)).not.toMatch(/min de t[aá]xi|min a p[eé]|taxi\/transporte/);
+      // B.3.1: "~" = texto fixo do motor; dica do catálogo ("15 min a pé entre eles", Torre de Belém) é dado.
+      expect(JSON.stringify(r.days)).not.toMatch(/~\d+ min de t[aá]xi|~\d+ min a p[eé]|taxi\/transporte/);
     }
     const { readFileSync } = await import('node:fs');
     const pdf = readFileSync('src/lib/tripPdfExport.ts', 'utf8');
@@ -315,8 +318,9 @@ describe('C.4 — layoutDay: a hora vem da sequência', () => {
   };
   const GC = ['gastronomy', 'culture'];
 
-  it('Fortaleza gc D2: Crocobeach ocupa o dia — sem tarde; almoço depois do fim + deslocamento ou "no local"', async () => {
-    const d2 = (await draft('Fortaleza', GC))[1].activities;
+  // B.3.1: o R17 puxa os essenciais para o começo, o dia longo muda de lugar — acha-se pelo item.
+  it('Fortaleza gc: Crocobeach ocupa o dia — sem tarde; almoço depois do fim + deslocamento ou "no local"', async () => {
+    const d2 = (await draft('Fortaleza', GC)).find((d) => d.activities.some((a) => /Crocobeach/.test(a.name)))!.activities;
     const beach = d2.find((a) => /Crocobeach/.test(a.name))!;
     expect(beach).toBeDefined();
     expect(d2.filter((a) => a.timeSlot === 'afternoon')).toEqual([]);
@@ -334,10 +338,10 @@ describe('C.4 — layoutDay: a hora vem da sequência', () => {
     expect(d2.at(-1)).toBe(septime);
   });
 
-  it('Rio gc D2: Aprazível (2,5 h) empurra a Mureta da Urca — começa no fim + deslocamento', async () => {
-    const d2 = (await draft('Rio de Janeiro', GC))[1].activities;
+  it('Rio gc: Aprazível (2,5 h) empurra a tarde — começa no fim + deslocamento', async () => {
+    const d2 = (await draft('Rio de Janeiro', GC)).find((d) => d.activities.some((a) => a.name === 'Aprazível'))!.activities;
     const lunch = d2.find((a) => a.name === 'Aprazível')!;
-    const mureta = d2.find((a) => a.name === 'Mureta da Urca')!;
+    const mureta = d2.find((a) => a.timeSlot === 'afternoon')!;
     expect(dur(lunch)).toBe(150);
     const end = mins(lunch.time) + 150;
     expect(mins(mureta.time)).toBe(Math.max(15 * 60, end + hopMinutes(lunch, mureta)));

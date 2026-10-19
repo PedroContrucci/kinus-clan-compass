@@ -148,6 +148,7 @@ interface TripPanelProps {
    * getSession() extra por montagem. A Viagens já tem o usuário — passa.
    */
   exporterName?: string;
+  exporterEmail?: string;
 }
 
 
@@ -428,7 +429,7 @@ function getTripCurrency(dest: string): string {
   return DEST_CURRENCY_MAP[n] || 'USD';
 }
 
-export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAuction, onNavigateTab, pendingConfirmRequest, onPendingConfirmHandled, exporterName }: TripPanelProps) => {
+export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAuction, onNavigateTab, pendingConfirmRequest, onPendingConfirmHandled, exporterName, exporterEmail }: TripPanelProps) => {
   const summaryHeaderRef = useRef<HTMLDivElement | null>(null);
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [showAllActions, setShowAllActions] = useState(false);
@@ -699,7 +700,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       case 'navigate-roteiro': onNavigateTab('roteiro'); break;
       case 'export-pdf': {
         setPdfLoading(true);
-        exportTripPDF(trip, exporterName).finally(() => setPdfLoading(false));
+        exportTripPDF(trip, exporterName, exporterEmail).finally(() => setPdfLoading(false));
         break;
       }
     }
@@ -708,7 +709,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const handleExportPdf = async () => {
     setPdfLoading(true);
     try {
-      await exportTripPDF(trip, exporterName);
+      await exportTripPDF(trip, exporterName, exporterEmail);
     } finally {
       setPdfLoading(false);
     }

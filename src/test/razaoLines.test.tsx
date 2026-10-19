@@ -70,7 +70,7 @@ describe('C.5c — razaoLines (Fortaleza 02:30)', () => {
     const t = await fortaleza();
     const p = planBreakdown(t);
     expect(razaoTotals(razaoLines(t))).toEqual({ planned: p.total, confirmed: 0 });
-    expect(p.total).toBe(11004);
+    expect(p.total).toBe(11254); // B.3.1: R17/R18/lanche mudam o roteiro (era 11004)
     expect(t.finances.planned).toBe(p.total);
     const days = razaoLines(t).filter((l) => l.kind === 'dia').reduce((s, l) => s + l.value, 0);
     expect(days).toBe(p.food + p.tours);
@@ -146,25 +146,35 @@ describe('C.5c — FinanceiroRazao (UI)', () => {
     expect(h.onOpenDay).toHaveBeenCalledWith(3);
     expect(screen.queryByRole('button', { name: /Reservar|Trocar/ })).toBeNull();
 
+    // B.3.1: linha sem dia fechada = uma linha (valor · a confirmar), sem origem nem ações; aberta mostra tudo.
     const ida = container.querySelector<HTMLElement>('[data-razao-line="voo"]')!;
+    const idaRow = within(ida).getByRole('button', { name: /R\$ .* · a confirmar/ });
+    expect(idaRow.getAttribute('aria-expanded')).toBe('false');
+    expect(within(ida).queryByText('○ a confirmar')).toBeNull();
+    expect(within(ida).queryByRole('button', { name: /Confirmar/ })).toBeNull();
+    fireEvent.click(idaRow);
     expect(within(ida).getByText('○ a confirmar')).toBeTruthy();
     expect(within(ida).getByRole('link', { name: /Reservar com parceiro/ })).toBeTruthy();
     fireEvent.click(within(ida).getByRole('button', { name: /Confirmar/ }));
     expect(h.onConfirm).toHaveBeenCalledWith('voo');
     const hotel = container.querySelector<HTMLElement>('[data-razao-line="hotel"]')!;
+    fireEvent.click(within(hotel).getAllByRole('button')[0]);
     fireEvent.click(within(hotel).getByRole('button', { name: /Buscar ofertas/ }));
     expect(h.onHotelOffers).toHaveBeenCalled();
     const reserva = container.querySelector<HTMLElement>('[data-razao-line="reserva"]')!;
+    fireEvent.click(within(reserva).getByRole('button'));
     expect(within(reserva).getByText('—')).toBeTruthy();
-    expect(within(reserva).queryByRole('button')).toBeNull();
+    expect(within(reserva).getAllByRole('button')).toHaveLength(1);
   });
 
   it('linha confirmada: ✓ verde e nenhuma ação', async () => {
     const t = confirmHotel(await fortaleza(), 5400);
     const { container } = render(<FinanceiroRazao lines={razaoLines(t)} onConfirm={vi.fn()} onHotelOffers={vi.fn()} onOpenDay={vi.fn()} onCheck={vi.fn()} />);
     const hotel = container.querySelector<HTMLElement>('[data-razao-line="hotel"]')!;
+    const row = within(hotel).getByRole('button', { name: /· ✓ confirmado/ });
+    fireEvent.click(row);
     expect(within(hotel).getByText('✓ confirmado')).toBeTruthy();
-    expect(within(hotel).queryByRole('button')).toBeNull();
+    expect(within(hotel).getAllByRole('button')).toHaveLength(1);
   });
 });
 

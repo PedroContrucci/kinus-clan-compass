@@ -12,7 +12,7 @@ import { getExpandedCityData } from '@/data/destinationPdfData';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { getDocsForDestination } from '@/data/destinationDocs';
-import { tripTimezone, formatTzDiff, formatTzInfo } from '@/lib/timezone';
+import { tripTimezone, formatTzDiff, formatTzInfo, airportCity } from '@/lib/timezone';
 import { formatDurationHM, durationTextToMinutes } from '@/lib/flightModel';
 import { logisticsLine, itemCoord } from '@/lib/itineraryEngine';
 
@@ -515,7 +515,7 @@ function getDestInfo(destination: string) {
 }
 
 function cleanText(text: string): string {
-  return text.replace(/[^\w\sà-úÀ-Ú—·•\-,.;:!?()\/'"@#$%&*+=<>{}[\]|\\~`^°ºª§¢£¥€]/gi, '').trim();
+  return text.replace(/[^\w\sà-úÀ-Ú—·•›\-,.;:!?()\/'"@#$%&*+=<>{}[\]|\\~`^°ºª§¢£¥€]/gi, '').trim();
 }
 
 function fmt(n: number) {
@@ -758,8 +758,10 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
  *   Esta lib NÃO é componente e não pode usar hook — antes ela lia `kinu_user`
  *   do localStorage direto (recon §2.2). A thread agora vem de quem exporta.
  *   Omitido = PDF sem a linha "Preparado para".
+ * @param email e-mail de quem exporta: nome igual ao local do e-mail (fallback do useAuth) não é
+ *   nome — sai "Preparado para você" (B.3.1 D4).
  */
-export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
+export async function exportTripPDF(trip: SavedTrip, displayName?: string, email?: string) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.getWidth();  // 210
   const ph = doc.internal.pageSize.getHeight(); // 297
@@ -912,13 +914,19 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
     const raw = (displayName || '').trim();
     const isFallbackName = raw.toLowerCase() === 'viajante';
     const looksLikeSlug = /\d/.test(raw);
+    const emailLocal = (email || '').split('@')[0].trim().toLowerCase();
+    const isEmailLocal = !!emailLocal && raw.toLowerCase() === emailLocal;
 
     if (raw && !isFallbackName && !looksLikeSlug) {
-      const pretty = raw
-        .split(/[\s._\-]+/)
-        .filter(Boolean)
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-        .join(' ');
+      // B.3.1: só divide onde há separador (espaço, ., _, -); nunca cola nem inventa espaço.
+      const pretty = isEmailLocal
+        ? 'você'
+        : raw
+          .replace(/[._-]+/g, ' ')
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(' ');
 
       y += 7;
       setC(B.emeraldL, false);
@@ -963,7 +971,8 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
     // "3h25", nunca "3.42h": o gravado segue decimal, a capa formata.
     const flightDurMin = durationTextToMinutes(flightDuration);
     const durLabel = durationKnown ? (flightDurMin > 0 ? `~${formatDurationHM(flightDurMin)}` : '~?h') : 'duracao a confirmar';
-    const originCity = trip.flights?.outbound?.origin || 'GRU';
+    const originIata = trip.flights?.outbound?.origin || 'GRU';
+    const originCity = airportCity(originIata)?.city ?? originIata;
     const destCity = trip.destination || '';
     if (flightDurNum > 0 || Math.abs(tzDiff) > 0 || !tz.tzKnown) {
       y += 6;
@@ -971,7 +980,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
       setC(B.horizon, false);
       doc.setFontSize(11.5);
       doc.setFont('helvetica', 'bold');
-      const flightLine = `Voo: ${originCity} > ${cleanText(destCity)}  |  ${durLabel}  |  Fuso: ${formatTzDiff(tz)}`;
+      const flightLine = `Voo: ${cleanText(originCity)} › ${cleanText(destCity)}  |  ${durLabel}  |  Fuso: ${formatTzDiff(tz)}`;
       doc.text(flightLine, 14, y);
       y += 5;
 
@@ -1041,7 +1050,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
   const availableCalc = budgetTotal - plannedVal - confirmedVal;
   const isOverBudget = availableCalc < 0;
   const finData = [
-    { label: 'Orcamento total', value: `R$ ${fmt(budgetTotal)}`, color: B.white },
+    { label: 'Orçamento total', value: `R$ ${fmt(budgetTotal)}`, color: B.white },
     { label: 'Confirmado', value: `R$ ${fmt(confirmedVal)}`, color: B.emerald },
     { label: 'Planejado', value: `R$ ${fmt(plannedVal)}`, color: B.gold },
     {
@@ -1516,7 +1525,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
     setC(B.emerald, false);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text('INFORMACOES UTEIS', 14, y);
+    doc.text('INFORMAÇÕES ÚTEIS', 14, y);
     y += 8;
 
     const infoItems = [
@@ -1551,7 +1560,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
     setC(B.emerald, false);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text('DOCUMENTACAO', 14, y);
+    doc.text('DOCUMENTAÇÃO', 14, y);
     y += 4;
     setC(B.gray400, false);
     doc.setFontSize(9.5);
@@ -1798,7 +1807,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string) {
   setC(B.red, false);
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('INFORMACOES DE EMERGENCIA', 14, y);
+  doc.text('INFORMAÇÕES DE EMERGÊNCIA', 14, y);
   y += 3;
   drawRect(14, y, 50, 0.5, B.red);
   y += 8;

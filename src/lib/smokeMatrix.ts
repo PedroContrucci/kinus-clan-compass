@@ -6,7 +6,7 @@ import { buildFlowInput, type FlowTierId } from '@/lib/onboardingFlow';
 import { interestsFor } from '@/lib/interestsFor';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { CURATED_CITIES } from '@/lib/curatedCities';
-import { validatePlanRules, validateDaySequence, type PlanRuleResult, type PlanDay, type SequenceReport } from '@/lib/itineraryValidator';
+import { validatePlanRules, validateDaySequence, validateEssentials, validateDaysOfWeek, type PlanRuleResult, type PlanDay, type SequenceReport, type ExtraRuleResult } from '@/lib/itineraryValidator';
 
 export interface SmokeProfile { id: string; label: string; interests: string[]; tier: FlowTierId }
 export const SMOKE_PROFILES: SmokeProfile[] = [
@@ -16,7 +16,7 @@ export const SMOKE_PROFILES: SmokeProfile[] = [
 ];
 export const SMOKE_NIGHTS = 7;
 
-export interface SmokeRow { city: string; profile: string; interestsUsed: string[]; results: PlanRuleResult[]; r19?: SequenceReport; error?: string }
+export interface SmokeRow { city: string; profile: string; interestsUsed: string[]; results: PlanRuleResult[]; r19?: SequenceReport; r17?: ExtraRuleResult; r18?: ExtraRuleResult; error?: string }
 
 // Doméstico = destino no Brasil, por enquanto. O modelo de voo vai carregar uma flag explícita depois.
 export const isDomesticDestination = (city: string) => findCityInfo(city)?.region === 'Brasil';
@@ -57,7 +57,7 @@ export async function runSmokeCase(city: string, profile: SmokeProfile, from: Da
       domestic: isDomesticDestination(city),
     };
     const results = validatePlanRules(days, ctx);
-    return { city, profile: profile.id, interestsUsed, results, r19: validateDaySequence(days, ctx) };
+    return { city, profile: profile.id, interestsUsed, results, r19: validateDaySequence(days, ctx), r17: validateEssentials(days, ctx), r18: validateDaysOfWeek(days) };
   } catch (e) {
     return { city, profile: profile.id, interestsUsed, results: [], error: String(e) };
   }

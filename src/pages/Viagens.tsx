@@ -1529,6 +1529,7 @@ const Viagens = () => {
               <TripPanel
               trip={selectedTrip}
               exporterName={user?.name}
+              exporterEmail={user?.email}
               onConfirm={handleHeroConfirm}
               onUnconfirm={handleHeroUnconfirm}
               onUpdateTrip={handleUpdateTrip}
@@ -1564,7 +1565,7 @@ const Viagens = () => {
                   <p className="text-[10px] text-muted-foreground">PDF premium com fotos, mapa e dicas</p>
                 </div>
                 <button
-                  onClick={() => exportTripPDF(selectedTrip, user?.name)}
+                  onClick={() => exportTripPDF(selectedTrip, user?.name, user?.email)}
                   className="px-4 py-2 text-xs font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   Gerar PDF

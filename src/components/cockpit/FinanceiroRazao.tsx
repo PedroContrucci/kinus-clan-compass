@@ -46,7 +46,8 @@ export const FinanceiroRazao = ({ lines, onConfirm, onHotelOffers, onOpenDay, on
       <div className="divide-y divide-[#334155]">
         {lines.map((line) => {
           const day = line.day;
-          const open = day ? openDays.has(line.id) : false;
+          // B.3.1: toda linha abre/fecha (voo, hotel, outros, reserva também); fechada = uma linha.
+          const open = openDays.has(line.id);
           return (
             <div key={line.id} data-razao-line={line.kind} className="py-2">
               {day ? (
@@ -68,21 +69,31 @@ export const FinanceiroRazao = ({ lines, onConfirm, onHotelOffers, onOpenDay, on
                   {open ? <ChevronDown size={16} className="text-[#94a3b8]" /> : <ChevronRight size={16} className="text-[#94a3b8]" />}
                 </button>
               ) : (
-                <div className="flex items-center gap-2 text-sm">
+                <button
+                  type="button"
+                  onClick={() => toggleDay(line.id)}
+                  aria-expanded={open}
+                  className="w-full flex items-center gap-2 text-left text-sm"
+                >
                   <span className="w-6 text-center flex-shrink-0">{line.icon}</span>
-                  <span className="flex-1 min-w-0 truncate text-[#f8fafc] font-['Outfit']">{line.title}</span>
-                  <span className={`tabular-nums font-semibold flex-shrink-0 ${line.status === 'confirmed' ? 'text-[#10b981]' : 'text-[#f8fafc]'}`}>{brl(line.value)}</span>
-                </div>
+                  <span className="flex-1 min-w-0 truncate text-[#f8fafc] font-['Outfit']">
+                    {line.title} ·{' '}
+                    <span className={`tabular-nums font-semibold ${line.status === 'confirmed' ? 'text-[#10b981]' : ''}`}>{brl(line.value)}</span>
+                    {line.status === 'confirmed' && <span className="text-[#10b981]"> · ✓ confirmado</span>}
+                    {line.status === 'pending' && <span className="text-[#94a3b8]"> · a confirmar</span>}
+                  </span>
+                  {open ? <ChevronDown size={16} className="text-[#94a3b8]" /> : <ChevronRight size={16} className="text-[#94a3b8]" />}
+                </button>
               )}
 
-              {!day && (
+              {!day && open && (
                 <div className="flex items-center gap-2 pl-8 mt-0.5">
                   <span className="flex-1 min-w-0 truncate text-xs text-[#64748b]">{line.origin}</span>
                   <StatusMark status={line.status} />
                 </div>
               )}
 
-              {line.actions.length > 0 && (!day || open) && (
+              {line.actions.length > 0 && open && (
                 <div className="flex gap-2 flex-wrap pl-8 mt-2">
                   {line.actions.includes('confirmar') && line.confirmTipo && (
                     <button type="button" onClick={() => onConfirm(line.confirmTipo!)} className={`${btn} bg-[#10b981] text-white hover:bg-[#10b981]/80 flex items-center gap-1`}>

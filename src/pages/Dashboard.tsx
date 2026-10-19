@@ -213,7 +213,7 @@ const Dashboard = () => {
                         emoji={nearest.emoji || '✈️'}
                         trip={nearest}
                         onNavigate={(tab) => navigate(`/viagens?trip=${nearest.id}&tab=${tab}`)}
-                        onExportPdf={() => exportTripPDF(nearest, user?.name)}
+                        onExportPdf={() => exportTripPDF(nearest, user?.name, user?.email)}
                       />
                     );
                   })()}

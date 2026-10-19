@@ -41,5 +41,11 @@ describe('R13–R16 — resultado estruturado (não exige PASS)', () => {
     expect(rows).toHaveLength(63);
     rows.forEach(assertStructured);
     console.log('SMOKE SUMMARY:', summarizeSmoke(rows));
+    // B.3.1: R18 nunca FAIL; R17 lista as viagens com essencial que cabia e ficou de fora.
+    expect(rows.filter((r) => r.r18?.status === 'FAIL').map((r) => `${r.city}/${r.profile}: ${r.r18!.detail}`)).toEqual([]);
+    const r17 = rows.filter((r) => r.r17?.status === 'WARN');
+    const count = (st: string) => rows.filter((r) => r.r17?.status === st).length;
+    console.log(`R17 SUMMARY: ${count('PASS')} PASS · ${r17.length} WARN · ${count('SKIP')} SKIP`);
+    for (const r of r17) console.log(`R17 WARN ${r.city}/${r.profile}: ${r.r17!.detail}`);
   }, 120_000);
 });
