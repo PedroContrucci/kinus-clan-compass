@@ -37,7 +37,7 @@
  * (A anon key do .env **não** serve: o papel `anon` não tem SELECT em curated_activities.)
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -50,6 +50,7 @@ const ENV_FILE = resolve(ROOT, '.env.sync');
 const CATALOG_FILE = resolve(ROOT, 'src/data/destinationActivities.ts');
 const TIERS_FILE = resolve(ROOT, 'src/data/generated/landmarkTiers.ts');
 const COORDS_FILE = resolve(ROOT, 'src/data/generated/coords.ts');
+const BOOKING_FILE = resolve(ROOT, 'src/data/generated/booking.ts');
 const TSCONFIG = 'tsconfig.app.json';
 
 /** O SQL que cria as colunas de coordenada. Aparece na mensagem de erro quando elas faltam. */
@@ -114,6 +115,10 @@ interface DbRow {
   landmark_tier: string | null;
   lat: number | string | null;
   lng: number | string | null;
+  booking_mode: string | null;
+  booking_url: string | null;
+  booking_phone: string | null;
+  booking_note: string | null;
 }
 
 /** O mínimo que o mapa de coordenadas precisa saber sobre um hotel curado. */
@@ -124,7 +129,7 @@ interface HotelCoordRow {
 }
 
 const SELECT =
-  'id,city,name,category,neighborhood,rating,google_rating,estimated_cost_brl,duration_hours,tips,style_tags,landmark_tier,lat,lng';
+  'id,city,name,category,neighborhood,rating,google_rating,estimated_cost_brl,duration_hours,tips,style_tags,landmark_tier,lat,lng,booking_mode,booking_url,booking_phone,booking_note';
 
 // ---------------------------------------------------------------------------
 // Utilidades
@@ -581,6 +586,60 @@ ${body}};
   return { content, acts, hotelCoords };
 }
 
+/** Os modos que a UI sabe transformar em ação honesta. Qualquer outro valor aborta o run. */
+const BOOKING_MODES = ['walk_in', 'phone', 'online', 'partner', 'included'] as const;
+
+/**
+ * Gera `src/data/generated/booking.ts` — C.5d: COMO cada item se fecha (ordem de chegada,
+ * telefone, site, parceiro, incluído). Mesma forma e mesma razão de `coords.ts`: não é campo
+ * de roteiro e `SuggestedActivity` é intocável. Só entram linhas com `booking_mode` preenchido;
+ * `null` = o KINU não sabe, e a UI não mostra nada.
+ */
+function renderBooking(rows: DbRow[]): { content: string; counts: Record<string, number> } {
+  const counts: Record<string, number> = {};
+  const clean = (v: string | null) => (v && v.trim() ? v.trim() : null);
+  const entries = rows
+    .filter((r) => r.booking_mode !== null && r.booking_mode !== undefined && r.booking_mode !== '')
+    .map((r) => {
+      const mode = String(r.booking_mode);
+      if (!(BOOKING_MODES as readonly string[]).includes(mode)) {
+        die(`'${r.id}': booking_mode '${mode}' fora de ${BOOKING_MODES.join('|')}. Nada foi escrito.`);
+      }
+      counts[mode] = (counts[mode] ?? 0) + 1;
+      const parts = [`mode: ${q(mode)}`];
+      const url = clean(r.booking_url);
+      const phone = clean(r.booking_phone);
+      const note = clean(r.booking_note);
+      if (url) parts.push(`url: ${q(url)}`);
+      if (phone) parts.push(`phone: ${q(phone)}`);
+      if (note) parts.push(`note: ${q(note)}`);
+      return { id: r.id, line: `  ${q(r.id)}: { ${parts.join(', ')} },` };
+    })
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+  const content = `// GERADO por scripts/sync-catalog.ts --apply — não edite à mão.
+//
+// C.5d — como cada item do catálogo se fecha, das colunas \`booking_*\` de \`curated_activities\`
+// no kinu-beta. Dado do catálogo, nunca inferência: id ausente aqui = o KINU não sabe, e a UI
+// não oferece ação nenhuma. Mesma ponte de \`coords.ts\` (\`SuggestedActivity\` é intocável).
+// Consumidor: \`roteiroBooking\` em \`src/lib/roteiroBlocks.ts\`.
+
+export type BookingMode = ${BOOKING_MODES.map(q).join(' | ')};
+
+export interface CuratedBooking {
+  mode: BookingMode;
+  url?: string;
+  phone?: string;
+  note?: string;
+}
+
+/** Chaveado pelo id do catálogo (\`for-barraca-crocobeach\`). */
+export const CURATED_BOOKING: Record<string, CuratedBooking> = {
+${entries.map((e) => e.line).join('\n')}${entries.length ? '\n' : ''}};
+`;
+  return { content, counts };
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -712,6 +771,17 @@ async function main(): Promise<void> {
       `com coordenada — ${coordsBefore === null ? 'ARQUIVO NOVO' : coordsChanged ? 'muda' : 'sem mudança'}\n`
   );
 
+  // E o modo de reserva: modo desconhecido aborta aqui, com os arquivos intactos no disco.
+  const booking = renderBooking(rows);
+  const bookingBefore = existsSync(BOOKING_FILE) ? readFileSync(BOOKING_FILE, 'utf8') : null;
+  const bookingChanged = bookingBefore !== booking.content;
+  const bookingTotal = Object.values(booking.counts).reduce((s, c) => s + c, 0);
+  console.log(
+    `booking.ts: ${bookingTotal}/${rows.length} atividades com modo de reserva ` +
+      `(${BOOKING_MODES.map((m) => `${m} ${booking.counts[m] ?? 0}`).join(' · ')}) — ` +
+      `${bookingBefore === null ? 'ARQUIVO NOVO' : bookingChanged ? 'muda' : 'sem mudança'}\n`
+  );
+
   if (!apply) {
     console.log(`Dry-run — nada foi escrito. Para aplicar:\n\n   npx tsx scripts/sync-catalog.ts --apply\n`);
     return;
@@ -735,13 +805,16 @@ async function main(): Promise<void> {
   mkdirSync(dirname(TIERS_FILE), { recursive: true });
   writeFileSync(TIERS_FILE, tiersContent, 'utf8');
   writeFileSync(COORDS_FILE, coords.content, 'utf8');
+  writeFileSync(BOOKING_FILE, booking.content, 'utf8');
 
-  // Restaura os TRÊS. Meio-caminho é o pior estado possível: o app compila com um catálogo,
+  // Restaura os QUATRO. Meio-caminho é o pior estado possível: o app compila com um catálogo,
   // classifica com o outro e desenha o mapa com um terceiro.
   const restore = () => {
     writeFileSync(CATALOG_FILE, original, 'utf8');
     if (tiersBefore !== null) writeFileSync(TIERS_FILE, tiersBefore, 'utf8');
     if (coordsBefore !== null) writeFileSync(COORDS_FILE, coordsBefore, 'utf8');
+    if (bookingBefore !== null) writeFileSync(BOOKING_FILE, bookingBefore, 'utf8');
+    else unlinkSync(BOOKING_FILE);
   };
 
   // --- Revalidação a partir do arquivo escrito ---
@@ -765,6 +838,7 @@ async function main(): Promise<void> {
   console.log(
     `   • src/data/generated/coords.ts — ${coords.acts.length + coords.hotelCoords.length} coordenadas`
   );
+  console.log(`   • src/data/generated/booking.ts — ${bookingTotal} modos de reserva`);
   console.log(`   • rodando type-check (tsc -p ${TSCONFIG} --noEmit)…`);
   try {
     execSync(`npx tsc -p ${TSCONFIG} --noEmit`, { cwd: ROOT, stdio: 'inherit' });

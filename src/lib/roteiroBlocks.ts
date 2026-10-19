@@ -1,12 +1,14 @@
 import type { TripActivity } from '@/types/trip';
 import type { RouteLeg } from '@/components/cockpit/DailyRouteMap';
 import { itemCoord, logisticsLine } from '@/lib/itineraryEngine';
+import { catalogIdOf } from '@/lib/localAchievements';
+import { CURATED_BOOKING } from '@/data/generated/booking';
 
 // C.5b — regras da aba Roteiro em blocos: tipo do item, ações que se aplicam e o
 // deslocamento entre itens (real > estimado). Puras; a UI fica em RoteiroDia.tsx.
 
 export type RoteiroKind = 'logistica' | 'incluido' | 'restaurante' | 'passeio';
-export type RoteiroAction = 'reservar' | 'trocar' | 'confirmar';
+export type RoteiroAction = 'trocar' | 'confirmar';
 
 const lower = (a: TripActivity) => (a.name || '').toLowerCase();
 
@@ -37,9 +39,34 @@ export function roteiroActions(a: TripActivity): RoteiroAction[] {
     return isFlight || isHotelCheckin ? ['confirmar'] : [];
   }
   if (kind === 'incluido') return [];
-  // Restaurante: não há link de parceiro por restaurante (OffersModal é genérico de atividade).
-  if (kind === 'restaurante') return ['trocar'];
-  return a.cost > 0 ? ['reservar', 'trocar'] : ['trocar'];
+  // C.5d: reservar não é mais ação genérica — vem do catálogo, por item (roteiroBooking).
+  return ['trocar'];
+}
+
+/** C.5d — como o item se fecha, dito pelo catálogo. `null` = o KINU não sabe: nenhuma ação, nenhum texto. */
+export type RoteiroBooking =
+  | { type: 'link'; label: 'Reservar com parceiro' | 'Reservar no site'; url: string }
+  | { type: 'tel'; phone: string }
+  | { type: 'text'; text: string };
+
+export function roteiroBooking(a: TripActivity): RoteiroBooking | null {
+  if (a.status === 'confirmed' || a.status === 'cancelled') return null;
+  const kind = roteiroKind(a);
+  if (kind === 'logistica' || kind === 'incluido') return null;
+  const b = CURATED_BOOKING[catalogIdOf(a.id)];
+  if (!b) return null;
+  switch (b.mode) {
+    case 'partner':
+    case 'online':
+      return b.url ? { type: 'link', label: b.mode === 'partner' ? 'Reservar com parceiro' : 'Reservar no site', url: b.url } : null;
+    case 'phone':
+      return b.phone ? { type: 'tel', phone: b.phone } : { type: 'text', text: 'Reserva por telefone · número a cadastrar' };
+    case 'walk_in':
+      // A note do catálogo já diz o "sem reserva" do lugar; nunca os dois textos.
+      return { type: 'text', text: b.note || 'Sem reserva · ordem de chegada' };
+    default:
+      return null;
+  }
 }
 
 export interface RoteiroLeg {

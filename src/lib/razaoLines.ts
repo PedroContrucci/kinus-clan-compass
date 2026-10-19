@@ -2,6 +2,8 @@
 // origem, status e a ação que fecha. Puro: lê só o que já está gravado na viagem (voos,
 // hospedagem, itens do dia, categorias de finanças) — nenhum número novo. Os tiles
 // Planejado/Confirmado leem `razaoTotals` destas mesmas linhas: Σ linhas = tile por construção.
+import { addDays, format, isValid, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import type { TripActivity } from '@/types/trip';
 import { hotelRateSource } from '@/lib/draftItinerary';
 import { planBreakdown, reserveFor } from '@/lib/planTotals';
@@ -188,4 +190,76 @@ export function razaoTotals(lines: RazaoLine[]): { planned: number; confirmed: n
     (t, l) => ({ planned: t.planned + l.planned, confirmed: t.confirmed + l.confirmed }),
     { planned: 0, confirmed: 0 },
   );
+}
+
+// ---------------------------------------------------------------------------
+// C.5d — tiles clicáveis e "Quando o dinheiro sai". Os dois só AGRUPAM as linhas acima:
+// Σ quebra = tile e Σ desembolso = Planejado por construção, nenhuma conta nova.
+// ---------------------------------------------------------------------------
+
+export type RazaoCategory = 'voo' | 'hotel' | 'passeios' | 'alimentacao' | 'transfer' | 'outros';
+
+export const RAZAO_CATEGORY_LABEL: Record<RazaoCategory, string> = {
+  voo: 'Voo', hotel: 'Hotel', passeios: 'Passeios', alimentacao: 'Alimentação', transfer: 'Transfer', outros: 'Outros gastos',
+};
+
+function itemCategory(a: TripActivity): RazaoCategory {
+  const name = (a.name || '').toLowerCase();
+  if (a.type === 'transport' || a.category === 'transporte' || name.includes('transfer')) return 'transfer';
+  if (roteiroKind(a) === 'restaurante') return 'alimentacao';
+  return 'passeios';
+}
+
+/** Quebra de um tile (a confirmar ou confirmado) por categoria. As 5 sempre; "outros" só se > 0. */
+export function razaoBreakdown(
+  lines: RazaoLine[],
+  part: 'planned' | 'confirmed',
+): { key: RazaoCategory; label: string; value: number }[] {
+  const acc: Record<RazaoCategory, number> = { voo: 0, hotel: 0, passeios: 0, alimentacao: 0, transfer: 0, outros: 0 };
+  for (const l of lines) {
+    if (l.kind === 'voo' || l.kind === 'hotel' || l.kind === 'outros') acc[l.kind] += l[part];
+    else if (l.kind === 'dia' && l.day) {
+      for (const it of l.day.items) {
+        if (it.confirmed === (part === 'confirmed')) acc[itemCategory(it.activity)] += it.value;
+      }
+    }
+  }
+  return (Object.keys(acc) as RazaoCategory[])
+    .filter((k) => k !== 'outros' || acc.outros > 0)
+    .map((key) => ({ key, label: RAZAO_CATEGORY_LABEL[key], value: acc[key] }));
+}
+
+export interface DesembolsoMarco {
+  id: string;
+  label: string;
+  value: number;
+  /** Reserva: aparece, mas fica fora da soma (não é plano). */
+  outOfPlan?: boolean;
+}
+
+const dayLabel = (d: Date | null) => (d && isValid(d) ? format(d, 'dd/MMM', { locale: ptBR }) : null);
+const isoDay = (v: unknown) => (v ? parseISO(String(v).slice(0, 10)) : null);
+
+/** Quando sai o que ainda está a confirmar: voo ao confirmar, hotel no check-in, cada dia na sua data. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function razaoDesembolso(trip: any, lines: RazaoLine[]): DesembolsoMarco[] {
+  const out: DesembolsoMarco[] = [];
+  const voo = lines.filter((l) => l.kind === 'voo').reduce((s, l) => s + l.planned, 0);
+  if (voo > 0) out.push({ id: 'voo', label: 'Ao confirmar o voo · hoje', value: voo });
+  const start = isoDay(trip?.startDate);
+  for (const l of lines) {
+    if (l.planned <= 0) continue;
+    if (l.kind === 'hotel') {
+      const d = dayLabel(isoDay(trip?.accommodation?.checkIn) ?? start);
+      out.push({ id: l.id, label: `No check-in${d ? ` (${d})` : ''} · Hotel`, value: l.planned });
+    } else if (l.kind === 'dia' && l.day) {
+      // Mesma regra de data do Roteiro: a do dia, senão início + N − 1.
+      const own = isoDay(trip?.days?.[l.day.dayIndex]?.date);
+      const d = dayLabel(own ?? (start ? addDays(start, l.day.dayNumber - 1) : null));
+      out.push({ id: l.id, label: `Dia ${l.day.dayNumber}${d ? ` (${d})` : ''}`, value: l.planned });
+    }
+  }
+  const reserva = lines.find((l) => l.kind === 'reserva');
+  if (reserva) out.push({ id: 'reserva', label: 'Reserva', value: reserva.value, outOfPlan: true });
+  return out;
 }

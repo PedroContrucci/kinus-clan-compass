@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useKinuAI } from "@/contexts/KinuAIContext";
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, X, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Pencil, Loader2 } from 'lucide-react';
+import { ArrowLeft, X, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Loader2 } from 'lucide-react';
 import { format, differenceInDays, addDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -50,8 +50,8 @@ import { getDocsForDestination } from '@/data/destinationDocs';
 import { DailyRouteMap, RouteLeg } from '@/components/cockpit/DailyRouteMap';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 import { RoteiroDia, RoteiroLinha } from '@/components/cockpit/RoteiroDia';
-import { FinanceiroRazao } from '@/components/cockpit/FinanceiroRazao';
-import { razaoLines, razaoTotals } from '@/lib/razaoLines';
+import { FinanceiroRazao, FinanceiroTiles, QuandoDinheiroSai } from '@/components/cockpit/FinanceiroRazao';
+import { razaoLines } from '@/lib/razaoLines';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
 import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
 import { CheckinBanner } from '@/components/checkin/CheckinBanner';
@@ -1657,11 +1657,6 @@ const Viagens = () => {
                             expanded={expandedActivityIds.has(activity.id)}
                             onToggle={() => toggleExpandedActivity(activity.id)}
                             onCheck={() => setConfirmModal({ isOpen: true, activity, dayIndex: dayIdx, actIndex: realActIdx })}
-                            onOffers={() => setOffersModal({
-                              isOpen: true,
-                              activityName: activity.name,
-                              activityDate: String(day.date || '').slice(0, 10),
-                            })}
                             onSwap={() => setSwapModal({ dayIndex: dayIdx, actIndex: realActIdx, activity })}
                             onConfirmAnchor={() => openAnchorConfirm(activity.category === 'voo' ? 'voo' : 'hotel')}
                             onOpenDetails={() => setActivityDetailDrawer({ activity, open: true })}
@@ -1786,11 +1781,6 @@ const Viagens = () => {
                       />
                     ) : null}
                     onCheck={(activity, actIndex) => setConfirmModal({ isOpen: true, activity, dayIndex, actIndex })}
-                    onOffers={(activity) => setOffersModal({
-                      isOpen: true,
-                      activityName: activity.name,
-                      activityDate: String(currentDay.date || '').slice(0, 10),
-                    })}
                     onSwap={(activity, actIndex) => setSwapModal({ dayIndex, actIndex, activity })}
                     onConfirmAnchor={openAnchorConfirm}
                     onOpenDetails={(activity) => setActivityDetailDrawer({ activity, open: true })}
@@ -1810,43 +1800,19 @@ const Viagens = () => {
               <AgentTip agent="hestia" variant="compact" message={getHestiaCambio(selectedTrip)} />
 
               
-              {/* Budget Summary — C.5c: Planejado/Confirmado = Σ das linhas do razão (mesma função). */}
+              {/* Budget Summary — C.5c: Planejado/Confirmado = Σ das linhas do razão; C.5d: tiles clicáveis. */}
               {(() => {
                 const lines = razaoLines(selectedTrip);
-                const { planned: pending, confirmed } = razaoTotals(lines);
-                const available = selectedTrip.budget - pending - confirmed;
                 return (
                   <>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center relative">
-                        <button
-                          onClick={() => {
-                            setBudgetEditValue(selectedTrip.budget.toString());
-                            setBudgetEditOpen(true);
-                          }}
-                          className="absolute top-2 right-2 p-1 text-[#94a3b8] hover:text-[#f8fafc] transition-colors"
-                          aria-label="Editar orçamento"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <p className="text-xs text-[#94a3b8]">Orçamento</p>
-                        <p className="text-lg font-bold text-[#f8fafc] font-['Outfit']">{formatTileBRL(selectedTrip.budget)}</p>
-                      </div>
-                      <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
-                        <p className="text-xs text-[#94a3b8]">Planejado (a confirmar)</p>
-                        <p className="text-lg font-bold text-[#eab308] font-['Outfit']">{formatTileBRL(pending)}</p>
-                      </div>
-                      <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
-                        <p className="text-xs text-[#94a3b8]">Confirmado</p>
-                        <p className="text-lg font-bold text-[#10b981] font-['Outfit']">{formatTileBRL(confirmed)}</p>
-                      </div>
-                      <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-3 text-center">
-                        <p className="text-xs text-[#94a3b8]">Disponível</p>
-                        <p className={`text-lg font-bold font-['Outfit'] ${available >= 0 ? 'text-[#0ea5e9]' : 'text-red-500'}`}>
-                          {formatTileBRL(available)}
-                        </p>
-                      </div>
-                    </div>
+                    <FinanceiroTiles
+                      budget={selectedTrip.budget}
+                      lines={lines}
+                      onEditBudget={() => {
+                        setBudgetEditValue(selectedTrip.budget.toString());
+                        setBudgetEditOpen(true);
+                      }}
+                    />
 
                     <FinanceiroRazao
                       lines={lines}
@@ -1866,6 +1832,8 @@ const Viagens = () => {
                       }}
                       onCheck={(activity, dayIndex, actIndex) => setConfirmModal({ isOpen: true, activity, dayIndex, actIndex })}
                     />
+
+                    <QuandoDinheiroSai trip={selectedTrip} lines={lines} />
                   </>
                 );
               })()}

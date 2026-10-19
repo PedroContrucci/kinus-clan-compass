@@ -1,9 +1,25 @@
 import { useState } from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, cleanup } from '@testing-library/react';
 import { RoteiroDia } from '@/components/cockpit/RoteiroDia';
 import { legBetween } from '@/lib/roteiroBlocks';
 import type { TripActivity } from '@/types/trip';
+
+// C.5d: o banco ainda não tem online/partner/telefone — entradas de teste somadas ao gerado real.
+vi.mock('@/data/generated/booking', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/data/generated/booking')>();
+  return {
+    CURATED_BOOKING: {
+      ...real.CURATED_BOOKING,
+      'tst-online': { mode: 'online', url: 'https://exemplo.com/reserva' },
+      'tst-partner': { mode: 'partner', url: 'https://parceiro.example/p?aff=kinu' },
+      'tst-online-sem-url': { mode: 'online' },
+      'tst-tel': { mode: 'phone', phone: '+55 (85) 3242-0000' },
+      'tst-walk-sem-note': { mode: 'walk_in' },
+      'tst-incluido': { mode: 'included' },
+    },
+  };
+});
 
 const act = (id: string, over: Partial<TripActivity>): TripActivity => ({
   id, time: '09:00', name: id, description: '', duration: '', cost: 0, type: 'activity', status: 'planned', ...over,
@@ -20,7 +36,7 @@ function setup(extra: Partial<Parameters<typeof RoteiroDia>[0]> = {}) {
   const renderMap = vi.fn(() => <div data-testid="mapa" />);
   const renderDetail = vi.fn(() => <div data-testid="place-info" />);
   const h = {
-    onCheck: vi.fn(), onOffers: vi.fn(), onSwap: vi.fn(), onConfirmAnchor: vi.fn(), onOpenDetails: vi.fn(),
+    onCheck: vi.fn(), onSwap: vi.fn(), onConfirmAnchor: vi.fn(), onOpenDetails: vi.fn(),
   };
   const Harness = () => {
     const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
@@ -74,23 +90,23 @@ describe('C.5b — Roteiro em blocos', () => {
     expect(32 + 40 + 5 * 44 + legs * 20).toBeLessThanOrEqual(700);
   });
 
-  it('(b) passeio pago aberto → Reservar com parceiro + Trocar, sem Confirmar', () => {
+  it('(b) passeio pago aberto → Marcar como fechado + Trocar; sem dado de reserva → nenhum Reservar', () => {
     const { container, h, renderDetail } = setup();
     openRow('Dia de praia');
     const row = rowOf(container, 'Dia de praia');
-    expect(within(row).getByRole('button', { name: /Reservar com parceiro/ })).toBeTruthy();
+    expect(within(row).queryByRole('button', { name: /Reservar/ })).toBeNull();
+    expect(within(row).queryByRole('link', { name: /Reservar/ })).toBeNull();
     expect(within(row).getByRole('button', { name: /Trocar/ })).toBeTruthy();
-    expect(within(row).queryByRole('button', { name: /Confirmar/ })).toBeNull();
+    expect(within(row).queryByRole('button', { name: /^Confirmar/ })).toBeNull();
     expect(screen.getByText(/Chegue cedo/)).toBeTruthy();
     expect(screen.getByText(/estimativa do KINU/)).toBeTruthy();
     expect(renderDetail).toHaveBeenCalledWith(praia);
-    fireEvent.click(within(row).getByRole('button', { name: /Reservar com parceiro/ }));
-    expect(h.onOffers).toHaveBeenCalledWith(praia);
+    fireEvent.click(within(row).getByRole('button', { name: 'Marcar como fechado' }));
+    expect(h.onCheck).toHaveBeenCalledWith(praia, 2);
     openRow('Almoço no Coco Bambu');
-    // restaurante: só Trocar
     const almocoRow = rowOf(container, 'Coco Bambu');
     expect(within(almocoRow).getByRole('button', { name: /Trocar/ })).toBeTruthy();
-    expect(within(almocoRow).queryByRole('button', { name: /Reservar/ })).toBeNull();
+    expect(within(almocoRow).queryByRole('link')).toBeNull();
   });
 
   it('C.5c — abrir 2 linhas → 2 abertas; "fechar tudo" → 0 (e some sem nenhuma aberta)', () => {
@@ -136,5 +152,88 @@ describe('C.5b — Roteiro em blocos', () => {
     const live = [{ fromName: praia.name, toName: almoco.name, durationMin: 12, distanceKm: '0.9' }];
     expect(legBetween(praia, almoco, live, 'Fortaleza')).toEqual({ text: '~12 min a pé', minutes: 12, source: 'osrm' });
     expect(legBetween(praia, almoco, null, 'Fortaleza')?.source ?? 'estimativa').toBe('estimativa');
+  });
+});
+
+describe('C.5d — modo de reserva por atividade (catálogo → ação honesta)', () => {
+  const one = (a: TripActivity) => {
+    const utils = render(
+      <RoteiroDia
+        dayNumber={2} activities={[a]} destination="Fortaleza" liveLegs={null}
+        expandedIds={new Set([a.id])} onToggleExpand={() => {}} onCollapseAll={() => {}}
+        renderMap={null} routeOpen={false} onRouteToggle={() => {}}
+        onCheck={vi.fn()} onSwap={vi.fn()} onConfirmAnchor={vi.fn()} onOpenDetails={vi.fn()}
+      />,
+    );
+    const row = utils.container.querySelector<HTMLElement>('[data-roteiro-line="item"]')!;
+    return { ...utils, row };
+  };
+  const passeio = (id: string, name = id) => act(`day-2-${id}`, { name, category: 'passeio', cost: 100 });
+  const rest = (id: string, name = id) => act(`day-2-${id}`, { name, category: 'comida', type: 'food', cost: 120 });
+
+  it('(a) Crocobeach walk_in → sem botão de reserva; só a note do catálogo, verbatim (nunca os dois textos)', () => {
+    const { row } = one(passeio('for-barraca-crocobeach', 'Dia de praia no Crocobeach'));
+    expect(within(row).queryByRole('link')).toBeNull();
+    expect(within(row).queryByRole('button', { name: /Reservar|Ligar/ })).toBeNull();
+    expect(within(row).getByText('Sem reserva — chegue antes das 10h para pegar mesa na frente')).toBeTruthy();
+    expect(within(row).queryByText('Sem reserva · ordem de chegada')).toBeNull();
+  });
+
+  it('(a2) walk_in sem note → texto padrão "Sem reserva · ordem de chegada"', () => {
+    const { row } = one(passeio('tst-walk-sem-note'));
+    expect(within(row).getByText('Sem reserva · ordem de chegada')).toBeTruthy();
+    expect(within(row).queryByRole('link')).toBeNull();
+  });
+
+  it('(b) restaurante phone sem telefone → texto, nenhum botão; com telefone → Ligar (tel:)', () => {
+    const { row } = one(rest('for-caravaggio-cucina', 'Jantar no Caravaggio'));
+    expect(within(row).getByText('Reserva por telefone · número a cadastrar')).toBeTruthy();
+    expect(within(row).queryByRole('link')).toBeNull();
+    cleanup();
+    const tel = one(rest('tst-tel')).row;
+    expect(within(tel).getByRole('link', { name: /Ligar/ }).getAttribute('href')).toBe('tel:+558532420000');
+    expect(within(tel).queryByText(/número a cadastrar/)).toBeNull();
+  });
+
+  it('(c) item null / included / online sem url → nenhuma ação e nenhum texto de reserva', () => {
+    for (const id of ['for-item-sem-modo', 'tst-incluido', 'tst-online-sem-url']) {
+      const { row, container } = one(passeio(id));
+      expect(within(row).queryByRole('link')).toBeNull();
+      expect(container.querySelector('[data-roteiro-line="booking"]')).toBeNull();
+      expect(within(row).queryByText(/Reserv|ordem de chegada/)).toBeNull();
+      cleanup();
+    }
+  });
+
+  it('(d) online com url → "Reservar no site"; partner → "Reservar com parceiro"', () => {
+    const site = within(one(passeio('tst-online')).row).getByRole('link', { name: /Reservar no site/ });
+    expect(site.getAttribute('href')).toBe('https://exemplo.com/reserva');
+    expect(site.getAttribute('target')).toBe('_blank');
+    cleanup();
+    const p = within(one(passeio('tst-partner')).row).getByRole('link', { name: /Reservar com parceiro/ });
+    expect(p.getAttribute('href')).toBe('https://parceiro.example/p?aff=kinu');
+  });
+
+  it('Marcar como fechado → onCheck; linha fechada mantém o ☐ e não mostra o botão nem a reserva', () => {
+    const a = passeio('tst-online');
+    const onCheck = vi.fn();
+    const { row } = (() => {
+      const u = render(
+        <RoteiroDia
+          dayNumber={2} activities={[a]} destination="Fortaleza" liveLegs={null}
+          expandedIds={new Set([a.id])} onToggleExpand={() => {}} onCollapseAll={() => {}}
+          renderMap={null} routeOpen={false} onRouteToggle={() => {}}
+          onCheck={onCheck} onSwap={vi.fn()} onConfirmAnchor={vi.fn()} onOpenDetails={vi.fn()}
+        />,
+      );
+      return { row: u.container.querySelector<HTMLElement>('[data-roteiro-line="item"]')! };
+    })();
+    fireEvent.click(within(row).getByRole('button', { name: 'Marcar como fechado' }));
+    expect(onCheck).toHaveBeenCalledWith(a, 0);
+    cleanup();
+    const closed = one({ ...a, status: 'confirmed', paidAmount: 100 }).row;
+    expect(within(closed).getByRole('checkbox', { checked: true })).toBeTruthy();
+    expect(within(closed).queryByRole('button', { name: 'Marcar como fechado' })).toBeNull();
+    expect(within(closed).queryByRole('link')).toBeNull();
   });
 });

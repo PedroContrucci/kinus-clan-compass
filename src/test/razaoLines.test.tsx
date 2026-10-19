@@ -2,10 +2,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { buildDraftTrip, type DraftTripInput } from '@/lib/createTrip';
-import { razaoLines, razaoTotals } from '@/lib/razaoLines';
+import { razaoLines, razaoTotals, razaoBreakdown, razaoDesembolso } from '@/lib/razaoLines';
 import { planBreakdown, reserveFor } from '@/lib/planTotals';
 import { computeBuckets, type ItineraryDay } from '@/lib/itineraryEngine';
-import { FinanceiroRazao } from '@/components/cockpit/FinanceiroRazao';
+import { FinanceiroRazao, FinanceiroTiles, QuandoDinheiroSai } from '@/components/cockpit/FinanceiroRazao';
 
 const input: DraftTripInput = {
   originCity: 'São Paulo', originAirportCode: 'GRU', destinationCity: 'Fortaleza', destinationAirportCode: 'FOR',
@@ -165,5 +165,70 @@ describe('C.5c — FinanceiroRazao (UI)', () => {
     const hotel = container.querySelector<HTMLElement>('[data-razao-line="hotel"]')!;
     expect(within(hotel).getByText('✓ confirmado')).toBeTruthy();
     expect(within(hotel).queryByRole('button')).toBeNull();
+  });
+});
+
+describe('C.5d — tiles clicáveis e "Quando o dinheiro sai"', () => {
+  const sum = (xs: { value: number }[]) => xs.reduce((s, x) => s + x.value, 0);
+
+  it('(e) Planejado/Confirmado abrem a quebra (Σ = tile, um por vez); Orçamento abre o editor; Disponível → reserva', async () => {
+    const t = confirmActivity(await fortaleza(), 2, 2, 150);
+    const lines = razaoLines(t);
+    const { planned, confirmed } = razaoTotals(lines);
+    expect(sum(razaoBreakdown(lines, 'planned'))).toBe(planned);
+    expect(sum(razaoBreakdown(lines, 'confirmed'))).toBe(confirmed);
+    expect(razaoBreakdown(lines, 'planned').map((b) => b.label)).toEqual(['Voo', 'Hotel', 'Passeios', 'Alimentação', 'Transfer']);
+
+    const onEditBudget = vi.fn();
+    const { container } = render(<FinanceiroTiles budget={t.budget} lines={lines} onEditBudget={onEditBudget} />);
+    const tile = (k: string) => container.querySelector<HTMLElement>(`[data-tile="${k}"]`)!;
+    const detail = () => container.querySelectorAll<HTMLElement>('[data-tile-detail]');
+    expect(detail()).toHaveLength(0);
+    fireEvent.click(tile('planejado'));
+    expect(detail()).toHaveLength(1);
+    expect(detail()[0].dataset.tileDetail).toBe('planejado');
+    expect(within(detail()[0]).getByText('Hotel')).toBeTruthy();
+    fireEvent.click(tile('confirmado'));
+    expect(detail()).toHaveLength(1);
+    expect(detail()[0].dataset.tileDetail).toBe('confirmado');
+    fireEvent.click(tile('confirmado'));
+    expect(detail()).toHaveLength(0);
+    fireEvent.click(tile('disponivel'));
+    const reserva = lines.find((l) => l.kind === 'reserva')!.value;
+    expect(detail()[0].textContent).toBe(`Reserva 15% · fora do planoR$ ${reserva.toLocaleString('pt-BR')}`);
+    fireEvent.click(tile('orcamento'));
+    expect(onEditBudget).toHaveBeenCalled();
+  });
+
+  it('(f) desembolso: Σ marcos = Planejado; reserva aparece fora da soma; datas do trip', async () => {
+    const t = confirmActivity(await fortaleza(), 2, 2, 150);
+    const lines = razaoLines(t);
+    const marcos = razaoDesembolso(t, lines);
+    expect(sum(marcos.filter((m) => !m.outOfPlan))).toBe(razaoTotals(lines).planned);
+    expect(marcos[0]).toMatchObject({ id: 'voo', label: 'Ao confirmar o voo · hoje' });
+    expect(marcos.find((m) => m.id === 'hotel')!.label).toBe('No check-in (10/nov) · Hotel');
+    expect(marcos.find((m) => m.id === 'dia-2')!.label).toBe('Dia 2 (11/nov)');
+    expect(marcos.at(-1)).toMatchObject({ id: 'reserva', label: 'Reserva', outOfPlan: true });
+
+    render(<QuandoDinheiroSai trip={t} lines={lines} />);
+    const btn = screen.getByRole('button', { name: /Quando o dinheiro sai/ });
+    expect(btn.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText('Ao confirmar o voo · hoje')).toBeNull();
+    fireEvent.click(btn);
+    expect(screen.getByText('Ao confirmar o voo · hoje')).toBeTruthy();
+    expect(screen.getByText(/\(não planejado\)/)).toBeTruthy();
+  });
+
+  it('voo e hotel confirmados saem do desembolso (já saiu)', async () => {
+    const t = confirmHotel(await fortaleza(), 5400);
+    const marcos = razaoDesembolso(t, razaoLines(t));
+    expect(marcos.find((m) => m.id === 'hotel')).toBeUndefined();
+  });
+
+  it('razão: item do dia não mostra texto de como fechar (fica no Roteiro)', async () => {
+    const t = await fortaleza();
+    render(<FinanceiroRazao lines={razaoLines(t)} onConfirm={vi.fn()} onHotelOffers={vi.fn()} onOpenDay={vi.fn()} onCheck={vi.fn()} />);
+    for (const b of screen.getAllByRole('button', { name: /Dia \d+ · / })) fireEvent.click(b);
+    expect(screen.queryByText(/número a cadastrar|ordem de chegada|Sem reserva/)).toBeNull();
   });
 });

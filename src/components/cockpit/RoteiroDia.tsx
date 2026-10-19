@@ -1,16 +1,37 @@
 import type { ReactNode, Ref } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronRight, ChevronDown, Check, Tag, RotateCcw } from 'lucide-react';
+import { ChevronRight, ChevronDown, Check, Tag, RotateCcw, Phone } from 'lucide-react';
 import type { TripActivity } from '@/types/trip';
 import type { RouteLeg } from '@/components/cockpit/DailyRouteMap';
-import { legBetween, roteiroActions, roteiroKind } from '@/lib/roteiroBlocks';
+import { legBetween, roteiroActions, roteiroBooking, roteiroKind, type RoteiroBooking } from '@/lib/roteiroBlocks';
 
 // C.5b — a aba Roteiro da viagem ativa em blocos: uma linha fechada por item, detalhe e
 // ações só ao abrir. Apresentação pura: nenhum estado de viagem, nenhum handler próprio —
-// os de Viagens.tsx (confirmModal, ofertas, troca, drawer, confirmar voo/hotel) chegam por prop.
+// os de Viagens.tsx (confirmModal, troca, drawer, confirmar voo/hotel) chegam por prop.
+// C.5d: reservar vem do catálogo (roteiroBooking), por item — nunca o link genérico de busca.
 
 const brl = (n: number) => `R$ ${n.toLocaleString('pt-BR')}`;
+
+const actionBtn = 'flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-colors';
+
+/** Botão de fechar a reserva (site/parceiro ou telefone). Texto não é botão: fica com o Roteiro. */
+export const BookingAction = ({ booking, className = actionBtn }: { booking: RoteiroBooking | null; className?: string }) => {
+  if (!booking || booking.type === 'text') return null;
+  const style = `${className} bg-background border border-border text-foreground hover:border-primary/50`;
+  if (booking.type === 'tel') {
+    return (
+      <a href={`tel:${booking.phone.replace(/[^\d+]/g, '')}`} className={style}>
+        <Phone size={12} /> Ligar ▸
+      </a>
+    );
+  }
+  return (
+    <a href={booking.url} target="_blank" rel="noopener noreferrer" className={style}>
+      <Tag size={12} /> {booking.label} ▸
+    </a>
+  );
+};
 
 const logisticsIcon = (a: TripActivity) => {
   if (a.category === 'voo' || (a.name || '').toLowerCase().includes('aeroporto')) return '✈️';
@@ -24,7 +45,6 @@ interface RoteiroLinhaProps {
   onToggle: () => void;
   /** ☐ → o confirmModal existente. */
   onCheck: () => void;
-  onOffers: () => void;
   onSwap: () => void;
   onConfirmAnchor: () => void;
   onOpenDetails: () => void;
@@ -39,16 +59,18 @@ interface RoteiroLinhaProps {
 }
 
 export const RoteiroLinha = ({
-  activity, expanded, onToggle, onCheck, onOffers, onSwap, onConfirmAnchor, onOpenDetails,
+  activity, expanded, onToggle, onCheck, onSwap, onConfirmAnchor, onOpenDetails,
   renderDetail, prefix, priceBRL, highlight, anchorRef,
 }: RoteiroLinhaProps) => {
   const kind = roteiroKind(activity);
   const actions = roteiroActions(activity);
+  const booking = roteiroBooking(activity);
+  const canClose = kind !== 'logistica' && activity.status !== 'confirmed' && activity.status !== 'cancelled';
   const confirmed = activity.status === 'confirmed';
   const price = priceBRL ?? activity.cost;
   const paid = confirmed && activity.paidAmount ? activity.paidAmount : 0;
   const detailId = `roteiro-detalhe-${activity.id}`;
-  const btn = 'flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-colors';
+  const btn = actionBtn;
 
   return (
     <div
@@ -113,18 +135,22 @@ export const RoteiroLinha = ({
                 ? `~${brl(price)} — estimativa do KINU${activity.edited ? ' (ajustada por você)' : ''}`
                 : kind === 'passeio' || kind === 'restaurante' ? 'Grátis' : null}
           </p>
-          {actions.length > 0 && (
+          {booking?.type === 'text' && (
+            <p data-roteiro-line="booking" className="text-xs text-muted-foreground">{booking.text}</p>
+          )}
+          {(actions.length > 0 || canClose || booking) && (
             <div className="flex gap-2 flex-wrap">
+              {canClose && (
+                <button type="button" onClick={onCheck} className={`${btn} bg-background border border-border text-foreground hover:border-primary/50`}>
+                  <Check size={12} /> Marcar como fechado
+                </button>
+              )}
               {actions.includes('confirmar') && (
                 <button type="button" onClick={onConfirmAnchor} className={`${btn} bg-[#10b981] text-white hover:bg-[#10b981]/80`}>
                   <Check size={12} /> Confirmar
                 </button>
               )}
-              {actions.includes('reservar') && (
-                <button type="button" onClick={onOffers} className={`${btn} bg-background border border-border text-foreground hover:border-primary/50`}>
-                  <Tag size={12} /> Reservar com parceiro ▸
-                </button>
-              )}
+              <BookingAction booking={booking} />
               {actions.includes('trocar') && (
                 <button type="button" onClick={onSwap} className={`${btn} bg-background border border-border text-foreground hover:border-primary/50`}>
                   <RotateCcw size={12} /> Trocar ↻
@@ -143,7 +169,6 @@ export const RoteiroLinha = ({
 
 type LinhaHandlers = Pick<RoteiroLinhaProps, 'renderDetail'> & {
   onCheck: (a: TripActivity, actIndex: number) => void;
-  onOffers: (a: TripActivity) => void;
   onSwap: (a: TripActivity, actIndex: number) => void;
   onConfirmAnchor: (tipo: 'voo' | 'hotel') => void;
   onOpenDetails: (a: TripActivity) => void;
@@ -173,7 +198,7 @@ interface RoteiroDiaProps extends LinhaHandlers {
 export const RoteiroDia = ({
   dayNumber, date, activities, destination, liveLegs, expandedIds, onToggleExpand, onCollapseAll,
   renderMap, routeOpen, onRouteToggle, mapAnchorRef, anchorActivityId, anchorRef, highlightId,
-  onCheck, onOffers, onSwap, onConfirmAnchor, onOpenDetails, renderDetail,
+  onCheck, onSwap, onConfirmAnchor, onOpenDetails, renderDetail,
 }: RoteiroDiaProps) => {
   const legs = activities.map((a, i) => (i > 0 ? legBetween(activities[i - 1], a, liveLegs, destination) : null));
   const routeMinutes = legs.reduce((s, l) => s + (l?.minutes ?? 0), 0);
@@ -230,7 +255,6 @@ export const RoteiroDia = ({
               expanded={expandedIds.has(activity.id)}
               onToggle={() => onToggleExpand(activity.id)}
               onCheck={() => onCheck(activity, actIndex)}
-              onOffers={() => onOffers(activity)}
               onSwap={() => onSwap(activity, actIndex)}
               onConfirmAnchor={() => onConfirmAnchor(activity.category === 'voo' ? 'voo' : 'hotel')}
               onOpenDetails={() => onOpenDetails(activity)}
