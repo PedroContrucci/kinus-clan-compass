@@ -23,7 +23,7 @@ function setup(extra: Partial<Parameters<typeof RoteiroDia>[0]> = {}) {
     onCheck: vi.fn(), onOffers: vi.fn(), onSwap: vi.fn(), onConfirmAnchor: vi.fn(), onOpenDetails: vi.fn(),
   };
   const Harness = () => {
-    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
     const [routeOpen, setRouteOpen] = useState(false);
     return (
       <RoteiroDia
@@ -32,8 +32,13 @@ function setup(extra: Partial<Parameters<typeof RoteiroDia>[0]> = {}) {
         activities={dia}
         destination="Fortaleza"
         liveLegs={null}
-        expandedId={expandedId}
-        onExpand={setExpandedId}
+        expandedIds={expandedIds}
+        onToggleExpand={(id) => setExpandedIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id); else next.add(id);
+          return next;
+        })}
+        onCollapseAll={() => setExpandedIds(new Set())}
         renderMap={renderMap}
         routeOpen={routeOpen}
         onRouteToggle={() => setRouteOpen((o) => !o)}
@@ -69,7 +74,7 @@ describe('C.5b — Roteiro em blocos', () => {
     expect(32 + 40 + 5 * 44 + legs * 20).toBeLessThanOrEqual(700);
   });
 
-  it('(b) passeio pago aberto → Reservar com parceiro + Trocar, sem Confirmar; um aberto por vez', () => {
+  it('(b) passeio pago aberto → Reservar com parceiro + Trocar, sem Confirmar', () => {
     const { container, h, renderDetail } = setup();
     openRow('Dia de praia');
     const row = rowOf(container, 'Dia de praia');
@@ -82,12 +87,22 @@ describe('C.5b — Roteiro em blocos', () => {
     fireEvent.click(within(row).getByRole('button', { name: /Reservar com parceiro/ }));
     expect(h.onOffers).toHaveBeenCalledWith(praia);
     openRow('Almoço no Coco Bambu');
-    expect(screen.queryByText(/Chegue cedo/)).toBeNull();
-    expect(screen.getAllByRole('button', { expanded: true })).toHaveLength(1);
     // restaurante: só Trocar
     const almocoRow = rowOf(container, 'Coco Bambu');
     expect(within(almocoRow).getByRole('button', { name: /Trocar/ })).toBeTruthy();
     expect(within(almocoRow).queryByRole('button', { name: /Reservar/ })).toBeNull();
+  });
+
+  it('C.5c — abrir 2 linhas → 2 abertas; "fechar tudo" → 0 (e some sem nenhuma aberta)', () => {
+    setup();
+    expect(screen.queryByRole('button', { name: 'fechar tudo' })).toBeNull();
+    openRow('Dia de praia');
+    openRow('Almoço no Coco Bambu');
+    expect(screen.getAllByRole('button', { expanded: true })).toHaveLength(2);
+    expect(screen.getByText(/Chegue cedo/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'fechar tudo' }));
+    expect(screen.queryAllByRole('button', { expanded: true })).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: 'fechar tudo' })).toBeNull();
   });
 
   it('(c) café do hotel aberto → nenhuma ação; ☐ abre o confirmModal existente', () => {

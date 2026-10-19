@@ -156,8 +156,10 @@ interface RoteiroDiaProps extends LinhaHandlers {
   destination: string;
   /** Trechos OSRM que o mapa já calculou para este dia (null = mapa ainda não calculou). */
   liveLegs: RouteLeg[] | null;
-  expandedId: string | null;
-  onExpand: (id: string | null) => void;
+  /** C.5c — linhas abertas: abrir uma não fecha a outra. */
+  expandedIds: ReadonlySet<string>;
+  onToggleExpand: (id: string) => void;
+  onCollapseAll: () => void;
   /** null = dia sem rota (Embarque/Retorno). Só é chamado com o bloco aberto. */
   renderMap: (() => ReactNode) | null;
   routeOpen: boolean;
@@ -169,7 +171,7 @@ interface RoteiroDiaProps extends LinhaHandlers {
 }
 
 export const RoteiroDia = ({
-  dayNumber, date, activities, destination, liveLegs, expandedId, onExpand,
+  dayNumber, date, activities, destination, liveLegs, expandedIds, onToggleExpand, onCollapseAll,
   renderMap, routeOpen, onRouteToggle, mapAnchorRef, anchorActivityId, anchorRef, highlightId,
   onCheck, onOffers, onSwap, onConfirmAnchor, onOpenDetails, renderDetail,
 }: RoteiroDiaProps) => {
@@ -186,10 +188,18 @@ export const RoteiroDia = ({
     `${activities.length} ${activities.length === 1 ? 'item' : 'itens'}`,
     dayTotal > 0 ? brl(dayTotal) : null,
   ].filter(Boolean).join(' · ');
+  const anyOpen = activities.some((a) => expandedIds.has(a.id));
 
   return (
     <div className="bg-card border border-border rounded-2xl p-3">
-      <h3 data-roteiro-line="header" className="font-semibold text-sm text-foreground font-['Outfit'] mb-2 truncate">{header}</h3>
+      <div className="flex items-center gap-2 mb-2">
+        <h3 data-roteiro-line="header" className="flex-1 min-w-0 font-semibold text-sm text-foreground font-['Outfit'] truncate">{header}</h3>
+        {anyOpen && (
+          <button type="button" onClick={onCollapseAll} className="flex-shrink-0 text-xs text-muted-foreground hover:text-foreground hover:underline">
+            fechar tudo
+          </button>
+        )}
+      </div>
 
       {renderMap && (
         <div ref={mapAnchorRef} className="mb-2">
@@ -217,8 +227,8 @@ export const RoteiroDia = ({
             )}
             <RoteiroLinha
               activity={activity}
-              expanded={expandedId === activity.id}
-              onToggle={() => onExpand(expandedId === activity.id ? null : activity.id)}
+              expanded={expandedIds.has(activity.id)}
+              onToggle={() => onToggleExpand(activity.id)}
               onCheck={() => onCheck(activity, actIndex)}
               onOffers={() => onOffers(activity)}
               onSwap={() => onSwap(activity, actIndex)}

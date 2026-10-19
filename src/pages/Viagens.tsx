@@ -50,6 +50,8 @@ import { getDocsForDestination } from '@/data/destinationDocs';
 import { DailyRouteMap, RouteLeg } from '@/components/cockpit/DailyRouteMap';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 import { RoteiroDia, RoteiroLinha } from '@/components/cockpit/RoteiroDia';
+import { FinanceiroRazao } from '@/components/cockpit/FinanceiroRazao';
+import { razaoLines, razaoTotals } from '@/lib/razaoLines';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
 import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
 import { CheckinBanner } from '@/components/checkin/CheckinBanner';
@@ -160,7 +162,13 @@ const Viagens = () => {
   const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
   const [focusMapActivity, setFocusMapActivity] = useState<string | null>(null);
   // C.5b: um item aberto por vez; mapa da rota montado só com o bloco aberto.
-  const [expandedActivityId, setExpandedActivityId] = useState<string | null>(null);
+  // C.5c — abrir uma linha não fecha a outra.
+  const [expandedActivityIds, setExpandedActivityIds] = useState<Set<string>>(() => new Set());
+  const toggleExpandedActivity = (id: string) => setExpandedActivityIds((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
   const [routeOpen, setRouteOpen] = useState(false);
   const mapAnchorRef = useRef<HTMLDivElement | null>(null);
   const roteiroActionRef = useRef<HTMLDivElement | null>(null);
@@ -1646,8 +1654,8 @@ const Viagens = () => {
                             activity={activity}
                             prefix={`Dia ${day.day}`}
                             priceBRL={showHotelTotal ? hotelDisplay : undefined}
-                            expanded={expandedActivityId === activity.id}
-                            onToggle={() => setExpandedActivityId(expandedActivityId === activity.id ? null : activity.id)}
+                            expanded={expandedActivityIds.has(activity.id)}
+                            onToggle={() => toggleExpandedActivity(activity.id)}
                             onCheck={() => setConfirmModal({ isOpen: true, activity, dayIndex: dayIdx, actIndex: realActIdx })}
                             onOffers={() => setOffersModal({
                               isOpen: true,
@@ -1756,8 +1764,9 @@ const Viagens = () => {
                     activities={currentDay.activities}
                     destination={selectedTrip.destination}
                     liveLegs={liveLegs}
-                    expandedId={expandedActivityId}
-                    onExpand={setExpandedActivityId}
+                    expandedIds={expandedActivityIds}
+                    onToggleExpand={toggleExpandedActivity}
+                    onCollapseAll={() => setExpandedActivityIds(new Set())}
                     routeOpen={routeOpen}
                     onRouteToggle={() => setRouteOpen((o) => !o)}
                     mapAnchorRef={mapAnchorRef}
@@ -1801,10 +1810,10 @@ const Viagens = () => {
               <AgentTip agent="hestia" variant="compact" message={getHestiaCambio(selectedTrip)} />
 
               
-              {/* Budget Summary */}
+              {/* Budget Summary — C.5c: Planejado/Confirmado = Σ das linhas do razão (mesma função). */}
               {(() => {
-                const confirmed = selectedTrip.finances?.confirmed || 0;
-                const pending = (selectedTrip.finances?.planned || 0) + (selectedTrip.finances?.bidding || 0);
+                const lines = razaoLines(selectedTrip);
+                const { planned: pending, confirmed } = razaoTotals(lines);
                 const available = selectedTrip.budget - pending - confirmed;
                 return (
                   <>
@@ -1838,6 +1847,25 @@ const Viagens = () => {
                         </p>
                       </div>
                     </div>
+
+                    <FinanceiroRazao
+                      lines={lines}
+                      onConfirm={(tipo) => {
+                        setActiveTab('painel');
+                        setPendingConfirmRequest({ tipo, ts: Date.now() });
+                      }}
+                      onHotelOffers={() => setOffersModal({
+                        isOpen: true,
+                        activityName: 'Hospedagem',
+                        activityDate: String(selectedTrip.startDate || '').slice(0, 10),
+                      })}
+                      onOpenDay={(dayNumber) => {
+                        setRoteiroCategoryFilter(null);
+                        setSelectedDay(dayNumber);
+                        setActiveTab('roteiro');
+                      }}
+                      onCheck={(activity, dayIndex, actIndex) => setConfirmModal({ isOpen: true, activity, dayIndex, actIndex })}
+                    />
                   </>
                 );
               })()}

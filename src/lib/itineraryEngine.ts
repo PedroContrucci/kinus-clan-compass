@@ -198,7 +198,8 @@ export function computeBuckets(
       const cost = Math.round(act.estimatedCost || 0);
       // Exclude flight/hotel/system items — their cost lives only in the
       // planned flight/hotel totals from breakdown, never on day items.
-      if (['flight', 'hotel', 'checkin', 'checkout', 'transport'].includes(act.type)) return;
+      // C.5c (D2): transport conta — transfer com custo é gasto do dia (Roteiro = razão = tile).
+      if (['flight', 'hotel', 'checkin', 'checkout'].includes(act.type)) return;
       if (['breakfast', 'lunch', 'dinner'].includes(act.timeSlot)) {
         foodPlanned += cost;
       } else if (['morning', 'afternoon', 'night'].includes(act.timeSlot)) {
