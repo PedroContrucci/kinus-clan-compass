@@ -7,6 +7,8 @@ import { checkRate } from "../_shared/telemetry.ts";
 // curada sem viagem ativa e sem o front ter adivinhado a cidade na mensagem.
 // Import de módulo local: nenhuma rede, nenhum segredo, nenhuma leitura de banco.
 import { CATALOG, CATALOG_INDEX } from "./catalog.ts";
+// C.6: estado da conta (perfil + viagens) em toda chamada; sem imports, testável no vitest.
+import { sanitizeAccount, accountGate, ACCOUNT_RULES } from "./account.ts";
 
 function sanitizeUrl(url: string): string {
   return url
@@ -78,7 +80,7 @@ ESCOPO DA CONVERSA: Se houver uma viagem ativa, ela é CONTEXTO para enriquecer 
 
 ⚠️ REGRA DE TRANSPARÊNCIA DE CONTEXTO: o bloco <trip_context> vem do APP, não da boca do usuário — ele pode nunca ter dito nada daquilo, e o dado pode estar desatualizado. Na PRIMEIRA vez que você usar um dado do <trip_context> numa resposta (destino, datas, viajantes, orçamento, estilo, hotel, interesses), declare de onde veio e abra a porta para correção, numa frase curta e leve: "considerando os 2 viajantes e o orçamento de R$ 8 mil que estão na sua viagem — me corrige se mudou". Declarado uma vez na conversa, pode usar à vontade sem repetir o aviso. É PROIBIDO apresentar dado do contexto como se o usuário tivesse dito ("você me falou que...", "como você disse..."), e é PROIBIDO afirmar dado que não esteja NEM no <trip_context> NEM na conversa.
 
-CIDADE DE PARTIDA: você NÃO recebe a cidade de origem do usuário — ela não existe no <trip_context> nem em nenhum outro lugar. NUNCA afirme, assuma ou insinue de onde ele sai: nada de "saindo de São Paulo", nada de preço de voo "de SP", nada de duração de voo calculada a partir de uma origem que você escolheu. Se a origem importar para responder, PERGUNTE — "de qual cidade você sairia?" — e essa pergunta é a sua ÚNICA pergunta da mensagem, conforme a REGRA ABSOLUTA E INEGOCIÁVEL DE CONVERSA.
+CIDADE DE PARTIDA: a única fonte é a linha "Origem padrão do perfil" do <account_context> (quando informada, use-a declarando que veio do perfil). Fora dela, você NÃO recebe a cidade de origem do usuário. NUNCA afirme, assuma ou insinue de onde ele sai: nada de "saindo de São Paulo", nada de preço de voo "de SP", nada de duração de voo calculada a partir de uma origem que você escolheu. Se a origem importar para responder, PERGUNTE — "de qual cidade você sairia?" — e essa pergunta é a sua ÚNICA pergunta da mensagem, conforme a REGRA ABSOLUTA E INEGOCIÁVEL DE CONVERSA.
 
 AÇÕES ESTRUTURADAS (FERRAMENTAS): Quando o usuário PEDIR uma mudança na viagem (trocar atividade, ajustar horário, remover algo do dia, confirmar voo ou hotel), use as ferramentas disponíveis para PROPOR a ação — nunca afirme que executou; o app pedirá confirmação ao usuário antes de aplicar. Para o parâmetro nova_atividade em trocar_atividade, use SOMENTE nomes que aparecem LITERALMENTE no CATÁLOGO CURADO fornecido. Sua resposta em texto deve explicar brevemente a proposta em tom de irmão mais velho; a ferramenta cuida da execução. Se o usuário apenas conversar (sem pedir mudança), NÃO chame nenhuma ferramenta.
 
@@ -357,6 +359,7 @@ interface RequestBody {
   curatedCityNames?: unknown;
   curatedCatalog?: unknown;
   itineraryDays?: unknown;
+  account?: unknown;
 }
 
 // Seções do catálogo curado, em ordem cronológica do dia. As chaves são as categorias de
@@ -700,9 +703,22 @@ serve(async (req) => {
         contextStr =
           `<trip_context fonte="dados do app, NÃO ditos pelo usuário">\n` +
           `${parts.join("\n")}\n` +
-          `Cidade de partida: NÃO INFORMADA — o app não coleta a origem do usuário.\n` +
+          `Cidade de partida: só a "Origem padrão do perfil" do <account_context>, se houver; senão NÃO INFORMADA.\n` +
           `</trip_context>\n\n`;
       }
+    }
+
+    // C.6: regra de escolha da viagem. 2+ viagens sem escolha → a pergunta sai daqui,
+    // determinística, sem chamar o modelo (emergência sempre passa).
+    const gate = accountGate(sanitizeAccount(body.account), {
+      hasOpenTrip: contextStr.length > 0,
+      isEmergency,
+    });
+    if (gate.reply) {
+      return new Response(
+        JSON.stringify({ message: gate.reply, proposedActions: [] }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Sanitize curated city names
@@ -818,7 +834,7 @@ serve(async (req) => {
     const iso = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
     const dateLine = `DATA DE HOJE: ${fmt.format(now)} (${iso}). O ano atual é ${iso.slice(0,4)}. Use esta data como única referência de "hoje" para a regra 15 — datas sem ano são sempre a PRÓXIMA ocorrência futura a partir de hoje.`;
 
-    let systemPrompt = dateLine + "\n\n" + KINU_SYSTEM_PROMPT.replace("{{DESTINOS_DISPONIVEIS_LINE}}", cityLine) + catalogBlock + itineraryBlock;
+    let systemPrompt = dateLine + "\n\n" + KINU_SYSTEM_PROMPT.replace("{{DESTINOS_DISPONIVEIS_LINE}}", cityLine) + ACCOUNT_RULES + catalogBlock + itineraryBlock;
     if (isEmergency) {
       systemPrompt += `\n\nMODO EMERGÊNCIA ATIVADO:
 - Seja calmo, direto e prático
@@ -829,7 +845,7 @@ serve(async (req) => {
     }
 
     // Build messages array with history — user content isolated in structured block
-    const userContent = `${contextStr}<user_message>\n${message}\n</user_message>`;
+    const userContent = `${gate.block}${contextStr}<user_message>\n${message}\n</user_message>`;
     
     const messages: Array<{ role: "user" | "assistant"; content: unknown }> = [
       ...history,

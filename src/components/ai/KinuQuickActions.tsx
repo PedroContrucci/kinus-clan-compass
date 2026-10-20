@@ -1,4 +1,4 @@
-import { useKinuAI } from "@/contexts/KinuAIContext";
+import { useKinuAI, tripChipLabel, NO_TRIP } from "@/contexts/KinuAIContext";
 import { openClaSuggest } from "@/components/cla/ClaSuggestHost";
 
 interface KinuQuickActionsProps {
@@ -6,9 +6,9 @@ interface KinuQuickActionsProps {
 }
 
 export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
-  const { sendMessage, tripContext } = useKinuAI();
+  const { sendMessage, tripContext, accountTrips, chooseTrip } = useKinuAI();
 
-  const actions: { id: string; icon: string; label: string; prompt: string }[] = [];
+  const actions: { id: string; icon: string; label: string; prompt: string; tripId?: string }[] = [];
 
   if (tripContext?.activeTab === 'roteiro') {
     actions.push({ id: 'tab-reorganize', icon: '🗓️', label: 'Reorganizar um dia', prompt: 'Analisa meu roteiro e me diz qual dia está mais pesado e como reorganizar.' });
@@ -61,6 +61,12 @@ export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
         actions.push({ id: 'save', icon: '💰', label: 'Economizar', prompt: `Como economizar em ${tripContext.destination}?` });
       }
     }
+  } else if (accountTrips.length > 0) {
+    // C.6: com viagens na conta, um chip por viagem (seta a escolha da sessão) + "geral".
+    for (const t of accountTrips.slice(0, 3)) {
+      actions.push({ id: `trip-${t.id}`, icon: t.status === 'draft' ? '📝' : '✈️', label: tripChipLabel(t), prompt: '', tripId: t.id });
+    }
+    actions.push({ id: 'geral', icon: '💬', label: 'Pergunta geral', prompt: '', tripId: NO_TRIP });
   } else {
     actions.push(
       { id: 'plan', icon: '🧭', label: 'Planejar viagem', prompt: 'Me ajude a escolher um destino!' },
@@ -77,9 +83,11 @@ export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
         <button
           key={action.id}
           onClick={() =>
-            action.id === 'indicar'
-              ? openClaSuggest({ city: tripContext?.destination, preferGps: true })
-              : sendMessage(action.prompt)
+            action.tripId
+              ? chooseTrip(action.tripId)
+              : action.id === 'indicar'
+                ? openClaSuggest({ city: tripContext?.destination, preferGps: true })
+                : sendMessage(action.prompt)
           }
           disabled={disabled}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#334155] hover:bg-[#475569] text-xs font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

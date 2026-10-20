@@ -11,7 +11,9 @@ import { getCuratedHotels } from "@/data/curatedHotels";
 import { findCityInfo } from "@/data/destinationCatalog";
 import { kinuAuthHeaders } from "@/lib/kinuAuthHeader";
 import { buildDraftTrip } from "@/lib/createTrip";
-import { addTrip, type StoredTrip } from "@/lib/tripStore";
+import { addTrip, listTrips, type StoredTrip } from "@/lib/tripStore";
+import { kinuDidLines } from "@/lib/onboardingFlow";
+import { razaoLines, razaoTotals } from "@/lib/razaoLines";
 import { trackTripCreated } from "@/lib/tripEvents";
 import { TRAVEL_INTERESTS, PRIORITY_OPTIONS } from "@/components/wizard/types";
 
@@ -114,6 +116,126 @@ export function buildDuranteContext(ctx: KinuTripContext | null, today: string =
   return { tripPhase: phase, currentDayIndex, todayDate: today, todayPlan, todayHotel } as Partial<KinuTripContext>;
 }
 
+// ---------------------------------------------------------------------------
+// C.6 — o agente sempre sabe o que a pessoa tem na conta. Tudo derivado do gravado.
+// ---------------------------------------------------------------------------
+
+/** Sentinela da sessão do chat: o usuário pediu pergunta "geral" (espelha NO_TRIP da function). */
+export const NO_TRIP = 'none';
+
+export interface KinuAccountTrip {
+  id: string;
+  destination: string;
+  dates: { start: string; end: string };
+  status: 'active' | 'draft';
+  travelers: number;
+  budget: number;
+  summary: string;
+}
+
+export interface KinuAccount {
+  profile: { name?: string; origin?: string };
+  trips: KinuAccountTrip[];
+  activeTripId?: string;
+}
+
+const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+/** "10–15/nov" · "28/out–03/nov" — mesmo formato do dateRangeLabel da function. */
+function dateRangeLabel(start: string, end: string): string {
+  const [, sm, sd] = (start ?? '').slice(0, 10).split('-');
+  const [, em, ed] = (end ?? '').slice(0, 10).split('-');
+  if (!sd || !ed) return '';
+  return sm === em ? `${sd}–${ed}/${MONTHS[Number(em) - 1]}` : `${sd}/${MONTHS[Number(sm) - 1]}–${ed}/${MONTHS[Number(em) - 1]}`;
+}
+
+/** Chip/ack: "Fortaleza 10–15/nov" · "Lisboa (rascunho)". */
+export function tripChipLabel(trip: { destination: string; status?: string; startDate?: string; endDate?: string }): string {
+  if (trip.status === 'draft') return `${trip.destination} (rascunho)`;
+  const range = dateRangeLabel(trip.startDate ?? '', trip.endDate ?? '');
+  return range ? `${trip.destination} ${range}` : trip.destination;
+}
+
+/** Voo escolhido · hotel · N dias · Planejado — só linhas que o app já mostra. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function tripSummary(trip: any): string {
+  const parts: string[] = [];
+  try { parts.push(kinuDidLines(trip).flight); } catch { /* viagem torta: sem linha de voo */ }
+  if (trip.accommodation?.name) parts.push(`Hotel ${trip.accommodation.name}`);
+  const days = Array.isArray(trip.days) ? trip.days.length : 0;
+  if (days) parts.push(`${days} dias`);
+  try {
+    const planned = razaoTotals(razaoLines(trip)).planned;
+    if (planned > 0) parts.push(`Planejado R$ ${Math.round(planned).toLocaleString('pt-BR')}`);
+  } catch { /* idem */ }
+  return parts.join(' · ');
+}
+
+/** Viagens que a conta mostra ao agente: ativas e rascunhos (concluídas ficam fora). */
+export function accountTripsOf(trips: StoredTrip[]): StoredTrip[] {
+  return trips.filter((t) => t && t.destination && (t.status === 'draft' || t.status === 'active' || t.status === 'ongoing'));
+}
+
+/** Origem padrão só quando NÃO foi assumida (originSource !== 'default'). */
+function profileOrigin(trips: StoredTrip[]): string | undefined {
+  const t = trips.find((x) => x.origin && x.originSource && x.originSource !== 'default');
+  return t?.origin;
+}
+
+/**
+ * O `account` de toda chamada. activeTripId só se o chat foi aberto de dentro de uma
+ * viagem ou se o usuário escolheu na conversa — NUNCA deduzido de "só tem uma".
+ */
+export function buildAccountPayload(
+  allTrips: StoredTrip[],
+  opts: { profileName?: string; openTripId?: string; chosenTripId?: string | null },
+): KinuAccount {
+  const trips = accountTripsOf(allTrips).slice(0, 8);
+  const activeTripId = opts.openTripId || opts.chosenTripId || undefined;
+  return {
+    profile: {
+      ...(opts.profileName ? { name: opts.profileName } : {}),
+      ...(profileOrigin(allTrips) ? { origin: profileOrigin(allTrips) } : {}),
+    },
+    trips: trips.map((t) => ({
+      id: t.id,
+      destination: t.destination,
+      dates: { start: String(t.startDate ?? '').slice(0, 10), end: String(t.endDate ?? '').slice(0, 10) },
+      status: t.status === 'draft' ? 'draft' : 'active',
+      travelers: Number(t.travelers) || 1,
+      budget: Number(t.budget) || 0,
+      summary: tripSummary(t),
+    })),
+    ...(activeTripId ? { activeTripId } : {}),
+  };
+}
+
+const normTxt = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+/**
+ * Resposta digitada à pergunta "qual viagem?": 'geral'/'nenhuma' → NO_TRIP; cita o destino
+ * de exatamente uma viagem → o id dela; senão null (o gate pergunta de novo).
+ */
+export function tripChoiceFromMessage(message: string, trips: { id: string; destination: string }[]): string | null {
+  const m = normTxt(message);
+  if (/\b(geral|nenhuma)\b/.test(m)) return NO_TRIP;
+  const hits = trips.filter((t) => m.includes(normTxt(t.destination)));
+  return hits.length === 1 ? hits[0].id : null;
+}
+
+/** Nome do perfil: mesma cascata do useAuth (name → full_name → nome). */
+async function profileName(): Promise<string | undefined> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const meta = (data.session?.user?.user_metadata ?? {}) as Record<string, unknown>;
+    return [meta.name, meta.full_name, meta.nome]
+      .map((v) => (typeof v === 'string' ? v.trim() : ''))
+      .find((v) => v.length > 0);
+  } catch {
+    return undefined;
+  }
+}
+
 function detectCuratedCity(message: string, activeDestination?: string): string | null {
   if (activeDestination && CURATED_CITIES.some((c) => c.toLowerCase() === activeDestination.toLowerCase())) {
     const match = CURATED_CITIES.find((c) => c.toLowerCase() === activeDestination.toLowerCase());
@@ -146,6 +268,11 @@ interface KinuAIContextType {
   wizardPrefill: { destino: string; data_ida: string; data_volta: string; viajantes: number } | null;
   setWizardPrefill: (prefill: { destino: string; data_ida: string; data_volta: string; viajantes: number } | null) => void;
   clearWizardPrefill: () => void;
+  /** C.6: viagens da conta (ativas + rascunhos) — os chips do chat global. */
+  accountTrips: StoredTrip[];
+  /** C.6: escolha da sessão do chat (id ou NO_TRIP). */
+  chosenTripId: string | null;
+  chooseTrip: (id: string) => void;
 }
 
 
@@ -166,6 +293,22 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
   // follow-up ("e pra jantar?") não repetem o nome da cidade — sem isso o catálogo
   // deixava de ser injetado e o agente perdia a fonte da verdade no meio do papo.
   const stickyCuratedCityRef = useRef<string | null>(null);
+
+  // C.6: viagem escolhida NA CONVERSA (chip ou resposta digitada). Vive na sessão do chat.
+  const [chosenTripId, setChosenTripId] = useState<string | null>(null);
+  const [accountTrips, setAccountTrips] = useState<StoredTrip[]>([]);
+  useEffect(() => {
+    if (isOpen) setAccountTrips(accountTripsOf(listTrips()));
+  }, [isOpen]);
+
+  const chooseTrip = useCallback((id: string) => {
+    setChosenTripId(id);
+    const trip = id === NO_TRIP ? null : accountTripsOf(listTrips()).find((t) => t.id === id);
+    const content = trip
+      ? `Beleza — sobre sua viagem a ${tripChipLabel(trip)}. O que você quer saber?`
+      : 'Beleza — pergunta geral, sem viagem. O que você quer saber?';
+    setMessages((prev) => [...prev, { id: `msg-${Date.now()}-choice`, role: 'assistant', content, timestamp: new Date() }]);
+  }, []);
 
 
   // Abertura do chat com a viagem acontecendo: um evento por dia por viagem.
@@ -212,10 +355,30 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         content: m.content,
       }));
 
+      // C.6: o estado da conta vai em TODA chamada. Com 2+ viagens e nenhuma escolhida,
+      // a resposta digitada à pergunta "qual?" vira a escolha da sessão.
+      const allTrips = listTrips();
+      const visible = accountTripsOf(allTrips);
+      let chosen = chosenTripId;
+      if (!tripContext?.tripId && !chosen && visible.length >= 2) {
+        chosen = tripChoiceFromMessage(content, visible);
+        if (chosen) setChosenTripId(chosen);
+      }
+      const account = buildAccountPayload(allTrips, {
+        profileName: await profileName(),
+        openTripId: tripContext?.tripId,
+        chosenTripId: chosen,
+      });
+      // Viagem escolhida (não aberta) alimenta o catálogo/dicas como se fosse a ativa.
+      const chosenTrip = !tripContext?.destination && chosen && chosen !== NO_TRIP
+        ? visible.find((t) => t.id === chosen)
+        : undefined;
+      const focusDestination = tripContext?.destination ?? chosenTrip?.destination;
+
       // Detecção explícita (mensagem) ou viagem ativa têm prioridade e sobrescrevem a
       // pegajosa; só caímos nela quando não há nem uma nem outra.
-      const hasActiveTrip = Boolean(tripContext?.destination);
-      const detectedCity = detectCuratedCity(content, tripContext?.destination);
+      const hasActiveTrip = Boolean(focusDestination);
+      const detectedCity = detectCuratedCity(content, focusDestination);
       if (detectedCity) {
         stickyCuratedCityRef.current = detectedCity;
       } else if (hasActiveTrip) {
@@ -227,7 +390,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       const curatedCatalog = curatedCity ? buildCuratedCatalog(curatedCity) : null;
       const curatedHotelList = curatedCity ? buildCuratedHotels(curatedCity) : null;
       // Dicas vivas do clã: cidade detectada ou da viagem ativa. Cache por sessão; nunca lança.
-      const tipsCity = curatedCity ?? detectCuratedCity(tripContext?.destination ?? '', tripContext?.destination);
+      const tipsCity = curatedCity ?? detectCuratedCity(focusDestination ?? '', focusDestination);
       const claTips = tipsCity ? (await tipsForAgent(tipsCity)).slice(0, 40) : [];
 
       // Build compact itineraryDays, cap total payload ~4000 chars
@@ -273,6 +436,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
             : undefined,
           itineraryDays,
           claTips: claTips.length > 0 ? claTips : undefined,
+          account,
         },
       });
 
@@ -328,12 +492,13 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, tripContext, checkForEmergency]);
+  }, [messages, tripContext, checkForEmergency, chosenTripId]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
     setIsEmergencyMode(false);
     stickyCuratedCityRef.current = null;
+    setChosenTripId(null);
   }, []);
 
   const clearSuggestedDestinations = useCallback(() => {
@@ -611,6 +776,9 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         wizardPrefill,
         setWizardPrefill,
         clearWizardPrefill,
+        accountTrips,
+        chosenTripId,
+        chooseTrip,
       }}
     >
       {children}
