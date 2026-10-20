@@ -1,7 +1,7 @@
 import type { ReactNode, Ref } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronRight, ChevronDown, Check, Tag, RotateCcw, Phone } from 'lucide-react';
+import { ChevronRight, ChevronDown, Check, Tag, RotateCcw, Phone, Trash2 } from 'lucide-react';
 import type { TripActivity } from '@/types/trip';
 import type { RouteLeg } from '@/components/cockpit/DailyRouteMap';
 import { legBetween, roteiroActions, roteiroBooking, roteiroKind, type RoteiroBooking } from '@/lib/roteiroBlocks';
@@ -10,6 +10,7 @@ import { legBetween, roteiroActions, roteiroBooking, roteiroKind, type RoteiroBo
 // ações só ao abrir. Apresentação pura: nenhum estado de viagem, nenhum handler próprio —
 // os de Viagens.tsx (confirmModal, troca, drawer, confirmar voo/hotel) chegam por prop.
 // C.5d: reservar vem do catálogo (roteiroBooking), por item — nunca o link genérico de busca.
+// C.5e: o rascunho usa o mesmo bloco sem ☐/Confirmar/Mais detalhes (handlers opcionais) e com 🗑.
 
 const brl = (n: number) => `R$ ${n.toLocaleString('pt-BR')}`;
 
@@ -43,11 +44,13 @@ interface RoteiroLinhaProps {
   activity: TripActivity;
   expanded: boolean;
   onToggle: () => void;
-  /** ☐ → o confirmModal existente. */
-  onCheck: () => void;
+  /** ☐ → o confirmModal existente. Ausente (rascunho): sem ☐ e sem "Marcar como fechado". */
+  onCheck?: () => void;
   onSwap: () => void;
-  onConfirmAnchor: () => void;
-  onOpenDetails: () => void;
+  onConfirmAnchor?: () => void;
+  onOpenDetails?: () => void;
+  /** 🗑 do rascunho: só passeio e restaurante, nunca logística. */
+  onRemove?: () => void;
   /** Foto/nota/aberto-fechado, Michelin, Clã — só chamado com a linha aberta. */
   renderDetail?: (a: TripActivity) => ReactNode;
   /** Prefixo da vista filtrada ("Dia 3"). */
@@ -59,18 +62,21 @@ interface RoteiroLinhaProps {
 }
 
 export const RoteiroLinha = ({
-  activity, expanded, onToggle, onCheck, onSwap, onConfirmAnchor, onOpenDetails,
+  activity, expanded, onToggle, onCheck, onSwap, onConfirmAnchor, onOpenDetails, onRemove,
   renderDetail, prefix, priceBRL, highlight, anchorRef,
 }: RoteiroLinhaProps) => {
   const kind = roteiroKind(activity);
   const actions = roteiroActions(activity);
   const booking = roteiroBooking(activity);
-  const canClose = kind !== 'logistica' && activity.status !== 'confirmed' && activity.status !== 'cancelled';
+  const canClose = !!onCheck && kind !== 'logistica' && activity.status !== 'confirmed' && activity.status !== 'cancelled';
   const confirmed = activity.status === 'confirmed';
   const price = priceBRL ?? activity.cost;
   const paid = confirmed && activity.paidAmount ? activity.paidAmount : 0;
   const detailId = `roteiro-detalhe-${activity.id}`;
   const btn = actionBtn;
+  const canConfirm = !!onConfirmAnchor && actions.includes('confirmar');
+  const canRemove = !!onRemove && (kind === 'passeio' || kind === 'restaurante')
+    && activity.status !== 'confirmed' && activity.status !== 'cancelled';
 
   return (
     <div
@@ -81,6 +87,8 @@ export const RoteiroLinha = ({
       <div className="flex items-center gap-2 h-11 px-1">
         {kind === 'logistica' ? (
           <span className="w-6 text-center flex-shrink-0" aria-label="Logística">{logisticsIcon(activity)}</span>
+        ) : !onCheck ? (
+          <span className="w-6 text-center flex-shrink-0 text-muted-foreground" aria-hidden="true">•</span>
         ) : (
           <button
             type="button"
@@ -138,14 +146,14 @@ export const RoteiroLinha = ({
           {booking?.type === 'text' && (
             <p data-roteiro-line="booking" className="text-xs text-muted-foreground">{booking.text}</p>
           )}
-          {(actions.length > 0 || canClose || booking) && (
+          {(actions.includes('trocar') || canConfirm || canClose || canRemove || booking) && (
             <div className="flex gap-2 flex-wrap">
               {canClose && (
                 <button type="button" onClick={onCheck} className={`${btn} bg-background border border-border text-foreground hover:border-primary/50`}>
                   <Check size={12} /> Marcar como fechado
                 </button>
               )}
-              {actions.includes('confirmar') && (
+              {canConfirm && (
                 <button type="button" onClick={onConfirmAnchor} className={`${btn} bg-[#10b981] text-white hover:bg-[#10b981]/80`}>
                   <Check size={12} /> Confirmar
                 </button>
@@ -156,11 +164,18 @@ export const RoteiroLinha = ({
                   <RotateCcw size={12} /> Trocar ↻
                 </button>
               )}
+              {canRemove && (
+                <button type="button" onClick={onRemove} className={`${btn} bg-background border border-border text-red-400 hover:border-red-500/50`}>
+                  <Trash2 size={12} /> Remover
+                </button>
+              )}
             </div>
           )}
-          <button type="button" onClick={onOpenDetails} className="text-xs text-primary hover:underline">
-            Mais detalhes
-          </button>
+          {onOpenDetails && (
+            <button type="button" onClick={onOpenDetails} className="text-xs text-primary hover:underline">
+              Mais detalhes
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -168,10 +183,11 @@ export const RoteiroLinha = ({
 };
 
 type LinhaHandlers = Pick<RoteiroLinhaProps, 'renderDetail'> & {
-  onCheck: (a: TripActivity, actIndex: number) => void;
+  onCheck?: (a: TripActivity, actIndex: number) => void;
   onSwap: (a: TripActivity, actIndex: number) => void;
-  onConfirmAnchor: (tipo: 'voo' | 'hotel') => void;
-  onOpenDetails: (a: TripActivity) => void;
+  onConfirmAnchor?: (tipo: 'voo' | 'hotel') => void;
+  onOpenDetails?: (a: TripActivity) => void;
+  onRemove?: (a: TripActivity, actIndex: number) => void;
 };
 
 interface RoteiroDiaProps extends LinhaHandlers {
@@ -198,7 +214,7 @@ interface RoteiroDiaProps extends LinhaHandlers {
 export const RoteiroDia = ({
   dayNumber, date, activities, destination, liveLegs, expandedIds, onToggleExpand, onCollapseAll,
   renderMap, routeOpen, onRouteToggle, mapAnchorRef, anchorActivityId, anchorRef, highlightId,
-  onCheck, onSwap, onConfirmAnchor, onOpenDetails, renderDetail,
+  onCheck, onSwap, onConfirmAnchor, onOpenDetails, onRemove, renderDetail,
 }: RoteiroDiaProps) => {
   const legs = activities.map((a, i) => (i > 0 ? legBetween(activities[i - 1], a, liveLegs, destination) : null));
   const routeMinutes = legs.reduce((s, l) => s + (l?.minutes ?? 0), 0);
@@ -254,10 +270,11 @@ export const RoteiroDia = ({
               activity={activity}
               expanded={expandedIds.has(activity.id)}
               onToggle={() => onToggleExpand(activity.id)}
-              onCheck={() => onCheck(activity, actIndex)}
+              onCheck={onCheck && (() => onCheck(activity, actIndex))}
               onSwap={() => onSwap(activity, actIndex)}
-              onConfirmAnchor={() => onConfirmAnchor(activity.category === 'voo' ? 'voo' : 'hotel')}
-              onOpenDetails={() => onOpenDetails(activity)}
+              onConfirmAnchor={onConfirmAnchor && (() => onConfirmAnchor(activity.category === 'voo' ? 'voo' : 'hotel'))}
+              onOpenDetails={onOpenDetails && (() => onOpenDetails(activity))}
+              onRemove={onRemove && (() => onRemove(activity, actIndex))}
               renderDetail={renderDetail}
               highlight={highlightId === activity.id}
               anchorRef={activity.id === anchorActivityId ? anchorRef : undefined}

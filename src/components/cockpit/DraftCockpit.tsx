@@ -7,7 +7,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { FlightSelectionStage, SelectedFlight } from './FlightSelectionStage';
-import { GeneratedItineraryStage } from './GeneratedItineraryStage';
+import { RoteiroRascunho } from './RoteiroRascunho';
 import { HotelSwapModal } from '@/components/hotel/HotelSwapModal';
 import { HotelPlanBlock } from '@/components/hotel/HotelPlanBlock';
 import { applyHotelSwap, type SwapTripLike, type AccommodationLike } from '@/lib/hotelSwap';
@@ -71,10 +71,6 @@ interface DraftCockpitProps {
   onUpdateTrip?: (updater: (t: StoredTrip) => StoredTrip) => void;
   /** Incrementado por fora para abrir o painel Voo. */
   openFlightsSignal?: number;
-}
-
-function getTravelers(trip: DraftTrip): number {
-  return trip.travelers || 1;
 }
 
 // plannedFlightToSelected mora em src/lib/flightModel.ts; reexport para quem importava daqui.
@@ -197,23 +193,6 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     return undefined;
   });
   const [hotelSwapOpen, setHotelSwapOpen] = useState(false);
-
-  // If the trip already carries a complete generated itinerary (from the wizard /
-  // createTrip), we hand it off to GeneratedItineraryStage as `existingDays` and
-  // preserve its original shape on activate — never overwriting with a re-generated one.
-  const totalDaysExpected =
-    trip.totalDays ||
-    (Math.round((new Date(trip.endDate).getTime() - new Date(trip.startDate).getTime()) / 86400000) + 1);
-  // Rascunho salvo é mostrado como está (nunca regerado no open); "Regerar roteiro" é o único caminho.
-  void totalDaysExpected;
-  const hasExistingDays = Array.isArray(trip.days)
-    && trip.days.length > 0
-    && trip.days.some((d: any) => Array.isArray(d?.activities) && d.activities.length > 0);
-
-  // C.4.2: o balde de hospedagem é SEMPRE acc.totalPrice (curado, estimado ou confirmado) —
-  // a mesma diária × noites que o card e o PDF mostram. Sem ele, a etapa de roteiro
-  // recalcularia o balde no mount e desfaria a troca de hotel.
-  const hotelPlanned = Math.round(Number(trip.accommodation?.totalPrice) || 0) || undefined;
 
   // C.4.3: códigos só por flightSearchRoute (nunca inventados); sem rota, não há busca automática.
   const searchRoute = flightSearchRoute(trip);
@@ -421,9 +400,6 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
       : { title: 'Itens encaixados', description: `${r.placed.length} de volta ao roteiro.` });
   }, [trip, onSave, onUpdateTrip]);
 
-  const tierToPriceLevel = { backpacker: 'budget', economic: 'budget', comfort: 'midrange', luxury: 'luxury' } as const;
-  const chosenPriceLevel = trip.budgetType ? tierToPriceLevel[trip.budgetType] : undefined;
-
   // Stage 1: Flight Selection
   // Troca de hotel no rascunho. Mesmo modal e mesma persistência da viagem ativa:
   // um só caminho de escrita para os dois estados da viagem.
@@ -492,35 +468,9 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     </>
   );
 
+  // C.5e: o roteiro do rascunho em blocos (RoteiroDia); edições gravam em trip.days na hora.
   const itineraryPanel = selectedOutbound && selectedReturn ? (
-    <GeneratedItineraryStage
-      embedded
-      key={regenKey}
-      tripId={trip.id}
-      destination={trip.destination}
-      origin={trip.origin || 'São Paulo'}
-      emoji={emoji}
-      departureDate={new Date(trip.startDate)}
-      returnDate={new Date(trip.endDate)}
-      budget={trip.budget}
-      travelers={getTravelers(trip)}
-      outboundFlight={selectedOutbound}
-      returnFlight={selectedReturn}
-      travelInterests={trip.travelInterests}
-      jetLagSeverity={trip.jetLagSeverity}
-      priceLevel={chosenPriceLevel}
-      onActivate={handleActivate}
-      onSave={handleSave}
-      onBack={() => setOpenRow(null)}
-      existingDays={hasExistingDays ? trip.days : undefined}
-      hotelPlannedOverride={hotelPlanned}
-      budgetFollowsPlan={budgetFollowsPlan(trip)}
-      plannedFlights={(trip as { finances?: { categories?: { flights?: { planned?: number } } } }).finances?.categories?.flights?.planned}
-      plannedHotel={(trip as { finances?: { categories?: { accommodation?: { planned?: number } } } }).finances?.categories?.accommodation?.planned}
-      financeBuckets={financeBucketsOf(trip)}
-      engineItemIds={(trip as { engineItemIds?: string[] }).engineItemIds}
-      onRegenerate={handleRegenerate}
-    />
+    <RoteiroRascunho key={regenKey} trip={trip} onRegenerate={handleRegenerate} />
   ) : (
     <p className="text-xs text-muted-foreground p-2">Escolha os voos de ida e volta para montar o roteiro.</p>
   );
