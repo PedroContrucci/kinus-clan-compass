@@ -2329,7 +2329,7 @@
       "timeSlot": "morning",
       "estimatedCost": 170,
       "costPerPerson": 85,
-      "time": "09:15",
+      "time": "09:25",
       "duration": "5h",
       "location": "Praia do Futuro (2 pax)",
       "rating": 4.6,
@@ -2393,12 +2393,13 @@
       "timeSlot": "morning",
       "estimatedCost": 220,
       "costPerPerson": 110,
-      "time": "09:15",
+      "time": "09:20",
       "duration": "5h",
       "location": "Praia do Futuro (2 pax)",
       "rating": 4.5,
       "status": "suggestion",
       "tips": [
+       "Almoço no local",
        "Uma das maiores estruturas da orla — coquetéis, frutos do mar e grelhados entre palmeiras",
        "Acessibilidade completa (entrada, assentos, banheiro e estacionamento adaptados)",
        "Consumo médio R$ 60-160 por pessoa; chegue antes das 10h em alta temporada"
@@ -2406,43 +2407,26 @@
       "source": "kinu"
      },
      {
-      "id": "day-2-for-mercado-peixes",
-      "name": "Mercado dos Peixes (Mucuripe)",
-      "type": "lunch",
-      "timeSlot": "lunch",
-      "estimatedCost": 180,
-      "costPerPerson": 90,
-      "time": "14:30",
-      "duration": "2h",
-      "location": "Mucuripe (2 pax)",
-      "rating": 4.3,
-      "status": "suggestion",
-      "tips": [
-       "Compre o peixe fresco e os quiosques preparam na hora",
-       "Peça o pargo frito inteiro ou camarão no bafo",
-       "Vá no fim da tarde para o pôr do sol"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-2-for-rest-santa-grelha",
-      "name": "Santa Grelha",
+      "id": "day-2-for-caranguejada-iate",
+      "name": "Caranguejada de quinta (Iate Clube)",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 300,
-      "costPerPerson": 150,
+      "estimatedCost": 220,
+      "costPerPerson": 110,
       "time": "19:30",
       "duration": "2h",
-      "location": "Aldeota (2 pax)",
-      "rating": 4.7,
+      "location": "Mucuripe (2 pax)",
+      "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "Carnes premium e ambiente de ocasião — o jantar de fechamento da viagem"
+       "Quinta é a noite da caranguejada em Fortaleza",
+       "Iate Clube é aberto ao público, a partir das 18h",
+       "Ritual cultural fortalezense longe do circuito turístico"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 700
+    "totalCost": 440
    },
    {
     "dayNumber": 4,
@@ -2473,7 +2457,7 @@
       "timeSlot": "morning",
       "estimatedCost": 180,
       "costPerPerson": 90,
-      "time": "09:15",
+      "time": "10:00",
       "duration": "7h",
       "location": "Cascavel (2 pax)",
       "rating": 4.4,
@@ -2554,19 +2538,21 @@
       "source": "kinu"
      },
      {
-      "id": "day-4-for-cemoara",
-      "name": "Cemoara",
+      "id": "day-4-for-mercado-peixes",
+      "name": "Mercado dos Peixes (Mucuripe)",
       "type": "lunch",
       "timeSlot": "lunch",
-      "estimatedCost": 360,
-      "costPerPerson": 180,
+      "estimatedCost": 180,
+      "costPerPerson": 90,
       "time": "12:30",
-      "duration": "1.5h",
-      "location": "Meireles (2 pax)",
+      "duration": "2h",
+      "location": "Mucuripe (2 pax)",
       "rating": 4.3,
       "status": "suggestion",
       "tips": [
-       "Frutos do mar de décadas na Beira-Mar do Meireles — peixada e camarão no coco"
+       "Compre o peixe fresco e os quiosques preparam na hora",
+       "Peça o pargo frito inteiro ou camarão no bafo",
+       "Vá no fim da tarde para o pôr do sol"
       ],
       "source": "kinu"
      },
@@ -2607,7 +2593,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 820
+    "totalCost": 640
    },
    {
     "dayNumber": 6,
@@ -2651,19 +2637,19 @@
       "source": "kinu"
      },
      {
-      "id": "day-5-for-giz-cozinha",
-      "name": "Giz Cozinha Afetiva",
+      "id": "day-5-for-cemoara",
+      "name": "Cemoara",
       "type": "lunch",
       "timeSlot": "lunch",
-      "estimatedCost": 300,
-      "costPerPerson": 150,
+      "estimatedCost": 360,
+      "costPerPerson": 180,
       "time": "12:30",
       "duration": "1.5h",
       "location": "Meireles (2 pax)",
-      "rating": 4.8,
+      "rating": 4.3,
       "status": "suggestion",
       "tips": [
-       "Cozinha afetiva autoral — almoço tranquilo perto da Beira-Mar"
+       "Frutos do mar de décadas na Beira-Mar do Meireles — peixada e camarão no coco"
       ],
       "source": "kinu"
      },
@@ -2706,26 +2692,24 @@
       "source": "kinu"
      },
      {
-      "id": "day-5-for-coco-bambu-varjota",
-      "name": "Coco Bambu (Varjota)",
+      "id": "day-5-for-rest-santa-grelha",
+      "name": "Santa Grelha",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 260,
-      "costPerPerson": 130,
-      "time": "19:40",
+      "estimatedCost": 300,
+      "costPerPerson": 150,
+      "time": "19:45",
       "duration": "2h",
-      "location": "Varjota (2 pax)",
-      "rating": 4.6,
+      "location": "Aldeota (2 pax)",
+      "rating": 4.7,
       "status": "suggestion",
       "tips": [
-       "O ícone dos frutos do mar em Fortaleza — unidade da Varjota",
-       "Moqueca de camarão e bobó de camarão são os destaques",
-       "Chegue cedo ou reserve — tem fila nos fins de semana"
+       "Carnes premium e ambiente de ocasião — o jantar de fechamento da viagem"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 800
+    "totalCost": 900
    },
    {
     "dayNumber": 7,
@@ -2769,21 +2753,19 @@
       "source": "kinu"
      },
      {
-      "id": "day-6-for-vojnilo",
-      "name": "Vojnilô (frutos do mar)",
+      "id": "day-6-for-giz-cozinha",
+      "name": "Giz Cozinha Afetiva",
       "type": "lunch",
       "timeSlot": "lunch",
-      "estimatedCost": 260,
-      "costPerPerson": 130,
+      "estimatedCost": 300,
+      "costPerPerson": 150,
       "time": "12:30",
-      "duration": "2h",
-      "location": "Varjota (2 pax)",
-      "rating": 4.7,
+      "duration": "1.5h",
+      "location": "Meireles (2 pax)",
+      "rating": 4.8,
       "status": "suggestion",
       "tips": [
-       "Frutos do mar frescos com toque autoral, queridinho dos locais",
-       "O polvo grelhado é o prato-assinatura",
-       "Casa pequena — reserve ou chegue cedo"
+       "Cozinha afetiva autoral — almoço tranquilo perto da Beira-Mar"
       ],
       "source": "kinu"
      },
@@ -2807,24 +2789,26 @@
       "source": "kinu"
      },
      {
-      "id": "day-6-for-rest-ryori",
-      "name": "Ryori Sushi",
+      "id": "day-6-for-coco-bambu-varjota",
+      "name": "Coco Bambu (Varjota)",
       "type": "dinner",
       "timeSlot": "dinner",
       "estimatedCost": 260,
       "costPerPerson": 130,
       "time": "19:30",
       "duration": "2h",
-      "location": "Meireles (2 pax)",
+      "location": "Varjota (2 pax)",
       "rating": 4.6,
       "status": "suggestion",
       "tips": [
-       "Referência japonesa da cidade — unidade do Shopping Buganvília (Av. Dom Luís)"
+       "O ícone dos frutos do mar em Fortaleza — unidade da Varjota",
+       "Moqueca de camarão e bobó de camarão são os destaques",
+       "Chegue cedo ou reserve — tem fila nos fins de semana"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 600
+    "totalCost": 640
    },
    {
     "dayNumber": 8,
@@ -2887,21 +2871,21 @@
       "source": "kinu"
      },
      {
-      "id": "day-7-for-coco-bambu-beira-mar",
-      "name": "Coco Bambu Beira-Mar",
+      "id": "day-7-for-vojnilo",
+      "name": "Vojnilô (frutos do mar)",
       "type": "lunch",
       "timeSlot": "lunch",
-      "estimatedCost": 240,
-      "costPerPerson": 120,
+      "estimatedCost": 260,
+      "costPerPerson": 130,
       "time": "12:45",
       "duration": "2h",
-      "location": "Meireles (2 pax)",
+      "location": "Varjota (2 pax)",
       "rating": 4.7,
       "status": "suggestion",
       "tips": [
-       "A casa-mãe da rede que nasceu em Fortaleza — frutos do mar em pratos fartos com vista para o mar",
-       "Camarão Internacional serve bem uma família inteira — peçam menos do que o instinto manda",
-       "Espaço kids — ótimo para ir com crianças"
+       "Frutos do mar frescos com toque autoral, queridinho dos locais",
+       "O polvo grelhado é o prato-assinatura",
+       "Casa pequena — reserve ou chegue cedo"
       ],
       "source": "kinu"
      },
@@ -2952,7 +2936,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 4530
+    "totalCost": 4550
    }
   ],
   "breakdown": {
@@ -2972,13 +2956,13 @@
     "status": "estimated"
    },
    "food": {
-    "amount": 3230,
-    "percent": 16,
+    "amount": 2950,
+    "percent": 15,
     "status": "estimated"
    },
-   "total": 23060,
-   "available": -3060,
-   "trustZonePercent": 115
+   "total": 22780,
+   "available": -2780,
+   "trustZonePercent": 114
   },
   "meta": {
    "michelinCount": 0

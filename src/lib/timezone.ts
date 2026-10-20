@@ -53,6 +53,51 @@ export function airportCity(iata: string | undefined | null): { city: string; br
   return airportCityCache[iata.toUpperCase()] ?? null;
 }
 
+/** Cidade de origem do wizard → 1º aeroporto dela (São Paulo → GRU). */
+const ORIGIN_CITY_AIRPORT: Record<string, string> = {};
+for (const [code, city] of Object.entries(ORIGIN_AIRPORT_CITY)) {
+  if (code.length === 3 && !['SAO', 'RIO', 'BHZ'].includes(code)) ORIGIN_CITY_AIRPORT[city] ??= code;
+}
+
+/**
+ * Cidade ou código → IATA, ou null. Nunca inventa (C.4.3): IATA conhecido passa › `airports[0]` do
+ * catálogo › origens do wizard › null. Única fonte do código que vai para a busca de voo.
+ */
+export function cityToIata(value: string | undefined | null): string | null {
+  const v = String(value ?? '').trim();
+  if (!v) return null;
+  if (/^[A-Za-z]{3}$/.test(v) && airportCity(v)) return v.toUpperCase();
+  const fromCatalog = findCityInfo(v)?.city.airports[0];
+  if (fromCatalog) return fromCatalog.toUpperCase();
+  return ORIGIN_CITY_AIRPORT[v] ?? null;
+}
+
+/** O mínimo da viagem que a rota da busca lê (perna gravada, códigos e cidades). */
+export interface FlightSearchTripLike {
+  origin?: string;
+  destination?: string;
+  originAirportCode?: string;
+  destinationAirportCode?: string;
+  flights?: { outbound?: { origin?: string; destination?: string } | null } | null;
+}
+
+/**
+ * A porta única da busca de voo: origem e destino em IATA, ou null (sem código conhecido → não buscar).
+ * Cada candidato passa por cityToIata; código lixo cai para o próximo. Sem origem declarada, São Paulo.
+ */
+export function flightSearchRoute(trip: FlightSearchTripLike): { origin: string; destination: string } | null {
+  const first = (...xs: (string | undefined | null)[]) => {
+    for (const x of xs) { const c = cityToIata(x); if (c) return c; }
+    return null;
+  };
+  const origin = first(trip.flights?.outbound?.origin, trip.originAirportCode, trip.origin, DEFAULT_ORIGIN_CITY);
+  const destination = first(trip.flights?.outbound?.destination, trip.destinationAirportCode, trip.destination);
+  return origin && destination ? { origin, destination } : null;
+}
+
+/** Texto do aviso quando a viagem não tem código de aeroporto conhecido. */
+export const FLIGHT_SEARCH_NO_IATA = 'Busca de preços indisponível para este destino';
+
 /** IATA → IANA via aeroporto → cidade → cityTimezones (null = desconhecido). */
 export function airportTimezone(iata: string | undefined | null): string | null {
   const a = airportCity(iata);

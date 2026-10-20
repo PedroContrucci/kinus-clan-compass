@@ -17,6 +17,7 @@ import { isKinuBuilt } from '@/lib/kinuBuilt';
 import { plannedFlightToSelected, offerToSelected, writeFlightsThrough, estimateOf } from '@/lib/flightModel';
 import { pickBest, explainPick, flightChoiceLine, flightSearchKey, shouldAutoSearch, type KinuFlightSearch } from '@/lib/flightRanking';
 import { useFlightSearch } from '@/hooks/useFlightSearch';
+import { flightSearchRoute } from '@/lib/timezone';
 import { buildItineraryForTrip, countManualEdits, itemIdsOf } from '@/lib/draftItinerary';
 import { replanTrip, unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
 import { KinuDidCard, type KinuDidRow } from '@/components/onboarding/KinuDidCard';
@@ -74,47 +75,6 @@ interface DraftCockpitProps {
 
 function getTravelers(trip: DraftTrip): number {
   return trip.travelers || 1;
-}
-
-// Infer airport codes from city names
-export function inferAirportCode(city: string): string {
-  const codeMap: Record<string, string> = {
-    'São Paulo': 'GRU',
-    'Rio de Janeiro': 'GIG',
-    'Paris': 'CDG',
-    'Tóquio': 'NRT',
-    'Tokyo': 'NRT',
-    'Londres': 'LHR',
-    'London': 'LHR',
-    'Nova York': 'JFK',
-    'New York': 'JFK',
-    'Lisboa': 'LIS',
-    'Barcelona': 'BCN',
-    'Roma': 'FCO',
-    'Bangkok': 'BKK',
-    'Dubai': 'DXB',
-    'Cidade do México': 'MEX',
-    'Lima': 'LIM',
-    'Buenos Aires': 'EZE',
-    'Santiago': 'SCL',
-    'Florianópolis': 'FLN',
-    'Salvador': 'SSA',
-    'Recife': 'REC',
-    'Fortaleza': 'FOR',
-    'Manaus': 'MAO',
-    'Brasília': 'BSB',
-    'Curitiba': 'CWB',
-    'Porto Alegre': 'POA',
-    'Natal': 'NAT',
-    'Maceió': 'MCZ',
-    'Montevidéu': 'MVD',
-    'Cartagena': 'CTG',
-    'Cusco': 'CUZ',
-    'Bariloche': 'BRC',
-    'Havana': 'HAV',
-  };
-  
-  return codeMap[city] || city.substring(0, 3).toUpperCase();
 }
 
 // plannedFlightToSelected mora em src/lib/flightModel.ts; reexport para quem importava daqui.
@@ -255,9 +215,10 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   // recalcularia o balde no mount e desfaria a troca de hotel.
   const hotelPlanned = Math.round(Number(trip.accommodation?.totalPrice) || 0) || undefined;
 
-  // Infer airport codes
-  const originCode = trip.originAirportCode || inferAirportCode(trip.origin || 'São Paulo');
-  const destinationCode = trip.destinationAirportCode || inferAirportCode(trip.destination);
+  // C.4.3: códigos só por flightSearchRoute (nunca inventados); sem rota, não há busca automática.
+  const searchRoute = flightSearchRoute(trip);
+  const originCode = searchRoute?.origin ?? '';
+  const destinationCode = searchRoute?.destination ?? '';
   const emoji = trip.emoji || getDestinationEmoji(trip.destination);
 
   // Regerar: motor único com os voos dados → dias + finanças gravados no rascunho.
@@ -303,7 +264,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
 
   // ─── Busca ao abrir o rascunho (D2) + escolha automática pelo ranking (D3) ───
   const searchKey = flightSearchKey(originCode, destinationCode, trip.startDate, trip.endDate);
-  const needSearch = shouldAutoSearch(trip, searchKey);
+  const needSearch = !!searchRoute && shouldAutoSearch(trip, searchKey);
   const outQ = useFlightSearch(originCode, destinationCode, String(trip.startDate).slice(0, 10), 1, needSearch);
   const retQ = useFlightSearch(destinationCode, originCode, String(trip.endDate).slice(0, 10), 1, needSearch);
   const searchDone = useRef<string | null>(null);

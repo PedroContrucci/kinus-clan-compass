@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { exportTripPDF } from '@/lib/tripPdfExport';
-import { tripTimezone } from '@/lib/timezone';
+import { tripTimezone, flightSearchRoute, FLIGHT_SEARCH_NO_IATA } from '@/lib/timezone';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
@@ -17,7 +17,6 @@ import JetLagAlert from '@/components/JetLagAlert';
 import FinOpsDashboard from '@/components/FinOpsDashboard';
 import SmartPacking from '@/components/SmartPacking';
 import { DraftCockpit, TripGuide, ExchangeRates, EnhancedDayTimeline, SmartPackingWithLuggage } from '@/components/cockpit';
-import { inferAirportCode } from '@/components/cockpit/DraftCockpit';
 import OffersModal from '@/components/cockpit/OffersModal';
 import { TripPanel } from '@/components/cockpit/TripPanel';
 import { AgentTip } from '@/components/shared/AgentTip';
@@ -797,11 +796,12 @@ const Viagens = () => {
   // Returns null on any failure or empty results.
   const fetchCheapestFlightPrice = useCallback(async (trip: SavedTrip): Promise<number | null> => {
     try {
-      const origin = trip.originAirportCode || inferAirportCode(trip.origin || 'São Paulo');
-      const destination = trip.destinationAirportCode || inferAirportCode(trip.destination);
+      // C.4.3: porta única da busca — só IATA conhecido; sem ele, não busca.
+      const route = flightSearchRoute(trip);
       const date = trip.startDate?.split('T')[0];
       const adults = trip.travelers || 1;
-      if (!date || !destination || !/^[A-Z]{3}$/.test(destination)) return null;
+      if (!date || !route) return null;
+      const { origin, destination } = route;
       const { data, error } = await supabase.functions.invoke('amadeus-flights', {
         body: { action: 'search', origin, destination, date, adults },
       });
@@ -993,12 +993,13 @@ const Viagens = () => {
       },
       verificar_ofertas: async () => {
         try {
+          const route = flightSearchRoute(selectedTrip);
+          if (!route) return `${FLIGHT_SEARCH_NO_IATA}.`;
           const cheapest = await fetchCheapestFlightPrice(selectedTrip);
           if (cheapest == null) {
             return 'Não consegui consultar os preços agora — tenta de novo em instantes.';
           }
-          const origin = selectedTrip.flights?.outbound?.origin || 'GRU';
-          const destination = selectedTrip.flights?.outbound?.destination || selectedTrip.destination;
+          const { origin, destination } = route;
           const adults = selectedTrip.travelers || 1;
           const comparable = Math.round(cheapest * 2 * adults);
           const anchor = getFlightPlannedTotal(selectedTrip);

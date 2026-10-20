@@ -240,7 +240,7 @@ export function getFlightTip(
  * linha GRU→<código>, remover daqui e reativar o teste de cobertura.
  */
 export const ROUTES_PENDING_PRICE: Record<string, string> = {
-  'Fortaleza': 'FOR', 'Rio de Janeiro': 'GIG', 'Orlando': 'MCO', 'Salvador': 'SSA',
+  'Rio de Janeiro': 'GIG', 'Orlando': 'MCO', 'Salvador': 'SSA',
   'Buenos Aires': 'EZE', 'Cartagena': 'CTG', 'Gramado': 'POA', 'Porto Seguro': 'BPS',
   'Cidade do Cabo': 'CPT', 'Istambul': 'IST', 'Bangkok': 'BKK', 'Marrakech': 'RAK',
   'Singapura': 'SIN',

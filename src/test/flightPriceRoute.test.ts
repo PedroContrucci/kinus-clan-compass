@@ -68,8 +68,8 @@ describe('preço do voo estimado por rota', () => {
     expect(ctg.budgetDetail).toContain('(estimativa genérica)');
   });
 
-  // TODO(A.6): preços reais das 13 rotas pendentes serão fornecidos pelo fundador:
-  // Fortaleza, Rio de Janeiro, Orlando, Salvador, Buenos Aires, Cartagena, Gramado,
+  // TODO(A.6): preços reais das 12 rotas pendentes serão fornecidos pelo fundador:
+  // Rio de Janeiro, Orlando, Salvador, Buenos Aires, Cartagena, Gramado,
   // Porto Seguro, Cidade do Cabo, Istambul, Bangkok, Marrakech, Singapura.
   // Ao inserir as linhas em flight_price_estimates e esvaziar ROUTES_PENDING_PRICE, trocar skip por it.
   it.skip('toda cidade da grade de destinos tem linha de rota (nenhuma pendente)', () => {
@@ -77,8 +77,8 @@ describe('preço do voo estimado por rota', () => {
     expect(pending).toEqual([]);
   });
 
-  it('lista de pendentes cobre exatamente 13 cidades da grade', () => {
-    expect(Object.keys(ROUTES_PENDING_PRICE)).toHaveLength(13);
+  it('lista de pendentes cobre exatamente 12 cidades da grade (Fortaleza saiu no C.4.3)', () => {
+    expect(Object.keys(ROUTES_PENDING_PRICE)).toHaveLength(12);
     for (const c of Object.keys(ROUTES_PENDING_PRICE)) expect(CURATED_CITIES).toContain(c);
   });
 });

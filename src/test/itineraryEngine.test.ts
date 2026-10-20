@@ -41,6 +41,9 @@ import { buildFlowInput } from '@/lib/onboardingFlow';
 // R18 (dia da semana do catálogo), lanche (tag snack) no fim da tarde e estrada > 15 km = carro (km + 10 min).
 // Adendo B.3.2: as 4 cidades regravadas — o essencial sai da ordenação (volta a [salto, interesse, tema,
 // dual, preço] do B.3); R17 fica só como relatório. R18, lanche e estrada seguem como no B.3.1.
+// Adendo C.4.3: só Fortaleza regravada — café no hotel/check-in/out saltam do hotel real (Gran Marquise):
+// praias 09:15 → 09:20/09:25, Águas Belas 09:15 → 10:00 (D3 perde o almoço pela R7, barraca longa); bônus do
+// dia certo põe a Caranguejada no jantar de quinta (D3) e a cadeia de almoços/jantares anda um dia. Comida 3230 → 2950.
 const flight = (d: string, dep: string): SelectedFlight => ({
   date: new Date(d),
   source: 'estimate',

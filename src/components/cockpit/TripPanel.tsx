@@ -8,7 +8,7 @@ import { WeatherBadge } from './WeatherBadge';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
 import { differenceInDays, format } from 'date-fns';
-import { tripTimezone } from '@/lib/timezone';
+import { tripTimezone, flightSearchRoute, FLIGHT_SEARCH_NO_IATA } from '@/lib/timezone';
 import { ptBR } from 'date-fns/locale';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { exportTripPDF } from '@/lib/tripPdfExport';
@@ -735,14 +735,17 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
 
   const searchRealFlights = async () => {
     if (!trip.flights?.outbound) return;
-    setSearchingFlights(true);
     setFlightSearchError(null);
+    // C.4.3: só IATA vai para a busca; sem código conhecido, não busca e diz por quê.
+    const route = flightSearchRoute(trip);
+    if (!route) { setFlightSearchError(FLIGHT_SEARCH_NO_IATA); return; }
+    setSearchingFlights(true);
     try {
       const { data, error } = await supabase.functions.invoke('amadeus-flights', {
         body: {
           action: 'search',
-          origin: trip.flights.outbound.origin || 'GRU',
-          destination: trip.flights.outbound.destination || trip.destination,
+          origin: route.origin,
+          destination: route.destination,
           date: trip.startDate?.split('T')[0],
           adults: trip.travelers || 1,
         },
@@ -1187,8 +1190,14 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
               </button>
               {flightSearchError && (
                 <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
-                  <p className="text-[10px] font-semibold text-amber-400">Busca de voos indisponível</p>
-                  <p className="text-[10px] text-muted-foreground">Não conseguimos consultar os preços agora. Tente novamente em alguns minutos.</p>
+                  {flightSearchError === FLIGHT_SEARCH_NO_IATA ? (
+                    <p className="text-[10px] font-semibold text-amber-400">{FLIGHT_SEARCH_NO_IATA}</p>
+                  ) : (
+                    <>
+                      <p className="text-[10px] font-semibold text-amber-400">Busca de voos indisponível</p>
+                      <p className="text-[10px] text-muted-foreground">Não conseguimos consultar os preços agora. Tente novamente em alguns minutos.</p>
+                    </>
+                  )}
                 </div>
               )}
             </div>

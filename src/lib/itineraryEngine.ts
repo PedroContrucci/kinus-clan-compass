@@ -33,6 +33,7 @@ import { maxHopKmFor, haversineKm, travelMinutes, isSnack, opensOn, weekdayOf, H
 import { catalogIdOf } from '@/lib/localAchievements';
 import { rulesContextOf } from '@/lib/cockpitLines';
 import { findCityInfo } from '@/data/destinationCatalog';
+import { CURATED_DAYS_OF_WEEK } from '@/data/generated/daysOfWeek';
 
 type Coord = { lat: number; lng: number };
 
@@ -336,13 +337,34 @@ export function logisticsLine(prev: Coord | null | undefined, curr: Coord | null
   return `${roadClock(t.minutes)} de carro`;
 }
 
-/** Coordenada real de um item do roteiro: catálogo pelo id; hotel só por casamento real (nunca a mediana). */
-export function itemCoord(item: { id?: string; name?: string; type?: string; timeSlot?: string; location?: string } | undefined, destination: string): Coord | null {
+type CoordItem = { id?: string; name?: string; type?: string; timeSlot?: string; location?: string };
+const isCheckInOut = (item: CoordItem) => item.type === 'checkin' || item.type === 'checkout' || /check-?(in|out)/i.test(item.name ?? '');
+/** Incluído no hotel (C.4.3): café/room service do hotel acontece no hotel. */
+const isHotelIncluded = (item: CoordItem) =>
+  /-slot-(quick-)?breakfast$/.test(item.id ?? '') || item.location === 'Hotel' || /no hotel|room service/i.test(item.name ?? '');
+
+/**
+ * Coordenada real de um item do roteiro: catálogo pelo id. Check-in/out pelo casamento do nome do hotel,
+ * senão `hotel`; item incluído no hotel (café, room service) = `hotel`. Nunca a mediana.
+ */
+export function itemCoord(item: CoordItem | undefined, destination: string, hotel?: Coord | null): Coord | null {
   if (!item) return null;
-  const isHotel = item.type === 'checkin' || item.type === 'checkout' || /check-?(in|out)/i.test(item.name ?? '');
-  if (isHotel) return resolveHotelCoord(undefined, item.location, destination);
+  if (isCheckInOut(item)) return resolveHotelCoord(undefined, item.location, destination) ?? hotel ?? null;
+  if (isHotelIncluded(item)) return hotel ?? null;
   if (item.timeSlot === 'flight' || item.type === 'flight' || /transfer|aeroporto/i.test(item.name ?? '')) return null;
   return curatedCoordOf(item.id);
+}
+
+/** Hotel da viagem por casamento real: o 1º check-in/out cuja `location` é um hotel curado (ou null). */
+export function stayHotelCoord(days: { activities?: CoordItem[] }[] | undefined, destination: string): Coord | null {
+  for (const d of days ?? []) {
+    for (const a of d.activities ?? []) {
+      if (!isCheckInOut(a)) continue;
+      const c = resolveHotelCoord(undefined, a.location, destination);
+      if (c) return c;
+    }
+  }
+  return null;
 }
 
 // ── C.4: scheduler — o dia é uma sequência; a hora é calculada (R1–R12 no RELATORIO-C4) ──
@@ -395,6 +417,8 @@ export interface LayoutItem {
 }
 export interface LayoutOpts {
   destination: string;
+  /** Hotel por casamento real: check-in/out e itens incluídos saltam dele (C.4.3). */
+  hotelCoord?: Coord | null;
   /** Nada flexível começa antes disto (dia de chegada: pouso + 60 + 45 min). */
   startMin?: number;
   /** Máximo do jantar (dia de chegada: 22:00). */
@@ -417,11 +441,12 @@ const MEAL_SLOT_SET = new Set(['breakfast', 'lunch', 'dinner']);
  * Minutos de deslocamento: os de travelMinutes (logisticsLine; arredondados para cima a 5) com coords nas duas pontas;
  * senão 15. Saindo de um bate-volta, 15: a duração do catálogo já inclui a volta.
  */
-export function hopMinutes(a: LayoutItem | null | undefined, b: LayoutItem | null | undefined, index?: Map<string, SuggestedActivity>): number {
+export function hopMinutes(a: LayoutItem | null | undefined, b: LayoutItem | null | undefined, index?: Map<string, SuggestedActivity>, hotel?: Coord | null): number {
   const fromTrip = a && index ? catalogItemOf(a as PlanDayItem, index) : null;
   if (fromTrip && isDaytripTagged(fromTrip)) return DEFAULT_HOP_MIN;
-  const ca = a ? curatedCoordOf(a.id) : null;
-  const cb = b ? curatedCoordOf(b.id) : null;
+  const at = (x: LayoutItem) => (isCheckInOut(x) || isHotelIncluded(x) ? hotel ?? null : curatedCoordOf(x.id));
+  const ca = a ? at(a) : null;
+  const cb = b ? at(b) : null;
   if (!ca || !cb) return DEFAULT_HOP_MIN;
   const raw = travelMinutes(haversineKm(ca, cb)).minutes;
   return Math.max(5, Math.ceil(raw / 5) * 5);
@@ -484,10 +509,10 @@ export function layoutDay<T extends LayoutItem>(items: T[], opts: LayoutOpts): {
       const userAnchor = opts.anchorFromTime?.(a) && own >= 0;
       const anchor = userAnchor ? own : isLong(a) ? LONG_ITEM_ANCHOR : rule.anchor;
       const max = userAnchor ? Infinity : slot === 'dinner' && opts.dinnerMax ? opts.dinnerMax : rule.max;
-      const start = Math.max(anchor, opts.startMin ?? -Infinity, prev ? cursor + hopMinutes(prev, a, index) : -Infinity);
+      const start = Math.max(anchor, opts.startMin ?? -Infinity, prev ? cursor + hopMinutes(prev, a, index, opts.hotelCoord) : -Infinity);
       const end = start + (mins.get(a) ?? 0);
       const nextFixed = live.slice(k + 1).find((x) => isFixedL(x) && clockMinutes(x.time) >= 0);
-      const fits = start <= max && (!nextFixed || end + hopMinutes(a, nextFixed, index) <= clockMinutes(nextFixed.time));
+      const fits = start <= max && (!nextFixed || end + hopMinutes(a, nextFixed, index, opts.hotelCoord) <= clockMinutes(nextFixed.time));
       if (fits) {
         a.time = nextDayClock(start);
         cursor = end;
@@ -564,8 +589,10 @@ export function swapCandidates(trip: any, dayIndex: number, itemId: string): Swa
   if (isArrival && arr >= 0 && clockMinutes(item.time) >= 0 && clockMinutes(item.time) < arr) return [];
 
   // "Cabe" (C.4) = o scheduler com a candidata no lugar não derruba nada que o dia mantinha.
+  const stay = stayHotelCoord(days, ctx.destination);
   const layoutOpts: LayoutOpts = {
     destination: ctx.destination,
+    hotelCoord: stay,
     index,
     ...(isArrival && arr >= 0 ? { startMin: arr + 60 + AIRPORT_HOP_MIN, dinnerMax: ARRIVAL_DINNER_MAX } : {}),
   };
@@ -573,7 +600,7 @@ export function swapCandidates(trip: any, dayIndex: number, itemId: string): Swa
   kept.delete(item.id);
 
   const neighbors = [day.activities[pos - 1], day.activities[pos + 1]]
-    .map((a) => ({ a, c: itemCoord(a, ctx.destination) }))
+    .map((a) => ({ a, c: itemCoord(a, ctx.destination, stay) }))
     .filter((n): n is { a: PlanDayItem; c: Coord } => !!n.c);
 
   const { used } = splitInterests(ctx.destination, trip?.travelInterests ?? trip?.interests);
@@ -730,6 +757,8 @@ export function generateItinerary(
   const opensToday = (a: SuggestedActivity) => opensOn(a.id, addDays(departureDate, currentPickDayIndex).getDay());
 
   const hotelCoord = engineHotelCoord(destination, hotel?.label ?? getHotelRecommendation(destination, priceLevel, travelInterests)?.name);
+  // C.4.3: o scheduler salta do hotel só por casamento real (a mediana do engineHotelCoord fica no pick).
+  const stayCoord = resolveHotelCoord(undefined, hotel?.label ?? getHotelRecommendation(destination, priceLevel, travelInterests)?.name, destination);
 
   const themeStyleMap: Record<string, string[]> = {
     'Cultura': ['culture', 'history', 'art'],
@@ -797,7 +826,7 @@ export function generateItinerary(
 
     if (candidates.length === 0) return null;
     if (!forcedReuse) {
-      // Ordem: dentro do salto > interesse (só quando a cota pede) > tema > preço do tier.
+      // Ordem: dentro do salto > interesse (só quando a cota pede) > dia certo (R18) > tema > preço do tier.
       // R17 (essenciais) é só validador: o motor volta a usá-lo depois de o essencial ser redefinido por dado (B.3.2).
       // Sem interesse válido o critério de interesse some e sobra o comportamento anterior
       // (tema, depois preço), agora com a coesão geográfica na frente.
@@ -821,6 +850,8 @@ export function generateItinerary(
       // isto rende mais que alternar em 50–75 % — o estoque de interesse por cidade é que limita.
       const wantInterest = !!opts.quota && top2.length > 0;
       const interestKey = (a: SuggestedActivity) => (wantInterest && !matchesTop2(a) ? 1 : 0);
+      // C.4.3: item com dia da semana no catálogo que chegou aqui abre HOJE (opensToday) — é o dia dele.
+      const weekdayKey = (a: SuggestedActivity) => (CURATED_DAYS_OF_WEEK[a.id] ? 0 : 1);
       const themeKey = (a: SuggestedActivity) =>
         targetTags.length === 0 || (a.styleTags && a.styleTags.some(t => targetTags.includes(t))) ? 0 : 1;
       // Casa com dois papéis no catálogo (ex.: Cabaña del Primo almoço e jantar) vai por último:
@@ -832,7 +863,7 @@ export function generateItinerary(
         if (priceLevel === 'luxury') return -p;
         return Math.abs(p - target);
       };
-      const keyed = candidates.map((a) => ({ a, k: [hopKey(a), interestKey(a), themeKey(a), dualKey(a), priceKey(a)] }));
+      const keyed = candidates.map((a) => ({ a, k: [hopKey(a), interestKey(a), weekdayKey(a), themeKey(a), dualKey(a), priceKey(a)] }));
       keyed.sort((x, y) => {
         for (let j = 0; j < x.k.length; j++) if (x.k[j] !== y.k[j]) return x.k[j] - y.k[j];
         return 0;
@@ -1171,7 +1202,7 @@ export function generateItinerary(
         let prevItem: ItineraryActivity | null = null;
         const candidate = (a: SuggestedActivity) => ({ id: `day-${i}-${a.id}`, name: a.name });
         const startAfter = (a: SuggestedActivity, anchor: number) =>
-          Math.max(anchor, cursor + (prevItem ? hopMinutes(prevItem, candidate(a), layoutIndex) : DEFAULT_HOP_MIN));
+          Math.max(anchor, cursor + (prevItem ? hopMinutes(prevItem, candidate(a), layoutIndex, stayCoord) : DEFAULT_HOP_MIN));
         if (lastCheckoutMin >= 9 * 60) {
           const breakfastActivity = pickActivity('breakfast', 'Gastronomia', { near: last });
           if (breakfastActivity) {
@@ -1419,10 +1450,10 @@ export function generateItinerary(
           // Dia longo (CASE A/B unificados): café + longo + almoço se termina (+ desloc.) até 14:30 + jantar.
           // Só escolhe almoço que o scheduler vai manter: fim real do longo + deslocamento até ele ≤ 14:30.
           const morningAct = activities.find((a) => morningActivity && a.id === `day-${i}-${morningActivity.id}`);
-          const longLaid = morningAct && layoutDay(activities, { destination, index: layoutIndex }).items.find((a) => a.id === morningAct.id);
+          const longLaid = morningAct && layoutDay(activities, { destination, index: layoutIndex, hotelCoord: stayCoord }).items.find((a) => a.id === morningAct.id);
           const longEnd = longLaid ? clockMinutes(longLaid.time) + layoutMinutesOf(longLaid, layoutIndex) : Infinity;
           const lunchFits = (a: SuggestedActivity) =>
-            !!longLaid && longEnd + hopMinutes(longLaid, { id: `day-${i}-${a.id}`, name: a.name }, layoutIndex) <= SLOT_RULES.lunch.max;
+            !!longLaid && longEnd + hopMinutes(longLaid, { id: `day-${i}-${a.id}`, name: a.name }, layoutIndex, stayCoord) <= SLOT_RULES.lunch.max;
           if (pool.some((a) => a.category === 'lunch' && !usedPlaces.isUsed(a.name) && !isPairMeal(a) && lunchFits(a))) {
             const lunchActivity = pickActivity('lunch', dayTheme.title, { near: last, accept: lunchFits });
             if (lunchActivity) place(lunchActivity, 'lunch', '13:00');
@@ -1583,6 +1614,7 @@ export function generateItinerary(
     const laid = layoutDay(activities, {
       destination,
       index: layoutIndex,
+      hotelCoord: stayCoord,
       ...(isArrivalDay ? { startMin: arrivalStartMin, dinnerMax: ARRIVAL_DINNER_MAX } : {}),
     });
     for (const out of laid.dropped) dayTotal -= out.estimatedCost;

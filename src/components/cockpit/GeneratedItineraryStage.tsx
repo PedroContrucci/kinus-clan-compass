@@ -33,6 +33,7 @@ import {
   swapCandidates,
   logisticsLine,
   itemCoord,
+  stayHotelCoord,
   type SwapCandidate,
   type ItineraryActivity,
   type ItineraryDay,
@@ -296,6 +297,8 @@ export const GeneratedItineraryStage = ({
   const totalDays = days.length;
   const startDate = departureDate;
   const currentDay = days[selectedDay - 1];
+  // C.4.3: hotel por casamento real (check-in/out da viagem) — café no hotel e check-in/out saltam dele.
+  const stayCoord = useMemo(() => stayHotelCoord(days, destination), [days, destination]);
 
   const handleRemoveActivity = (activityId: string) => {
     const updatedDays = days.map(day => ({
@@ -598,7 +601,7 @@ export const GeneratedItineraryStage = ({
                   const tips = leg?.chosenBy ? [flightWhyLine(leg)] : activity.tips;
                   // Logística só com coords reais nas duas pontas (derivada aqui, nunca gravada).
                   const hop = actIdx > 0
-                    ? logisticsLine(itemCoord(currentDay.activities[actIdx - 1], destination), itemCoord(activity, destination))
+                    ? logisticsLine(itemCoord(currentDay.activities[actIdx - 1], destination, stayCoord), itemCoord(activity, destination, stayCoord))
                     : undefined;
                   const swapOpen = swapOpenId === activity.id;
                   const cands = swapOpen ? swapCandidates(swapTrip(), currentDay.dayNumber - 1, activity.id) : [];
