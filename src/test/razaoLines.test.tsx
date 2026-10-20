@@ -70,7 +70,7 @@ describe('C.5c — razaoLines (Fortaleza 02:30)', () => {
     const t = await fortaleza();
     const p = planBreakdown(t);
     expect(razaoTotals(razaoLines(t))).toEqual({ planned: p.total, confirmed: 0 });
-    expect(p.total).toBe(11254); // B.3.1: R17/R18/lanche mudam o roteiro (era 11004)
+    expect(p.total).toBe(10984); // B.3.2: essencial fora do sort muda o roteiro (era 11254; 11004 antes do B.3.1)
     expect(t.finances.planned).toBe(p.total);
     const days = razaoLines(t).filter((l) => l.kind === 'dia').reduce((s, l) => s + l.value, 0);
     expect(days).toBe(p.food + p.tours);

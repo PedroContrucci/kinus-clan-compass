@@ -35,10 +35,10 @@ describe('B.3.1 — R18 dia da semana', () => {
     expect(weekdayOf(undefined)).toBe(-1);
   });
 
-  it('Fortaleza 10–15/nov: Caranguejada só em 12/nov (quinta)', async () => {
+  // B.3.2: sem o essencial no sort, a Caranguejada pode não ser escalada; o R18 garante só que nunca sai da quinta.
+  it('Fortaleza 10–15/nov: Caranguejada, se entra, só em 12/nov (quinta)', async () => {
     const days = await draft('Fortaleza', new Date(2026, 10, 10), 5);
-    const hit = daysWith(days, CARANGUEJADA);
-    expect(hit.map((d) => String(d.date).slice(0, 10))).toEqual(['2026-11-12']);
+    for (const d of daysWith(days, CARANGUEJADA)) expect(String(d.date).slice(0, 10)).toBe('2026-11-12');
     expect(validateDaysOfWeek(days).status).toBe('PASS');
   });
 
@@ -88,11 +88,14 @@ describe('B.3.1 — R17 essenciais', () => {
     expect(validateEssentials(empty(4), ctx).status).toBe('SKIP');
   });
 
-  it('Lisboa gc 7 noites: Torre de Belém e Jerónimos entram no roteiro', async () => {
+  // B.3.2: o motor não usa mais o essencial (169 essential + 22 icon ≈ 8/cidade contra ~10 slots).
+  // R17 é só relatório: no roteiro real ele mede e lista, sem o motor garantir presença.
+  it('Lisboa gc 7 noites: R17 relata os essenciais presentes e os que cabiam', async () => {
     const days = await draft('Lisboa', new Date(2026, 10, 10), 7);
-    const ids = days.flatMap((d) => d.activities.map((a) => a.id));
-    expect(ids.some((id) => id.endsWith('-lis-torre-belem'))).toBe(true);
-    expect(ids.some((id) => id.endsWith('-lis-jeronimos'))).toBe(true);
+    const r = validateEssentials(days as unknown as PlanDay[], { ...ctx, interests: ['gastronomy', 'culture'] });
+    expect(['PASS', 'WARN']).toContain(r.status);
+    expect(r.detail).toMatch(new RegExp(`^\\d+/${essentialsOf('Lisboa').length}`));
+    for (const id of r.ids ?? []) expect(essentialsOf('Lisboa')).toContain(id);
   });
 });
 

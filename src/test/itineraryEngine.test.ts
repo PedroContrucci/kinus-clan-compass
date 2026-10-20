@@ -39,6 +39,8 @@ import { buildFlowInput } from '@/lib/onboardingFlow';
 // tarde passa a recusar item ≥ 4 h e onde o último dia ganha almoço/tarde depois do check-out (D1).
 // Adendo B.3.1: as 4 cidades regravadas — R17 (essenciais icon ∪ essential na frente do interesse),
 // R18 (dia da semana do catálogo), lanche (tag snack) no fim da tarde e estrada > 15 km = carro (km + 10 min).
+// Adendo B.3.2: as 4 cidades regravadas — o essencial sai da ordenação (volta a [salto, interesse, tema,
+// dual, preço] do B.3); R17 fica só como relatório. R18, lanche e estrada seguem como no B.3.1.
 const flight = (d: string, dep: string): SelectedFlight => ({
   date: new Date(d),
   source: 'estimate',

@@ -29,7 +29,7 @@ import { getHotelRecommendation } from '@/lib/hotelZones';
 import { interestsFor, catalogFor, splitInterests, interestLabel } from '@/lib/interestsFor';
 import { matchesPriority } from '@/lib/claChips';
 import { curatedCoordOf, resolveHotelCoord } from '@/lib/routeCoords';
-import { maxHopKmFor, haversineKm, travelMinutes, isSnack, essentialsOf, opensOn, weekdayOf, ESSENTIALS_MIN_DAYS, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, durationMinutesOf, defaultMinutesOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
+import { maxHopKmFor, haversineKm, travelMinutes, isSnack, opensOn, weekdayOf, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, durationMinutesOf, defaultMinutesOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
 import { catalogIdOf } from '@/lib/localAchievements';
 import { rulesContextOf } from '@/lib/cockpitLines';
 import { findCityInfo } from '@/data/destinationCatalog';
@@ -726,9 +726,6 @@ export function generateItinerary(
   })();
   const pairsOf = (anchorId: string) => pool.filter((a) => a.id === `${anchorId}-almoco` || a.id === `${anchorId}-jantar`);
 
-  // R17: em viagem com ≥ 3 dias de exploração, os essenciais da cidade vêm logo depois do salto.
-  const explorationDayCount = Math.max(0, totalDays - 1 - explorationStart);
-  const essentials = new Set(explorationDayCount >= ESSENTIALS_MIN_DAYS ? essentialsOf(destination) : []);
   // R18: o item existe no dia da semana do dia sendo montado.
   const opensToday = (a: SuggestedActivity) => opensOn(a.id, addDays(departureDate, currentPickDayIndex).getDay());
 
@@ -800,7 +797,8 @@ export function generateItinerary(
 
     if (candidates.length === 0) return null;
     if (!forcedReuse) {
-      // Ordem: dentro do salto > essencial (R17) > interesse (só quando a cota pede) > tema > preço do tier.
+      // Ordem: dentro do salto > interesse (só quando a cota pede) > tema > preço do tier.
+      // R17 (essenciais) é só validador: o motor volta a usá-lo depois de o essencial ser redefinido por dado (B.3.2).
       // Sem interesse válido o critério de interesse some e sobra o comportamento anterior
       // (tema, depois preço), agora com a coesão geográfica na frente.
       const nearKm = opts.near ? (opts.nearKm ?? maxHop) : 0;
@@ -834,8 +832,7 @@ export function generateItinerary(
         if (priceLevel === 'luxury') return -p;
         return Math.abs(p - target);
       };
-      const essentialKey = (a: SuggestedActivity) => (essentials.has(a.id) ? 0 : 1);
-      const keyed = candidates.map((a) => ({ a, k: [hopKey(a), essentialKey(a), interestKey(a), themeKey(a), dualKey(a), priceKey(a)] }));
+      const keyed = candidates.map((a) => ({ a, k: [hopKey(a), interestKey(a), themeKey(a), dualKey(a), priceKey(a)] }));
       keyed.sort((x, y) => {
         for (let j = 0; j < x.k.length; j++) if (x.k[j] !== y.k[j]) return x.k[j] - y.k[j];
         return 0;
