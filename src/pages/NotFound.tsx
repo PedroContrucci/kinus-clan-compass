@@ -18,7 +18,7 @@ const NotFound = () => {
         Página não encontrada
       </p>
       <button
-        onClick={() => navigate('/dashboard')}
+        onClick={() => navigate('/inicio')}
         className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold font-['Outfit'] hover:bg-primary/90 transition-colors"
       >
         🏠 Voltar para Home

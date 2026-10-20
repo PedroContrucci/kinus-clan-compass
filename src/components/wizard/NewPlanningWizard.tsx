@@ -115,7 +115,7 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
     if (onCancel) {
       onCancel();
     } else {
-      navigate('/dashboard');
+      navigate('/inicio');
     }
   };
 
@@ -169,7 +169,7 @@ export const NewPlanningWizard = ({ onComplete, onCancel }: NewPlanningWizardPro
       if (onComplete) {
         onComplete(data);
       } else {
-        navigate(`/viagens?trip=${trip.id}`);
+        navigate(`/inicio?trip=${trip.id}`);
       }
     } catch (error) {
       console.error('Error generating draft:', error);

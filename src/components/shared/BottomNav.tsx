@@ -1,12 +1,10 @@
-// Bottom Navigation — 4 tabs: Home, Planejar, Viagens, Perfil
+// Bottom Navigation — C.7: 3 abas (Início · Clã · Perfil)
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const navItems = [
-  { id: 'dashboard', icon: '🏠', label: 'Home', path: '/dashboard' },
+  { id: 'inicio', icon: '🏠', label: 'Início', path: '/inicio' },
   { id: 'cla', icon: '🌿', label: 'Clã', path: '/cla' },
-  { id: 'planejar', icon: '🧭', label: 'Planejar', path: '/planejar' },
-  { id: 'viagens', icon: '💼', label: 'Viagens', path: '/viagens' },
   { id: 'conta', icon: '👤', label: 'Perfil', path: '/conta' },
 ];
 
@@ -16,14 +14,14 @@ export const BottomNav = () => {
 
   const getActiveTab = () => {
     const path = location.pathname;
-    if (path.startsWith('/destino')) return 'viagens';
-    return navItems.find(item => item.path === path)?.id || 'dashboard';
+    if (path.startsWith('/destino')) return 'inicio';
+    return navItems.find(item => item.path === path)?.id || 'inicio';
   };
 
   const activeTab = getActiveTab();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-lg border-t border-border px-4 py-2 z-50 lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-lg border-t border-border px-4 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] z-50 lg:hidden">
       <div className="flex justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;

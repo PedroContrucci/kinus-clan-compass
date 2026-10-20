@@ -359,6 +359,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       // a resposta digitada à pergunta "qual?" vira a escolha da sessão.
       const allTrips = listTrips();
       const visible = accountTripsOf(allTrips);
+      // C.7 (0b): os chips seguem a conta de agora (viagem criada com o chat aberto entra).
+      setAccountTrips(visible);
       let chosen = chosenTripId;
       if (!tripContext?.tripId && !chosen && visible.length >= 2) {
         chosen = tripChoiceFromMessage(content, visible);

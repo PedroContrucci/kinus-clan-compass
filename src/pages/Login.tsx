@@ -79,7 +79,7 @@ const Login = () => {
   // O inverso do guard (recon §4): quem já tem sessão não fica parado na porta.
   // `replace` para que o botão Voltar não traga a pessoa de volta ao login.
   useEffect(() => {
-    if (!authLoading && isAuthenticated) navigate('/dashboard', { replace: true });
+    if (!authLoading && isAuthenticated) navigate('/inicio', { replace: true });
   }, [authLoading, isAuthenticated, navigate]);
 
   // Corte seco com verniz B (recon §6(d)). Só depois que a sessão resolveu e
@@ -120,7 +120,7 @@ const Login = () => {
     try {
       if (isLogin) {
         await signIn(trimmedEmail, password);
-        navigate('/dashboard');
+        navigate('/inicio');
         return;
       }
 
@@ -135,7 +135,7 @@ const Login = () => {
         setPassword('');
         return;
       }
-      navigate('/dashboard');
+      navigate('/inicio');
     } catch (err) {
       setError(mapAuthError(err, isLogin ? 'entrar' : 'criar'));
     } finally {

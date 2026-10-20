@@ -1,5 +1,5 @@
-// RoteiroRascunho — C.5e: o painel "ver ▸" do roteiro no rascunho, em blocos (RoteiroDia):
-// dias empilhados, uma linha fechada por item, detalhe ao abrir, uma rota aberta por vez
+// RoteiroRascunho — C.5e: o painel "ver ▸" do roteiro no rascunho, em blocos (RoteiroDia).
+// C.7: a mesma tira de dias da viagem ativa (EnhancedDayTimeline), um dia por vez; uma linha fechada por item, detalhe ao abrir, uma rota aberta por vez
 // (mapa montado só ao abrir). ↻ e 🗑 são as edições do rascunho (src/lib/draftRoteiro.ts),
 // gravadas na hora pelo mesmo funil do stage (updateTrip).
 
@@ -15,6 +15,7 @@ import { draftSwapCandidates, removeDraftItem, swapDraftItem } from '@/lib/draft
 import type { SwapCandidate } from '@/lib/itineraryEngine';
 import { roteiroKind } from '@/lib/roteiroBlocks';
 import { RoteiroDia } from './RoteiroDia';
+import { EnhancedDayTimeline } from './EnhancedDayTimeline';
 import { DailyRouteMap, type RouteLeg } from './DailyRouteMap';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,6 +45,12 @@ export const RoteiroRascunho = ({ trip, onRegenerate }: RoteiroRascunhoProps) =>
   const [swapOpenId, setSwapOpenId] = useState<string | null>(null);
 
   const days: DayLike[] = Array.isArray(current.days) ? current.days : [];
+  const [selectedDay, setSelectedDay] = useState<number>(() => days[0]?.day ?? 1);
+  const selectDay = (day: number) => {
+    setSelectedDay(day);
+    setRouteDay(null);
+    setSwapOpenId(null);
+  };
 
   const commit = useCallback((edit: (t: DraftLike) => DraftLike) => {
     const saved = updateTrip(current.id, (t) => edit(t as DraftLike) as StoredTrip);
@@ -88,7 +95,16 @@ export const RoteiroRascunho = ({ trip, onRegenerate }: RoteiroRascunhoProps) =>
           </Button>
         </div>
       )}
-      {days.map((d) => {
+      {current.startDate && (
+        <EnhancedDayTimeline
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          days={days as any}
+          selectedDay={selectedDay}
+          onSelectDay={selectDay}
+          tripStartDate={String(current.startDate)}
+        />
+      )}
+      {[days.find((d) => d.day === selectedDay) ?? days[0]].map((d) => {
         const stops = d.activities.filter(isStop);
         const stopNumbers: Record<string, number> = {};
         stops.slice()

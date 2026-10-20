@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useKinuAI } from "@/contexts/KinuAIContext";
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, X, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, RotateCcw, Settings, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Plus, ChevronRight, Plane, Building, MapPin, Utensils, Car, ShoppingBag, Loader2 } from 'lucide-react';
 import { format, differenceInDays, addDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -25,7 +25,6 @@ import { analyzeTrip, AgentInsight } from '@/engines/agentIntelligence';
 import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, contextualTips } from '@/types/trip';
 import { PackingData } from '@/types/packing';
 import { getActivityPrice, determinePriceLevel, findBestPriceLevel, mapCategoryToPricingType, CITY_PRICES } from '@/lib/activityPricing';
-import kinuLogo from '@/assets/KINU_logo.png';
 import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { TRAVEL_INTERESTS } from '@/components/wizard/types';
@@ -33,11 +32,10 @@ import { getDestinationActivities } from '@/data/destinationActivities';
 import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '@/lib/placeIdentity';
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
-import { clearTrips, deleteTrip, getTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
+import { getTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
 import { retimeConfirmedLegs, unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
 import { trackEvent } from '@/lib/kinuEvents';
 import { addCatalogActivityToDay, applyTripPlannedCostDelta, calculateTripProgress } from '@/lib/tripItineraryOps';
-import { ViagensVividas } from '@/components/viagens/ViagensVividas';
 import { itemKindOf, trackTripActivated, trackTripItemConfirmed } from '@/lib/tripEvents';
 import { activateDraft } from '@/lib/activateDraft';
 import { buildOfferLinks } from '@/lib/offersLinks';
@@ -53,7 +51,6 @@ import { FinanceiroRazao, FinanceiroTiles, QuandoDinheiroSai } from '@/component
 import { razaoLines } from '@/lib/razaoLines';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
 import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
-import { CheckinBanner } from '@/components/checkin/CheckinBanner';
 import { ClaProof } from '@/components/cla/ClaProof';
 import { catalogIdOf } from '@/lib/localAchievements';
 import { HotelPlanBlock } from '@/components/hotel/HotelPlanBlock';
@@ -137,12 +134,21 @@ function isLogistics(activity: { name: string; category?: string }): boolean {
 }
 
 
-const Viagens = () => {
+interface ViagensProps {
+  /** C.7: a viagem aberta pelo Início (`/inicio?trip=<id>`). */
+  tripId?: string;
+  /** Voltar/viagem sumida: devolve à lista do Início. */
+  onExit?: () => void;
+}
+
+const findTrip = (id?: string): SavedTrip | null =>
+  (id ? (listTrips().find((t) => t.id === id) as SavedTrip | undefined) : undefined) ?? null;
+
+const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, isLoading: authLoading } = useAuth();
   const [trips, setTrips] = useState<SavedTrip[]>([]);
-  const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(null);
+  const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(() => findTrip(tripId));
   const [activeTab, setActiveTab] = useState<'painel' | 'roteiro' | 'financeiro' | 'preparacao'>('painel');
   const [selectedDay, setSelectedDay] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -157,7 +163,6 @@ const Viagens = () => {
   const [confirmLink, setConfirmLink] = useState('');
   const [manualExpenseModal, setManualExpenseModal] = useState(false);
   const [manualExpense, setManualExpense] = useState({ name: '', amount: 0, category: 'shopping' as keyof SavedTrip['finances']['categories'] });
-  const [resetModal, setResetModal] = useState(false);
   const [activityDetailDrawer, setActivityDetailDrawer] = useState<{ activity: TripActivity; open: boolean } | null>(null);
   const [focusMapActivity, setFocusMapActivity] = useState<string | null>(null);
   // C.5b: um item aberto por vez; mapa da rota montado só com o bloco aberto.
@@ -280,6 +285,19 @@ const Viagens = () => {
       });
     });
   }, []);
+
+  // C.7: o id da URL escolhe a viagem (antes o `?trip=` era ignorado e caía na lista).
+  useEffect(() => {
+    setSelectedTrip(findTrip(tripId));
+    setSelectedDay(1);
+    setActiveTab('painel');
+  }, [tripId]);
+
+  // Sem viagem selecionada (voltar, exclusão, id inexistente) não há tela aqui: volta ao Início.
+  useEffect(() => {
+    if (authLoading || !user || selectedTrip) return;
+    if (onExit) onExit(); else navigate('/inicio');
+  }, [selectedTrip, authLoading, user, onExit, navigate]);
 
   const handleDayChange = (day: number) => {
     if (day === selectedDay) return;
@@ -474,45 +492,6 @@ const Viagens = () => {
   };
 
 
-  const handleResetJourney = () => {
-    // Reset pelo funil: apaga `kinu_trips` E varre TODOS os `kinu_price_history_*`,
-    // órfãos de exclusões antigas inclusive (§4.9). `setTrips` sai — o `emit` do
-    // store recarrega a lista (vazia) pelo sino.
-    clearTrips();
-    setSelectedTrip(null);
-    setResetModal(false);
-    toast({
-      title: "Jornada reiniciada! 🌿",
-      description: "Bora planejar de novo?",
-    });
-    navigate('/planejar');
-  };
-
-  const handleDeleteTrip = (tripId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const confirmed = window.confirm('Tem certeza que deseja excluir esta viagem?');
-    if (!confirmed) return;
-
-    // Exclusão pelo funil: remove a viagem E o `kinu_price_history_<id>` dela — o
-    // vazamento do recon §4.9 fecha aqui, na primeira exclusão real do app.
-    // `setTrips` sai: o `emit` síncrono do store recarrega a lista pelo sino.
-    deleteTrip(tripId);
-
-    // O sino zera a seleção quando a viagem selecionada some do storage. Esta tela,
-    // porém, promove a primeira viagem restante — comportamento preservado. A lista
-    // vem do storage recém-gravado, não do `trips` do estado: se outra aba tiver
-    // criado uma viagem no meio, ela conta.
-    if (selectedTrip?.id === tripId) {
-      const remaining = listTrips();
-      setSelectedTrip(remaining.length > 0 ? remaining[0] : null);
-    }
-
-    toast({
-      title: "Viagem excluída 🗑️",
-      description: "A viagem foi removida da sua lista.",
-    });
-  };
-
   const handlePackingUpdate = (packingData: PackingData) => {
     if (!selectedTrip) return;
 
@@ -607,16 +586,6 @@ const Viagens = () => {
   const getTripDuration = (trip: SavedTrip): number => {
     if (!trip.startDate || !trip.endDate) return 7;
     return differenceInDays(new Date(trip.endDate), new Date(trip.startDate)) + 1;
-  };
-
-  const getStatusLabel = (status: SavedTrip['status']) => {
-    switch (status) {
-      case 'draft': return { label: 'Rascunho', color: 'text-[#64748b]' };
-      case 'active': return { label: 'Planejando', color: 'text-[#0ea5e9]' };
-      case 'ongoing': return { label: 'Em Viagem', color: 'text-[#10b981]' };
-      case 'completed': return { label: 'Concluída', color: 'text-[#8b5cf6]' };
-      default: return { label: 'Rascunho', color: 'text-[#64748b]' };
-    }
   };
 
   // handleHeroConfirm — saves flight/hotel confirmation to localStorage
@@ -1167,144 +1136,6 @@ const Viagens = () => {
     );
   }
 
-  // --- Reusable trip list renderer ---
-  const renderTripList = (isSidebar: boolean) => {
-    const containerClass = isSidebar
-      ? "h-screen overflow-y-auto border-r border-border bg-[#0f172a]"
-      : "min-h-screen bg-[#0f172a] pb-36 lg:pb-24";
-
-    return (
-      <div className={containerClass}>
-        <header className="sticky top-0 z-40 bg-[#0f172a]/80 backdrop-blur-lg border-b border-[#334155] px-4 py-3">
-          <div className="flex items-center gap-2">
-            <img src={kinuLogo} alt="KINU" className="h-8 w-8 object-contain" />
-            <span className="font-bold text-xl font-['Outfit'] text-[#f8fafc]">KINU</span>
-          </div>
-        </header>
-
-        <main className="px-4 py-4">
-          <h1 className={`font-bold mb-2 font-['Outfit'] text-[#f8fafc] ${isSidebar ? 'text-lg' : 'text-2xl'}`}>Minhas Viagens 💼</h1>
-          {!isSidebar && <p className="text-[#94a3b8] mb-6 font-['Plus_Jakarta_Sans']">Teus roteiros salvos aparecem aqui.</p>}
-
-          {trips.length > 0 ? (
-            <div className="space-y-3">
-              {trips.map((trip) => {
-                const progress = calculateProgress(trip);
-                const days = trip?.days && Array.isArray(trip.days) ? trip.days : [];
-                const statusInfo = getStatusLabel(trip.status);
-                const isSelected = selectedTrip?.id === trip.id;
-                const totalActivities = days.reduce((acc, day) => acc + (day?.activities?.length || 0), 0);
-                const confirmedActivities = days.reduce((acc, day) => {
-                  const activities = day?.activities && Array.isArray(day.activities) ? day.activities : [];
-                  return acc + activities.filter((a) => a.status === 'confirmed').length;
-                }, 0);
-
-                return (
-                  <div key={trip.id} className="space-y-0">
-                  <CheckinBanner
-                    trip={trip as any}
-                    compact
-                    onOpen={() => {
-                      setSelectedTrip(trip);
-                      setSelectedDay(1);
-                      setActiveTab('painel');
-                    }}
-                  />
-                  <button
-                    onClick={() => {
-                      setSelectedTrip(trip);
-                      setSelectedDay(1);
-                      setActiveTab('painel');
-                    }}
-                    className={`w-full bg-[#1e293b] border rounded-2xl p-4 text-left transition-colors ${
-                      isSelected && isSidebar
-                        ? 'border-primary/60 bg-primary/5'
-                        : 'border-[#334155] hover:border-[#10b981]/50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className={`font-semibold text-[#f8fafc] font-['Outfit'] truncate ${isSidebar ? 'text-sm' : 'text-lg'}`}>
-                            {trip.emoji} {trip.destination}{!isSidebar && `, ${trip.country}`}
-                          </h3>
-                          <span className={`text-xs flex-shrink-0 ${statusInfo.color}`}>• {statusInfo.label}</span>
-                        </div>
-                        <p className="text-xs text-[#94a3b8]">
-                          {trip.startDate && format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} - {trip.endDate && format(new Date(trip.endDate), "dd MMM", { locale: ptBR })}
-                          {!isSidebar && ` • ${days.length} dias`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button
-                          onClick={(e) => handleDeleteTrip(trip.id, e)}
-                          className="p-1 rounded-lg hover:bg-red-500/20 text-[#64748b] hover:text-red-400 transition-colors"
-                        >
-                          <X size={14} />
-                        </button>
-                        {!isSidebar && <ChevronRight size={20} className="text-[#94a3b8]" />}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-[#94a3b8]">R$ {(trip.budget/1000).toFixed(0)}k</span>
-                        <span className="text-[#f8fafc]">{progress}%</span>
-                      </div>
-                      <Progress value={progress} className="h-1.5 bg-[#334155]" />
-                    </div>
-                    {!isSidebar && <p className="text-xs text-[#94a3b8] mt-1">{confirmedActivities} de {totalActivities} itens fechados</p>}
-                  </button>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="text-6xl mb-4">🗺️</div>
-              <p className="text-[#f8fafc] font-['Outfit'] text-lg mb-2">Nenhuma viagem salva</p>
-              <button
-                onClick={() => navigate('/planejar')}
-                className="px-6 py-3 bg-gradient-to-r from-[#10b981] to-[#0ea5e9] text-white rounded-xl font-semibold font-['Outfit'] mt-4"
-              >
-                ✈️ Planejar Nova Viagem
-              </button>
-            </div>
-          )}
-
-          {!isSidebar && <ViagensVividas trips={trips as StoredTrip[]} />}
-
-          {trips.length > 0 && !isSidebar && (
-            <div className="mt-8 pt-6 border-t border-[#334155]">
-              <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Settings size={16} className="text-[#64748b]" />
-                  <span className="text-sm text-[#64748b]">Modo Teste</span>
-                </div>
-                <button
-                  onClick={() => setResetModal(true)}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#94a3b8] hover:text-[#f8fafc] hover:border-[#ef4444] transition-colors"
-                >
-                  <RotateCcw size={16} />
-                  Reiniciar Jornada
-                </button>
-              </div>
-            </div>
-          )}
-        </main>
-      </div>
-    );
-  };
-
-  // --- Desktop: empty state for detail panel ---
-  const renderEmptyDetail = () => (
-    <div className="flex-1 flex items-center justify-center h-screen bg-[#0f172a]">
-      <div className="text-center">
-        <div className="text-5xl mb-4">👈</div>
-        <p className="text-[#94a3b8] font-['Outfit'] text-lg">Selecione uma viagem</p>
-      </div>
-    </div>
-  );
-
   // --- Trip detail renderer ---
   const renderTripDetailContent = () => {
     if (!selectedTrip) return null;
@@ -1363,7 +1194,7 @@ const Viagens = () => {
     const isRecoveryDay = tripSeverity === 'SEVERO' && selectedDay >= 3 && selectedDay <= 4;
 
     return (
-      <div className="min-h-screen lg:h-screen lg:overflow-y-auto bg-[#0f172a] pb-36 lg:pb-0">
+      <div className="min-h-screen bg-[#0f172a] pb-36 lg:pb-24">
         {/* Header */}
         <header className="sticky top-0 z-40 bg-[#0f172a]/80 backdrop-blur-lg border-b border-[#334155] px-4 py-3">
           <div className="flex items-center gap-3 mb-3">
@@ -2217,62 +2048,10 @@ const Viagens = () => {
   };
 
   // ========== MAIN RENDER ==========
-  // Mobile: show list OR detail (not both)
-  // Desktop (lg+): show sidebar list + detail side-by-side
+  // C.7: a lista vive na aba Início; aqui é só a viagem aberta, coluna única em todo tamanho.
   return (
     <>
-      {/* DESKTOP LAYOUT */}
-      <div className="hidden lg:flex lg:h-screen">
-        <div className="w-80 flex-shrink-0">
-          {renderTripList(true)}
-        </div>
-        <div className="flex-1">
-          {selectedTrip ? renderTripDetailContent() : renderEmptyDetail()}
-        </div>
-      </div>
-
-      {/* MOBILE LAYOUT */}
-      <div className="lg:hidden">
-        {selectedTrip ? renderTripDetailContent() : renderTripList(false)}
-      </div>
-
-      {/* Reset Modal — shared */}
-      <Dialog open={resetModal} onOpenChange={setResetModal}>
-        <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc] max-w-sm mx-auto">
-          <DialogHeader>
-            <DialogTitle className="font-['Outfit'] flex items-center gap-2">
-              <RotateCcw size={20} className="text-[#eab308]" />
-              Reiniciar Jornada?
-            </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
-              Isso apaga todas as suas viagens: roteiros, orçamentos e histórico de preços.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="flex items-start gap-2 p-3 bg-[#ef4444]/10 border border-[#ef4444]/30 rounded-xl">
-              <span className="text-[#ef4444]">⚠️</span>
-              <p className="text-sm text-[#ef4444]">
-                A exclusão é permanente e vale para a sua conta — as viagens somem deste e dos
-                outros dispositivos onde você entrar. Não dá para desfazer.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setResetModal(false)}
-                className="flex-1 py-3 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] font-medium"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleResetJourney}
-                className="flex-1 py-3 bg-[#ef4444] rounded-xl text-white font-semibold"
-              >
-                Apagar tudo
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {selectedTrip ? renderTripDetailContent() : null}
 
       {/* Budget Edit Dialog */}
       <Dialog open={budgetEditOpen} onOpenChange={setBudgetEditOpen}>

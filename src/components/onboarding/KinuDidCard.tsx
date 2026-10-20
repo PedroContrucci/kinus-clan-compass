@@ -34,11 +34,11 @@ export const KinuDidCard = ({ trip, onActivate, onUpdateTrip, onOpenFlights, pan
   const toCockpit = () => document.getElementById('draft-cockpit')?.scrollIntoView({ behavior: 'smooth' });
 
   const rows: { icon: string; text: string; action: () => void; panel?: KinuDidRow; verb?: string }[] = [
-    { icon: '🛫', text: l.origin, action: () => navigate('/planejar') },
+    { icon: '🛫', text: l.origin, action: () => navigate('/inicio') },
     { icon: '🏨', text: l.hotel, action: () => setSwapOpen(true), panel: 'hotel', verb: 'trocar' },
     { icon: '✈️', text: l.flight, action: () => { onOpenFlights?.(); toCockpit(); }, panel: 'flight', verb: 'trocar' },
     { icon: '🗺️', text: l.itinerary, action: toCockpit, panel: 'itinerary', verb: 'ver' },
-    { icon: '💰', text: l.budget, action: () => navigate('/planejar') },
+    { icon: '💰', text: l.budget, action: () => navigate('/inicio') },
   ];
 
   return (

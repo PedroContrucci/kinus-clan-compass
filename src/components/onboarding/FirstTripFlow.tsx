@@ -9,6 +9,7 @@ import { ArrowLeft, Loader2, Minus, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CURATED_CITIES } from '@/lib/curatedCities';
+import { interestsFor } from '@/lib/interestsFor';
 import { PlacePhoto } from '@/components/shared/PlacePhoto';
 import { DestinationImage } from '@/components/shared/DestinationImage';
 import { buildDraftTrip } from '@/lib/createTrip';
@@ -23,11 +24,20 @@ import {
 interface Props {
   userId: string;
   homeCity?: unknown;
+  /** C.7: vindo do Clã, abre direto nos campos da cidade. */
+  initialCity?: string | null;
+  /** C.7: com viagens na conta, volta para a lista do Início. */
+  onBack?: () => void;
 }
 
-export const FirstTripFlow = ({ userId, homeCity }: Props) => {
+export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack }: Props) => {
   const navigate = useNavigate();
-  const [city, setCity] = useState<string | null>(null);
+  const [city, setCity] = useState<string | null>(initialCity ?? null);
+  const [interests, setInterests] = useState<string[]>([]);
+  const [cap, setCap] = useState('');
+  const offered = useMemo(() => (city ? interestsFor(city) : []), [city]);
+  const toggleInterest = (id: string) =>
+    setInterests((cur) => (cur.includes(id) ? cur.filter((i) => i !== id) : [...cur, id]));
   const initial = useMemo(() => defaultDates(), []);
   const [from, setFrom] = useState(initial.from);
   const [to, setTo] = useState(initial.to);
@@ -40,6 +50,7 @@ export const FirstTripFlow = ({ userId, homeCity }: Props) => {
 
   const pick = (c: string) => {
     setCity(c);
+    setInterests([]);
     trackEvent('onboarding.destination_picked', { city: c }, userId);
   };
 
@@ -48,8 +59,10 @@ export const FirstTripFlow = ({ userId, homeCity }: Props) => {
     setBusy(true);
     try {
       const origin = resolveOrigin(homeCity);
-      const trip = await buildDraftTrip(buildFlowInput({ city, origin: origin.city, from, to, adults, children, tier }));
-      const stored = followPlanEnvelope({ ...(trip as StoredTrip), budgetSource: 'plan' }) as StoredTrip;
+      const capValue = Number(cap.replace(/\D/g, '')) || 0;
+      const trip = await buildDraftTrip(buildFlowInput({ city, origin: origin.city, from, to, adults, children, tier, interests, cap: capValue }));
+      // Teto informado = orçamento do usuário: o envelope do plano não o sobrescreve.
+      const stored = followPlanEnvelope({ ...(trip as StoredTrip), budgetSource: capValue > 0 ? 'user' : 'plan' }) as StoredTrip;
       stored.childrenCount = children;
       stored.originSource = origin.source;
       stored.createdVia = stored.createdVia ?? 'onboarding';
@@ -57,7 +70,7 @@ export const FirstTripFlow = ({ userId, homeCity }: Props) => {
       addTrip(stored);
       trackTripCreated(stored, 'wizard');
       trackEvent('onboarding.trip_built', { city, tier }, userId);
-      navigate(`/viagens?trip=${stored.id}`);
+      navigate(`/inicio?trip=${stored.id}`);
     } catch (e) {
       console.error('[onboarding] buildDraftTrip falhou', e);
       toast({ title: 'Não deu para montar agora', description: 'Tente de novo em instantes.' });
@@ -73,6 +86,11 @@ export const FirstTripFlow = ({ userId, homeCity }: Props) => {
       <AnimatePresence mode="wait">
         {!city ? (
           <motion.section key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -40 }}>
+            {onBack && (
+              <button onClick={onBack} className="flex items-center gap-1 text-sm text-muted-foreground mb-4 min-h-[44px]">
+                <ArrowLeft size={16} /> Minhas viagens
+              </button>
+            )}
             <h1 className="text-3xl font-bold text-foreground font-['Outfit']">Para onde vamos?</h1>
             <p className="text-muted-foreground mt-1">{CURATED_CITIES.length} destinos verificados um a um</p>
             <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -147,6 +165,29 @@ export const FirstTripFlow = ({ userId, homeCity }: Props) => {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {offered.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">Prioridades <span className="text-muted-foreground font-normal">(opcional)</span></p>
+                  <div className="flex flex-wrap gap-2">
+                    {offered.map((c) => (
+                      <button key={c.id} onClick={() => toggleInterest(c.id)} aria-pressed={interests.includes(c.id)}
+                        className={interests.includes(c.id)
+                          ? 'px-3 py-1.5 rounded-full border border-primary bg-primary/15 text-foreground text-sm'
+                          : 'px-3 py-1.5 rounded-full border border-border bg-card text-muted-foreground text-sm'}>
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm font-medium text-foreground mb-2">Teto <span className="text-muted-foreground font-normal">(opcional)</span></p>
+                <input inputMode="numeric" value={cap} onChange={(e) => setCap(e.target.value)} placeholder="R$ — sem teto, o KINU estima"
+                  aria-label="Teto do orçamento"
+                  className="w-full bg-card border border-border rounded-xl px-3 py-2 text-foreground placeholder:text-muted-foreground" />
               </div>
 
               <button onClick={build} disabled={busy}

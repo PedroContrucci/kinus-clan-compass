@@ -6,7 +6,7 @@ interface KinuQuickActionsProps {
 }
 
 export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
-  const { sendMessage, tripContext, accountTrips, chooseTrip } = useKinuAI();
+  const { sendMessage, tripContext, accountTrips, chooseTrip, chosenTripId } = useKinuAI();
 
   const actions: { id: string; icon: string; label: string; prompt: string; tripId?: string }[] = [];
 
@@ -61,8 +61,12 @@ export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
         actions.push({ id: 'save', icon: '💰', label: 'Economizar', prompt: `Como economizar em ${tripContext.destination}?` });
       }
     }
+  } else if (chosenTripId) {
+    // C.7 (0b): escolhida a viagem (ou "geral") nesta sessão, os chips de escolha somem.
+    // Trocar de viagem = 🗑 do chat, que zera a escolha.
   } else if (accountTrips.length > 0) {
     // C.6: com viagens na conta, um chip por viagem (seta a escolha da sessão) + "geral".
+    // C.7 (0b): visíveis enquanto não há escolha, com ou sem mensagens na conversa.
     for (const t of accountTrips.slice(0, 3)) {
       actions.push({ id: `trip-${t.id}`, icon: t.status === 'draft' ? '📝' : '✈️', label: tripChipLabel(t), prompt: '', tripId: t.id });
     }
@@ -76,6 +80,7 @@ export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
   }
 
   const visibleActions = actions.slice(0, isDuringTrip ? 6 : 4);
+  if (visibleActions.length === 0) return null;
 
   return (
     <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[#334155]">

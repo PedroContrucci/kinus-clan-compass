@@ -2,9 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import kinuLogo from '@/assets/KINU_logo.png';
 
 const navItems = [
-  { id: 'dashboard', icon: '🏠', label: 'Home', path: '/dashboard' },
-  { id: 'planejar', icon: '🧭', label: 'Planejar', path: '/planejar' },
-  { id: 'viagens', icon: '💼', label: 'Viagens', path: '/viagens' },
+  { id: 'inicio', icon: '🏠', label: 'Início', path: '/inicio' },
   { id: 'cla', icon: '🌿', label: 'Clã', path: '/cla' },
   { id: 'conta', icon: '👤', label: 'Perfil', path: '/conta' },
 ];
@@ -18,8 +16,8 @@ export const TopNav = () => {
 
   const getActiveTab = () => {
     const path = location.pathname;
-    if (path.startsWith('/destino')) return 'viagens';
-    return navItems.find(item => item.path === path)?.id || 'dashboard';
+    if (path.startsWith('/destino')) return 'inicio';
+    return navItems.find(item => item.path === path)?.id || 'inicio';
   };
 
   const activeTab = getActiveTab();
@@ -29,7 +27,7 @@ export const TopNav = () => {
       <div className="max-w-6xl mx-auto px-6 py-2 flex items-center justify-between">
         {/* Logo */}
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/inicio')}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
           <img src={kinuLogo} alt="KINU" className="h-8 w-8 object-contain" />

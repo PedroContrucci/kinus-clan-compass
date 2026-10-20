@@ -56,6 +56,10 @@ export function estimateBudget(city: string, tierId: string, travelers: number, 
 
 export function buildFlowInput(p: {
   city: string; origin: string; from: Date; to: Date; adults: number; children: number; tier: FlowTierId;
+  /** C.7: prioridades escolhidas nos chips de interestsFor(city). */
+  interests?: string[];
+  /** C.7: teto do usuário; quando presente vira o orçamento (budgetSource 'user' no chamador). */
+  cap?: number;
 }): DraftTripInput {
   const info = findCityInfo(p.city);
   const nights = Math.max(1, differenceInDays(p.to, p.from));
@@ -73,8 +77,8 @@ export function buildFlowInput(p: {
     infants: 0,
     budgetTier: p.tier,
     travelStyle: p.tier,
-    budgetAmount: estimateBudget(p.city, p.tier, travelers, nights),
-    travelInterests: [],
+    budgetAmount: p.cap && p.cap > 0 ? p.cap : estimateBudget(p.city, p.tier, travelers, nights),
+    travelInterests: p.interests ?? [],
     priorities: [],
   };
 }
