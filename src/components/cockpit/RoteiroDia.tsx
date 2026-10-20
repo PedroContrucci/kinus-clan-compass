@@ -1,10 +1,11 @@
-import type { ReactNode, Ref } from 'react';
+import { useState, type ReactNode, type Ref } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronRight, ChevronDown, Check, Tag, RotateCcw, Phone, Trash2 } from 'lucide-react';
 import type { TripActivity } from '@/types/trip';
 import type { RouteLeg } from '@/components/cockpit/DailyRouteMap';
-import { legBetween, roteiroActions, roteiroBooking, roteiroKind, type RoteiroBooking } from '@/lib/roteiroBlocks';
+import { legBetween, passeioCloseLinks, requiresBooking, roteiroActions, roteiroBooking, roteiroKind, type RoteiroBooking } from '@/lib/roteiroBlocks';
+import { CLOSE_DISCLOSURE, type CloseLink } from '@/lib/offersLinks';
 
 // C.5b — a aba Roteiro da viagem ativa em blocos: uma linha fechada por item, detalhe e
 // ações só ao abrir. Apresentação pura: nenhum estado de viagem, nenhum handler próprio —
@@ -34,6 +35,40 @@ export const BookingAction = ({ booking, className = actionBtn }: { booking: Rot
   );
 };
 
+/** C.8 — "Onde fechar ▸": provedores com rota/datas/pax, colapsado. Depois do clique num
+ *  provedor, "Fechou? Registrar valor pago ▸" chama o registro de hoje (sheet/confirmModal). */
+export const OndeFechar = ({ links, onRegister }: { links: CloseLink[]; onRegister?: () => void }) => {
+  const [open, setOpen] = useState(false);
+  const [visited, setVisited] = useState(false);
+  if (links.length === 0) return null;
+  return (
+    <div data-onde-fechar className="rounded-lg border border-border bg-background/40 px-2 py-1.5 text-xs">
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
+        className="w-full flex items-center gap-1 text-left font-medium text-foreground">
+        <span className="flex-1">Onde fechar</span>
+        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+      </button>
+      {open && (
+        <div className="mt-1.5 space-y-1">
+          <p className="text-[11px] leading-snug text-muted-foreground">{CLOSE_DISCLOSURE}</p>
+          {links.slice(0, 4).map((l) => (
+            <a key={l.provider} href={l.url} target="_blank" rel="noopener noreferrer" onClick={() => setVisited(true)}
+              className="flex items-center gap-1 py-1 text-foreground hover:text-primary">
+              <span className="flex-1">{l.provider} · <span className={l.partner ? 'text-emerald-400' : 'text-muted-foreground'}>{l.label}</span></span>
+              <span aria-hidden="true">▸</span>
+            </a>
+          ))}
+          {visited && onRegister && (
+            <button type="button" onClick={onRegister} className="py-1 text-primary hover:underline">
+              Fechou? Registrar valor pago ▸
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const logisticsIcon = (a: TripActivity) => {
   if (a.category === 'voo' || (a.name || '').toLowerCase().includes('aeroporto')) return '✈️';
   if (a.category === 'hotel') return '🏨';
@@ -59,16 +94,21 @@ interface RoteiroLinhaProps {
   priceBRL?: number;
   highlight?: boolean;
   anchorRef?: Ref<HTMLDivElement>;
+  /** C.8 — cidade e dia do item: "Onde fechar ▸" do passeio pago. */
+  city?: string;
+  date?: Date;
 }
 
 export const RoteiroLinha = ({
   activity, expanded, onToggle, onCheck, onSwap, onConfirmAnchor, onOpenDetails, onRemove,
-  renderDetail, prefix, priceBRL, highlight, anchorRef,
+  renderDetail, prefix, priceBRL, highlight, anchorRef, city, date,
 }: RoteiroLinhaProps) => {
   const kind = roteiroKind(activity);
   const actions = roteiroActions(activity);
   const booking = roteiroBooking(activity);
-  const canClose = !!onCheck && kind !== 'logistica' && activity.status !== 'confirmed' && activity.status !== 'cancelled';
+  // C.8: "Marcar como fechado" só para o que se reserva (online/partner/phone); walk_in/incluído/sem dado ficam fora.
+  const canClose = !!onCheck && requiresBooking(activity) && activity.status !== 'confirmed' && activity.status !== 'cancelled';
+  const closeLinks = onCheck && city ? passeioCloseLinks(activity, city, date) : [];
   const confirmed = activity.status === 'confirmed';
   const price = priceBRL ?? activity.cost;
   const paid = confirmed && activity.paidAmount ? activity.paidAmount : 0;
@@ -146,6 +186,7 @@ export const RoteiroLinha = ({
           {booking?.type === 'text' && (
             <p data-roteiro-line="booking" className="text-xs text-muted-foreground">{booking.text}</p>
           )}
+          {closeLinks.length > 0 && <OndeFechar links={closeLinks} onRegister={onCheck} />}
           {(actions.includes('trocar') || canConfirm || canClose || canRemove || booking) && (
             <div className="flex gap-2 flex-wrap">
               {canClose && (
@@ -158,7 +199,8 @@ export const RoteiroLinha = ({
                   <Check size={12} /> Confirmar
                 </button>
               )}
-              <BookingAction booking={booking} />
+              {/* C.8: com "Onde fechar" o site oficial já é a 1ª linha do bloco — nunca os dois. */}
+              {closeLinks.length === 0 && <BookingAction booking={booking} />}
               {actions.includes('trocar') && (
                 <button type="button" onClick={onSwap} className={`${btn} bg-background border border-border text-foreground hover:border-primary/50`}>
                   <RotateCcw size={12} /> Trocar ↻
@@ -278,6 +320,8 @@ export const RoteiroDia = ({
               renderDetail={renderDetail}
               highlight={highlightId === activity.id}
               anchorRef={activity.id === anchorActivityId ? anchorRef : undefined}
+              city={destination}
+              date={date}
             />
           </div>
         ))}

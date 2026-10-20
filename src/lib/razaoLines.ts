@@ -8,10 +8,11 @@ import type { TripActivity } from '@/types/trip';
 import { hotelRateSource } from '@/lib/draftItinerary';
 import { planBreakdown, reserveFor } from '@/lib/planTotals';
 import { roteiroKind } from '@/lib/roteiroBlocks';
-import { buildOfferLinks } from '@/lib/offersLinks';
+import { buildCloseLinks, type CloseLink } from '@/lib/offersLinks';
+import { flightSearchRoute } from '@/lib/timezone';
 
 export type RazaoStatus = 'pending' | 'confirmed' | 'na';
-export type RazaoAction = 'confirmar' | 'parceiro' | 'ofertas' | 'roteiro';
+export type RazaoAction = 'confirmar' | 'ofertas' | 'roteiro';
 
 export interface RazaoDayItem {
   activity: TripActivity;
@@ -37,8 +38,8 @@ export interface RazaoLine {
   actions: RazaoAction[];
   /** Voo e hotel: qual sheet do TripPanel o [Confirmar] abre. */
   confirmTipo?: 'voo' | 'hotel';
-  /** Link de afiliado (Kiwi) quando `actions` inclui 'parceiro'. */
-  partnerUrl?: string;
+  /** C.8 — voo/hotel a confirmar: provedores com rota/datas/pax ("Onde fechar ▸"). */
+  closeLinks?: CloseLink[];
   day?: {
     dayNumber: number;
     dayIndex: number;
@@ -48,6 +49,11 @@ export interface RazaoLine {
   };
 }
 
+const tripDate = (v: unknown) => {
+  if (!v) return undefined;
+  const d = typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? new Date(`${v}T12:00:00`) : new Date(v as string);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+};
 const n = (v: unknown) => Math.round(Number(v) || 0);
 const hasPrice = (v: unknown) => v != null && v !== '' && Number.isFinite(Number(v));
 
@@ -74,16 +80,17 @@ function flightLines(trip: any): RazaoLine[] {
   const rt = trip?.returnFlight?.option?.price;
   const actions: RazaoAction[] = ['confirmar'];
   const o = trip?.flights?.outbound;
-  const partnerUrl = buildOfferLinks({
-    category: 'flight',
-    originCode: o?.origin,
-    destinationCode: o?.destination,
-    startDate: trip?.startDate ? new Date(trip.startDate) : undefined,
-    endDate: trip?.endDate ? new Date(trip.endDate) : undefined,
-    travelers: trav,
-  }).find((l) => l.partner === 'Kiwi')?.url;
-  if (partnerUrl) actions.push('parceiro');
-  const base = { kind: 'voo' as const, icon: '✈️', confirmed: 0, status: 'pending' as const, actions, confirmTipo: 'voo' as const, partnerUrl };
+  // C.8: "Onde fechar ▸" — rota da busca (nunca inventada) + datas + pax; Kiwi parceiro entra aqui.
+  const route = flightSearchRoute(trip ?? {});
+  const closeLinks = buildCloseLinks('voo', {
+    origin: route?.origin,
+    destination: route?.destination,
+    start: tripDate(trip?.startDate),
+    end: tripDate(trip?.endDate),
+    pax: trav,
+    airline: trip?.outboundFlight?.option?.airline,
+  });
+  const base = { kind: 'voo' as const, icon: '✈️', confirmed: 0, status: 'pending' as const, actions, confirmTipo: 'voo' as const, closeLinks };
 
   // Trechos separados só quando o par gravado é o mesmo número do balde (sem resto de arredondamento).
   if (hasPrice(ob) && hasPrice(rt) && n(Number(ob) * trav) + n(Number(rt) * trav) === planned && planned > 0) {
@@ -113,6 +120,13 @@ function hotelLine(trip: any): RazaoLine | null {
   return {
     id: 'hotel', kind: 'hotel', icon: '🏨', title, value, planned: value, confirmed: 0,
     origin: HOTEL_ORIGIN[src], status: 'pending', actions: ['confirmar', 'ofertas'], confirmTipo: 'hotel',
+    closeLinks: buildCloseLinks('hotel', {
+      city: trip?.destination,
+      hotelName: acc?.name,
+      start: tripDate(trip?.startDate),
+      end: tripDate(trip?.endDate),
+      pax: Math.max(1, Number(trip?.travelers) || 1),
+    }),
   };
 }
 

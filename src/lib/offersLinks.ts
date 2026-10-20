@@ -321,3 +321,106 @@ export function buildOfferLinks(params: OfferParams): OfferLink[] {
 
   return links.slice(0, 5);
 }
+
+// C.8 — "Onde fechar ▸": o KINU decide e leva ao provedor com rota, datas e pax na URL.
+// Só padrões de URL conhecidos; provedor que não aceita data na URL não entra (Google Hotels,
+// Civitatis, home de cia aérea). `partner` = afiliado ativo (o KINU ganha comissão).
+
+export interface CloseLink {
+  provider: string;
+  label: 'parceiro KINU' | 'link direto' | 'site oficial';
+  url: string;
+  partner: boolean;
+}
+
+export const CLOSE_DISCLOSURE =
+  'O KINU não vende passagens nem reservas: ele monta a rota e te leva ao provedor com as datas certas. Parceiro KINU = o KINU ganha uma comissão sem custo pra você.';
+
+export type CloseKind = 'voo' | 'hotel' | 'passeio';
+
+export interface CloseCtx {
+  /** voo: IATA */
+  origin?: string;
+  destination?: string;
+  /** hotel/passeio */
+  city?: string;
+  hotelName?: string;
+  name?: string;
+  /** passeio: modo e URL do catálogo (`CURATED_BOOKING`) */
+  mode?: string | null;
+  bookingUrl?: string;
+  /** voo: ida/volta · hotel: check-in/out · passeio: dia (start) */
+  start?: Date;
+  end?: Date;
+  pax?: number;
+  /** voo: companhia da oferta escolhida */
+  airline?: string;
+}
+
+const ymd = (d: Date) => format(d, 'yyyy-MM-dd');
+const validDate = (d?: Date): d is Date => d instanceof Date && !Number.isNaN(d.getTime());
+const direct = (provider: string, url: string): CloseLink => ({ provider, label: 'link direto', url, partner: false });
+
+/** Cias com deep link datado conhecido. Azul/GOL/TAP ficam fora até termos o padrão (nunca a home). */
+function airlineLink(airline: string | undefined, o: string, d: string, s: Date, e: Date, pax: number): CloseLink | null {
+  const a = (airline || '').toLowerCase();
+  if (/\blatam\b/.test(a)) {
+    const iso = (x: Date) => `${ymd(x)}T12:00:00.000Z`;
+    return direct('LATAM', `https://www.latamairlines.com/br/pt/oferta-voos?origin=${o}&destination=${d}&outbound=${encodeURIComponent(iso(s))}&inbound=${encodeURIComponent(iso(e))}&adt=${pax}&chd=0&inf=0&trip=RT&cabin=Economy`);
+  }
+  return null;
+}
+
+export function buildCloseLinks(kind: CloseKind, ctx: CloseCtx): CloseLink[] {
+  const pax = Math.max(1, Math.round(Number(ctx.pax) || 1));
+  const { start, end } = ctx;
+
+  if (kind === 'voo') {
+    const o = ctx.origin?.trim().toUpperCase();
+    const d = ctx.destination?.trim().toUpperCase();
+    if (!o || !d || !/^[A-Z]{3}$/.test(o) || !/^[A-Z]{3}$/.test(d) || !validDate(start) || !validDate(end)) return [];
+    const kiwi = `https://www.kiwi.com/deep?from=${o}&to=${d}&departure=${ymd(start)}&return=${ymd(end)}&adults=${pax}`;
+    const links: CloseLink[] = [
+      {
+        provider: 'Kiwi', label: 'parceiro KINU', partner: true,
+        url: `https://c111.travelpayouts.com/click?shmarker=${TRAVELPAYOUTS_MARKER}&promo_id=3791&source_type=customlink&type=click&custom_url=${encodeURIComponent(kiwi)}`,
+      },
+      direct('Google Flights', `https://www.google.com/travel/flights?q=${encodeURIComponent(`Flights from ${o} to ${d} on ${ymd(start)} through ${ymd(end)} for ${pax} adults`)}`),
+      direct('Skyscanner', `https://www.skyscanner.com.br/transport/flights/${o.toLowerCase()}/${d.toLowerCase()}/${format(start, 'yyMMdd')}/${format(end, 'yyMMdd')}/?adults=${pax}`),
+    ];
+    const cia = airlineLink(ctx.airline, o, d, start, end, pax);
+    if (cia) links.push(cia);
+    return links;
+  }
+
+  if (kind === 'hotel') {
+    const city = ctx.city?.trim();
+    if (!city || !validDate(start) || !validDate(end)) return [];
+    const hotel = ctx.hotelName?.trim();
+    const q = hotel ? `${hotel} ${city}` : city;
+    return [
+      direct('Booking', `https://www.booking.com/searchresults.pt-br.html?ss=${encodeURIComponent(q)}&checkin=${ymd(start)}&checkout=${ymd(end)}&group_adults=${pax}&no_rooms=1`),
+      direct('Hoteis.com', `https://www.hoteis.com/Hotel-Search?destination=${encodeURIComponent(q)}&startDate=${ymd(start)}&endDate=${ymd(end)}&adults=${pax}`),
+      direct('Airbnb', `https://www.airbnb.com.br/s/${encodeURIComponent(city)}/homes?checkin=${ymd(start)}&checkout=${ymd(end)}&adults=${pax}`),
+    ];
+  }
+
+  // passeio: só o que se reserva online — walk_in/included/phone/null não ganham link.
+  if (ctx.mode !== 'online' && ctx.mode !== 'partner') return [];
+  const city = ctx.city?.trim();
+  const name = ctx.name?.trim();
+  const links: CloseLink[] = [];
+  if (ctx.bookingUrl) {
+    links.push({
+      provider: 'Site oficial', url: ctx.bookingUrl,
+      label: ctx.mode === 'partner' ? 'parceiro KINU' : 'site oficial', partner: ctx.mode === 'partner',
+    });
+  }
+  if (city && name) {
+    const q = encodeURIComponent(`${name} ${city}`);
+    links.push(direct('Klook', `https://www.klook.com/pt-BR/search/result/?query=${q}`));
+    const day = validDate(start) ? `&date_from=${ymd(start)}&date_to=${ymd(start)}` : '';
+    links.push(direct('GetYourGuide', `https://www.getyourguide.com/s/?q=${q}${day}`));
+  }
+  return links;
+}

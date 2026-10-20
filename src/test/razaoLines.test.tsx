@@ -55,8 +55,10 @@ describe('C.5c — razaoLines (Fortaleza 02:30)', () => {
     ]);
     const [ida, volta, hotel] = lines;
     expect([ida.value, volta.value, hotel.value]).toEqual([994, 1160, 6000]);
-    expect(ida).toMatchObject({ origin: 'estimativa', status: 'pending', actions: ['confirmar', 'parceiro'], confirmTipo: 'voo' });
-    expect(ida.partnerUrl).toMatch(/kiwi|travelpayouts/i);
+    expect(ida).toMatchObject({ origin: 'estimativa', status: 'pending', actions: ['confirmar'], confirmTipo: 'voo' });
+    // C.8: o Kiwi parceiro virou a 1ª linha do "Onde fechar".
+    expect(ida.closeLinks?.[0]).toMatchObject({ provider: 'Kiwi', partner: true });
+    expect(hotel.closeLinks?.map((l) => l.provider)).toEqual(['Booking', 'Hoteis.com', 'Airbnb']);
     expect(hotel).toMatchObject({ origin: 'estimativa', status: 'pending', actions: ['confirmar', 'ofertas'], confirmTipo: 'hotel' });
     for (const d of lines.filter((l) => l.kind === 'dia')) {
       expect(d).toMatchObject({ origin: 'estimativa do catálogo', status: 'pending', actions: ['roteiro'] });
@@ -154,7 +156,8 @@ describe('C.5c — FinanceiroRazao (UI)', () => {
     expect(within(ida).queryByRole('button', { name: /Confirmar/ })).toBeNull();
     fireEvent.click(idaRow);
     expect(within(ida).getByText('○ a confirmar')).toBeTruthy();
-    expect(within(ida).getByRole('link', { name: /Reservar com parceiro/ })).toBeTruthy();
+    fireEvent.click(within(ida).getByRole('button', { name: /Onde fechar/ }));
+    expect(within(ida).getByRole('link', { name: /Kiwi · parceiro KINU/ })).toBeTruthy();
     fireEvent.click(within(ida).getByRole('button', { name: /Confirmar/ }));
     expect(h.onConfirm).toHaveBeenCalledWith('voo');
     const hotel = container.querySelector<HTMLElement>('[data-razao-line="hotel"]')!;

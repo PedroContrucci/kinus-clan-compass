@@ -39,6 +39,7 @@ import { addCatalogActivityToDay, applyTripPlannedCostDelta, calculateTripProgre
 import { itemKindOf, trackTripActivated, trackTripItemConfirmed } from '@/lib/tripEvents';
 import { activateDraft } from '@/lib/activateDraft';
 import { buildOfferLinks } from '@/lib/offersLinks';
+import { prontidao } from '@/lib/roteiroBlocks';
 import { buildOfferCheckReply, formatTileBRL, isDomesticTrip, scopeChecklist } from '@/lib/tripScope';
 import { CambioBlock, ChecklistBlocks } from '@/components/viagens/TripScopeBlocks';
 import { supabase } from '@/integrations/supabase/client';
@@ -476,6 +477,8 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
     const stored = updateTrip(selectedTrip.id, (trip) => ({
       ...trip,
       budget: newBudget,
+      // C.8 (D4): valor digitado = orçamento do usuário; o envelope do plano não o reescreve.
+      budgetSource: 'user',
       finances: {
         ...trip.finances,
         total: newBudget,
@@ -1119,6 +1122,44 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
 
   if (!user) return null;
 
+  // Budget Edit Dialog — C.8: também no ramo do rascunho ("trocar" do 💰 no KinuDidCard).
+  const budgetDialog = (
+    <Dialog open={budgetEditOpen} onOpenChange={setBudgetEditOpen}>
+      <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc]">
+        <DialogHeader>
+          <DialogTitle className="font-['Outfit']">Editar orçamento</DialogTitle>
+          <DialogDescription className="text-[#94a3b8]">
+            Atualize o valor total disponível para a viagem.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <Input
+            type="number"
+            value={budgetEditValue}
+            onChange={(e) => setBudgetEditValue(e.target.value)}
+            className="bg-[#0f172a] border-[#334155] text-[#f8fafc] placeholder:text-[#64748b]"
+            placeholder="Valor em R$"
+            autoFocus
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setBudgetEditOpen(false)}
+              className="px-4 py-2 rounded-lg text-sm text-[#94a3b8] hover:bg-[#334155] transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleUpdateBudget}
+              className="px-4 py-2 rounded-lg text-sm bg-[#0ea5e9] text-white hover:bg-[#0284c7] transition-colors"
+            >
+              Salvar
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   // Draft Trip → Flight Selection Flow
   if (selectedTrip && selectedTrip.status === 'draft') {
     // Todo rascunho (onboarding, wizard, KINU AI) é o mesmo cockpit: card + um só Ativar,
@@ -1131,7 +1172,12 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
           onActivate={handleActivateDraft}
           onClose={() => setSelectedTrip(null)}
           onUpdateTrip={handleUpdateTrip}
+          onEditBudget={() => {
+            setBudgetEditValue(String(selectedTrip.budget ?? ''));
+            setBudgetEditOpen(true);
+          }}
         />
+        {budgetDialog}
       </div>
     );
   }
@@ -1771,7 +1817,9 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
             const visibleChecklist = scoped.items.filter((i) => !hiddenIds.has(i.id));
             const totalItems = visibleChecklist.length;
             const checkedItems = visibleChecklist.filter(i => i.checked).length;
-            const readiness = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
+            // C.8: Prontidão = voo + hotel + itens que exigem reserva, confirmados. Checklist tem o próprio contador.
+            const ready = prontidao(selectedTrip);
+            const readiness = ready.pct;
 
             return (
               <div className="animate-fade-in space-y-6">
@@ -1788,7 +1836,7 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
                     </span>
                   </div>
                   <Progress value={readiness} className="h-2 bg-[#334155]" />
-                  <p className="text-xs text-[#94a3b8] mt-2">{checkedItems} de {totalItems} itens prontos</p>
+                  <p className="text-xs text-[#94a3b8] mt-2">{ready.done} de {ready.total} {ready.total === 1 ? 'reserva confirmada' : 'reservas confirmadas'} · voo, hotel e o que exige reserva</p>
                 </div>
 
                 {/* Bagagem — vazia vira uma linha */}
@@ -1804,7 +1852,7 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
 
                 {/* Checklist — um bloco por categoria, aberto só o primeiro incompleto */}
                 <div ref={preparacaoHeaderRef}>
-                  <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">✅ Checklist</h3>
+                  <h3 className="text-sm font-semibold text-[#f8fafc] font-['Outfit'] mb-3">✅ Checklist <span className="text-xs font-normal text-[#94a3b8]">· {checkedItems} de {totalItems} prontos</span></h3>
                   <ChecklistBlocks items={visibleChecklist} onToggle={handleToggleChecklist} />
                 </div>
 
@@ -2053,41 +2101,7 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
     <>
       {selectedTrip ? renderTripDetailContent() : null}
 
-      {/* Budget Edit Dialog */}
-      <Dialog open={budgetEditOpen} onOpenChange={setBudgetEditOpen}>
-        <DialogContent className="bg-[#1e293b] border-[#334155] text-[#f8fafc]">
-          <DialogHeader>
-            <DialogTitle className="font-['Outfit']">Editar orçamento</DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
-              Atualize o valor total disponível para a viagem.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Input
-              type="number"
-              value={budgetEditValue}
-              onChange={(e) => setBudgetEditValue(e.target.value)}
-              className="bg-[#0f172a] border-[#334155] text-[#f8fafc] placeholder:text-[#64748b]"
-              placeholder="Valor em R$"
-              autoFocus
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setBudgetEditOpen(false)}
-                className="px-4 py-2 rounded-lg text-sm text-[#94a3b8] hover:bg-[#334155] transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleUpdateBudget}
-                className="px-4 py-2 rounded-lg text-sm bg-[#0ea5e9] text-white hover:bg-[#0284c7] transition-colors"
-              >
-                Salvar
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {budgetDialog}
 
       {/* Activity Detail Drawer */}
       {selectedTrip && (

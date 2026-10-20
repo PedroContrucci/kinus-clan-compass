@@ -2,7 +2,8 @@ import type { TripActivity } from '@/types/trip';
 import type { RouteLeg } from '@/components/cockpit/DailyRouteMap';
 import { itemCoord, logisticsLine } from '@/lib/itineraryEngine';
 import { catalogIdOf } from '@/lib/localAchievements';
-import { CURATED_BOOKING } from '@/data/generated/booking';
+import { buildCloseLinks, type CloseLink } from '@/lib/offersLinks';
+import { CURATED_BOOKING, type BookingMode } from '@/data/generated/booking';
 
 // C.5b — regras da aba Roteiro em blocos: tipo do item, ações que se aplicam e o
 // deslocamento entre itens (real > estimado). Puras; a UI fica em RoteiroDia.tsx.
@@ -67,6 +68,42 @@ export function roteiroBooking(a: TripActivity): RoteiroBooking | null {
     default:
       return null;
   }
+}
+
+/** C.8 — modo de fechar do catálogo (logística/incluído não têm). `null` = o KINU não sabe. */
+export function bookingModeOf(a: TripActivity): BookingMode | null {
+  const kind = roteiroKind(a);
+  if (kind === 'logistica' || kind === 'incluido') return null;
+  return CURATED_BOOKING[catalogIdOf(a.id)]?.mode ?? null;
+}
+
+/** C.8 — regra dentro/fora: só online/partner/phone se "fecham"; walk_in/included/null ficam fora. */
+export function requiresBooking(a: TripActivity): boolean {
+  const m = bookingModeOf(a);
+  return m === 'online' || m === 'partner' || m === 'phone';
+}
+
+/** C.8 — Prontidão = (voo + hotel + itens que exigem reserva) confirmados / total desses. Checklist fora. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function prontidao(trip: any): { done: number; total: number; pct: number } {
+  const days = Array.isArray(trip?.days) ? trip.days : [];
+  const items: TripActivity[] = days
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .flatMap((d: any) => (Array.isArray(d?.activities) ? d.activities : []))
+    .filter((a: TripActivity) => a.status !== 'cancelled' && requiresBooking(a));
+  const total = 2 + items.length;
+  const done = (trip?.flights?.outbound?.status === 'confirmed' ? 1 : 0)
+    + (trip?.accommodation?.status === 'confirmed' ? 1 : 0)
+    + items.filter((a) => a.status === 'confirmed').length;
+  return { done, total, pct: Math.round((done / total) * 100) };
+}
+
+/** C.8 — "Onde fechar ▸" do passeio pago em aberto: site oficial do catálogo primeiro, depois buscas. */
+export function passeioCloseLinks(a: TripActivity, city: string, date?: Date, pax?: number): CloseLink[] {
+  if (a.status === 'confirmed' || a.status === 'cancelled') return [];
+  if (roteiroKind(a) !== 'passeio' || !(Number(a.cost) > 0)) return [];
+  const b = CURATED_BOOKING[catalogIdOf(a.id)];
+  return buildCloseLinks('passeio', { city, name: a.name, mode: b?.mode ?? null, bookingUrl: b?.url, start: date, pax });
 }
 
 export interface RoteiroLeg {

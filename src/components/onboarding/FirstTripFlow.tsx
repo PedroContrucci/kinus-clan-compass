@@ -18,7 +18,7 @@ import { trackTripCreated } from '@/lib/tripEvents';
 import { trackEvent } from '@/lib/kinuEvents';
 import { toast } from '@/hooks/use-toast';
 import {
-  FLOW_TIERS, type FlowTierId, buildFlowInput, countryOf, defaultDates, iconIdOf, resolveOrigin,
+  FLOW_TIERS, type FlowTierId, buildFlowInput, countryOf, defaultDates, iconIdOf, resolveOrigin, returnForDeparture,
 } from '@/lib/onboardingFlow';
 
 interface Props {
@@ -41,6 +41,12 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack }: Props) 
   const initial = useMemo(() => defaultDates(), []);
   const [from, setFrom] = useState(initial.from);
   const [to, setTo] = useState(initial.to);
+  // C.8 (D5): volta tocada pelo usuário mantém a duração quando a ida muda; senão ida + 5.
+  const [toEdited, setToEdited] = useState(false);
+  const changeFrom = (d: Date) => {
+    setTo(returnForDeparture(d, { from, to, toEdited }));
+    setFrom(d);
+  };
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [tier, setTier] = useState<FlowTierId>('comfort');
@@ -129,9 +135,14 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack }: Props) 
               <div>
                 <p className="text-sm font-medium text-foreground mb-2">Datas</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="date" value={iso(from)} onChange={(e) => e.target.value && setFrom(toDate(e.target.value))}
+                  <input type="date" value={iso(from)} onChange={(e) => e.target.value && changeFrom(toDate(e.target.value))}
                     className="bg-card border border-border rounded-xl px-3 py-2 text-foreground" aria-label="Ida" />
-                  <input type="date" value={iso(to)} min={iso(from)} onChange={(e) => e.target.value && setTo(toDate(e.target.value))}
+                  <input type="date" value={iso(to)} min={iso(from)} onChange={(e) => {
+                      if (!e.target.value) return;
+                      const d = toDate(e.target.value);
+                      setTo(d < from ? from : d);
+                      setToEdited(true);
+                    }}
                     className="bg-card border border-border rounded-xl px-3 py-2 text-foreground" aria-label="Volta" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">

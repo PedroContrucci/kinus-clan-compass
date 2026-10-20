@@ -12,6 +12,7 @@ import { planBreakdown, reserveFor, RESERVE_RATE } from '@/lib/planTotals';
 import type { DraftTripInput } from '@/lib/createTrip';
 import { interestLabel, splitInterests } from '@/lib/interestsFor';
 import { flightChoiceLine } from '@/lib/flightRanking';
+import { cityToIata } from '@/lib/timezone';
 
 export const DEFAULT_ORIGIN = 'São Paulo';
 export type OriginSource = 'profile' | 'default';
@@ -39,7 +40,19 @@ export function countryOf(city: string): string {
 /** Próximo mês, 5 noites. */
 export function defaultDates(now = new Date()): { from: Date; to: Date } {
   const from = addDays(startOfMonth(addMonths(now, 1)), 9);
-  return { from, to: addDays(from, 5) };
+  return { from, to: addDays(from, RETURN_SUGGESTION_DAYS) };
+}
+
+/** Sugestão de volta: ida + 5 dias. */
+export const RETURN_SUGGESTION_DAYS = 5;
+
+/**
+ * C.8 (0b/D5) — nova ida → volta: volta editada pelo usuário mantém a duração; senão ida + 5.
+ * Nunca antes da ida (o seletor da volta abre no mês da ida, com mínimo = ida).
+ */
+export function returnForDeparture(from: Date, prev: { from: Date; to: Date; toEdited: boolean }): Date {
+  const days = prev.toEdited ? differenceInDays(prev.to, prev.from) : RETURN_SUGGESTION_DAYS;
+  return addDays(from, Math.max(0, days));
 }
 
 export function resolveOrigin(homeCity: unknown): { city: string; source: OriginSource } {
@@ -168,4 +181,21 @@ export function flightPriceLabel(trip: any): string {
   return trip?.outboundFlight?.priceSource === 'route'
     ? 'estimativa por rota'
     : 'estimativa genérica · cotação real na etapa Voo';
+}
+
+/**
+ * C.8 (D3) — trocar a origem no rascunho: reescreve origem, código e as pontas das pernas, e limpa os
+ * voos escolhidos (o preço era de outra rota). A chave da busca muda e o cockpit busca de novo.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function applyOriginChange<T extends Record<string, any>>(trip: T, city: string): T {
+  const iata = cityToIata(city) ?? undefined;
+  const flights = trip.flights
+    ? {
+        ...trip.flights,
+        outbound: trip.flights.outbound ? { ...trip.flights.outbound, origin: iata ?? trip.flights.outbound.origin } : trip.flights.outbound,
+        return: trip.flights.return ? { ...trip.flights.return, destination: iata ?? trip.flights.return.destination } : trip.flights.return,
+      }
+    : trip.flights;
+  return { ...trip, origin: city, originAirportCode: iata, originSource: 'user', flights, outboundFlight: undefined, returnFlight: undefined };
 }

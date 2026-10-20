@@ -37,6 +37,9 @@ const ORIGIN_AIRPORT_CITY: Record<string, string> = {
   SAO: 'São Paulo', RIO: 'Rio de Janeiro', BHZ: 'Belo Horizonte',
 };
 
+/** C.8 — cidades de origem do wizard, na ordem do seletor (o "trocar" da origem no rascunho). */
+export const WIZARD_ORIGINS: readonly string[] = [...new Set(Object.values(ORIGIN_AIRPORT_CITY))];
+
 let airportCityCache: Record<string, { city: string; brazil: boolean }> | null = null;
 
 /** IATA → cidade (catálogo `airports[]` + origens do wizard) e se fica no Brasil. */

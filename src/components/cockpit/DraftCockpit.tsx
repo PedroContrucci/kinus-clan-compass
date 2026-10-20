@@ -21,6 +21,7 @@ import { flightSearchRoute } from '@/lib/timezone';
 import { buildItineraryForTrip, countManualEdits, itemIdsOf } from '@/lib/draftItinerary';
 import { replanTrip, unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
 import { KinuDidCard, type KinuDidRow } from '@/components/onboarding/KinuDidCard';
+import { applyOriginChange } from '@/lib/onboardingFlow';
 import { KinuAnalysisCard } from './KinuAnalysisCard';
 import { analysisSummary, tryPlaceUnplaced } from '@/lib/cockpitLines';
 import {
@@ -71,6 +72,8 @@ interface DraftCockpitProps {
   onUpdateTrip?: (updater: (t: StoredTrip) => StoredTrip) => void;
   /** Incrementado por fora para abrir o painel Voo. */
   openFlightsSignal?: number;
+  /** C.8: "trocar" do 💰 → o Dialog de orçamento de Viagens.tsx. */
+  onEditBudget?: () => void;
 }
 
 // plannedFlightToSelected mora em src/lib/flightModel.ts; reexport para quem importava daqui.
@@ -155,7 +158,7 @@ export function flightPillSubtitle(trip: { outboundFlight?: SelectedFlight; kinu
   return 'Escolha os voos de ida e volta';
 }
 
-export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, openFlightsSignal }: DraftCockpitProps) => {
+export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, openFlightsSignal, onEditBudget }: DraftCockpitProps) => {
   // KINU-built trips (KINU AI ou onboarding) arrive with a pre-generated itinerary and an
   // estimated flight; o card mostra as duas e os painéis abrem pela linha.
   const isKinuCreated = isKinuBuilt(trip);
@@ -279,6 +282,15 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     regenerateWith(out, ret, { kinuFlightSearch: record });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [needSearch, searchKey, outQ.isSuccess, retQ.isSuccess]);
+
+  // C.8 (D3): nova origem = voos limpos e busca refeita pela chave nova.
+  const handleChangeOrigin = useCallback((city: string) => {
+    if (!onUpdateTrip || city === trip.origin) return;
+    setSelectedOutbound(undefined);
+    setSelectedReturn(undefined);
+    onUpdateTrip((t) => applyOriginChange(t, city));
+    toast({ title: 'Origem alterada — buscando voos de novo' });
+  }, [onUpdateTrip, trip.origin]);
 
   const applyPendingPick = useCallback(() => {
     const rec = trip.kinuFlightSearch;
@@ -551,6 +563,8 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
         trip={trip}
         onActivate={handleActivate}
         onUpdateTrip={(u) => onUpdateTrip?.(u)}
+        onChangeOrigin={onUpdateTrip ? handleChangeOrigin : undefined}
+        onEditBudget={onEditBudget}
         panels={{ hotel: hotelPanel, flight: flightPanel, itinerary: itineraryPanel }}
         openRow={openRow}
         onToggleRow={toggleRow}

@@ -4,11 +4,12 @@ import type { TripActivity } from '@/types/trip';
 import { razaoBreakdown, razaoDesembolso, razaoTotals, type RazaoLine } from '@/lib/razaoLines';
 import { formatTileBRL } from '@/lib/tripScope';
 import { roteiroBooking } from '@/lib/roteiroBlocks';
-import { BookingAction } from '@/components/cockpit/RoteiroDia';
+import { BookingAction, OndeFechar } from '@/components/cockpit/RoteiroDia';
 
 // C.5c — "📒 Compromissos": o livro-razão da viagem. Apresentação pura: as linhas vêm de
 // razaoLines (nenhum valor calculado aqui) e as ações chamam handlers que já existem em
 // Viagens.tsx (sheet de confirmar do TripPanel, OffersModal, confirmModal, aba Roteiro).
+// C.8: voo/hotel a confirmar ganham "Onde fechar ▸" (provedores datados de razaoLines.closeLinks).
 
 const brl = (n: number) => `R$ ${n.toLocaleString('pt-BR')}`;
 
@@ -100,11 +101,6 @@ export const FinanceiroRazao = ({ lines, onConfirm, onHotelOffers, onOpenDay, on
                       <Check size={12} /> Confirmar
                     </button>
                   )}
-                  {line.actions.includes('parceiro') && line.partnerUrl && (
-                    <a href={line.partnerUrl} target="_blank" rel="noopener noreferrer" className={`${btn} bg-[#0f172a] border border-[#334155] text-[#f8fafc] hover:border-[#10b981]/50`}>
-                      Reservar com parceiro ▸
-                    </a>
-                  )}
                   {line.actions.includes('ofertas') && (
                     <button type="button" onClick={onHotelOffers} className={`${btn} bg-[#0f172a] border border-[#334155] text-[#f8fafc] hover:border-[#10b981]/50`}>
                       Buscar ofertas ▸
@@ -115,6 +111,13 @@ export const FinanceiroRazao = ({ lines, onConfirm, onHotelOffers, onOpenDay, on
                       ver no Roteiro ▸
                     </button>
                   )}
+                </div>
+              )}
+
+              {/* C.8: voo e hotel se fecham DENTRO — o KINU leva ao provedor e o valor pago é registrado aqui. */}
+              {open && line.closeLinks && line.closeLinks.length > 0 && line.confirmTipo && (
+                <div className="pl-8 mt-2">
+                  <OndeFechar links={line.closeLinks} onRegister={() => onConfirm(line.confirmTipo!)} />
                 </div>
               )}
 

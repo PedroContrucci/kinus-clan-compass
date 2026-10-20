@@ -90,7 +90,7 @@ describe('C.5b — Roteiro em blocos', () => {
     expect(32 + 40 + 5 * 44 + legs * 20).toBeLessThanOrEqual(700);
   });
 
-  it('(b) passeio pago aberto → Marcar como fechado + Trocar; sem dado de reserva → nenhum Reservar', () => {
+  it('(b) passeio pago aberto → Trocar; sem dado de reserva → nem Reservar nem Marcar como fechado (C.8)', () => {
     const { container, h, renderDetail } = setup();
     openRow('Dia de praia');
     const row = rowOf(container, 'Dia de praia');
@@ -101,7 +101,9 @@ describe('C.5b — Roteiro em blocos', () => {
     expect(screen.getByText(/Chegue cedo/)).toBeTruthy();
     expect(screen.getByText(/estimativa do KINU/)).toBeTruthy();
     expect(renderDetail).toHaveBeenCalledWith(praia);
-    fireEvent.click(within(row).getByRole('button', { name: 'Marcar como fechado' }));
+    expect(within(row).queryByRole('button', { name: 'Marcar como fechado' })).toBeNull();
+    expect(within(row).queryByRole('button', { name: /Onde fechar/ })).toBeNull();
+    fireEvent.click(within(row).getByRole('checkbox'));
     expect(h.onCheck).toHaveBeenCalledWith(praia, 2);
     openRow('Almoço no Coco Bambu');
     const almocoRow = rowOf(container, 'Coco Bambu');
@@ -206,11 +208,12 @@ describe('C.5d — modo de reserva por atividade (catálogo → ação honesta)'
   });
 
   it('(d) online com url → "Reservar no site"; partner → "Reservar com parceiro"', () => {
-    const site = within(one(passeio('tst-online')).row).getByRole('link', { name: /Reservar no site/ });
+    // C.8: passeio pago vai para "Onde fechar ▸" (closeLinks.test); o botão segue no restaurante.
+    const site = within(one(rest('tst-online')).row).getByRole('link', { name: /Reservar no site/ });
     expect(site.getAttribute('href')).toBe('https://exemplo.com/reserva');
     expect(site.getAttribute('target')).toBe('_blank');
     cleanup();
-    const p = within(one(passeio('tst-partner')).row).getByRole('link', { name: /Reservar com parceiro/ });
+    const p = within(one(rest('tst-partner')).row).getByRole('link', { name: /Reservar com parceiro/ });
     expect(p.getAttribute('href')).toBe('https://parceiro.example/p?aff=kinu');
   });
 

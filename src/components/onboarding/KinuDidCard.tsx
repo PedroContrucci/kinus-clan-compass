@@ -8,7 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, Rocket } from 'lucide-react';
 import { HotelSwapModal } from '@/components/hotel/HotelSwapModal';
 import { applyHotelSwap, type SwapTripLike } from '@/lib/hotelSwap';
-import { kinuDidLines } from '@/lib/onboardingFlow';
+import { DEFAULT_ORIGIN, kinuDidLines } from '@/lib/onboardingFlow';
+import { WIZARD_ORIGINS } from '@/lib/timezone';
 
 export type KinuDidRow = 'hotel' | 'flight' | 'itinerary';
 
@@ -24,21 +25,26 @@ interface Props {
   onToggleRow?: (row: KinuDidRow) => void;
   /** Linhas extras do cockpit (análise, itens que não couberam), antes do Ativar. */
   extraRows?: ReactNode;
+  /** C.8: "trocar" da origem abre o seletor das origens do wizard. */
+  onChangeOrigin?: (city: string) => void;
+  /** C.8: "trocar" do 💰 abre o editor de orçamento existente. */
+  onEditBudget?: () => void;
 }
 
-export const KinuDidCard = ({ trip, onActivate, onUpdateTrip, onOpenFlights, panels, openRow, onToggleRow, extraRows }: Props) => {
+export const KinuDidCard = ({ trip, onActivate, onUpdateTrip, onOpenFlights, panels, openRow, onToggleRow, extraRows, onChangeOrigin, onEditBudget }: Props) => {
   const navigate = useNavigate();
   const [swapOpen, setSwapOpen] = useState(false);
   const [budgetOpen, setBudgetOpen] = useState(false);
+  const [originOpen, setOriginOpen] = useState(false);
   const l = kinuDidLines(trip);
   const toCockpit = () => document.getElementById('draft-cockpit')?.scrollIntoView({ behavior: 'smooth' });
 
   const rows: { icon: string; text: string; action: () => void; panel?: KinuDidRow; verb?: string }[] = [
-    { icon: '🛫', text: l.origin, action: () => navigate('/inicio') },
+    { icon: '🛫', text: l.origin, action: onChangeOrigin ? () => setOriginOpen((v) => !v) : () => navigate('/inicio') },
     { icon: '🏨', text: l.hotel, action: () => setSwapOpen(true), panel: 'hotel', verb: 'trocar' },
     { icon: '✈️', text: l.flight, action: () => { onOpenFlights?.(); toCockpit(); }, panel: 'flight', verb: 'trocar' },
     { icon: '🗺️', text: l.itinerary, action: toCockpit, panel: 'itinerary', verb: 'ver' },
-    { icon: '💰', text: l.budget, action: () => navigate('/inicio') },
+    { icon: '💰', text: l.budget, action: onEditBudget ?? (() => navigate('/inicio')) },
   ];
 
   return (
@@ -74,6 +80,17 @@ export const KinuDidCard = ({ trip, onActivate, onUpdateTrip, onOpenFlights, pan
                 )}
               </div>
               {open && <div className="mt-2 -mx-2 rounded-xl border border-border bg-background/60 p-2" data-panel={panel}>{panels?.[panel]}</div>}
+              {r.icon === '🛫' && originOpen && onChangeOrigin && (
+                <div role="listbox" aria-label="Cidade de origem" className="mt-2 ml-6 flex flex-wrap gap-1.5">
+                  {WIZARD_ORIGINS.map((city) => (
+                    <button key={city} role="option" aria-selected={city === (trip.origin || DEFAULT_ORIGIN)}
+                      onClick={() => { setOriginOpen(false); onChangeOrigin(city); }}
+                      className={`px-2.5 py-1 rounded-full text-xs border ${city === (trip.origin || DEFAULT_ORIGIN) ? 'border-primary text-primary' : 'border-border text-foreground hover:border-primary/50'}`}>
+                      {city}
+                    </button>
+                  ))}
+                </div>
+              )}
             </li>
           );
         })}
