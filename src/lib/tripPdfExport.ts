@@ -1077,9 +1077,9 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   // Progress bar
   const barY = y + boxH + 3;
   const barW = pw - 28;
-  const total = trip.finances?.total || trip.budget || 1;
-  const confirmedPct = Math.min(100, (trip.finances?.confirmed || 0) / total * 100);
-  const plannedPct = Math.min(100 - confirmedPct, (trip.finances?.planned || 0) / total * 100);
+  const total = budgetTotal || 1;
+  const confirmedPct = Math.min(100, confirmedVal / total * 100);
+  const plannedPct = Math.min(100 - confirmedPct, plannedVal / total * 100);
 
   drawRect(14, barY, barW, 2.5, B.surface);
   if (confirmedPct > 0) drawRect(14, barY, barW * confirmedPct / 100, 2.5, B.emerald);
