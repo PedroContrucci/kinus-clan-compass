@@ -614,6 +614,8 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </div>
       )}
 
+      <PainelResumo trip={trip} onNavigateTab={onNavigateTab} />
+
       {/* Section: Voo & Hospedagem */}
       <Collapsible open={vooOpen} onOpenChange={setVooOpen}>
         <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
