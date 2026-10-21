@@ -1227,7 +1227,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </CollapsibleContent>
       </Collapsible>
 
-      <PainelResumo trip={trip} onNavigateTab={onNavigateTab} />
 
       {/* 4. Actions Bar: Share + Export PDF */}
       <div className="flex gap-2">
