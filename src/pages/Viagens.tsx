@@ -20,7 +20,7 @@ import OffersModal from '@/components/cockpit/OffersModal';
 import { TripPanel } from '@/components/cockpit/TripPanel';
 import { AgentTip } from '@/components/shared/AgentTip';
 import { getIcarusRoteiro, getIcarusGuia, getIcarusLeilao, getHestiaFinOps, getHestiaCambio, getHestiaLeilao, getHermesChecklist, getHermesPacking } from '@/lib/agentMessages';
-import { analyzeTrip, AgentInsight } from '@/engines/agentIntelligence';
+import { AgentInsight } from '@/engines/agentIntelligence';
 import { SavedTrip, TripActivity, ActivityStatus, contextualTips } from '@/types/trip';
 import { PackingData } from '@/types/packing';
 import { getActivityPrice, determinePriceLevel, findBestPriceLevel, mapCategoryToPricingType, CITY_PRICES } from '@/lib/activityPricing';
@@ -1268,8 +1268,6 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
 
           {/* Tabs */}
           {(() => {
-            const tripInsights = selectedTrip ? analyzeTrip(selectedTrip) : [];
-            const criticalHighCount = tripInsights.filter(i => i.priority === 'critical' || i.priority === 'high').length;
             return (
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 {[
@@ -1288,11 +1286,6 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
                     }`}
                   >
                     {tab.label}
-                    {tab.id === 'painel' && criticalHighCount > 0 && (
-                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
-                        {criticalHighCount}
-                      </span>
-                    )}
                   </button>
                 ))}
               </div>
