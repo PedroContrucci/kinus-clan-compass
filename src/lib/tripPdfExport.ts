@@ -15,6 +15,7 @@ import { getDocsForDestination } from '@/data/destinationDocs';
 import { tripTimezone, formatTzDiff, formatTzInfo, airportCity } from '@/lib/timezone';
 import { formatDurationHM, durationTextToMinutes } from '@/lib/flightModel';
 import { logisticsLine, itemCoord } from '@/lib/itineraryEngine';
+import { razaoLines, razaoTotals } from '@/lib/razaoLines';
 
 // ── Branding colors (RGB) ──
 const B = {
@@ -801,7 +802,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     doc.setFont('helvetica', 'normal');
     const today = format(new Date(), "dd/MM/yyyy", { locale: ptBR });
     doc.text('KINU — Travel Intelligence', 14, ph - 8);
-    doc.text(`Gerado em ${today}  |  kinu.travel`, pw - 14, ph - 8, { align: 'right' });
+    doc.text(`Gerado em ${today}  |  kinu-travel.app`, pw - 14, ph - 8, { align: 'right' });
   };
 
   const addPageHeader = () => {
@@ -1043,9 +1044,8 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   drawRect(14, y, pw - 28, boxH, B.deep);
   drawRect(14, y, 2, boxH, B.emerald);
 
-  const budgetTotal = trip.finances?.total || trip.budget || 0;
-  const confirmedVal = trip.finances?.confirmed || 0;
-  const plannedVal = trip.finances?.planned || 0;
+  const budgetTotal = Number(trip.budget) || trip.finances?.total || 0;
+  const { planned: plannedVal, confirmed: confirmedVal } = razaoTotals(razaoLines(trip));
   // Canonical app formula: Disponível = orçamento − planejado − confirmado
   const availableCalc = budgetTotal - plannedVal - confirmedVal;
   const isOverBudget = availableCalc < 0;
