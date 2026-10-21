@@ -198,30 +198,6 @@ const TIER_LABELS: Record<string, string> = {
   backpacker: 'Mochileiro', economic: 'Econômico', comfort: 'Conforto', luxury: 'Luxo',
 };
 
-const AGENTS = {
-  icarus: {
-    emoji: '🦅',
-    name: 'Ícaro',
-    gradient: 'from-sky-500/10 to-cyan-500/10',
-    border: 'border-sky-500/20',
-    accentColor: 'text-sky-400',
-  },
-  hestia: {
-    emoji: '🏛️',
-    name: 'Héstia',
-    gradient: 'from-amber-500/10 to-yellow-500/10',
-    border: 'border-amber-500/20',
-    accentColor: 'text-amber-400',
-  },
-  hermes: {
-    emoji: '⚡',
-    name: 'Hermes',
-    gradient: 'from-emerald-500/10 to-teal-500/10',
-    border: 'border-emerald-500/20',
-    accentColor: 'text-emerald-400',
-  },
-};
-
 interface OrchestratedAction {
   agent: 'icarus' | 'hestia' | 'hermes';
   priority: number;
@@ -246,139 +222,6 @@ function getChecklistPct(trip: SavedTrip): number {
 function getPendingItems(trip: SavedTrip): string {
   const pending = trip.checklist?.filter(i => !i.checked).slice(0, 2).map(i => i.label) || [];
   return pending.join(', ') || 'itens';
-}
-
-function getOrchestratedActions(trip: SavedTrip): OrchestratedAction[] {
-  const actions: OrchestratedAction[] = [];
-  const dest = trip.destination || 'o destino';
-  const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
-  const hotelConfirmed = trip.accommodation?.status === 'confirmed';
-  const checklistPct = getChecklistPct(trip);
-  const daysUntil = getDaysLeft(trip);
-  const currency = (trip as any).destinationCurrency || 'USD';
-  const originCode = trip.flights?.outbound?.origin || 'GRU';
-  const destCode = trip.flights?.outbound?.destination || dest;
-
-  // 1. Flight — urgency-based messaging
-  if (!flightConfirmed && daysUntil <= 14 && daysUntil > 0) {
-    actions.push({
-      agent: 'icarus', priority: 1,
-      title: 'Comprar voo AGORA',
-      message: `Urgente! Faltam apenas ${daysUntil} dias. Precos de voo tendem a subir nas ultimas 2 semanas. Feche agora para garantir!`,
-      actionType: 'open-auction-flight', actionLabel: '🎯 Buscar Ofertas Agora', completed: false,
-    });
-  } else if (!flightConfirmed && daysUntil > 30) {
-    actions.push({
-      agent: 'icarus', priority: 2,
-      title: 'Monitorar preco do voo',
-      message: `Faltam ${daysUntil} dias. Historicamente, voos para ${dest} caem de preco 45-60 dias antes. Quer monitorar por 7 dias?`,
-      actionType: 'open-auction-flight', actionLabel: '🎯 Monitorar Voos', completed: false,
-    });
-  } else {
-    actions.push({
-      agent: 'icarus', priority: flightConfirmed ? 99 : 1,
-      title: 'Voo Ida e Volta',
-      message: getIcarusHeroFlight(trip, flightConfirmed),
-      actionType: flightConfirmed ? 'celebrate' : 'open-auction-flight',
-      actionLabel: flightConfirmed ? '✅ Confirmado' : '🎯 Buscar Voos',
-      completed: flightConfirmed,
-    });
-  }
-
-  // 2. Hotel
-  actions.push({
-    agent: 'icarus', priority: hotelConfirmed ? 99 : (flightConfirmed ? 2 : 3),
-    title: 'Hospedagem',
-    message: getIcarusHeroHotel(trip, hotelConfirmed),
-    actionType: hotelConfirmed ? 'celebrate' : 'open-auction-hotel',
-    actionLabel: hotelConfirmed ? '✅ Confirmado' : '🎯 Buscar Hotel',
-    completed: hotelConfirmed,
-  });
-
-  // 2b. Hermes hotel insight (only when hotel has neighborhood and not confirmed)
-  if (trip.accommodation?.neighborhood && !hotelConfirmed) {
-    actions.push({
-      agent: 'hermes', priority: 6,
-      title: 'Dica de Hospedagem',
-      message: getHermesHotelInsight(trip),
-      actionType: 'navigate-roteiro',
-      actionLabel: '📍 Ver Roteiro',
-      completed: false,
-    });
-  }
-
-  // 3. Câmbio (Héstia)
-  const volatileCurrencies = ['ARS', 'TRY', 'EGP'];
-  const destCurrency = (trip as any).destinationCurrency || '';
-  if (volatileCurrencies.includes(destCurrency)) {
-    actions.push({
-      agent: 'hestia', priority: 3,
-      title: 'Câmbio instável',
-      message: `A moeda do destino (${destCurrency}) tem alta volatilidade. Considere levar USD como backup e comprar moeda local gradualmente.`,
-      actionType: 'navigate-cambio', actionLabel: '💱 Ver Câmbio', completed: false,
-    });
-  } else {
-    actions.push({
-      agent: 'hestia', priority: flightConfirmed && hotelConfirmed ? 3 : 5,
-      title: 'Câmbio',
-      message: `Comece a comprar ${currency} aos poucos. Diluir o câmbio reduz o risco.`,
-      actionType: 'navigate-cambio', actionLabel: '💱 Ver Câmbio', completed: false,
-    });
-  }
-
-  // 4. Checklist (Hermes)
-  actions.push({
-    agent: 'hermes', priority: checklistPct === 100 ? 99 : (daysUntil <= 14 ? 2 : 4),
-    title: 'Preparação',
-    message: checklistPct === 100
-      ? `Tudo pronto! Você está preparado para ${dest}!`
-      : checklistPct > 50
-        ? `Checklist em ${checklistPct}%. Faltam: ${getPendingItems(trip)}`
-        : `Muita coisa pendente! Comece pelo passaporte e seguro viagem.`,
-    actionType: checklistPct === 100 ? 'celebrate' : 'navigate-checklist',
-    actionLabel: checklistPct === 100 ? '✅ Tudo Pronto' : '✅ Ver Checklist',
-    completed: checklistPct === 100,
-  });
-
-  // 5. Gastronomy suggestion
-  const gastroDay = trip.days?.find(d => d.title?.toLowerCase().includes('gastro'));
-  if (gastroDay) {
-    const hasMichelin = gastroDay.activities?.some(a => a.name?.toLowerCase().includes('michelin'));
-    if (!hasMichelin) {
-      actions.push({
-        agent: 'icarus', priority: 40,
-        title: 'Experiência Gastronômica',
-        message: `No Dia ${gastroDay.day} (${gastroDay.title}), considere trocar um restaurante por um Michelin local. A diferença de preço pode valer a experiência!`,
-        actionType: 'navigate-roteiro', actionLabel: '📋 Ver no Roteiro', completed: false,
-      });
-    }
-  }
-
-  // 6. Early booking reminder
-  if (daysUntil > 7 && daysUntil < 30 && flightConfirmed) {
-    actions.push({
-      agent: 'hermes', priority: 50,
-      title: 'Reserve passeios populares',
-      message: `Faltam ${daysUntil} dias. Passeios populares em ${dest} costumam esgotar. Confirme os principais no roteiro!`,
-      actionType: 'navigate-roteiro', actionLabel: '📋 Ver Roteiro', completed: false,
-    });
-  }
-
-  // 7. Smart Packing
-  if (checklistPct > 50) {
-    actions.push({
-      agent: 'hermes', priority: 6,
-      title: 'Mala Inteligente',
-      message: `Hora de montar a mala! Vou te ajudar com base no clima de ${dest}.`,
-      actionType: 'navigate-packing', actionLabel: '🧳 Montar Mala', completed: false,
-    });
-  }
-
-  return actions.sort((a, b) => {
-    if (a.completed && !b.completed) return 1;
-    if (!a.completed && b.completed) return -1;
-    return a.priority - b.priority;
-  });
 }
 
 const MiniKPI = ({ label, value, urgent }: { label: string; value: string; urgent?: boolean }) => (
@@ -431,7 +274,6 @@ function getTripCurrency(dest: string): string {
 export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAuction, onNavigateTab, pendingConfirmRequest, onPendingConfirmHandled, exporterName, exporterEmail }: TripPanelProps) => {
   const summaryHeaderRef = useRef<HTMLDivElement | null>(null);
   const [checkinOpen, setCheckinOpen] = useState(false);
-  const [showAllActions, setShowAllActions] = useState(false);
   const [dismissedNow, setDismissedNow] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
@@ -662,19 +504,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   }, [trip.id, flightConfirmed]);
   const dest = trip.destination || 'o destino';
 
-  const allActions = getOrchestratedActions(trip);
-  // Filter out flight/hotel actions since they have dedicated hero cards
-  const filteredActions = allActions.filter(a => 
-    a.actionType !== 'open-auction-flight' && 
-    a.actionType !== 'open-auction-hotel' && 
-    a.actionType !== 'confirm-flight' && 
-    a.actionType !== 'confirm-hotel' &&
-    !(a.title === 'Voo Ida e Volta') &&
-    !(a.title === 'Hospedagem')
-  );
-  const visibleActions = showAllActions ? filteredActions : filteredActions.slice(0, 2);
-  const hiddenCount = Math.max(0, filteredActions.length - 2);
-
   const dateRange = trip.startDate && trip.endDate
     ? `${format(new Date(trip.startDate), "dd MMM", { locale: ptBR })} – ${format(new Date(trip.endDate), "dd MMM yyyy", { locale: ptBR })}`
     : '';
@@ -724,10 +553,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }
   };
-
-
-  // Find first non-completed action index
-  const firstActiveIdx = filteredActions.findIndex(a => !a.completed);
 
   // Reservation status items (flight, hotel, paid activities only)
   const reservationItems = useMemo(() => {
@@ -1485,139 +1310,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Section: Insights do KINU */}
-      <Collapsible open={insightsOpen} onOpenChange={setInsightsOpen}>
-        <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <span className="flex items-center gap-2">
-            <span>💡</span>
-            <span className="font-medium text-foreground">Insights do KINU</span>
-          </span>
-          {insightsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4 mt-4">
-          {/* 1.75 — Activity Summary by Category */}
-      {(() => {
-        const CATEGORY_STYLES: Record<string, { bg: string; border: string; bar: string; hover: string }> = {
-          passeio: { bg: 'bg-sky-500/5', border: 'border-sky-500/20', bar: 'bg-sky-500', hover: 'hover:bg-sky-500/10' },
-          comida: { bg: 'bg-amber-500/5', border: 'border-amber-500/20', bar: 'bg-amber-500', hover: 'hover:bg-amber-500/10' },
-          transporte: { bg: 'bg-violet-500/5', border: 'border-violet-500/20', bar: 'bg-violet-500', hover: 'hover:bg-violet-500/10' },
-          hotel: { bg: 'bg-emerald-500/5', border: 'border-emerald-500/20', bar: 'bg-emerald-500', hover: 'hover:bg-emerald-500/10' },
-        };
-        const CATEGORY_META: Record<string, { icon: string; label: string }> = {
-          passeio: { icon: '🏛️', label: 'Passeios' },
-          comida: { icon: '🍽️', label: 'Refeições' },
-          transporte: { icon: '🚕', label: 'Transporte' },
-          hotel: { icon: '🏨', label: 'Hospedagem' },
-        };
-        const allActivities = trip.days?.flatMap(d => d.activities) || [];
-        const cats = ['passeio', 'comida', 'transporte', 'hotel'] as const;
-
-        return (
-          <div className="space-y-2">
-            <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1">
-              Atividades por Categoria
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {cats.map(cat => {
-                const items = allActivities.filter(a => {
-                  if (cat === 'comida') return a.category === 'comida' && !a.name?.toLowerCase().includes('café da manhã') && !a.name?.toLowerCase().includes('room service');
-                  return a.category === cat;
-                });
-                const confirmed = items.filter(a => a.status === 'confirmed').length;
-                const total = items.length;
-                const totalCost = items.reduce((s, a) => s + (a.cost || 0), 0);
-                const pct = total > 0 ? Math.round((confirmed / total) * 100) : 0;
-                const style = CATEGORY_STYLES[cat];
-                const meta = CATEGORY_META[cat];
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => onNavigateTab('roteiro', cat)}
-                    className={`rounded-xl border p-3 text-left transition-colors ${style.bg} ${style.border} ${style.hover}`}
-                  >
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="text-base">{meta.icon}</span>
-                      <span className="text-[11px] font-semibold text-foreground font-['Outfit']">{meta.label}</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">{confirmed}/{total} confirmadas</p>
-                    <p className="text-xs font-bold text-foreground font-['Outfit'] mt-0.5">R$ {fmt(totalCost)}</p>
-                    <div className="w-full h-1 bg-muted rounded-full mt-2 overflow-hidden">
-                      <div className={`h-full rounded-full ${style.bar} transition-all`} style={{ width: `${pct}%` }} />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* 2. Próximos Passos — Agentes orquestrando (prioritized, max 3 visible) */}
-      <div className="space-y-2">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-          Próximos Passos
-        </h3>
-        {visibleActions.map((action, i) => {
-          const agent = AGENTS[action.agent];
-          const globalIdx = filteredActions.indexOf(action);
-          const isFirstActive = globalIdx === firstActiveIdx;
-
-          return (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${
-                action.completed
-                  ? 'bg-emerald-500/5 border-emerald-500/20 opacity-60'
-                  : `bg-gradient-to-r ${agent.gradient} ${agent.border}`
-              } ${isFirstActive ? 'ring-1 ring-emerald-500/30' : ''}`}
-            >
-              <span className="text-lg flex-shrink-0 mt-0.5">{agent.emoji}</span>
-              <div className="flex-1 min-w-0">
-                {isFirstActive && (
-                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1 block">
-                    Proximo Passo
-                  </span>
-                )}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-xs font-bold font-['Outfit'] ${action.completed ? 'text-emerald-400' : agent.accentColor}`}>
-                    {agent.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">•</span>
-                  <span className="text-xs font-medium text-foreground">{action.title}</span>
-                  {action.completed && <Check size={12} className="text-emerald-400 ml-auto" />}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{action.message}</p>
-                {!action.completed && action.actionType !== 'celebrate' && (
-                  <button
-                    onClick={() => handleAction(action)}
-                    className={`mt-2 inline-flex items-center gap-1 text-xs font-medium ${agent.accentColor} bg-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors`}
-                  >
-                    {action.actionLabel}
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          );
-        })}
-
-        {hiddenCount > 0 && (
-          <button
-            onClick={() => setShowAllActions(!showAllActions)}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mx-auto"
-          >
-            {showAllActions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            {showAllActions ? 'Menos insights' : `Ver todos os insights (+${hiddenCount})`}
-          </button>
-        )}
-      </div>
-
-      {/* Roteiro Executivo removed — day-by-day lives in the Roteiro tab */}
-
-
-
       {/* 4. Actions Bar: Share + Export PDF */}
       <div className="flex gap-2">
         <button
@@ -1635,8 +1327,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           {pdfLoading ? 'Gerando...' : 'Exportar PDF'}
         </button>
       </div>
-        </CollapsibleContent>
-      </Collapsible>
 
       {/* Bottom: Mapa da viagem (collapsed, lazy) */}
       <Collapsible open={mapOpen} onOpenChange={setMapOpen}>
