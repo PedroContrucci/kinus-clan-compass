@@ -1,7 +1,7 @@
 // TripPanel — Orchestrated Executive Dashboard
 
 import { motion } from 'framer-motion';
-import { Check, FileText, ChevronDown, ChevronUp, MapPin, ExternalLink, X } from 'lucide-react';
+import { FileText, ChevronDown, ChevronUp, MapPin, ExternalLink, X } from 'lucide-react';
 import { CheckinBanner } from '@/components/checkin/CheckinBanner';
 import { TripCheckinDrawer } from '@/components/checkin/TripCheckinDrawer';
 import { WeatherBadge } from './WeatherBadge';
@@ -173,40 +173,11 @@ function getPriceHistory(tripId: string): PriceSnapshot[] {
   return [];
 }
 
-function savePriceSnapshot(tripId: string, price: number) {
-  const history = getPriceHistory(tripId);
-  history.push({ price, timestamp: new Date().toISOString() });
-  if (history.length > 10) {
-    history.shift();
-  }
-  localStorage.setItem(`kinu_price_history_${tripId}`, JSON.stringify(history));
-}
-
-function getPriceChangeInfo(tripId: string): { diff: number; dateStr: string; dropped: boolean } | null {
-  const history = getPriceHistory(tripId);
-  if (history.length < 2) return null;
-  const latest = history[history.length - 1];
-  const previous = history[history.length - 2];
-  if (latest.price === previous.price) return null;
-  const diff = Math.abs(latest.price - previous.price);
-  const dropped = latest.price < previous.price;
-  const dateStr = format(new Date(previous.timestamp), 'dd/MM');
-  return { diff, dateStr, dropped };
-}
 
 const TIER_LABELS: Record<string, string> = {
   backpacker: 'Mochileiro', economic: 'Econômico', comfort: 'Conforto', luxury: 'Luxo',
 };
 
-interface OrchestratedAction {
-  agent: 'icarus' | 'hestia' | 'hermes';
-  priority: number;
-  title: string;
-  message: string;
-  actionType: 'confirm-flight' | 'confirm-hotel' | 'open-auction-flight' | 'open-auction-hotel' | 'navigate-checklist' | 'navigate-cambio' | 'navigate-packing' | 'navigate-roteiro' | 'export-pdf' | 'celebrate';
-  actionLabel: string;
-  completed: boolean;
-}
 
 function getDaysLeft(trip: SavedTrip): number {
   if (!trip.startDate) return 999;
@@ -219,10 +190,6 @@ function getChecklistPct(trip: SavedTrip): number {
   return total > 0 ? Math.round((done / total) * 100) : 0;
 }
 
-function getPendingItems(trip: SavedTrip): string {
-  const pending = trip.checklist?.filter(i => !i.checked).slice(0, 2).map(i => i.label) || [];
-  return pending.join(', ') || 'itens';
-}
 
 const MiniKPI = ({ label, value, urgent }: { label: string; value: string; urgent?: boolean }) => (
   <div className={`flex-1 text-center py-2 rounded-xl ${urgent ? 'bg-amber-500/20 border border-amber-500/40' : 'bg-white/5 border border-white/5'}`}>
@@ -258,7 +225,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const [pdfLoading, setPdfLoading] = useState(false);
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
   const [vooOpen, setVooOpen] = useSectionOpen('vooHospedagem', true);
-  const [insightsOpen, setInsightsOpen] = useSectionOpen('insights', false);
   const [mapOpen, setMapOpen] = useSectionOpen('mapa', false);
   const [weatherOpen, setWeatherOpen] = useSectionOpen('clima', false);
   const [fontesOpen, setFontesOpen] = useSectionOpen('fontes', false);
@@ -477,10 +443,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const returnNumberDisp = returnFlightOpt?.flightNumber && returnFlightOpt.flightNumber !== '---' ? returnFlightOpt.flightNumber : null;
   const returnTimeDisp = returnFlightOpt?.departureTime || null;
 
-  const priceChange = useMemo(() => {
-    if (flightConfirmed) return null;
-    return getPriceChangeInfo(trip.id);
-  }, [trip.id, flightConfirmed]);
   const dest = trip.destination || 'o destino';
 
   const dateRange = trip.startDate && trip.endDate
@@ -488,23 +450,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     : '';
 
 
-  const handleAction = (action: OrchestratedAction) => {
-    switch (action.actionType) {
-      case 'open-auction-flight': onOpenAuction('flight'); break;
-      case 'open-auction-hotel': onOpenAuction('hotel'); break;
-      case 'confirm-flight': openReservationConfirm('flight'); break;
-      case 'confirm-hotel': openReservationConfirm('hotel'); break;
-      case 'navigate-checklist': onNavigateTab('preparacao'); break;
-      case 'navigate-cambio': onNavigateTab('financeiro'); break;
-      case 'navigate-packing': onNavigateTab('preparacao'); break;
-      case 'navigate-roteiro': onNavigateTab('roteiro'); break;
-      case 'export-pdf': {
-        setPdfLoading(true);
-        exportTripPDF(trip, exporterName, exporterEmail).finally(() => setPdfLoading(false));
-        break;
-      }
-    }
-  };
 
   const handleExportPdf = async () => {
     setPdfLoading(true);
@@ -750,14 +695,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           <p className="text-xs text-muted-foreground mt-1">
             total · R$ {fmt(flightPerPerson)} por pessoa
           </p>
-          {!flightConfirmed && priceChange && (
-            <div className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full mt-1 ${priceChange.dropped ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'}`}>
-              {priceChange.dropped ? '↓' : '↑'} R$ {fmt(priceChange.diff)} desde {priceChange.dateStr}
-            </div>
-          )}
-          {!flightConfirmed && priceChange?.dropped && (
-            <p className="text-[10px] text-amber-400 mt-1">💡 Héstia: preço caiu — bom momento para confirmar o voo.</p>
-          )}
           <p className="text-[10px] text-muted-foreground mt-1">
             {flightDuration} · {flightDirect ? 'Direto' : 'Com conexão'}
           </p>
