@@ -16,6 +16,7 @@ import { agentCity, nearestCatalogCities, planFromAgent } from "@/lib/destinatio
 import { readCachedPrefs } from "@/lib/onboarding";
 import { razaoLines, razaoTotals } from "@/lib/razaoLines";
 import { trackTripCreated } from "@/lib/tripEvents";
+import { getAllCities } from "@/data/destinationCatalog";
 
 export interface KinuActionHandlers {
   trocar_atividade?: (params: { dia: number; atividade_atual: string; nova_atividade: string }) => string | null | Promise<string | null>;
@@ -220,7 +221,16 @@ export function tripChoiceFromMessage(message: string, trips: { id: string; dest
   const m = normTxt(message);
   if (/\b(geral|nenhuma)\b/.test(m)) return NO_TRIP;
   const hits = trips.filter((t) => m.includes(normTxt(t.destination)));
-  return hits.length === 1 ? hits[0].id : null;
+  if (hits.length === 1) return hits[0].id;
+  if (hits.length > 1) return null;
+  // C.10.1: cita uma cidade do catálogo que não é destino de nenhuma viagem → planejar algo novo.
+  const tripDest = trips.map((t) => normTxt(t.destination));
+  const cited = getAllCities().some(({ name }) => {
+    const c = normTxt(name);
+    const esc = c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(^|[^a-z0-9])${esc}($|[^a-z0-9])`).test(m) && !tripDest.some((d) => d.includes(c));
+  });
+  return cited ? NO_TRIP : null;
 }
 
 /** Nome do perfil: mesma cascata do useAuth (name → full_name → nome). */
@@ -526,6 +536,8 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       content: 'Bora planejar! 🧭 Para onde você quer ir? Se já souber, me conta também as datas e quem vai.',
       timestamp: new Date(),
     }]);
+    // C.10.1: planejar nova viagem é sempre "geral" — o gate "qual viagem?" não entra.
+    setChosenTripId(NO_TRIP);
     setIsOpen(true);
   }, []);
 

@@ -9,7 +9,7 @@ import {
   agentCity, nearestCatalogCities, pickerCities, pickerCountries, pickerRegions, planFromAgent, searchDestinations,
 } from '@/lib/destinationPicker';
 import { buildFlowInput } from '@/lib/onboardingFlow';
-import { clearTrips, listTrips } from '@/lib/tripStore';
+import { addTrip, clearTrips, listTrips, type StoredTrip } from '@/lib/tripStore';
 import { PlanDoors } from '@/components/onboarding/PlanDoors';
 
 const sb = vi.hoisted(() => ({ invoke: vi.fn() }));
@@ -116,6 +116,22 @@ describe('C.10 — porta KINU AI', () => {
     expect(ref.current!.messages).toHaveLength(1);
     expect(ref.current!.messages[0].role).toBe('assistant');
     expect(sb.invoke).not.toHaveBeenCalled();
+  });
+
+  it('C.10.1: com 2 viagens, a porta de planejar fixa NO_TRIP e o account vai "geral" (sem gate)', async () => {
+    const t = (id: string, destination: string) => ({
+      id, status: 'active', destination, country: 'Brasil', emoji: '🏖️', startDate: '2026-11-10', endDate: '2026-11-15',
+      budget: 6000, budgetType: 'total', travelers: 2, priorities: [], progress: 0, days: [],
+    } as unknown as StoredTrip);
+    addTrip(t('trip-for', 'Fortaleza')); addTrip(t('trip-lis', 'Lisboa'));
+    sb.invoke.mockResolvedValue({ data: { message: 'Bora.' }, error: null });
+    const ref = mount();
+    act(() => ref.current!.openPlanning());
+    expect(ref.current!.chosenTripId).toBe('none');
+    await act(async () => { await ref.current!.sendMessage('quero viajar em dezembro'); });
+    const body = sb.invoke.mock.calls[0][1].body as { account: { activeTripId?: string; trips: unknown[] } };
+    expect(body.account.trips).toHaveLength(2);
+    expect(body.account.activeTripId).toBe('none');
   });
 
   it('criar_viagem → buildDraftTrip (mock) com os campos do fluxo → rascunho na conta + navegação', async () => {

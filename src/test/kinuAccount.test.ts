@@ -58,6 +58,15 @@ describe('C.6 front — account em toda chamada', () => {
     expect(tripChoiceFromMessage('nenhuma delas', ts)).toBe(NO_TRIP);
     expect(tripChoiceFromMessage('qual é mais barata?', ts)).toBeNull();
     expect(tripChipLabel(fortaleza)).toBe('Fortaleza 10–15/nov');
+  });
+
+  it('C.10.1: viagem da conta › cidade do catálogo fora da conta → NO_TRIP › sem cidade → null', () => {
+    const ts = [fortaleza, lisboa];
+    expect(tripChoiceFromMessage('quero ir pra Milão', ts)).toBe(NO_TRIP);
+    expect(tripChoiceFromMessage('quero ir pra milao', ts)).toBe(NO_TRIP);
+    expect(tripChoiceFromMessage('qual o clima?', ts)).toBeNull();
+    expect(tripChoiceFromMessage('clima em Fortaleza', ts)).toBe('trip-for');
+    expect(tripChoiceFromMessage('estou num clima romântico', ts)).toBeNull();
     expect(tripChipLabel(lisboa)).toBe('Lisboa (rascunho)');
   });
 });
