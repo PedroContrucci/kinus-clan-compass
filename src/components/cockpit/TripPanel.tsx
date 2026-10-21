@@ -5,7 +5,6 @@ import { Check, FileText, ChevronDown, ChevronUp, MapPin, ExternalLink, X } from
 import { CheckinBanner } from '@/components/checkin/CheckinBanner';
 import { TripCheckinDrawer } from '@/components/checkin/TripCheckinDrawer';
 import { WeatherBadge } from './WeatherBadge';
-import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
 import { differenceInDays, format } from 'date-fns';
 import { tripTimezone, flightSearchRoute, FLIGHT_SEARCH_NO_IATA } from '@/lib/timezone';
@@ -534,8 +533,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     showFlexDates
   );
 
-  const destCurrency = (trip as any).destinationCurrency || getTripCurrency(trip.destination);
-  const { rates, loading: ratesLoading, updatedAgo } = useExchangeRates(destCurrency);
 
   const daysLeft = trip.startDate ? Math.max(0, differenceInDays(new Date(trip.startDate), new Date())) : 0;
   const isPast = trip.startDate ? differenceInDays(new Date(trip.startDate), new Date()) < 0 : false;
@@ -569,8 +566,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const tierLabel = TIER_LABELS[(trip as any).budgetTier || trip.budgetType || 'comfort'] || 'Conforto';
 
   const confirmedPct = trip.finances.total > 0 ? Math.round((trip.finances.confirmed / trip.finances.total) * 100) : 0;
-  const plannedPct = trip.finances.total > 0 ? Math.min(100 - confirmedPct, Math.round((trip.finances.planned / trip.finances.total) * 100)) : 0;
-  const overflow = (trip.finances.planned + trip.finances.confirmed) - trip.finances.total;
 
   const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
@@ -1702,51 +1697,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       {/* Roteiro Executivo removed — day-by-day lives in the Roteiro tab */}
 
 
-      {/* 3. Resumo Financeiro Compacto */}
-      <div className="bg-card border border-border rounded-xl p-3 space-y-2">
-        <div className="flex justify-between items-center">
-          <span className="text-xs font-medium text-muted-foreground">Financeiro</span>
-          <span className="text-xs text-foreground font-['Outfit']">
-            R$ {fmt(trip.finances.confirmed)} / R$ {fmt(trip.finances.total)}
-          </span>
-        </div>
-        <div className="h-2 w-full rounded-full bg-muted overflow-hidden flex">
-          <div className="h-full bg-emerald-500 transition-all" style={{ width: `${confirmedPct}%` }} />
-          <div className="h-full bg-yellow-500 transition-all" style={{ width: `${plannedPct}%` }} />
-        </div>
-        <div className="flex gap-3 text-[10px]">
-          <span className="flex items-center gap-1 text-muted-foreground">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" /> Confirmado: R$ {fmt(trip.finances.confirmed)}
-          </span>
-          <span className="flex items-center gap-1 text-muted-foreground">
-            <div className="w-2 h-2 rounded-full bg-yellow-500" /> Planejado: R$ {fmt(trip.finances.planned)}
-          </span>
-        </div>
-        {/* Currency badge */}
-        {rates[destCurrency] && (
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-              💱 1 BRL = {rates[destCurrency].toFixed(4)} {destCurrency}
-            </span>
-            <span className="text-[10px] text-muted-foreground">{updatedAgo}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Budget overflow warning */}
-      {overflow > 0 && (
-        <div className="bg-[#eab308]/10 border border-[#eab308]/30 rounded-xl p-3 flex items-start gap-2.5">
-          <span className="text-[#eab308] text-sm leading-5">⚠️</span>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-[#eab308]">
-              Plano excede o orçamento em R$ {fmt(overflow)}
-            </p>
-            <p className="text-xs text-[#eab308]/80 mt-0.5">
-              Revise os custos na aba Financeiro ou ajuste o orçamento da viagem.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* 4. Actions Bar: Share + Export PDF */}
       <div className="flex gap-2">
