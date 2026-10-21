@@ -24,6 +24,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { getFlightPlannedTotal, getSelectedFlightPlannedTotal } from '@/lib/flightFinance';
+import { PainelResumo } from './PainelResumo';
 
 const TIER_DESCRIPTIONS: Record<string, string> = {
   backpacker: 'Hostels, street food, tours gratuitos',
@@ -1223,6 +1224,8 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       </Drawer>
         </CollapsibleContent>
       </Collapsible>
+
+      <PainelResumo trip={trip} onNavigateTab={onNavigateTab} />
 
       {/* 4. Actions Bar: Share + Export PDF */}
       <div className="flex gap-2">
