@@ -614,6 +614,8 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </div>
       )}
 
+      <PainelResumo trip={trip} onNavigateTab={onNavigateTab} />
+
       {/* Section: Voo & Hospedagem */}
       <Collapsible open={vooOpen} onOpenChange={setVooOpen}>
         <CollapsibleTrigger className="w-full flex items-center justify-between py-3 px-4 bg-card border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -995,52 +997,15 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       {/* Status de Reservas — removed: flight/hotel state now lives in the hero cards only. */}
 
 
-      {/* 🎟️ Ofertas de Experiências — activity partner links only.
-          Flight partner links live behind the flight hero's "Buscar Ofertas" popover.
-          Hotel partner links live on the hotel hero. */}
-      {(() => {
-        const paidActivities = (trip.days?.flatMap(d => (d.activities || []).map(a => ({ ...a, dayDate: d.date }))) || [])
-          .filter(a => a.category === 'passeio' && (a.cost || 0) >= 80);
-        const uniqueByName = new Map<string, typeof paidActivities[0]>();
-        paidActivities.forEach(a => {
-          if (a.name && !uniqueByName.has(a.name)) uniqueByName.set(a.name, a);
-        });
-        const uniquePaidActivities = Array.from(uniqueByName.values());
-        if (uniquePaidActivities.length === 0) return null;
-
-        return (
-          <div id="ofertas-experiencias" className="bg-card border border-border rounded-xl p-4 space-y-3">
-            <div>
-              <p className="text-sm font-bold text-foreground font-['Outfit']">🎟️ Ofertas de Experiências</p>
-              <p className="text-xs text-muted-foreground">Reserve as atividades pagas do seu roteiro</p>
-            </div>
-            <div className="space-y-1.5">
-              {uniquePaidActivities.map((activity) => (
-                <button
-                  key={activity.name}
-                  onClick={() => setOffersModal({ isOpen: true, activityName: activity.name, activityDate: String(activity.dayDate || '').slice(0, 10) })}
-                  className="w-full flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/60 transition-colors group text-left"
-                >
-                  <span className="text-sm font-semibold text-foreground font-['Outfit']">{activity.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Ver ofertas</span>
-                    <ExternalLink size={14} className="text-muted-foreground group-hover:text-foreground shrink-0" />
-                  </div>
-                </button>
-              ))}
-            </div>
-            {offersModal && (
-              <OffersModal
-                isOpen={offersModal.isOpen}
-                onClose={() => setOffersModal(null)}
-                activityName={offersModal.activityName}
-                activityDate={offersModal.activityDate}
-                city={trip.destination}
-              />
-            )}
-          </div>
-        );
-      })()}
+      {offersModal && (
+        <OffersModal
+          isOpen={offersModal.isOpen}
+          onClose={() => setOffersModal(null)}
+          activityName={offersModal.activityName}
+          activityDate={offersModal.activityDate}
+          city={trip.destination}
+        />
+      )}
 
       {/* Troca de hotel. Persiste pelo onUpdateTrip, que é o read-modify-write do
           storage (Viagens.handleUpdateTrip) — não a cópia do estado React. */}
@@ -1225,7 +1190,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </CollapsibleContent>
       </Collapsible>
 
-      <PainelResumo trip={trip} onNavigateTab={onNavigateTab} />
 
       {/* 4. Actions Bar: Share + Export PDF */}
       <div className="flex gap-2">
