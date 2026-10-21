@@ -382,9 +382,10 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       if (deltaPct >= 0.08) {
         return {
           message: '📈 Voos desta rota subiram — seu preço planejado está defasado',
-          actionLabel: 'Atualizar',
-          onClick: () => document.getElementById('central-ofertas')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+          actionLabel: 'Ver no Financeiro',
+          onClick: () => onNavigateTab('financeiro'),
         };
+
       }
     }
     if (!flightConfirmed && daysLeft <= 30) {
