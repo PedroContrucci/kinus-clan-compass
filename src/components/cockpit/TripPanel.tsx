@@ -569,8 +569,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const tierLabel = TIER_LABELS[(trip as any).budgetTier || trip.budgetType || 'comfort'] || 'Conforto';
 
   const confirmedPct = trip.finances.total > 0 ? Math.round((trip.finances.confirmed / trip.finances.total) * 100) : 0;
-  const plannedPct = trip.finances.total > 0 ? Math.min(100 - confirmedPct, Math.round((trip.finances.planned / trip.finances.total) * 100)) : 0;
-  const overflow = (trip.finances.planned + trip.finances.confirmed) - trip.finances.total;
 
   const flightConfirmed = trip.flights?.outbound?.status === 'confirmed';
   const hotelConfirmed = trip.accommodation?.status === 'confirmed';
