@@ -8,14 +8,14 @@ import { toast } from "sonner";
 import { CURATED_CITIES } from "@/lib/curatedCities";
 import { destinationActivities } from "@/data/destinationActivities";
 import { getCuratedHotels } from "@/data/curatedHotels";
-import { findCityInfo } from "@/data/destinationCatalog";
 import { kinuAuthHeaders } from "@/lib/kinuAuthHeader";
 import { buildDraftTrip } from "@/lib/createTrip";
 import { addTrip, listTrips, type StoredTrip } from "@/lib/tripStore";
-import { kinuDidLines } from "@/lib/onboardingFlow";
+import { finishFlowTrip, kinuDidLines } from "@/lib/onboardingFlow";
+import { agentCity, nearestCatalogCities, planFromAgent } from "@/lib/destinationPicker";
+import { readCachedPrefs } from "@/lib/onboarding";
 import { razaoLines, razaoTotals } from "@/lib/razaoLines";
 import { trackTripCreated } from "@/lib/tripEvents";
-import { TRAVEL_INTERESTS, PRIORITY_OPTIONS } from "@/components/wizard/types";
 
 export interface KinuActionHandlers {
   trocar_atividade?: (params: { dia: number; atividade_atual: string; nova_atividade: string }) => string | null | Promise<string | null>;
@@ -268,6 +268,8 @@ interface KinuAIContextType {
   wizardPrefill: { destino: string; data_ida: string; data_volta: string; viajantes: number } | null;
   setWizardPrefill: (prefill: { destino: string; data_ida: string; data_volta: string; viajantes: number } | null) => void;
   clearWizardPrefill: () => void;
+  /** C.10: abre o chat no modo "planejar" (mensagem de abertura do assistente). */
+  openPlanning: () => void;
   /** C.6: viagens da conta (ativas + rascunhos) — os chips do chat global. */
   accountTrips: StoredTrip[];
   /** C.6: escolha da sessão do chat (id ou NO_TRIP). */
@@ -515,6 +517,18 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
     setWizardPrefill(null);
   }, []);
 
+  // C.10: porta "Planejar com o KINU AI". A abertura é fala DO ASSISTENTE, local (sem chamar a
+  // function); nada é atribuído ao usuário. O agente pergunta só o que faltar e emite criar_viagem.
+  const openPlanning = useCallback(() => {
+    setMessages(prev => [...prev, {
+      id: `msg-${Date.now()}-planejar`,
+      role: 'assistant',
+      content: 'Bora planejar! 🧭 Para onde você quer ir? Se já souber, me conta também as datas e quem vai.',
+      timestamp: new Date(),
+    }]);
+    setIsOpen(true);
+  }, []);
+
 
   const dismissInsight = useCallback((id: string) => {
     setInsights(prev => prev.filter(insight => insight.id !== id));
@@ -559,91 +573,42 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
 
     if (action.type === 'criar_viagem') {
       const p = (action.params as any) ?? {};
-      const destino = String(p.destino ?? '');
-      const data_ida = String(p.data_ida ?? '');
-      const data_volta = String(p.data_volta ?? '');
-      const viajantes = Number(p.viajantes);
-      const estilo = String(p.estilo ?? '').toLowerCase();
-      const interessesRaw: string[] = Array.isArray(p.interesses) ? p.interesses.map(String) : [];
-      const prioridadesRaw: string[] = Array.isArray(p.prioridades) ? p.prioridades.map(String) : [];
-      const orcamentoTotal = Number(p.orcamento_total);
-      const cityMatch = CURATED_CITIES.find((c) => c.toLowerCase() === destino.toLowerCase());
-      const dateRe = /^\d{4}-\d{2}-\d{2}$/;
-      if (!cityMatch || !dateRe.test(data_ida) || !dateRe.test(data_volta) || !Number.isFinite(viajantes) || viajantes < 1) {
+      const destino = String(p.destino ?? '').trim();
+      // C.10: destino fora da lista do agente → recusa honesta com as mais próximas do catálogo (sem toast).
+      if (destino && !agentCity(destino)) {
+        setActionStatus(messageId, actionIndex, 'dismissed');
+        setMessages(prev => [...prev, {
+          id: `msg-${Date.now()}-fora`,
+          role: 'assistant',
+          content: `Ainda não cubro ${destino} por aqui. As mais próximas do catálogo verificado: ${nearestCatalogCities(destino).join(', ')}. Quer seguir com uma delas?`,
+          timestamp: new Date(),
+        }]);
+        return;
+      }
+      // O MESMO DraftTripInput do fluxo curto (buildFlowInput); origem = home_city do perfil.
+      const plan = planFromAgent(p, (readCachedPrefs() as Record<string, unknown>).home_city);
+      if (!plan) {
         toast.error('Não consegui montar essa viagem — dados incompletos.');
         return;
       }
-      const adults = Math.max(1, Math.floor(viajantes));
-      const parseDate = (s: string) => {
-        const [y, m, d] = s.split('-').map(Number);
-        return new Date(y, (m || 1) - 1, d || 1);
-      };
-      const departureDate = parseDate(data_ida);
-      const returnDate = parseDate(data_volta);
-
-      // Map estilo → wizard tier
-      let budgetTier: 'backpacker' | 'economic' | 'comfort' | 'luxury' = 'comfort';
-      if (estilo.includes('econom')) budgetTier = 'economic';
-      else if (estilo.includes('premium') || estilo.includes('luxo') || estilo.includes('luxury')) budgetTier = 'luxury';
-
-      // Fuzzy matching helper (normalized, lowercase, accent-insensitive)
-      const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-      const fuzzyMatch = <T extends { id: string; label: string }>(inputs: string[], options: readonly T[]): string[] => {
-        const result: string[] = [];
-        for (const raw of inputs) {
-          const n = norm(raw);
-          if (!n) continue;
-          for (const opt of options) {
-            const nid = norm(opt.id);
-            const nlabel = norm(opt.label);
-            if (nid.includes(n) || n.includes(nid) || nlabel.includes(n) || n.includes(nlabel)) {
-              if (!result.includes(opt.id)) result.push(opt.id);
-            }
-          }
-        }
-        return result;
-      };
-
-      const travelInterests = fuzzyMatch(interessesRaw, TRAVEL_INTERESTS as any);
-      const priorities = fuzzyMatch(prioridadesRaw, PRIORITY_OPTIONS as any);
-      const budgetAmount = Number.isFinite(orcamentoTotal) && orcamentoTotal > 0 ? orcamentoTotal : 0;
-
-      const info = findCityInfo(cityMatch);
+      const cityMatch = plan.input.destinationCity;
+      const adults = plan.input.adults;
+      const data_ida = String(p.data_ida);
+      const data_volta = String(p.data_volta);
       setActionStatus(messageId, actionIndex, 'applied');
 
       (async () => {
         try {
-          const trip = await buildDraftTrip({
-            originCity: 'São Paulo',
-            originAirportCode: 'GRU',
-            destinationCity: cityMatch,
-            destinationAirportCode: info?.city.airports?.[0],
-            destinationTimezoneId: info?.city.timezone,
-            destinationTimezone: info?.city.timezone,
-            selectedCountry: info?.country.country,
-            hasDirectFlight: false,
-            departureDate,
-            returnDate,
-            adults,
-            children: [],
-            infants: 0,
-            budgetTier,
-            travelStyle: budgetTier,
-            budgetAmount,
-            travelInterests,
-            priorities,
-            biologyAIEnabled: true,
+          const trip = await buildDraftTrip(plan.input);
+          const stored = finishFlowTrip(trip as StoredTrip, {
+            cap: plan.cap, children: 0, originSource: plan.origin.source, createdVia: 'kinu',
           });
 
-          const stored = trip as StoredTrip;
-          stored.createdVia = 'kinu';
-          stored.childrenCount = 0; // o chat não pergunta por crianças (`children: []` acima)
-
           // Funil único: read-modify-write contra o storage + notifica os assinantes.
-          // Os dois campos são setados ANTES e sobrevivem — StoredTrip preserva campos extras.
           addTrip(stored);
           trackTripCreated(stored, 'kinu_ai');
 
+          // A viagem abre no rascunho → card "O que o KINU fez".
           setPendingNavigation({ destino: 'painel', ts: Date.now(), tripId: trip.id });
           setMessages(prev => [...prev, {
             id: `msg-${Date.now()}-ack`,
@@ -666,7 +631,6 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       })();
       return;
     }
-
 
     if (action.type === 'sugerir_destinos') {
       const cidades: string[] = Array.isArray((action.params as any)?.cidades)
@@ -778,6 +742,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         wizardPrefill,
         setWizardPrefill,
         clearWizardPrefill,
+        openPlanning,
         accountTrips,
         chosenTripId,
         chooseTrip,

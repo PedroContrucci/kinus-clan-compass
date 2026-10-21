@@ -70,8 +70,10 @@ beforeEach(() => {
 });
 
 describe('C.7 — aba Início', () => {
-  it('0 viagens → a aba é o fluxo curto (sem lista vazia)', () => {
+  it('0 viagens → a aba mostra as duas portas (C.10); 🧭 abre o fluxo curto (sem lista vazia)', () => {
     at('/inicio');
+    expect(screen.getByTestId('plan-doors')).toBeTruthy();
+    fireEvent.click(screen.getByText('🧭 Planejar pela interface'));
     expect(screen.getByText('Para onde vamos?')).toBeTruthy();
     expect(screen.queryAllByTestId('trip-linha')).toHaveLength(0);
     expect(screen.queryByText('Minhas viagens')).toBeNull();

@@ -1,24 +1,22 @@
-// FirstTripFlow — onboarding v2: grade das cidades curadas → 3 campos → rascunho.
+// FirstTripFlow — onboarding v2: continente → país → cidade (C.10) → 3 campos → rascunho.
 // Um toque escolhe o destino; um botão monta a viagem pelo mesmo buildDraftTrip do assistente.
 
-import { followPlanEnvelope } from '@/lib/planTotals';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Loader2, Minus, Plus } from 'lucide-react';
+import { ArrowLeft, Loader2, Minus, Plus, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CURATED_CITIES } from '@/lib/curatedCities';
+import { pickerCities, pickerCountries, pickerRegions, searchDestinations } from '@/lib/destinationPicker';
+import type { RegionName } from '@/data/destinationCatalog';
 import { interestsFor } from '@/lib/interestsFor';
-import { PlacePhoto } from '@/components/shared/PlacePhoto';
-import { DestinationImage } from '@/components/shared/DestinationImage';
 import { buildDraftTrip } from '@/lib/createTrip';
 import { addTrip, type StoredTrip } from '@/lib/tripStore';
 import { trackTripCreated } from '@/lib/tripEvents';
 import { trackEvent } from '@/lib/kinuEvents';
 import { toast } from '@/hooks/use-toast';
 import {
-  FLOW_TIERS, type FlowTierId, buildFlowInput, countryOf, defaultDates, iconIdOf, resolveOrigin, returnForDeparture,
+  FLOW_TIERS, type FlowTierId, buildFlowInput, defaultDates, finishFlowTrip, resolveOrigin, returnForDeparture,
 } from '@/lib/onboardingFlow';
 
 interface Props {
@@ -28,9 +26,11 @@ interface Props {
   initialCity?: string | null;
   /** C.7: com viagens na conta, volta para a lista do Início. */
   onBack?: () => void;
+  /** C.10: rótulo do voltar (sem viagem, volta para as duas portas). */
+  backLabel?: string;
 }
 
-export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack }: Props) => {
+export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack, backLabel }: Props) => {
   const navigate = useNavigate();
   const [city, setCity] = useState<string | null>(initialCity ?? null);
   const [interests, setInterests] = useState<string[]>([]);
@@ -54,6 +54,12 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack }: Props) 
 
   useEffect(() => { trackEvent('onboarding.welcome_shown', { flow: 'v2' }, userId); }, [userId]);
 
+  const [query, setQuery] = useState('');
+  const [region, setRegion] = useState<RegionName | null>(null);
+  const [country, setCountry] = useState<string | null>(null);
+  const regions = useMemo(() => pickerRegions(), []);
+  const hits = useMemo(() => searchDestinations(query), [query]);
+
   const pick = (c: string) => {
     setCity(c);
     setInterests([]);
@@ -67,12 +73,7 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack }: Props) 
       const origin = resolveOrigin(homeCity);
       const capValue = Number(cap.replace(/\D/g, '')) || 0;
       const trip = await buildDraftTrip(buildFlowInput({ city, origin: origin.city, from, to, adults, children, tier, interests, cap: capValue }));
-      // Teto informado = orçamento do usuário: o envelope do plano não o sobrescreve.
-      const stored = followPlanEnvelope({ ...(trip as StoredTrip), budgetSource: capValue > 0 ? 'user' : 'plan' }) as StoredTrip;
-      stored.childrenCount = children;
-      stored.originSource = origin.source;
-      stored.createdVia = stored.createdVia ?? 'onboarding';
-      stored.onboardingFlow = 'v2';
+      const stored = finishFlowTrip(trip as StoredTrip, { cap: capValue, children, originSource: origin.source, createdVia: 'onboarding' });
       addTrip(stored);
       trackTripCreated(stored, 'wizard');
       trackEvent('onboarding.trip_built', { city, tier }, userId);
@@ -94,34 +95,73 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack }: Props) 
           <motion.section key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -40 }}>
             {onBack && (
               <button onClick={onBack} className="flex items-center gap-1 text-sm text-muted-foreground mb-4 min-h-[44px]">
-                <ArrowLeft size={16} /> Minhas viagens
+                <ArrowLeft size={16} /> {backLabel ?? 'Minhas viagens'}
               </button>
             )}
             <h1 className="text-3xl font-bold text-foreground font-['Outfit']">Para onde vamos?</h1>
-            <p className="text-muted-foreground mt-1">{CURATED_CITIES.length} destinos verificados um a um</p>
-            <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {CURATED_CITIES.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => pick(c)}
-                  className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-border text-left group"
-                >
-                  <PlacePhoto
-                    id={iconIdOf(c)}
-                    name={c}
-                    city={c}
-                    w={640}
-                    className="absolute inset-0 h-full w-full"
-                    fallback={<DestinationImage destination={c} query={`${c} landmark`} className="absolute inset-0 h-full w-full object-cover" />}
-                  />
-                  <span className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
-                  <span className="absolute bottom-3 left-3 right-3">
-                    <span className="block font-semibold text-foreground font-['Outfit'] leading-tight">{c}</span>
-                    <span className="block text-xs text-muted-foreground">{countryOf(c)}</span>
-                  </span>
-                </button>
-              ))}
+            <p className="text-muted-foreground mt-1">Continente, país e cidade. ✓ curado = verificado um a um.</p>
+            <div className="relative mt-5">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar cidade ou país…"
+                aria-label="Buscar destino"
+                className="w-full min-h-[44px] pl-9 pr-3 rounded-xl border border-border bg-card text-sm text-foreground"
+              />
             </div>
+            {query.trim() ? (
+              hits.length === 0 ? (
+                <p className="mt-4 text-sm text-muted-foreground">Nenhum destino encontrado para “{query}”.</p>
+              ) : (
+                <ul className="mt-4 space-y-2" data-testid="picker-hits">
+                  {hits.map((h) => (
+                    <li key={h.name}>
+                      {cityLine(h.name, h.curated, pick, `${h.flag} ${h.country}`)}
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : (
+              <>
+                <div className="mt-4 flex flex-wrap gap-2" data-testid="picker-regions">
+                  {regions.map((r) => (
+                    <button key={r.id} onClick={() => { setRegion(r.id); setCountry(null); }}
+                      className={`min-h-[44px] px-3 rounded-full border text-sm ${region === r.id ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground'}`}>
+                      {r.emoji} {r.id}
+                    </button>
+                  ))}
+                </div>
+                {region && !country && (
+                  <ul className="mt-4 space-y-2" data-testid="picker-countries">
+                    {pickerCountries(region).map((c) => (
+                      <li key={c.country}>
+                        <button onClick={() => setCountry(c.country)}
+                          className="w-full flex items-center justify-between min-h-[44px] px-3 rounded-xl border border-border bg-card text-sm text-foreground">
+                          <span>{c.flag} {c.country}</span>
+                          <span className="text-muted-foreground">{c.cities.length} {c.cities.length === 1 ? 'cidade' : 'cidades'} ▸</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {region && country && (
+                  <>
+                    <button onClick={() => setCountry(null)} className="mt-4 flex items-center gap-1 text-sm text-muted-foreground min-h-[44px]">
+                      <ArrowLeft size={16} /> {region} › {country}
+                    </button>
+                    <ul className="mt-2 space-y-2" data-testid="picker-cities">
+                      {pickerCities(region, country).map((c) => (
+                        <li key={c.name}>
+                          {cityLine(c.name, c.curated, pick)}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </>
+            )}
           </motion.section>
         ) : (
           <motion.section key="fields" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="max-w-md mx-auto">
@@ -214,3 +254,18 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack }: Props) 
 };
 
 export default FirstTripFlow;
+
+// Linha de cidade do seletor (render helper, não componente).
+const cityLine = (name: string, curated: boolean, onPick: (c: string) => void, sub?: string) => (
+  <button onClick={() => onPick(name)}
+    className="w-full flex items-center justify-between min-h-[44px] px-3 rounded-xl border border-border bg-card text-sm text-foreground text-left">
+    <span>
+      {name}
+      {sub && <span className="ml-2 text-muted-foreground">{sub}</span>}
+    </span>
+    <span className="flex items-center gap-2">
+      {curated && <span className="text-xs text-emerald-500">✓ curado</span>}
+      <span className="text-primary">▸</span>
+    </span>
+  </button>
+);

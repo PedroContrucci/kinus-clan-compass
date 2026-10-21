@@ -12,6 +12,7 @@ import { razaoLines, razaoTotals } from '@/lib/razaoLines';
 import { formatTileBRL } from '@/lib/tripScope';
 import { ACTIVE, STATUS_LABEL, ddmm, orderTrips, statusLine } from '@/lib/inicioTrips';
 import { FirstTripFlow } from '@/components/onboarding/FirstTripFlow';
+import { PlanDoors } from '@/components/onboarding/PlanDoors';
 import { NewPlanningWizard } from '@/components/wizard/NewPlanningWizard';
 import { CheckinBanner } from '@/components/checkin/CheckinBanner';
 import { ViagensVividas } from '@/components/viagens/ViagensVividas';
@@ -80,7 +81,7 @@ const Inicio = () => {
   const debugMode = searchParams.get('debug') === 'true';
   const forceGuide = searchParams.get('guia') === '1';
   const { user, isLoading: authLoading } = useAuth();
-  const { wizardPrefill } = useKinuAI();
+  const { wizardPrefill, openPlanning } = useKinuAI();
 
   const [trips, setTrips] = useState<StoredTrip[]>(() => listTrips());
   useEffect(() => subscribeTrips(() => setTrips(listTrips())), []);
@@ -102,6 +103,8 @@ const Inicio = () => {
   const openFor = (location.state as { openWizardFor?: string } | null)?.openWizardFor ?? null;
   const [planning, setPlanning] = useState<boolean>(Boolean(openFor));
   useEffect(() => { if (openFor) setPlanning(true); }, [openFor]);
+  // C.10: o "➕" (e a aba sem viagem) abre as duas portas; o fluxo curto é a porta 🧭.
+  const [doors, setDoors] = useState(false);
 
   // Prefill do KINU AI: o assistente completo, por cima da aba.
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -131,16 +134,28 @@ const Inicio = () => {
 
   const ordered = orderTrips(trips);
 
-  // Sem viagem a aba É o fluxo curto; com viagens, o fluxo abre pelo "➕" e volta à lista.
-  if (ordered.length === 0 || forceGuide || planning) {
+  // Sem viagem (ou pelo "➕") a aba mostra as duas portas; Clã (openFor) e ?guia=1 vão direto ao fluxo curto.
+  const backToList = ordered.length > 0
+    ? () => { setPlanning(false); setDoors(false); if (forceGuide) navigate('/inicio', { replace: true }); }
+    : undefined;
+  if (forceGuide || planning) {
     return (
       <>
         <FirstTripFlow
           userId={user.id}
           homeCity={prefs.home_city}
           initialCity={openFor}
-          onBack={ordered.length > 0 ? () => { setPlanning(false); if (forceGuide) navigate('/inicio', { replace: true }); } : undefined}
+          onBack={backToList ?? (openFor || forceGuide ? undefined : () => setPlanning(false))}
+          backLabel={backToList ? undefined : 'Voltar'}
         />
+        <BottomNav />
+      </>
+    );
+  }
+  if (ordered.length === 0 || doors) {
+    return (
+      <>
+        <PlanDoors onInterface={() => setPlanning(true)} onAgent={openPlanning} onBack={backToList} />
         <BottomNav />
       </>
     );
@@ -181,7 +196,7 @@ const Inicio = () => {
             </li>
           ))}
           <li>
-            <button onClick={() => setPlanning(true)}
+            <button onClick={() => setDoors(true)}
               className="w-full flex items-center justify-between min-h-[44px] px-3 rounded-xl border border-dashed border-border text-sm text-foreground hover:border-primary/40">
               <span>➕ Planejar nova viagem</span>
               <span className="text-primary">▸</span>

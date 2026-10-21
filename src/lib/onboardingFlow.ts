@@ -8,7 +8,7 @@ import { BUDGET_TIERS } from '@/components/wizard/types';
 import { calculateTripEstimate } from '@/lib/activityPricing';
 import { rankHotelsForTrip, type SwapTripLike } from '@/lib/hotelSwap';
 import { catalogIdOf } from '@/lib/localAchievements';
-import { planBreakdown, reserveFor, RESERVE_RATE } from '@/lib/planTotals';
+import { followPlanEnvelope, planBreakdown, reserveFor, RESERVE_RATE } from '@/lib/planTotals';
 import type { DraftTripInput } from '@/lib/createTrip';
 import { interestLabel, splitInterests } from '@/lib/interestsFor';
 import { flightChoiceLine } from '@/lib/flightRanking';
@@ -94,6 +94,21 @@ export function buildFlowInput(p: {
     travelInterests: p.interests ?? [],
     priorities: [],
   };
+}
+
+/**
+ * C.10 — pós-processamento único do rascunho (fluxo curto e KINU AI): teto informado = orçamento do
+ * usuário (o envelope do plano não o sobrescreve), crianças e origem declaradas, canal de criação.
+ */
+export function finishFlowTrip<T extends Record<string, unknown>>(
+  trip: T, m: { cap: number; children: number; originSource: OriginSource; createdVia: string },
+): T {
+  const out: Record<string, unknown> = followPlanEnvelope({ ...trip, budgetSource: m.cap > 0 ? 'user' : 'plan' });
+  out.childrenCount = m.children;
+  out.originSource = m.originSource;
+  out.createdVia = out.createdVia ?? m.createdVia;
+  out.onboardingFlow = 'v2';
+  return out as T;
 }
 
 export function tierLabel(id: unknown): string {
