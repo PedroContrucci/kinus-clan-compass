@@ -7,7 +7,6 @@ import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { exportTripPDF } from '@/lib/tripPdfExport';
 import { tripTimezone, flightSearchRoute, FLIGHT_SEARCH_NO_IATA } from '@/lib/timezone';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -27,7 +26,6 @@ import { PackingData } from '@/types/packing';
 import { getActivityPrice, determinePriceLevel, findBestPriceLevel, mapCategoryToPricingType, CITY_PRICES } from '@/lib/activityPricing';
 import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
 import { BottomNav } from '@/components/shared/BottomNav';
-import { TRAVEL_INTERESTS } from '@/components/wizard/types';
 import { getDestinationActivities } from '@/data/destinationActivities';
 import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '@/lib/placeIdentity';
 import type { SuggestedActivity } from '@/data/destinationActivities';
@@ -1306,102 +1304,6 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
           {/* Painel Tab */}
           {activeTab === 'painel' && (
             <TabErrorBoundary tabName="Painel"><div className="animate-fade-in">
-              {/* Agent Proactive Insights */}
-              {(() => {
-                const insights = analyzeTrip(selectedTrip);
-                const topInsights = insights.slice(0, 3);
-                if (topInsights.length === 0) return null;
-                return (
-                  <div className="mb-4 space-y-2">
-                    {topInsights.map((insight) => (
-                      <AgentTip
-                        key={insight.id}
-                        agent={insight.agent}
-                        variant="full"
-                        message={insight.message}
-                        action={insight.action ? {
-                          label: insight.action.label,
-                          onClick: () => setActiveTab(insight.action!.tab as any),
-                        } : undefined}
-                      />
-                    ))}
-                  </div>
-                );
-              })()}
-              {/* Curadoria do Roteiro Card */}
-              {(selectedTrip as any).travelInterests && (selectedTrip as any).travelInterests.length > 0 && (
-                <div className="mb-4 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-accent/5 overflow-hidden">
-                  <div className="p-4 pb-2">
-                    <h3 className="text-sm font-bold text-foreground font-['Outfit']">🎯 Roteiro curado para você</h3>
-                  </div>
-                  <div className="px-4 pb-3 space-y-2">
-                    {((selectedTrip as any).travelInterests as string[]).map(interest => {
-                      const keywordMap: Record<string, string[]> = {
-                        'gastronomy': ['restaurante', 'jantar', 'almoço', 'café', 'market', 'culinária', 'gastronomia', 'michelin', 'food'],
-                        'culture': ['museu', 'museum', 'catedral', 'igreja', 'templo', 'palace', 'castelo', 'história', 'cultural'],
-                        'art': ['museu', 'museum', 'galeria', 'gallery', 'arte', 'art', 'orsay', 'louvre', 'uffizi'],
-                        'history': ['museu', 'museum', 'ruínas', 'fort', 'castelo', 'palace', 'histórico', 'antiga', 'romano'],
-                        'adventure': ['trekking', 'snorkeling', 'kayak', 'surf', 'mountain', 'canoa', 'mergulho', 'hiking'],
-                        'beach': ['beach', 'praia', 'island', 'ilha', 'bay', 'baía', 'costa', 'snorkeling'],
-                        'nature': ['parque', 'garden', 'jardim', 'mountain', 'floresta', 'cachoeira', 'natureza', 'trilha'],
-                        'nightlife': ['bar', 'rooftop', 'club', 'noturno', 'night', 'jazz', 'música'],
-                        'shopping': ['shopping', 'mercado', 'market', 'bazar', 'loja', 'compras', 'souk'],
-                        'relaxation': ['spa', 'praia', 'beach', 'termas', 'relax', 'piscina', 'jardim'],
-                        'family': ['parque', 'zoo', 'aquário', 'museu', 'praia', 'beach'],
-                        'winter': ['ski', 'neve', 'snow', 'mountain', 'termas', 'chocolate'],
-                      };
-                      const interestMeta = TRAVEL_INTERESTS.find(i => i.id === interest);
-                      const keywords = keywordMap[interest] || [];
-                      const matches = (selectedTrip.days || []).flatMap(day =>
-                        day.activities.filter(act => {
-                          const name = (act.name || '').toLowerCase();
-                          return keywords.some(kw => name.includes(kw)) &&
-                            act.category !== 'voo' && act.category !== 'transporte' && act.category !== 'hotel';
-                        })
-                      ).slice(0, 4);
-                      if (matches.length === 0) return null;
-                      return (
-                        <div key={interest} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-muted/50">
-                          <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0 border border-emerald-500/20">
-                            <span className="text-sm">{interestMeta?.icon}</span>
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold text-foreground">{interestMeta?.icon} {interestMeta?.label}</p>
-                            <p className="text-[11px] text-muted-foreground leading-tight mt-0.5 truncate">
-                              {matches.map(m => m.name.replace(/^(Jantar|Almoço|Café):\s*/i, '')).join(' · ')}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* Biology AI */}
-                    {(selectedTrip as any).jetLagMode && (
-                      <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-muted/50">
-                        <div className="w-7 h-7 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0 border border-purple-500/20">
-                          <span className="text-sm">🧠</span>
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-foreground">🧠 Biology AI</p>
-                          <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-                            Ritmo adaptado ao fuso ({(selectedTrip as any).jetLagSeverity || 'MODERADO'})
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Stats */}
-                    <p className="text-[11px] text-muted-foreground text-center pt-1 border-t border-border/50">
-                      {selectedTrip.days?.reduce((s, d) => s + d.activities.filter(a =>
-                        a.category !== 'voo' && a.category !== 'transporte' && a.category !== 'hotel'
-                      ).length, 0) || 0} atividades curadas · {
-                        selectedTrip.days?.reduce((s, d) => s + d.activities.filter(a =>
-                          a.category === 'comida'
-                        ).length, 0) || 0} restaurantes selecionados
-                    </p>
-                  </div>
-                </div>
-              )}
 
               <TripPanel
               trip={selectedTrip}
@@ -1433,21 +1335,6 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
                 }
               }}
             />
-
-              {/* Sticky PDF Export Bar */}
-              <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-card border border-border">
-                <span className="text-2xl">📄</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground font-['Outfit']">Exportar Roteiro em PDF</p>
-                  <p className="text-[10px] text-muted-foreground">PDF premium com fotos, mapa e dicas</p>
-                </div>
-                <button
-                  onClick={() => exportTripPDF(selectedTrip, user?.name, user?.email)}
-                  className="px-4 py-2 text-xs font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                >
-                  Gerar PDF
-                </button>
-              </div>
             </div></TabErrorBoundary>
           )}
 
