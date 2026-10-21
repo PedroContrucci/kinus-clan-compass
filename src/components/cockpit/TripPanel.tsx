@@ -534,8 +534,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     showFlexDates
   );
 
-  const destCurrency = (trip as any).destinationCurrency || getTripCurrency(trip.destination);
-  const { rates, loading: ratesLoading, updatedAgo } = useExchangeRates(destCurrency);
 
   const daysLeft = trip.startDate ? Math.max(0, differenceInDays(new Date(trip.startDate), new Date())) : 0;
   const isPast = trip.startDate ? differenceInDays(new Date(trip.startDate), new Date()) < 0 : false;
