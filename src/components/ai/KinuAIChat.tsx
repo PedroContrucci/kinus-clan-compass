@@ -109,9 +109,9 @@ export function KinuAIChat() {
             {/* Quick Actions or Emergency Actions */}
             {isEmergencyMode ? (
               <KinuEmergencyActions disabled={isLoading} />
-            ) : (
+            ) : messages.length === 0 ? (
               <KinuQuickActions disabled={isLoading} />
-            )}
+            ) : null}
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[200px]">
@@ -139,6 +139,11 @@ export function KinuAIChat() {
               
               <div ref={messagesEndRef} />
             </div>
+
+            {/* C.9 (0b): com conversa, os chips ficam logo acima do campo de digitar */}
+            {!isEmergencyMode && messages.length > 0 && (
+              <KinuQuickActions disabled={isLoading} placement="bottom" />
+            )}
 
             {/* Input */}
             <form

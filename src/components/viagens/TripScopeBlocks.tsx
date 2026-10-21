@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Check, ChevronRight } from 'lucide-react';
 import { EnhancedExchangeRates } from '@/components/cockpit/EnhancedExchangeRates';
-import { isDomesticTrip } from '@/lib/tripScope';
+import { isDomesticTrip, rulesSummary, type DestinationRules } from '@/lib/tripScope';
 import type { ChecklistItem } from '@/types/trip';
 
 type TripLike = Parameters<typeof isDomesticTrip>[0];
@@ -18,6 +18,45 @@ export function CambioBlock({ trip, destinationCurrency }: { trip: TripLike; des
       budgetBRL={Number((trip as { budget?: number })?.budget) || 0}
       collapsible
     />
+  );
+}
+
+/** C.9 — regras do destino numa linha; aberto, o mesmo texto que o PDF imprime em DOCUMENTAÇÃO. */
+export function DestinationRulesBlock({ rules }: { rules: DestinationRules }) {
+  const [open, setOpen] = useState(false);
+  const summary = rulesSummary(rules);
+  if (!summary) return null;
+  const rows = [
+    { label: 'Visto', value: rules.visaText },
+    { label: 'Vacina', value: rules.vaccineText },
+    { label: 'Passaporte', value: rules.passportText },
+    { label: 'Moeda', value: rules.currencyText },
+    { label: 'Tomada', value: rules.plugText },
+  ].filter((r): r is { label: string; value: string } => !!r.value);
+  return (
+    <div className="bg-[#1e293b] border border-[#334155] rounded-2xl">
+      <button onClick={() => setOpen(!open)} aria-expanded={open} className="w-full flex items-center gap-2 p-4 text-left">
+        <span className="text-sm">📋</span>
+        <span className="flex-1 min-w-0">
+          <span className="block font-semibold text-[#f8fafc] font-['Outfit'] text-sm">Regras do destino</span>
+          <span className="block text-xs text-[#94a3b8] truncate">{summary}</span>
+        </span>
+        <ChevronRight size={14} className={`text-[#94a3b8] transition-transform ${open ? 'rotate-90' : ''}`} />
+      </button>
+      {open && (
+        <div className="space-y-2 px-4 pb-4">
+          {rows.map((r) => (
+            <div key={r.label} className="text-xs">
+              <span className="font-semibold text-[#f8fafc]">{r.label}: </span>
+              <span className="text-[#94a3b8]">{r.value}</span>
+            </div>
+          ))}
+          <p className="text-[10px] text-[#64748b]">
+            {rules.source === 'docs' ? 'Regras para passaporte brasileiro comum' : 'Guia do destino KINU'} · revalide no consulado antes de viajar.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
 

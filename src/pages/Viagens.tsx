@@ -22,7 +22,7 @@ import { TripPanel } from '@/components/cockpit/TripPanel';
 import { AgentTip } from '@/components/shared/AgentTip';
 import { getIcarusRoteiro, getIcarusGuia, getIcarusLeilao, getHestiaFinOps, getHestiaCambio, getHestiaLeilao, getHermesChecklist, getHermesPacking } from '@/lib/agentMessages';
 import { analyzeTrip, AgentInsight } from '@/engines/agentIntelligence';
-import { SavedTrip, TripActivity, ChecklistItem, ActivityStatus, contextualTips } from '@/types/trip';
+import { SavedTrip, TripActivity, ActivityStatus, contextualTips } from '@/types/trip';
 import { PackingData } from '@/types/packing';
 import { getActivityPrice, determinePriceLevel, findBestPriceLevel, mapCategoryToPricingType, CITY_PRICES } from '@/lib/activityPricing';
 import { findMichelinMatch, getMichelinStarDisplay } from '@/lib/michelinData';
@@ -40,10 +40,9 @@ import { itemKindOf, trackTripActivated, trackTripItemConfirmed } from '@/lib/tr
 import { activateDraft } from '@/lib/activateDraft';
 import { buildOfferLinks } from '@/lib/offersLinks';
 import { prontidao } from '@/lib/roteiroBlocks';
-import { buildOfferCheckReply, formatTileBRL, isDomesticTrip, scopeChecklist } from '@/lib/tripScope';
-import { CambioBlock, ChecklistBlocks } from '@/components/viagens/TripScopeBlocks';
+import { buildOfferCheckReply, destinationRules, formatTileBRL, scopeChecklist } from '@/lib/tripScope';
+import { CambioBlock, ChecklistBlocks, DestinationRulesBlock } from '@/components/viagens/TripScopeBlocks';
 import { supabase } from '@/integrations/supabase/client';
-import { getDocsForDestination } from '@/data/destinationDocs';
 
 import { DailyRouteMap, RouteLeg } from '@/components/cockpit/DailyRouteMap';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
@@ -1787,33 +1786,10 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
           {activeTab === 'preparacao' && (
             <TabErrorBoundary tabName="Preparação">{(() => {
             const rawChecklist = selectedTrip.checklist || [];
-            const docs = getDocsForDestination(selectedTrip.destination);
-
-            // Context-aware transform: enrich Visto (doc-2) and Vacinas (pre-1);
-            // auto-check + hide when there's no obligation for brasileiros.
-            const hiddenIds = new Set<string>();
-            const checklist: ChecklistItem[] = rawChecklist.map((item) => {
-              if (!docs) return item;
-              if (item.id === 'doc-2') {
-                if (docs.vistoIsento) {
-                  hiddenIds.add(item.id);
-                  return { ...item, checked: true, label: `Visto — ${docs.visto}` };
-                }
-                return { ...item, label: `Visto — ${docs.visto}` };
-              }
-              if (item.id === 'pre-1') {
-                if (!docs.vacinaObrigatoria) {
-                  hiddenIds.add(item.id);
-                  return { ...item, checked: true, label: `Vacina — ${docs.vacina}` };
-                }
-                return { ...item, label: `Vacina — ${docs.vacina}` };
-              }
-              return item;
-            });
-
-            // Viagem doméstica: sem passaporte, câmbio, chip e aviso ao banco (recorte por id).
-            const scoped = scopeChecklist(checklist, isDomesticTrip(selectedTrip));
-            scoped.hiddenIds.forEach((id) => hiddenIds.add(id));
+            // C.9: o checklist lê as regras do destino (visto, vacina, tomada, seguro, recorte doméstico).
+            const rules = destinationRules(selectedTrip);
+            const scoped = scopeChecklist(rawChecklist, rules);
+            const hiddenIds = new Set(scoped.hiddenIds);
             const visibleChecklist = scoped.items.filter((i) => !hiddenIds.has(i.id));
             const totalItems = visibleChecklist.length;
             const checkedItems = visibleChecklist.filter(i => i.checked).length;
@@ -1824,6 +1800,9 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
             return (
               <div className="animate-fade-in space-y-6">
                 <AgentTip agent="hermes" variant="compact" message={getHermesPacking(selectedTrip)} />
+
+                {/* C.9: regras do destino — uma linha, colapsado */}
+                <DestinationRulesBlock rules={rules} />
 
 
 

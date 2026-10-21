@@ -3,9 +3,11 @@ import { openClaSuggest } from "@/components/cla/ClaSuggestHost";
 
 interface KinuQuickActionsProps {
   disabled?: boolean;
+  /** C.9 (0b): com conversa, os chips moram logo acima do campo de digitar. */
+  placement?: 'top' | 'bottom';
 }
 
-export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
+export function KinuQuickActions({ disabled, placement = 'top' }: KinuQuickActionsProps) {
   const { sendMessage, tripContext, accountTrips, chooseTrip, chosenTripId } = useKinuAI();
 
   const actions: { id: string; icon: string; label: string; prompt: string; tripId?: string }[] = [];
@@ -83,7 +85,7 @@ export function KinuQuickActions({ disabled }: KinuQuickActionsProps) {
   if (visibleActions.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[#334155]">
+    <div className={`flex flex-wrap gap-2 px-4 py-3 border-[#334155] ${placement === 'top' ? 'border-b' : 'border-t'}`}>
       {visibleActions.map((action) => (
         <button
           key={action.id}

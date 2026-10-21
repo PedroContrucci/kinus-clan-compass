@@ -385,7 +385,8 @@ export function buildCloseLinks(kind: CloseKind, ctx: CloseCtx): CloseLink[] {
         provider: 'Kiwi', label: 'parceiro KINU', partner: true,
         url: `https://c111.travelpayouts.com/click?shmarker=${TRAVELPAYOUTS_MARKER}&promo_id=3791&source_type=customlink&type=click&custom_url=${encodeURIComponent(kiwi)}`,
       },
-      direct('Google Flights', `https://www.google.com/travel/flights?q=${encodeURIComponent(`Flights from ${o} to ${d} on ${ymd(start)} through ${ymd(end)} for ${pax} adults`)}`),
+      // C.9 (0a): Google Flights saiu — a URL por texto não leva data/pax no celular.
+      direct('Decolar', `https://www.decolar.com/shop/flights/results/roundtrip/${o}/${d}/${ymd(start)}/${ymd(end)}/${pax}/0/0`),
       direct('Skyscanner', `https://www.skyscanner.com.br/transport/flights/${o.toLowerCase()}/${d.toLowerCase()}/${format(start, 'yyMMdd')}/${format(end, 'yyMMdd')}/?adults=${pax}`),
     ];
     const cia = airlineLink(ctx.airline, o, d, start, end, pax);

@@ -30,7 +30,7 @@ describe('C.8 — buildCloseLinks', () => {
   it('voo: rota + datas + pax em todas as URLs; Kiwi parceiro; LATAM só quando é a cia', () => {
     const links = buildCloseLinks('voo', { origin: 'GRU', destination: 'FOR', start: ida, end: volta, pax: 2, airline: 'LATAM Airlines' });
     expect(links.map((l) => [l.provider, l.label, l.partner])).toEqual([
-      ['Kiwi', 'parceiro KINU', true], ['Google Flights', 'link direto', false], ['Skyscanner', 'link direto', false], ['LATAM', 'link direto', false],
+      ['Kiwi', 'parceiro KINU', true], ['Decolar', 'link direto', false], ['Skyscanner', 'link direto', false], ['LATAM', 'link direto', false],
     ]);
     for (const l of links) {
       const u = decodeURIComponent(decodeURIComponent(l.url));
@@ -38,11 +38,15 @@ describe('C.8 — buildCloseLinks', () => {
       expect(u).toMatch(/FOR/i);
       expect(u).toMatch(/2026-11-10|261110/);
       expect(u).toMatch(/2026-11-15|261115/);
-      expect(u).toMatch(/adults=2|for 2 adults|adt=2/);
+      expect(u).toMatch(/adults=2|adt=2|\/2\/0\/0$/);
     }
+    // C.9 (0a): Decolar com o padrão datado; Google Flights (URL por texto) não volta.
+    expect(links.find((l) => l.provider === 'Decolar')!.url)
+      .toBe('https://www.decolar.com/shop/flights/results/roundtrip/GRU/FOR/2026-11-10/2026-11-15/2/0/0');
+    expect(links.some((l) => /google/.test(l.url))).toBe(false);
     // Azul/GOL/TAP: sem padrão datado conhecido → fora (nunca a home).
     expect(buildCloseLinks('voo', { origin: 'GRU', destination: 'FOR', start: ida, end: volta, airline: 'Azul' }).map((l) => l.provider))
-      .toEqual(['Kiwi', 'Google Flights', 'Skyscanner']);
+      .toEqual(['Kiwi', 'Decolar', 'Skyscanner']);
     expect(buildCloseLinks('voo', { origin: 'GRU', destination: 'FOR', start: ida })).toEqual([]);
   });
 
