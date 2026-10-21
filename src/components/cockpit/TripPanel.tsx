@@ -7,7 +7,7 @@ import { TripCheckinDrawer } from '@/components/checkin/TripCheckinDrawer';
 import { WeatherBadge } from './WeatherBadge';
 import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
 import { differenceInDays, format } from 'date-fns';
-import { tripTimezone, flightSearchRoute, FLIGHT_SEARCH_NO_IATA } from '@/lib/timezone';
+import { tripTimezone } from '@/lib/timezone';
 import { ptBR } from 'date-fns/locale';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { exportTripPDF } from '@/lib/tripPdfExport';
@@ -434,9 +434,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const [showAllActions, setShowAllActions] = useState(false);
   const [dismissedNow, setDismissedNow] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [flightResults, setFlightResults] = useState<any[] | null>(null);
-  const [searchingFlights, setSearchingFlights] = useState(false);
-  const [flightSearchError, setFlightSearchError] = useState<string | null>(null);
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
   const [vooOpen, setVooOpen] = useSectionOpen('vooHospedagem', true);
   const [insightsOpen, setInsightsOpen] = useSectionOpen('insights', false);
@@ -728,46 +725,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     }
   };
 
-  const searchRealFlights = async () => {
-    if (!trip.flights?.outbound) return;
-    setFlightSearchError(null);
-    // C.4.3: só IATA vai para a busca; sem código conhecido, não busca e diz por quê.
-    const route = flightSearchRoute(trip);
-    if (!route) { setFlightSearchError(FLIGHT_SEARCH_NO_IATA); return; }
-    setSearchingFlights(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('amadeus-flights', {
-        body: {
-          action: 'search',
-          origin: route.origin,
-          destination: route.destination,
-          date: trip.startDate?.split('T')[0],
-          adults: trip.travelers || 1,
-        },
-      });
-      let results: any[] = [];
-      if (data?.data && Array.isArray(data.data)) {
-        results = data.data.slice(0, 3);
-        setFlightResults(results);
-      } else if (data?.offers) {
-        results = data.offers.slice(0, 3);
-        setFlightResults(results);
-      }
-      if (results.length > 0) {
-        const bestPrice = Math.min(...results.map((r: any) => r.price || Infinity));
-        if (bestPrice !== Infinity) {
-          savePriceSnapshot(trip.id, bestPrice);
-        }
-      } else {
-        setFlightSearchError('Busca de voos indisponível: Não conseguimos consultar os preços agora. Tente novamente em alguns minutos.');
-      }
-    } catch (err) {
-      console.error('Amadeus search failed:', err);
-      setFlightSearchError('Busca de voos indisponível: Não conseguimos consultar os preços agora. Tente novamente em alguns minutos.');
-    } finally {
-      setSearchingFlights(false);
-    }
-  };
 
   // Find first non-completed action index
   const firstActiveIdx = filteredActions.findIndex(a => !a.completed);
@@ -1176,25 +1133,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                   </PopoverContent>
                 </Popover>
               </div>
-              <button
-                onClick={searchRealFlights}
-                disabled={searchingFlights}
-                className="w-full text-[10px] font-medium py-1.5 rounded-lg border border-sky-500/30 text-sky-400 hover:bg-sky-500/10 transition-colors disabled:opacity-50"
-              >
-                {searchingFlights ? '✈️ Buscando...' : '✈️ Preços de referência · Travelpayouts'}
-              </button>
-              {flightSearchError && (
-                <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
-                  {flightSearchError === FLIGHT_SEARCH_NO_IATA ? (
-                    <p className="text-[10px] font-semibold text-amber-400">{FLIGHT_SEARCH_NO_IATA}</p>
-                  ) : (
-                    <>
-                      <p className="text-[10px] font-semibold text-amber-400">Busca de voos indisponível</p>
-                      <p className="text-[10px] text-muted-foreground">Não conseguimos consultar os preços agora. Tente novamente em alguns minutos.</p>
-                    </>
-                  )}
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -1313,24 +1251,6 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
         </div>
       </div>
 
-      {/* Preços de referência (Travelpayouts, via function amadeus-flights) */}
-      {flightResults && flightResults.length > 0 && (
-        <div className="bg-sky-500/5 border border-sky-500/20 rounded-xl p-3 space-y-2">
-          <p className="text-xs font-semibold text-sky-400 font-['Outfit']">✈️ Voos encontrados:</p>
-          {flightResults.map((flight: any, i: number) => (
-            <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/30 last:border-0">
-              <div>
-                <p className="text-xs font-medium text-foreground">{flight.airline || 'Companhia'}</p>
-                <p className="text-[10px] text-muted-foreground">{flight.duration || ''} · {flight.isDirect ? 'Direto' : `${flight.connectionCities?.length || 1} parada`}</p>
-              </div>
-              <span className="text-sm font-bold text-sky-400 font-['Outfit']">
-                R$ {(flight.price || 0).toLocaleString('pt-BR')}
-              </span>
-            </div>
-          ))}
-          <p className="text-[9px] text-muted-foreground text-center">preços de referência · Travelpayouts</p>
-        </div>
-      )}
 
       {/* Status de Reservas — removed: flight/hotel state now lives in the hero cards only. */}
 
