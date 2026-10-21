@@ -5,7 +5,6 @@ import { Check, FileText, ChevronDown, ChevronUp, MapPin, ExternalLink, X } from
 import { CheckinBanner } from '@/components/checkin/CheckinBanner';
 import { TripCheckinDrawer } from '@/components/checkin/TripCheckinDrawer';
 import { WeatherBadge } from './WeatherBadge';
-import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
 import { differenceInDays, format } from 'date-fns';
 import { tripTimezone, flightSearchRoute, FLIGHT_SEARCH_NO_IATA } from '@/lib/timezone';
