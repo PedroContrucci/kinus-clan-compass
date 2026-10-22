@@ -69,10 +69,11 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
   const jetLagMode = input.biologyAIEnabled || jetLagImpact.level !== 'BAIXO';
 
   // Calculate flight duration
-  // Sem fuso, a faixa de duração cai no fallback internacional conservador (11h) — e o voo
-  // sai marcado durationKnown:false, para nenhuma tela mostrar isso como medido.
+  // Só é "conhecida" a duração lida de FLIGHT_DURATION — a linha medida daquela rota. A média
+  // de 3h doméstica, o proxy de São Paulo e as faixas por fuso são estimativas: saem
+  // durationKnown:false e a tela diz "duração a confirmar" até haver oferta real escolhida.
   const { hours: flightHours, fromTable } = getFlightDuration(originCity, destinationCity, tz.tzKnown ? tzDiff : undefined);
-  const durationKnown = fromTable || tz.tzKnown;
+  const durationKnown = fromTable;
   const isLongHaul = flightHours > 10;
   // O que faz um voo ser noturno é a DIREÇÃO, não só a duração. A regra antiga
   // (`> 6h => 21:00`) foi calibrada no transatlântico para leste — GRU→Lisboa sai
