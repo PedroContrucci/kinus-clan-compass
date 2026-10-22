@@ -15,7 +15,7 @@ import { flightChoiceLine } from '@/lib/flightRanking';
 import { cityToIata } from '@/lib/timezone';
 
 export const DEFAULT_ORIGIN = 'São Paulo';
-export type OriginSource = 'profile' | 'default';
+export type OriginSource = 'profile' | 'default' | 'user';
 
 export const FLOW_TIERS = [
   { id: 'economic', label: 'Econômico' },
