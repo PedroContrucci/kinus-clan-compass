@@ -18,6 +18,7 @@ import { toast } from '@/hooks/use-toast';
 import {
   FLOW_TIERS, type FlowTierId, buildFlowInput, defaultDates, finishFlowTrip, resolveOrigin, returnForDeparture,
 } from '@/lib/onboardingFlow';
+import { WIZARD_ORIGINS } from '@/lib/timezone';
 
 interface Props {
   userId: string;
@@ -50,6 +51,8 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack, backLabel
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [tier, setTier] = useState<FlowTierId>('comfort');
+  const resolved = useMemo(() => resolveOrigin(homeCity), [homeCity]);
+  const [origin, setOrigin] = useState<string>(resolved.city);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { trackEvent('onboarding.welcome_shown', { flow: 'v2' }, userId); }, [userId]);
@@ -70,10 +73,9 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack, backLabel
     if (!city || busy) return;
     setBusy(true);
     try {
-      const origin = resolveOrigin(homeCity);
       const capValue = Number(cap.replace(/\D/g, '')) || 0;
-      const trip = await buildDraftTrip(buildFlowInput({ city, origin: origin.city, from, to, adults, children, tier, interests, cap: capValue }));
-      const stored = finishFlowTrip(trip as StoredTrip, { cap: capValue, children, originSource: origin.source, createdVia: 'onboarding' });
+      const trip = await buildDraftTrip(buildFlowInput({ city, origin, from, to, adults, children, tier, interests, cap: capValue }));
+      const stored = finishFlowTrip(trip as StoredTrip, { cap: capValue, children, originSource: origin === resolved.city ? resolved.source : 'user', createdVia: 'onboarding' });
       addTrip(stored);
       trackTripCreated(stored, 'wizard');
       trackEvent('onboarding.trip_built', { city, tier }, userId);
@@ -172,6 +174,15 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack, backLabel
             <p className="text-muted-foreground mt-1">Já deixamos tudo preenchido. Ajuste se quiser.</p>
 
             <div className="mt-6 space-y-5">
+              <div>
+                <p className="text-sm font-medium text-foreground mb-2">Saindo de</p>
+                <select value={origin} onChange={(e) => setOrigin(e.target.value)} aria-label="Cidade de origem"
+                  className="w-full bg-card border border-border rounded-xl px-3 py-2 text-foreground">
+                  {!WIZARD_ORIGINS.includes(origin) && <option value={origin}>{origin}</option>}
+                  {WIZARD_ORIGINS.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+
               <div>
                 <p className="text-sm font-medium text-foreground mb-2">Datas</p>
                 <div className="grid grid-cols-2 gap-2">
