@@ -35,6 +35,11 @@ const ORIGIN_AIRPORT_CITY: Record<string, string> = {
   BSB: 'Brasília', CWB: 'Curitiba', POA: 'Porto Alegre',
   // Códigos de cidade (metropolitanos) que a Travelpayouts devolve no lugar do aeroporto.
   SAO: 'São Paulo', RIO: 'Rio de Janeiro', BHZ: 'Belo Horizonte',
+  // Demais aeroportos brasileiros: o seletor "Saindo de" e o "trocar" da origem oferecem
+  // estas cidades (WIZARD_ORIGINS sai deste mapa).
+  GIG: 'Rio de Janeiro', SDU: 'Rio de Janeiro',
+  FOR: 'Fortaleza', REC: 'Recife', SSA: 'Salvador', NAT: 'Natal', MCZ: 'Maceió', JPA: 'João Pessoa',
+  FLN: 'Florianópolis', GYN: 'Goiânia', VIX: 'Vitória', BEL: 'Belém', MAO: 'Manaus', SLZ: 'São Luís', CGB: 'Cuiabá', CGR: 'Campo Grande',
 };
 
 /** C.8 — cidades de origem do wizard, na ordem do seletor (o "trocar" da origem no rascunho). */
