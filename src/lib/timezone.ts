@@ -30,6 +30,7 @@ export function cityTimezone(city: string | undefined | null): string | null {
 }
 
 /** Aeroportos de origem do wizard fora do catálogo (WizardStep1Logistics.ORIGIN_AIRPORTS). */
+// Origens só com fuso no gerador (cityTimezones); as demais entram quando a esteira cobrir a cidade.
 const ORIGIN_AIRPORT_CITY: Record<string, string> = {
   GRU: 'São Paulo', CGH: 'São Paulo', VCP: 'Campinas', CNF: 'Belo Horizonte',
   BSB: 'Brasília', CWB: 'Curitiba', POA: 'Porto Alegre',
@@ -38,8 +39,8 @@ const ORIGIN_AIRPORT_CITY: Record<string, string> = {
   // Demais aeroportos brasileiros: o seletor "Saindo de" e o "trocar" da origem oferecem
   // estas cidades (WIZARD_ORIGINS sai deste mapa).
   GIG: 'Rio de Janeiro', SDU: 'Rio de Janeiro',
-  FOR: 'Fortaleza', REC: 'Recife', SSA: 'Salvador', NAT: 'Natal', MCZ: 'Maceió', JPA: 'João Pessoa',
-  FLN: 'Florianópolis', GYN: 'Goiânia', VIX: 'Vitória', BEL: 'Belém', MAO: 'Manaus', SLZ: 'São Luís', CGB: 'Cuiabá', CGR: 'Campo Grande',
+  FOR: 'Fortaleza', REC: 'Recife', SSA: 'Salvador', NAT: 'Natal',
+  FLN: 'Florianópolis', MAO: 'Manaus',
 };
 
 /** C.8 — cidades de origem do wizard, na ordem do seletor (o "trocar" da origem no rascunho). */
