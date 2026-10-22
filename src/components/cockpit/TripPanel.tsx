@@ -59,12 +59,6 @@ function CurationSources({ trip }: { trip: SavedTrip }) {
           </p>
         </div>
       )}
-      <div className="flex items-start gap-2">
-        <div className="w-0.5 self-stretch rounded-full bg-sky-500 shrink-0" />
-        <p className="text-xs text-muted-foreground">
-          <span className="text-sky-400 font-medium">Base curada KINU:</span> Conde Nast Traveler, Lonely Planet, guias especializados
-        </p>
-      </div>
       {hasGastronomy && (
         <div className="flex items-start gap-2">
           <div className="w-0.5 self-stretch rounded-full bg-amber-500 shrink-0" />
