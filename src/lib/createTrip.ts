@@ -252,13 +252,29 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
 
 // ─── Helper Functions ───
 
+// fromTable:false marca a duração como estimativa — a UI mostra "duração a confirmar".
 function getFlightDuration(origin: string, destination: string, tzDiff?: number): { hours: number; fromTable: boolean } {
-  const key1 = `São Paulo-${destination}`;
-  const key2 = `Brasil-${destination}`;
-  if (FLIGHT_DURATION[key1]) return { hours: FLIGHT_DURATION[key1], fromTable: true };
-  if (FLIGHT_DURATION[key2]) return { hours: FLIGHT_DURATION[key2], fromTable: true };
-  const key3 = `${origin}-${destination}`;
-  if (FLIGHT_DURATION[key3]) return { hours: FLIGHT_DURATION[key3], fromTable: true };
+  // Linha exata da rota pedida: é o único número medido para esta origem.
+  const exact = `${origin}-${destination}`;
+  if (FLIGHT_DURATION[exact]) return { hours: FLIGHT_DURATION[exact], fromTable: true };
+
+  if (origin === 'São Paulo' || origin === 'Campinas') {
+    // Origens da tabela: o valor de São Paulo (ou o prefixo Brasil) é medido aqui.
+    const key1 = `São Paulo-${destination}`;
+    const key2 = `Brasil-${destination}`;
+    if (FLIGHT_DURATION[key1]) return { hours: FLIGHT_DURATION[key1], fromTable: true };
+    if (FLIGHT_DURATION[key2]) return { hours: FLIGHT_DURATION[key2], fromTable: true };
+  } else {
+    // Origem fora do hub: dentro do Brasil nenhuma rota passa de ~3h e a tabela não tem
+    // a linha — 3h é média conservadora, não medida.
+    if (tzDiff === 0 || getCountryForCity(destination) === 'Brasil') {
+      return { hours: 3, fromTable: false };
+    }
+    // Internacional de outra cidade brasileira: a rota de São Paulo serve de proxy
+    // (±2h na vida real), mas continua estimativa.
+    const proxy = `São Paulo-${destination}`;
+    if (FLIGHT_DURATION[proxy]) return { hours: FLIGHT_DURATION[proxy], fromTable: false };
+  }
 
   // Fuso desconhecido → 11h: fallback internacional conservador (não medido; durationKnown:false).
   if (tzDiff === undefined) return { hours: 11, fromTable: false };
