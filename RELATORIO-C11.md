@@ -31,3 +31,6 @@ Dados curados intocados (`git diff --stat`: só os 4 arquivos + o gerado). `tsc`
 - PDF: ~42 strings sem acento (helvetica) → fonte TTF; rótulo total/por pessoa no voo. KPI "N dias" virar texto na linha das datas.
 - "Fontes da curadoria" afirma "Conde Nast Traveler, Lonely Planet" — conferir antes da onda 2.
 - Lição: o Lovable travou uma vez em "Thinking" (13 min) com um prompt de 4 partes; dividido em 2 passou. Prompts de remoção com ≤3 alvos.
+
+## Adendo 22/10 08:45 — C.11.1 (publicado)
+Três prompts, três arquivos, `dd4a84b..27dbf69`: `WeatherBadge.tsx` — fora o fallback sazonal hardcoded (Paris/Tóquio/Dubai, mês em inglês); sem previsão viva, mostra "Previsão disponível a partir de 7 dias antes da viagem" em vez de caixa vazia · `TripPanel.tsx` (CurationSources) e `WizardStep4Summary.tsx` — fora a linha "Base curada KINU: Conde Nast Traveler, Lonely Planet…" (afirmação sem origem; o catálogo vem de Google Places + Michelin + curadoria própria). Decisão: nenhum texto no lugar; fonte citável (Wikivoyage, CC BY-SA) entra na esteira só pós-onda. Clima com média histórica (Open-Meteo ERA5, rotulada) = primeiro item do beta final, não antes da onda (toca edge function). Guia do Testador v4 entregue (Doc + PDF). Texto a corrigir (Rachel): "Hotels 4★" em Fontes da curadoria.
