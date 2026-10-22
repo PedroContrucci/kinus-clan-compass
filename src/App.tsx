@@ -16,6 +16,7 @@ import DestinationDetail from "./pages/DestinationDetail";
 import NotFound from "./pages/NotFound";
 import Privacidade from "./pages/Privacidade";
 import SmokeTest from "./pages/SmokeTest";
+import Onda from "./pages/Onda";
 import { TripAdoptionDialog } from "@/components/shared/TripAdoptionDialog";
 import { migrateLegacyTripIds } from "@/lib/tripIdMigration";
 import { startSession } from "@/lib/session";
@@ -132,6 +133,7 @@ const App = () => (
               <Route path="/conta" element={<Conta />} />
               <Route path="/destino/:id" element={<DestinationDetail />} />
               <Route path="/smoke" element={<SmokeTest />} />
+              <Route path="/onda" element={<Onda />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             </div>
