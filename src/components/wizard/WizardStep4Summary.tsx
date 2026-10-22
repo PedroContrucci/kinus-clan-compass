@@ -266,14 +266,6 @@ export const WizardStep4Summary = ({ data, onChange, onGenerateDraft, isGenerati
           </div>
         )}
 
-        <div className="flex items-start gap-3 pl-1">
-          <div className="w-1 self-stretch rounded-full bg-sky-500 shrink-0" />
-          <p className="text-sm text-muted-foreground">
-            <span className="text-sky-400 font-medium">Base curada KINU:</span>{' '}
-            atividades e restaurantes selecionados por curadoria inspirada em Conde Nast Traveler, Lonely Planet e guias especializados
-          </p>
-        </div>
-
         {(data.travelInterests || []).includes('gastronomy') && (
           <div className="flex items-start gap-3 pl-1">
             <div className="w-1 self-stretch rounded-full bg-amber-500 shrink-0" />
