@@ -1,7 +1,7 @@
 // WeatherBadge — Compact inline weather pill for trip destination
 import { useEffect, useMemo } from 'react';
 import { useWeather, getWeatherEmoji } from '@/hooks/useWeather';
-import { differenceInDays, format } from 'date-fns';
+import { differenceInDays } from 'date-fns';
 
 interface WeatherBadgeProps {
   destination: string;
@@ -45,16 +45,8 @@ export const WeatherBadge = ({ destination, startDate }: WeatherBadgeProps) => {
       }
     }
 
-    // Fallback: seasonal average
-    const monthStr = format(tripStart, 'MM');
-    const monthName = format(tripStart, 'MMMM');
-    const seasonal = getSeasonalFallback(destination, monthStr);
-    if (seasonal) {
-      return `${seasonal.emoji} ${monthName} em ${destination}: ${seasonal.temp}`;
-    }
-
-    return null;
-  }, [forecast, startDate, destination]);
+    return 'Previsão disponível a partir de 7 dias antes da viagem';
+  }, [forecast, startDate]);
 
   if (isLoading) {
     return <div className="h-5 w-32 bg-muted/50 rounded-full animate-pulse" />;
