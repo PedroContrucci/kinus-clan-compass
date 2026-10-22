@@ -6,6 +6,7 @@ import { Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { kinuBeta } from '@/integrations/kinu-beta/client';
+import { cn } from '@/lib/utils';
 
 interface OndaRow {
   nome: string;
@@ -170,10 +171,10 @@ export default function Onda() {
                 <div className="flex flex-wrap items-center gap-2"><h3 className="break-words font-bold">{row.nome}</h3><span className="rounded-md border border-accent/30 px-2 py-0.5 text-xs text-accent">{row.grupo}</span></div>
                 <p className="mt-3 break-words text-sm">Conta {row.cadastrou ? '✓' : '—'} · Viagens {row.viagens}{destinations ? ` · ${destinations}` : ''}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <span className={`${chipClass} ${row.voo_ok > 0 ? 'border-primary/30 bg-primary/10 text-primary' : 'text-muted-foreground'}`}>Voo {row.voo_ok > 0 ? '✓' : '—'}</span>
-                  <span className={`${chipClass} ${row.hotel_ok > 0 ? 'border-primary/30 bg-primary/10 text-primary' : 'text-muted-foreground'}`}>Hotel {row.hotel_ok > 0 ? '✓' : '—'}</span>
-                  <span className={`${chipClass} text-muted-foreground`}>Feedback {row.feedbacks}</span>
-                  {row.nota != null && <span className={`${chipClass} text-[hsl(var(--kinu-gold))]`}>Nota {row.nota}</span>}
+                  <span className={cn(chipClass, row.voo_ok > 0 ? 'border-primary/30 bg-primary/10 text-primary' : 'text-muted-foreground')}>Voo {row.voo_ok > 0 ? '✓' : '—'}</span>
+                  <span className={cn(chipClass, row.hotel_ok > 0 ? 'border-primary/30 bg-primary/10 text-primary' : 'text-muted-foreground')}>Hotel {row.hotel_ok > 0 ? '✓' : '—'}</span>
+                  <span className={cn(chipClass, 'text-muted-foreground')}>Feedback {row.feedbacks}</span>
+                  {row.nota != null && <span className={cn(chipClass, 'text-[hsl(var(--kinu-gold))]')}>Nota {row.nota}</span>}
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">{row.ultimo_sinal ? `Último sinal: ${serverDate(row.ultimo_sinal)}` : 'sem atividade'}</p>
               </article>;
