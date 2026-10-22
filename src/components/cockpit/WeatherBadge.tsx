@@ -8,21 +8,6 @@ interface WeatherBadgeProps {
   startDate?: string;
 }
 
-// Seasonal averages for destinations without live forecast
-const SEASONAL_AVERAGES: Record<string, Record<string, { temp: string; emoji: string }>> = {
-  paris: { '12': { temp: '3-8°C', emoji: '❄️' }, '01': { temp: '2-7°C', emoji: '❄️' }, '02': { temp: '3-9°C', emoji: '❄️' }, '03': { temp: '5-12°C', emoji: '🌤️' }, '04': { temp: '7-16°C', emoji: '🌤️' }, '05': { temp: '11-20°C', emoji: '☀️' }, '06': { temp: '14-23°C', emoji: '☀️' }, '07': { temp: '16-25°C', emoji: '☀️' }, '08': { temp: '16-25°C', emoji: '☀️' }, '09': { temp: '13-21°C', emoji: '🌤️' }, '10': { temp: '9-16°C', emoji: '🌧️' }, '11': { temp: '5-10°C', emoji: '🌧️' } },
-  tokyo: { '12': { temp: '3-12°C', emoji: '❄️' }, '01': { temp: '1-10°C', emoji: '❄️' }, '02': { temp: '2-11°C', emoji: '❄️' }, '03': { temp: '5-15°C', emoji: '🌸' }, '04': { temp: '10-20°C', emoji: '🌸' }, '05': { temp: '15-25°C', emoji: '☀️' }, '06': { temp: '19-27°C', emoji: '🌧️' }, '07': { temp: '23-31°C', emoji: '☀️' }, '08': { temp: '24-32°C', emoji: '☀️' }, '09': { temp: '20-28°C', emoji: '🌤️' }, '10': { temp: '14-22°C', emoji: '🌤️' }, '11': { temp: '8-17°C', emoji: '🌤️' } },
-  dubai: { '12': { temp: '15-26°C', emoji: '☀️' }, '01': { temp: '14-24°C', emoji: '☀️' }, '02': { temp: '15-26°C', emoji: '☀️' }, '03': { temp: '18-29°C', emoji: '☀️' }, '04': { temp: '21-34°C', emoji: '☀️' }, '05': { temp: '25-39°C', emoji: '🌡️' }, '06': { temp: '28-41°C', emoji: '🌡️' }, '07': { temp: '30-42°C', emoji: '🌡️' }, '08': { temp: '30-42°C', emoji: '🌡️' }, '09': { temp: '27-39°C', emoji: '☀️' }, '10': { temp: '23-35°C', emoji: '☀️' }, '11': { temp: '19-31°C', emoji: '☀️' } },
-};
-
-function getSeasonalFallback(destination: string, month: string): { temp: string; emoji: string } | null {
-  const key = destination.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  for (const [city, months] of Object.entries(SEASONAL_AVERAGES)) {
-    if (key.includes(city)) return months[month] || null;
-  }
-  return null;
-}
-
 export const WeatherBadge = ({ destination, startDate }: WeatherBadgeProps) => {
   const { forecast, isLoading, fetchWeather } = useWeather();
 
