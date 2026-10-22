@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,11 +24,9 @@ interface OndaRow {
   ultimo_sinal: string | null;
 }
 
-// Mantém o horário informado pelo servidor, sem convertê-lo ao fuso do navegador.
-function serverDate(value: string) {
-  const wallTime = value.replace(/(?:Z|[+-]\d{2}(?::?\d{2})?)$/i, '');
-  const date = parseISO(wallTime);
-  return Number.isNaN(date.getTime()) ? 'sem atividade' : format(date, 'dd/MM HH:mm', { locale: ptBR });
+// ultimo_sinal chega em UTC. new Date() lê o instante real e format() mostra no fuso de quem olha.
+function formatSignal(date: Date | null) {
+  return date && !Number.isNaN(date.getTime()) ? format(date, 'dd/MM HH:mm', { locale: ptBR }) : 'sem atividade';
 }
 
 const groups = ['familia', 'amigos', 'mba', 'trabalho'];
@@ -91,7 +89,7 @@ export default function Onda() {
     tripHotels: rows.filter(row => row.viagens > 0 && row.hotel_ok > 0).length,
   }), [rows]);
   const people = useMemo(() => [...rows].sort((a, b) => {
-    const time = (value: string | null) => value ? (parseISO(value).getTime() || 0) : 0;
+    const time = (value: string | null) => value ? (new Date(value).getTime() || 0) : 0;
     return time(b.ultimo_sinal) - time(a.ultimo_sinal);
   }), [rows]);
 
@@ -164,7 +162,8 @@ export default function Onda() {
           <h2 id="onda-pessoas" className={headingClass}>Pessoas</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {people.map((row, index) => {
-              const signal = row.ultimo_sinal ? parseISO(row.ultimo_sinal).getTime() : NaN;
+              const signalDate = row.ultimo_sinal ? new Date(row.ultimo_sinal) : null;
+              const signal = signalDate?.getTime() ?? NaN;
               const recent = signal <= now && now - signal <= 24 * 60 * 60 * 1000;
               const destinations = Array.isArray(row.destinos) ? row.destinos.join(', ') : row.destinos;
               return <article key={`${row.nome}-${row.grupo}-${index}`} className={recent ? 'min-w-0 rounded-lg border border-border border-l-4 border-l-primary bg-card p-4' : 'min-w-0 rounded-lg border border-border border-l-4 bg-card p-4'}>
@@ -176,7 +175,7 @@ export default function Onda() {
                   <span className={cn(chipClass, 'text-muted-foreground')}>Feedback {row.feedbacks}</span>
                   {row.nota != null && <span className={cn(chipClass, 'text-[hsl(var(--kinu-gold))]')}>Nota {row.nota}</span>}
                 </div>
-                <p className="mt-3 text-xs text-muted-foreground">{row.ultimo_sinal ? `Último sinal: ${serverDate(row.ultimo_sinal)}` : 'sem atividade'}</p>
+                <p className="mt-3 text-xs text-muted-foreground">{row.ultimo_sinal ? `Último sinal: ${formatSignal(signalDate)}` : 'sem atividade'}</p>
               </article>;
             })}
           </div>
