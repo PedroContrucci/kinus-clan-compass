@@ -53,10 +53,10 @@ describe('destino fora do catálogo', () => {
     render(<MemoryRouter><FirstTripFlow userId="u" /></MemoryRouter>);
     const box = screen.getByLabelText('Buscar destino');
 
-    fireEvent.change(box, { target: { value: 'Zur' } });
-    fireEvent.change(box, { target: { value: 'Zurique' } });
+    fireEvent.change(box, { target: { value: 'Qwe' } });
+    fireEvent.change(box, { target: { value: 'Qwerty' } });
 
-    expect(screen.getByText(/Ainda não cobrimos “Zurique”/)).toBeTruthy();
+    expect(screen.getByText(/Ainda não cobrimos “Qwerty”/)).toBeTruthy();
     expect(screen.getByText(/Os mais pedidos entram primeiro/)).toBeTruthy();
     expect(screen.getByText('Feedback', { selector: 'b' })).toBeTruthy();
 
@@ -66,7 +66,7 @@ describe('destino fora do catálogo', () => {
     await wait(950);
     const evs = missing();
     expect(evs).toHaveLength(1);
-    expect(evs[0].props).toEqual({ query: 'Zurique' });
+    expect(evs[0].props).toEqual({ query: 'Qwerty' });
     expect(evs[0].userId).toBe('u');
 
     // 2: destino com hit não registra
@@ -75,7 +75,7 @@ describe('destino fora do catálogo', () => {
     expect(missing()).toHaveLength(1);
 
     // 3: busca curta demais não registra
-    fireEvent.change(box, { target: { value: 'ro' } });
+    fireEvent.change(box, { target: { value: 'qz' } });
     await wait(950);
     expect(missing()).toHaveLength(1);
   });
