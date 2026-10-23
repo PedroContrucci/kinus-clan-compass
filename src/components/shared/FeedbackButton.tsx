@@ -56,7 +56,7 @@ export const FeedbackButton = () => {
     localStorage.setItem('kinu_tester_name', trimmedName);
 
     // A trava liga antes de qualquer await: posta só na linha do insert, o segundo
-    // toque passaria pelo guard enquanto a sessão ainda está sendo lida (:98).
+    // toque passaria pelo guard enquanto a sessão ainda está sendo lida (:105).
     setSending(true);
 
     const pagePath = page || window.location.pathname;
