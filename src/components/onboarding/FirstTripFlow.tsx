@@ -63,6 +63,17 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack, backLabel
   const regions = useMemo(() => pickerRegions(), []);
   const hits = useMemo(() => searchDestinations(query), [query]);
 
+  // Destino fora do catálogo: um evento por busca sem resposta. Os 800 ms de espera
+  // evitam que cada letra digitada vire um evento; o timer é limpo a cada troca.
+  useEffect(() => {
+    if (hits.length > 0 || query.trim().length < 3) return;
+    const t = setTimeout(() => {
+      trackEvent('onboarding.destination_missing', { query: query.trim().slice(0, 60) }, userId);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [query, hits, userId]);
+
+
   const pick = (c: string) => {
     setCity(c);
     setInterests([]);
@@ -115,7 +126,13 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack, backLabel
             </div>
             {query.trim() ? (
               hits.length === 0 ? (
-                <p className="mt-4 text-sm text-muted-foreground">Nenhum destino encontrado para “{query}”.</p>
+                <div className="mt-4">
+                  <p className="text-sm text-foreground">Ainda não cobrimos “{query}”.</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Quer que a gente adicione? Toque no botão amarelo <b>Feedback</b> e preencha
+                    “Qual destino você quer ver no KINU?”. Os mais pedidos entram primeiro.
+                  </p>
+                </div>
               ) : (
                 <ul className="mt-4 space-y-2" data-testid="picker-hits">
                   {hits.map((h) => (

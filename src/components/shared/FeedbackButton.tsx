@@ -22,6 +22,8 @@ export const FeedbackButton = () => {
   const [page, setPage] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [activeTrip, setActiveTrip] = useState<any>(null);
+  // Trava de envio: um toque duplo no botão chegava a gravar o feedback duas vezes.
+  const [sending, setSending] = useState(false);
 
   // Monta fora do <Routes> (App.tsx:74), logo nunca desmonta: sem o sino, a leitura
   // de mount seria uma leitura por sessão inteira e o feedback anexaria a viagem velha.
@@ -40,6 +42,7 @@ export const FeedbackButton = () => {
   ];
 
   const handleSubmit = async () => {
+    if (sending) return;
     if (!category || !message.trim()) {
       toast.error('Selecione uma categoria e escreva seu feedback');
       return;
@@ -51,6 +54,10 @@ export const FeedbackButton = () => {
 
     const trimmedName = testerName.trim();
     localStorage.setItem('kinu_tester_name', trimmedName);
+
+    // A trava liga antes de qualquer await: posta só na linha do insert, o segundo
+    // toque passaria pelo guard enquanto a sessão ainda está sendo lida (:105).
+    setSending(true);
 
     const pagePath = page || window.location.pathname;
     const screenSize = `${window.innerWidth}x${window.innerHeight}`;
@@ -131,6 +138,8 @@ export const FeedbackButton = () => {
     } catch (err) {
       console.warn('feedback insert failed', err);
       success = false;
+    } finally {
+      setSending(false);
     }
 
     // Fire-and-forget instant notification (always send, even if table insert fails)
@@ -318,13 +327,15 @@ export const FeedbackButton = () => {
                 />
               </div>
 
-              <button
-                onClick={handleSubmit}
-                className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
-              >
-                <Send size={16} />
-                Enviar Feedback
-              </button>
+      <button
+        onClick={handleSubmit}
+        disabled={sending}
+        aria-busy={sending}
+        className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
+      >
+        <Send size={16} />
+        {sending ? 'Enviando…' : 'Enviar Feedback'}
+      </button>
             </div>
           )}
         </DialogContent>
