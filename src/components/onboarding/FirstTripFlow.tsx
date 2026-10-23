@@ -129,8 +129,8 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack, backLabel
                 <div className="mt-4">
                   <p className="text-sm text-foreground">Ainda não cobrimos “{query}”.</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Quer que a gente adicione? Toque no botão amarelo <b>Feedback</b> e preencha “Destino que
-                    você queria”. Os mais pedidos entram primeiro.
+                    Quer que a gente adicione? Toque no botão amarelo <b>Feedback</b> e preencha
+                    “Qual destino você quer ver no KINU?”. Os mais pedidos entram primeiro.
                   </p>
                 </div>
               ) : (
