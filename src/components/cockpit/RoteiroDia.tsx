@@ -75,6 +75,33 @@ const logisticsIcon = (a: TripActivity) => {
   return '🚕';
 };
 
+// Rota do dia em olhar único: mesma numeração dos pins do mapa (não-logística, por hora).
+const CIRCLED = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩', '⑪', '⑫', '⑬', '⑭', '⑮', '⑯', '⑰', '⑱', '⑲', '⑳'];
+const circled = (n: number) => (n >= 1 && n <= 20 ? CIRCLED[n - 1] : `(${n})`);
+const byTime = (a: TripActivity, b: TripActivity) => (a.time || '99:99').localeCompare(b.time || '99:99');
+const isStop = (a: TripActivity) => {
+  const k = roteiroKind(a);
+  return k !== 'logistica' && k !== 'incluido';
+};
+/** Início/fim do dia: chegada/partida (✈️), senão hotel (🏨) em dia de exploração. */
+const routeLabelOf = (activities: TripActivity[], routeMinutes: number) => {
+  const timed = activities.slice().sort(byTime);
+  const arrival = timed.length > 0 && logisticsIcon(timed[0]) === '✈️' && roteiroKind(timed[0]) === 'logistica';
+  const departure = timed.length > 0 && logisticsIcon(timed[timed.length - 1]) === '✈️' && roteiroKind(timed[timed.length - 1]) === 'logistica';
+  const exploration = !arrival && !departure;
+  const hasHotelLine = activities.some((a) => {
+    const k = roteiroKind(a);
+    return k === 'incluido' || (k === 'logistica' && a.category === 'hotel');
+  });
+  const seq: string[] = [];
+  if (arrival) seq.push('✈️');
+  else if (hasHotelLine || exploration) seq.push('🏨');
+  timed.filter(isStop).forEach((a, i) => seq.push(circled(i + 1)));
+  if (departure) seq.push('✈️');
+  else if (exploration) seq.push('🏨');
+  return seq.join(' → ') + (routeMinutes > 0 ? ` · ~${routeMinutes} min` : '');
+};
+
 interface RoteiroLinhaProps {
   activity: TripActivity;
   expanded: boolean;
