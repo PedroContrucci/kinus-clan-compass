@@ -297,6 +297,11 @@ export const RoteiroDia = ({
 }: RoteiroDiaProps) => {
   const legs = activities.map((a, i) => (i > 0 ? legBetween(activities[i - 1], a, liveLegs, destination) : null));
   const routeMinutes = legs.reduce((s, l) => s + (l?.minutes ?? 0), 0);
+  // Numeração das paradas = a mesma dos pins do mapa: não-logística, em ordem de hora.
+  const stopNumberById = new Map(
+    activities.filter(isStop).slice().sort(byTime).map((a, i) => [a.id, i + 1] as const),
+  );
+  const routeLabel = routeLabelOf(activities, routeMinutes);
   const isAnchorCost = (a: TripActivity) => a.category === 'voo' || a.category === 'hotel';
   const dayTotal = activities.filter((a) => !isAnchorCost(a)).reduce((s, a) => s + (a.cost || 0), 0);
   const dateLabel = date && !isNaN(date.getTime())
@@ -355,6 +360,7 @@ export const RoteiroDia = ({
               onOpenDetails={onOpenDetails && (() => onOpenDetails(activity))}
               onRemove={onRemove && (() => onRemove(activity, actIndex))}
               renderDetail={renderDetail}
+              stopNumber={stopNumberById.get(activity.id)}
               highlight={highlightId === activity.id}
               anchorRef={activity.id === anchorActivityId ? anchorRef : undefined}
               city={destination}
