@@ -330,8 +330,8 @@ export const RoteiroDia = ({
             aria-expanded={routeOpen}
             className="w-full flex items-center gap-2 h-10 px-2 rounded-lg bg-muted/40 text-xs text-muted-foreground"
           >
-            <span>🗺 Rota do dia{routeMinutes > 0 ? ` · ~${routeMinutes} min de deslocamento` : ''}</span>
-            <span className="ml-auto">{routeOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
+            <span className="flex-1 min-w-0 truncate text-left">{routeLabel}</span>
+            <span className="flex-shrink-0">{routeOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
           </button>
           {routeOpen && <div className="mt-2">{renderMap()}</div>}
         </div>
