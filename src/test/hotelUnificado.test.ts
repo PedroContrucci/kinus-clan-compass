@@ -119,32 +119,36 @@ describe('buildDraftTrip — cidade com curadoria no tier pedido', () => {
 });
 
 describe('buildDraftTrip — cidade sem curadoria no tier: nada muda', () => {
-  // Istambul e Bangkok não têm curadoria nenhuma; Rio de Janeiro tem 4 curados mas
-  // nenhum `budget`, e é justamente o caso em que a escolha automática cega serviria
-  // o Copacabana Palace (R$ 4.500/noite) para um mochileiro de R$ 150.
-  it('Istambul segue no HOTEL_RECOMMENDATIONS, sem proveniência curada', async () => {
-    const trip = await buildDraftTrip(draftInput({ destinationCity: 'Istambul', destinationAirportCode: 'IST' }));
-    expect(getCuratedHotelsForCity('Istambul')).toHaveLength(0);
+  // Desde o catálogo de 177 hotéis, todas as 21 cidades curadas têm os tiers pedidos
+  // pelo wizard; o caminho "sem curado" só existe em cidade fora do catálogo (Natal,
+  // Florianópolis). O Rio, que antes não tinha `budget`, agora tem — e o mochileiro
+  // recebe ESSE, nunca o Copacabana Palace (R$ 4.500/noite).
+  it('Natal (sem curadoria) segue no HOTEL_RECOMMENDATIONS, sem proveniência curada', async () => {
+    const trip = await buildDraftTrip(draftInput({ destinationCity: 'Natal', destinationAirportCode: 'NAT' }));
+    expect(getCuratedHotelsForCity('Natal')).toHaveLength(0);
     expect(curatedIdOf(trip)).toBeUndefined();
-    expect(trip.accommodation!.name).toContain('Istambul');
+    expect(trip.accommodation!.name).toContain('Natal');
   });
 
-  it('Bangkok mantém o nome com sufixo de bairro/cidade do gerador antigo', async () => {
-    const trip = await buildDraftTrip(draftInput({ destinationCity: 'Bangkok', destinationAirportCode: 'BKK' }));
+  it('Florianópolis (sem curadoria) mantém o nome com sufixo de bairro/cidade do gerador antigo', async () => {
+    const trip = await buildDraftTrip(draftInput({ destinationCity: 'Florianópolis', destinationAirportCode: 'FLN' }));
+    expect(getCuratedHotelsForCity('Florianópolis')).toHaveLength(0);
     expect(curatedIdOf(trip)).toBeUndefined();
-    expect(trip.accommodation!.name).toMatch(/ — .+, Bangkok$/);
+    expect(trip.accommodation!.name).toMatch(/ — .+, Florianópolis$/);
   });
 
-  it('Rio/Mochileiro NÃO é promovido a hotel de luxo curado', async () => {
+  it('Rio/Mochileiro NÃO é promovido a hotel de luxo curado: recebe o `budget` curado', async () => {
     const trip = await buildDraftTrip(draftInput({ destinationCity: 'Rio de Janeiro', destinationAirportCode: 'GIG', budgetTier: 'backpacker' }));
-    expect(getCuratedHotelsForCity('Rio de Janeiro').length).toBeGreaterThan(0);
-    expect(pickCuratedHotelForTrip('Rio de Janeiro', { budgetTier: 'backpacker', travelers: 4 })).toBeNull();
-    expect(curatedIdOf(trip)).toBeUndefined();
+    const curated = getCuratedHotelsForCity('Rio de Janeiro');
+    expect(curated.length).toBeGreaterThan(0);
+    expect(pickCuratedHotelForTrip('Rio de Janeiro', { budgetTier: 'backpacker', travelers: 4 })?.tier).toBe('budget');
+    expect(curated.find((h) => h.id === curatedIdOf(trip))?.tier).toBe('budget');
     expect(trip.accommodation!.nightlyRate).toBeLessThan(1000);
   });
 
-  it('a hospedagem e o planejado seguem a estimativa de sempre (não-regressão)', async () => {
-    const trip = await buildDraftTrip(draftInput({ destinationCity: 'Marrakech', destinationAirportCode: 'RAK' }));
+  it('Natal: a hospedagem e o planejado seguem a estimativa de sempre (não-regressão)', async () => {
+    const trip = await buildDraftTrip(draftInput({ destinationCity: 'Natal', destinationAirportCode: 'NAT' }));
+    expect(getCuratedHotelsForCity('Natal')).toHaveLength(0);
     const acc = trip.accommodation!;
     // Estes números são os de antes do arco: diária estimada × 7 noites.
     expect(acc.nightlyRate).toBe(800);
