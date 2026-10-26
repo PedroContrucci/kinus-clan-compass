@@ -1697,7 +1697,7 @@
       "timeSlot": "morning",
       "estimatedCost": 120,
       "costPerPerson": 60,
-      "time": "09:30",
+      "time": "09:40",
       "duration": "2.5h",
       "location": "Odaiba (2 pax)",
       "rating": 4.5,
@@ -1794,7 +1794,7 @@
       "timeSlot": "morning",
       "estimatedCost": 240,
       "costPerPerson": 120,
-      "time": "09:15",
+      "time": "09:55",
       "duration": "8h",
       "location": "Kamakura (2 pax)",
       "rating": 4.7,
@@ -1807,27 +1807,27 @@
       "source": "kinu"
      },
      {
-      "id": "day-3-tokyo-monjayaki",
-      "name": "Monjayaki em Tsukishima",
+      "id": "day-3-tokyo-gyukaku",
+      "name": "Gyukaku (yakiniku)",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 200,
-      "costPerPerson": 100,
+      "estimatedCost": 320,
+      "costPerPerson": 160,
       "time": "19:30",
       "duration": "2h",
-      "location": "Tsukishima (2 pax)",
+      "location": "Shibuya (2 pax)",
       "rating": 4.5,
       "status": "suggestion",
       "tips": [
        "Perto do hotel, para a volta do bate-volta",
-       "A rua Monja Street tem dezenas de casas do prato típico de Tóquio",
-       "Você mesmo prepara na chapa da mesa",
-       "Programa autêntico longe do circuito turístico"
+       "Churrasco japonês grelhado na própria mesa",
+       "Peça o combo de cortes para provar variedade",
+       "Experiência interativa que diverte a família toda"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 440
+    "totalCost": 560
    },
    {
     "dayNumber": 5,
@@ -1908,26 +1908,26 @@
       "source": "kinu"
      },
      {
-      "id": "day-4-tokyo-kura-sushi",
-      "name": "Kura Sushi (esteira gigante)",
+      "id": "day-4-tokyo-monjayaki",
+      "name": "Monjayaki em Tsukishima",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 160,
-      "costPerPerson": 80,
+      "estimatedCost": 200,
+      "costPerPerson": 100,
       "time": "19:30",
-      "duration": "1.5h",
-      "location": "Asakusa (2 pax)",
+      "duration": "2h",
+      "location": "Tsukishima (2 pax)",
       "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "A cada 5 pratos, um gashapon de brinde — jantar vira brincadeira",
-       "Cardápio com fotos, fácil para crianças",
-       "Sistema de senha no app evita fila"
+       "A rua Monja Street tem dezenas de casas do prato típico de Tóquio",
+       "Você mesmo prepara na chapa da mesa",
+       "Programa autêntico longe do circuito turístico"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 680
+    "totalCost": 720
    },
    {
     "dayNumber": 6,
@@ -1958,7 +1958,7 @@
       "timeSlot": "morning",
       "estimatedCost": 500,
       "costPerPerson": 250,
-      "time": "09:15",
+      "time": "10:30",
       "duration": "10h",
       "location": "Hakone (2 pax)",
       "rating": 4.6,
@@ -1977,7 +1977,7 @@
       "timeSlot": "dinner",
       "estimatedCost": 150,
       "costPerPerson": 75,
-      "time": "19:30",
+      "time": "20:45",
       "duration": "1h",
       "location": "Ebisu (2 pax)",
       "rating": 4.6,
@@ -2068,26 +2068,26 @@
       "source": "kinu"
      },
      {
-      "id": "day-6-tokyo-gyukaku",
-      "name": "Gyukaku (yakiniku)",
+      "id": "day-6-tokyo-kura-sushi",
+      "name": "Kura Sushi (esteira gigante)",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 320,
-      "costPerPerson": 160,
+      "estimatedCost": 160,
+      "costPerPerson": 80,
       "time": "19:30",
-      "duration": "2h",
-      "location": "Shibuya (2 pax)",
+      "duration": "1.5h",
+      "location": "Asakusa (2 pax)",
       "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "Churrasco japonês grelhado na própria mesa",
-       "Peça o combo de cortes para provar variedade",
-       "Experiência interativa que diverte a família toda"
+       "A cada 5 pratos, um gashapon de brinde — jantar vira brincadeira",
+       "Cardápio com fotos, fácil para crianças",
+       "Sistema de senha no app evita fila"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 560
+    "totalCost": 400
    },
    {
     "dayNumber": 8,
@@ -2155,7 +2155,7 @@
       "timeSlot": "lunch",
       "estimatedCost": 700,
       "costPerPerson": 350,
-      "time": "12:45",
+      "time": "12:55",
       "duration": "1.5h",
       "location": "Ginza (2 pax)",
       "rating": 4.8,
