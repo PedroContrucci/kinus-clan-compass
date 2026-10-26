@@ -154,6 +154,14 @@ export const RoteiroLinha = ({
           className="flex-1 min-w-0 flex items-center gap-2 text-left text-sm"
         >
           {prefix && <span className="text-[10px] text-muted-foreground font-bold flex-shrink-0">{prefix}</span>}
+          {stopNumber !== undefined && (
+            <span
+              aria-label={`Parada ${stopNumber}`}
+              className="w-[18px] h-[18px] flex-shrink-0 rounded-full bg-muted text-[10px] leading-[18px] text-center text-muted-foreground font-semibold tabular-nums"
+            >
+              {stopNumber}
+            </span>
+          )}
           <span className="text-muted-foreground tabular-nums flex-shrink-0">{activity.time}</span>
           <span className={`truncate font-['Outfit'] ${kind === 'logistica' ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
             {activity.name}
