@@ -172,6 +172,8 @@ describe('rankHotelsForTrip', () => {
     const comCuradoria = Object.keys(curatedHotels).filter((c) => curatedHotels[c].length > 0);
     expect(comCuradoria.length).toBe(Object.keys(curatedHotels).length);
     expect(comCuradoria.length).toBeGreaterThan(0);
+    // Toda cidade curada do app tem hotel no catálogo novo.
+    for (const c of CURATED_CITIES) expect(getCuratedHotelsForCity(c).length, c).toBeGreaterThan(0);
     for (const cidade of comCuradoria) {
       const ranked = rankHotelsForTrip(cidade, makeTrip({ destination: cidade }));
       expect(ranked.length).toBeGreaterThan(0);

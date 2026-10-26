@@ -12,7 +12,7 @@
 //   2. cidade SEM curado do tier -> nada muda, byte a byte (inclusive as finanças).
 // A metade 2 é a que impede o `rankHotelsForTrip[0]` cru de servir Copacabana Palace
 // a R$ 4.500/noite para quem escolheu Mochileiro.
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { buildDraftTrip } from '@/lib/createTrip';
 import { getCuratedHotelsForCity, parsePriceRangeBRL, pickCuratedHotelForTrip } from '@/lib/hotelSwap';
 import type { SavedTrip } from '@/types/trip';
@@ -157,21 +157,34 @@ describe('buildDraftTrip — cidade sem curadoria no tier: nada muda', () => {
 });
 
 describe('pickCuratedHotelForTrip — a regra dos tiers aceitos', () => {
-  it('upscale e resort são par: Porto Seguro (só resort) atende o Luxo', async () => {
+  it('upscale e resort são par: Porto Seguro (upscale + resort) atende o Luxo com um dos dois', async () => {
     const escolha = pickCuratedHotelForTrip('Porto Seguro', { budgetTier: 'luxury', travelers: 4 });
-    expect(escolha?.tier).toBe('resort');
+    expect(['upscale', 'resort']).toContain(escolha?.tier);
     const trip = await buildDraftTrip(draftInput({ destinationCity: 'Porto Seguro', destinationAirportCode: 'BPS', budgetTier: 'luxury' }));
     expect(curatedIdOf(trip)).toBe(escolha!.id);
   });
 
-  it('mas resort não desce para o Conforto: Dubai/Conforto fica sem curado', () => {
-    // Dubai tem 3 resorts e zero `mid`. Aceitar resort ali significaria Atlantis The
-    // Palm a R$ 3.750/noite para quem pediu Conforto de R$ 1.300.
-    expect(pickCuratedHotelForTrip('Dubai', { budgetTier: 'comfort', travelers: 4 })).toBeNull();
+  it('mas resort não desce para o Conforto: fixture em teste (cidade só com resort) fica sem curado', async () => {
+    // Nenhuma cidade real tem resort sem `mid` no catálogo de 177 hotéis, então o cenário
+    // é montado num catálogo mínimo de teste. Aceitar resort ali significaria, p.ex.,
+    // Atlantis The Palm a R$ 3.750/noite para quem pediu Conforto de R$ 1.300.
+    const { curatedHotels: real } = await import('@/data/curatedHotels');
+    const resort = Object.values(real).flat().find((h) => h.tier === 'resort')!;
+    vi.resetModules();
+    vi.doMock('@/data/curatedHotels', () => ({ curatedHotels: { 'Só Resort': [{ ...resort, id: 'fx-resort' }] } }));
+    try {
+      const { pickCuratedHotelForTrip: pick } = await import('@/lib/hotelSwap');
+      expect(pick('Só Resort', { budgetTier: 'comfort', travelers: 4 })).toBeNull();
+      // Controle: o mesmo resort atende o Luxo — a fixture é visível para o código.
+      expect(pick('Só Resort', { budgetTier: 'luxury', travelers: 4 })?.id).toBe('fx-resort');
+    } finally {
+      vi.doUnmock('@/data/curatedHotels');
+      vi.resetModules();
+    }
   });
 
   it('cidade sem curadoria devolve null sem explodir', () => {
-    expect(pickCuratedHotelForTrip('Singapura', { budgetTier: 'comfort', travelers: 4 })).toBeNull();
+    expect(pickCuratedHotelForTrip('Natal', { budgetTier: 'comfort', travelers: 4 })).toBeNull();
     expect(pickCuratedHotelForTrip(undefined, { budgetTier: 'comfort' })).toBeNull();
     expect(pickCuratedHotelForTrip('Cartagena', null)).not.toBeNull(); // default 'mid'
   });
