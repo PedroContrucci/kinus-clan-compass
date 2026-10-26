@@ -90,6 +90,8 @@ interface RoteiroLinhaProps {
   renderDetail?: (a: TripActivity) => ReactNode;
   /** Prefixo da vista filtrada ("Dia 3"). */
   prefix?: string;
+  /** Número da parada (mesma numeração dos pins do mapa). Ausente em logística/incluído. */
+  stopNumber?: number;
   /** Valor exibido quando difere de `activity.cost` (hotel na vista Custos-âncora). */
   priceBRL?: number;
   highlight?: boolean;
@@ -101,7 +103,7 @@ interface RoteiroLinhaProps {
 
 export const RoteiroLinha = ({
   activity, expanded, onToggle, onCheck, onSwap, onConfirmAnchor, onOpenDetails, onRemove,
-  renderDetail, prefix, priceBRL, highlight, anchorRef, city, date,
+  renderDetail, prefix, stopNumber, priceBRL, highlight, anchorRef, city, date,
 }: RoteiroLinhaProps) => {
   const kind = roteiroKind(activity);
   const actions = roteiroActions(activity);
