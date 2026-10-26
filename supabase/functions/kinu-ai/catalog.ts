@@ -1,6 +1,6 @@
 // GERADO por scripts/build-kinu-catalog.ts — NÃO EDITAR À MÃO.
 // Fonte: src/data/destinationActivities.ts + src/data/curatedHotels.ts
-// 21 cidades · 901 atividades · 68 hotéis
+// 21 cidades · 901 atividades · 177 hotéis
 //
 // Este arquivo é o que permite ao KINU responder sobre uma cidade curada SEM viagem
 // ativa e SEM o front ter adivinhado a cidade na mensagem. Ele viaja com o deploy da
@@ -511,6 +511,47 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Apart-hotel com cozinha perto da Torre - o formato que família agradece"
       },
       {
+        "name": "Hôtel Fabric",
+        "zone": "Oberkampf",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 700-1.100",
+        "tip": "Antiga fábrica têxtil virada boutique industrial-chic"
+      },
+      {
+        "name": "Generator Paris",
+        "zone": "Canal Saint-Martin",
+        "tier": "budget",
+        "personaTags": [
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 150-350",
+        "tip": "Hostel-design com rooftop pro Sacré-Coeur"
+      },
+      {
+        "name": "Hôtel des Grands Boulevards",
+        "zone": "Grands Boulevards",
+        "tier": "mid",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 900-1.500",
+        "tip": "Boutique gastronômico com pátio - o hype certo"
+      },
+      {
+        "name": "Novotel Paris Les Halles",
+        "zone": "Les Halles",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 900-1.400",
+        "tip": "Central absoluto e família-friendly - metrô de tudo na porta"
+      },
+      {
         "name": "Le Pavillon de la Reine",
         "zone": "Marais",
         "tier": "upscale",
@@ -529,6 +570,16 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 5.000-9.000",
         "tip": "As sacadas de gerânios da Avenue Montaigne - alta-costura em hotel"
+      },
+      {
+        "name": "Relais Christine",
+        "zone": "Saint-Germain",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 1.800-3.000",
+        "tip": "Mansão do século XVI com jardim em Saint-Germain"
       }
     ]
   },
@@ -937,6 +988,16 @@ export const CATALOG: Record<string, CatalogCity> = {
     ],
     "hotels": [
       {
+        "name": "Gran Mareiro",
+        "zone": "Praia do Futuro",
+        "tier": "resort",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 500-900",
+        "tip": "Pé na areia com clube de praia próprio - família feliz"
+      },
+      {
         "name": "Gran Marquise",
         "zone": "Mucuripe",
         "tier": "upscale",
@@ -946,6 +1007,69 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 800-1.400",
         "tip": "O 5 estrelas da Beira-Mar - serviço impecável e mar na janela"
+      },
+      {
+        "name": "Ibis Fortaleza Praia de Iracema",
+        "zone": "Praia de Iracema",
+        "tier": "budget",
+        "personaTags": [
+          "solo",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 200-350",
+        "tip": "Econômico perto da noite de Iracema"
+      },
+      {
+        "name": "Hotel Luzeiros",
+        "zone": "Meireles",
+        "tier": "upscale",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 600-1.000",
+        "tip": "Design frente-mar na Beira-Mar - café da manhã elogiado"
+      },
+      {
+        "name": "Carmel Magna Praia",
+        "zone": "Meireles",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 400-650",
+        "tip": "Frente-mar funcional na Beira-Mar"
+      },
+      {
+        "name": "Praiano Hotel",
+        "zone": "Meireles",
+        "tier": "budget",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 250-400",
+        "tip": "Na Beira-Mar por preço de pousada — simples e bem localizado"
+      },
+      {
+        "name": "Refúgio Hostel Fortaleza",
+        "zone": "Praia de Iracema",
+        "tier": "budget",
+        "personaTags": [
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 70-180",
+        "tip": "O hostel querido da cidade - clima de casa"
+      },
+      {
+        "name": "Sonata de Iracema",
+        "zone": "Praia de Iracema",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 350-550",
+        "tip": "Em frente ao mar na Iracema, perto dos bares e do Dragão do Mar"
       },
       {
         "name": "Vila Galé Fortaleza",
@@ -1413,6 +1537,28 @@ export const CATALOG: Record<string, CatalogCity> = {
     ],
     "hotels": [
       {
+        "name": "Arena Copacabana",
+        "zone": "Copacabana",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 500-900",
+        "tip": "Frente-mar honesto com rooftop - custo-benefício raro na orla"
+      },
+      {
+        "name": "Arena Copacabana Hotel",
+        "zone": "Copacabana",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 600-950",
+        "tip": "Rooftop com piscina de frente para a praia de Copacabana"
+      },
+      {
         "name": "Copacabana Palace",
         "zone": "Copacabana",
         "tier": "resort",
@@ -1435,6 +1581,27 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Moderno no Posto 6 - piscinas com vista e estrutura família"
       },
       {
+        "name": "Hilton Copacabana",
+        "zone": "Copacabana",
+        "tier": "upscale",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 1.000-1.800",
+        "tip": "Rooftop com vista total da praia - confiável pra família"
+      },
+      {
+        "name": "Ibis Copacabana Posto 2",
+        "zone": "Copacabana",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 300-500",
+        "tip": "O básico bem-feito a 2 quadras da praia"
+      },
+      {
         "name": "Janeiro Hotel",
         "zone": "Leblon",
         "tier": "upscale",
@@ -1453,6 +1620,16 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 1.400-2.500",
         "tip": "Casarão colonial no alto boêmio - piscina entre árvores"
+      },
+      {
+        "name": "Windsor Excelsior Copacabana",
+        "zone": "Copacabana",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 550-900",
+        "tip": "Rede carioca de frente para o mar, café da manhã elogiado"
       }
     ]
   },
@@ -1780,6 +1957,48 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Boutique histórico entre o Chiado e o Bairro Alto - rooftop pro Tejo"
       },
       {
+        "name": "Browns Central",
+        "zone": "Baixa",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 450-800",
+        "tip": "Boutique acessível no miolo da Baixa"
+      },
+      {
+        "name": "Corpo Santo Lisbon",
+        "zone": "Cais do Sodré",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 800-1.400",
+        "tip": "5 estrelas com muralha fernandina no subsolo - localização total"
+      },
+      {
+        "name": "Home Lisbon Hostel",
+        "zone": "Baixa",
+        "tier": "budget",
+        "personaTags": [
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 100-250",
+        "tip": "Multi-premiado - o jantar da mamma é lendário entre mochileiros"
+      },
+      {
+        "name": "LX Boutique Hotel",
+        "zone": "Cais do Sodré",
+        "tier": "mid",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 650-1.000",
+        "tip": "Boutique de frente para o Tejo, Time Out Market na esquina"
+      },
+      {
         "name": "Martinhal Lisbon Chiado",
         "zone": "Chiado",
         "tier": "resort",
@@ -1800,6 +2019,27 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Escondido na Alfama com piscina vermelha sobre os telhados"
       },
       {
+        "name": "Hotel Mundial",
+        "zone": "Baixa",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 500-900",
+        "tip": "Clássico da Baixa com rooftop pro Castelo - prático pra tudo a pé"
+      },
+      {
+        "name": "My Story Hotel Rossio",
+        "zone": "Baixa",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 600-950",
+        "tip": "Na praça do Rossio, a pé de Alfama e Chiado"
+      },
+      {
         "name": "Pestana Palace",
         "zone": "Alcântara",
         "tier": "resort",
@@ -1809,6 +2049,16 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 1.200-2.200",
         "tip": "Palácio nacional com jardins e piscinas - viver como rei"
+      },
+      {
+        "name": "Yes! Lisbon Hostel",
+        "zone": "Baixa",
+        "tier": "budget",
+        "personaTags": [
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 120-250",
+        "tip": "Um dos hostels mais premiados do mundo, no centro da Baixa"
       }
     ]
   },
@@ -2114,6 +2364,16 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Refeições e happy hour INCLUSOS - a conta fecha bonito pra família"
       },
       {
+        "name": "Floridays Resort",
+        "zone": "I-Drive",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 500-850",
+        "tip": "Suítes de 2-3 quartos com cozinha - família grande cabe"
+      },
+      {
         "name": "Four Seasons Resort Orlando",
         "zone": "Disney World",
         "tier": "resort",
@@ -2132,6 +2392,16 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 1.200-2.000",
         "tip": "Piscina-caverna com tobogãs a minutos da Disney"
+      },
+      {
+        "name": "Rosen Shingle Creek",
+        "zone": "Universal Blvd",
+        "tier": "resort",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 700-1.200",
+        "tip": "Resort gigante com golfe e piscinas - espaço de sobra"
       }
     ]
   },
@@ -2512,6 +2782,26 @@ export const CATALOG: Record<string, CatalogCity> = {
     ],
     "hotels": [
       {
+        "name": "Asakusa View Hotel",
+        "zone": "Asakusa",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 500-900",
+        "tip": "Vista do Senso-ji e da Skytree - a Tóquio tradicional na janela"
+      },
+      {
+        "name": "Hotel Gracery Shinjuku",
+        "zone": "Shinjuku",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 600-1.000",
+        "tip": "O hotel do Godzilla na fachada - crianças em êxtase em Kabukicho"
+      },
+      {
         "name": "Hoshinoya Tokyo",
         "zone": "Otemachi",
         "tier": "upscale",
@@ -2540,6 +2830,38 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 2.800-5.000",
         "tip": "O hotel de Lost in Translation - piscina no céu e o bar New York"
+      },
+      {
+        "name": "Shibuya Excel Hotel Tokyu",
+        "zone": "Shibuya",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 700-1.100",
+        "tip": "Em cima do cruzamento de Shibuya - localização cinematográfica"
+      },
+      {
+        "name": "Tokyu Stay Shinjuku",
+        "zone": "Shinjuku",
+        "tier": "mid",
+        "personaTags": [
+          "solo",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 450-750",
+        "tip": "Máquina de lavar no quarto - o prático japonês perfeito"
+      },
+      {
+        "name": "UNPLAN Kagurazaka",
+        "zone": "Kagurazaka",
+        "tier": "budget",
+        "personaTags": [
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 130-280",
+        "tip": "Hostel impecável no bairro-Paris de Tóquio"
       }
     ]
   },
@@ -2892,6 +3214,47 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Jardins secretos entre o Popolo e a Spagna - refúgio de estrelas"
       },
       {
+        "name": "Nerva Boutique Hotel",
+        "zone": "Monti",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 550-900",
+        "tip": "Boutique aos pés do Fórum no charmoso Monti"
+      },
+      {
+        "name": "Hotel Ponte Sisto",
+        "zone": "Centro Storico",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 1.000-1.700",
+        "tip": "Pátio tranquilo a uma ponte de Trastevere"
+      },
+      {
+        "name": "Hotel Quirinale",
+        "zone": "Via Nazionale",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 600-1.000",
+        "tip": "Clássico com jardim - entrada secreta pra Ópera de Roma"
+      },
+      {
+        "name": "The RomeHello",
+        "zone": "Termini",
+        "tier": "budget",
+        "personaTags": [
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 120-280",
+        "tip": "Hostel-design com propósito social - o melhor budget de Roma"
+      },
+      {
         "name": "Hotel Santa Maria",
         "zone": "Trastevere",
         "tier": "mid",
@@ -2900,6 +3263,16 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 700-1.200",
         "tip": "Claustro com laranjeiras em Trastevere - térreo e tranquilo pra família"
+      },
+      {
+        "name": "Albergo del Senato",
+        "zone": "Pantheon",
+        "tier": "mid",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 800-1.300",
+        "tip": "Janelas de frente pro Pantheon - acordar com 2 mil anos de vista"
       }
     ]
   },
@@ -3371,6 +3744,59 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 900-1.600",
         "tip": "O palácio de 1934 renascido - piscina de borda na proa do Centro"
+      },
+      {
+        "name": "Ibis Salvador Rio Vermelho",
+        "zone": "Rio Vermelho",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 250-400",
+        "tip": "Base econômica no melhor bairro gastronômico"
+      },
+      {
+        "name": "Laranjeiras Hostel",
+        "zone": "Pelourinho",
+        "tier": "budget",
+        "personaTags": [
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 80-200",
+        "tip": "Hostel histórico no Pelô - mochileiro com cultura na porta"
+      },
+      {
+        "name": "Mercure Salvador Rio Vermelho",
+        "zone": "Rio Vermelho",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 400-700",
+        "tip": "No bairro do acarajé e da noite - praticidade com vista"
+      },
+      {
+        "name": "Hotel Villa Bahia",
+        "zone": "Pelourinho",
+        "tier": "mid",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 600-1.000",
+        "tip": "Boutique colonial no coração do Pelô - café no pátio"
+      },
+      {
+        "name": "Wish Hotel da Bahia",
+        "zone": "Campo Grande",
+        "tier": "upscale",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 700-1.200",
+        "tip": "O clássico histórico com piscina e obras de Carybé"
       }
     ]
   },
@@ -3684,6 +4110,17 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O grande dame portenho - chá da tarde e mordomos desde 1932"
       },
       {
+        "name": "CasaSur Palermo",
+        "zone": "Palermo",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 700-1.200",
+        "tip": "Conforto contemporâneo a passos dos bosques"
+      },
+      {
         "name": "Palacio Duhau - Park Hyatt",
         "zone": "Recoleta",
         "tier": "upscale",
@@ -3714,6 +4151,37 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 500-900",
         "tip": "O boutique que inventou Palermo Hollywood - jardim com piscina"
+      },
+      {
+        "name": "Milhouse Hostel Avenue",
+        "zone": "Centro",
+        "tier": "budget",
+        "personaTags": [
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 90-220",
+        "tip": "O hostel-festa clássico de BA - social ao extremo"
+      },
+      {
+        "name": "Mine Hotel",
+        "zone": "Palermo Soho",
+        "tier": "mid",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 450-800",
+        "tip": "Boutique no coração do Soho - base perfeita de bares e feiras"
+      },
+      {
+        "name": "Hotel Pulitzer",
+        "zone": "Centro",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 400-700",
+        "tip": "Design com rooftop perto da Corrientes - teatro na porta"
       }
     ]
   },
@@ -4417,6 +4885,17 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Eco-chique com Manhattan inteira na janela"
       },
       {
+        "name": "Arlo Midtown",
+        "zone": "Midtown West",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 850-1.400",
+        "tip": "Micro-quartos bem desenhados a passos da Times Square"
+      },
+      {
         "name": "Hotel Beacon",
         "zone": "Upper West Side",
         "tier": "mid",
@@ -4425,6 +4904,28 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 1.200-2.000",
         "tip": "Suítes com kitchenette perto do Central Park — o favorito das famílias"
+      },
+      {
+        "name": "citizenM Times Square",
+        "zone": "Times Square",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 900-1.500",
+        "tip": "Design compacto e rooftop — dormir no meio do show"
+      },
+      {
+        "name": "Moxy Chelsea",
+        "zone": "Chelsea",
+        "tier": "mid",
+        "personaTags": [
+          "solo",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 800-1.300",
+        "tip": "Jovem, com rooftop-jardim e localização esperta"
       },
       {
         "name": "The Plaza",
@@ -4436,6 +4937,16 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 4.000-8.000",
         "tip": "O hotel-lenda de Home Alone na esquina do Central Park"
+      },
+      {
+        "name": "Pod 51",
+        "zone": "Midtown East",
+        "tier": "budget",
+        "personaTags": [
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 450-700",
+        "tip": "Cabines espertas pra quem só quer dormir e explorar"
       }
     ]
   },
@@ -5130,6 +5641,38 @@ export const CATALOG: Record<string, CatalogCity> = {
     ],
     "hotels": [
       {
+        "name": "citizenM Bankside",
+        "zone": "South Bank",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 900-1.400",
+        "tip": "Design compacto atrás da Tate Modern"
+      },
+      {
+        "name": "The Hoxton Holborn",
+        "zone": "Holborn",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 1.100-1.800",
+        "tip": "O boutique descolado com lobby que é point"
+      },
+      {
+        "name": "Park Plaza Westminster Bridge",
+        "zone": "Westminster",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 1.100-1.800",
+        "tip": "De frente pro Big Ben com piscina — família no epicentro"
+      },
+      {
         "name": "Premier Inn County Hall",
         "zone": "South Bank",
         "tier": "budget",
@@ -5148,6 +5691,28 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 4.500-8.000",
         "tip": "A lenda art déco do Tâmisa — chá, história e mordomia"
+      },
+      {
+        "name": "Strand Palace",
+        "zone": "Strand",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 900-1.400",
+        "tip": "Clássico central a pé do Covent Garden"
+      },
+      {
+        "name": "Zedwell Piccadilly",
+        "zone": "Piccadilly",
+        "tier": "budget",
+        "personaTags": [
+          "solo",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 600-950",
+        "tip": "Casulos silenciosos no meio do caos do Piccadilly"
       }
     ]
   },
@@ -5469,6 +6034,16 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A torre de frente pro mar com piscina e o peixe do Gehry ao lado"
       },
       {
+        "name": "Hotel Jazz",
+        "zone": "Eixample",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 800-1.300",
+        "tip": "Piscina no terraço e Plaça Catalunya a 3 quadras"
+      },
+      {
         "name": "Majestic Hotel & Spa",
         "zone": "Passeig de Gràcia",
         "tier": "upscale",
@@ -5477,6 +6052,48 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 1.800-3.200",
         "tip": "Clássico com rooftop pra Sagrada — elegância no Passeig"
+      },
+      {
+        "name": "H10 Casa Mimosa",
+        "zone": "Eixample",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 1.200-2.000",
+        "tip": "Ao lado da Pedrera com jardim e rooftop — refúgio no centro"
+      },
+      {
+        "name": "Motel One Barcelona-Ciutadella",
+        "zone": "Born",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 450-700",
+        "tip": "Rede alemã impecável na porta do parque"
+      },
+      {
+        "name": "Praktik Bakery",
+        "zone": "Eixample",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 600-1.000",
+        "tip": "O hotel com padaria de verdade no lobby — acorde com cheiro de croissant"
+      },
+      {
+        "name": "TOC Hostel Barcelona",
+        "zone": "Eixample",
+        "tier": "budget",
+        "personaTags": [
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 120-280",
+        "tip": "Hostel-design com piscina — mochileiro com estilo"
       },
       {
         "name": "Yurbban Trafalgar",
@@ -5763,6 +6380,17 @@ export const CATALOG: Record<string, CatalogCity> = {
     ],
     "hotels": [
       {
+        "name": "Pousada Alto da Pitinga",
+        "zone": "Arraial d Ajuda",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 350-600",
+        "tip": "Pousada com clima de vila perto do Mucugê"
+      },
+      {
         "name": "Arraial d'Ajuda Eco Resort",
         "zone": "Arraial d Ajuda",
         "tier": "resort",
@@ -5793,6 +6421,16 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Bangalôs com piscinas privadas sobre a praia de Itapororoca"
       },
       {
+        "name": "Maitei Hotel",
+        "zone": "Arraial d Ajuda",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 800-1.400",
+        "tip": "Vista dos mirantes de Arraial - adults-friendly romântico"
+      },
+      {
         "name": "Uxua Casa Hotel & Spa",
         "zone": "Trancoso",
         "tier": "resort",
@@ -5801,6 +6439,16 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 3.000-6.000",
         "tip": "As casas do Quadrado viradas hotel-lenda - design de Wilbert Das"
+      },
+      {
+        "name": "Villas de Trancoso",
+        "zone": "Trancoso",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 1.500-2.800",
+        "tip": "Pé na areia charmoso a caminhada do Quadrado"
       }
     ]
   },
@@ -6108,6 +6756,16 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A fonte dançante e o Burj Khalifa na varanda"
       },
       {
+        "name": "Anantara The Palm",
+        "zone": "Palm Jumeirah",
+        "tier": "resort",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 1.800-3.000",
+        "tip": "Vilas sobre a água estilo Maldivas — lua de mel na Palm"
+      },
+      {
         "name": "Atlantis The Palm",
         "zone": "Palm Jumeirah",
         "tier": "resort",
@@ -6138,6 +6796,16 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A onda de vidro com praia privada e Wild Wadi grátis"
       },
       {
+        "name": "Premier Inn Ibn Battuta",
+        "zone": "Jebel Ali",
+        "tier": "budget",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 300-500",
+        "tip": "Base econômica no metrô — família com orçamento curto"
+      },
+      {
         "name": "Rove Downtown",
         "zone": "Downtown",
         "tier": "budget",
@@ -6147,6 +6815,17 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 400-650",
         "tip": "O budget-esperto de Dubai — vista do Burj por preço de gente"
+      },
+      {
+        "name": "Vida Downtown",
+        "zone": "Downtown",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 800-1.300",
+        "tip": "Boutique descolado a pé do Dubai Mall"
       }
     ]
   },
@@ -6357,7 +7036,105 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O maior museu de arte contemporânea africana, num silo de grãos esculpido · A arquitetura do átrio já vale o ingresso"
       }
     ],
-    "hotels": []
+    "hotels": [
+      {
+        "name": "Cape Town Lodge Hotel",
+        "zone": "CBD",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 300-500",
+        "tip": "Central e sem frescura, a pé do Company Garden"
+      },
+      {
+        "name": "Protea Hotel Fire & Ice! Cape Town",
+        "zone": "CBD",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 500-800",
+        "tip": "Descolado, com milkshakes famosos e Long Street a duas quadras"
+      },
+      {
+        "name": "Belmond Mount Nelson Hotel",
+        "zone": "Gardens",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 2.500-5.000",
+        "tip": "O hotel rosa de 1899 com jardins e o chá da tarde mais famoso da cidade"
+      },
+      {
+        "name": "Once in Cape Town",
+        "zone": "Gardens",
+        "tier": "budget",
+        "personaTags": [
+          "solo",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 150-350",
+        "tip": "Hostel-boutique no sopé da Table Mountain, Kloof Street na porta"
+      },
+      {
+        "name": "One&Only Cape Town",
+        "zone": "V&A Waterfront",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 3.000-6.000",
+        "tip": "Ilha privada no Waterfront com a Table Mountain emoldurada"
+      },
+      {
+        "name": "Protea Hotel by Marriott Cape Town Sea Point",
+        "zone": "Sea Point",
+        "tier": "budget",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 350-550",
+        "tip": "Calçadão de Sea Point e pôr do sol do Atlântico pela janela"
+      },
+      {
+        "name": "Radisson RED Hotel V&A Waterfront",
+        "zone": "V&A Waterfront",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 650-1.000",
+        "tip": "Rooftop com piscina sobre o Waterfront — jovem e bem localizado"
+      },
+      {
+        "name": "The Silo Hotel",
+        "zone": "V&A Waterfront",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 4.000-8.000",
+        "tip": "Janelas de vidro facetado sobre o museu Zeitz MOCAA — ícone de design"
+      },
+      {
+        "name": "The Winchester Hotel",
+        "zone": "Sea Point",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 600-950",
+        "tip": "Clássico de frente para o mar com pátio de jazz aos domingos"
+      }
+    ]
   },
   "Istambul": {
     "city": "Istambul",
@@ -6559,7 +7336,103 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Sente ao redor da grelha de cobre e veja o mestre trabalhar · Adana kebab e asinhas direto da brasa"
       }
     ],
-    "hotels": []
+    "hotels": [
+      {
+        "name": "Agora Guesthouse",
+        "zone": "Sultanahmet",
+        "tier": "budget",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 250-400",
+        "tip": "Café no terraço de frente para o Mármara, a pé de tudo"
+      },
+      {
+        "name": "Hotel Amira Istanbul",
+        "zone": "Sultanahmet",
+        "tier": "mid",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 550-850",
+        "tip": "Terraço com vista do Bósforo e serviço que vira elogio em toda avaliação"
+      },
+      {
+        "name": "Cheers Hostel",
+        "zone": "Sultanahmet",
+        "tier": "budget",
+        "personaTags": [
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 120-250",
+        "tip": "Terraço com vista da Hagia Sophia — mochileiro no coração histórico"
+      },
+      {
+        "name": "Çırağan Palace Kempinski",
+        "zone": "Beşiktaş",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 3.000-7.000",
+        "tip": "Palácio otomano à beira do Bósforo com piscina infinita sobre a água"
+      },
+      {
+        "name": "Four Seasons Hotel Istanbul at Sultanahmet",
+        "zone": "Sultanahmet",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 3.500-6.500",
+        "tip": "A antiga prisão neoclássica virou o hotel mais charmoso da península"
+      },
+      {
+        "name": "Hanedan Hotel",
+        "zone": "Sultanahmet",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 250-420",
+        "tip": "Familiar e silencioso a 5 min da Mesquita Azul"
+      },
+      {
+        "name": "Ottoman Hotel Imperial",
+        "zone": "Sultanahmet",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 500-800",
+        "tip": "Casarão otomano de frente para a Hagia Sophia"
+      },
+      {
+        "name": "Pera Palace Hotel",
+        "zone": "Beyoğlu",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 1.800-3.200",
+        "tip": "O hotel do Expresso do Oriente e de Agatha Christie — Beyoğlu histórico"
+      },
+      {
+        "name": "Sirkeci Mansion",
+        "zone": "Sirkeci",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 600-950",
+        "tip": "Piscina coberta, aulas de culinária e Topkapi a pé — o favorito das famílias"
+      }
+    ]
   },
   "Bangkok": {
     "city": "Bangkok",
@@ -6768,7 +7641,104 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "À noite a avenida vira o maior banquete de rua da Ásia · Siga as filas de locais: noodles, frutos do mar, pato"
       }
     ],
-    "hotels": []
+    "hotels": [
+      {
+        "name": "Amara Bangkok",
+        "zone": "Silom",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 450-700",
+        "tip": "Piscina infinita no rooftop com Silom aos pés"
+      },
+      {
+        "name": "Centre Point Prime Hotel Pratunam",
+        "zone": "Pratunam",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 400-650",
+        "tip": "Suítes com cozinha — família que fica mais dias"
+      },
+      {
+        "name": "Holiday Inn Express Bangkok Siam",
+        "zone": "Siam",
+        "tier": "budget",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 300-450",
+        "tip": "Café incluso e BTS na porta — base prática para a família"
+      },
+      {
+        "name": "ibis Bangkok Riverside",
+        "zone": "Riverside",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 250-400",
+        "tip": "Rede confiável à beira do Chao Phraya com barco gratuito para o píer"
+      },
+      {
+        "name": "Lub d Bangkok Siam",
+        "zone": "Siam",
+        "tier": "budget",
+        "personaTags": [
+          "solo",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 150-350",
+        "tip": "Hostel-design a passos do BTS National Stadium e dos shoppings de Siam"
+      },
+      {
+        "name": "Mandarin Oriental Bangkok",
+        "zone": "Riverside",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 3.500-6.500",
+        "tip": "A lenda de 1876 à beira do rio — serviço que virou referência mundial"
+      },
+      {
+        "name": "Novotel Bangkok Platinum Pratunam",
+        "zone": "Pratunam",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 450-700",
+        "tip": "Colado ao Platinum Fashion Mall — compras e street food de Pratunam"
+      },
+      {
+        "name": "The Peninsula Bangkok",
+        "zone": "Riverside",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 2.500-4.500",
+        "tip": "Todos os quartos com vista do rio e piscina de três níveis"
+      },
+      {
+        "name": "Shangri-La Bangkok",
+        "zone": "Riverside",
+        "tier": "upscale",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 1.800-3.200",
+        "tip": "Jardins à beira do Chao Phraya e BTS Saphan Taksin ao lado"
+      }
+    ]
   },
   "Marrakech": {
     "city": "Marrakech",
@@ -6970,7 +7940,102 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Terraço amplo com tajines clássicos bem executados · Sombra, brisa e wi-fi no meio da medina"
       }
     ],
-    "hotels": []
+    "hotels": [
+      {
+        "name": "Equity Point Marrakech",
+        "zone": "Medina",
+        "tier": "budget",
+        "personaTags": [
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 100-250",
+        "tip": "Piscina no pátio e Jemaa el-Fna a 10 minutos a pé"
+      },
+      {
+        "name": "Four Seasons Resort Marrakech",
+        "zone": "Hivernage",
+        "tier": "upscale",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 2.500-4.500",
+        "tip": "Piscinas, kids club e Atlas no horizonte — o resort de família"
+      },
+      {
+        "name": "Les Jardins de la Koutoubia",
+        "zone": "Medina",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 900-1.600",
+        "tip": "Hotel com três piscinas a passos da Koutoubia e da praça"
+      },
+      {
+        "name": "La Mamounia",
+        "zone": "Hivernage",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 4.000-9.000",
+        "tip": "O palácio de Churchill — jardins de 8 hectares e o hotel mais famoso da África"
+      },
+      {
+        "name": "Riad Le Clos des Arts",
+        "zone": "Medina",
+        "tier": "mid",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 550-900",
+        "tip": "Riad de artista com piscina, hammam e jantar no terraço"
+      },
+      {
+        "name": "Riad Dar Anika",
+        "zone": "Medina",
+        "tier": "budget",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 300-500",
+        "tip": "Riad pequeno e impecável perto da praça — o custo-benefício da medina"
+      },
+      {
+        "name": "Riad Kniza",
+        "zone": "Medina",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 900-1.500",
+        "tip": "Riad do século XVIII de uma família de antiquários — serviço de palácio"
+      },
+      {
+        "name": "Rodamon Riad Marrakech",
+        "zone": "Medina",
+        "tier": "budget",
+        "personaTags": [
+          "solo",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 120-280",
+        "tip": "Riad-hostel com piscina e terraço — mochileiro dentro da medina"
+      },
+      {
+        "name": "Royal Mansour Marrakech",
+        "zone": "Medina",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 8.000-15.000",
+        "tip": "Riads privados do rei, mordomo e spa de mármore — o topo absoluto"
+      }
+    ]
   },
   "Singapura": {
     "city": "Singapura",
@@ -7179,7 +8244,93 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O zoológico sem jaulas mais premiado do mundo · Café da manhã com orangotangos em horário marcado"
       }
     ],
-    "hotels": []
+    "hotels": [
+      {
+        "name": "Carlton Hotel Singapore",
+        "zone": "City Hall",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 800-1.300",
+        "tip": "Ao lado do Raffles e do CHIJMES, piscina no terraço"
+      },
+      {
+        "name": "The Fullerton Hotel Singapore",
+        "zone": "Marina Bay",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 2.000-3.500",
+        "tip": "O antigo prédio dos Correios na foz do rio — clássico com vista da Marina"
+      },
+      {
+        "name": "Hotel G Singapore",
+        "zone": "Bugis",
+        "tier": "budget",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 450-700",
+        "tip": "Design compacto, café bom e metrô Bencoolen na porta"
+      },
+      {
+        "name": "ibis Singapore on Bencoolen",
+        "zone": "Bugis",
+        "tier": "budget",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 450-700",
+        "tip": "Rede previsível no meio de tudo — base barata numa cidade cara"
+      },
+      {
+        "name": "Marina Bay Sands",
+        "zone": "Marina Bay",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 2.500-4.500",
+        "tip": "A piscina infinita no 57º andar — o cartão-postal em que se dorme"
+      },
+      {
+        "name": "Park Regis Singapore",
+        "zone": "Clarke Quay",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 600-1.000",
+        "tip": "Clarke Quay e Chinatown a pé — piscina e quartos modernos"
+      },
+      {
+        "name": "The Pod @ Beach Road",
+        "zone": "Bugis",
+        "tier": "budget",
+        "personaTags": [
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 200-350",
+        "tip": "Cápsulas limpas e silenciosas a pé de Bugis e Kampong Glam"
+      },
+      {
+        "name": "Raffles Singapore",
+        "zone": "City Hall",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 5.000-9.000",
+        "tip": "O hotel colonial de 1887 onde nasceu o Singapore Sling"
+      }
+    ]
   }
 };
 
