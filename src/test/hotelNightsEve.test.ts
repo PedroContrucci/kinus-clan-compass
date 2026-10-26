@@ -12,8 +12,8 @@ const input: DraftTripInput = {
 };
 
 // luxury = hotel curado (Gran Marquise): o Financeiro lê acc.totalPrice. Sem curado, a estimativa do motor.
-async function withReturn(dep: string, tier = 'luxury') {
-  const trip = await buildDraftTrip({ ...input, budgetTier: tier });
+async function withReturn(dep: string, tier = 'luxury', dest: Partial<DraftTripInput> = {}) {
+  const trip = await buildDraftTrip({ ...input, budgetTier: tier, ...dest });
   const t = trip as typeof trip & { outboundFlight: SelectedFlight; returnFlight: SelectedFlight };
   const built = buildItineraryForTrip(trip, {
     outbound: t.outboundFlight,
@@ -56,9 +56,11 @@ describe('noites de hotel × saída de madrugada', () => {
     expect((back.accommodation as { totalNights: number }).totalNights).toBe(4);
   });
 
-  it('sem hotel curado (comfort): 4 noites gravadas e a estimativa do motor também com 4', async () => {
-    const eve = await withReturn('02:30', 'comfort');
-    const day = await withReturn('14:00', 'comfort');
+  // Fortaleza ganhou curados em todos os tiers; o caminho sem curado roda em Natal (fora do catálogo).
+  const NATAL = { destinationCity: 'Natal', destinationAirportCode: 'NAT' };
+  it('sem hotel curado (Natal, comfort): 4 noites gravadas e a estimativa do motor também com 4', async () => {
+    const eve = await withReturn('02:30', 'comfort', NATAL);
+    const day = await withReturn('14:00', 'comfort', NATAL);
     expect(eve.acc.curatedHotelId).toBeUndefined();
     expect(eve.acc.totalNights).toBe(4);
     expect(eve.acc.totalPrice).toBe(Math.round(4 * eve.acc.nightlyRate));

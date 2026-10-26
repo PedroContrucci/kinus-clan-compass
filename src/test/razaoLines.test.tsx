@@ -54,12 +54,15 @@ describe('C.5c — razaoLines (Fortaleza 02:30)', () => {
       'Voo ida', 'Voo volta', 'Hotel (4 noites)', 'Dia 1', 'Dia 2', 'Dia 3', 'Dia 4', 'Dia 5', 'Reserva (15%)',
     ]);
     const [ida, volta, hotel] = lines;
-    expect([ida.value, volta.value, hotel.value]).toEqual([994, 1160, 6000]);
+    // Hotel curado (mid) desde o catálogo de 177: valor = noites × diária gravada, não número fixo.
+    expect(hotel.value).toBe(t.accommodation.totalNights * t.accommodation.nightlyRate);
+    expect(t.accommodation.totalNights).toBe(4);
+    expect([ida.value, volta.value]).toEqual([994, 1160]);
     expect(ida).toMatchObject({ origin: 'estimativa', status: 'pending', actions: ['confirmar'], confirmTipo: 'voo' });
     // C.8: o Kiwi parceiro virou a 1ª linha do "Onde fechar".
     expect(ida.closeLinks?.[0]).toMatchObject({ provider: 'Kiwi', partner: true });
     expect(hotel.closeLinks?.map((l) => l.provider)).toEqual(['Booking', 'Hoteis.com', 'Airbnb']);
-    expect(hotel).toMatchObject({ origin: 'estimativa', status: 'pending', actions: ['confirmar', 'ofertas'], confirmTipo: 'hotel' });
+    expect(hotel).toMatchObject({ origin: 'curado', status: 'pending', actions: ['confirmar', 'ofertas'], confirmTipo: 'hotel' });
     for (const d of lines.filter((l) => l.kind === 'dia')) {
       expect(d).toMatchObject({ origin: 'estimativa do catálogo', status: 'pending', actions: ['roteiro'] });
     }
@@ -72,7 +75,9 @@ describe('C.5c — razaoLines (Fortaleza 02:30)', () => {
     const t = await fortaleza();
     const p = planBreakdown(t);
     expect(razaoTotals(razaoLines(t))).toEqual({ planned: p.total, confirmed: 0 });
-    expect(p.total).toBe(10764); // C.4.3: Caranguejada na quinta + salto do hotel (era 10984 no B.3.2; 11254; 11004 antes do B.3.1)
+    // Planejado = Σ das linhas sem a reserva (derivado; era 10764 fixo antes do hotel curado).
+    const semReserva = razaoLines(t).filter((l) => l.kind !== 'reserva');
+    expect(p.total).toBe(semReserva.reduce((s, l) => s + l.value, 0));
     expect(t.finances.planned).toBe(p.total);
     const days = razaoLines(t).filter((l) => l.kind === 'dia').reduce((s, l) => s + l.value, 0);
     expect(days).toBe(p.food + p.tours);
@@ -89,7 +94,8 @@ describe('C.5c — razaoLines (Fortaleza 02:30)', () => {
     const lines = razaoLines(t2);
     const tot = razaoTotals(lines);
     expect(tot.confirmed).toBe(cost + 55 + 5400);
-    expect(tot.planned).toBe(before.planned - cost - 6000);
+    const hotelPlanned = t0.accommodation.totalNights * t0.accommodation.nightlyRate;
+    expect(tot.planned).toBe(before.planned - cost - hotelPlanned);
     expect(tot.confirmed).toBe(lines.filter((l) => l.status === 'confirmed' || l.confirmed > 0).reduce((s, l) => s + l.confirmed, 0));
     // o acumulador gravado não bate (é por isso que a aba deixou de lê-lo)
     expect(t2.finances.planned).not.toBe(tot.planned);

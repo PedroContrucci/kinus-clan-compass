@@ -5,6 +5,7 @@ import { buildItineraryForTrip, hotelRateLabel, hotelRateSource } from '@/lib/dr
 import { planBreakdown } from '@/lib/planTotals';
 import { getActivityPrice } from '@/lib/activityPricing';
 import type { SelectedFlight } from '@/lib/itineraryEngine';
+import { getCuratedHotelsForCity, parsePriceRangeBRL } from '@/lib/hotelSwap';
 
 const input: DraftTripInput = {
   originCity: 'São Paulo', originAirportCode: 'GRU', destinationCity: 'Fortaleza', destinationAirportCode: 'FOR',
@@ -26,8 +27,11 @@ function surfaces(trip: { accommodation?: unknown; finances?: unknown }) {
   };
 }
 
-async function draft(tier: string, returnDep?: string) {
-  const trip = await buildDraftTrip({ ...input, budgetTier: tier });
+// Fortaleza ganhou curados (budget+mid); o caminho da ESTIMATIVA roda em Natal (fora do catálogo).
+const NATAL: Partial<DraftTripInput> = { destinationCity: 'Natal', destinationAirportCode: 'NAT' };
+
+async function draft(tier: string, returnDep?: string, dest: Partial<DraftTripInput> = {}) {
+  const trip = await buildDraftTrip({ ...input, budgetTier: tier, ...dest });
   if (!returnDep) return { trip, ...surfaces(trip) };
   const t = trip as typeof trip & { outboundFlight: SelectedFlight; returnFlight: SelectedFlight };
   const built = buildItineraryForTrip(trip, {
@@ -39,8 +43,8 @@ async function draft(tier: string, returnDep?: string) {
 }
 
 describe('diária de hotel — fonte única', () => {
-  it('Fortaleza Conforto 10–15/nov (sem curado): card = Financeiro = PDF', async () => {
-    const { acc, card, financeiro, pdf } = await draft('comfort');
+  it('Natal Conforto 10–15/nov (sem curado): card = Financeiro = PDF', async () => {
+    const { acc, card, financeiro, pdf } = await draft('comfort', undefined, NATAL);
     expect(acc.curatedHotelId).toBeUndefined();
     expect(hotelRateSource(acc)).toBe('estimate');
     expect(card).toBe(`R$ ${acc.nightlyRate.toLocaleString('pt-BR')}/noite · estimativa Conforto`);
@@ -67,13 +71,25 @@ describe('diária de hotel — fonte única', () => {
     }
   });
 
-  it('Mochileiro Fortaleza (o caso que divergia): os três a 60% da tabela', async () => {
-    const { acc, card, financeiro, pdf } = await draft('backpacker');
-    const rate = Math.round(getActivityPrice('hotel_night', 'Fortaleza', 'budget') * 0.6);
+  it('Mochileiro Natal (sem curado, o caso que divergia): os três a 60% da tabela', async () => {
+    const { acc, card, financeiro, pdf } = await draft('backpacker', undefined, NATAL);
+    const rate = Math.round(getActivityPrice('hotel_night', 'Natal', 'budget') * 0.6);
     expect(acc.curatedHotelId).toBeUndefined();
     expect(acc.nightlyRate).toBe(rate);
     expect(card).toBe(`R$ ${rate.toLocaleString('pt-BR')}/noite · estimativa Mochileiro`);
     expect(financeiro).toBe(rate * pdf.nights);
+  });
+
+  it('Fortaleza Conforto (curado mid): card = Financeiro = PDF na diária do curado, fonte curado', async () => {
+    const { acc, card, financeiro, pdf } = await draft('comfort');
+    const hotel = getCuratedHotelsForCity('Fortaleza').find((h) => h.id === acc.curatedHotelId);
+    expect(hotel?.tier).toBe('mid');
+    expect(hotelRateSource(acc)).toBe('curated');
+    expect(acc.nightlyRate).toBe(parsePriceRangeBRL(hotel!.priceRangeBRL)!.mid);
+    expect(card).toMatch(new RegExp(`^R\\$ ${acc.nightlyRate.toLocaleString('pt-BR').replace('.', '\\.')}/noite · curado`));
+    expect(financeiro).toBe(acc.nightlyRate * acc.totalNights);
+    expect(financeiro).toBe(acc.totalPrice);
+    expect(pdf.rate * pdf.nights).toBe(financeiro);
   });
 
   it('rótulo: confirmado > curado (com faixa) > estimativa; sem diária, nada', () => {

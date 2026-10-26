@@ -128,10 +128,10 @@ describe('estado fallback — o bloco admite o que não sabe', () => {
   });
 
   it('cidade SEM curadoria: nomeia a cidade e oferece o caminho externo', () => {
-    const trip = tripWith({ ...fallback, name: 'Hotel Qualquer' }, { destination: 'Singapura' });
+    const trip = tripWith({ ...fallback, name: 'Hotel Qualquer' }, { destination: 'Natal' });
     render(<HotelPlanBlock trip={trip} onSelectHotel={() => {}} onOpenOffers={() => {}} />);
 
-    expect(screen.getByText(/ainda sem curadoria KINU em Singapura/)).toBeInTheDocument();
+    expect(screen.getByText(/ainda sem curadoria KINU em Natal/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Buscar ofertas/ })).toBeInTheDocument();
   });
 
