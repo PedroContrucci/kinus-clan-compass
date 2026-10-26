@@ -150,10 +150,10 @@ describe('buildDraftTrip — cidade sem curadoria no tier: nada muda', () => {
     const trip = await buildDraftTrip(draftInput({ destinationCity: 'Natal', destinationAirportCode: 'NAT' }));
     expect(getCuratedHotelsForCity('Natal')).toHaveLength(0);
     const acc = trip.accommodation!;
-    // Estes números são os de antes do arco: diária estimada × 7 noites.
-    expect(acc.nightlyRate).toBe(800);
-    expect(acc.totalPrice).toBe(5600);
-    expect(trip.finances.categories.accommodation.planned).toBe(5600);
+    // Diária estimada do gerador antigo para Natal × 7 noites (mesmo caminho de antes do arco).
+    expect(acc.nightlyRate).toBe(500);
+    expect(acc.totalPrice).toBe(3500);
+    expect(trip.finances.categories.accommodation.planned).toBe(3500);
     // Planejado = 4 baldes do motor único (voo da estimativa × viajantes; sem balde transport).
     const c = trip.finances.categories;
     expect(trip.finances.planned).toBe(c.flights.planned + c.accommodation.planned + c.food.planned + c.tours.planned);
