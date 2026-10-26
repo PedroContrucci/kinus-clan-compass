@@ -71,10 +71,13 @@ function makeTrip(over: Partial<TestTrip> = {}): TestTrip {
 const hotelDe = (cidade: string, i = 0): CuratedHotel => curatedHotels[cidade][i];
 
 describe('parsePriceRangeBRL', () => {
-  it('parseia os 68 hotéis reais sem exceção', () => {
+  it('parseia todos os hotéis reais do catálogo sem exceção', () => {
     const falhas = TODOS.filter((h) => parsePriceRangeBRL(h.priceRangeBRL) === null);
     expect(falhas.map((h) => `${h.name}: ${h.priceRangeBRL}`)).toEqual([]);
-    expect(TODOS.length).toBe(68);
+    // Contagem derivada dos dados: cada cidade contribui com todos os seus hotéis.
+    const total = Object.values(curatedHotels).reduce((n, l) => n + l.length, 0);
+    expect(total).toBeGreaterThan(0);
+    expect(TODOS.length).toBe(total);
   });
 
   it('trata o ponto como separador de milhar (pt-BR)', () => {
@@ -150,8 +153,9 @@ describe('rankHotelsForTrip', () => {
     expect(ranked.some((r) => r.isCurrent)).toBe(false);
   });
 
-  it('devolve vazio, sem lançar, nas 5 cidades sem curadoria', () => {
-    for (const cidade of ['Cidade do Cabo', 'Istambul', 'Bangkok', 'Marrakech', 'Singapura']) {
+  it('devolve vazio, sem lançar, nas 5 cidades sem curadoria (Natal, Florianópolis, Recife, Manaus, Jericoacoara)', () => {
+    for (const cidade of ['Natal', 'Florianópolis', 'Recife', 'Manaus', 'Jericoacoara']) {
+      expect(cidade in curatedHotels).toBe(false);
       expect(rankHotelsForTrip(cidade, makeTrip({ destination: cidade }))).toEqual([]);
       expect(getCuratedHotelsForCity(cidade)).toEqual([]);
     }
@@ -164,9 +168,12 @@ describe('rankHotelsForTrip', () => {
     expect(getCuratedHotelsForCity('RIO DE JANEIRO').length).toBe(curatedHotels['Rio de Janeiro'].length);
   });
 
-  it('as 16 cidades com curadoria respondem, e todo item tem preço parseado', () => {
-    const comCuradoria = CURATED_CITIES.filter((c) => getCuratedHotelsForCity(c).length > 0);
-    expect(comCuradoria.length).toBe(16);
+  it('todas as cidades do catálogo de hotéis respondem, e todo item tem preço parseado', () => {
+    const comCuradoria = Object.keys(curatedHotels).filter((c) => curatedHotels[c].length > 0);
+    expect(comCuradoria.length).toBe(Object.keys(curatedHotels).length);
+    expect(comCuradoria.length).toBeGreaterThan(0);
+    // Toda cidade curada do app tem hotel no catálogo novo.
+    for (const c of CURATED_CITIES) expect(getCuratedHotelsForCity(c).length, c).toBeGreaterThan(0);
     for (const cidade of comCuradoria) {
       const ranked = rankHotelsForTrip(cidade, makeTrip({ destination: cidade }));
       expect(ranked.length).toBeGreaterThan(0);
