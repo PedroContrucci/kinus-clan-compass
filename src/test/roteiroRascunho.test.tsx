@@ -133,11 +133,11 @@ describe('C.5e — roteiro do rascunho em blocos', () => {
     const withRoute = trip.days.filter((d) => d.activities.filter((x) => ['passeio', 'restaurante'].includes(roteiroKind(x))).length >= 2);
     expect(withRoute.length).toBeGreaterThan(1);
     goDay(withRoute[0].day);
-    fireEvent.click(screen.getByRole('button', { name: /Rota do dia/ }));
+    fireEvent.click(screen.getByRole('button', { name: /→/ }));
     expect(screen.getAllByTestId('mapa')).toHaveLength(1);
     goDay(withRoute[1].day);
     expect(screen.queryByTestId('mapa')).toBeNull();
-    expect(screen.getByRole('button', { name: /Rota do dia/ }).getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByRole('button', { name: /→/ }).getAttribute('aria-expanded')).toBe('false');
   });
 
   it('0a: a tira troca o dia — um RoteiroDia por vez, o do D tocado', async () => {

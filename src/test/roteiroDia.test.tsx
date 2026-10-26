@@ -145,7 +145,7 @@ describe('C.5b — Roteiro em blocos', () => {
     const { renderMap } = setup();
     expect(screen.queryByTestId('mapa')).toBeNull();
     expect(renderMap).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /Rota do dia/ }));
+    fireEvent.click(screen.getByRole('button', { name: /✈️ → ①/ }));
     expect(screen.getByTestId('mapa')).toBeTruthy();
     expect(renderMap).toHaveBeenCalled();
   });

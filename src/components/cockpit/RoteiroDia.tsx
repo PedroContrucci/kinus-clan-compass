@@ -75,6 +75,33 @@ const logisticsIcon = (a: TripActivity) => {
   return '🚕';
 };
 
+// Rota do dia em olhar único: mesma numeração dos pins do mapa (não-logística, por hora).
+const CIRCLED = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩', '⑪', '⑫', '⑬', '⑭', '⑮', '⑯', '⑰', '⑱', '⑲', '⑳'];
+const circled = (n: number) => (n >= 1 && n <= 20 ? CIRCLED[n - 1] : `(${n})`);
+const byTime = (a: TripActivity, b: TripActivity) => (a.time || '99:99').localeCompare(b.time || '99:99');
+const isStop = (a: TripActivity) => {
+  const k = roteiroKind(a);
+  return k !== 'logistica' && k !== 'incluido';
+};
+/** Início/fim do dia: chegada/partida (✈️), senão hotel (🏨) em dia de exploração. */
+const routeLabelOf = (activities: TripActivity[], routeMinutes: number) => {
+  const timed = activities.slice().sort(byTime);
+  const arrival = timed.length > 0 && logisticsIcon(timed[0]) === '✈️' && roteiroKind(timed[0]) === 'logistica';
+  const departure = timed.length > 0 && logisticsIcon(timed[timed.length - 1]) === '✈️' && roteiroKind(timed[timed.length - 1]) === 'logistica';
+  const exploration = !arrival && !departure;
+  const hasHotelLine = activities.some((a) => {
+    const k = roteiroKind(a);
+    return k === 'incluido' || (k === 'logistica' && a.category === 'hotel');
+  });
+  const seq: string[] = [];
+  if (arrival) seq.push('✈️');
+  else if (hasHotelLine || exploration) seq.push('🏨');
+  timed.filter(isStop).forEach((a, i) => seq.push(circled(i + 1)));
+  if (departure) seq.push('✈️');
+  else if (exploration) seq.push('🏨');
+  return seq.join(' → ') + (routeMinutes > 0 ? ` · ~${routeMinutes} min` : '');
+};
+
 interface RoteiroLinhaProps {
   activity: TripActivity;
   expanded: boolean;
@@ -90,6 +117,8 @@ interface RoteiroLinhaProps {
   renderDetail?: (a: TripActivity) => ReactNode;
   /** Prefixo da vista filtrada ("Dia 3"). */
   prefix?: string;
+  /** Número da parada (mesma numeração dos pins do mapa). Ausente em logística/incluído. */
+  stopNumber?: number;
   /** Valor exibido quando difere de `activity.cost` (hotel na vista Custos-âncora). */
   priceBRL?: number;
   highlight?: boolean;
@@ -101,7 +130,7 @@ interface RoteiroLinhaProps {
 
 export const RoteiroLinha = ({
   activity, expanded, onToggle, onCheck, onSwap, onConfirmAnchor, onOpenDetails, onRemove,
-  renderDetail, prefix, priceBRL, highlight, anchorRef, city, date,
+  renderDetail, prefix, stopNumber, priceBRL, highlight, anchorRef, city, date,
 }: RoteiroLinhaProps) => {
   const kind = roteiroKind(activity);
   const actions = roteiroActions(activity);
@@ -152,6 +181,14 @@ export const RoteiroLinha = ({
           className="flex-1 min-w-0 flex items-center gap-2 text-left text-sm"
         >
           {prefix && <span className="text-[10px] text-muted-foreground font-bold flex-shrink-0">{prefix}</span>}
+          {stopNumber !== undefined && (
+            <span
+              aria-label={`Parada ${stopNumber}`}
+              className="w-[18px] h-[18px] flex-shrink-0 rounded-full bg-muted text-[10px] leading-[18px] text-center text-muted-foreground font-semibold tabular-nums"
+            >
+              {stopNumber}
+            </span>
+          )}
           <span className="text-muted-foreground tabular-nums flex-shrink-0">{activity.time}</span>
           <span className={`truncate font-['Outfit'] ${kind === 'logistica' ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
             {activity.name}
@@ -260,6 +297,11 @@ export const RoteiroDia = ({
 }: RoteiroDiaProps) => {
   const legs = activities.map((a, i) => (i > 0 ? legBetween(activities[i - 1], a, liveLegs, destination) : null));
   const routeMinutes = legs.reduce((s, l) => s + (l?.minutes ?? 0), 0);
+  // Numeração das paradas = a mesma dos pins do mapa: não-logística, em ordem de hora.
+  const stopNumberById = new Map(
+    activities.filter(isStop).slice().sort(byTime).map((a, i) => [a.id, i + 1] as const),
+  );
+  const routeLabel = routeLabelOf(activities, routeMinutes);
   const isAnchorCost = (a: TripActivity) => a.category === 'voo' || a.category === 'hotel';
   const dayTotal = activities.filter((a) => !isAnchorCost(a)).reduce((s, a) => s + (a.cost || 0), 0);
   const dateLabel = date && !isNaN(date.getTime())
@@ -293,8 +335,8 @@ export const RoteiroDia = ({
             aria-expanded={routeOpen}
             className="w-full flex items-center gap-2 h-10 px-2 rounded-lg bg-muted/40 text-xs text-muted-foreground"
           >
-            <span>🗺 Rota do dia{routeMinutes > 0 ? ` · ~${routeMinutes} min de deslocamento` : ''}</span>
-            <span className="ml-auto">{routeOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
+            <span className="flex-1 min-w-0 truncate text-left">{routeLabel}</span>
+            <span className="flex-shrink-0">{routeOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
           </button>
           {routeOpen && <div className="mt-2">{renderMap()}</div>}
         </div>
@@ -318,6 +360,7 @@ export const RoteiroDia = ({
               onOpenDetails={onOpenDetails && (() => onOpenDetails(activity))}
               onRemove={onRemove && (() => onRemove(activity, actIndex))}
               renderDetail={renderDetail}
+              stopNumber={stopNumberById.get(activity.id)}
               highlight={highlightId === activity.id}
               anchorRef={activity.id === anchorActivityId ? anchorRef : undefined}
               city={destination}
