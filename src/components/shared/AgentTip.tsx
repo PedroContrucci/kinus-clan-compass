@@ -7,6 +7,7 @@ const AGENTS = {
   icarus: {
     name: 'Ícaro',
     role: 'Explorador',
+    tipRole: 'guia do roteiro',
     emoji: '🦅',
     gradient: 'from-sky-500/20 to-cyan-500/20',
     border: 'border-sky-500/30',
@@ -16,6 +17,7 @@ const AGENTS = {
   hestia: {
     name: 'Héstia',
     role: 'Guardiã Financeira',
+    tipRole: 'guia financeira',
     emoji: '🏛️',
     gradient: 'from-amber-500/20 to-yellow-500/20',
     border: 'border-amber-500/30',
@@ -25,6 +27,7 @@ const AGENTS = {
   hermes: {
     name: 'Hermes',
     role: 'Logístico',
+    tipRole: 'guia da preparação',
     emoji: '⚡',
     gradient: 'from-emerald-500/20 to-green-500/20',
     border: 'border-emerald-500/30',
@@ -55,7 +58,10 @@ export const AgentTip = ({ agent, message, action, variant = 'compact' }: AgentT
       >
         <div className={`absolute left-0 top-0 bottom-0 w-1 ${a.barColor}`} />
         <span className="text-sm pl-1">{a.emoji}</span>
-        <span className={`text-xs font-bold ${a.accentColor} font-['Outfit']`}>{a.name}:</span>
+        <span className={`text-xs font-bold ${a.accentColor} font-['Outfit']`}>
+          {a.name}
+          <span className="font-normal"> · {a.tipRole}:</span>
+        </span>
         <span className="text-xs text-muted-foreground flex-1 truncate">"{message}"</span>
         {action && (
           <button
