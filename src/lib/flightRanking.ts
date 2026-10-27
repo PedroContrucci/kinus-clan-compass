@@ -152,8 +152,8 @@ function pickReasons(f: SelectedFlight): string[] {
   if (avg && why.offers > 1 && (f.option.price - avg) / avg > PRICE_TIE_PCT) {
     out.push(`${brl(Math.round(f.option.price - avg))} acima da média`);
   }
-  if (why.windowFallback && why.leg === 'return') out.push(`nenhuma volta sai e chega entre ${String(DEPARTURE_WINDOW.from).padStart(2, '0')}h e ${DEPARTURE_WINDOW.to}h`);
-  else if (why.windowFallback) out.push(`nenhuma opção chega entre ${String(ARRIVAL_WINDOW.from).padStart(2, '0')}h e ${ARRIVAL_WINDOW.to}h`);
+  if (why.windowFallback && why.leg === 'return') out.push(`nenhuma volta sai e chega entre ${DEPARTURE_WINDOW.from}h e ${DEPARTURE_WINDOW.to}h`);
+  else if (why.windowFallback) out.push(`nenhuma opção chega entre ${ARRIVAL_WINDOW.from}h e ${ARRIVAL_WINDOW.to}h`);
   return out;
 }
 
