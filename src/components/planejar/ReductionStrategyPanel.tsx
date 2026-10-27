@@ -299,7 +299,7 @@ export const ReductionStrategyPanel = ({
                                 Buscando...
                               </>
                             ) : (
-                              '🔍 Buscar Ofertas'
+                              '🔍 Buscar ofertas'
                             )}
                           </button>
                           <button

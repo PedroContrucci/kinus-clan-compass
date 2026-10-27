@@ -299,7 +299,7 @@ export const WizardStep4Summary = ({ data, onChange, onGenerateDraft, isGenerati
           <p className="text-sm text-muted-foreground">
             <span className="text-green-400 font-medium">Perfil {tier?.label}:</span>{' '}
             {tier?.id === 'luxury' ? 'Hotels 5★, restaurantes Michelin, tours VIP' :
-             tier?.id === 'comfort' ? 'Hotels 4★, restaurantes recomendados, tours privados' :
+             tier?.id === 'comfort' ? 'Hotéis 4★, restaurantes recomendados, tours privados' :
              tier?.id === 'economic' ? 'Hotels 3★, restaurantes locais, tours em grupo' :
              'Hostels, street food, tours gratuitos'}
           </p>

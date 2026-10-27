@@ -64,12 +64,12 @@ describe('ativação única', () => {
     });
   }
 
-  it('(c) rascunho sem dias é recusado apontando "Regerar roteiro"', async () => {
+  it('(c) rascunho sem dias é recusado apontando "Refazer roteiro"', async () => {
     const t = await stored('Lisboa', 'LIS', 'c-1');
     addTrip({ ...t, id: 'c-2', days: [] } as StoredTrip);
     const r = activateDraft('c-2');
     expect(r).toEqual({ ok: false, reason: 'no_days', message: ACTIVATION_MESSAGES.no_days });
-    expect(ACTIVATION_MESSAGES.no_days).toContain('Regerar roteiro');
+    expect(ACTIVATION_MESSAGES.no_days).toContain('Refazer roteiro');
     expect(getTrip('c-2')!.status).toBe('draft');
     expect(getTrip('c-2')!.days).toEqual([]);
   });

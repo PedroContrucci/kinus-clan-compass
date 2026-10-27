@@ -89,7 +89,7 @@ export const HeroCards = ({ trip, onOpenAuction, onConfirm }: HeroCardsProps) =>
                 onClick={() => onOpenAuction('flight')}
                 className="flex items-center gap-1.5 text-xs font-medium bg-sky-500/20 text-sky-400 px-3 py-1.5 rounded-lg hover:bg-sky-500/30 transition-colors"
               >
-                <Target size={12} /> Buscar Ofertas
+                <Target size={12} /> Buscar ofertas
               </button>
               <button
                 onClick={() => setConfirmModal({ type: 'flight', isOpen: true })}
@@ -138,7 +138,7 @@ export const HeroCards = ({ trip, onOpenAuction, onConfirm }: HeroCardsProps) =>
                 onClick={() => onOpenAuction('hotel')}
                 className="flex items-center gap-1.5 text-xs font-medium bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-lg hover:bg-amber-500/30 transition-colors"
               >
-                <Target size={12} /> Buscar Ofertas
+                <Target size={12} /> Buscar ofertas
               </button>
               <button
                 onClick={() => setConfirmModal({ type: 'hotel', isOpen: true })}

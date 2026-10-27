@@ -1355,7 +1355,7 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
                 {(() => {
                   const allActivities = (selectedTrip.days || []).flatMap(d => d.activities);
                   const categories = [
-                    { id: null as string | null, label: '📅 Por Dia', count: null as number | null, confirmed: 0 },
+                    { id: null as string | null, label: '📅 Por dia', count: null as number | null, confirmed: 0 },
                     { id: 'comida', label: '🍽️ Alimentação',
                       count: allActivities.filter(a => a.category === 'comida' && !a.name?.toLowerCase().includes('café da manhã') && !a.name?.toLowerCase().includes('room service')).length,
                       confirmed: allActivities.filter(a => a.category === 'comida' && !a.name?.toLowerCase().includes('café da manhã') && !a.name?.toLowerCase().includes('room service') && a.status === 'confirmed').length },
@@ -1689,7 +1689,7 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
                 {/* Readiness Score */}
                 <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-[#f8fafc] font-['Outfit']">🎯 Prontidão da Viagem</h3>
+                    <h3 className="font-semibold text-[#f8fafc] font-['Outfit']">🎯 Prontidão da viagem</h3>
                     <span className={`text-2xl font-bold font-['Outfit'] ${readiness >= 80 ? 'text-[#10b981]' : readiness >= 50 ? 'text-[#eab308]' : 'text-[#ef4444]'}`}>
                       {readiness}%
                     </span>

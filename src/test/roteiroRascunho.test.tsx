@@ -69,7 +69,7 @@ describe('C.5e — roteiro do rascunho em blocos', () => {
     expect(within(panel).queryAllByRole('checkbox')).toHaveLength(0);
     expect(within(panel).getAllByRole('button', { name: /^D\d+\b/ })).toHaveLength(trip.days.length);
     expect(within(panel).queryAllByRole('button', { expanded: true })).toHaveLength(0);
-    expect(within(panel).getByRole('button', { name: /Regerar roteiro/ })).toBeTruthy();
+    expect(within(panel).getByRole('button', { name: /Refazer roteiro/ })).toBeTruthy();
     for (const gone of [/ORÇAMENTO ESTIMADO/, /Roteiro gerado/, /Adicionar atividade/, /CALENDÁRIO/]) {
       expect(within(panel).queryByText(gone)).toBeNull();
     }

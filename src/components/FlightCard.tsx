@@ -82,7 +82,7 @@ const FlightCard = ({ flight, type, onOpenAuction }: FlightCardProps) => {
           className="w-full mt-4 py-2 bg-[#0f172a] border border-[#334155] rounded-xl text-[#f8fafc] text-sm flex items-center justify-center gap-2 hover:border-[#10b981] transition-colors"
         >
           <Tag size={14} />
-          Buscar Ofertas
+          Buscar ofertas
         </button>
       )}
 

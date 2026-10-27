@@ -357,7 +357,7 @@ export const GeneratedItineraryStage = ({
             {onRegenerate && (
               <Button variant="outline" size="sm" onClick={handleRegenerate}>
                 <RefreshCw size={16} className="mr-1" />
-                Regerar roteiro
+                Refazer roteiro
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={handleSaveWithDays}>
