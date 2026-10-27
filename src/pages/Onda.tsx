@@ -9,6 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useAuth } from '@/hooks/useAuth';
 import { kinuBeta } from '@/integrations/kinu-beta/client';
 import { cn } from '@/lib/utils';
+import CatalogoTab from '@/components/onda/CatalogoTab';
 
 interface OndaRow {
   nome: string;
@@ -196,6 +197,7 @@ export default function Onda() {
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tile, setTile] = useState<Tile | null>(null);
+  const [view, setView] = useState<'onda' | 'catalogo'>('onda');
   const refreshRef = useRef<(() => Promise<void>) | null>(null);
 
   useEffect(() => { if (!isLoading && !user) navigate('/', { replace: true }); }, [isLoading, user, navigate]);
@@ -251,6 +253,8 @@ export default function Onda() {
       <h1 className="font-['Outfit'] text-2xl font-semibold sm:text-3xl">Onda 27/10 → 02/11</h1>
       <div className="flex flex-wrap items-center gap-3"><Button variant="outline" size="sm" className="min-h-[44px]" disabled={refreshing} onClick={() => void refreshRef.current?.()}>{refreshing ? <Loader2 className="animate-spin" /> : <RefreshCw />}Atualizar</Button><span className="text-xs text-muted-foreground" aria-live="polite">{updatedAt ? `Atualizado às ${format(updatedAt, 'HH:mm', { locale: ptBR })}` : '—'}</span></div>
     </header>
+    <div role="tablist" className="mb-4 flex gap-2">{([['onda', 'Onda'], ['catalogo', 'Catálogo']] as const).map(([id, label]) => <Button key={id} role="tab" aria-selected={view === id} variant={view === id ? 'default' : 'outline'} size="sm" className="min-h-[44px]" onClick={() => setView(id)}>{label}</Button>)}</div>
+    {view === 'catalogo' ? <CatalogoTab /> : <>
     {error && <p role="alert" className="mb-4 text-sm text-destructive">{error}</p>}
     {!updatedAt && refreshing ? <div className="flex justify-center py-12" role="status" aria-label="Carregando painel"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div> : updatedAt && <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -277,6 +281,7 @@ export default function Onda() {
           </tbody></table></div>
         </Section>
       </div>
+    </>}
     </>}
   </main>;
 }
