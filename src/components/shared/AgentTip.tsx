@@ -7,6 +7,7 @@ const AGENTS = {
   icarus: {
     name: 'Ícaro',
     role: 'Explorador',
+    tipRole: 'guia do roteiro',
     emoji: '🦅',
     gradient: 'from-sky-500/20 to-cyan-500/20',
     border: 'border-sky-500/30',
@@ -16,6 +17,7 @@ const AGENTS = {
   hestia: {
     name: 'Héstia',
     role: 'Guardiã Financeira',
+    tipRole: 'guia financeira',
     emoji: '🏛️',
     gradient: 'from-amber-500/20 to-yellow-500/20',
     border: 'border-amber-500/30',
@@ -25,6 +27,7 @@ const AGENTS = {
   hermes: {
     name: 'Hermes',
     role: 'Logístico',
+    tipRole: 'guia da preparação',
     emoji: '⚡',
     gradient: 'from-emerald-500/20 to-green-500/20',
     border: 'border-emerald-500/30',
