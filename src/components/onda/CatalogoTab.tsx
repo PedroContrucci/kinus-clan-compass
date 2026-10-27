@@ -22,7 +22,7 @@ const NO_BEACH = new Set(['Bangkok', 'Buenos Aires', 'Gramado', 'Londres', 'Marr
 // [red abaixo de, green a partir de]
 const LIMITS: Partial<Record<Key, [number, number]>> = { cafe: [4, 6], almoco: [4, 6], jantar: [4, 6], cat_noite: [4, 6], passeios: [16, 24] };
 
-export function bandOf(row: CatRow, key: Key): Band {
+function bandOf(row: CatRow, key: Key): Band {
   if (key === 'praia' && NO_BEACH.has(row.city)) return 'na';
   const [red, green] = LIMITS[key] ?? [5, 8];
   const value = Number(row[key]) || 0;
