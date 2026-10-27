@@ -29,7 +29,7 @@ import { PainelResumo } from './PainelResumo';
 const TIER_DESCRIPTIONS: Record<string, string> = {
   backpacker: 'Hostels, street food, tours gratuitos',
   economic: 'Hotels 3★, restaurantes locais, tours em grupo',
-  comfort: 'Hotels 4★, restaurantes recomendados, tours privados',
+  comfort: 'Hotéis 4★, restaurantes recomendados, tours privados',
   luxury: 'Hotels 5★, restaurantes Michelin, tours VIP',
 };
 
@@ -549,7 +549,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   };
 
   // Hero-scoped offer links: flight partners live behind the flight hero's
-  // "Buscar Ofertas" popover; hotel partners split into a hotel-specific
+  // "Buscar ofertas" popover; hotel partners split into a hotel-specific
   // Booking link and a generic-hotel popover on the hotel hero.
   const heroOfferParams = {
     originCode: trip.flights?.outbound?.origin || 'GRU',
@@ -843,7 +843,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
                     <button
                       className="text-xs font-semibold py-2 rounded-lg bg-sky-500 text-white hover:bg-sky-600 transition-colors"
                     >
-                      🎯 Buscar Ofertas
+                      🎯 Buscar ofertas
                     </button>
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-64 p-2 bg-card border-border">

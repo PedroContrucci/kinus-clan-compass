@@ -487,7 +487,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
       
       let friendlyMessage: string;
       if (isApiKeyError) {
-        friendlyMessage = "Estou com um problema de conexão com meu cérebro (API key). Avisa o Pedro que ele resolve rapidinho! 🔧";
+        friendlyMessage = "Estou com um problema de conexão com meu cérebro. Avisa o Pedro que ele resolve rapidinho! 🔧";
       } else if (isRateLimit) {
         friendlyMessage = "Calma aí, muita gente falando comigo ao mesmo tempo! Tenta de novo em uns 30 segundos? 😅";
       } else {

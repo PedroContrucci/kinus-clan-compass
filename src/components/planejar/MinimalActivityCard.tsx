@@ -272,7 +272,7 @@ export const MinimalActivityCard = ({
                       onClick={handleSearchOffers}
                       className="flex-1 py-2 bg-gradient-to-r from-primary to-[#0ea5e9] text-white rounded-xl text-sm font-medium"
                     >
-                      Buscar Ofertas
+                      Buscar ofertas
                     </button>
                     <button
                       onClick={() => setAuctionOpen(false)}

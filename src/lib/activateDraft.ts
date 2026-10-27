@@ -18,7 +18,7 @@ export type ActivationResult =
 export const ACTIVATION_MESSAGES: Record<ActivationRefusal, string> = {
   not_found: 'Não encontrei este rascunho.',
   not_draft: 'Esta viagem já está ativa.',
-  no_days: 'Este rascunho não tem roteiro. Toque em “Regerar roteiro” e ative de novo.',
+  no_days: 'Este rascunho não tem roteiro. Toque em “Refazer roteiro” e ative de novo.',
   no_flight: 'Escolha os voos de ida e volta antes de ativar.',
 };
 

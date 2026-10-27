@@ -421,7 +421,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
         <AlertDialogHeader>
           <AlertDialogTitle>Refazer o roteiro?</AlertDialogTitle>
           <AlertDialogDescription>
-            Isso refaz o roteiro e desfaz {pendingRegen?.edits} {pendingRegen?.edits === 1 ? 'troca sua' : 'trocas suas'}. Continuar?
+            Isso refaz o roteiro e desfazer {pendingRegen?.edits} {pendingRegen?.edits === 1 ? 'troca sua' : 'trocas suas'}. Continuar?
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

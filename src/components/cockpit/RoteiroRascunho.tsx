@@ -80,7 +80,7 @@ export const RoteiroRascunho = ({ trip, onRegenerate }: RoteiroRascunhoProps) =>
   }, [routeDay]);
 
   if (days.length === 0) {
-    return <p className="text-xs text-muted-foreground p-2">Sem roteiro neste rascunho — use "Regerar roteiro".</p>;
+    return <p className="text-xs text-muted-foreground p-2">Sem roteiro neste rascunho — use "Refazer roteiro".</p>;
   }
 
   const startDate = current.startDate ? parseISO(String(current.startDate).slice(0, 10)) : undefined;
@@ -91,7 +91,7 @@ export const RoteiroRascunho = ({ trip, onRegenerate }: RoteiroRascunhoProps) =>
         <div className="flex justify-end">
           <Button variant="outline" size="sm" onClick={() => onRegenerate(countManualEdits(current.engineItemIds, itemIdsOf(days)))}>
             <RefreshCw size={16} className="mr-1" />
-            Regerar roteiro
+            Refazer roteiro
           </Button>
         </div>
       )}

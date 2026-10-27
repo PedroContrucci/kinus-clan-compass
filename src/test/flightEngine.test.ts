@@ -198,10 +198,10 @@ describe('C.2.1 — sugestão na janela, preço por pessoa/perna', () => {
     expect(rankFlights([madrugada, noite]).map(f => f.option.id)).toEqual(['Azul-2105', 'Gol-0300']);
   });
 
-  it('só a das 03:00 → é ela, e o porquê termina em "nenhuma opção chega entre 06h e 22h"', () => {
+  it('só a das 03:00 → é ela, e o porquê termina em "nenhuma opção chega entre 6h e 22h"', () => {
     const best = pickBest([madrugada])!;
     expect(best.option.id).toBe('Gol-0300');
-    expect(explainPick(best)).toMatch(/ · nenhuma opção chega entre 06h e 22h$/);
+    expect(explainPick(best)).toMatch(/ · nenhuma opção chega entre 6h e 22h$/);
   });
 
   it('explainPick: razão sem "média"; média só como ressalva acima de PRICE_TIE_PCT', () => {
@@ -251,7 +251,7 @@ describe('C.4 — janela de partida da volta', () => {
   it('só a das 02:30 → é ela, com a ressalva da volta; na ida a regra de partida não vale', () => {
     const best = pickBest([madrugada], 'kinu', 'return')!;
     expect(best.option.id).toBe('Gol-0230');
-    expect(explainPick(best)).toMatch(/ · nenhuma volta sai e chega entre 06h e 22h$/);
+    expect(explainPick(best)).toMatch(/ · nenhuma volta sai e chega entre 6h e 22h$/);
     // Na ida o critério continua sendo a chegada (05:55, fora), não a partida.
     expect(outsideWindowLabel(madrugada)).toBe('fora da janela · chega 05:55');
   });
