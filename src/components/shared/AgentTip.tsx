@@ -58,7 +58,10 @@ export const AgentTip = ({ agent, message, action, variant = 'compact' }: AgentT
       >
         <div className={`absolute left-0 top-0 bottom-0 w-1 ${a.barColor}`} />
         <span className="text-sm pl-1">{a.emoji}</span>
-        <span className={`text-xs font-bold ${a.accentColor} font-['Outfit']`}>{a.name}:</span>
+        <span className={`text-xs font-bold ${a.accentColor} font-['Outfit']`}>
+          {a.name}
+          <span className="font-normal"> · {a.tipRole}:</span>
+        </span>
         <span className="text-xs text-muted-foreground flex-1 truncate">"{message}"</span>
         {action && (
           <button
