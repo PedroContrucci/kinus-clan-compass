@@ -17,13 +17,15 @@ const WIZARD: Col[] = [
 const SECONDARY: Col[] = [{ key: 'arte', label: 'Arte' }, { key: 'aventura', label: 'Aventura' }, { key: 'relax', label: 'Relax' }, { key: 'bate_volta', label: 'Bate-volta' }];
 const MOMENTO: Col[] = [{ key: 'cafe', label: 'Café' }, { key: 'almoco', label: 'Almoço' }, { key: 'jantar', label: 'Jantar' }, { key: 'passeios', label: 'Passeios' }, { key: 'cat_noite', label: 'Noite' }];
 
-const NO_BEACH = new Set(['Bangkok', 'Buenos Aires', 'Gramado', 'Londres', 'Marrakech', 'Orlando', 'Paris', 'Tokyo']);
+const NO_BEACH = new Set(['Bangkok', 'Buenos Aires', 'Gramado', 'Londres', 'Marrakech', 'Orlando', 'Paris', 'Tokyo', 'Istambul', 'Rome', 'Nova York']);
+const NO_NIGHTLIFE = new Set(['Gramado', 'Porto Seguro', 'Orlando']);
 
 // [red abaixo de, green a partir de]
 const LIMITS: Partial<Record<Key, [number, number]>> = { cafe: [4, 6], almoco: [4, 6], jantar: [4, 6], cat_noite: [4, 6], passeios: [16, 24] };
 
 function bandOf(row: CatRow, key: Key): Band {
   if (key === 'praia' && NO_BEACH.has(row.city)) return 'na';
+  if (key === 'noite' && NO_NIGHTLIFE.has(row.city)) return 'na';
   const [red, green] = LIMITS[key] ?? [5, 8];
   const value = Number(row[key]) || 0;
   return value < red ? 'red' : value < green ? 'amber' : 'green';
