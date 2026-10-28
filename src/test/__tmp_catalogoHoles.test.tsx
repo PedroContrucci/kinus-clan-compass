@@ -67,8 +67,9 @@ describe('Catálogo — células "não se aplica"', () => {
   it('as listas de buracos não citam as cidades riscadas', async () => {
     render(<CatalogoTab />);
     await screen.findByText('Interesses do wizard');
-    const box = screen.getByRole('button', { name: 'Buracos' }).closest('div')!;
-    fireEvent.click(screen.getByRole('button', { name: 'Buracos' }));
+    const gatilho = screen.getAllByRole('button', { name: 'Buracos' }).find(b => !b.closest('th'))!;
+    const box = gatilho.closest('div')!;
+    fireEvent.click(gatilho);
     await waitFor(() => expect(within(box).getByText('Por interesse')).toBeInTheDocument());
 
     for (const city of ['Gramado', 'Orlando', 'Porto Seguro', 'Rome', 'Tokyo', 'Istambul', 'Nova York']) {
