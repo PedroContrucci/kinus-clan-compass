@@ -170,8 +170,8 @@ describe('C.10 — duas portas', () => {
   it('renderiza 🧭 interface e 💬 KINU AI', () => {
     const onI = vi.fn(), onA = vi.fn();
     render(<PlanDoors onInterface={onI} onAgent={onA} />);
-    fireEvent.click(screen.getByText('🧭 Planejar pela interface'));
-    fireEvent.click(screen.getByText('💬 Planejar com o KINU AI'));
+    fireEvent.click(screen.getByText('🧭 Escolher na tela'));
+    fireEvent.click(screen.getByText('💬 Conversar com o KINU AI'));
     expect(onI).toHaveBeenCalledOnce();
     expect(onA).toHaveBeenCalledOnce();
   });
