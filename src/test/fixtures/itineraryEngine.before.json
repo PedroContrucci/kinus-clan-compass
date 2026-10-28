@@ -37,24 +37,24 @@
       ]
      },
      {
-      "id": "day-0-ctg-maria",
-      "name": "María",
+      "id": "day-0-ctg-alma-san-agustin",
+      "name": "Alma (Casa San Agustín)",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 520,
-      "costPerPerson": 260,
+      "estimatedCost": 600,
+      "costPerPerson": 300,
       "time": "19:30",
-      "duration": "2h",
-      "location": "San Diego (2 pax)",
-      "rating": 4.9,
+      "duration": "2.5h",
+      "location": "Centro Histórico (2 pax)",
+      "rating": 4.8,
       "status": "suggestion",
       "tips": [
-       "Contemporâneo elegante no Centro — reserve"
+       "Jantar no pátio de um hotel colonial do século XVII, à luz de velas; cozinha caribenha contemporânea, reserve"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 4520
+    "totalCost": 4600
    },
    {
     "dayNumber": 2,
@@ -97,58 +97,60 @@
       "source": "kinu"
      },
      {
-      "id": "day-1-ctg-cocina-pepina",
-      "name": "La Cocina de Pepina",
+      "id": "day-1-ctg-cande",
+      "name": "Candé",
       "type": "lunch",
       "timeSlot": "lunch",
-      "estimatedCost": 280,
-      "costPerPerson": 140,
+      "estimatedCost": 220,
+      "costPerPerson": 110,
       "time": "12:30",
       "duration": "1.5h",
-      "location": "Getsemaní (2 pax)",
-      "rating": 4.5,
-      "status": "suggestion",
-      "tips": [
-       "Cozinha das avós do Caribe colombiano — mote de queso e posta negra"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-1-ctg-bovedas",
-      "name": "Las Bóvedas (compras)",
-      "type": "experience",
-      "timeSlot": "afternoon",
-      "estimatedCost": 80,
-      "costPerPerson": 40,
-      "time": "15:00",
-      "duration": "1h",
       "location": "Centro Histórico (2 pax)",
       "rating": 4.4,
       "status": "suggestion",
       "tips": [
-       "As antigas masmorras viradas lojinhas de artesanato — souvenir com história e sombra"
+       "Cozinha cartagenera típica com música ao vivo — almoço-experiência"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-1-ctg-carmen",
-      "name": "Carmen",
-      "type": "dinner",
-      "timeSlot": "dinner",
-      "estimatedCost": 500,
-      "costPerPerson": 250,
-      "time": "19:30",
-      "duration": "2.5h",
-      "location": "Centro Histórico (2 pax)",
-      "rating": 4.6,
+      "id": "day-1-ctg-boquilla-manglares",
+      "name": "La Boquilla: canoa pelos manguezais e praia de pescadores",
+      "type": "experience",
+      "timeSlot": "afternoon",
+      "estimatedCost": 180,
+      "costPerPerson": 90,
+      "time": "15:00",
+      "duration": "3h",
+      "location": "La Boquilla (2 pax)",
+      "rating": 4.2,
       "status": "suggestion",
       "tips": [
-       "Alta gastronomia num pátio colonial — o jantar de celebração"
+       "Passeio de canoa conduzido por pescadores locais pelos túneis de mangue",
+       "Combine o passeio com almoço de peixe nas barracas da praia",
+       "A 20 min do centro; vá de táxi ou app"
+      ],
+      "source": "kinu"
+     },
+     {
+      "id": "day-1-ctg-maria",
+      "name": "María",
+      "type": "dinner",
+      "timeSlot": "dinner",
+      "estimatedCost": 520,
+      "costPerPerson": 260,
+      "time": "19:30",
+      "duration": "2h",
+      "location": "San Diego (2 pax)",
+      "rating": 4.9,
+      "status": "suggestion",
+      "tips": [
+       "Contemporâneo elegante no Centro — reserve"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 980
+    "totalCost": 1040
    },
    {
     "dayNumber": 3,
@@ -173,97 +175,44 @@
       ]
      },
      {
-      "id": "day-2-ctg-cidade-murada",
-      "name": "Passeio pela Cidade Murada (Centro)",
+      "id": "day-2-ctg-tierra-bomba",
+      "name": "Beach club em Tierra Bomba",
       "type": "experience",
       "timeSlot": "morning",
-      "estimatedCost": 40,
-      "costPerPerson": 20,
-      "time": "09:30",
-      "duration": "2h",
-      "location": "Centro Histórico (2 pax)",
-      "rating": 4.8,
-      "status": "suggestion",
-      "tips": [
-       "Sacadas floridas, praças e as palenqueras de frutas — o cartão-postal vivo",
-       "Foto com palenquera: combine e PAGUE (é o trabalho delas); calçadas de pedra = carrinho de bebê sofre, prefira canguru"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-2-ctg-cevicheria",
-      "name": "La Cevichería",
-      "type": "lunch",
-      "timeSlot": "lunch",
-      "estimatedCost": 240,
-      "costPerPerson": 120,
-      "time": "12:30",
-      "duration": "1.5h",
-      "location": "San Diego (2 pax)",
+      "estimatedCost": 320,
+      "costPerPerson": 160,
+      "time": "09:15",
+      "duration": "5h",
+      "location": "Isla de Tierra Bomba (2 pax)",
       "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "O ceviche que Anthony Bourdain eternizou — clássico absoluto",
-       "Fila real: chegue 11h45 ou espere; tem opções sem pimenta pras crianças"
+       "Almoço no local",
+       "Lancha de 15–20 min saindo de Bocagrande ou do centro",
+       "Day pass costuma incluir cadeira, transporte e consumo mínimo",
+       "Mar mais calmo e limpo que o das praias urbanas"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-2-ctg-paleteria",
-      "name": "La Paletería",
-      "type": "experience",
-      "timeSlot": "afternoon",
-      "estimatedCost": 30,
-      "costPerPerson": 15,
-      "time": "15:00",
-      "duration": "0.5h",
-      "location": "Centro Histórico (2 pax)",
-      "rating": 4.7,
-      "status": "suggestion",
-      "tips": [
-       "As paletas mexicanas que salvam QUALQUER tarde de calor — corozo e coco são as locais",
-       "Vai virar parada diária da família, aceite isso 😄"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-2-ctg-portal-dulces",
-      "name": "Portal de los Dulces",
-      "type": "experience",
-      "timeSlot": "afternoon",
-      "estimatedCost": 40,
-      "costPerPerson": 20,
-      "time": "17:30",
-      "duration": "0.5h",
-      "location": "Centro Histórico (2 pax)",
-      "rating": 4.4,
-      "status": "suggestion",
-      "tips": [
-       "O corredor centenário dos doces de coco — cocadas de todos os sabores",
-       "Deixe as crianças escolherem: é tradição, não turismada"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-2-ctg-celele",
-      "name": "Celele",
+      "id": "day-2-ctg-carmen",
+      "name": "Carmen",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 440,
-      "costPerPerson": 220,
+      "estimatedCost": 500,
+      "costPerPerson": 250,
       "time": "19:30",
       "duration": "2.5h",
-      "location": "Getsemaní (2 pax)",
-      "rating": 4.7,
+      "location": "Centro Histórico (2 pax)",
+      "rating": 4.6,
       "status": "suggestion",
       "tips": [
-       "O melhor restaurante do Caribe colombiano — cozinha de pesquisa da região",
-       "RESERVE com semanas; programa dos pais (babá ou noite especial)"
+       "Alta gastronomia num pátio colonial — o jantar de celebração"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 790
+    "totalCost": 820
    },
    {
     "dayNumber": 4,
@@ -288,44 +237,44 @@
       ]
      },
      {
-      "id": "day-3-ctg-rosario",
-      "name": "Day-trip Islas del Rosario (beach club)",
+      "id": "day-3-ctg-volcan-totumo",
+      "name": "Volcán del Totumo (banho de lama)",
       "type": "experience",
       "timeSlot": "morning",
-      "estimatedCost": 500,
-      "costPerPerson": 250,
+      "estimatedCost": 240,
+      "costPerPerson": 120,
       "time": "09:15",
-      "duration": "7h",
-      "location": "Islas del Rosario (2 pax)",
-      "rating": 4.6,
+      "duration": "5h",
+      "location": "Santa Catalina (2 pax)",
+      "rating": 4.3,
       "status": "suggestion",
       "tips": [
        "Bate-volta: ocupa o dia inteiro",
-       "Mar caribenho manso e cristalino — escolha um beach club com day pass e estrutura kids",
-       "Lancha 45min: assentos na parte de trás balançam menos; protetor reef-safe"
+       "Cratera de lama morna a 50 km, onde se flutua; meio dia com agência, leve roupa que possa manchar"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-3-ctg-el-baron",
-      "name": "El Barón Café & Liquor Bar",
+      "id": "day-3-ctg-celele",
+      "name": "Celele",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 360,
-      "costPerPerson": 180,
+      "estimatedCost": 440,
+      "costPerPerson": 220,
       "time": "19:30",
-      "duration": "1.5h",
-      "location": "Centro Histórico (2 pax)",
-      "rating": 4.6,
+      "duration": "2.5h",
+      "location": "Getsemaní (2 pax)",
+      "rating": 4.7,
       "status": "suggestion",
       "tips": [
        "Perto do hotel, para a volta do bate-volta",
-       "Jantar leve + coquetelaria na Plaza San Pedro — pede mesa na praça"
+       "O melhor restaurante do Caribe colombiano — cozinha de pesquisa da região",
+       "RESERVE com semanas; programa dos pais (babá ou noite especial)"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 860
+    "totalCost": 680
    },
    {
     "dayNumber": 5,
@@ -352,95 +301,76 @@
       "source": "kinu"
      },
      {
-      "id": "day-4-ctg-getsemani",
-      "name": "Getsemaní e Plaza de la Trinidad",
+      "id": "day-4-ctg-cidade-murada",
+      "name": "Passeio pela Cidade Murada (Centro)",
       "type": "experience",
       "timeSlot": "morning",
-      "estimatedCost": 30,
-      "costPerPerson": 15,
+      "estimatedCost": 40,
+      "costPerPerson": 20,
       "time": "09:30",
       "duration": "2h",
-      "location": "Getsemaní (2 pax)",
-      "rating": 4.7,
+      "location": "Centro Histórico (2 pax)",
+      "rating": 4.8,
       "status": "suggestion",
       "tips": [
-       "O bairro do street art e das bandeirinhas — vibrante e fotogênico",
-       "De manhã é tranquilo pra família; à noite vira o point jovem"
+       "Sacadas floridas, praças e as palenqueras de frutas — o cartão-postal vivo",
+       "Foto com palenquera: combine e PAGUE (é o trabalho delas); calçadas de pedra = carrinho de bebê sofre, prefira canguru"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-4-ctg-cande",
-      "name": "Candé",
+      "id": "day-4-ctg-cocina-pepina",
+      "name": "La Cocina de Pepina",
       "type": "lunch",
       "timeSlot": "lunch",
-      "estimatedCost": 220,
-      "costPerPerson": 110,
+      "estimatedCost": 280,
+      "costPerPerson": 140,
       "time": "12:30",
       "duration": "1.5h",
-      "location": "Centro Histórico (2 pax)",
-      "rating": 4.4,
+      "location": "Getsemaní (2 pax)",
+      "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "Cozinha cartagenera típica com música ao vivo — almoço-experiência"
+       "Cozinha das avós do Caribe colombiano — mote de queso e posta negra"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-4-ctg-popa",
-      "name": "Convento de la Popa",
+      "id": "day-4-ctg-cerro-de-la-popa",
+      "name": "Cerro de la Popa (convento e mirante)",
       "type": "experience",
       "timeSlot": "afternoon",
-      "estimatedCost": 80,
-      "costPerPerson": 40,
+      "estimatedCost": 100,
+      "costPerPerson": 50,
       "time": "15:00",
       "duration": "1.5h",
       "location": "La Popa (2 pax)",
-      "rating": 4.5,
-      "status": "suggestion",
-      "tips": [
-       "A vista mais completa de Cartagena do alto do morro",
-       "Vá e volte de táxi/app combinado — não suba a pé"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-4-ctg-veleiro-baia",
-      "name": "Passeio de barco ao pôr do sol na baía",
-      "type": "experience",
-      "timeSlot": "afternoon",
-      "estimatedCost": 300,
-      "costPerPerson": 150,
-      "time": "17:30",
-      "duration": "2h",
-      "location": "Marina (2 pax)",
       "rating": 4.6,
       "status": "suggestion",
       "tips": [
-       "A cidade murada dourada vista do mar — o momento uau da viagem",
-       "Versões família saem mais cedo (17h); confirme colete infantil"
+       "O ponto mais alto da cidade, com convento do século XVII e vista de toda a baía; vá de táxi e combine a volta"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-4-ctg-mar-y-zielo",
-      "name": "Mar y Zielo",
+      "id": "day-4-ctg-el-baron",
+      "name": "El Barón Café & Liquor Bar",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 320,
-      "costPerPerson": 160,
-      "time": "19:35",
-      "duration": "2h",
+      "estimatedCost": 360,
+      "costPerPerson": 180,
+      "time": "19:30",
+      "duration": "1.5h",
       "location": "Centro Histórico (2 pax)",
-      "rating": 4.5,
+      "rating": 4.6,
       "status": "suggestion",
       "tips": [
-       "Frutos do mar contemporâneos com rooftop — impressiona sem formalidade"
+       "Jantar leve + coquetelaria na Plaza San Pedro — pede mesa na praça"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 1070
+    "totalCost": 900
    },
    {
     "dayNumber": 6,
@@ -465,20 +395,20 @@
       ]
      },
      {
-      "id": "day-5-ctg-muralhas",
-      "name": "Caminhada pelas Muralhas",
+      "id": "day-5-ctg-getsemani",
+      "name": "Getsemaní e Plaza de la Trinidad",
       "type": "experience",
       "timeSlot": "morning",
-      "estimatedCost": 0,
-      "costPerPerson": 0,
+      "estimatedCost": 30,
+      "costPerPerson": 15,
       "time": "09:30",
-      "duration": "1.5h",
-      "location": "Centro Histórico (2 pax)",
-      "rating": 4.8,
+      "duration": "2h",
+      "location": "Getsemaní (2 pax)",
+      "rating": 4.7,
       "status": "suggestion",
       "tips": [
-       "4km de muralhas do século XVII — gratuito e cinematográfico",
-       "Com crianças pequenas: trecho curto de manhã cedo; pôr do sol é a versão dos adultos"
+       "O bairro do street art e das bandeirinhas — vibrante e fotogênico",
+       "De manhã é tranquilo pra família; à noite vira o point jovem"
       ],
       "source": "kinu"
      },
@@ -501,42 +431,41 @@
       "source": "kinu"
      },
      {
-      "id": "day-5-ctg-inquisicion",
-      "name": "Palacio de la Inquisición",
+      "id": "day-5-ctg-bovedas",
+      "name": "Las Bóvedas (compras)",
       "type": "experience",
       "timeSlot": "afternoon",
-      "estimatedCost": 70,
-      "costPerPerson": 35,
+      "estimatedCost": 80,
+      "costPerPerson": 40,
       "time": "15:00",
-      "duration": "1.5h",
+      "duration": "1h",
       "location": "Centro Histórico (2 pax)",
       "rating": 4.4,
       "status": "suggestion",
       "tips": [
-       "O museu da história sombria da cidade num palacete lindo — melhor com crianças maiores; os pequenos curtem o pátio"
+       "As antigas masmorras viradas lojinhas de artesanato — souvenir com história e sombra"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-5-ctg-juan-del-mar",
-      "name": "Juan del Mar (Plaza San Diego)",
+      "id": "day-5-ctg-mar-y-zielo",
+      "name": "Mar y Zielo",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 260,
-      "costPerPerson": 130,
+      "estimatedCost": 320,
+      "costPerPerson": 160,
       "time": "19:30",
       "duration": "2h",
-      "location": "San Diego (2 pax)",
-      "rating": 4.4,
+      "location": "Centro Histórico (2 pax)",
+      "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "Jantar na praça mais charmosa — as crianças correm na praça enquanto os pratos chegam",
-       "A fórmula mágica de jantar com filhos pequenos: praça + mesa externa"
+       "Frutos do mar contemporâneos com rooftop — impressiona sem formalidade"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 450
+    "totalCost": 550
    },
    {
     "dayNumber": 7,
@@ -561,76 +490,97 @@
       ]
      },
      {
-      "id": "day-6-ctg-museo-oro",
-      "name": "Museo del Oro Zenú",
+      "id": "day-6-ctg-muralhas",
+      "name": "Caminhada pelas Muralhas",
       "type": "experience",
       "timeSlot": "morning",
       "estimatedCost": 0,
       "costPerPerson": 0,
       "time": "09:30",
-      "duration": "1h",
-      "location": "Centro Histórico (2 pax)",
-      "rating": 4.6,
-      "status": "suggestion",
-      "tips": [
-       "Ourivesaria pré-colombiana GRÁTIS e com ar-condicionado — o refúgio perfeito do meio-dia"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-6-ctg-la-mulata",
-      "name": "La Mulata",
-      "type": "lunch",
-      "timeSlot": "lunch",
-      "estimatedCost": 180,
-      "costPerPerson": 90,
-      "time": "12:30",
       "duration": "1.5h",
       "location": "Centro Histórico (2 pax)",
-      "rating": 4.6,
+      "rating": 4.8,
       "status": "suggestion",
       "tips": [
-       "Almoço caribenho de bandeja — chegue antes do meio-dia, a fila do executivo é real"
+       "4km de muralhas do século XVII — gratuito e cinematográfico",
+       "Com crianças pequenas: trecho curto de manhã cedo; pôr do sol é a versão dos adultos"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-6-ctg-bocagrande-praia",
-      "name": "Fim de tarde em Bocagrande",
-      "type": "experience",
-      "timeSlot": "afternoon",
-      "estimatedCost": 60,
-      "costPerPerson": 30,
-      "time": "15:00",
-      "duration": "2h",
-      "location": "Bocagrande (2 pax)",
-      "rating": 4.2,
-      "status": "suggestion",
-      "tips": [
-       "A praia urbana da cidade — mar escuro mas água morna e pôr do sol bonito",
-       "Vendedores insistentes: um \"no, gracias\" firme e sorridente resolve; castelo de areia salva o dia"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-6-ctg-demente",
-      "name": "Demente (tapas no rooftop)",
-      "type": "dinner",
-      "timeSlot": "dinner",
-      "estimatedCost": 180,
-      "costPerPerson": 90,
-      "time": "19:30",
-      "duration": "2h",
-      "location": "Getsemaní (2 pax)",
+      "id": "day-6-ctg-cevicheria",
+      "name": "La Cevichería",
+      "type": "lunch",
+      "timeSlot": "lunch",
+      "estimatedCost": 240,
+      "costPerPerson": 120,
+      "time": "12:30",
+      "duration": "1.5h",
+      "location": "San Diego (2 pax)",
       "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "Tapas e forno a lenha com teto retrátil na Plaza Trinidad — descontraído e delicioso"
+       "O ceviche que Anthony Bourdain eternizou — clássico absoluto",
+       "Fila real: chegue 11h45 ou espere; tem opções sem pimenta pras crianças"
+      ],
+      "source": "kinu"
+     },
+     {
+      "id": "day-6-ctg-paleteria",
+      "name": "La Paletería",
+      "type": "experience",
+      "timeSlot": "afternoon",
+      "estimatedCost": 30,
+      "costPerPerson": 15,
+      "time": "15:00",
+      "duration": "0.5h",
+      "location": "Centro Histórico (2 pax)",
+      "rating": 4.7,
+      "status": "suggestion",
+      "tips": [
+       "As paletas mexicanas que salvam QUALQUER tarde de calor — corozo e coco são as locais",
+       "Vai virar parada diária da família, aceite isso 😄"
+      ],
+      "source": "kinu"
+     },
+     {
+      "id": "day-6-ctg-portal-dulces",
+      "name": "Portal de los Dulces",
+      "type": "experience",
+      "timeSlot": "afternoon",
+      "estimatedCost": 40,
+      "costPerPerson": 20,
+      "time": "17:30",
+      "duration": "0.5h",
+      "location": "Centro Histórico (2 pax)",
+      "rating": 4.4,
+      "status": "suggestion",
+      "tips": [
+       "O corredor centenário dos doces de coco — cocadas de todos os sabores",
+       "Deixe as crianças escolherem: é tradição, não turismada"
+      ],
+      "source": "kinu"
+     },
+     {
+      "id": "day-6-ctg-juan-del-mar",
+      "name": "Juan del Mar (Plaza San Diego)",
+      "type": "dinner",
+      "timeSlot": "dinner",
+      "estimatedCost": 260,
+      "costPerPerson": 130,
+      "time": "19:30",
+      "duration": "2h",
+      "location": "San Diego (2 pax)",
+      "rating": 4.4,
+      "status": "suggestion",
+      "tips": [
+       "Jantar na praça mais charmosa — as crianças correm na praça enquanto os pratos chegam",
+       "A fórmula mágica de jantar com filhos pequenos: praça + mesa externa"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 420
+    "totalCost": 570
    },
    {
     "dayNumber": 8,
@@ -656,6 +606,24 @@
       "source": "kinu"
      },
      {
+      "id": "day-7-ctg-inquisicion",
+      "name": "Palacio de la Inquisición",
+      "type": "experience",
+      "timeSlot": "morning",
+      "estimatedCost": 70,
+      "costPerPerson": 35,
+      "time": "09:30",
+      "duration": "1.5h",
+      "status": "suggestion",
+      "tips": [
+       "Aproveite as últimas horas!",
+       "O museu da história sombria da cidade num palacete lindo — melhor com crianças maiores; os pequenos curtem o pátio"
+      ],
+      "source": "kinu",
+      "location": "Centro Histórico (2 pax)",
+      "rating": 4.4
+     },
+     {
       "id": "day-7-slot-checkout",
       "name": "Check-out do hotel",
       "type": "transport",
@@ -672,21 +640,38 @@
       "source": "kinu"
      },
      {
-      "id": "day-7-ctg-di-silvio",
-      "name": "Di Silvio Trattoria",
+      "id": "day-7-ctg-la-mulata",
+      "name": "La Mulata",
       "type": "lunch",
       "timeSlot": "lunch",
-      "estimatedCost": 140,
-      "costPerPerson": 70,
+      "estimatedCost": 180,
       "time": "12:45",
       "duration": "1.5h",
-      "location": "Getsemaní (2 pax)",
-      "rating": 4.6,
       "status": "suggestion",
       "tips": [
-       "Pizza napolitana honesta em Getsemaní — o coringa quando as crianças pedem \"comida normal\""
+       "Almoço caribenho de bandeja — chegue antes do meio-dia, a fila do executivo é real"
       ],
-      "source": "kinu"
+      "source": "kinu",
+      "costPerPerson": 90,
+      "location": "Centro Histórico (2 pax)",
+      "rating": 4.6
+     },
+     {
+      "id": "day-7-ctg-caribe-plaza",
+      "name": "Caribe Plaza (shopping)",
+      "type": "experience",
+      "timeSlot": "afternoon",
+      "estimatedCost": 0,
+      "costPerPerson": 0,
+      "time": "15:00",
+      "duration": "2h",
+      "location": "Pie de la Popa (2 pax)",
+      "status": "suggestion",
+      "source": "kinu",
+      "rating": 4.6,
+      "tips": [
+       "O maior shopping da cidade, a 10 min de Getsemaní; cinema, praça de alimentação e ar-condicionado"
+      ]
      },
      {
       "id": "day-7-slot-transfer",
@@ -716,7 +701,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 4372
+    "totalCost": 4482
    }
   ],
   "breakdown": {
@@ -731,18 +716,18 @@
     "status": "estimated"
    },
    "experiences": {
-    "amount": 1482,
+    "amount": 1382,
     "percent": 7,
     "status": "estimated"
    },
    "food": {
-    "amount": 3980,
-    "percent": 20,
+    "amount": 4260,
+    "percent": 21,
     "status": "estimated"
    },
-   "total": 19062,
-   "available": 938,
-   "trustZonePercent": 95
+   "total": 19242,
+   "available": 758,
+   "trustZonePercent": 96
   },
   "meta": {
    "michelinCount": 0
@@ -932,21 +917,19 @@
       "source": "kinu"
      },
      {
-      "id": "day-2-lis-museu-azulejo",
-      "name": "Museu Nacional do Azulejo",
+      "id": "day-2-lis-conserveira",
+      "name": "Conserveira de Lisboa",
       "type": "experience",
       "timeSlot": "afternoon",
-      "estimatedCost": 90,
-      "costPerPerson": 45,
+      "estimatedCost": 0,
+      "costPerPerson": 0,
       "time": "15:00",
-      "duration": "2h",
-      "location": "Xabregas (2 pax)",
-      "rating": 4.7,
+      "duration": "0.5h",
+      "location": "Baixa (2 pax)",
+      "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "A história de Portugal contada em azulejos",
-       "O painel panorâmico de Lisboa pré-terremoto é o destaque",
-       "Igreja barroca interna surpreendente"
+       "Loja de 1930 que embrulha latas de sardinha e atum em papel como antigamente — o presente comestível de Lisboa"
       ],
       "source": "kinu"
      },
@@ -986,7 +969,7 @@
       ]
      }
     ],
-    "totalCost": 2390
+    "totalCost": 2300
    },
    {
     "dayNumber": 4,
@@ -1015,21 +998,19 @@
       "source": "kinu"
      },
      {
-      "id": "day-3-lis-baixa-chiado",
-      "name": "Baixa, Chiado e Praça do Comércio",
+      "id": "day-3-lis-botanico-tropical",
+      "name": "Jardim Botânico Tropical (Belém)",
       "type": "experience",
       "timeSlot": "morning",
-      "estimatedCost": 0,
-      "costPerPerson": 0,
+      "estimatedCost": 40,
+      "costPerPerson": 20,
       "time": "09:30",
-      "duration": "3h",
-      "location": "Baixa (2 pax)",
-      "rating": 4.7,
+      "duration": "1.5h",
+      "location": "Belém (2 pax)",
+      "rating": 4.3,
       "status": "suggestion",
       "tips": [
-       "Do Rossio à Praça do Comércio pela Rua Augusta",
-       "Livraria Bertrand no Chiado é a mais antiga do mundo em atividade",
-       "Café histórico A Brasileira com a estátua de Fernando Pessoa"
+       "Palmeiras, pavões e plantas das antigas colônias ao lado do Mosteiro dos Jerónimos; a pausa verde do circuito de Belém"
       ],
       "source": "kinu"
      },
@@ -1040,7 +1021,7 @@
       "timeSlot": "lunch",
       "estimatedCost": 240,
       "costPerPerson": 120,
-      "time": "12:45",
+      "time": "12:30",
       "duration": "2.5h",
       "location": "Almada (barco de 10min) (2 pax)",
       "rating": 4.6,
@@ -1053,21 +1034,19 @@
       "source": "kinu"
      },
      {
-      "id": "day-3-lis-lx-factory",
-      "name": "LX Factory",
+      "id": "day-3-lis-jardim-botanico",
+      "name": "Jardim Botânico de Lisboa (Príncipe Real)",
       "type": "experience",
       "timeSlot": "afternoon",
-      "estimatedCost": 0,
-      "costPerPerson": 0,
-      "time": "15:30",
-      "duration": "2.5h",
-      "location": "Alcântara (2 pax)",
-      "rating": 4.6,
+      "estimatedCost": 40,
+      "costPerPerson": 20,
+      "time": "15:20",
+      "duration": "1.5h",
+      "location": "Príncipe Real (2 pax)",
+      "rating": 4,
       "status": "suggestion",
       "tips": [
-       "Fábrica antiga convertida em polo criativo",
-       "A livraria Ler Devagar é cenográfica",
-       "Lojas independentes, cafés e arte urbana sob a ponte"
+       "Jardim científico de 1878 escondido atrás do Museu de História Natural; palmeiras centenárias e silêncio no meio da cidade"
       ],
       "source": "kinu"
      },
@@ -1091,7 +1070,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 640
+    "totalCost": 720
    },
    {
     "dayNumber": 5,
@@ -1154,21 +1133,21 @@
       "source": "kinu"
      },
      {
-      "id": "day-4-lis-santa-justa-carmo",
-      "name": "Elevador de Santa Justa e Convento do Carmo",
+      "id": "day-4-lis-museu-azulejo",
+      "name": "Museu Nacional do Azulejo",
       "type": "experience",
       "timeSlot": "afternoon",
       "estimatedCost": 90,
       "costPerPerson": 45,
       "time": "15:00",
       "duration": "2h",
-      "location": "Baixa/Chiado (2 pax)",
-      "rating": 4.5,
+      "location": "Xabregas (2 pax)",
+      "rating": 4.7,
       "status": "suggestion",
       "tips": [
-       "O elevador de ferro de 1902 liga a Baixa ao Chiado",
-       "As ruínas góticas do Carmo a céu aberto são únicas",
-       "Suba pelo elevador e desça a pé pelo Chiado"
+       "A história de Portugal contada em azulejos",
+       "O painel panorâmico de Lisboa pré-terremoto é o destaque",
+       "Igreja barroca interna surpreendente"
       ],
       "source": "kinu"
      },
@@ -1317,20 +1296,21 @@
       "source": "kinu"
      },
      {
-      "id": "day-6-lis2-maat",
-      "name": "MAAT — Museu de Arte, Arquitetura e Tecnologia",
+      "id": "day-6-lis-santa-justa-carmo",
+      "name": "Elevador de Santa Justa e Convento do Carmo",
       "type": "experience",
       "timeSlot": "afternoon",
       "estimatedCost": 90,
       "costPerPerson": 45,
       "time": "15:00",
       "duration": "2h",
-      "location": "Belém (2 pax)",
-      "rating": 4.4,
+      "location": "Baixa/Chiado (2 pax)",
+      "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "O prédio-onda à beira do Tejo — arte contemporânea e telhado-mirante",
-       "Encaixa no dia de Belém, entre os Pastéis e a Torre"
+       "O elevador de ferro de 1902 liga a Baixa ao Chiado",
+       "As ruínas góticas do Carmo a céu aberto são únicas",
+       "Suba pelo elevador e desça a pé pelo Chiado"
       ],
       "source": "kinu"
      },
@@ -1381,22 +1361,21 @@
       "source": "kinu"
      },
      {
-      "id": "day-7-lis-tram-28",
-      "name": "Elétrico 28 (Tram histórico)",
+      "id": "day-7-lis2-maat",
+      "name": "MAAT — Museu de Arte, Arquitetura e Tecnologia",
       "type": "experience",
       "timeSlot": "morning",
-      "estimatedCost": 40,
-      "costPerPerson": 20,
+      "estimatedCost": 90,
+      "costPerPerson": 45,
       "time": "09:30",
-      "duration": "1.5h",
-      "location": "Graça a Estrela (2 pax)",
-      "rating": 4.5,
+      "duration": "2h",
+      "location": "Belém (2 pax)",
+      "rating": 4.4,
       "status": "suggestion",
       "tips": [
        "Aproveite as últimas horas!",
-       "O bonde amarelo atravessa os bairros históricos",
-       "Pegue no início da linha (Martim Moniz) para conseguir lugar",
-       "Atenção com carteiristas — é o ponto mais visado da cidade"
+       "O prédio-onda à beira do Tejo — arte contemporânea e telhado-mirante",
+       "Encaixa no dia de Belém, entre os Pastéis e a Torre"
       ],
       "source": "kinu"
      },
@@ -1436,21 +1415,21 @@
       "source": "kinu"
      },
      {
-      "id": "day-7-lis-miradouros",
-      "name": "Miradouros: Senhora do Monte e Graça",
+      "id": "day-7-lis-tram-28",
+      "name": "Elétrico 28 (Tram histórico)",
       "type": "experience",
       "timeSlot": "afternoon",
-      "estimatedCost": 0,
-      "costPerPerson": 0,
+      "estimatedCost": 40,
+      "costPerPerson": 20,
       "time": "15:00",
-      "duration": "2h",
-      "location": "Graça (2 pax)",
-      "rating": 4.7,
+      "duration": "1.5h",
+      "location": "Graça a Estrela (2 pax)",
+      "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "Os dois miradouros mais bonitos, a 10 minutos um do outro",
-       "Fim de tarde tem a luz dourada sobre o casario",
-       "Leve uma ginjinha para brindar o pôr do sol"
+       "O bonde amarelo atravessa os bairros históricos",
+       "Pegue no início da linha (Martim Moniz) para conseguir lugar",
+       "Atenção com carteiristas — é o ponto mais visado da cidade"
       ],
       "source": "kinu"
      },
@@ -1482,7 +1461,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 4508
+    "totalCost": 4598
    }
   ],
   "breakdown": {
@@ -1497,7 +1476,7 @@
     "status": "estimated"
    },
    "experiences": {
-    "amount": 1748,
+    "amount": 1828,
     "percent": 9,
     "status": "estimated"
    },
@@ -1506,8 +1485,8 @@
     "percent": 25,
     "status": "estimated"
    },
-   "total": 22398,
-   "available": -2398,
+   "total": 22478,
+   "available": -2478,
    "trustZonePercent": 112
   },
   "meta": {
@@ -1630,43 +1609,43 @@
       "source": "kinu"
      },
      {
-      "id": "day-1-tok3-teamlab-planets",
-      "name": "teamLab Planets (Toyosu)",
+      "id": "day-1-tok-teamlab-planets",
+      "name": "teamLab Planets",
       "type": "experience",
       "timeSlot": "afternoon",
-      "estimatedCost": 240,
-      "costPerPerson": 120,
+      "estimatedCost": 300,
+      "costPerPerson": 150,
       "time": "15:00",
       "duration": "2h",
       "location": "Toyosu (2 pax)",
-      "rating": 4.6,
+      "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "A versão descalça-na-água do teamLab — imersão total, joelhos molhados",
-       "Diferente do Borderless; compre datado"
+       "Museu imersivo onde se anda descalço pela água entre luzes; reserve o horário com dias de antecedência"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-1-tokyo-robot-restaurant",
-      "name": "Robot Restaurant",
+      "id": "day-1-tokyo-monjayaki",
+      "name": "Monjayaki em Tsukishima",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 700,
-      "costPerPerson": 350,
+      "estimatedCost": 200,
+      "costPerPerson": 100,
       "time": "19:30",
       "duration": "2h",
-      "location": "Shinjuku (2 pax)",
-      "rating": 4,
+      "location": "Tsukishima (2 pax)",
+      "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "Show bizarro e divertido",
-       "Comida é secundária ao espetáculo"
+       "A rua Monja Street tem dezenas de casas do prato típico de Tóquio",
+       "Você mesmo prepara na chapa da mesa",
+       "Programa autêntico longe do circuito turístico"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 1360
+    "totalCost": 920
    },
    {
     "dayNumber": 3,
@@ -1726,21 +1705,20 @@
       "source": "kinu"
      },
      {
-      "id": "day-2-tokyo-odaiba",
-      "name": "Odaiba: Gundam e orla da baía",
+      "id": "day-2-tok3-teamlab-planets",
+      "name": "teamLab Planets (Toyosu)",
       "type": "experience",
       "timeSlot": "afternoon",
-      "estimatedCost": 60,
-      "costPerPerson": 30,
+      "estimatedCost": 240,
+      "costPerPerson": 120,
       "time": "15:00",
-      "duration": "3h",
-      "location": "Odaiba (2 pax)",
+      "duration": "2h",
+      "location": "Toyosu (2 pax)",
       "rating": 4.6,
       "status": "suggestion",
       "tips": [
-       "O Gundam gigante em tamanho real se move em horários marcados",
-       "Vista da Rainbow Bridge ao entardecer",
-       "Shoppings com fliperamas gigantes para as crianças"
+       "A versão descalça-na-água do teamLab — imersão total, joelhos molhados",
+       "Diferente do Borderless; compre datado"
       ],
       "source": "kinu"
      },
@@ -1763,7 +1741,7 @@
       ]
      }
     ],
-    "totalCost": 6068
+    "totalCost": 6248
    },
    {
     "dayNumber": 4,
@@ -1908,26 +1886,26 @@
       "source": "kinu"
      },
      {
-      "id": "day-4-tokyo-monjayaki",
-      "name": "Monjayaki em Tsukishima",
+      "id": "day-4-tokyo-kura-sushi",
+      "name": "Kura Sushi (esteira gigante)",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 200,
-      "costPerPerson": 100,
+      "estimatedCost": 160,
+      "costPerPerson": 80,
       "time": "19:30",
-      "duration": "2h",
-      "location": "Tsukishima (2 pax)",
+      "duration": "1.5h",
+      "location": "Asakusa (2 pax)",
       "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "A rua Monja Street tem dezenas de casas do prato típico de Tóquio",
-       "Você mesmo prepara na chapa da mesa",
-       "Programa autêntico longe do circuito turístico"
+       "A cada 5 pratos, um gashapon de brinde — jantar vira brincadeira",
+       "Cardápio com fotos, fácil para crianças",
+       "Sistema de senha no app evita fila"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 720
+    "totalCost": 680
    },
    {
     "dayNumber": 6,
@@ -2068,26 +2046,25 @@
       "source": "kinu"
      },
      {
-      "id": "day-6-tokyo-kura-sushi",
-      "name": "Kura Sushi (esteira gigante)",
+      "id": "day-6-tokyo-gonpachi",
+      "name": "Gonpachi (Kill Bill)",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 160,
-      "costPerPerson": 80,
+      "estimatedCost": 500,
+      "costPerPerson": 250,
       "time": "19:30",
-      "duration": "1.5h",
-      "location": "Asakusa (2 pax)",
-      "rating": 4.5,
+      "duration": "2h",
+      "location": "Roppongi (2 pax)",
+      "rating": 4.4,
       "status": "suggestion",
       "tips": [
-       "A cada 5 pratos, um gashapon de brinde — jantar vira brincadeira",
-       "Cardápio com fotos, fácil para crianças",
-       "Sistema de senha no app evita fila"
+       "Cenário do filme Kill Bill",
+       "Yakitori e soba são excelentes"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 400
+    "totalCost": 740
    },
    {
     "dayNumber": 8,
@@ -2114,21 +2091,20 @@
       "source": "kinu"
      },
      {
-      "id": "day-7-tokyo-shibuya-crossing",
-      "name": "Shibuya Crossing",
+      "id": "day-7-tok-ginza-six",
+      "name": "Ginza Six",
       "type": "experience",
       "timeSlot": "morning",
       "estimatedCost": 0,
       "costPerPerson": 0,
       "time": "09:30",
-      "duration": "1h",
-      "location": "Shibuya (2 pax)",
-      "rating": 4.6,
+      "duration": "2h",
+      "location": "Ginza (2 pax)",
+      "rating": 4,
       "status": "suggestion",
       "tips": [
        "Aproveite as últimas horas!",
-       "Atravessamento mais movimentado do mundo",
-       "Starbucks no 2º andar tem melhor vista"
+       "O shopping de luxo de Ginza com arte no átrio, a livraria Tsutaya e um jardim no terraço; entre no Teatro Kanze no subsolo"
       ],
       "source": "kinu"
      },
@@ -2167,19 +2143,19 @@
       "source": "kinu"
      },
      {
-      "id": "day-7-tok3-skytree",
-      "name": "Tokyo Skytree",
+      "id": "day-7-tok-kappabashi",
+      "name": "Kappabashi (rua dos utensílios de cozinha)",
       "type": "experience",
       "timeSlot": "afternoon",
-      "estimatedCost": 300,
-      "costPerPerson": 150,
+      "estimatedCost": 0,
+      "costPerPerson": 0,
       "time": "15:00",
-      "duration": "2h",
-      "location": "Sumida (2 pax)",
-      "rating": 4.4,
+      "duration": "1.5h",
+      "location": "Asakusa (2 pax)",
+      "rating": 4.3,
       "status": "suggestion",
       "tips": [
-       "A torre mais alta do Japão — 634m com aquário e shopping na base"
+       "800 m de lojas de facas, cerâmica e comida de plástico entre Asakusa e Ueno; o souvenir de quem cozinha"
       ],
       "source": "kinu"
      },
@@ -2211,7 +2187,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 5548
+    "totalCost": 5248
    }
   ],
   "breakdown": {
@@ -2226,18 +2202,18 @@
     "status": "estimated"
    },
    "experiences": {
-    "amount": 2428,
+    "amount": 2368,
     "percent": 12,
     "status": "estimated"
    },
    "food": {
-    "amount": 9378,
-    "percent": 47,
+    "amount": 9178,
+    "percent": 46,
     "status": "estimated"
    },
-   "total": 31006,
-   "available": -11006,
-   "trustZonePercent": 155
+   "total": 30746,
+   "available": -10746,
+   "trustZonePercent": 154
   },
   "meta": {
    "michelinCount": 1
@@ -2281,24 +2257,24 @@
       ]
      },
      {
-      "id": "day-0-for-rest-lo",
-      "name": "L'Ô Restaurante",
+      "id": "day-0-for-pipo",
+      "name": "Pipo Restaurante",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 320,
-      "costPerPerson": 160,
+      "estimatedCost": 400,
+      "costPerPerson": 200,
       "time": "19:30",
       "duration": "2h",
-      "location": "Centro (2 pax)",
+      "location": "Meireles (2 pax)",
       "rating": 4.6,
       "status": "suggestion",
       "tips": [
-       "Franco-contemporâneo na Av. Pessoa Anta — o fine dining do Centro histórico"
+       "Cozinha contemporânea com frutos do mar da costa cearense, num dos jantares mais elogiados da cidade; reserve"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 4320
+    "totalCost": 4400
    },
    {
     "dayNumber": 2,
@@ -2451,47 +2427,43 @@
       ]
      },
      {
-      "id": "day-3-for-aguas-belas",
-      "name": "Praia de Águas Belas",
+      "id": "day-3-for-morro-branco",
+      "name": "Bate-volta a Morro Branco e Praia das Fontes",
       "type": "experience",
       "timeSlot": "morning",
-      "estimatedCost": 180,
-      "costPerPerson": 90,
-      "time": "10:00",
-      "duration": "7h",
-      "location": "Cascavel (2 pax)",
-      "rating": 4.4,
+      "estimatedCost": 300,
+      "costPerPerson": 150,
+      "time": "10:20",
+      "duration": "9h",
+      "location": "Beberibe (2 pax)",
+      "rating": 4.6,
       "status": "suggestion",
       "tips": [
        "Bate-volta: ocupa o dia inteiro",
-       "Encontro do Rio Mal Cozinhado com o mar",
-       "Dá para escolher banho de água doce ou salgada",
-       "Menos badalada que Morro Branco e Canoa"
+       "Labirinto de falésias coloridas e fontes de água doce na praia vizinha; ~90 km, meio dia de passeio"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-3-for-caravaggio-cucina",
-      "name": "Caravaggio Cucina (Varjota)",
+      "id": "day-3-for-pulcinella",
+      "name": "Pulcinella (Varjota)",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 240,
-      "costPerPerson": 120,
-      "time": "19:30",
+      "estimatedCost": 320,
+      "costPerPerson": 160,
+      "time": "19:35",
       "duration": "2h",
       "location": "Varjota (2 pax)",
-      "rating": 4.5,
+      "rating": 4.6,
       "status": "suggestion",
       "tips": [
        "Perto do hotel, para a volta do bate-volta",
-       "Italiano romantico de ambiente intimista",
-       "Camarao na vodka e tournedos com risoto sao destaques",
-       "Otimo para um jantar a dois"
+       "Italiano tradicional da Varjota, salão discreto e massa feita na casa; o jantar a dois da cidade"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 420
+    "totalCost": 620
    },
    {
     "dayNumber": 5,
@@ -2618,98 +2590,25 @@
       ]
      },
      {
-      "id": "day-5-for-parque-coco",
-      "name": "Parque do Cocó",
-      "type": "experience",
-      "timeSlot": "morning",
-      "estimatedCost": 0,
-      "costPerPerson": 0,
-      "time": "09:30",
+      "id": "day-5-for-rest-lo",
+      "name": "L'Ô Restaurante",
+      "type": "dinner",
+      "timeSlot": "dinner",
+      "estimatedCost": 320,
+      "costPerPerson": 160,
+      "time": "19:30",
       "duration": "2h",
-      "location": "Cocó (2 pax)",
+      "location": "Centro (2 pax)",
       "rating": 4.6,
       "status": "suggestion",
       "tips": [
-       "Maior parque urbano do Nordeste",
-       "Trilhas e passeio de barco entre os manguezais",
-       "Ótimo para uma manhã leve com a família"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-5-for-cemoara",
-      "name": "Cemoara",
-      "type": "lunch",
-      "timeSlot": "lunch",
-      "estimatedCost": 360,
-      "costPerPerson": 180,
-      "time": "12:30",
-      "duration": "1.5h",
-      "location": "Meireles (2 pax)",
-      "rating": 4.3,
-      "status": "suggestion",
-      "tips": [
-       "Frutos do mar de décadas na Beira-Mar do Meireles — peixada e camarão no coco"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-5-for-theatro-jose-alencar",
-      "name": "Theatro José de Alencar",
-      "type": "experience",
-      "timeSlot": "afternoon",
-      "estimatedCost": 40,
-      "costPerPerson": 20,
-      "time": "15:00",
-      "duration": "1h",
-      "location": "Centro (2 pax)",
-      "rating": 4.7,
-      "status": "suggestion",
-      "tips": [
-       "Teatro-monumento em ferro art nouveau / neoclássico",
-       "Visita guiada disponível",
-       "Um dos cartões-postais históricos da cidade"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-5-for-veleiro-por-do-sol",
-      "name": "Passeio de veleiro ao pôr do sol",
-      "type": "experience",
-      "timeSlot": "afternoon",
-      "estimatedCost": 200,
-      "costPerPerson": 100,
-      "time": "17:30",
-      "duration": "2h",
-      "location": "Beira-Mar (2 pax)",
-      "rating": 4.8,
-      "status": "suggestion",
-      "tips": [
-       "Saída do Iate Clube ou Marina Park no fim da tarde",
-       "O pôr do sol visto do mar é o cartão-postal da viagem",
-       "Leve casaco leve — venta no mar"
-      ],
-      "source": "kinu"
-     },
-     {
-      "id": "day-5-for-rest-santa-grelha",
-      "name": "Santa Grelha",
-      "type": "dinner",
-      "timeSlot": "dinner",
-      "estimatedCost": 300,
-      "costPerPerson": 150,
-      "time": "19:45",
-      "duration": "2h",
-      "location": "Aldeota (2 pax)",
-      "rating": 4.7,
-      "status": "suggestion",
-      "tips": [
-       "Carnes premium e ambiente de ocasião — o jantar de fechamento da viagem"
+       "Perto do hotel, para a volta do bate-volta",
+       "Franco-contemporâneo na Av. Pessoa Anta — o fine dining do Centro histórico"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 900
+    "totalCost": 320
    },
    {
     "dayNumber": 7,
@@ -2753,62 +2652,60 @@
       "source": "kinu"
      },
      {
-      "id": "day-6-for-giz-cozinha",
-      "name": "Giz Cozinha Afetiva",
+      "id": "day-6-for-cemoara",
+      "name": "Cemoara",
       "type": "lunch",
       "timeSlot": "lunch",
-      "estimatedCost": 300,
-      "costPerPerson": 150,
+      "estimatedCost": 360,
+      "costPerPerson": 180,
       "time": "12:30",
       "duration": "1.5h",
       "location": "Meireles (2 pax)",
-      "rating": 4.8,
+      "rating": 4.3,
       "status": "suggestion",
       "tips": [
-       "Cozinha afetiva autoral — almoço tranquilo perto da Beira-Mar"
+       "Frutos do mar de décadas na Beira-Mar do Meireles — peixada e camarão no coco"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-6-for-catedral-metropolitana",
-      "name": "Catedral Metropolitana de Fortaleza",
+      "id": "day-6-for-theatro-jose-alencar",
+      "name": "Theatro José de Alencar",
       "type": "experience",
       "timeSlot": "afternoon",
-      "estimatedCost": 0,
-      "costPerPerson": 0,
+      "estimatedCost": 40,
+      "costPerPerson": 20,
       "time": "15:00",
-      "duration": "1.5h",
+      "duration": "1h",
       "location": "Centro (2 pax)",
-      "rating": 4.6,
+      "rating": 4.7,
       "status": "suggestion",
       "tips": [
-       "Arquitetura neogótica impressionante com vitrais coloridos",
-       "A poucos passos do Mercado Central — combine os dois",
-       "Entrada gratuita"
+       "Teatro-monumento em ferro art nouveau / neoclássico",
+       "Visita guiada disponível",
+       "Um dos cartões-postais históricos da cidade"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-6-for-coco-bambu-varjota",
-      "name": "Coco Bambu (Varjota)",
+      "id": "day-6-for-rest-santa-grelha",
+      "name": "Santa Grelha",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 260,
-      "costPerPerson": 130,
+      "estimatedCost": 300,
+      "costPerPerson": 150,
       "time": "19:30",
       "duration": "2h",
-      "location": "Varjota (2 pax)",
-      "rating": 4.6,
+      "location": "Aldeota (2 pax)",
+      "rating": 4.7,
       "status": "suggestion",
       "tips": [
-       "O ícone dos frutos do mar em Fortaleza — unidade da Varjota",
-       "Moqueca de camarão e bobó de camarão são os destaques",
-       "Chegue cedo ou reserve — tem fila nos fins de semana"
+       "Carnes premium e ambiente de ocasião — o jantar de fechamento da viagem"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 640
+    "totalCost": 780
    },
    {
     "dayNumber": 8,
@@ -2871,40 +2768,38 @@
       "source": "kinu"
      },
      {
-      "id": "day-7-for-vojnilo",
-      "name": "Vojnilô (frutos do mar)",
+      "id": "day-7-for-giz-cozinha",
+      "name": "Giz Cozinha Afetiva",
       "type": "lunch",
       "timeSlot": "lunch",
-      "estimatedCost": 260,
-      "costPerPerson": 130,
-      "time": "12:45",
-      "duration": "2h",
-      "location": "Varjota (2 pax)",
-      "rating": 4.7,
+      "estimatedCost": 300,
+      "costPerPerson": 150,
+      "time": "12:40",
+      "duration": "1.5h",
+      "location": "Meireles (2 pax)",
+      "rating": 4.8,
       "status": "suggestion",
       "tips": [
-       "Frutos do mar frescos com toque autoral, queridinho dos locais",
-       "O polvo grelhado é o prato-assinatura",
-       "Casa pequena — reserve ou chegue cedo"
+       "Cozinha afetiva autoral — almoço tranquilo perto da Beira-Mar"
       ],
       "source": "kinu"
      },
      {
-      "id": "day-7-for-feirinha-beira-mar",
-      "name": "Feirinha da Beira-Mar",
+      "id": "day-7-for-catedral-metropolitana",
+      "name": "Catedral Metropolitana de Fortaleza",
       "type": "experience",
       "timeSlot": "afternoon",
       "estimatedCost": 0,
       "costPerPerson": 0,
       "time": "15:00",
-      "duration": "2h",
-      "location": "Meireles (2 pax)",
+      "duration": "1.5h",
+      "location": "Centro (2 pax)",
       "rating": 4.6,
       "status": "suggestion",
       "tips": [
-       "Feira de artesanato tradicional no calçadão, todos os dias a partir do fim da tarde",
-       "Rendas, redes e castanha — melhor lugar para lembranças",
-       "Combine com o pôr do sol na Beira-Mar"
+       "Arquitetura neogótica impressionante com vitrais coloridos",
+       "A poucos passos do Mercado Central — combine os dois",
+       "Entrada gratuita"
       ],
       "source": "kinu"
      },
@@ -2936,7 +2831,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 4550
+    "totalCost": 4590
    }
   ],
   "breakdown": {
@@ -2951,18 +2846,18 @@
     "status": "estimated"
    },
    "experiences": {
-    "amount": 1330,
-    "percent": 7,
+    "amount": 1250,
+    "percent": 6,
     "status": "estimated"
    },
    "food": {
-    "amount": 2950,
+    "amount": 2910,
     "percent": 15,
     "status": "estimated"
    },
-   "total": 22780,
-   "available": -2780,
-   "trustZonePercent": 114
+   "total": 22660,
+   "available": -2660,
+   "trustZonePercent": 113
   },
   "meta": {
    "michelinCount": 0

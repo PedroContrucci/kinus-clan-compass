@@ -91,7 +91,7 @@ describe('reasons — zona ideal', () => {
     );
     const comZona = r.filter((x) => kinds(x.reasons).includes('zone'));
 
-    expect(comZona.map((x) => x.hotel.id).sort()).toEqual(['bue-h-alvear', 'bue-h-duhau']);
+    expect(comZona.map((x) => x.hotel.id).sort()).toEqual(['bue-h-alvear', 'bue-h-duhau', 'bue-h-sofitel-recoleta']);
     for (const item of comZona) {
       expect(labelOf(item.reasons, 'zone')).toBe('zona ideal Recoleta ✓');
       expect(item.hotel.zone).toBe('Recoleta');

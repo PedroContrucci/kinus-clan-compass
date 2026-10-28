@@ -48,9 +48,9 @@ describe('C.4.3 — IATA sempre', () => {
 });
 
 describe('C.4.3 — hotel no salto', () => {
-  it('Fortaleza D4: café no hotel → Águas Belas ≥ 10:00 e "~1h de carro" na tela', async () => {
-    const days = await draft('Fortaleza', new Date(2026, 10, 10), 5);
-    const d4 = days[3].activities;
+  it('Fortaleza D11 (11 noites): café no hotel → Águas Belas ≥ 10:00 e "~1h de carro" na tela', async () => {
+    const days = await draft('Fortaleza', new Date(2026, 10, 10), 11);
+    const d4 = days[10].activities;
     const k = d4.findIndex((a) => a.id.endsWith('-for-aguas-belas'));
     expect(k).toBeGreaterThan(0);
     const cafe = d4[k - 1];
