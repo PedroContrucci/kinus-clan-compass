@@ -1,5 +1,4 @@
-import { render, screen, within, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { fireEvent, render, screen, within, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 const ROWS: [string, Record<string, number>][] = [
@@ -69,7 +68,7 @@ describe('Catálogo — células "não se aplica"', () => {
     render(<CatalogoTab />);
     await screen.findByText('Interesses do wizard');
     const box = screen.getByRole('button', { name: 'Buracos' }).closest('div')!;
-    await userEvent.click(screen.getByRole('button', { name: 'Buracos' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Buracos' }));
     await waitFor(() => expect(within(box).getByText('Por interesse')).toBeInTheDocument());
 
     for (const city of ['Gramado', 'Orlando', 'Porto Seguro', 'Rome', 'Tokyo', 'Istambul', 'Nova York']) {
