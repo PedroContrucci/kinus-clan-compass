@@ -1,5 +1,5 @@
 // PlanDoors — C.10: as duas portas do "➕ Planejar nova viagem" (e da aba Início sem viagem).
-// 🧭 pela interface = o fluxo curto; 💬 com o KINU AI = o chat em modo "planejar". Mesmo rascunho.
+// 💬 Conversar com o KINU AI = o chat em modo "planejar" (primeira porta); 🧭 Escolher na tela = o fluxo curto. Mesmo rascunho.
 
 import { ArrowLeft } from 'lucide-react';
 
