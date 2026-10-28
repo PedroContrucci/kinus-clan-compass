@@ -45,10 +45,10 @@ describe('interestsFor', () => {
     expect(kinuDidLines(trip).itinerary).toContain('montei por Gastronomia — Praia não tem catálogo em Gramado');
   });
 
-  // Quando a curadoria levar Rio/Cartagena a ≥5 itens de praia, este teste passa a falhar: hora de removê-lo.
+  // A curadoria de Rio/Cartagena agora tem ≥5 itens de praia.
   it.todo('Rio de Janeiro e Cartagena ganham Praia quando o catálogo chegar a 5 itens');
-  it('Rio e Cartagena ainda sem Praia (catálogo abaixo de 5) — falha quando os dados chegarem', () => {
-    expect(ids('Rio de Janeiro')).not.toContain('beach');
-    expect(ids('Cartagena')).not.toContain('beach');
+  it('Rio e Cartagena agora oferecem Praia (catálogo com pelo menos 5 itens)', () => {
+    expect(ids('Rio de Janeiro')).toContain('beach');
+    expect(ids('Cartagena')).toContain('beach');
   });
 });
