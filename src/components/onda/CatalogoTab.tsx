@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ChevronDown, Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { kinuBeta } from '@/integrations/kinu-beta/client';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +17,13 @@ const WIZARD: Col[] = [
 ];
 const SECONDARY: Col[] = [{ key: 'arte', label: 'Arte' }, { key: 'aventura', label: 'Aventura' }, { key: 'relax', label: 'Relax' }, { key: 'bate_volta', label: 'Bate-volta' }];
 const MOMENTO: Col[] = [{ key: 'cafe', label: 'Café' }, { key: 'almoco', label: 'Almoço' }, { key: 'jantar', label: 'Jantar' }, { key: 'passeios', label: 'Passeios' }, { key: 'cat_noite', label: 'Noite' }];
+
+// Coluna -> p_tag (wizard/secundários) ou p_category (momento do dia) da RPC onda_catalogo_itens.
+const TAG_BY_KEY: Partial<Record<Key, string>> = {
+  familia: 'family', gastro: 'gastronomy', cultura: 'cultura', praia: 'beach', natureza: 'nature', noite: 'nightlife',
+  compras: 'shopping', romantico: 'romantic', arte: 'art', aventura: 'adventure', relax: 'relaxation', bate_volta: 'daytrip',
+};
+const CATEGORY_BY_KEY: Partial<Record<Key, string>> = { cafe: 'breakfast', almoco: 'lunch', jantar: 'dinner', passeios: 'passeios', cat_noite: 'night' };
 
 const NO_BEACH = new Set(['Bangkok', 'Buenos Aires', 'Gramado', 'Londres', 'Marrakech', 'Orlando', 'Paris', 'Tokyo', 'Istambul', 'Rome', 'Nova York']);
 const NO_NIGHTLIFE = new Set(['Gramado', 'Porto Seguro', 'Orlando']);
@@ -57,7 +65,23 @@ function Block({ title, summary, initialOpen = false, children }: { title: strin
 
 const holesIn = (row: CatRow, cols: Col[]) => cols.filter(c => bandOf(row, c.key) === 'red').length;
 
-function HeatTable({ rows, cols }: { rows: CatRow[]; cols: Col[] }) {
+type Sel = { city: string; label: string | null; tag: string | null; category: string | null };
+type Item = { name: string; neighborhood: string | null; category: string | null; rating: number | null; reviews: number | null; cost: number | null };
+
+// A RPC não tem tipagem gerada; normaliza variantes comuns de nome de campo.
+function toItem(raw: Record<string, unknown>): Item {
+  const num = (v: unknown) => (v === null || v === undefined || v === '' ? null : Number(v));
+  return {
+    name: String(raw.name ?? raw.title ?? ''),
+    neighborhood: (raw.neighborhood ?? raw.bairro ?? null) as string | null,
+    category: (raw.category ?? null) as string | null,
+    rating: num(raw.rating ?? raw.google_rating),
+    reviews: num(raw.reviews ?? raw.review_count ?? raw.user_ratings_total),
+    cost: num(raw.cost_brl ?? raw.cost ?? raw.price_brl),
+  };
+}
+
+function HeatTable({ rows, cols, onOpen }: { rows: CatRow[]; cols: Col[]; onOpen: (city: string, col: Col | null) => void }) {
   const [sort, setSort] = useState<{ key: Key | 'buracos' | 'city'; dir: 'desc' | 'asc' }>({ key: 'total', dir: 'desc' });
   const sorted = useMemo(() => {
     const val = (r: CatRow) => sort.key === 'buracos' ? holesIn(r, cols) : sort.key === 'city' ? 0 : Number(r[sort.key]) || 0;
@@ -74,9 +98,17 @@ function HeatTable({ rows, cols }: { rows: CatRow[]; cols: Col[] }) {
     <thead className="text-muted-foreground"><tr>{header('city', 'Cidade', true)}{header('total', 'Total')}{cols.map(c => header(c.key, c.label))}{header('buracos', 'Buracos')}</tr></thead>
     <tbody>
       {sorted.map(r => <tr key={r.city}>
-        <th scope="row" className="sticky left-0 z-10 whitespace-nowrap bg-card px-2 py-1.5 text-left font-medium">{r.city}</th>
-        <td className="px-2 py-1.5 tabular-nums">{r.total}</td>
-        {cols.map(c => { const b = bandOf(r, c.key); return <td key={c.key} className={cn('rounded px-2 py-1.5 text-center tabular-nums', bandClass[b])}>{b === 'na' ? '—' : r[c.key]}</td>; })}
+        <th scope="row" className="sticky left-0 z-10 whitespace-nowrap bg-card px-2 py-1.5 text-left font-medium">
+          <button type="button" onClick={() => onOpen(r.city, null)} className="hover:text-primary hover:underline">{r.city}</button>
+        </th>
+        <td className="p-0 tabular-nums">
+          <button type="button" onClick={() => onOpen(r.city, null)} className="w-full rounded px-2 py-1.5 text-left hover:bg-muted/40">{r.total}</button>
+        </td>
+        {cols.map(c => { const b = bandOf(r, c.key); return <td key={c.key} className="p-0 tabular-nums">
+          {b === 'na'
+            ? <span className={cn('block rounded px-2 py-1.5 text-center', bandClass.na)}>—</span>
+            : <button type="button" onClick={() => onOpen(r.city, c)} aria-label={`${r.city} · ${c.label}`} className={cn('block w-full rounded px-2 py-1.5 text-center hover:ring-1 hover:ring-foreground/30', bandClass[b])}>{r[c.key]}</button>}
+        </td>; })}
         <td className="px-2 py-1.5 text-center tabular-nums">{holesIn(r, cols)}</td>
       </tr>)}
       <tr className="text-muted-foreground">
@@ -89,9 +121,64 @@ function HeatTable({ rows, cols }: { rows: CatRow[]; cols: Col[] }) {
   </table></div>;
 }
 
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const fn = () => setMobile(mq.matches);
+    mq.addEventListener('change', fn);
+    return () => mq.removeEventListener('change', fn);
+  }, []);
+  return mobile;
+}
+
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+
+function ItemsSheet({ sel, onClose }: { sel: Sel | null; onClose: () => void }) {
+  const mobile = useIsMobile();
+  const [items, setItems] = useState<Item[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!sel) return;
+    let active = true;
+    setItems(null);
+    setError(null);
+    void (async () => {
+      const { data, error } = await (kinuBeta.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)('onda_catalogo_itens', { p_city: sel.city, p_tag: sel.tag, p_category: sel.category });
+      if (!active) return;
+      if (error) { setError('Não foi possível carregar os itens. Tente novamente.'); return; }
+      setItems(((data ?? []) as Record<string, unknown>[]).map(toItem));
+    })();
+    return () => { active = false; };
+  }, [sel]);
+
+  return <Sheet open={!!sel} onOpenChange={o => { if (!o) onClose(); }}>
+    <SheetContent side={mobile ? 'bottom' : 'right'} className={cn('overflow-y-auto', mobile && 'max-h-[80vh] rounded-t-xl')}>
+      <SheetHeader>
+        <SheetTitle>{sel ? (sel.label ? `${sel.city} · ${sel.label}` : sel.city) : ''}</SheetTitle>
+      </SheetHeader>
+      {error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}
+      {!error && !items && <div className="flex justify-center py-12" role="status" aria-label="Carregando itens"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
+      {!error && items && (items.length === 0
+        ? <p className="mt-4 text-sm text-muted-foreground">Nenhum item neste recorte.</p>
+        : <ul className="mt-4 space-y-2">
+          {items.map((it, i) => <li key={`${it.name}-${i}`} className="rounded-lg border border-border px-3 py-2">
+            <p className="text-sm font-semibold">{it.name}</p>
+            <p className="text-xs text-muted-foreground">{[it.neighborhood, it.category].filter(Boolean).join(' · ')}</p>
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+              {it.rating !== null && <span className="inline-flex items-center gap-0.5"><Star aria-hidden="true" className="h-3 w-3 fill-[hsl(var(--kinu-gold))] text-[hsl(var(--kinu-gold))]" />{it.rating.toFixed(1)}{it.reviews !== null && <span>({it.reviews.toLocaleString('pt-BR')})</span>}</span>}
+              {it.cost !== null && it.cost > 0 && <span className="tabular-nums">{brl.format(it.cost)}</span>}
+            </p>
+          </li>)}
+        </ul>)}
+    </SheetContent>
+  </Sheet>;
+}
+
 export default function CatalogoTab() {
   const [rows, setRows] = useState<CatRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sel, setSel] = useState<Sel | null>(null);
   useEffect(() => {
     let active = true;
     void (async () => {
@@ -105,6 +192,13 @@ export default function CatalogoTab() {
 
   if (error) return <p role="alert" className="text-sm text-destructive">{error}</p>;
   if (!rows) return <div className="flex justify-center py-12" role="status" aria-label="Carregando catálogo"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+
+  const openCell = (city: string, col: Col | null) => setSel({
+    city,
+    label: col ? col.label : null,
+    tag: col ? (TAG_BY_KEY[col.key] ?? null) : null,
+    category: col ? (CATEGORY_BY_KEY[col.key] ?? null) : null,
+  });
 
   const sum = (k: Key) => rows.reduce((s, r) => s + (Number(r[k]) || 0), 0);
   const mainCells = rows.flatMap(r => WIZARD.map(c => bandOf(r, c.key))).filter(b => b !== 'na');
@@ -121,11 +215,12 @@ export default function CatalogoTab() {
       {tiles.map(([label, value]) => <div key={label} className={cn(cardClass, 'px-3 py-2')}><p className="truncate text-xs text-muted-foreground">{label}</p><p className="font-['Outfit'] text-xl font-semibold tabular-nums">{value}</p></div>)}
     </div>
     <p className="text-xs text-muted-foreground"><span className="text-destructive">vermelho</span> = buraco (&lt; 5) · <span className="text-[hsl(var(--kinu-gold))]">âmbar</span> = fino (5–7, o app já oferece) · <span className="text-primary">verde</span> = coberto (≥ 8) · — = não se aplica</p>
-    <Block title="Interesses do wizard" summary={`${holes} buracos`} initialOpen><HeatTable rows={rows} cols={WIZARD} /></Block>
+    <Block title="Interesses do wizard" summary={`${holes} buracos`} initialOpen><HeatTable rows={rows} cols={WIZARD} onOpen={openCell} /></Block>
     <Block title="Buracos" summary={`${byInterest.length} interesses · ${byCity.length} cidades`}>
       <div className="space-y-3"><div><p className="mb-1 text-xs font-medium text-muted-foreground">Por interesse</p>{list(byInterest)}</div><div><p className="mb-1 text-xs font-medium text-muted-foreground">Por cidade</p>{list(byCity)}</div></div>
     </Block>
-    <Block title="Secundários" summary={SECONDARY.map(c => c.label).join(' · ')}><HeatTable rows={rows} cols={SECONDARY} /></Block>
-    <Block title="Momento do dia" summary={MOMENTO.map(c => c.label).join(' · ')}><HeatTable rows={rows} cols={MOMENTO} /></Block>
+    <Block title="Secundários" summary={SECONDARY.map(c => c.label).join(' · ')}><HeatTable rows={rows} cols={SECONDARY} onOpen={openCell} /></Block>
+    <Block title="Momento do dia" summary={MOMENTO.map(c => c.label).join(' · ')}><HeatTable rows={rows} cols={MOMENTO} onOpen={openCell} /></Block>
+    <ItemsSheet sel={sel} onClose={() => setSel(null)} />
   </div>;
 }
