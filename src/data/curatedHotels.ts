@@ -1,7 +1,7 @@
 // GERADO por scripts/sync-hotels.ts — não edite à mão.
 // Fonte: tabela `curated_hotels` (status='published') do projeto kinu-beta.
 // Para atualizar: npx tsx scripts/sync-hotels.ts   (sem argumentos = TODAS as cidades)
-// Gerado com 21 cidade(s) — RUN PARCIAL, cidades fora da lista foram omitidas: Barcelona, Buenos Aires, Cartagena, Dubai, Fortaleza, Gramado, Lisboa, Londres, Nova York, Orlando, Paris, Porto Seguro, Rio de Janeiro, Rome, Salvador, Tokyo, Bangkok, Cidade do Cabo, Istambul, Marrakech, Singapura
+// Gerado com 21 cidade(s) — RUN PARCIAL, cidades fora da lista foram omitidas: Bangkok, Barcelona, Buenos Aires, Cartagena, Cidade do Cabo, Dubai, Fortaleza, Gramado, Istambul, Lisboa, Londres, Marrakech, Nova York, Orlando, Paris, Porto Seguro, Rio de Janeiro, Rome, Salvador, Singapura, Tokyo
 
 export interface CuratedHotel {
   id: string;
@@ -20,6 +20,17 @@ export interface CuratedHotel {
 
 /** Hotéis curados por cidade. Chave = nome da cidade como em CURATED_CITIES. */
 export const curatedHotels: Record<string, CuratedHotel[]> = {
+  'Bangkok': [
+    { id: 'bkk-h-amara', name: 'Amara Bangkok', zone: 'Silom', tier: 'mid', personaTags: ['couple', 'solo'], priceRangeBRL: 'R$ 450-700', rating: 4.5, tips: ['Piscina infinita no rooftop com Silom aos pés'] },
+    { id: 'bkk-h-centre-point-pratunam', name: 'Centre Point Prime Hotel Pratunam', zone: 'Pratunam', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 400-650', rating: 4.4, tips: ['Suítes com cozinha — família que fica mais dias'] },
+    { id: 'bkk-h-hie-siam', name: 'Holiday Inn Express Bangkok Siam', zone: 'Siam', tier: 'budget', personaTags: ['family'], priceRangeBRL: 'R$ 300-450', rating: 4.5, tips: ['Café incluso e BTS na porta — base prática para a família'] },
+    { id: 'bkk-h-ibis-riverside', name: 'ibis Bangkok Riverside', zone: 'Riverside', tier: 'budget', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 250-400', rating: 4.4, tips: ['Rede confiável à beira do Chao Phraya com barco gratuito para o píer'] },
+    { id: 'bkk-h-lubd-siam', name: 'Lub d Bangkok Siam', zone: 'Siam', tier: 'budget', personaTags: ['solo', 'couple'], priceRangeBRL: 'R$ 150-350', rating: 4.5, tips: ['Hostel-design a passos do BTS National Stadium e dos shoppings de Siam'] },
+    { id: 'bkk-h-mandarin', name: 'Mandarin Oriental Bangkok', zone: 'Riverside', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 3.500-6.500', rating: 4.8, tips: ['A lenda de 1876 à beira do rio — serviço que virou referência mundial'] },
+    { id: 'bkk-h-novotel-platinum', name: 'Novotel Bangkok Platinum Pratunam', zone: 'Pratunam', tier: 'mid', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 450-700', rating: 4.5, tips: ['Colado ao Platinum Fashion Mall — compras e street food de Pratunam'] },
+    { id: 'bkk-h-peninsula', name: 'The Peninsula Bangkok', zone: 'Riverside', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 2.500-4.500', rating: 4.7, tips: ['Todos os quartos com vista do rio e piscina de três níveis'] },
+    { id: 'bkk-h-shangri-la', name: 'Shangri-La Bangkok', zone: 'Riverside', tier: 'upscale', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 1.800-3.200', rating: 4.6, tips: ['Jardins à beira do Chao Phraya e BTS Saphan Taksin ao lado'] },
+  ],
   'Barcelona': [
     { id: 'bcn-h-arts', name: 'Hotel Arts Barcelona', zone: 'Barceloneta', tier: 'upscale', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 2.500-4.500', rating: 4.7, tips: ['A torre de frente pro mar com piscina e o peixe do Gehry ao lado'] },
     { id: 'bcn-h-jazz', name: 'Hotel Jazz', zone: 'Eixample', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 800-1.300', rating: 4.5, tips: ['Piscina no terraço e Plaça Catalunya a 3 quadras'] },
@@ -39,6 +50,7 @@ export const curatedHotels: Record<string, CuratedHotel[]> = {
     { id: 'bue-h-milhouse', name: 'Milhouse Hostel Avenue', zone: 'Centro', tier: 'budget', personaTags: ['solo'], priceRangeBRL: 'R$ 90-220', rating: 4.4, tips: ['O hostel-festa clássico de BA - social ao extremo'] },
     { id: 'bue-h-mine', name: 'Mine Hotel', zone: 'Palermo Soho', tier: 'mid', personaTags: ['couple'], priceRangeBRL: 'R$ 450-800', rating: 4.5, tips: ['Boutique no coração do Soho - base perfeita de bares e feiras'] },
     { id: 'bue-h-pulitzer', name: 'Hotel Pulitzer', zone: 'Centro', tier: 'mid', personaTags: ['family', 'solo'], priceRangeBRL: 'R$ 400-700', rating: 4.5, tips: ['Design com rooftop perto da Corrientes - teatro na porta'] },
+    { id: 'bue-h-sofitel-recoleta', name: 'Sofitel Buenos Aires Recoleta', zone: 'Recoleta', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 1.200-2.200', rating: 4.6, tips: ['Francês-portenho na Recoleta, a pé da Av. Alvear e do cemitério'] },
   ],
   'Cartagena': [
     { id: 'ctg-h-ananda', name: 'Ananda Hotel Boutique', zone: 'Centro Histórico', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 1.200-2.000', rating: 4.6, tips: ['Boutique colonial com piscina no pátio — romance sem preço Sofitel'] },
@@ -51,6 +63,17 @@ export const curatedHotels: Record<string, CuratedHotel[]> = {
     { id: 'ctg-h-radisson', name: 'Radisson Cartagena Ocean Pavillion', zone: 'La Boquilla', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 800-1.300', rating: 4.5, tips: ['Resort pé na areia fora do burburinho — piscinas enormes pras crianças', 'Longe do Centro: carro/app pra passeios'] },
     { id: 'ctg-h-san-agustin', name: 'Casa San Agustín', zone: 'Centro Histórico', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 2.200-3.800', rating: 4.7, tips: ['Boutique de charme absoluto — aquário privê e serviço impecável'] },
     { id: 'ctg-h-sofitel', name: 'Sofitel Legend Santa Clara', zone: 'Centro Histórico', tier: 'resort', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 2.500-4.500', rating: 4.7, tips: ['Convento do século XVII virado lenda — piscina, tucanos no pátio e história', 'Família E casal cabem: kids adorados, spa idem'] },
+  ],
+  'Cidade do Cabo': [
+    { id: 'cpt-h-cape-town-lodge', name: 'Cape Town Lodge Hotel', zone: 'CBD', tier: 'budget', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 300-500', rating: 4.3, tips: ['Central e sem frescura, a pé do Company Garden'] },
+    { id: 'cpt-h-fire-ice', name: 'Protea Hotel Fire & Ice! Cape Town', zone: 'CBD', tier: 'mid', personaTags: ['couple', 'solo'], priceRangeBRL: 'R$ 500-800', rating: 4.4, tips: ['Descolado, com milkshakes famosos e Long Street a duas quadras'] },
+    { id: 'cpt-h-mount-nelson', name: 'Belmond Mount Nelson Hotel', zone: 'Gardens', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 2.500-5.000', rating: 4.7, tips: ['O hotel rosa de 1899 com jardins e o chá da tarde mais famoso da cidade'] },
+    { id: 'cpt-h-once', name: 'Once in Cape Town', zone: 'Gardens', tier: 'budget', personaTags: ['solo', 'couple'], priceRangeBRL: 'R$ 150-350', rating: 4.5, tips: ['Hostel-boutique no sopé da Table Mountain, Kloof Street na porta'] },
+    { id: 'cpt-h-one-only', name: 'One&Only Cape Town', zone: 'V&A Waterfront', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 3.000-6.000', rating: 4.7, tips: ['Ilha privada no Waterfront com a Table Mountain emoldurada'] },
+    { id: 'cpt-h-protea-sea-point', name: 'Protea Hotel by Marriott Cape Town Sea Point', zone: 'Sea Point', tier: 'budget', personaTags: ['family'], priceRangeBRL: 'R$ 350-550', rating: 4.3, tips: ['Calçadão de Sea Point e pôr do sol do Atlântico pela janela'] },
+    { id: 'cpt-h-radisson-red', name: 'Radisson RED Hotel V&A Waterfront', zone: 'V&A Waterfront', tier: 'mid', personaTags: ['couple', 'solo'], priceRangeBRL: 'R$ 650-1.000', rating: 4.5, tips: ['Rooftop com piscina sobre o Waterfront — jovem e bem localizado'] },
+    { id: 'cpt-h-silo', name: 'The Silo Hotel', zone: 'V&A Waterfront', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 4.000-8.000', rating: 4.8, tips: ['Janelas de vidro facetado sobre o museu Zeitz MOCAA — ícone de design'] },
+    { id: 'cpt-h-winchester', name: 'The Winchester Hotel', zone: 'Sea Point', tier: 'mid', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 600-950', rating: 4.5, tips: ['Clássico de frente para o mar com pátio de jazz aos domingos'] },
   ],
   'Dubai': [
     { id: 'dxb-h-address-dt', name: 'Address Downtown', zone: 'Downtown', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 2.000-3.500', rating: 4.7, tips: ['A fonte dançante e o Burj Khalifa na varanda'] },
@@ -85,6 +108,17 @@ export const curatedHotels: Record<string, CuratedHotel[]> = {
     { id: 'gra-h-vovo-carolina', name: 'Pousada Vovó Carolina', zone: 'Centro', tier: 'budget', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 350-550', rating: 4.6, tips: ['A pousada de dono presente — café caseiro e preço honesto no centro'] },
     { id: 'gra-h-wish-serrano', name: 'Wish Serrano Resort', zone: 'Centro', tier: 'resort', personaTags: ['family'], priceRangeBRL: 'R$ 1.200-2.200', rating: 4.6, tips: ['O resort família de Gramado — piscina térmica coberta e recreação infantil', 'A 5 min a pé da Rua Coberta'] },
   ],
+  'Istambul': [
+    { id: 'ist-h-agora', name: 'Agora Guesthouse', zone: 'Sultanahmet', tier: 'budget', personaTags: ['couple', 'solo'], priceRangeBRL: 'R$ 250-400', rating: 4.6, tips: ['Café no terraço de frente para o Mármara, a pé de tudo'] },
+    { id: 'ist-h-amira', name: 'Hotel Amira Istanbul', zone: 'Sultanahmet', tier: 'mid', personaTags: ['couple'], priceRangeBRL: 'R$ 550-850', rating: 4.7, tips: ['Terraço com vista do Bósforo e serviço que vira elogio em toda avaliação'] },
+    { id: 'ist-h-cheers', name: 'Cheers Hostel', zone: 'Sultanahmet', tier: 'budget', personaTags: ['solo'], priceRangeBRL: 'R$ 120-250', rating: 4.5, tips: ['Terraço com vista da Hagia Sophia — mochileiro no coração histórico'] },
+    { id: 'ist-h-ciragan', name: 'Çırağan Palace Kempinski', zone: 'Beşiktaş', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 3.000-7.000', rating: 4.7, tips: ['Palácio otomano à beira do Bósforo com piscina infinita sobre a água'] },
+    { id: 'ist-h-four-seasons-sultanahmet', name: 'Four Seasons Hotel Istanbul at Sultanahmet', zone: 'Sultanahmet', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 3.500-6.500', rating: 4.8, tips: ['A antiga prisão neoclássica virou o hotel mais charmoso da península'] },
+    { id: 'ist-h-hanedan', name: 'Hanedan Hotel', zone: 'Sultanahmet', tier: 'budget', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 250-420', rating: 4.5, tips: ['Familiar e silencioso a 5 min da Mesquita Azul'] },
+    { id: 'ist-h-ottoman-imperial', name: 'Ottoman Hotel Imperial', zone: 'Sultanahmet', tier: 'mid', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 500-800', rating: 4.6, tips: ['Casarão otomano de frente para a Hagia Sophia'] },
+    { id: 'ist-h-pera-palace', name: 'Pera Palace Hotel', zone: 'Beyoğlu', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 1.800-3.200', rating: 4.6, tips: ['O hotel do Expresso do Oriente e de Agatha Christie — Beyoğlu histórico'] },
+    { id: 'ist-h-sirkeci-mansion', name: 'Sirkeci Mansion', zone: 'Sirkeci', tier: 'mid', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 600-950', rating: 4.7, tips: ['Piscina coberta, aulas de culinária e Topkapi a pé — o favorito das famílias'] },
+  ],
   'Lisboa': [
     { id: 'lis-h-bairro-alto', name: 'Bairro Alto Hotel', zone: 'Bairro Alto', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 1.600-2.800', rating: 4.7, tips: ['Boutique histórico entre o Chiado e o Bairro Alto - rooftop pro Tejo'] },
     { id: 'lis-h-browns', name: 'Browns Central', zone: 'Baixa', tier: 'mid', personaTags: ['couple', 'solo'], priceRangeBRL: 'R$ 450-800', rating: 4.5, tips: ['Boutique acessível no miolo da Baixa'] },
@@ -106,6 +140,17 @@ export const curatedHotels: Record<string, CuratedHotel[]> = {
     { id: 'lon-h-savoy', name: 'The Savoy', zone: 'Strand', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 4.500-8.000', rating: 4.7, tips: ['A lenda art déco do Tâmisa — chá, história e mordomia'] },
     { id: 'lon-h-strand-palace', name: 'Strand Palace', zone: 'Strand', tier: 'mid', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 900-1.400', rating: 4.4, tips: ['Clássico central a pé do Covent Garden'] },
     { id: 'lon-h-zedwell', name: 'Zedwell Piccadilly', zone: 'Piccadilly', tier: 'budget', personaTags: ['solo', 'couple'], priceRangeBRL: 'R$ 600-950', rating: 4.4, tips: ['Casulos silenciosos no meio do caos do Piccadilly'] },
+  ],
+  'Marrakech': [
+    { id: 'rak-h-equity-point', name: 'Equity Point Marrakech', zone: 'Medina', tier: 'budget', personaTags: ['solo'], priceRangeBRL: 'R$ 100-250', rating: 4.3, tips: ['Piscina no pátio e Jemaa el-Fna a 10 minutos a pé'] },
+    { id: 'rak-h-four-seasons', name: 'Four Seasons Resort Marrakech', zone: 'Hivernage', tier: 'upscale', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 2.500-4.500', rating: 4.7, tips: ['Piscinas, kids club e Atlas no horizonte — o resort de família'] },
+    { id: 'rak-h-jardins-koutoubia', name: 'Les Jardins de la Koutoubia', zone: 'Medina', tier: 'mid', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 900-1.600', rating: 4.6, tips: ['Hotel com três piscinas a passos da Koutoubia e da praça'] },
+    { id: 'rak-h-mamounia', name: 'La Mamounia', zone: 'Hivernage', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 4.000-9.000', rating: 4.8, tips: ['O palácio de Churchill — jardins de 8 hectares e o hotel mais famoso da África'] },
+    { id: 'rak-h-riad-clos-des-arts', name: 'Riad Le Clos des Arts', zone: 'Medina', tier: 'mid', personaTags: ['couple'], priceRangeBRL: 'R$ 550-900', rating: 4.8, tips: ['Riad de artista com piscina, hammam e jantar no terraço'] },
+    { id: 'rak-h-riad-dar-anika', name: 'Riad Dar Anika', zone: 'Medina', tier: 'budget', personaTags: ['couple'], priceRangeBRL: 'R$ 300-500', rating: 4.7, tips: ['Riad pequeno e impecável perto da praça — o custo-benefício da medina'] },
+    { id: 'rak-h-riad-kniza', name: 'Riad Kniza', zone: 'Medina', tier: 'mid', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 900-1.500', rating: 4.8, tips: ['Riad do século XVIII de uma família de antiquários — serviço de palácio'] },
+    { id: 'rak-h-rodamon', name: 'Rodamon Riad Marrakech', zone: 'Medina', tier: 'budget', personaTags: ['solo', 'couple'], priceRangeBRL: 'R$ 120-280', rating: 4.5, tips: ['Riad-hostel com piscina e terraço — mochileiro dentro da medina'] },
+    { id: 'rak-h-royal-mansour', name: 'Royal Mansour Marrakech', zone: 'Medina', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 8.000-15.000', rating: 4.9, tips: ['Riads privados do rei, mordomo e spa de mármore — o topo absoluto'] },
   ],
   'Nova York': [
     { id: 'ny-h-1hotel-bk', name: '1 Hotel Brooklyn Bridge', zone: 'Dumbo', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 2.200-3.800', rating: 4.6, tips: ['Eco-chique com Manhattan inteira na janela'] },
@@ -175,60 +220,6 @@ export const curatedHotels: Record<string, CuratedHotel[]> = {
     { id: 'ssa-h-villa-bahia', name: 'Hotel Villa Bahia', zone: 'Pelourinho', tier: 'mid', personaTags: ['couple'], priceRangeBRL: 'R$ 600-1.000', rating: 4.6, tips: ['Boutique colonial no coração do Pelô - café no pátio'] },
     { id: 'ssa-h-wish', name: 'Wish Hotel da Bahia', zone: 'Campo Grande', tier: 'upscale', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 700-1.200', rating: 4.5, tips: ['O clássico histórico com piscina e obras de Carybé'] },
   ],
-  'Tóquio': [
-    { id: 'tok-h-asakusa-view', name: 'Asakusa View Hotel', zone: 'Asakusa', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 500-900', rating: 4.4, tips: ['Vista do Senso-ji e da Skytree - a Tóquio tradicional na janela'] },
-    { id: 'tok-h-gracery', name: 'Hotel Gracery Shinjuku', zone: 'Shinjuku', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 600-1.000', rating: 4.4, tips: ['O hotel do Godzilla na fachada - crianças em êxtase em Kabukicho'] },
-    { id: 'tok-h-hoshinoya', name: 'Hoshinoya Tokyo', zone: 'Otemachi', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 3.500-6.000', rating: 4.7, tips: ['Ryokan de luxo vertical - onsen no topo de um arranha-céu'] },
-    { id: 'tok-h-mimaru-ueno', name: 'Mimaru Tokyo Ueno', zone: 'Ueno', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 700-1.200', rating: 4.6, tips: ['Apart-hotel DESENHADO pra famílias - quartos amplos e cozinha (raridade no Japão)'] },
-    { id: 'tok-h-park-hyatt', name: 'Park Hyatt Tokyo', zone: 'Shinjuku', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 2.800-5.000', rating: 4.7, tips: ['O hotel de Lost in Translation - piscina no céu e o bar New York'] },
-    { id: 'tok-h-shibuya-excel', name: 'Shibuya Excel Hotel Tokyu', zone: 'Shibuya', tier: 'mid', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 700-1.100', rating: 4.4, tips: ['Em cima do cruzamento de Shibuya - localização cinematográfica'] },
-    { id: 'tok-h-tokyu-stay', name: 'Tokyu Stay Shinjuku', zone: 'Shinjuku', tier: 'mid', personaTags: ['solo', 'couple'], priceRangeBRL: 'R$ 450-750', rating: 4.5, tips: ['Máquina de lavar no quarto - o prático japonês perfeito'] },
-    { id: 'tok-h-unplan', name: 'UNPLAN Kagurazaka', zone: 'Kagurazaka', tier: 'budget', personaTags: ['solo'], priceRangeBRL: 'R$ 130-280', rating: 4.6, tips: ['Hostel impecável no bairro-Paris de Tóquio'] },
-  ],
-  'Bangkok': [
-    { id: 'bkk-h-amara', name: 'Amara Bangkok', zone: 'Silom', tier: 'mid', personaTags: ['couple', 'solo'], priceRangeBRL: 'R$ 450-700', rating: 4.5, tips: ['Piscina infinita no rooftop com Silom aos pés'] },
-    { id: 'bkk-h-centre-point-pratunam', name: 'Centre Point Prime Hotel Pratunam', zone: 'Pratunam', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 400-650', rating: 4.4, tips: ['Suítes com cozinha — família que fica mais dias'] },
-    { id: 'bkk-h-hie-siam', name: 'Holiday Inn Express Bangkok Siam', zone: 'Siam', tier: 'budget', personaTags: ['family'], priceRangeBRL: 'R$ 300-450', rating: 4.5, tips: ['Café incluso e BTS na porta — base prática para a família'] },
-    { id: 'bkk-h-ibis-riverside', name: 'ibis Bangkok Riverside', zone: 'Riverside', tier: 'budget', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 250-400', rating: 4.4, tips: ['Rede confiável à beira do Chao Phraya com barco gratuito para o píer'] },
-    { id: 'bkk-h-lubd-siam', name: 'Lub d Bangkok Siam', zone: 'Siam', tier: 'budget', personaTags: ['solo', 'couple'], priceRangeBRL: 'R$ 150-350', rating: 4.5, tips: ['Hostel-design a passos do BTS National Stadium e dos shoppings de Siam'] },
-    { id: 'bkk-h-mandarin', name: 'Mandarin Oriental Bangkok', zone: 'Riverside', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 3.500-6.500', rating: 4.8, tips: ['A lenda de 1876 à beira do rio — serviço que virou referência mundial'] },
-    { id: 'bkk-h-novotel-platinum', name: 'Novotel Bangkok Platinum Pratunam', zone: 'Pratunam', tier: 'mid', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 450-700', rating: 4.5, tips: ['Colado ao Platinum Fashion Mall — compras e street food de Pratunam'] },
-    { id: 'bkk-h-peninsula', name: 'The Peninsula Bangkok', zone: 'Riverside', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 2.500-4.500', rating: 4.7, tips: ['Todos os quartos com vista do rio e piscina de três níveis'] },
-    { id: 'bkk-h-shangri-la', name: 'Shangri-La Bangkok', zone: 'Riverside', tier: 'upscale', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 1.800-3.200', rating: 4.6, tips: ['Jardins à beira do Chao Phraya e BTS Saphan Taksin ao lado'] },
-  ],
-  'Cidade do Cabo': [
-    { id: 'cpt-h-cape-town-lodge', name: 'Cape Town Lodge Hotel', zone: 'CBD', tier: 'budget', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 300-500', rating: 4.3, tips: ['Central e sem frescura, a pé do Company Garden'] },
-    { id: 'cpt-h-fire-ice', name: 'Protea Hotel Fire & Ice! Cape Town', zone: 'CBD', tier: 'mid', personaTags: ['couple', 'solo'], priceRangeBRL: 'R$ 500-800', rating: 4.4, tips: ['Descolado, com milkshakes famosos e Long Street a duas quadras'] },
-    { id: 'cpt-h-mount-nelson', name: 'Belmond Mount Nelson Hotel', zone: 'Gardens', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 2.500-5.000', rating: 4.7, tips: ['O hotel rosa de 1899 com jardins e o chá da tarde mais famoso da cidade'] },
-    { id: 'cpt-h-once', name: 'Once in Cape Town', zone: 'Gardens', tier: 'budget', personaTags: ['solo', 'couple'], priceRangeBRL: 'R$ 150-350', rating: 4.5, tips: ['Hostel-boutique no sopé da Table Mountain, Kloof Street na porta'] },
-    { id: 'cpt-h-one-only', name: 'One&Only Cape Town', zone: 'V&A Waterfront', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 3.000-6.000', rating: 4.7, tips: ['Ilha privada no Waterfront com a Table Mountain emoldurada'] },
-    { id: 'cpt-h-protea-sea-point', name: 'Protea Hotel by Marriott Cape Town Sea Point', zone: 'Sea Point', tier: 'budget', personaTags: ['family'], priceRangeBRL: 'R$ 350-550', rating: 4.3, tips: ['Calçadão de Sea Point e pôr do sol do Atlântico pela janela'] },
-    { id: 'cpt-h-radisson-red', name: 'Radisson RED Hotel V&A Waterfront', zone: 'V&A Waterfront', tier: 'mid', personaTags: ['couple', 'solo'], priceRangeBRL: 'R$ 650-1.000', rating: 4.5, tips: ['Rooftop com piscina sobre o Waterfront — jovem e bem localizado'] },
-    { id: 'cpt-h-silo', name: 'The Silo Hotel', zone: 'V&A Waterfront', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 4.000-8.000', rating: 4.8, tips: ['Janelas de vidro facetado sobre o museu Zeitz MOCAA — ícone de design'] },
-    { id: 'cpt-h-winchester', name: 'The Winchester Hotel', zone: 'Sea Point', tier: 'mid', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 600-950', rating: 4.5, tips: ['Clássico de frente para o mar com pátio de jazz aos domingos'] },
-  ],
-  'Istambul': [
-    { id: 'ist-h-agora', name: 'Agora Guesthouse', zone: 'Sultanahmet', tier: 'budget', personaTags: ['couple', 'solo'], priceRangeBRL: 'R$ 250-400', rating: 4.6, tips: ['Café no terraço de frente para o Mármara, a pé de tudo'] },
-    { id: 'ist-h-amira', name: 'Hotel Amira Istanbul', zone: 'Sultanahmet', tier: 'mid', personaTags: ['couple'], priceRangeBRL: 'R$ 550-850', rating: 4.7, tips: ['Terraço com vista do Bósforo e serviço que vira elogio em toda avaliação'] },
-    { id: 'ist-h-cheers', name: 'Cheers Hostel', zone: 'Sultanahmet', tier: 'budget', personaTags: ['solo'], priceRangeBRL: 'R$ 120-250', rating: 4.5, tips: ['Terraço com vista da Hagia Sophia — mochileiro no coração histórico'] },
-    { id: 'ist-h-ciragan', name: 'Çırağan Palace Kempinski', zone: 'Beşiktaş', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 3.000-7.000', rating: 4.7, tips: ['Palácio otomano à beira do Bósforo com piscina infinita sobre a água'] },
-    { id: 'ist-h-four-seasons-sultanahmet', name: 'Four Seasons Hotel Istanbul at Sultanahmet', zone: 'Sultanahmet', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 3.500-6.500', rating: 4.8, tips: ['A antiga prisão neoclássica virou o hotel mais charmoso da península'] },
-    { id: 'ist-h-hanedan', name: 'Hanedan Hotel', zone: 'Sultanahmet', tier: 'budget', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 250-420', rating: 4.5, tips: ['Familiar e silencioso a 5 min da Mesquita Azul'] },
-    { id: 'ist-h-ottoman-imperial', name: 'Ottoman Hotel Imperial', zone: 'Sultanahmet', tier: 'mid', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 500-800', rating: 4.6, tips: ['Casarão otomano de frente para a Hagia Sophia'] },
-    { id: 'ist-h-pera-palace', name: 'Pera Palace Hotel', zone: 'Beyoğlu', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 1.800-3.200', rating: 4.6, tips: ['O hotel do Expresso do Oriente e de Agatha Christie — Beyoğlu histórico'] },
-    { id: 'ist-h-sirkeci-mansion', name: 'Sirkeci Mansion', zone: 'Sirkeci', tier: 'mid', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 600-950', rating: 4.7, tips: ['Piscina coberta, aulas de culinária e Topkapi a pé — o favorito das famílias'] },
-  ],
-  'Marrakech': [
-    { id: 'rak-h-equity-point', name: 'Equity Point Marrakech', zone: 'Medina', tier: 'budget', personaTags: ['solo'], priceRangeBRL: 'R$ 100-250', rating: 4.3, tips: ['Piscina no pátio e Jemaa el-Fna a 10 minutos a pé'] },
-    { id: 'rak-h-four-seasons', name: 'Four Seasons Resort Marrakech', zone: 'Hivernage', tier: 'upscale', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 2.500-4.500', rating: 4.7, tips: ['Piscinas, kids club e Atlas no horizonte — o resort de família'] },
-    { id: 'rak-h-jardins-koutoubia', name: 'Les Jardins de la Koutoubia', zone: 'Medina', tier: 'mid', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 900-1.600', rating: 4.6, tips: ['Hotel com três piscinas a passos da Koutoubia e da praça'] },
-    { id: 'rak-h-mamounia', name: 'La Mamounia', zone: 'Hivernage', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 4.000-9.000', rating: 4.8, tips: ['O palácio de Churchill — jardins de 8 hectares e o hotel mais famoso da África'] },
-    { id: 'rak-h-riad-clos-des-arts', name: 'Riad Le Clos des Arts', zone: 'Medina', tier: 'mid', personaTags: ['couple'], priceRangeBRL: 'R$ 550-900', rating: 4.8, tips: ['Riad de artista com piscina, hammam e jantar no terraço'] },
-    { id: 'rak-h-riad-dar-anika', name: 'Riad Dar Anika', zone: 'Medina', tier: 'budget', personaTags: ['couple'], priceRangeBRL: 'R$ 300-500', rating: 4.7, tips: ['Riad pequeno e impecável perto da praça — o custo-benefício da medina'] },
-    { id: 'rak-h-riad-kniza', name: 'Riad Kniza', zone: 'Medina', tier: 'mid', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 900-1.500', rating: 4.8, tips: ['Riad do século XVIII de uma família de antiquários — serviço de palácio'] },
-    { id: 'rak-h-rodamon', name: 'Rodamon Riad Marrakech', zone: 'Medina', tier: 'budget', personaTags: ['solo', 'couple'], priceRangeBRL: 'R$ 120-280', rating: 4.5, tips: ['Riad-hostel com piscina e terraço — mochileiro dentro da medina'] },
-    { id: 'rak-h-royal-mansour', name: 'Royal Mansour Marrakech', zone: 'Medina', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 8.000-15.000', rating: 4.9, tips: ['Riads privados do rei, mordomo e spa de mármore — o topo absoluto'] },
-  ],
   'Singapura': [
     { id: 'sin-h-carlton', name: 'Carlton Hotel Singapore', zone: 'City Hall', tier: 'mid', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 800-1.300', rating: 4.5, tips: ['Ao lado do Raffles e do CHIJMES, piscina no terraço'] },
     { id: 'sin-h-fullerton', name: 'The Fullerton Hotel Singapore', zone: 'Marina Bay', tier: 'upscale', personaTags: ['couple', 'family'], priceRangeBRL: 'R$ 2.000-3.500', rating: 4.7, tips: ['O antigo prédio dos Correios na foz do rio — clássico com vista da Marina'] },
@@ -238,6 +229,16 @@ export const curatedHotels: Record<string, CuratedHotel[]> = {
     { id: 'sin-h-park-regis', name: 'Park Regis Singapore', zone: 'Clarke Quay', tier: 'mid', personaTags: ['couple', 'solo'], priceRangeBRL: 'R$ 600-1.000', rating: 4.3, tips: ['Clarke Quay e Chinatown a pé — piscina e quartos modernos'] },
     { id: 'sin-h-pod-beach-road', name: 'The Pod @ Beach Road', zone: 'Bugis', tier: 'budget', personaTags: ['solo'], priceRangeBRL: 'R$ 200-350', rating: 4.5, tips: ['Cápsulas limpas e silenciosas a pé de Bugis e Kampong Glam'] },
     { id: 'sin-h-raffles', name: 'Raffles Singapore', zone: 'City Hall', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 5.000-9.000', rating: 4.8, tips: ['O hotel colonial de 1887 onde nasceu o Singapore Sling'] },
+  ],
+  'Tóquio': [
+    { id: 'tok-h-asakusa-view', name: 'Asakusa View Hotel', zone: 'Asakusa', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 500-900', rating: 4.4, tips: ['Vista do Senso-ji e da Skytree - a Tóquio tradicional na janela'] },
+    { id: 'tok-h-gracery', name: 'Hotel Gracery Shinjuku', zone: 'Shinjuku', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 600-1.000', rating: 4.4, tips: ['O hotel do Godzilla na fachada - crianças em êxtase em Kabukicho'] },
+    { id: 'tok-h-hoshinoya', name: 'Hoshinoya Tokyo', zone: 'Otemachi', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 3.500-6.000', rating: 4.7, tips: ['Ryokan de luxo vertical - onsen no topo de um arranha-céu'] },
+    { id: 'tok-h-mimaru-ueno', name: 'Mimaru Tokyo Ueno', zone: 'Ueno', tier: 'mid', personaTags: ['family'], priceRangeBRL: 'R$ 700-1.200', rating: 4.6, tips: ['Apart-hotel DESENHADO pra famílias - quartos amplos e cozinha (raridade no Japão)'] },
+    { id: 'tok-h-park-hyatt', name: 'Park Hyatt Tokyo', zone: 'Shinjuku', tier: 'upscale', personaTags: ['couple'], priceRangeBRL: 'R$ 2.800-5.000', rating: 4.7, tips: ['O hotel de Lost in Translation - piscina no céu e o bar New York'] },
+    { id: 'tok-h-shibuya-excel', name: 'Shibuya Excel Hotel Tokyu', zone: 'Shibuya', tier: 'mid', personaTags: ['family', 'couple'], priceRangeBRL: 'R$ 700-1.100', rating: 4.4, tips: ['Em cima do cruzamento de Shibuya - localização cinematográfica'] },
+    { id: 'tok-h-tokyu-stay', name: 'Tokyu Stay Shinjuku', zone: 'Shinjuku', tier: 'mid', personaTags: ['solo', 'couple'], priceRangeBRL: 'R$ 450-750', rating: 4.5, tips: ['Máquina de lavar no quarto - o prático japonês perfeito'] },
+    { id: 'tok-h-unplan', name: 'UNPLAN Kagurazaka', zone: 'Kagurazaka', tier: 'budget', personaTags: ['solo'], priceRangeBRL: 'R$ 130-280', rating: 4.6, tips: ['Hostel impecável no bairro-Paris de Tóquio'] },
   ],
 };
 

@@ -1,6 +1,6 @@
 // GERADO por scripts/build-kinu-catalog.ts — NÃO EDITAR À MÃO.
 // Fonte: src/data/destinationActivities.ts + src/data/curatedHotels.ts
-// 21 cidades · 901 atividades · 177 hotéis
+// 21 cidades · 1234 atividades · 178 hotéis
 //
 // Este arquivo é o que permite ao KINU responder sobre uma cidade curada SEM viagem
 // ativa e SEM o front ter adivinhado a cidade na mensagem. Ele viaja com o deploy da
@@ -36,6 +36,76 @@ export const CATALOG: Record<string, CatalogCity> = {
   "Paris": {
     "city": "Paris",
     "items": [
+      {
+        "name": "Bois de Vincennes e Parc Floral",
+        "category": "morning",
+        "neighborhood": "12e",
+        "costBRL": 0,
+        "tip": "O maior parque de Paris, com lago de barcos a remo, o Parc Floral e o castelo; metrô Château de Vincennes"
+      },
+      {
+        "name": "Le Bon Marché",
+        "category": "afternoon",
+        "neighborhood": "Saint-Germain",
+        "costBRL": 0,
+        "tip": "A loja de departamentos mais antiga de Paris (1852), elegante e sem a multidão da Lafayette; La Grande Épicerie ao lado"
+      },
+      {
+        "name": "Parc des Buttes-Chaumont",
+        "category": "afternoon",
+        "neighborhood": "19e",
+        "costBRL": 0,
+        "tip": "O parque mais vertical de Paris: templo no alto do rochedo, cascata e gramados para piquenique"
+      },
+      {
+        "name": "Caveau de la Huchette (jazz)",
+        "category": "night",
+        "neighborhood": "Quartier Latin",
+        "costBRL": 100,
+        "tip": "Porão medieval com jazz e swing para dançar desde 1946 — o do filme La La Land"
+      },
+      {
+        "name": "Le Comptoir Général",
+        "category": "night",
+        "neighborhood": "Canal Saint-Martin",
+        "costBRL": 60,
+        "tip": "Bar-galeria de clima afro-tropical escondido numa viela do canal; entrada livre, chegue cedo"
+      },
+      {
+        "name": "Duc des Lombards (jazz)",
+        "category": "night",
+        "neighborhood": "Châtelet",
+        "costBRL": 120,
+        "tip": "Clube de jazz pequeno e sério na rue des Lombards, dois shows por noite; reserve, 70 lugares"
+      },
+      {
+        "name": "Experimental Cocktail Club",
+        "category": "night",
+        "neighborhood": "Montorgueil",
+        "costBRL": 110,
+        "tip": "O speakeasy que abriu a onda de coquetelaria em Paris; porta sem placa na rue Saint-Sauveur"
+      },
+      {
+        "name": "Jardin d'Acclimatation (Bois de Boulogne)",
+        "category": "morning",
+        "neighborhood": "16e",
+        "costBRL": 40,
+        "tip": "Parque de diversões de 1860 dentro do Bois de Boulogne; entrada barata, brinquedos pagos à parte · Metrô Les Sablons"
+      },
+      {
+        "name": "Jardin des Plantes e Ménagerie",
+        "category": "morning",
+        "neighborhood": "5e",
+        "costBRL": 80,
+        "tip": "Jardim botânico gratuito; o zoológico histórico (Ménagerie) e a Grande Galeria da Evolução são pagos"
+      },
+      {
+        "name": "La Vallée Village (outlet)",
+        "category": "morning",
+        "neighborhood": "Serris",
+        "costBRL": 40,
+        "tip": "Outlet de grifes ao lado da Disneyland, 40 min de RER A; dá para combinar meio dia de cada"
+      },
       {
         "name": "Le Baratin",
         "category": "dinner",
@@ -671,6 +741,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Torrefação tradicional cearense · Peça o café coado na hora com tapioca"
       },
       {
+        "name": "Bate-volta a Canoa Quebrada",
+        "category": "morning",
+        "neighborhood": "Aracati",
+        "costBRL": 180,
+        "tip": "Falésias vermelhas, buggy pelas dunas e a Broadway à noite — 160 km, saia cedo com transporte de agência"
+      },
+      {
         "name": "Cantinho do Faustino",
         "category": "lunch",
         "neighborhood": "Varjota",
@@ -776,11 +853,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Cozinha afetiva autoral — almoço tranquilo perto da Beira-Mar"
       },
       {
+        "name": "Iguatemi Bosque",
+        "category": "afternoon",
+        "neighborhood": "Edson Queiroz",
+        "costBRL": 0,
+        "tip": "Shopping tradicional ao lado do Parque do Cocó; combine com o parque no fim da tarde"
+      },
+      {
         "name": "Pôr do sol e noite na Ponte dos Ingleses",
         "category": "night",
         "neighborhood": "Praia de Iracema",
         "costBRL": 0,
         "tip": "Pôr do sol icônico na Ponte dos Ingleses · Região boêmia, mais agitada à noite"
+      },
+      {
+        "name": "Jardim Japonês da Beira-Mar",
+        "category": "afternoon",
+        "neighborhood": "Meireles",
+        "costBRL": 0,
+        "tip": "Pequeno jardim com lago e ponte vermelha na Avenida Beira-Mar; pausa de sombra entre a praia e a Feirinha"
+      },
+      {
+        "name": "Praia de Lagoinha",
+        "category": "morning",
+        "neighborhood": "Paraipaba",
+        "costBRL": 120,
+        "tip": "Coqueiral, dunas e lagoa — uma das praias mais fotografadas do litoral oeste, 120 km de Fortaleza"
       },
       {
         "name": "Mar & Terra (Varjota)",
@@ -804,11 +902,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Compre o peixe fresco e os quiosques preparam na hora · Peça o pargo frito inteiro ou camarão no bafo"
       },
       {
+        "name": "Bate-volta a Morro Branco e Praia das Fontes",
+        "category": "morning",
+        "neighborhood": "Beberibe",
+        "costBRL": 150,
+        "tip": "Labirinto de falésias coloridas e fontes de água doce na praia vizinha; ~90 km, meio dia de passeio"
+      },
+      {
         "name": "Museu da Fotografia Fortaleza",
         "category": "morning",
         "neighborhood": "Varjota",
         "costBRL": 40,
         "tip": "Um dos acervos fotográficos mais relevantes da América Latina · Climatizado — ótima opção para fugir do calor"
+      },
+      {
+        "name": "North Shopping Fortaleza",
+        "category": "afternoon",
+        "neighborhood": "Presidente Kennedy",
+        "costBRL": 0,
+        "tip": "O shopping mais antigo da cidade, popular e grande; preços mais baixos que os da orla"
       },
       {
         "name": "Parque do Cocó",
@@ -825,6 +937,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Instituição fortalezense de carnes · Porções generosas — bom para dividir em família"
       },
       {
+        "name": "Pipo Restaurante",
+        "category": "dinner",
+        "neighborhood": "Meireles",
+        "costBRL": 200,
+        "tip": "Cozinha contemporânea com frutos do mar da costa cearense, num dos jantares mais elogiados da cidade; reserve"
+      },
+      {
         "name": "Praia do Futuro",
         "category": "morning",
         "neighborhood": "Praia do Futuro",
@@ -837,6 +956,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Praia de Iracema",
         "costBRL": 0,
         "tip": "Caminhada histórica com a estátua de Iracema e vista do mar · A Ponte dos Ingleses é o point do pôr do sol"
+      },
+      {
+        "name": "Pulcinella (Varjota)",
+        "category": "dinner",
+        "neighborhood": "Varjota",
+        "costBRL": 160,
+        "tip": "Italiano tradicional da Varjota, salão discreto e massa feita na casa; o jantar a dois da cidade"
       },
       {
         "name": "Recanto Praiano",
@@ -909,6 +1035,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Carnes e cozinha contemporânea na Senador Virgílio Távora"
       },
       {
+        "name": "RioMar Fortaleza",
+        "category": "afternoon",
+        "neighborhood": "Papicu",
+        "costBRL": 0,
+        "tip": "O maior shopping da cidade, a 10 min da Praia do Futuro; cinema, praça de alimentação e lojas de marca"
+      },
+      {
+        "name": "Praia e dunas de Sabiaguaba",
+        "category": "morning",
+        "neighborhood": "Sabiaguaba",
+        "costBRL": 30,
+        "tip": "Onde o rio Cocó encontra o mar: dunas, mangue e barracas de caranguejo, a 20 min da Praia do Futuro"
+      },
+      {
         "name": "Praia da Taíba",
         "category": "afternoon",
         "neighborhood": "São Gonçalo do Amarante",
@@ -942,6 +1082,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Beira-Mar",
         "costBRL": 100,
         "tip": "Saída do Iate Clube ou Marina Park no fim da tarde · O pôr do sol visto do mar é o cartão-postal da viagem"
+      },
+      {
+        "name": "Shopping Via Sul",
+        "category": "afternoon",
+        "neighborhood": "Sapiranga",
+        "costBRL": 0,
+        "tip": "Shopping de bairro na saída para as praias do leste; parada prática antes de Aquiraz ou Porto das Dunas"
       },
       {
         "name": "Vojnilô (frutos do mar)",
@@ -1192,6 +1339,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O salão histórico por trás da famosa mureta — frutos do mar com vista pra baía · Complemento perfeito do fim de tarde na mureta"
       },
       {
+        "name": "BarraShopping",
+        "category": "afternoon",
+        "neighborhood": "Barra da Tijuca",
+        "costBRL": 0,
+        "tip": "O maior shopping do Rio, com 700 lojas e o parque de diversões coberto; a tarde da Barra fora da praia"
+      },
+      {
         "name": "Bibi Sucos",
         "category": "lunch",
         "neighborhood": "Leblon",
@@ -1318,6 +1472,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "215 degraus cobertos de azulejos de mais de 60 países · Os Arcos da Lapa ficam a 5 minutos a pé"
       },
       {
+        "name": "Feira Hippie de Ipanema (domingo)",
+        "category": "morning",
+        "neighborhood": "Ipanema",
+        "costBRL": 0,
+        "tip": "Desde 1968 na Praça General Osório, só aos domingos: artesanato, roupa, arte e comida — melhor souvenir carioca"
+      },
+      {
+        "name": "Feira do Rio Antigo (Rua do Lavradio)",
+        "category": "afternoon",
+        "neighborhood": "Lapa",
+        "costBRL": 0,
+        "tip": "No primeiro sábado do mês a rua dos antiquários vira feira com chorinho e samba na calçada; combine com a noite na Lapa"
+      },
+      {
         "name": "Feira de São Cristóvão",
         "category": "night",
         "neighborhood": "São Cristóvão",
@@ -1337,6 +1505,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Copacabana",
         "costBRL": 20,
         "tip": "Museu histórico do Exército na ponta da praia · A filial da Confeitaria Colombo tem mesas de frente para o mar"
+      },
+      {
+        "name": "Galeria River (Arpoador)",
+        "category": "afternoon",
+        "neighborhood": "Arpoador",
+        "costBRL": 0,
+        "tip": "Galeria de lojas de surf e skate a 2 min da Pedra do Arpoador; prancha, biquíni e sunga de marca carioca"
       },
       {
         "name": "Galeto Sat's",
@@ -1465,6 +1640,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O balcão de sucos mais amado de Ipanema — açaí e sanduíche natural pós-praia · Rápido, barato e carioca até o osso"
       },
       {
+        "name": "Praia da Barra da Tijuca",
+        "category": "morning",
+        "neighborhood": "Barra da Tijuca",
+        "costBRL": 0,
+        "tip": "18 km de praia: escolha um posto e fique por ali · Posto 8 concentra kite e stand-up"
+      },
+      {
         "name": "Praia de Copacabana",
         "category": "morning",
         "neighborhood": "Copacabana",
@@ -1477,6 +1659,27 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Ipanema",
         "costBRL": 0,
         "tip": "Posto 9 é o coração jovem da praia · Aos domingos a orla fecha para carros — ótimo para pedalar"
+      },
+      {
+        "name": "Praia do Leblon (Posto 12 e Baixo Bebê)",
+        "category": "morning",
+        "neighborhood": "Leblon",
+        "costBRL": 0,
+        "tip": "Baixo Bebê, no Posto 12, é o trecho com estrutura para famílias com crianças pequenas · Mais tranquila que Ipanema, mesma faixa de areia"
+      },
+      {
+        "name": "Praia Vermelha (Urca)",
+        "category": "morning",
+        "neighborhood": "Urca",
+        "costBRL": 0,
+        "tip": "Mar calmo, boa para crianças · Fica ao lado do bondinho do Pão de Açúcar: combine os dois na mesma manhã"
+      },
+      {
+        "name": "Prainha",
+        "category": "morning",
+        "neighborhood": "Recreio dos Bandeirantes",
+        "costBRL": 60,
+        "tip": "Reserva ambiental, quase sem construções em volta · Mar de surfe: ondas fortes, não é praia para nadar com crianças pequenas"
       },
       {
         "name": "Real Gabinete Português de Leitura",
@@ -1493,11 +1696,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Casarão de antiquário com samba ao vivo — a noite mais cenográfica da Lapa · Reserve ou chegue antes das 20h"
       },
       {
+        "name": "Shopping Rio Sul",
+        "category": "afternoon",
+        "neighborhood": "Botafogo",
+        "costBRL": 0,
+        "tip": "O shopping clássico da zona sul, a 5 min de Copacabana; cinema e lojas de marca, bom para tarde de chuva"
+      },
+      {
         "name": "Rubaiyat Rio (Jockey)",
         "category": "dinner",
         "neighborhood": "Gávea",
         "costBRL": 180,
         "tip": "Carnes premium com vista pro Cristo iluminado no Jockey Club · Jantar de ocasião especial — romântico e imponente"
+      },
+      {
+        "name": "Saara (comércio popular do Centro)",
+        "category": "morning",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "Mais de mil lojas em ruas de pedestres, de fantasia de Carnaval a tecido e eletrônico; vá de manhã, em dia de semana, e negocie"
+      },
+      {
+        "name": "Shopping Leblon",
+        "category": "afternoon",
+        "neighborhood": "Leblon",
+        "costBRL": 0,
+        "tip": "Marcas brasileiras de praia e moda (Farm, Osklen, Lenny) num shopping pequeno e elegante; terraço com vista para a Lagoa"
       },
       {
         "name": "The Slow Bakery",
@@ -1533,6 +1757,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Centro",
         "costBRL": 30,
         "tip": "O interior mais suntuoso do Rio — visita guiada revela os bastidores · Confira os horários das visitas no dia"
+      },
+      {
+        "name": "VillageMall (Barra)",
+        "category": "afternoon",
+        "neighborhood": "Barra da Tijuca",
+        "costBRL": 0,
+        "tip": "O shopping de luxo da Barra, com grifes internacionais, restaurantes e Teatro Bradesco; combine com a praia da Barra"
       }
     ],
     "hotels": [
@@ -1644,6 +1875,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Desça do castelo se perdendo pelas vielas — o miradouro é o prêmio"
       },
       {
+        "name": "Bairro Alto (bares de rua)",
+        "category": "night",
+        "neighborhood": "Bairro Alto",
+        "costBRL": 80,
+        "tip": "As ruas enchem depois das 23h; a tradição é beber na rua com o copo na mão, de bar em bar · Subida íngreme — vá pelo Elevador da Glória ou de táxi"
+      },
+      {
         "name": "Baixa, Chiado e Praça do Comércio",
         "category": "morning",
         "neighborhood": "Baixa",
@@ -1656,6 +1894,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Baixa",
         "costBRL": 80,
         "tip": "O frango de churrasco com piri-piri que virou lenda · Simples, farto e barato"
+      },
+      {
+        "name": "Jardim Botânico Tropical (Belém)",
+        "category": "morning",
+        "neighborhood": "Belém",
+        "costBRL": 20,
+        "tip": "Palmeiras, pavões e plantas das antigas colônias ao lado do Mosteiro dos Jerónimos; a pausa verde do circuito de Belém"
       },
       {
         "name": "Casa do Alentejo",
@@ -1672,6 +1917,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Vista panorâmica; subida íngreme — com crianças pequenas, considere tuk-tuk"
       },
       {
+        "name": "Centro Colombo",
+        "category": "afternoon",
+        "neighborhood": "Benfica",
+        "costBRL": 0,
+        "tip": "O maior shopping da cidade, com Primark, Zara, FNAC e cinema; metrô Colégio Militar/Luz, bom para dia de chuva"
+      },
+      {
         "name": "A Cevicheria",
         "category": "lunch",
         "neighborhood": "Príncipe Real",
@@ -1686,11 +1938,46 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Fado autêntico na Alfama com jantar completo · Silêncio absoluto durante as canções — é a etiqueta"
       },
       {
+        "name": "Conserveira de Lisboa",
+        "category": "afternoon",
+        "neighborhood": "Baixa",
+        "costBRL": 0,
+        "tip": "Loja de 1930 que embrulha latas de sardinha e atum em papel como antigamente — o presente comestível de Lisboa"
+      },
+      {
+        "name": "El Corte Inglés Lisboa",
+        "category": "afternoon",
+        "neighborhood": "São Sebastião",
+        "costBRL": 0,
+        "tip": "Loja de departamentos com o Gourmet Experience no último andar; metrô São Sebastião, ao lado da Gulbenkian"
+      },
+      {
+        "name": "Praia da Costa da Caparica",
+        "category": "morning",
+        "neighborhood": "Almada",
+        "costBRL": 20,
+        "tip": "Do outro lado do Tejo: ônibus a partir do Areeiro ou barco até Cacilhas + ônibus; quilômetros de areal com restaurantes de peixe à beira-mar"
+      },
+      {
+        "name": "Embaixada (galeria no Príncipe Real)",
+        "category": "afternoon",
+        "neighborhood": "Príncipe Real",
+        "costBRL": 0,
+        "tip": "Palacete neo-árabe de 1877 com lojas de designers portugueses e um bar de gin no pátio"
+      },
+      {
         "name": "Fábrica Coffee Roasters",
         "category": "breakfast",
         "neighborhood": "Baixa",
         "costBRL": 50,
         "tip": "Café de especialidade torrado na casa · Brunch com tostas e ovos"
+      },
+      {
+        "name": "Feira da Ladra (terça e sábado)",
+        "category": "morning",
+        "neighborhood": "Alfama",
+        "costBRL": 0,
+        "tip": "O mercado de pulgas de Lisboa desde o século XIII, no Campo de Santa Clara; azulejos antigos, vinil e bugigangas — negocie"
       },
       {
         "name": "O Frade dos Mares",
@@ -1705,6 +1992,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Avenidas Novas",
         "costBRL": 60,
         "tip": "Coleção de arte do Egito antigo a Monet · Os jardins do museu são um oásis na cidade"
+      },
+      {
+        "name": "Jardim Botânico de Lisboa (Príncipe Real)",
+        "category": "afternoon",
+        "neighborhood": "Príncipe Real",
+        "costBRL": 20,
+        "tip": "Jardim científico de 1878 escondido atrás do Museu de História Natural; palmeiras centenárias e silêncio no meio da cidade"
+      },
+      {
+        "name": "Jardim da Estrela",
+        "category": "afternoon",
+        "neighborhood": "Estrela",
+        "costBRL": 0,
+        "tip": "Jardim romântico do século XIX em frente à Basílica, com coreto, lago de patos e parque infantil; o favorito das famílias lisboetas"
       },
       {
         "name": "Mosteiro dos Jerónimos",
@@ -1728,11 +2029,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O rival moderno do pastel de Belém — muitos preferem · O sino toca quando sai fornada fresca"
       },
       {
+        "name": "Mesa de Frades (fado em Alfama)",
+        "category": "night",
+        "neighborhood": "Alfama",
+        "costBRL": 250,
+        "tip": "Antiga capela transformada em casa de fado; jantar com espetáculo, reserve com antecedência"
+      },
+      {
         "name": "Miradouros: Senhora do Monte e Graça",
         "category": "afternoon",
         "neighborhood": "Graça",
         "costBRL": 0,
         "tip": "Os dois miradouros mais bonitos, a 10 minutos um do outro · Fim de tarde tem a luz dourada sobre o casario"
+      },
+      {
+        "name": "Miradouro dos Montes Claros (Monsanto)",
+        "category": "afternoon",
+        "neighborhood": "Monsanto",
+        "costBRL": 0,
+        "tip": "O pulmão verde de Lisboa, com trilhas e o miradouro sobre o Tejo e a Ponte 25 de Abril; vá de táxi ou carro"
       },
       {
         "name": "Museu Nacional do Azulejo",
@@ -1763,6 +2078,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Clássico moderno da cozinha portuguesa no andar do mercado · A açorda de marisco dá nome à casa"
       },
       {
+        "name": "Parque Eduardo VII",
+        "category": "afternoon",
+        "neighborhood": "Marquês de Pombal",
+        "costBRL": 0,
+        "tip": "O maior parque do centro, com a vista enquadrada até o Tejo e a Estufa Fria; comece pelo alto, no miradouro"
+      },
+      {
         "name": "Pastéis de Belém (café da manhã)",
         "category": "breakfast",
         "neighborhood": "Belém",
@@ -1770,11 +2092,46 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A receita original e secreta desde 1837 · Coma quente com canela e açúcar em pó"
       },
       {
+        "name": "Pensão Amor",
+        "category": "night",
+        "neighborhood": "Cais do Sodré",
+        "costBRL": 60,
+        "tip": "Antiga pensão de marinheiros virou bar de decoração burlesca — fica na Pink Street, ótimo para começar a noite"
+      },
+      {
         "name": "Ponto Final (Cacilhas)",
         "category": "lunch",
         "neighborhood": "Almada (barco de 10min)",
         "costBRL": 120,
         "tip": "Atravesse o Tejo de barco no Cais do Sodré · Mesas na beira do rio com Lisboa inteira de frente"
+      },
+      {
+        "name": "Praia da Adraga (Sintra)",
+        "category": "morning",
+        "neighborhood": "Colares",
+        "costBRL": 60,
+        "tip": "Praia selvagem entre falésias na costa de Sintra, com restaurante de peixe na areia; vá de carro ou táxi a partir de Sintra"
+      },
+      {
+        "name": "Praia de Carcavelos",
+        "category": "morning",
+        "neighborhood": "Carcavelos",
+        "costBRL": 15,
+        "tip": "Trem da Linha de Cascais a partir do Cais do Sodré, 25 min — desça em Carcavelos e a praia fica a 10 min a pé · Areal largo com escolas de surf; leve protetor, há pouca sombra"
+      },
+      {
+        "name": "Praia do Guincho",
+        "category": "afternoon",
+        "neighborhood": "Cascais",
+        "costBRL": 40,
+        "tip": "Praia selvagem de dunas e vento forte, a preferida de surf e kite — vá de carro ou táxi a partir de Cascais · Combine com o bate-volta a Cascais no mesmo dia"
+      },
+      {
+        "name": "Praia do Tamariz (Estoril)",
+        "category": "morning",
+        "neighborhood": "Estoril",
+        "costBRL": 15,
+        "tip": "A praia do Estoril, com piscina oceânica e o calçadão até Cascais; trem da Linha de Cascais, estação Estoril na areia"
       },
       {
         "name": "Cervejaria Ramiro",
@@ -1798,6 +2155,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O elevador de ferro de 1902 liga a Baixa ao Chiado · As ruínas góticas do Carmo a céu aberto são únicas"
       },
       {
+        "name": "Praia de Santo Amaro de Oeiras",
+        "category": "afternoon",
+        "neighborhood": "Oeiras",
+        "costBRL": 15,
+        "tip": "Praia de bandeira azul a 20 min de trem, com piscina oceânica e passeio marítimo; menos cheia que Carcavelos"
+      },
+      {
         "name": "Solar dos Presuntos",
         "category": "dinner",
         "neighborhood": "Restauradores",
@@ -1819,6 +2183,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Os melhores chefs de Lisboa em bancas num mercado histórico · Cada um pede numa banca e senta junto nas mesas comunitárias"
       },
       {
+        "name": "Carmo Rooftop",
+        "category": "night",
+        "neighborhood": "Chiado",
+        "costBRL": 70,
+        "tip": "Terraço junto ao Elevador de Santa Justa com vista para o Castelo — vá ao pôr do sol"
+      },
+      {
         "name": "Torre de Belém",
         "category": "morning",
         "neighborhood": "Belém",
@@ -1831,6 +2202,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Graça a Estrela",
         "costBRL": 20,
         "tip": "O bonde amarelo atravessa os bairros históricos · Pegue no início da linha (Martim Moniz) para conseguir lugar"
+      },
+      {
+        "name": "A Vida Portuguesa (Chiado)",
+        "category": "afternoon",
+        "neighborhood": "Chiado",
+        "costBRL": 0,
+        "tip": "Loja de marcas portuguesas antigas — sabonetes Claus Porto, pasta Couto, andorinhas de cerâmica; a loja mais bonita para souvenir"
       },
       {
         "name": "Zé da Mouraria",
@@ -2080,6 +2458,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Clima caribenho com música ao vivo no deck · Coconut shrimp e drinks tropicais"
       },
       {
+        "name": "Voo de balão ao nascer do sol",
+        "category": "morning",
+        "neighborhood": "Kissimmee",
+        "costBRL": 1200,
+        "tip": "Uma hora sobre os lagos e laranjais ao amanhecer, com brinde no pouso; reserve pela Orlando Balloon Rides, saída às 5h30"
+      },
+      {
+        "name": "Blue Spring State Park (peixes-boi)",
+        "category": "morning",
+        "neighborhood": "Orange City",
+        "costBRL": 40,
+        "tip": "De novembro a março, centenas de peixes-boi se aquecem na nascente; chegue antes das 9h, o parque fecha quando lota"
+      },
+      {
         "name": "The Boathouse (Disney Springs)",
         "category": "dinner",
         "neighborhood": "Walt Disney World",
@@ -2122,11 +2514,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Entrada gratuita — compras, restaurantes e shows de rua · A loja World of Disney é a maior do mundo"
       },
       {
+        "name": "Dr. Phillips Center (Broadway em Orlando)",
+        "category": "night",
+        "neighborhood": "Downtown",
+        "costBRL": 300,
+        "tip": "O centro de artes do Downtown recebe os musicais da Broadway em turnê; a noite de teatro fora dos parques"
+      },
+      {
         "name": "First Watch",
         "category": "breakfast",
         "neighborhood": "Vários (Lake Buena Vista)",
         "costBRL": 80,
         "tip": "Café da manhã saudável e farto, favorito local · Sucos prensados na hora e omeletes generosos"
+      },
+      {
+        "name": "The Florida Mall",
+        "category": "afternoon",
+        "neighborhood": "South Orlando",
+        "costBRL": 0,
+        "tip": "O maior shopping da Flórida Central, com M&M's World e Crayola; perto do aeroporto, bom para o último dia"
       },
       {
         "name": "Ford's Garage",
@@ -2143,6 +2549,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Café e confeitaria premiada com salgados de brunch · As sobremesas na vitrine são obras de arte"
       },
       {
+        "name": "Hillstone (jantar no lago, Winter Park)",
+        "category": "dinner",
+        "neighborhood": "Winter Park",
+        "costBRL": 250,
+        "tip": "Jantar com mesa na varanda sobre o Lake Killarney ao pôr do sol; o restaurante onde Winter Park celebra"
+      },
+      {
         "name": "Chef Art Smith's Homecomin'",
         "category": "dinner",
         "neighborhood": "Walt Disney World (Disney Springs)",
@@ -2155,6 +2568,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "International Drive",
         "costBRL": 160,
         "tip": "A roda-gigante The Wheel tem vista de toda Orlando · Museu de cera e aquário SEA LIFE no mesmo complexo"
+      },
+      {
+        "name": "Orlando International Premium Outlets",
+        "category": "morning",
+        "neighborhood": "International Drive",
+        "costBRL": 0,
+        "tip": "O outlet do começo da I-Drive, Nike, Coach e Tommy com desconto; vá de manhã em dia de semana"
       },
       {
         "name": "Lake Eola Park (Downtown)",
@@ -2171,11 +2591,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Reserve o parque no app My Disney Experience — ingresso sem reserva não entra · Chegue antes da abertura (rope drop) e deixe o castelo iluminado e os fogos para o fim"
       },
       {
+        "name": "The Mall at Millenia",
+        "category": "afternoon",
+        "neighborhood": "Millenia",
+        "costBRL": 0,
+        "tip": "O shopping de grifes de Orlando, com Apple, Bloomingdale's e Neiman Marcus; a 10 min da Universal"
+      },
+      {
         "name": "Maple Street Biscuit Company",
         "category": "breakfast",
         "neighborhood": "Vários (I-Drive / Winter Park)",
         "costBRL": 70,
         "tip": "Biscuits artesanais com combinações criativas · O \"Five and Dime\" com frango frito é o pedido certo"
+      },
+      {
+        "name": "Morse Museum (Tiffany, Winter Park)",
+        "category": "morning",
+        "neighborhood": "Winter Park",
+        "costBRL": 80,
+        "tip": "A maior coleção de vitrais e lâmpadas Tiffany do mundo, incluindo a capela da feira de 1893; Winter Park, grátis às sextas à noite no inverno"
+      },
+      {
+        "name": "Orlando Museum of Art",
+        "category": "afternoon",
+        "neighborhood": "Loch Haven",
+        "costBRL": 100,
+        "tip": "Arte americana e pré-colombiana no parque dos museus de Loch Haven; combine com o Science Center ao lado"
       },
       {
         "name": "Old Town Kissimmee",
@@ -2220,11 +2661,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Comida porto-riquenha farta e saborosa · O mofongo é o prato para conhecer"
       },
       {
+        "name": "Tibet-Butler Preserve",
+        "category": "afternoon",
+        "neighborhood": "Lake Buena Vista",
+        "costBRL": 0,
+        "tip": "Trilhas de passarela por pântano e pinheiral a 10 min da Disney; gratuito, a pausa de silêncio entre os parques"
+      },
+      {
         "name": "Universal Studios + Islands of Adventure",
         "category": "morning",
         "neighborhood": "Universal Orlando",
         "costBRL": 680,
         "tip": "O passe park-to-park libera o trem do Harry Potter entre os dois parques — é a atração · Single rider corta filas pela metade para os maiores"
+      },
+      {
+        "name": "Victoria & Albert's (Grand Floridian)",
+        "category": "dinner",
+        "neighborhood": "Walt Disney World",
+        "costBRL": 900,
+        "tip": "O único restaurante com estrela Michelin da Disney, menu degustação com harpa ao vivo; só adultos, reserve com 60 dias"
+      },
+      {
+        "name": "Wekiwa Springs State Park",
+        "category": "morning",
+        "neighborhood": "Apopka",
+        "costBRL": 40,
+        "tip": "Nascente de água cristalina a 22 °C o ano inteiro, com caiaque pelo rio entre jacarés e tartarugas; 30 min do centro, lota aos fins de semana"
       },
       {
         "name": "Winter Park e Scenic Boat Tour",
@@ -2408,6 +2870,76 @@ export const CATALOG: Record<string, CatalogCity> = {
   "Tóquio": {
     "city": "Tóquio",
     "items": [
+      {
+        "name": "Bar High Five (Ginza)",
+        "category": "night",
+        "neighborhood": "Ginza",
+        "costBRL": 200,
+        "tip": "Coquetelaria clássica japonesa de balcão, entre os melhores bares do mundo; sem cardápio, diga o que gosta"
+      },
+      {
+        "name": "Blue Note Tokyo",
+        "category": "night",
+        "neighborhood": "Aoyama",
+        "costBRL": 350,
+        "tip": "A filial japonesa do clube de jazz de Nova York, com nomes internacionais; dois shows por noite, reserve"
+      },
+      {
+        "name": "Jardim do Hotel Chinzanso (mar de nuvens)",
+        "category": "night",
+        "neighborhood": "Mejiro",
+        "costBRL": 0,
+        "tip": "Jardim de 1878 com pagode e cascata, onde a névoa artificial do \"mar de nuvens\" sobe de hora em hora; gratuito, melhor à noite"
+      },
+      {
+        "name": "Ginza Six",
+        "category": "afternoon",
+        "neighborhood": "Ginza",
+        "costBRL": 0,
+        "tip": "O shopping de luxo de Ginza com arte no átrio, a livraria Tsutaya e um jardim no terraço; entre no Teatro Kanze no subsolo"
+      },
+      {
+        "name": "Kappabashi (rua dos utensílios de cozinha)",
+        "category": "afternoon",
+        "neighborhood": "Asakusa",
+        "costBRL": 0,
+        "tip": "800 m de lojas de facas, cerâmica e comida de plástico entre Asakusa e Ueno; o souvenir de quem cozinha"
+      },
+      {
+        "name": "New York Bar (Park Hyatt)",
+        "category": "night",
+        "neighborhood": "Shinjuku",
+        "costBRL": 250,
+        "tip": "O bar do filme Encontros e Desencontros, no 52º andar com jazz ao vivo; consumação mínima depois das 20h"
+      },
+      {
+        "name": "Nonbei Yokocho (Shibuya)",
+        "category": "night",
+        "neighborhood": "Shibuya",
+        "costBRL": 100,
+        "tip": "Beco dos bêbados: duas vielas de bares de 6 lugares a 2 min do cruzamento de Shibuya; entre onde houver banco vazio"
+      },
+      {
+        "name": "Samurai Restaurant (Kabukicho)",
+        "category": "night",
+        "neighborhood": "Shinjuku",
+        "costBRL": 350,
+        "tip": "O sucessor do Robot Restaurant, no mesmo porão de Kabukicho: show de luzes, tambores e robôs; reserve pelo site"
+      },
+      {
+        "name": "teamLab Planets",
+        "category": "afternoon",
+        "neighborhood": "Toyosu",
+        "costBRL": 150,
+        "tip": "Museu imersivo onde se anda descalço pela água entre luzes; reserve o horário com dias de antecedência"
+      },
+      {
+        "name": "Yakatabune (jantar em barco tradicional na baía)",
+        "category": "night",
+        "neighborhood": "Asakusa",
+        "costBRL": 450,
+        "tip": "Barco de madeira com tatames, tempurá e saquê navegando sob a Rainbow Bridge; reserve com a Amisei ou Funasei"
+      },
       {
         "name": "Ameyoko (mercado de rua)",
         "category": "afternoon",
@@ -2696,13 +3228,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O Gundam gigante em tamanho real se move em horários marcados · Vista da Rainbow Bridge ao entardecer"
       },
       {
-        "name": "Robot Restaurant",
-        "category": "dinner",
-        "neighborhood": "Shinjuku",
-        "costBRL": 350,
-        "tip": "Show bizarro e divertido · Comida é secundária ao espetáculo"
-      },
-      {
         "name": "Templo Senso-ji",
         "category": "morning",
         "neighborhood": "Asakusa",
@@ -2868,6 +3393,153 @@ export const CATALOG: Record<string, CatalogCity> = {
   "Roma": {
     "city": "Roma",
     "items": [
+      {
+        "name": "Ai Tre Scalini (enoteca em Monti)",
+        "category": "night",
+        "neighborhood": "Monti",
+        "costBRL": 90,
+        "tip": "Enoteca de bairro desde 1895: vinho em taça, tábuas e mesa na calçada — chega cedo, não aceita reserva"
+      },
+      {
+        "name": "Via Appia Antica de bicicleta",
+        "category": "morning",
+        "neighborhood": "Appia Antica",
+        "costBRL": 90,
+        "tip": "Alugue a bicicleta no centro de visitantes do parque e pedale sobre as pedras romanas até as catacumbas; aos domingos a via fecha para carros"
+      },
+      {
+        "name": "Mercado de Campo de' Fiori",
+        "category": "morning",
+        "neighborhood": "Centro Storico",
+        "costBRL": 0,
+        "tip": "Feira de frutas, flores e especiarias na praça, de segunda a sábado de manhã; à noite a praça vira bar"
+      },
+      {
+        "name": "Castel Romano Designer Outlet",
+        "category": "morning",
+        "neighborhood": "Castel Romano",
+        "costBRL": 50,
+        "tip": "Outlet das grifes italianas a 25 km, com ônibus direto de Termini; meio dia, vá em dia de semana"
+      },
+      {
+        "name": "Castroni (Via Cola di Rienzo)",
+        "category": "afternoon",
+        "neighborhood": "Prati",
+        "costBRL": 0,
+        "tip": "Empório de 1932 com café no balcão e tudo de comida italiana para levar; a rua é a de compras de Prati, perto do Vaticano"
+      },
+      {
+        "name": "Cinecittà si Mostra (estúdios de cinema)",
+        "category": "morning",
+        "neighborhood": "Cinecittà",
+        "costBRL": 110,
+        "tip": "Os cenários de Roma antiga de filmes e séries, a 20 min de metrô (linha A, estação Cinecittà); fechado às terças"
+      },
+      {
+        "name": "Eataly Roma",
+        "category": "afternoon",
+        "neighborhood": "Ostiense",
+        "costBRL": 0,
+        "tip": "Quatro andares de comida italiana para levar — azeite, massa, queijo — e restaurantes por tema; metrô Piramide"
+      },
+      {
+        "name": "Galleria Alberto Sordi",
+        "category": "afternoon",
+        "neighborhood": "Centro Storico",
+        "costBRL": 0,
+        "tip": "Galeria art nouveau de 1922 na Via del Corso, com lojas e café sob o vitral — refúgio no calor ou na chuva"
+      },
+      {
+        "name": "Giardino degli Aranci (Aventino)",
+        "category": "afternoon",
+        "neighborhood": "Aventino",
+        "costBRL": 0,
+        "tip": "Laranjal com a melhor vista gratuita da cidade ao pôr do sol; a 2 min fica o buraco da fechadura dos Cavaleiros de Malta"
+      },
+      {
+        "name": "Gregory's Jazz Club",
+        "category": "night",
+        "neighborhood": "Piazza di Spagna",
+        "costBRL": 120,
+        "tip": "Clube de jazz íntimo a 3 min da Escadaria Espanhola; shows todas as noites, reserve mesa"
+      },
+      {
+        "name": "Il Goccetto (enoteca)",
+        "category": "night",
+        "neighborhood": "Centro Storico",
+        "costBRL": 80,
+        "tip": "Enoteca de bairro na Via dei Banchi Vecchi com 800 rótulos e tábuas; os romanos bebem na calçada"
+      },
+      {
+        "name": "Jerry Thomas Speakeasy",
+        "category": "night",
+        "neighborhood": "Centro Storico",
+        "costBRL": 120,
+        "tip": "Porta sem placa no Vicolo Cellini e senha que muda — reserve pelo site e responda ao enigma; coquetelaria clássica"
+      },
+      {
+        "name": "Praia em Lido di Ostia",
+        "category": "morning",
+        "neighborhood": "Ostia",
+        "costBRL": 20,
+        "tip": "A praia dos romanos, 40 min de trem a partir da Piramide; combine com as ruínas de Ostia Antica no caminho de volta"
+      },
+      {
+        "name": "Mercato Monti (vintage)",
+        "category": "morning",
+        "neighborhood": "Monti",
+        "costBRL": 0,
+        "tip": "Mercado de designers e vintage aos fins de semana num hotel de Monti; roupa, joia e vinil de criadores romanos"
+      },
+      {
+        "name": "Parco degli Acquedotti",
+        "category": "afternoon",
+        "neighborhood": "Cinecittà",
+        "costBRL": 0,
+        "tip": "Campo aberto com os aquedutos romanos de 2.000 anos — cenário de La Grande Bellezza; metrô Giulio Agricola, leve água"
+      },
+      {
+        "name": "Rinascente (Via del Tritone)",
+        "category": "afternoon",
+        "neighborhood": "Centro Storico",
+        "costBRL": 0,
+        "tip": "Loja de departamentos com um aqueduto romano exposto no subsolo e terraço de bares no último andar"
+      },
+      {
+        "name": "Scuola di Gladiatori (Gruppo Storico Romano)",
+        "category": "morning",
+        "neighborhood": "Appia Antica",
+        "costBRL": 350,
+        "tip": "Aula de 2h com túnica, espada de madeira e museu de armaduras — crianças a partir de 6 anos adoram; reserve com antecedência"
+      },
+      {
+        "name": "Terrazza Borromini (rooftop)",
+        "category": "night",
+        "neighborhood": "Piazza Navona",
+        "costBRL": 150,
+        "tip": "Terraço sobre a Piazza Navona com vista para a cúpula de Sant'Agnese; reserve o entardecer, consumação mínima"
+      },
+      {
+        "name": "Villa Doria Pamphilj",
+        "category": "morning",
+        "neighborhood": "Monteverde",
+        "costBRL": 0,
+        "tip": "O maior parque de Roma, onde os romanos correm e fazem piquenique; longe dos turistas, bom com crianças e bicicleta"
+      },
+      {
+        "name": "Welcome To Rome (show imersivo)",
+        "category": "afternoon",
+        "neighborhood": "Centro Storico",
+        "costBRL": 80,
+        "tip": "Projeções e maquetes contam 2.700 anos da cidade em 30 min — bom para abrir a viagem com as crianças, ao lado do Castel Sant'Angelo"
+      },
+      {
+        "name": "Bate-volta a Zoomarine (Torvaianica)",
+        "category": "morning",
+        "neighborhood": "Pomezia",
+        "costBRL": 220,
+        "tip": "Parque com golfinhos, piscinas e brinquedos a 35 km de Roma; ônibus próprio do parque sai de Termini na alta temporada"
+      },
       {
         "name": "Bioparco (Villa Borghese)",
         "category": "morning",
@@ -3322,6 +3994,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Moqueca honesta escondida num sobrado do Pelô — favorito de quem trabalha no Centro Histórico"
       },
       {
+        "name": "Bahia Outlet Center",
+        "category": "afternoon",
+        "neighborhood": "Paralela",
+        "costBRL": 0,
+        "tip": "Outlet de marcas nacionais na Paralela, com preços de fábrica; vá em dia de semana"
+      },
+      {
         "name": "Balé Folclórico da Bahia",
         "category": "night",
         "neighborhood": "Pelourinho",
@@ -3341,6 +4020,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Bonfim",
         "costBRL": 0,
         "tip": "Amarre a fitinha na grade com três nós e três pedidos · A sala dos milagres é comovente"
+      },
+      {
+        "name": "Boteco do França (Rio Vermelho)",
+        "category": "night",
+        "neighborhood": "Rio Vermelho",
+        "costBRL": 70,
+        "tip": "Boteco de esquina na Praça da Mariquita, com cerveja gelada e a boemia do Rio Vermelho até tarde; emende com o acarajé"
       },
       {
         "name": "Boteco do França",
@@ -3397,6 +4083,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Rio Vermelho",
         "costBRL": 40,
         "tip": "A casa onde Jorge Amado e Zélia Gattai viveram 40 anos · Museografia moderna e emocionante"
+      },
+      {
+        "name": "Mercado do Rio Vermelho (Ceasinha)",
+        "category": "morning",
+        "neighborhood": "Rio Vermelho",
+        "costBRL": 30,
+        "tip": "Mercado de frutas, flores e temperos da Bahia, com restaurantes e sucos no mezanino; o café da manhã dos soteropolitanos"
       },
       {
         "name": "Cidade da Música da Bahia",
@@ -3476,11 +4169,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A igreja azul do Pelô, erguida por mãos escravizadas — missa com atabaques é única no mundo · Terças costumam ter celebração especial"
       },
       {
+        "name": "Instituto Mauá (artesanato baiano)",
+        "category": "afternoon",
+        "neighborhood": "Pelourinho",
+        "costBRL": 0,
+        "tip": "Loja do governo com artesanato de todo o estado a preço justo — renda, cerâmica e palha, sem regateio"
+      },
+      {
         "name": "JAM no MAM (jazz no Solar do Unhão)",
         "category": "night",
         "neighborhood": "Comércio",
         "costBRL": 40,
         "tip": "Jazz ao pôr do sol com a baía de fundo — o sábado mais elegante de Salvador · Ingressos acabam: chegue cedo"
+      },
+      {
+        "name": "Jardim Botânico de Salvador",
+        "category": "morning",
+        "neighborhood": "Paralela",
+        "costBRL": 0,
+        "tip": "Mata Atlântica preservada com trilhas, orquidário e borboletário na Avenida Luís Viana; gratuito, fecha às segundas"
       },
       {
         "name": "La Taperia",
@@ -3574,6 +4281,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Premiado — cozinha baiana com frutas do pomar próprio · A moqueca de aratu é a assinatura"
       },
       {
+        "name": "Parque da Cidade (Joventino Silva)",
+        "category": "morning",
+        "neighborhood": "Itaigara",
+        "costBRL": 0,
+        "tip": "Mata Atlântica no meio da cidade com trilhas, lago e parquinho; onde Salvador corre de manhã"
+      },
+      {
+        "name": "Parque Metropolitano de Pituaçu",
+        "category": "morning",
+        "neighborhood": "Pituaçu",
+        "costBRL": 0,
+        "tip": "Lagoa com ciclovia de 15 km ao redor e esculturas de Mário Cravo; alugue bicicleta na entrada"
+      },
+      {
         "name": "Pasta em Casa",
         "category": "dinner",
         "neighborhood": "Caminho das Árvores",
@@ -3623,11 +4344,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Tartarugas do Tamar + vila charmosa + praias de piscinas naturais · O bate-volta favorito das famílias — 1h de estrada"
       },
       {
+        "name": "Praia do Flamengo",
+        "category": "morning",
+        "neighborhood": "Flamengo",
+        "costBRL": 0,
+        "tip": "A praia mais ao norte da orla, de mar aberto e barracas estruturadas; vá de manhã, antes do vento"
+      },
+      {
         "name": "Praia de Itapuã",
         "category": "morning",
         "neighborhood": "Itapuã",
         "costBRL": 40,
         "tip": "A praia cantada por Dorival e Vinicius — coqueiros, farol e baianidade · Barracas simples e mar bom em maré baixa"
+      },
+      {
+        "name": "Praia de Jaguaribe",
+        "category": "afternoon",
+        "neighborhood": "Jaguaribe",
+        "costBRL": 0,
+        "tip": "A praia dos surfistas e das barracas de tapioca na orla da Paralela; piscinas naturais na maré baixa"
       },
       {
         "name": "Ribeira no fim de tarde",
@@ -3642,6 +4377,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Rio Vermelho",
         "costBRL": 0,
         "tip": "O bairro boêmio de Salvador — largo, mar e música · Casa de Iemanjá e os pescadores no largo"
+      },
+      {
+        "name": "Salvador Shopping",
+        "category": "afternoon",
+        "neighborhood": "Caminho das Árvores",
+        "costBRL": 0,
+        "tip": "O maior e mais moderno da cidade, com cinema e praça de alimentação ampla; metrô Pituaçu/Mussurunga não serve, vá de carro ou app"
       },
       {
         "name": "Bairro de Santo Antônio Além do Carmo",
@@ -3663,6 +4405,27 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Pelourinho",
         "costBRL": 120,
         "tip": "Buffet com dezenas de pratos típicos baianos — aula de gastronomia · Perfeito para provar de tudo um pouco na primeira vez"
+      },
+      {
+        "name": "Shopping Barra",
+        "category": "afternoon",
+        "neighborhood": "Barra",
+        "costBRL": 0,
+        "tip": "A 5 min do Farol da Barra, com cinema e lojas de marca; refúgio com ar-condicionado entre a praia e o pôr do sol"
+      },
+      {
+        "name": "Shopping da Bahia",
+        "category": "afternoon",
+        "neighborhood": "Caminho das Árvores",
+        "costBRL": 0,
+        "tip": "O shopping mais tradicional da cidade, no eixo do Iguatemi; bom para dia de chuva, ao lado da rodoviária"
+      },
+      {
+        "name": "Shopping Paralela",
+        "category": "afternoon",
+        "neighborhood": "Paralela",
+        "costBRL": 0,
+        "tip": "Shopping grande na Avenida Paralela, com cinema e lojas de marca; a caminho do Jardim Botânico e de Pituaçu"
       },
       {
         "name": "Soho (Bahia Marina)",
@@ -3712,6 +4475,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Armação",
         "costBRL": 150,
         "tip": "A moqueca clássica de Salvador há décadas · Porções servem bem duas pessoas"
+      },
+      {
+        "name": "Parque Zoobotânico Getúlio Vargas",
+        "category": "morning",
+        "neighborhood": "Ondina",
+        "costBRL": 20,
+        "tip": "Zoológico de Salvador em meio à mata de Ondina, com animais brasileiros; entrada barata, bom com crianças pequenas"
       }
     ],
     "hotels": [
@@ -3804,6 +4574,13 @@ export const CATALOG: Record<string, CatalogCity> = {
     "city": "Buenos Aires",
     "items": [
       {
+        "name": "Alto Palermo Shopping",
+        "category": "afternoon",
+        "neighborhood": "Palermo",
+        "costBRL": 0,
+        "tip": "O shopping mais movimentado da cidade, marcas argentinas de roupa e couro; metrô Bulnes, linha D"
+      },
+      {
         "name": "El Ateneo Grand Splendid",
         "category": "afternoon",
         "neighborhood": "Recoleta",
@@ -3846,6 +4623,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Pizzaria de 1934 com paredes cobertas de pôsteres esportivos · A fugazzeta (cebola e queijo) é obrigatória"
       },
       {
+        "name": "Distrito Arcos (outlet)",
+        "category": "afternoon",
+        "neighborhood": "Palermo",
+        "costBRL": 0,
+        "tip": "Outlet a céu aberto sob os arcos de um antigo viaduto ferroviário em Palermo; marcas argentinas com desconto"
+      },
+      {
         "name": "Don Julio",
         "category": "dinner",
         "neighborhood": "Palermo",
@@ -3853,11 +4637,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Eleita a melhor parrilla do mundo — reserve com semanas · Enquanto espera, servem espumante na calçada"
       },
       {
+        "name": "Feria de Mataderos (domingo)",
+        "category": "morning",
+        "neighborhood": "Mataderos",
+        "costBRL": 0,
+        "tip": "Feira gaúcha com artesanato de couro e prata, empanadas e folclore ao vivo; só aos domingos, longe do centro, vá de táxi"
+      },
+      {
+        "name": "Feria de Plaza Francia (Recoleta)",
+        "category": "afternoon",
+        "neighborhood": "Recoleta",
+        "costBRL": 0,
+        "tip": "Feira de artesãos nos fins de semana ao lado do Cemitério da Recoleta; mate, couro e prata com quem faz"
+      },
+      {
         "name": "Calle Florida e Galerías Pacífico",
         "category": "afternoon",
         "neighborhood": "Centro",
         "costBRL": 0,
         "tip": "O calçadão comercial histórico da cidade · Os afrescos da cúpula das Galerías são obra de mestres argentinos"
+      },
+      {
+        "name": "Frank's Bar (speakeasy)",
+        "category": "night",
+        "neighborhood": "Palermo",
+        "costBRL": 90,
+        "tip": "Entrada por cabine telefônica com a senha do dia (publicada nas redes do bar); coquetelaria clássica"
       },
       {
         "name": "Gran Parrilla del Plata",
@@ -3879,6 +4684,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Recoleta/Palermo",
         "costBRL": 40,
         "tip": "O sorvete argentino no seu melhor — chocolates da Patagônia · Dulce de leche granizado é lei"
+      },
+      {
+        "name": "Jardín Botánico Carlos Thays",
+        "category": "morning",
+        "neighborhood": "Palermo",
+        "costBRL": 0,
+        "tip": "Jardim de 1898 com estufas, esculturas e gatos; gratuito, ao lado do Jardín Japonés e dos Bosques"
+      },
+      {
+        "name": "Jardín Japonés",
+        "category": "afternoon",
+        "neighborhood": "Palermo",
+        "costBRL": 30,
+        "tip": "Lago com carpas, pontes e casa de chá — pequeno, cabe antes ou depois dos Bosques de Palermo"
       },
       {
         "name": "La Cabrera",
@@ -3923,6 +4742,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Onde os portenhos dançam de verdade — não é show, é vida · Aulas para iniciantes antes da pista abrir"
       },
       {
+        "name": "Niceto Club",
+        "category": "night",
+        "neighborhood": "Palermo",
+        "costBRL": 120,
+        "tip": "Shows e festas que viram a madrugada; confira a programação da semana antes de ir"
+      },
+      {
         "name": "Bosques de Palermo e Rosedal",
         "category": "morning",
         "neighborhood": "Palermo",
@@ -3937,11 +4763,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Praça Serrano cercada de bares e design independente · Murais de arte urbana em cada esquina"
       },
       {
+        "name": "Parque Lezama",
+        "category": "afternoon",
+        "neighborhood": "San Telmo",
+        "costBRL": 0,
+        "tip": "Barranca onde a cidade foi fundada, com a igreja ortodoxa russa de cúpulas azuis; fim de tarde depois de San Telmo"
+      },
+      {
         "name": "Parrilla Peña",
         "category": "dinner",
         "neighborhood": "Centro",
         "costBRL": 150,
         "tip": "Parrilla raiz sem turismo — garçons de colete e carne no ponto · Preço honesto para qualidade alta"
+      },
+      {
+        "name": "Patio Bullrich",
+        "category": "afternoon",
+        "neighborhood": "Recoleta",
+        "costBRL": 0,
+        "tip": "Antigo mercado de leilões de gado virou o shopping de luxo de Recoleta; arquitetura de 1867 preservada"
       },
       {
         "name": "Plaza de Mayo e Casa Rosada",
@@ -3958,6 +4798,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Bodegón centenário reformado pela equipe do Don Julio · Milanesa e fiambres artesanais de referência"
       },
       {
+        "name": "Presidente Bar",
+        "category": "night",
+        "neighborhood": "Recoleta",
+        "costBRL": 110,
+        "tip": "Casarão de 1900 com coquetéis autorais — figura entre os melhores bares da América Latina"
+      },
+      {
         "name": "Puerto Madero e Puente de la Mujer",
         "category": "afternoon",
         "neighborhood": "Puerto Madero",
@@ -3970,6 +4817,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Recoleta",
         "costBRL": 35,
         "tip": "Labirinto de mausoléus onde está Evita Perón · Pegue o mapa na entrada ou se perca de propósito"
+      },
+      {
+        "name": "Reserva Ecológica Costanera Sur",
+        "category": "morning",
+        "neighborhood": "Puerto Madero",
+        "costBRL": 0,
+        "tip": "Trilhas planas à beira do Rio de la Plata, a 10 min de Puerto Madero; dá para alugar bicicleta na entrada · Fechada às segundas"
       },
       {
         "name": "San Telmo e Feira da Praça Dorrego",
@@ -4005,6 +4859,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Centro (Av. de Mayo)",
         "costBRL": 75,
         "tip": "O café mais antigo da Argentina (1858) — mármore, vitrais e história · Chocolate con churros é o pedido clássico"
+      },
+      {
+        "name": "Trade Sky Bar (Edifício Comega)",
+        "category": "night",
+        "neighborhood": "Centro",
+        "costBRL": 100,
+        "tip": "Rooftop no 19º andar do Comega, vista para o rio e o Obelisco — melhor no entardecer"
       },
       {
         "name": "Museo Nacional de Bellas Artes",
@@ -4182,6 +5043,17 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 400-700",
         "tip": "Design com rooftop perto da Corrientes - teatro na porta"
+      },
+      {
+        "name": "Sofitel Buenos Aires Recoleta",
+        "zone": "Recoleta",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 1.200-2.200",
+        "tip": "Francês-portenho na Recoleta, a pé da Av. Alvear e do cemitério"
       }
     ]
   },
@@ -4194,6 +5066,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Centro Histórico",
         "costBRL": 35,
         "tip": "Livraria-café charmosa — cantinho fresco com livros infantis pras crianças folhearem"
+      },
+      {
+        "name": "Alma (Casa San Agustín)",
+        "category": "dinner",
+        "neighborhood": "Centro Histórico",
+        "costBRL": 300,
+        "tip": "Jantar no pátio de um hotel colonial do século XVII, à luz de velas; cozinha caribenha contemporânea, reserve"
+      },
+      {
+        "name": "Alquímico",
+        "category": "night",
+        "neighborhood": "Centro Histórico",
+        "costBRL": 90,
+        "tip": "Três andares de bar numa casa colonial, entre os 50 melhores do mundo; o rooftop lota, chegue antes das 21h"
       },
       {
         "name": "Aviário Nacional da Colômbia",
@@ -4210,11 +5096,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A praia urbana da cidade — mar escuro mas água morna e pôr do sol bonito · Vendedores insistentes: um \"no, gracias\" firme e sorridente resolve; castelo de areia salva o dia"
       },
       {
+        "name": "La Boquilla: canoa pelos manguezais e praia de pescadores",
+        "category": "afternoon",
+        "neighborhood": "La Boquilla",
+        "costBRL": 90,
+        "tip": "Passeio de canoa conduzido por pescadores locais pelos túneis de mangue · Combine o passeio com almoço de peixe nas barracas da praia"
+      },
+      {
         "name": "Las Bóvedas (compras)",
         "category": "afternoon",
         "neighborhood": "Centro Histórico",
         "costBRL": 40,
         "tip": "As antigas masmorras viradas lojinhas de artesanato — souvenir com história e sombra"
+      },
+      {
+        "name": "Café del Mar (pôr do sol na muralha)",
+        "category": "night",
+        "neighborhood": "Centro Histórico",
+        "costBRL": 100,
+        "tip": "Bar sobre o Baluarte de Santo Domingo com o pôr do sol no Caribe; chegue 1h antes para pegar mesa de frente"
       },
       {
         "name": "Café del Mural",
@@ -4238,6 +5138,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Cozinha cartagenera típica com música ao vivo — almoço-experiência"
       },
       {
+        "name": "Caribe Plaza (shopping)",
+        "category": "afternoon",
+        "neighborhood": "Pie de la Popa",
+        "costBRL": 0,
+        "tip": "O maior shopping da cidade, a 10 min de Getsemaní; cinema, praça de alimentação e ar-condicionado"
+      },
+      {
         "name": "Carmen",
         "category": "dinner",
         "neighborhood": "Centro Histórico",
@@ -4259,11 +5166,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A maior fortaleza espanhola das Américas — túneis que crianças ADORAM explorar · Vá na ABERTURA (8h): sombra zero depois das 10h; leve água e boné"
       },
       {
+        "name": "Praia de Castillogrande",
+        "category": "afternoon",
+        "neighborhood": "Castillogrande",
+        "costBRL": 0,
+        "tip": "Bairro residencial ao lado de Bocagrande: praia mais vazia e tranquila · Boa para o fim de tarde, sem estrutura de barracas"
+      },
+      {
         "name": "Celele",
         "category": "dinner",
         "neighborhood": "Getsemaní",
         "costBRL": 220,
         "tip": "O melhor restaurante do Caribe colombiano — cozinha de pesquisa da região · RESERVE com semanas; programa dos pais (babá ou noite especial)"
+      },
+      {
+        "name": "Cerro de la Popa (convento e mirante)",
+        "category": "afternoon",
+        "neighborhood": "La Popa",
+        "costBRL": 50,
+        "tip": "O ponto mais alto da cidade, com convento do século XVII e vista de toda a baía; vá de táxi e combine a volta"
       },
       {
         "name": "La Cevichería",
@@ -4308,6 +5229,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Pizza napolitana honesta em Getsemaní — o coringa quando as crianças pedem \"comida normal\""
       },
       {
+        "name": "Donde Fidel (salsa na Plaza de los Coches)",
+        "category": "night",
+        "neighborhood": "Centro Histórico",
+        "costBRL": 40,
+        "tip": "Bar minúsculo de salsa com mesas na praça e cerveja gelada; o ponto de encontro mais tradicional da cidade murada"
+      },
+      {
         "name": "El Barón Café & Liquor Bar",
         "category": "dinner",
         "neighborhood": "Centro Histórico",
@@ -4329,6 +5257,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O almoço caseiro dos cartageneros — peixe frito, arroz de coco e patacón em porção farta · Barato, rápido e autêntico; ótimo custo pra família inteira"
       },
       {
+        "name": "Galería Cano (joias pré-colombianas)",
+        "category": "afternoon",
+        "neighborhood": "Centro Histórico",
+        "costBRL": 0,
+        "tip": "Réplicas certificadas de ouro pré-colombiano desde 1970, na Plaza de Bolívar; a lembrança com história"
+      },
+      {
         "name": "Getsemaní e Plaza de la Trinidad",
         "category": "morning",
         "neighborhood": "Getsemaní",
@@ -4343,6 +5278,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O museu da história sombria da cidade num palacete lindo — melhor com crianças maiores; os pequenos curtem o pátio"
       },
       {
+        "name": "Passeio de lancha às Islas del Rosario",
+        "category": "morning",
+        "neighborhood": "Muelle de la Bodeguita",
+        "costBRL": 320,
+        "tip": "Reserve na véspera com operadora do cais, não com abordagem na rua · Snorkel e almoço geralmente inclusos; confirme o que está no preço"
+      },
+      {
+        "name": "Jardín Botánico Guillermo Piñeres",
+        "category": "morning",
+        "neighborhood": "Turbaco",
+        "costBRL": 40,
+        "tip": "Floresta seca tropical com trilhas, macacos e preguiças a 30 min da cidade; o mais verde que Cartagena oferece"
+      },
+      {
         "name": "Juan del Mar (Plaza San Diego)",
         "category": "dinner",
         "neighborhood": "San Diego",
@@ -4355,6 +5304,41 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Centro Histórico",
         "costBRL": 90,
         "tip": "Almoço caribenho de bandeja — chegue antes do meio-dia, a fila do executivo é real"
+      },
+      {
+        "name": "La Serrezuela (praça de touros virou shopping)",
+        "category": "afternoon",
+        "neighborhood": "San Diego",
+        "costBRL": 0,
+        "tip": "Antiga praça de touros de madeira restaurada como shopping de luxo com teatro e restaurantes; vale pela arquitetura"
+      },
+      {
+        "name": "Las Bóvedas (artesanato nas muralhas)",
+        "category": "afternoon",
+        "neighborhood": "Centro Histórico",
+        "costBRL": 0,
+        "tip": "23 antigas celas da muralha viraram lojas de artesanato, mochilas wayuu e esmeraldas; compare preços entre elas"
+      },
+      {
+        "name": "Lucy Jewelry (esmeraldas)",
+        "category": "afternoon",
+        "neighborhood": "Centro Histórico",
+        "costBRL": 0,
+        "tip": "Joalheria de esmeraldas colombianas com certificado, desde 1969; peça para ver as pedras ao microscópio antes de comprar"
+      },
+      {
+        "name": "Mall Plaza El Castillo",
+        "category": "afternoon",
+        "neighborhood": "Pie del Cerro",
+        "costBRL": 0,
+        "tip": "Shopping grande ao pé do Castelo de San Felipe, com cinema e supermercado; útil para abastecer antes das ilhas"
+      },
+      {
+        "name": "Praia de Manzanillo del Mar",
+        "category": "morning",
+        "neighborhood": "Zona Norte",
+        "costBRL": 40,
+        "tip": "Praia de areia escura e mar mais calmo a 20 min ao norte, com beach clubs de preço justo; alternativa a Barú sem barco"
       },
       {
         "name": "Mar y Zielo",
@@ -4399,11 +5383,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "As paletas mexicanas que salvam QUALQUER tarde de calor — corozo e coco são as locais · Vai virar parada diária da família, aceite isso 😄"
       },
       {
+        "name": "Parque del Centenario (preguiças)",
+        "category": "afternoon",
+        "neighborhood": "Getsemaní",
+        "costBRL": 0,
+        "tip": "Praça entre Getsemaní e a cidade murada onde vivem preguiças, macacos e iguanas soltos; olhe para cima"
+      },
+      {
         "name": "Pezetarian",
         "category": "dinner",
         "neighborhood": "Centro Histórico",
         "costBRL": 70,
         "tip": "Poke e peixe fresco descomplicado — jantar leve e rápido com crianças cansadas"
+      },
+      {
+        "name": "Playa Blanca (Barú)",
+        "category": "morning",
+        "neighborhood": "Isla de Barú",
+        "costBRL": 180,
+        "tip": "Areia branca e mar turquesa, a praia mais bonita perto da cidade · Vá cedo e em dia de semana: lota e os vendedores são insistentes"
+      },
+      {
+        "name": "Plaza Bocagrande (shopping)",
+        "category": "afternoon",
+        "neighborhood": "Bocagrande",
+        "costBRL": 0,
+        "tip": "O shopping moderno de Bocagrande, com ar-condicionado e vista para o mar — refúgio do calor com crianças"
       },
       {
         "name": "Noite na Plaza de la Trinidad",
@@ -4427,6 +5432,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O corredor centenário dos doces de coco — cocadas de todos os sabores · Deixe as crianças escolherem: é tradição, não turismada"
       },
       {
+        "name": "Quiebra-Canto (salsa)",
+        "category": "night",
+        "neighborhood": "Getsemaní",
+        "costBRL": 60,
+        "tip": "Bar de salsa de 1979 em frente ao Parque del Centenario; pista pequena, locais dançando — chegue depois das 23h"
+      },
+      {
         "name": "Day-trip Islas del Rosario (beach club)",
         "category": "morning",
         "neighborhood": "Islas del Rosario",
@@ -4448,11 +5460,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Brunch australiano com projeto social — emprega jovens locais"
       },
       {
+        "name": "Beach club em Tierra Bomba",
+        "category": "morning",
+        "neighborhood": "Isla de Tierra Bomba",
+        "costBRL": 160,
+        "tip": "Lancha de 15–20 min saindo de Bocagrande ou do centro · Day pass costuma incluir cadeira, transporte e consumo mínimo"
+      },
+      {
         "name": "Passeio de barco ao pôr do sol na baía",
         "category": "afternoon",
         "neighborhood": "Marina",
         "costBRL": 150,
         "tip": "A cidade murada dourada vista do mar — o momento uau da viagem · Versões família saem mais cedo (17h); confirme colete infantil"
+      },
+      {
+        "name": "Volcán del Totumo (banho de lama)",
+        "category": "morning",
+        "neighborhood": "Santa Catalina",
+        "costBRL": 120,
+        "tip": "Cratera de lama morna a 50 km, onde se flutua; meio dia com agência, leve roupa que possa manchar"
       }
     ],
     "hotels": [
@@ -4670,6 +5696,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Pista de gelo grátis e mercadinho de inverno — a NY de novembro a março"
       },
       {
+        "name": "Blue Note Jazz Club",
+        "category": "night",
+        "neighborhood": "Greenwich Village",
+        "costBRL": 350,
+        "tip": "O clube de jazz mais famoso do mundo; dois shows por noite, reserve com semanas de antecedência"
+      },
+      {
         "name": "Musical da Broadway",
         "category": "night",
         "neighborhood": "Midtown",
@@ -4677,11 +5710,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O Lion King e o Wicked são certeiros com crianças · TKTS em Times Square vende ingresso do dia com desconto"
       },
       {
+        "name": "Bronx Zoo",
+        "category": "morning",
+        "neighborhood": "Bronx",
+        "costBRL": 220,
+        "tip": "Um dos maiores zoológicos do mundo, com gorilas, tigres e o monotrilho da Ásia; dia inteiro, metrô linha 2 ou 5"
+      },
+      {
+        "name": "Brooklyn Botanic Garden",
+        "category": "morning",
+        "neighborhood": "Prospect Heights",
+        "costBRL": 100,
+        "tip": "Jardim japonês, roseiral e as cerejeiras de abril; ao lado do Brooklyn Museum, metrô Eastern Parkway"
+      },
+      {
         "name": "Brooklyn Bridge e Dumbo",
         "category": "morning",
         "neighborhood": "Brooklyn",
         "costBRL": 0,
         "tip": "Atravesse a pé do lado de Manhattan para o Brooklyn · Em Dumbo, a foto clássica é na Washington St"
+      },
+      {
+        "name": "Brooklyn Bridge Park",
+        "category": "afternoon",
+        "neighborhood": "DUMBO",
+        "costBRL": 0,
+        "tip": "Orla sob a ponte com a vista clássica de Manhattan, carrossel de 1922 e gramados; atravesse a ponte a pé e termine aqui"
       },
       {
         "name": "Carmine's (family style)",
@@ -4698,6 +5752,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Entre pela 59th e suba até o Bethesda Fountain · Alugue bike ou remo no lago"
       },
       {
+        "name": "Century 21 (Financial District)",
+        "category": "afternoon",
+        "neighborhood": "Financial District",
+        "costBRL": 0,
+        "tip": "A loja de grifes com desconto reaberta em 2023 em frente ao World Trade Center; garimpo, não vitrine"
+      },
+      {
         "name": "Chelsea Market",
         "category": "lunch",
         "neighborhood": "Chelsea",
@@ -4710,6 +5771,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Lower East Side",
         "costBRL": 95,
         "tip": "As panquecas com manteiga de maple mais famosas da cidade · Espere fila no fim de semana — vá cedo"
+      },
+      {
+        "name": "The Cloisters e Fort Tryon Park",
+        "category": "morning",
+        "neighborhood": "Washington Heights",
+        "costBRL": 150,
+        "tip": "Museu medieval do Met num claustro sobre o Hudson, dentro de um parque de jardins; metrô A até 190th St"
+      },
+      {
+        "name": "The Dead Rabbit",
+        "category": "night",
+        "neighborhood": "Financial District",
+        "costBRL": 120,
+        "tip": "Pub irlandês eleito melhor bar do mundo; térreo informal, andar de cima com coquetéis — a 5 min do ferry"
       },
       {
         "name": "Ellen's Stardust Diner",
@@ -4726,6 +5801,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A cidade acesa aos seus pés do deck 86 · Aberto até tarde — vá depois do jantar"
       },
       {
+        "name": "Employees Only",
+        "category": "night",
+        "neighborhood": "West Village",
+        "costBRL": 140,
+        "tip": "Speakeasy com placa de cartomante na porta; coquetéis clássicos e cozinha aberta até as 3h"
+      },
+      {
         "name": "Ess-a-Bagel",
         "category": "breakfast",
         "neighborhood": "Midtown East",
@@ -4738,6 +5820,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Battery Park",
         "costBRL": 130,
         "tip": "Ferry oficial sai do Battery Park; reserve o primeiro horário e inclua Ellis Island — a metade que os apressados perdem · Para só ver de perto sem desembarcar, o Staten Island Ferry é gratuito"
+      },
+      {
+        "name": "FAO Schwarz",
+        "category": "afternoon",
+        "neighborhood": "Rockefeller Center",
+        "costBRL": 0,
+        "tip": "A loja de brinquedos do piano gigante do filme Quero Ser Grande, de volta no Rockefeller Center"
       },
       {
         "name": "Grand Central e Bryant Park",
@@ -4810,6 +5899,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Considerado o melhor taco de NY · Adobada (porco marinado) na tortilla feita na hora"
       },
       {
+        "name": "Macy's Herald Square",
+        "category": "afternoon",
+        "neighborhood": "Midtown",
+        "costBRL": 0,
+        "tip": "A maior loja de departamentos do mundo, com escadas rolantes de madeira de 1902; turista tem 10% de desconto no balcão de visitantes"
+      },
+      {
         "name": "The Met (Metropolitan Museum)",
         "category": "morning",
         "neighborhood": "Upper East Side",
@@ -4824,11 +5920,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Os dinossauros do filme Uma Noite no Museu · A baleia azul em tamanho real no salão dos oceanos"
       },
       {
+        "name": "Please Don't Tell (PDT)",
+        "category": "night",
+        "neighborhood": "East Village",
+        "costBRL": 130,
+        "tip": "Entrada pela cabine telefônica da lanchonete Crif Dogs; reserva por telefone no mesmo dia, a partir das 15h"
+      },
+      {
         "name": "Peter Luger Steak House",
         "category": "dinner",
         "neighborhood": "Williamsburg (Brooklyn)",
         "costBRL": 380,
         "tip": "A steakhouse lendária de 1887 — porterhouse para dividir · Reserve com semanas e leve cartão de débito ou dinheiro"
+      },
+      {
+        "name": "Prospect Park",
+        "category": "afternoon",
+        "neighborhood": "Park Slope",
+        "costBRL": 0,
+        "tip": "O Central Park do Brooklyn, dos mesmos arquitetos e com menos turistas; lago, gramado para piquenique e carrossel"
+      },
+      {
+        "name": "Saks Fifth Avenue",
+        "category": "afternoon",
+        "neighborhood": "Midtown",
+        "costBRL": 0,
+        "tip": "A loja de departamentos da Quinta Avenida em frente ao Rockefeller Center; em dezembro, o show de luzes na fachada"
       },
       {
         "name": "Serendipity 3 (frozen hot chocolate)",
@@ -4845,11 +5962,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O quiosque original onde a rede nasceu · ShackBurger + cheese fries + shake: o rito completo"
       },
       {
+        "name": "Smalls Jazz Club",
+        "category": "night",
+        "neighborhood": "West Village",
+        "costBRL": 150,
+        "tip": "Porão minúsculo com jam sessions até as 4h; ingresso na porta, chegue cedo para sentar"
+      },
+      {
         "name": "SoHo e Little Italy",
         "category": "afternoon",
         "neighborhood": "SoHo",
         "costBRL": 0,
         "tip": "Fachadas de ferro fundido e vitrines de grife · Little Italy e Chinatown ficam coladas — três mundos numa tarde"
+      },
+      {
+        "name": "Strand Bookstore",
+        "category": "afternoon",
+        "neighborhood": "Union Square",
+        "costBRL": 0,
+        "tip": "29 km de estantes de livros novos e usados desde 1927; a sacola é o souvenir de quem lê"
       },
       {
         "name": "SUMMIT One Vanderbilt",
@@ -4871,6 +6002,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Midtown (Rockefeller)",
         "costBRL": 190,
         "tip": "A melhor vista DO Empire State é daqui · Compre horário marcado — fim de tarde é o mais disputado"
+      },
+      {
+        "name": "Westlight (rooftop no Brooklyn)",
+        "category": "night",
+        "neighborhood": "Williamsburg",
+        "costBRL": 130,
+        "tip": "Rooftop no 22º andar do William Vale com a melhor vista de Manhattan do outro lado do rio; vá ao pôr do sol"
+      },
+      {
+        "name": "Woodbury Common Premium Outlets",
+        "category": "morning",
+        "neighborhood": "Central Valley",
+        "costBRL": 150,
+        "tip": "O maior outlet da região, 1h de ônibus do Port Authority; 250 lojas, dia inteiro, vá de semana"
       }
     ],
     "hotels": [
@@ -4975,6 +6120,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A sequência de fondue mais premiada de Gramado · Queijo, carne e chocolate — o rito completo da serra"
       },
       {
+        "name": "Cacau Show Megastore Gramado",
+        "category": "afternoon",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "A maior loja da marca, com cafeteria, fonte de chocolate e espaço para crianças"
+      },
+      {
         "name": "Cantina Pastasciutta",
         "category": "lunch",
         "neighborhood": "Av. Borges de Medeiros",
@@ -4982,11 +6134,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Massas caseiras de tradição italiana da serra · O galeto com massa é o combo colono"
       },
       {
+        "name": "Caracol Chocolates",
+        "category": "afternoon",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "Chocolateria de 1976 na Borges de Medeiros, da mesma família do parque; trufa e chocolate quente"
+      },
+      {
         "name": "Galeteria Casa di Paolo",
         "category": "dinner",
         "neighborhood": "Centro",
         "costBRL": 130,
         "tip": "O galeto al primo canto da tradição italiana gaúcha · Sequência com massa, polenta e salada — rodízio de fartura"
+      },
+      {
+        "name": "Casa da Velha Bruxa",
+        "category": "afternoon",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "Loja-casa de bruxas e fadas com café, na Avenida Borges de Medeiros; crianças pedem para voltar"
       },
       {
         "name": "Café Coffee & Motion",
@@ -5003,11 +6169,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Massas fartas no coração da Rua Coberta · O rondelli da casa é o pedido certo"
       },
       {
+        "name": "Dreamland Museu de Cera",
+        "category": "night",
+        "neighborhood": "Centro",
+        "costBRL": 120,
+        "tip": "Museu de cera na Avenida das Hortênsias, aberto até as 22h — o programa noturno com crianças depois do jantar"
+      },
+      {
         "name": "Gasthof Edelweiss",
         "category": "lunch",
         "neighborhood": "Centro",
         "costBRL": 150,
         "tip": "Cozinha alemã clássica — eisbein e marreco recheado · Chope artesanal da casa"
+      },
+      {
+        "name": "Fábrica de Chocolate Florybal",
+        "category": "afternoon",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "Visita à produção e loja com degustação; a marca do parque Terra Mágica, bom para emendar com as crianças"
       },
       {
         "name": "Fritz & Frida",
@@ -5094,6 +6274,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Combo de atrações na mesma avenida · Fotos com ídolos de cera divertem a família"
       },
       {
+        "name": "Natal Luz de Gramado",
+        "category": "night",
+        "neighborhood": "Centro",
+        "costBRL": 250,
+        "tip": "De outubro a janeiro, os espetáculos do maior evento natalino do país; compre com antecedência, lota"
+      },
+      {
         "name": "Olivas de Gramado",
         "category": "morning",
         "neighborhood": "Linha Nova",
@@ -5106,6 +6293,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Centro",
         "costBRL": 200,
         "tip": "Italiano elegante para a noite especial da viagem · Massas frescas e carta de vinhos da serra"
+      },
+      {
+        "name": "Chocolate Planalto",
+        "category": "afternoon",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "Chocolateria familiar desde 1985 na Avenida das Hortênsias, menos turística que as grandes; trufas e licor de chocolate"
       },
       {
         "name": "Café da Prawer Chocolates",
@@ -5359,6 +6553,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Os baos taiwaneses que criaram filas históricas no Soho · O clássico de porco confitado é o must"
       },
       {
+        "name": "Battersea Park",
+        "category": "afternoon",
+        "neighborhood": "Battersea",
+        "costBRL": 0,
+        "tip": "Parque vitoriano à beira do Tâmisa com o Pagode da Paz e um pequeno zoológico infantil; combine com a usina Battersea restaurada"
+      },
+      {
+        "name": "Bicester Village (outlet)",
+        "category": "morning",
+        "neighborhood": "Bicester",
+        "costBRL": 120,
+        "tip": "Outlet de grifes a 1h de trem de Marylebone, com estação própria; devolução de imposto não vale mais para turista, compare preços"
+      },
+      {
         "name": "Borough Market",
         "category": "lunch",
         "neighborhood": "London Bridge",
@@ -5387,11 +6595,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O cardápio de duas opções que virou fenômeno · Lagosta inteira a preço de Londres justo"
       },
       {
+        "name": "Cahoots (bar anos 1940)",
+        "category": "night",
+        "neighborhood": "Soho",
+        "costBRL": 110,
+        "tip": "Bar temático numa estação de metrô dos anos 1940, com vagão, piano e coquetéis; reserve, lota"
+      },
+      {
         "name": "Camden Market",
         "category": "afternoon",
         "neighborhood": "Camden",
         "costBRL": 0,
         "tip": "O mercado alternativo à beira do canal · Street food do mundo inteiro nos pátios"
+      },
+      {
+        "name": "The Churchill Arms (pub)",
+        "category": "night",
+        "neighborhood": "Kensington",
+        "costBRL": 80,
+        "tip": "O pub coberto de flores de Kensington, com comida tailandesa surpreendente nos fundos; a 10 min de Notting Hill"
       },
       {
         "name": "Covent Garden",
@@ -5429,6 +6651,34 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Pizza de fermentação natural a preço justo · Nasceu no mercado de Brixton e conquistou a cidade"
       },
       {
+        "name": "Gordon's Wine Bar",
+        "category": "night",
+        "neighborhood": "Embankment",
+        "costBRL": 90,
+        "tip": "O bar de vinhos mais antigo de Londres (1890), num porão à luz de velas; queijos e vinho, sem reserva"
+      },
+      {
+        "name": "Hamleys (Regent Street)",
+        "category": "afternoon",
+        "neighborhood": "Regent Street",
+        "costBRL": 0,
+        "tip": "Sete andares de brinquedos desde 1760, com demonstrações ao vivo em cada piso — para crianças é programa, não loja"
+      },
+      {
+        "name": "Hampstead Heath",
+        "category": "morning",
+        "neighborhood": "Hampstead",
+        "costBRL": 0,
+        "tip": "Campo aberto e lagos de nado dentro da cidade; suba o Parliament Hill para a vista e desça para o café de Hampstead"
+      },
+      {
+        "name": "Harrods",
+        "category": "afternoon",
+        "neighborhood": "Knightsbridge",
+        "costBRL": 0,
+        "tip": "A loja de departamentos mais famosa do mundo; o Food Hall vale a visita mesmo sem comprar nada"
+      },
+      {
         "name": "Hawksmoor",
         "category": "dinner",
         "neighborhood": "Seven Dials/City",
@@ -5441,6 +6691,27 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Hyde Park",
         "costBRL": 0,
         "tip": "Pedalinho na Serpentine e o memorial da Diana · O playground da Diana é temático de Peter Pan"
+      },
+      {
+        "name": "Jazz Cafe (Camden)",
+        "category": "night",
+        "neighborhood": "Camden Town",
+        "costBRL": 180,
+        "tip": "Shows de jazz, soul e funk todas as noites na casa mais tradicional de Camden; jantar na varanda com vista para o palco"
+      },
+      {
+        "name": "Kew Gardens",
+        "category": "morning",
+        "neighborhood": "Kew",
+        "costBRL": 170,
+        "tip": "O jardim botânico real, Patrimônio da Humanidade, com a estufa vitoriana e a passarela nas copas; metrô Kew Gardens, meio dia"
+      },
+      {
+        "name": "Liberty London",
+        "category": "afternoon",
+        "neighborhood": "Soho",
+        "costBRL": 0,
+        "tip": "Loja de 1875 num prédio Tudor de madeira, famosa pelas estampas florais e pelo departamento de tecidos"
       },
       {
         "name": "London Eye",
@@ -5469,6 +6740,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "West End",
         "costBRL": 350,
         "tip": "O Rei Leão e Matilda são certeiros com crianças · A bilheteria TKTS de Leicester Square vende o dia com desconto"
+      },
+      {
+        "name": "Nightjar",
+        "category": "night",
+        "neighborhood": "Shoreditch",
+        "costBRL": 130,
+        "tip": "Speakeasy com jazz ao vivo e coquetéis premiados em Old Street; reserva obrigatória"
       },
       {
         "name": "Notting Hill e Portobello Road",
@@ -5506,6 +6784,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O full English breakfast num caff de 1946 — cenário de cinema · A dona grita os pedidos prontos: parte do show"
       },
       {
+        "name": "Regent's Park e Primrose Hill",
+        "category": "afternoon",
+        "neighborhood": "Camden",
+        "costBRL": 0,
+        "tip": "Roseiral de Queen Mary e, do outro lado da rua, a colina com a vista clássica do skyline ao pôr do sol"
+      },
+      {
+        "name": "Richmond Park (cervos)",
+        "category": "morning",
+        "neighborhood": "Richmond",
+        "costBRL": 0,
+        "tip": "O maior parque real, com 600 cervos soltos e vista da catedral de St Paul a 16 km; alugue bicicleta no portão"
+      },
+      {
         "name": "Rules (1798)",
         "category": "dinner",
         "neighborhood": "Covent Garden",
@@ -5518,6 +6810,27 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Covent Garden",
         "costBRL": 90,
         "tip": "Food hall moderno num armazém de bananas vitoriano · Do cheeseburger ao taiwanês — cada um pede o seu"
+      },
+      {
+        "name": "Sky Garden (jardim no 35º andar)",
+        "category": "night",
+        "neighborhood": "City",
+        "costBRL": 60,
+        "tip": "Entrada gratuita com reserva pelo site (abre 3 semanas antes); bar com vista 360º — vá ao anoitecer"
+      },
+      {
+        "name": "Old Spitalfields Market",
+        "category": "morning",
+        "neighborhood": "Shoreditch",
+        "costBRL": 0,
+        "tip": "Mercado vitoriano coberto com designers independentes, vintage e comida de rua; mais calmo que Camden"
+      },
+      {
+        "name": "St James's Park (pelicanos)",
+        "category": "afternoon",
+        "neighborhood": "Westminster",
+        "costBRL": 0,
+        "tip": "O parque real entre o Palácio de Buckingham e Westminster, com pelicanos alimentados às 14h30; a ponte do lago tem a melhor vista"
       },
       {
         "name": "Tate Modern e Millennium Bridge",
@@ -5734,6 +7047,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Tapas catalãs com toque contemporâneo · A bomba (bolinho picante) é a estrela"
       },
       {
+        "name": "Bar Marsella",
+        "category": "night",
+        "neighborhood": "Raval",
+        "costBRL": 40,
+        "tip": "Aberto em 1820, frequentado por Picasso e Hemingway; absinto e lustres empoeirados, só dinheiro"
+      },
+      {
         "name": "Praia da Barceloneta",
         "category": "afternoon",
         "neighborhood": "Barceloneta",
@@ -5746,6 +7066,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Gòtic (porto)",
         "costBRL": 45,
         "tip": "O sanduíche cult de Barcelona — fila de estudantes e locais · Frango com todos os molhos: peça completo"
+      },
+      {
+        "name": "Boadas Cocktails",
+        "category": "night",
+        "neighborhood": "Raval",
+        "costBRL": 70,
+        "tip": "O bar de coquetéis mais antigo de Barcelona (1933), na esquina da Rambla; peça o daiquiri da casa"
       },
       {
         "name": "La Boqueria e Las Ramblas",
@@ -5804,6 +7131,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A casa-dragão de Gaudí com audioguia imersivo · A Casa Milà (La Pedrera) fica a 5 minutos"
       },
       {
+        "name": "Casa Gispert (frutos secos desde 1851)",
+        "category": "afternoon",
+        "neighborhood": "El Born",
+        "costBRL": 0,
+        "tip": "Loja com forno a lenha de 1851 torrando amêndoas e avelãs no Born; o presente comestível de Barcelona"
+      },
+      {
+        "name": "Praia de Castelldefels",
+        "category": "morning",
+        "neighborhood": "Castelldefels",
+        "costBRL": 15,
+        "tip": "5 km de areia larga a 20 min de trem (R2 a partir de Sants); a praia que os barceloneses escolhem no fim de semana"
+      },
+      {
         "name": "Cervecería Catalana",
         "category": "lunch",
         "neighborhood": "Eixample",
@@ -5825,11 +7166,39 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Barquinho no lago e a cascata monumental · O Arco do Triunfo na entrada rende fotos"
       },
       {
+        "name": "Parc de Collserola (trilhas do Tibidabo)",
+        "category": "morning",
+        "neighborhood": "Collserola",
+        "costBRL": 0,
+        "tip": "A serra atrás da cidade: trilhas a partir do Tibidabo ou da estação Baixador de Vallvidrera, com javalis e vista do mar"
+      },
+      {
+        "name": "El Corte Inglés (Plaça de Catalunya)",
+        "category": "afternoon",
+        "neighborhood": "Eixample",
+        "costBRL": 0,
+        "tip": "A loja de departamentos espanhola; o último andar tem restaurante com vista para a praça e a cidade"
+      },
+      {
+        "name": "Dr. Stravinsky",
+        "category": "night",
+        "neighborhood": "El Born",
+        "costBRL": 90,
+        "tip": "Coquetéis autorais com destilados da casa, entre os melhores da Europa; sem reserva, chegue antes das 21h"
+      },
+      {
         "name": "El Nacional",
         "category": "dinner",
         "neighborhood": "Passeig de Gràcia",
         "costBRL": 160,
         "tip": "Quatro restaurantes num salão modernista deslumbrante · Cada um do grupo escolhe seu balcão"
+      },
+      {
+        "name": "Mercat dels Encants",
+        "category": "morning",
+        "neighborhood": "Glòries",
+        "costBRL": 0,
+        "tip": "Mercado de pulgas centenário sob um teto espelhado de design; segunda, quarta, sexta e sábado — leilão às 8h"
       },
       {
         "name": "Federal Café",
@@ -5846,11 +7215,39 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O show de água, luz e música aos pés do MNAC · Confira dias e horários da temporada"
       },
       {
+        "name": "Praia de Garraf",
+        "category": "afternoon",
+        "neighborhood": "Garraf",
+        "costBRL": 20,
+        "tip": "Enseada pequena com as casinhas verdes e brancas de banho dos anos 1920, 30 min de trem; estação na própria praia"
+      },
+      {
         "name": "Bairro Gótico e Catedral",
         "category": "morning",
         "neighborhood": "Ciutat Vella",
         "costBRL": 0,
         "tip": "Vielas medievais entre a Catedral e a Plaça Reial · A ponte do Bisbe é o cartão-postal escondido"
+      },
+      {
+        "name": "L'illa Diagonal",
+        "category": "afternoon",
+        "neighborhood": "Les Corts",
+        "costBRL": 0,
+        "tip": "Shopping horizontal na Avinguda Diagonal, com marcas espanholas e mercado gourmet no subsolo"
+      },
+      {
+        "name": "Jamboree Jazz Club",
+        "category": "night",
+        "neighborhood": "Barri Gòtic",
+        "costBRL": 120,
+        "tip": "Jazz no porão da Plaça Reial desde 1960; dois shows por noite, depois vira pista"
+      },
+      {
+        "name": "Jardins de Mossèn Costa i Llobera (Montjuïc)",
+        "category": "afternoon",
+        "neighborhood": "Montjuïc",
+        "costBRL": 0,
+        "tip": "Jardim de cactos na encosta de Montjuïc sobre o porto; ao lado do teleférico, melhor na luz do fim de tarde"
       },
       {
         "name": "La Paradeta",
@@ -5874,6 +7271,41 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Bodega clássica de conservas e vermute · O jamón cortado na hora vale o pedido"
       },
       {
+        "name": "La Roca Village (outlet)",
+        "category": "morning",
+        "neighborhood": "La Roca del Vallès",
+        "costBRL": 60,
+        "tip": "Outlet de grifes a 40 min, com ônibus direto da Plaça de Catalunya; meio dia"
+      },
+      {
+        "name": "Praia de Mar Bella",
+        "category": "afternoon",
+        "neighborhood": "Poblenou",
+        "costBRL": 0,
+        "tip": "Praia jovem de Poblenou, com escola de vela e trecho naturista sinalizado; metrô Poblenou, menos turistas"
+      },
+      {
+        "name": "Maremagnum",
+        "category": "afternoon",
+        "neighborhood": "Port Vell",
+        "costBRL": 0,
+        "tip": "Shopping sobre a água no porto velho, aberto aos domingos (raro em Barcelona); ao lado do aquário"
+      },
+      {
+        "name": "Praia de Nova Icària",
+        "category": "morning",
+        "neighborhood": "Vila Olímpica",
+        "costBRL": 0,
+        "tip": "A praia mais tranquila e familiar da cidade, ao lado do Porto Olímpico; chiringuitos e quadras de vôlei"
+      },
+      {
+        "name": "Praia de Ocata (El Masnou)",
+        "category": "morning",
+        "neighborhood": "El Masnou",
+        "costBRL": 15,
+        "tip": "Areia fina e água limpa a 25 min de trem para o norte (R1); a estação fica a 1 min da areia"
+      },
+      {
         "name": "Granja La Pallaresa (churros)",
         "category": "breakfast",
         "neighborhood": "Gòtic",
@@ -5895,6 +7327,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O boulevard do modernismo e das vitrines · A fachada ondulada da Pedrera vale a parada"
       },
       {
+        "name": "Jardins do Palau de Pedralbes",
+        "category": "afternoon",
+        "neighborhood": "Pedralbes",
+        "costBRL": 0,
+        "tip": "Jardim de palácio com fonte de Gaudí e bambuzal, quase sem turistas; combine com o Mosteiro de Pedralbes"
+      },
+      {
+        "name": "La Pedrera à noite (Night Experience)",
+        "category": "night",
+        "neighborhood": "Eixample",
+        "costBRL": 180,
+        "tip": "Visita noturna ao terraço de Gaudí com projeções sobre as chaminés e taça de cava; reserve, sessões limitadas"
+      },
+      {
         "name": "Els Quatre Gats",
         "category": "dinner",
         "neighborhood": "Gòtic",
@@ -5902,11 +7348,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O café modernista onde Picasso fez a primeira exposição · Mais pela história e pelo salão que pela cozinha"
       },
       {
+        "name": "Razzmatazz",
+        "category": "night",
+        "neighborhood": "Poblenou",
+        "costBRL": 130,
+        "tip": "Cinco pistas num galpão industrial — o clube mais famoso da cidade; abre à 1h, metrô Bogatell"
+      },
+      {
         "name": "Sagrada Família",
         "category": "morning",
         "neighborhood": "Eixample",
         "costBRL": 150,
         "tip": "A obra-prima inacabada de Gaudí — ingresso SÓ online com horário · A luz dos vitrais pela manhã é um espetáculo à parte"
+      },
+      {
+        "name": "Sala Apolo",
+        "category": "night",
+        "neighborhood": "Poble-sec",
+        "costBRL": 120,
+        "tip": "Teatro de 1943 virou a casa de shows e festas mais querida da cidade; a Nasty Mondays das segundas é instituição"
+      },
+      {
+        "name": "Bate-volta a Sitges",
+        "category": "morning",
+        "neighborhood": "Sitges",
+        "costBRL": 30,
+        "tip": "Vila de praia com casario branco, 17 praias e calçadão, 40 min de trem; dia inteiro com almoço de frente para o mar"
       },
       {
         "name": "El Xampanyet",
@@ -6376,6 +7843,27 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Passarela do Descobrimento",
         "costBRL": 110,
         "tip": "Cozinha baiana tradicional desde 1976 na Passarela · Moqueca de peixe com pirão é a pedida"
+      },
+      {
+        "name": "Barramares (axé pé na areia)",
+        "category": "night",
+        "neighborhood": "Taperapuã",
+        "costBRL": 80,
+        "tip": "A maior barraca da Praia de Taperapuã, com show de axé e lambaeróbica à noite; a alternativa ao Tôa Tôa"
+      },
+      {
+        "name": "Falésias de Taípe (Arraial d'Ajuda)",
+        "category": "afternoon",
+        "neighborhood": "Arraial d'Ajuda",
+        "costBRL": 0,
+        "tip": "Paredão de falésias coloridas de 50 m sobre a praia deserta de Taípe; caminhe a partir de Pitinga na maré baixa"
+      },
+      {
+        "name": "Praia dos Nativos (Trancoso)",
+        "category": "morning",
+        "neighborhood": "Trancoso",
+        "costBRL": 0,
+        "tip": "A praia do Quadrado, com a foz do rio Trancoso, coqueiral e barracas simples; desça pela trilha da igreja ao amanhecer"
       }
     ],
     "hotels": [
@@ -6638,6 +8126,132 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O café de especialidade que abriu o movimento em Dubai · Brunch australiano num galpão industrial"
       },
       {
+        "name": "Al Mamzar Beach Park",
+        "category": "morning",
+        "neighborhood": "Al Mamzar",
+        "costBRL": 10,
+        "tip": "Parque de praia em Deira com cinco enseadas, piscinas e churrasqueiras; o mais familiar e mais barato da cidade"
+      },
+      {
+        "name": "Al Qudra Lakes (Love Lake)",
+        "category": "afternoon",
+        "neighborhood": "Al Qudra",
+        "costBRL": 60,
+        "tip": "Lagos artificiais no deserto a 45 min, com pôr do sol, bicicleta e piquenique; vá de carro, leve água e lanterna"
+      },
+      {
+        "name": "Atmosphere (lounge no 122º andar do Burj Khalifa)",
+        "category": "night",
+        "neighborhood": "Downtown",
+        "costBRL": 250,
+        "tip": "Chá da tarde ou coquetel no andar 122 — sai mais barato que o deck de observação e tem mesa; reserve e vá de roupa elegante"
+      },
+      {
+        "name": "Bla Bla Dubai (JBR)",
+        "category": "night",
+        "neighborhood": "JBR",
+        "costBRL": 150,
+        "tip": "20 bares num complexo só na praia de JBR, de pub a beach club; comece pelo terraço ao entardecer"
+      },
+      {
+        "name": "Black Palace Beach",
+        "category": "afternoon",
+        "neighborhood": "Al Sufouh",
+        "costBRL": 0,
+        "tip": "Praia escondida entre palácios, sem estrutura e sem multidão, com a Palm ao fundo; leve tudo"
+      },
+      {
+        "name": "CÉ LA VI Dubai (rooftop do Address Sky View)",
+        "category": "night",
+        "neighborhood": "Downtown",
+        "costBRL": 200,
+        "tip": "Piscina infinita e bar no 54º andar de frente para o Burj Khalifa; reserve o pôr do sol"
+      },
+      {
+        "name": "Dubai Creek Park",
+        "category": "afternoon",
+        "neighborhood": "Bur Dubai",
+        "costBRL": 10,
+        "tip": "Parque antigo à beira do Creek com teleférico, Children's City e vista dos barcos de madeira; entrada simbólica"
+      },
+      {
+        "name": "Dragon Mart",
+        "category": "afternoon",
+        "neighborhood": "International City",
+        "costBRL": 0,
+        "tip": "O maior centro de produtos chineses fora da China, em forma de dragão; eletrônicos, decoração e preços de atacado"
+      },
+      {
+        "name": "Ibn Battuta Mall",
+        "category": "afternoon",
+        "neighborhood": "Jebel Ali",
+        "costBRL": 0,
+        "tip": "Shopping temático com seis cortes (China, Índia, Pérsia, Egito…) seguindo a viagem do explorador; metrô Ibn Battuta"
+      },
+      {
+        "name": "Bate-volta a Jebel Jais (tirolesa mais longa do mundo)",
+        "category": "morning",
+        "neighborhood": "Ras Al Khaimah",
+        "costBRL": 300,
+        "tip": "A montanha mais alta dos Emirados, a 2h de Dubai: estrada de curvas, mirantes e a tirolesa de 2,8 km; reserve a tirolesa com antecedência"
+      },
+      {
+        "name": "Jumeirah Public Beach (vista do Burj Al Arab)",
+        "category": "morning",
+        "neighborhood": "Umm Suqeim",
+        "costBRL": 0,
+        "tip": "A praia pública com o Burj Al Arab de cenário; calçadão, chuveiros e cafés — vá cedo pelo calor"
+      },
+      {
+        "name": "La Perle by Dragone (show aquático)",
+        "category": "night",
+        "neighborhood": "Al Habtoor City",
+        "costBRL": 450,
+        "tip": "Espetáculo de acrobacia com palco que vira piscina, do criador do O do Cirque du Soleil; cabe criança, reserve"
+      },
+      {
+        "name": "Lock, Stock & Barrel (JBR)",
+        "category": "night",
+        "neighborhood": "JBR",
+        "costBRL": 150,
+        "tip": "Pub-rock em dois andares com banda ao vivo todas as noites e happy hour longo; o mais despretensioso de JBR"
+      },
+      {
+        "name": "Mall of the Emirates (Ski Dubai)",
+        "category": "afternoon",
+        "neighborhood": "Al Barsha",
+        "costBRL": 0,
+        "tip": "Shopping com pista de esqui indoor e pinguins; metrô Mall of the Emirates, bom para a hora mais quente"
+      },
+      {
+        "name": "Mushrif Park",
+        "category": "morning",
+        "neighborhood": "Mushrif",
+        "costBRL": 5,
+        "tip": "Floresta de árvores ghaf com trilhas de bicicleta, piscinas e uma aldeia de casas em miniatura do mundo; o parque dos emiradenses"
+      },
+      {
+        "name": "Dubai Outlet Mall",
+        "category": "afternoon",
+        "neighborhood": "Dubailand",
+        "costBRL": 0,
+        "tip": "Outlet de grifes a 20 min do Downtown, com descontos de verdade fora da temporada de liquidação; vá de táxi"
+      },
+      {
+        "name": "Palm West Beach (Palm Jumeirah)",
+        "category": "afternoon",
+        "neighborhood": "Palm Jumeirah",
+        "costBRL": 0,
+        "tip": "Orla de 1,6 km na Palm com restaurantes de pé na areia e o skyline da Marina em frente; melhor no fim de tarde"
+      },
+      {
+        "name": "Dubai Safari Park",
+        "category": "morning",
+        "neighborhood": "Al Warqa",
+        "costBRL": 80,
+        "tip": "Zoológico moderno com safári de ônibus entre leões e girafas; fecha no verão (junho a setembro)"
+      },
+      {
         "name": "Day-trip a Abu Dhabi",
         "category": "morning",
         "neighborhood": "Abu Dhabi",
@@ -6833,6 +8447,34 @@ export const CATALOG: Record<string, CatalogCity> = {
     "city": "Cidade do Cabo",
     "items": [
       {
+        "name": "Asoka (Kloof Street)",
+        "category": "night",
+        "neighborhood": "Gardens",
+        "costBRL": 100,
+        "tip": "Bar-lounge numa casa de 1860 com oliveira no pátio e jazz ao vivo às terças; cozinha asiática, reserve"
+      },
+      {
+        "name": "The Athletic Club & Social",
+        "category": "night",
+        "neighborhood": "City Bowl",
+        "costBRL": 110,
+        "tip": "Bar de coquetéis em três andares de um clube de boxe dos anos 1920, na Buitengracht; reserve o rooftop"
+      },
+      {
+        "name": "Bay Harbour Market (Hout Bay)",
+        "category": "afternoon",
+        "neighborhood": "Hout Bay",
+        "costBRL": 0,
+        "tip": "Mercado coberto de artesanato, comida e música ao vivo no porto de Hout Bay, sexta à noite e fins de semana"
+      },
+      {
+        "name": "Bloubergstrand (a vista da Table Mountain)",
+        "category": "morning",
+        "neighborhood": "Bloubergstrand",
+        "costBRL": 0,
+        "tip": "A praia do cartão-postal: Table Mountain inteira do outro lado da baía; kitesurf à tarde, 25 min do centro"
+      },
+      {
         "name": "Bo-Kaap",
         "category": "morning",
         "neighborhood": "Bo-Kaap",
@@ -6861,6 +8503,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A praia glamourosa aos pés dos Doze Apóstolos · Fim de tarde no calçadão com o sol caindo no Atlântico"
       },
       {
+        "name": "Canal Walk",
+        "category": "afternoon",
+        "neighborhood": "Century City",
+        "costBRL": 0,
+        "tip": "O maior shopping da África Austral, com 500 lojas e cinema; a 15 min do centro, bom para dia de chuva ou vento"
+      },
+      {
         "name": "Cabo da Boa Esperança e Cape Point",
         "category": "morning",
         "neighborhood": "Cape Peninsula",
@@ -6868,11 +8517,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Emende com Boulders e Chapman's Peak num dia de península — alugue carro ou tour · Atenção aos babuínos: nada de comida à vista"
       },
       {
+        "name": "Cavendish Square",
+        "category": "afternoon",
+        "neighborhood": "Claremont",
+        "costBRL": 0,
+        "tip": "Shopping dos bairros do sul, ao lado da estação Claremont; combine com Kirstenbosch ou Constantia"
+      },
+      {
+        "name": "Chapman's Peak Drive (mirante)",
+        "category": "afternoon",
+        "neighborhood": "Hout Bay",
+        "costBRL": 60,
+        "tip": "9 km de estrada esculpida no penhasco entre Hout Bay e Noordhoek, com mirantes para parar; pedágio, melhor no fim da tarde"
+      },
+      {
         "name": "Clarke's Bar & Dining",
         "category": "lunch",
         "neighborhood": "Bree Street",
         "costBRL": 90,
         "tip": "O diner descolado da rua mais cool do centro · Burgers e sanduíches caprichados"
+      },
+      {
+        "name": "Clifton 4th Beach",
+        "category": "afternoon",
+        "neighborhood": "Clifton",
+        "costBRL": 0,
+        "tip": "Quatro enseadas de areia branca protegidas do vento; a 4ª é a mais tranquila e familiar — água gelada, sol forte"
       },
       {
         "name": "The Codfather",
@@ -6889,6 +8559,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A vinícola mais antiga do hemisfério sul (1685) · Degustação com vista dos parreirais na encosta"
       },
       {
+        "name": "The Crypt Jazz Restaurant",
+        "category": "night",
+        "neighborhood": "City Bowl",
+        "costBRL": 150,
+        "tip": "Jazz ao vivo na cripta da Catedral de St George, com jantar; reserve, lota aos fins de semana"
+      },
+      {
         "name": "Den Anker",
         "category": "dinner",
         "neighborhood": "Waterfront",
@@ -6903,6 +8580,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Mexicano contemporâneo querido dos locais · Tacos de peixe fresco do Atlântico"
       },
       {
+        "name": "Praia de Fish Hoek",
+        "category": "morning",
+        "neighborhood": "Fish Hoek",
+        "costBRL": 0,
+        "tip": "Baía abrigada de água mais quente (False Bay) e rede contra tubarões; a praia mais segura para crianças, trem da linha sul"
+      },
+      {
+        "name": "The Gin Bar",
+        "category": "night",
+        "neighborhood": "City Bowl",
+        "costBRL": 90,
+        "tip": "Pátio escondido atrás de uma chocolateria na Wale Street, só gins sul-africanos; sem reserva"
+      },
+      {
         "name": "GOLD Restaurant",
         "category": "dinner",
         "neighborhood": "Green Point",
@@ -6910,11 +8601,39 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Jantar-experiência pan-africano de 14 pratos com tambores e dança · Aula de djembe antes do jantar — as crianças participam"
       },
       {
+        "name": "Greenmarket Square (feira de artesanato)",
+        "category": "morning",
+        "neighborhood": "City Bowl",
+        "costBRL": 0,
+        "tip": "Feira de artesanato africano numa praça de 1696 no centro; máscaras, tecidos e miçangas, negocie com calma"
+      },
+      {
         "name": "Harbour House (Kalk Bay)",
         "category": "lunch",
         "neighborhood": "Kalk Bay",
         "costBRL": 180,
         "tip": "Frutos do mar com as ondas quebrando na janela · Versão elegante do almoço no porto"
+      },
+      {
+        "name": "Harringtons Cocktail Lounge",
+        "category": "night",
+        "neighborhood": "City Bowl",
+        "costBRL": 90,
+        "tip": "Coquetelaria num casarão da Harrington Street, no bairro que virou polo de bares do centro"
+      },
+      {
+        "name": "Praia de Hout Bay",
+        "category": "afternoon",
+        "neighborhood": "Hout Bay",
+        "costBRL": 0,
+        "tip": "Praia larga na baía das focas, com o Sentinel ao fundo e o porto de pescadores ao lado; combine com o mercado de fim de semana"
+      },
+      {
+        "name": "Hout Bay e barco à ilha das focas",
+        "category": "morning",
+        "neighborhood": "Hout Bay",
+        "costBRL": 120,
+        "tip": "Barco de 40 min até Duiker Island, com centenas de focas; o mercado de fim de semana no porto vale o almoço"
       },
       {
         "name": "Jason Bakery",
@@ -6945,6 +8664,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Casarão vitoriano de jardins iluminados por luzinhas · Clima de festa elegante no jantar"
       },
       {
+        "name": "Trilha do Lion's Head",
+        "category": "morning",
+        "neighborhood": "Signal Hill",
+        "costBRL": 0,
+        "tip": "Subida em espiral de 1h30 com escadas e correntes no trecho final; vista de 360º — vá ao nascer do sol ou em noite de lua cheia com lanterna"
+      },
+      {
+        "name": "Praia de Llandudno",
+        "category": "afternoon",
+        "neighborhood": "Llandudno",
+        "costBRL": 0,
+        "tip": "Enseada de pedras de granito e areia branca entre Camps Bay e Hout Bay, sem comércio; vá de carro, estaciona cedo"
+      },
+      {
         "name": "Mama Africa",
         "category": "dinner",
         "neighborhood": "Long Street",
@@ -6952,11 +8685,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Carnes de caça (springbok, kudu) com marimba ao vivo · Turístico e divertido na medida"
       },
       {
+        "name": "Praia de Muizenberg (cabines coloridas)",
+        "category": "morning",
+        "neighborhood": "Muizenberg",
+        "costBRL": 40,
+        "tip": "A praia das cabines coloridas e das escolas de surf para iniciantes; trem da linha sul a partir da estação central, 40 min"
+      },
+      {
+        "name": "Noordhoek (Long Beach)",
+        "category": "afternoon",
+        "neighborhood": "Noordhoek",
+        "costBRL": 0,
+        "tip": "8 km de areia branca quase vazia no fim do Chapman's Peak, com cavalgada e naufrágio; vento forte, leve casaco"
+      },
+      {
         "name": "Ocean Basket (Waterfront)",
         "category": "lunch",
         "neighborhood": "Waterfront",
         "costBRL": 100,
         "tip": "A rede sul-africana de frutos do mar que agrada família inteira · Combinados fartos de camarão e calamares"
+      },
+      {
+        "name": "Old Biscuit Mill (mercado de sábado)",
+        "category": "morning",
+        "neighborhood": "Woodstock",
+        "costBRL": 40,
+        "tip": "Antiga fábrica de biscoitos com o Neighbourgoods Market aos sábados: comida, design e música; lota, chegue às 9h"
       },
       {
         "name": "Panama Jack's",
@@ -6971,6 +8725,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Old Biscuit Mill (Woodstock)",
         "costBRL": 290,
         "tip": "Tapas do chef Luke Dale-Roberts no topo do silo · Vista 360° de Woodstock à montanha"
+      },
+      {
+        "name": "Publik Wine Bar",
+        "category": "night",
+        "neighborhood": "Gardens",
+        "costBRL": 90,
+        "tip": "Bar de vinhos naturais de pequenos produtores do Cabo, na Kloof Street; bom antes do jantar"
       },
       {
         "name": "Robben Island",
@@ -7001,6 +8762,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O teleférico fecha com vento — vá no primeiro dia de céu limpo da viagem, não deixe pro fim · Compre online e chegue antes das 8h30"
       },
       {
+        "name": "Tjing Tjing Rooftop Bar",
+        "category": "night",
+        "neighborhood": "City Bowl",
+        "costBRL": 110,
+        "tip": "Rooftop de inspiração japonesa num prédio de 1800 na Longmarket Street; coquetéis e vista para a Table Mountain"
+      },
+      {
         "name": "Truth Coffee Roasting",
         "category": "breakfast",
         "neighborhood": "Centro",
@@ -7027,6 +8795,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Waterfront",
         "costBRL": 0,
         "tip": "O porto histórico virou o coração turístico da cidade · Focas de verdade descansam nos píeres"
+      },
+      {
+        "name": "Watershed (V&A Waterfront)",
+        "category": "afternoon",
+        "neighborhood": "V&A Waterfront",
+        "costBRL": 0,
+        "tip": "Galpão com 150 estandes de design e artesanato sul-africano dentro do Waterfront; o melhor souvenir sem regateio"
+      },
+      {
+        "name": "Yours Truly (Kloof Street)",
+        "category": "night",
+        "neighborhood": "Gardens",
+        "costBRL": 80,
+        "tip": "Bar-café de esquina na Kloof Street com DJs, pizza e a turma jovem da cidade; comece a noite aqui"
       },
       {
         "name": "Zeitz MOCAA",
@@ -7140,6 +8922,13 @@ export const CATALOG: Record<string, CatalogCity> = {
     "city": "Istambul",
     "items": [
       {
+        "name": "16 Roof (Swissôtel)",
+        "category": "night",
+        "neighborhood": "Beşiktaş",
+        "costBRL": 130,
+        "tip": "Rooftop sobre o Bósforo com a ponte iluminada; coquetéis caros, mas a vista é a melhor da margem europeia"
+      },
+      {
         "name": "360 Istanbul",
         "category": "dinner",
         "neighborhood": "Istiklal (rooftop)",
@@ -7147,11 +8936,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Rooftop panorâmico no topo de um prédio histórico da Istiklal · Jantar vira balada tarde da noite"
       },
       {
+        "name": "Istanbul Akvaryum",
+        "category": "morning",
+        "neighborhood": "Florya",
+        "costBRL": 180,
+        "tip": "Um dos maiores aquários temáticos da Europa, com túnel e percurso do Mar Negro ao Pacífico; Marmaray até Florya"
+      },
+      {
+        "name": "Arasta Bazaar",
+        "category": "afternoon",
+        "neighborhood": "Sultanahmet",
+        "costBRL": 0,
+        "tip": "Bazar pequeno e tranquilo atrás da Mesquita Azul, com tapetes, cerâmica de İznik e preços sem o assédio do Grand Bazaar"
+      },
+      {
         "name": "Asitane",
         "category": "dinner",
         "neighborhood": "Edirnekapı",
         "costBRL": 210,
         "tip": "Receitas dos banquetes dos palácios otomanos, pesquisadas em arquivos · Jantar-viagem-no-tempo ao lado da igreja de Chora"
+      },
+      {
+        "name": "Babylon (Bomontiada)",
+        "category": "night",
+        "neighborhood": "Bomonti",
+        "costBRL": 120,
+        "tip": "A principal casa de shows da cidade, numa antiga cervejaria convertida em complexo cultural; confira a agenda"
       },
       {
         "name": "Balat e Fener (casas coloridas)",
@@ -7168,11 +8978,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O sanduíche de peixe grelhado dos barcos do porto · Coma no cais vendo os ferries — ritual de Istambul"
       },
       {
+        "name": "Floresta de Belgrado",
+        "category": "morning",
+        "neighborhood": "Sarıyer",
+        "costBRL": 0,
+        "tip": "Floresta de 5.000 hectares com aquedutos otomanos e trilhas de corrida a 40 min do centro; o pulmão da cidade"
+      },
+      {
         "name": "Cruzeiro pelo Bósforo",
         "category": "afternoon",
         "neighborhood": "Eminönü/Kabataş",
         "costBRL": 110,
         "tip": "Europa de um lado, Ásia do outro — palácios e fortalezas da água · O ferry público faz o trajeto por muito menos que os turísticos"
+      },
+      {
+        "name": "Colina de Çamlıca",
+        "category": "afternoon",
+        "neighborhood": "Üsküdar",
+        "costBRL": 20,
+        "tip": "O ponto mais alto do lado asiático, com a cidade e o Bósforo inteiros aos pés; chá no café do alto ao pôr do sol"
       },
       {
         "name": "Cisterna da Basílica",
@@ -7203,6 +9027,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O dürüm que Anthony Bourdain eternizou · Pão lambido na gordura do kebab antes de enrolar"
       },
       {
+        "name": "Parque Emirgan",
+        "category": "morning",
+        "neighborhood": "Sarıyer",
+        "costBRL": 0,
+        "tip": "O parque das tulipas na margem europeia do Bósforo, com pavilhões otomanos e café; explode de cor em abril"
+      },
+      {
+        "name": "Fethi Paşa Korusu (bosque de Üsküdar)",
+        "category": "afternoon",
+        "neighborhood": "Üsküdar",
+        "costBRL": 20,
+        "tip": "Bosque com café de chá e a vista do Bósforo mais bonita do lado asiático; ao lado da ponte, pôr do sol"
+      },
+      {
         "name": "Torre de Gálata e Istiklal",
         "category": "afternoon",
         "neighborhood": "Beyoğlu",
@@ -7215,6 +9053,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Beyazıt",
         "costBRL": 0,
         "tip": "4 mil lojas em 61 ruas cobertas desde 1461 · Pechinchar é esperado — comece em 50% do preço"
+      },
+      {
+        "name": "Ali Muhiddin Hacı Bekir (lokum desde 1777)",
+        "category": "afternoon",
+        "neighborhood": "Eminönü",
+        "costBRL": 30,
+        "tip": "A confeitaria que inventou o lokum em 1777, ainda na família; compre a caixa de presente na loja original de Bahçekapı"
       },
       {
         "name": "Hafız Mustafa 1864",
@@ -7238,6 +9083,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Kebabs do sudeste com vista do Corno de Ouro · Peça mesa no terraço ao pôr do sol"
       },
       {
+        "name": "Cerimônia dos dervixes (Hodjapasha)",
+        "category": "night",
+        "neighborhood": "Sirkeci",
+        "costBRL": 200,
+        "tip": "Cerimônia sufi dos dervixes rodopiantes num hammam do século XV; é rito, não show — silêncio e sem fotos"
+      },
+      {
         "name": "Ilhas dos Príncipes (Büyükada)",
         "category": "morning",
         "neighborhood": "Mar de Mármara (ferry 1h30)",
@@ -7245,11 +9097,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Ilha sem carros — bicicletas e charretes elétricas · Ferry público barato saindo de Eminönü ou Kabataş"
       },
       {
+        "name": "Isfanbul (parque temático)",
+        "category": "morning",
+        "neighborhood": "Eyüp",
+        "costBRL": 150,
+        "tip": "O maior parque temático da cidade, com montanhas-russas e área infantil; combine com o teleférico de Eyüp e o Pierre Loti"
+      },
+      {
+        "name": "İstinye Park",
+        "category": "afternoon",
+        "neighborhood": "Sarıyer",
+        "costBRL": 0,
+        "tip": "O shopping mais elegante da cidade, com grifes, mercado coberto e cinema; perto do Parque Emirgan"
+      },
+      {
         "name": "Kadıköy: o lado asiático",
         "category": "afternoon",
         "neighborhood": "Kadıköy (Ásia)",
         "costBRL": 30,
         "tip": "Pegue o ferry e mude de continente em 20 minutos · O mercado de rua de Kadıköy é festa gastronômica"
+      },
+      {
+        "name": "Kanyon",
+        "category": "afternoon",
+        "neighborhood": "Levent",
+        "costBRL": 0,
+        "tip": "Shopping a céu aberto em forma de cânion, premiado de arquitetura; metrô Levent, cinemas e restaurantes"
       },
       {
         "name": "Karabatak",
@@ -7266,6 +9139,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Azulejos turquesa e cozinha turca impecável · Esnaf (pratos do dia) no almoço, meyhane à noite"
       },
       {
+        "name": "Parque Maçka Demokrasi (teleférico)",
+        "category": "afternoon",
+        "neighborhood": "Nişantaşı",
+        "costBRL": 10,
+        "tip": "Vale verde entre Nişantaşı e Beşiktaş com teleférico de 3 min, parquinho e piquenique; a pausa depois das compras"
+      },
+      {
         "name": "Mesquita Azul e Hipódromo",
         "category": "morning",
         "neighborhood": "Sultanahmet",
@@ -7280,11 +9160,39 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O fine dining turco-escandinavo no topo do Marmara Pera · A vista da cidade antiga iluminada é o acompanhamento"
       },
       {
+        "name": "Miniatürk",
+        "category": "afternoon",
+        "neighborhood": "Sütlüce",
+        "costBRL": 60,
+        "tip": "A Turquia inteira em miniatura à beira do Chifre de Ouro; a 10 min do Museu Rahmi Koç, dá para emendar"
+      },
+      {
+        "name": "Nardis Jazz Club",
+        "category": "night",
+        "neighborhood": "Galata",
+        "costBRL": 150,
+        "tip": "Clube de jazz íntimo aos pés da Torre de Gálata; shows diários, reserve mesa"
+      },
+      {
         "name": "Meyhanes de Nevizade (jantar com mezes)",
         "category": "dinner",
         "neighborhood": "Beyoğlu",
         "costBRL": 150,
         "tip": "A viela das tavernas turcas — mesas na rua e bandejas de mezes · Escolha os pratinhos frios da bandeja e o peixe do dia"
+      },
+      {
+        "name": "Museu Rahmi M. Koç",
+        "category": "morning",
+        "neighborhood": "Hasköy",
+        "costBRL": 60,
+        "tip": "Museu industrial à beira do Chifre de Ouro: submarino, aviões, trens e carros para subir e tocar — o melhor programa com crianças da cidade"
+      },
+      {
+        "name": "Salon İKSV (shows)",
+        "category": "night",
+        "neighborhood": "Beyoğlu",
+        "costBRL": 120,
+        "tip": "Sala de 500 lugares da fundação cultural de Istambul, com jazz, indie e música turca contemporânea; veja a agenda"
       },
       {
         "name": "Simit com chá no Bósforo",
@@ -7327,6 +9235,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Cihangir",
         "costBRL": 85,
         "tip": "O café da manhã turco completo do leste — a mesa não cabe · Mel com kaymak (nata) é a dupla imortal"
+      },
+      {
+        "name": "Parque Yıldız",
+        "category": "afternoon",
+        "neighborhood": "Beşiktaş",
+        "costBRL": 0,
+        "tip": "Antigo jardim imperial atrás do Dolmabahçe, com lagos, mirantes e os pavilhões do sultão; combine com o palácio"
+      },
+      {
+        "name": "Zorlu Center",
+        "category": "afternoon",
+        "neighborhood": "Beşiktaş",
+        "costBRL": 0,
+        "tip": "Shopping de luxo com a melhor sala de espetáculos da cidade e terraço-jardim; metrô Gayrettepe"
       },
       {
         "name": "Zübeyir Ocakbaşı",
@@ -7466,6 +9388,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O pad thai elevado a prato de chef, com receita de 100 anos · Casa charmosa no distrito criativo"
       },
       {
+        "name": "Bang Krachao de bicicleta (o pulmão verde)",
+        "category": "morning",
+        "neighborhood": "Phra Pradaeng",
+        "costBRL": 60,
+        "tip": "Barco de 1 min a partir do píer de Khlong Toei e bicicleta alugada na chegada; trilhas elevadas sobre o mangue, mercado flutuante aos fins de semana"
+      },
+      {
+        "name": "Benjakitti Forest Park",
+        "category": "afternoon",
+        "neighborhood": "Khlong Toei",
+        "costBRL": 0,
+        "tip": "Parque-floresta novo com passarelas elevadas e vista do skyline; ao lado do MRT Queen Sirikit, melhor no fim da tarde"
+      },
+      {
         "name": "Blue Elephant",
         "category": "dinner",
         "neighborhood": "Sathorn",
@@ -7480,6 +9416,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Jardim de luzinhas com decoração... peculiar — renda vai para ONG de saúde · Comida tailandesa sólida com propósito"
       },
       {
+        "name": "CentralWorld",
+        "category": "afternoon",
+        "neighborhood": "Ratchaprasong",
+        "costBRL": 0,
+        "tip": "Um dos maiores shoppings da Ásia, com o santuário Erawan na esquina e o food hall do último andar; BTS Chit Lom"
+      },
+      {
+        "name": "Jantar-cruzeiro no Chao Phraya",
+        "category": "night",
+        "neighborhood": "Riverside",
+        "costBRL": 250,
+        "tip": "Barco de jantar passando por Wat Arun e o Grand Palace iluminados; escolha os menores (Manohra, Apsara) para evitar o show de turista"
+      },
+      {
         "name": "Mercado de Chatuchak (fim de semana)",
         "category": "morning",
         "neighborhood": "Chatuchak",
@@ -7487,11 +9437,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "15 mil barracas — o maior mercado de fim de semana do mundo · Só sábado e domingo; vá cedo antes do calor"
       },
       {
+        "name": "Parque Chatuchak e Queen Sirikit",
+        "category": "morning",
+        "neighborhood": "Chatuchak",
+        "costBRL": 0,
+        "tip": "Três parques emendados ao lado do mercado de Chatuchak, com lagos e jardim botânico; a pausa verde do fim de semana de compras"
+      },
+      {
         "name": "Grand Palace e Wat Phra Kaew (Buda de Esmeralda)",
         "category": "morning",
         "neighborhood": "Phra Nakhon",
         "costBRL": 95,
         "tip": "Vá na abertura (8h30) — calor e multidão dobram a cada hora · Dress code rígido: ombros e joelhos cobertos; emende com o Wat Pho, vizinho de muro"
+      },
+      {
+        "name": "Havana Social (speakeasy)",
+        "category": "night",
+        "neighborhood": "Sukhumvit",
+        "costBRL": 100,
+        "tip": "Entrada por cabine telefônica com código numa viela da Soi 11; Havana dos anos 1940, rum e banda ao vivo"
       },
       {
         "name": "ICONSIAM e a orla do Chao Phraya",
@@ -7515,6 +9479,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A casa de teca do americano que reviveu a seda tailandesa — e sumiu misteriosamente · Tour guiado incluso conta a história"
       },
       {
+        "name": "Khao San Road à noite",
+        "category": "night",
+        "neighborhood": "Banglamphu",
+        "costBRL": 60,
+        "tip": "A rua dos mochileiros: bares, pad thai de rua e música até tarde — caótica de propósito, vá para ver, não para jantar"
+      },
+      {
         "name": "Passeio de longtail pelos khlongs",
         "category": "afternoon",
         "neighborhood": "Thonburi",
@@ -7536,11 +9507,39 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O pulmão verde de Bangkok — pedalinho e sombra · Os lagartos-monitores gigantes passeiam livres (inofensivos!)"
       },
       {
+        "name": "Mahanakhon SkyWalk",
+        "category": "night",
+        "neighborhood": "Sathorn",
+        "costBRL": 180,
+        "tip": "Piso de vidro no 78º andar do prédio pixelado, a plataforma mais alta da cidade; reserve o pôr do sol, BTS Chong Nonsi"
+      },
+      {
+        "name": "MBK Center",
+        "category": "afternoon",
+        "neighborhood": "Siam",
+        "costBRL": 0,
+        "tip": "Oito andares de eletrônicos, celulares e souvenirs a preço de rua, com ar-condicionado; negocie, é a regra"
+      },
+      {
         "name": "Mercado flutuante de Damnoen Saduak",
         "category": "morning",
         "neighborhood": "1h30 de Bangkok",
         "costBRL": 190,
         "tip": "Barcos carregados de frutas e comida nos canais · Saída cedo do hotel — o mercado morre até o meio-dia"
+      },
+      {
+        "name": "Muay Thai no Rajadamnern Stadium",
+        "category": "night",
+        "neighborhood": "Phra Nakhon",
+        "costBRL": 300,
+        "tip": "O estádio mais antigo do muay thai (1945), lutas de verdade com banda ao vivo; ingresso pelo site, ringside vale o preço"
+      },
+      {
+        "name": "Octave Rooftop Lounge",
+        "category": "night",
+        "neighborhood": "Sukhumvit",
+        "costBRL": 120,
+        "tip": "Três andares de rooftop no Marriott Sukhumvit, menos formal e mais barato que os famosos; BTS Thong Lo"
       },
       {
         "name": "On Lok Yun (1933)",
@@ -7557,6 +9556,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O mercado premium de frutas e comida da Tailândia · Manga com arroz de coco no auge da qualidade"
       },
       {
+        "name": "Platinum Fashion Mall",
+        "category": "morning",
+        "neighborhood": "Pratunam",
+        "costBRL": 0,
+        "tip": "Seis andares de roupa no atacado e varejo a preço de fábrica; leve dinheiro, negocie a partir de 3 peças"
+      },
+      {
         "name": "Roast Coffee & Eatery",
         "category": "breakfast",
         "neighborhood": "Thonglor/EmQuartier",
@@ -7569,6 +9575,34 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Phra Athit",
         "costBRL": 50,
         "tip": "Rotis e currys muçulmano-tailandeses desde 1943 · O mataba de frango é o pedido"
+      },
+      {
+        "name": "Safari World e Marine Park",
+        "category": "morning",
+        "neighborhood": "Khlong Sam Wa",
+        "costBRL": 350,
+        "tip": "Safári de carro entre girafas e tigres, mais shows de golfinhos e orangotangos; dia inteiro, vá de táxi ou transfer"
+      },
+      {
+        "name": "Saxophone Pub (jazz e blues)",
+        "category": "night",
+        "neighborhood": "Victory Monument",
+        "costBRL": 80,
+        "tip": "Desde 1987, bandas tailandesas de jazz e blues todas as noites; entrada livre, chegue antes das 21h para sentar"
+      },
+      {
+        "name": "SEA LIFE Bangkok Ocean World",
+        "category": "afternoon",
+        "neighborhood": "Siam",
+        "costBRL": 180,
+        "tip": "Aquário no subsolo do Siam Paragon — a saída perfeita para a hora mais quente do dia com crianças"
+      },
+      {
+        "name": "Siam Paragon",
+        "category": "afternoon",
+        "neighborhood": "Siam",
+        "costBRL": 0,
+        "tip": "O shopping de luxo de Siam, com o aquário no subsolo e o maior food hall da cidade; BTS Siam, refúgio do calor"
       },
       {
         "name": "Sky Bar (Lebua) ao anoitecer",
@@ -7599,6 +9633,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Receitas da avó do dono, do leste da Tailândia · A unidade Riverside tem vista do Wat Arun iluminado"
       },
       {
+        "name": "Tep Bar (Chinatown)",
+        "category": "night",
+        "neighborhood": "Yaowarat",
+        "costBRL": 90,
+        "tip": "Bar de coquetéis com música tailandesa tradicional ao vivo, escondido numa viela de Chinatown; emende com o street food de Yaowarat"
+      },
+      {
         "name": "Terminal 21 (shopping temático)",
         "category": "afternoon",
         "neighborhood": "Asok",
@@ -7625,6 +9666,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Rattanakosin",
         "costBRL": 80,
         "tip": "O Buda dourado de 46 metros deitado · Berço da massagem tailandesa — a escola funciona no templo"
+      },
+      {
+        "name": "Wat Saket (Golden Mount)",
+        "category": "morning",
+        "neighborhood": "Phra Nakhon",
+        "costBRL": 20,
+        "tip": "300 degraus suaves em espiral até o chedi dourado, com vista 360º da cidade velha; vá cedo, antes do calor"
       },
       {
         "name": "Wattana Panich (caldo eterno)",
@@ -7744,11 +9792,32 @@ export const CATALOG: Record<string, CatalogCity> = {
     "city": "Marrakech",
     "items": [
       {
+        "name": "33 Rue Majorelle (concept store)",
+        "category": "afternoon",
+        "neighborhood": "Guéliz",
+        "costBRL": 0,
+        "tip": "Loja de design marroquino contemporâneo em frente ao Jardim Majorelle; caftans, cerâmica e joias de criadores locais"
+      },
+      {
+        "name": "Noite no deserto de Agafay",
+        "category": "night",
+        "neighborhood": "Agafay",
+        "costBRL": 400,
+        "tip": "Deserto de pedra a 40 km: pôr do sol de camelo, jantar sob as estrelas e música gnawa; transfer incluído nos pacotes"
+      },
+      {
         "name": "Al Fassia",
         "category": "dinner",
         "neighborhood": "Gueliz",
         "costBRL": 190,
         "tip": "Cozinha de Fez comandada só por mulheres há décadas · O ombro de cordeiro confitado exige pedido antecipado"
+      },
+      {
+        "name": "Al Nour (bordado, cooperativa de mulheres)",
+        "category": "afternoon",
+        "neighborhood": "Medina",
+        "costBRL": 0,
+        "tip": "Cooperativa de mulheres com deficiência que borda roupa de casa e de mesa; compra com causa, perto da Mouassine"
       },
       {
         "name": "Amal (centro de mulheres)",
@@ -7763,6 +9832,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Gueliz",
         "costBRL": 60,
         "tip": "A confeitaria franco-marroquina de Gueliz · Cornes de gazelle e mil-folhas dividem a vitrine"
+      },
+      {
+        "name": "Jardim Anima (André Heller)",
+        "category": "morning",
+        "neighborhood": "Route de l'Ourika",
+        "costBRL": 120,
+        "tip": "Jardim-obra de arte a 27 km, com esculturas entre cactos e palmeiras; ônibus gratuito do jardim sai do centro"
       },
       {
         "name": "Atay Café",
@@ -7784,6 +9860,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Medina (Mellah)",
         "costBRL": 60,
         "tip": "Pátios de zellige e tetos de cedro pintado · A luz da manhã atravessa os vitrais coloridos"
+      },
+      {
+        "name": "Baromètre (bar de coquetéis)",
+        "category": "night",
+        "neighborhood": "Guéliz",
+        "costBRL": 100,
+        "tip": "Coquetelaria de autor num porão de Guéliz, com infusões de ervas do Atlas; reserve"
       },
       {
         "name": "Barracas da Jemaa el-Fna (jantar na praça)",
@@ -7814,6 +9897,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Chá de menta no terraço sobre a praça das especiarias · Observe os tapetes sendo negociados lá embaixo"
       },
       {
+        "name": "Carré Eden Shopping Center",
+        "category": "afternoon",
+        "neighborhood": "Guéliz",
+        "costBRL": 0,
+        "tip": "Shopping moderno de Guéliz com marcas internacionais, cafés e ar-condicionado; a tarde fora da medina"
+      },
+      {
         "name": "Chez Lamine Hadj Mustapha (mechoui)",
         "category": "lunch",
         "neighborhood": "Medina (beco do mechoui)",
@@ -7828,11 +9918,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Jantar com show de dançarinas equilibrando velas · Franco-marroquino festivo — clima de celebração"
       },
       {
+        "name": "Cyber Park Arsat Moulay Abdeslam",
+        "category": "afternoon",
+        "neighborhood": "Medina",
+        "costBRL": 0,
+        "tip": "Jardim do século XVIII a 5 min da Koutoubia, com fontes, sombra e wi-fi gratuito; pausa fácil entre a medina e Guéliz"
+      },
+      {
         "name": "Dar Yacout",
         "category": "dinner",
         "neighborhood": "Medina",
         "costBRL": 380,
         "tip": "Jantar-experiência num palácio das mil e uma noites · Começa com drinks no terraço sob o call to prayer"
+      },
+      {
+        "name": "Ensemble Artisanal",
+        "category": "afternoon",
+        "neighborhood": "Medina",
+        "costBRL": 0,
+        "tip": "Centro de artesanato do governo com preço fixo e artesãos trabalhando; veja aqui o preço justo antes de negociar nos souks"
       },
       {
         "name": "Hammam tradicional (Les Bains de Marrakech)",
@@ -7856,11 +9960,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A praça-espetáculo: contadores de história, música gnawa, encantadores · Ao pôr do sol as barracas de comida armam o banquete"
       },
       {
+        "name": "Kabana Rooftop (vista da Koutoubia)",
+        "category": "night",
+        "neighborhood": "Medina",
+        "costBRL": 120,
+        "tip": "Rooftop com a Koutoubia iluminada em frente, DJ e coquetéis — raro na medina; reserve o pôr do sol"
+      },
+      {
         "name": "Kasbah Café (rooftop)",
         "category": "dinner",
         "neighborhood": "Kasbah",
         "costBRL": 90,
         "tip": "Terraço de frente para os túmulos Saadianos e as cegonhas · Tajines honestos a preço justo"
+      },
+      {
+        "name": "Kechmara (Guéliz)",
+        "category": "night",
+        "neighborhood": "Guéliz",
+        "costBRL": 80,
+        "tip": "Bar-restaurante de terraço no bairro moderno, com DJ e cerveja — a Marrakech fora da medina"
       },
       {
         "name": "Koutoubia e seus jardins",
@@ -7891,6 +10009,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O jardim azul-cobalto que Yves Saint Laurent salvou · Ingresso SÓ online com horário — esgota"
       },
       {
+        "name": "Max & Jan (concept store)",
+        "category": "afternoon",
+        "neighborhood": "Medina",
+        "costBRL": 0,
+        "tip": "Moda e design marroquino contemporâneo numa casa da medina com rooftop-café; preço fixo, sem regateio"
+      },
+      {
         "name": "Medina e souks",
         "category": "morning",
         "neighborhood": "Medina",
@@ -7905,11 +10030,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O tanque do século XII com o pavilhão e o Atlas ao fundo · O cartão-postal clássico do Marrocos"
       },
       {
+        "name": "Menara Mall",
+        "category": "afternoon",
+        "neighborhood": "Hivernage",
+        "costBRL": 0,
+        "tip": "Shopping moderno com ar-condicionado, praça de alimentação e cinema — a pausa do calor da medina com crianças"
+      },
+      {
+        "name": "Mustapha Blaoui (decoração)",
+        "category": "afternoon",
+        "neighborhood": "Medina",
+        "costBRL": 0,
+        "tip": "Depósito-labirinto de lanternas, tapetes e móveis onde os decoradores do mundo compram; envia para o exterior"
+      },
+      {
         "name": "Naranj",
         "category": "dinner",
         "neighborhood": "Medina (Riad Zitoun)",
         "costBRL": 130,
         "tip": "O libanês que conquistou a medina · Mezzes frescos quando você já provou todos os tajines"
+      },
+      {
+        "name": "Nectarome (jardim de ervas no Ourika)",
+        "category": "morning",
+        "neighborhood": "Vale do Ourika",
+        "costBRL": 60,
+        "tip": "Jardim bio-aromático com 50 plantas medicinais, oficina de óleos e banho de pés; combine com o bate-volta ao Ourika"
       },
       {
         "name": "Nomad",
@@ -7926,6 +10072,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "As montanhas do Atlas e aldeias berberes a 1h da cidade · Caminhada leve até as cascatas de Setti Fatma"
       },
       {
+        "name": "Bate-volta às Cascatas de Ouzoud",
+        "category": "morning",
+        "neighborhood": "Ouzoud",
+        "costBRL": 200,
+        "tip": "Quedas de 110 m com macacos nas trilhas e barcos sob a cascata; 150 km, dia inteiro com agência"
+      },
+      {
         "name": "Passeio de camelo na Palmeraie",
         "category": "afternoon",
         "neighborhood": "Palmeraie",
@@ -7938,6 +10091,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Medina",
         "costBRL": 140,
         "tip": "Terraço amplo com tajines clássicos bem executados · Sombra, brisa e wi-fi no meio da medina"
+      },
+      {
+        "name": "Terres d'Amanar (aventura no Atlas)",
+        "category": "morning",
+        "neighborhood": "Tahanaout",
+        "costBRL": 350,
+        "tip": "Tirolesas, arvorismo e trilhas a 40 min da cidade, com almoço berbere; bom para adolescentes"
+      },
+      {
+        "name": "Théâtro (clube)",
+        "category": "night",
+        "neighborhood": "Hivernage",
+        "costBRL": 150,
+        "tip": "Teatro antigo virou a boate mais famosa da cidade, dentro do Hotel Es Saadi; abre à meia-noite"
       }
     ],
     "hotels": [
@@ -8048,6 +10215,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O museu-flor com a exposição digital do teamLab · Salas imersivas que hipnotizam as crianças"
       },
       {
+        "name": "ATLAS Bar",
+        "category": "night",
+        "neighborhood": "Bugis",
+        "costBRL": 130,
+        "tip": "Salão art déco com uma torre de 1.300 gins; dress code elegante, reserve"
+      },
+      {
         "name": "Jardim Botânico e Orquidário Nacional",
         "category": "morning",
         "neighborhood": "Tanglin",
@@ -8055,11 +10229,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Patrimônio UNESCO — 160 anos de jardins tropicais · O Orquidário tem 60 mil orquídeas; a ala VIP homenageia chefes de estado"
       },
       {
+        "name": "Bugis Street Market",
+        "category": "afternoon",
+        "neighborhood": "Bugis",
+        "costBRL": 0,
+        "tip": "O mercado de rua mais barato da cidade: roupa, souvenir e suco de frutas; ao lado do metrô Bugis"
+      },
+      {
         "name": "Candlenut",
         "category": "dinner",
         "neighborhood": "Dempsey Hill",
         "costBRL": 320,
         "tip": "A alta cozinha peranakan (sino-malaia) reconhecida mundialmente · O buah keluak de chocolate na sobremesa é genial"
+      },
+      {
+        "name": "Changi Beach Park",
+        "category": "afternoon",
+        "neighborhood": "Changi",
+        "costBRL": 0,
+        "tip": "Praia de pescadores com coqueiros e churrasqueiras, onde os locais veem os aviões pousarem; combine com Pulau Ubin"
       },
       {
         "name": "Chinatown e Templo do Dente de Buda",
@@ -8076,11 +10264,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Os armazéns coloridos do rio viraram polo de restaurantes · O bumboat desce o rio até o Merlion — vá no fim de tarde"
       },
       {
+        "name": "Coney Island Park",
+        "category": "morning",
+        "neighborhood": "Punggol",
+        "costBRL": 0,
+        "tip": "Ilha selvagem ligada por ponte, com trilhas, praias vazias e bicicleta; alugue em Punggol, leve repelente"
+      },
+      {
         "name": "Din Tai Fung",
         "category": "dinner",
         "neighborhood": "Marina Bay Sands/Várias",
         "costBRL": 120,
         "tip": "Os xiao long bao perfeitos — 18 dobras cada · Cozinha de vidro hipnotiza as crianças"
+      },
+      {
+        "name": "East Coast Park de bicicleta",
+        "category": "afternoon",
+        "neighborhood": "East Coast",
+        "costBRL": 60,
+        "tip": "15 km de orla com ciclovia, praia e barracas de satay; alugue bicicleta no parque e termine no Lagoon Food Village"
+      },
+      {
+        "name": "Garden Rhapsody (show das Supertrees)",
+        "category": "night",
+        "neighborhood": "Marina Bay",
+        "costBRL": 0,
+        "tip": "Show gratuito de luz e som nas Supertrees, às 19h45 e 20h45; deite no gramado e combine com o Spectra depois"
       },
       {
         "name": "Gardens by the Bay (Cloud Forest e Flower Dome)",
@@ -8097,11 +10306,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O frango com molho de soja que fez história mundial · A refeição premiada mais barata que existe"
       },
       {
+        "name": "ION Orchard",
+        "category": "afternoon",
+        "neighborhood": "Orchard Road",
+        "costBRL": 0,
+        "tip": "O shopping-ícone de Orchard Road, com mirante gratuito no 56º andar (ION Sky) e food court no subsolo"
+      },
+      {
         "name": "Jewel Changi (cachoeira do aeroporto)",
         "category": "afternoon",
         "neighborhood": "Changi",
         "costBRL": 0,
         "tip": "A maior cachoeira indoor do mundo — dentro do aeroporto · PERFEITO para o dia da volta: chegue 3h antes e passeie"
+      },
+      {
+        "name": "Jigger & Pony",
+        "category": "night",
+        "neighborhood": "Tanjong Pagar",
+        "costBRL": 130,
+        "tip": "Entre os melhores bares da Ásia, no Amara Hotel; carta em formato de revista, reserve"
       },
       {
         "name": "Jumbo Seafood (chilli crab)",
@@ -8132,6 +10355,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O vegetariano sul-indiano de 1947 · Thali na folha de bananeira e dosas gigantes"
       },
       {
+        "name": "Lantern (rooftop do Fullerton Bay)",
+        "category": "night",
+        "neighborhood": "Marina Bay",
+        "costBRL": 130,
+        "tip": "Rooftop à beira da água de frente para o Marina Bay Sands; reserve para o show de luzes das 20h"
+      },
+      {
         "name": "Lau Pa Sat e a rua do satay",
         "category": "lunch",
         "neighborhood": "CBD",
@@ -8139,11 +10369,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Mercado vitoriano de ferro fundido entre arranha-céus · À noite a rua lateral fecha e vira churrasco de satay"
       },
       {
+        "name": "Lazarus Island (balsa de Marina South)",
+        "category": "morning",
+        "neighborhood": "Southern Islands",
+        "costBRL": 60,
+        "tip": "Balsa de 30 min do Marina South Pier até a praia mais bonita de Singapura, sem comércio; leve água e comida"
+      },
+      {
         "name": "Little India e Haji Lane",
         "category": "afternoon",
         "neighborhood": "Little India/Kampong Glam",
         "costBRL": 0,
         "tip": "Dois mundos vizinhos: templos hindus e a mesquita dourada do Sultão · Haji Lane: a viela de murais e lojinhas indie"
+      },
+      {
+        "name": "MacRitchie TreeTop Walk",
+        "category": "morning",
+        "neighborhood": "Central Catchment",
+        "costBRL": 0,
+        "tip": "Ponte suspensa de 250 m sobre a floresta tropical, com macacos no caminho; trilha de 10 km ida e volta, leve água"
+      },
+      {
+        "name": "Manhattan (Regent Singapore)",
+        "category": "night",
+        "neighborhood": "Tanglin",
+        "costBRL": 140,
+        "tip": "Bar de hotel inspirado na Nova York do século XIX, com a primeira sala de envelhecimento de coquetéis em barril; reserve"
       },
       {
         "name": "Marina Bay e Merlion",
@@ -8160,11 +10411,32 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O hawker centre clássico — o chicken rice do Tian Tian é lenda · Guarde lugar com um pacote de lenços (chope!) como os locais"
       },
       {
+        "name": "Mustafa Centre (24 h)",
+        "category": "night",
+        "neighborhood": "Little India",
+        "costBRL": 0,
+        "tip": "Loja de departamentos aberta 24 h em Little India, de eletrônicos a especiarias; o lugar para a compra de madrugada"
+      },
+      {
+        "name": "Native (Amoy Street)",
+        "category": "night",
+        "neighborhood": "Chinatown",
+        "costBRL": 120,
+        "tip": "Coquetéis com ingredientes do Sudeste Asiático (formigas, folhas de pandan, arak); pequeno, chegue antes das 20h"
+      },
+      {
         "name": "Newton Food Centre à noite",
         "category": "dinner",
         "neighborhood": "Newton",
         "costBRL": 70,
         "tip": "O hawker do filme Podres de Ricos · Satay, arraia grelhada e cerveja gelada ao ar livre"
+      },
+      {
+        "name": "Ngee Ann City (Takashimaya)",
+        "category": "afternoon",
+        "neighborhood": "Orchard Road",
+        "costBRL": 0,
+        "tip": "A loja de departamentos japonesa de Orchard, com a livraria Kinokuniya e o food hall no subsolo"
       },
       {
         "name": "Night Safari",
@@ -8188,11 +10460,46 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A avenida das compras — do luxo ao eletrônico · ION e Takashimaya são os âncoras"
       },
       {
+        "name": "Palawan Beach (Sentosa)",
+        "category": "afternoon",
+        "neighborhood": "Sentosa",
+        "costBRL": 0,
+        "tip": "A praia das famílias, com a ponte suspensa até o \"ponto mais ao sul da Ásia continental\" e parque aquático infantil gratuito"
+      },
+      {
+        "name": "Bate-volta a Pulau Ubin",
+        "category": "morning",
+        "neighborhood": "Changi",
+        "costBRL": 60,
+        "tip": "Barco de 10 min a partir de Changi Point para a ilha que parou nos anos 1960; bicicleta alugada no cais e mangue de Chek Jawa"
+      },
+      {
         "name": "Dia em Sentosa",
         "category": "morning",
         "neighborhood": "Sentosa Island",
         "costBRL": 220,
         "tip": "A ilha-parque: praias, teleférico, SkyHelix e aquário · Vá de Cable Car para chegar já passeando"
+      },
+      {
+        "name": "The Shoppes at Marina Bay Sands",
+        "category": "afternoon",
+        "neighborhood": "Marina Bay",
+        "costBRL": 0,
+        "tip": "Shopping de luxo com canal e gôndolas dentro, pista de patinação e o casino ao lado; combine com o Spectra à noite"
+      },
+      {
+        "name": "Siloso Beach (Sentosa)",
+        "category": "morning",
+        "neighborhood": "Sentosa",
+        "costBRL": 0,
+        "tip": "A praia mais animada de Sentosa, com bares, vôlei e tirolesa; vá de monotrilho ou a pé pela passarela do VivoCity"
+      },
+      {
+        "name": "Singapore Flyer",
+        "category": "afternoon",
+        "neighborhood": "Marina Bay",
+        "costBRL": 150,
+        "tip": "Roda-gigante de 165 m com vista da baía; volta de 30 min, melhor no entardecer para pegar dia e noite"
       },
       {
         "name": "Song Fa Bak Kut Teh",
@@ -8202,11 +10509,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A sopa de costela com pimenta que conforta há 50 anos · Refil de caldo é grátis — aceite sempre"
       },
       {
+        "name": "Southern Ridges e Henderson Waves",
+        "category": "morning",
+        "neighborhood": "Mount Faber",
+        "costBRL": 0,
+        "tip": "10 km de trilhas e pontes sobre a copa das árvores ligando parques; comece em Mount Faber, vá cedo pelo calor"
+      },
+      {
         "name": "Spectra — show de luzes da Marina Bay",
         "category": "night",
         "neighborhood": "Marina Bay Sands",
         "costBRL": 0,
         "tip": "Água, laser e música na frente do MBS — gratuito · Dois horários por noite; chegue 20 min antes"
+      },
+      {
+        "name": "Tanjong Beach Club (Sentosa)",
+        "category": "afternoon",
+        "neighborhood": "Sentosa",
+        "costBRL": 120,
+        "tip": "A ponta mais tranquila de Sentosa, com o beach club de piscina e espreguiçadeiras; melhor dos três para casais"
       },
       {
         "name": "Tiong Bahru Bakery",
@@ -8230,6 +10551,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A grande dama da cozinha peranakan num salão de época · Dry laksa e beef rendang de referência"
       },
       {
+        "name": "VivoCity",
+        "category": "afternoon",
+        "neighborhood": "HarbourFront",
+        "costBRL": 0,
+        "tip": "O maior shopping da ilha, com terraço de vista para Sentosa e o monotrilho que leva até lá; combine com o dia em Sentosa"
+      },
+      {
+        "name": "Wings of Time (Sentosa)",
+        "category": "night",
+        "neighborhood": "Sentosa",
+        "costBRL": 80,
+        "tip": "Show noturno de água, laser e fogos na praia de Siloso; sessões às 19h40 e 20h40, fecha o dia em Sentosa"
+      },
+      {
         "name": "Ya Kun Kaya Toast",
         "category": "breakfast",
         "neighborhood": "Chinatown/Várias",
@@ -8242,6 +10577,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Mandai",
         "costBRL": 290,
         "tip": "O zoológico sem jaulas mais premiado do mundo · Café da manhã com orangotangos em horário marcado"
+      },
+      {
+        "name": "Zouk Singapore",
+        "category": "night",
+        "neighborhood": "Clarke Quay",
+        "costBRL": 150,
+        "tip": "O clube mais famoso do Sudeste Asiático, em Clarke Quay; DJs internacionais, abre às 22h e vai até as 4h"
       }
     ],
     "hotels": [
