@@ -23,14 +23,24 @@ export const PlanDoors = ({ onInterface, onAgent, onBack }: Props) => (
     <p className="text-muted-foreground mt-1">Do jeito que preferir — o rascunho sai igual.</p>
     <ul className="mt-5 space-y-2">
       <li>
-        <button onClick={onInterface} className={LINE}>
-          <span>🧭 Planejar pela interface</span>
+        <button onClick={onAgent} className={LINE}>
+          <span className="min-w-0">
+            <span className="block">💬 Conversar com o KINU AI</span>
+            <span className="block text-xs font-normal text-muted-foreground">
+              Diga só a ideia. Ele pergunta o que falta e monta o rascunho.
+            </span>
+          </span>
           <span className="text-primary">▸</span>
         </button>
       </li>
       <li>
-        <button onClick={onAgent} className={LINE}>
-          <span>💬 Planejar com o KINU AI</span>
+        <button onClick={onInterface} className={LINE}>
+          <span className="min-w-0">
+            <span className="block">🧭 Escolher na tela</span>
+            <span className="block text-xs font-normal text-muted-foreground">
+              Continente, país, cidade, datas: você monta passo a passo.
+            </span>
+          </span>
           <span className="text-primary">▸</span>
         </button>
       </li>
