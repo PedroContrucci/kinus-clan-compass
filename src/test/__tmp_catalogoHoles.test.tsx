@@ -2,7 +2,7 @@ import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-const ROWS = [
+const ROWS: [string, Record<string, number>][] = [
   ['Gramado', { praia: 0, noite: 0 }],
   ['Porto Seguro', { noite: 0 }],
   ['Orlando', { praia: 0, noite: 0 }],
@@ -13,7 +13,7 @@ const ROWS = [
   ['Bangkok', { praia: 0, compras: 2 }],
   ['Buenos Aires', { praia: 0, noite: 3 }],
   ['Lisboa', { praia: 2 }],
-] as const;
+];
 
 const row = (city: string, over: Record<string, number>) => ({
   city, total: 100, hoteis: 10, familia: 10, gastro: 10, cultura: 10, arte: 10, praia: 10, natureza: 10,
@@ -28,53 +28,57 @@ vi.mock('@/integrations/kinu-beta/client', () => ({
 import CatalogoTab from '@/components/onda/CatalogoTab';
 
 const tile = (label: string) => screen.getAllByText(label).find(el => el.tagName === 'P')!.parentElement!;
+const buracosDaLinha = async (city: string) => {
+  const r = await screen.findByRole('row', { name: new RegExp(city) });
+  const cells = within(r).getAllByRole('cell');
+  return cells[cells.length - 1].textContent;
+};
 
 describe('Catálogo — células "não se aplica"', () => {
-  it(' Praia e Noite fora de jogo não entram na conta de buracos', async () => {
+  it('Praia e Noite fora de jogo não entram na conta de buracos', async () => {
     render(<CatalogoTab />);
     await screen.findByText('Interesses do wizard');
 
-    // Lisboa: praia 0 vale; Gramado/Orlando: praia e noite 0 não valem.
-    expect(within(tile('Buracos')).getByText('2')).toBeInTheDocument();
-    expect(screen.getByText('2 buracos')).toBeInTheDocument();
+    // Só 3 buracos de verdade: Lisboa praia 2, Bangkok compras 2, Buenos Aires noite 3.
+    expect(within(tile('Buracos')).getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('3 buracos')).toBeInTheDocument();
 
-    // Lisboa continua buraco de praia; Nova York/Rome/Tokyo/Istambul/Bangkok não.
-    const lisboa = await screen.findByRole('row', { name: /Lisboa/ });
-    expect(within(lisboa).getByText('0')).toBeInTheDocument();
-    for (const city of ['Gramado', 'Orlando', 'Rome', 'Tokyo', 'Istambul', 'Nova York']) {
-      const r = await screen.findByRole('row', { name: new RegExp(city) });
-      expect(within(r).queryByText('0'), city).not.toBeInTheDocument();
+    expect(await buracosDaLinha('Lisboa')).toBe('1');
+    expect(await buracosDaLinha('Bangkok')).toBe('1');
+    expect(await buracosDaLinha('Buenos Aires')).toBe('1');
+    for (const city of ['Gramado', 'Orlando', 'Porto Seguro', 'Rome', 'Tokyo', 'Istambul', 'Nova York']) {
+      expect(await buracosDaLinha(city), city).toBe('0');
     }
 
-    // Gramado: praia E noite riscadas; Orlando idem.
+    // Gramado e Orlando: praia E noite riscadas. Porto Seguro: só noite (praia se aplica).
     expect(within(await screen.findByRole('row', { name: /Gramado/ })).getAllByText('—')).toHaveLength(2);
     expect(within(await screen.findByRole('row', { name: /Orlando/ })).getAllByText('—')).toHaveLength(2);
-    // Porto Seguro: só noite riscada (praia se aplica lá).
     expect(within(await screen.findByRole('row', { name: /Porto Seguro/ })).getAllByText('—')).toHaveLength(1);
+    // Rome/Tokyo/Istambul/Nova York/Bangkok: praia riscada, mas o resto continua valendo.
+    expect(within(await screen.findByRole('row', { name: /Rome/ })).getAllByText('—')).toHaveLength(1);
+    expect(within(await screen.findByRole('row', { name: /Nova York/ })).getAllByText('—')).toHaveLength(1);
+    expect(within(await screen.findByRole('row', { name: /Buenos Aires/ })).getAllByText('—')).toHaveLength(1);
 
-    // Buenos Aires: praia riscada, mas noite 0 é buraco de verdade.
-    const ba = await screen.findByRole('row', { name: /Buenos Aires/ });
-    expect(within(ba).getAllByText('—')).toHaveLength(1);
-    expect(within(ba).getByText('3')).toBeInTheDocument();
-
-    // Contagem por coluna: Praia e Noite não somam as cidades riscadas.
+    // Buracos por coluna: Praia e Noite não somam as cidades riscadas.
     const totals = await screen.findByRole('row', { name: /Buracos por coluna/ });
-    const cells = within(totals).getAllByRole('cell').concat(within(totals).getAllByRole('columnheader'));
-    expect(cells.length).toBeGreaterThan(0);
+    expect(within(totals).getAllByRole('cell').map(c => c.textContent))
+      .toEqual(['', '0', '0', '0', '1', '0', '1', '1', '0', '3']);
   });
 
   it('as listas de buracos não citam as cidades riscadas', async () => {
     render(<CatalogoTab />);
     await screen.findByText('Interesses do wizard');
+    const box = screen.getByRole('button', { name: 'Buracos' }).closest('div')!;
     await userEvent.click(screen.getByRole('button', { name: 'Buracos' }));
-    await waitFor(() => expect(screen.getByText('Por interesse')).toBeInTheDocument());
+    await waitFor(() => expect(within(box).getByText('Por interesse')).toBeInTheDocument());
 
-    expect(screen.queryByText(/Gramado/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Orlando/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Porto Seguro/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Nova York/)).not.toBeInTheDocument();
-    expect(screen.getByText(/Buenos Aires \(3\)/)).toBeInTheDocument();
-    expect(screen.getByText(/Lisboa \(2\)/)).toBeInTheDocument();
-    expect(screen.getByText(/Bangkok \(2\)/)).toBeInTheDocument();
+    for (const city of ['Gramado', 'Orlando', 'Porto Seguro', 'Rome', 'Tokyo', 'Istambul', 'Nova York']) {
+      expect(within(box).queryByText(new RegExp(city)), city).not.toBeInTheDocument();
+    }
+    expect(within(box).getByText(/Buenos Aires \(3\)/)).toBeInTheDocument();
+    expect(within(box).getByText(/Lisboa \(2\)/)).toBeInTheDocument();
+    expect(within(box).getByText(/Bangkok \(2\)/)).toBeInTheDocument();
+    // Bangkok não aparece na lista de Praia, mesmo com praia 0.
+    expect(within(box).queryByText(/Bangkok \(0\)/)).not.toBeInTheDocument();
   });
 });
