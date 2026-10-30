@@ -252,6 +252,17 @@ export const HOTEL_ZONES: Record<string, HotelZone[]> = {
     { name: 'Praia do Futuro', neighborhood: 'Praia do Futuro', whyGood: 'Para quem quer praia urbana de verdade com mar bom para banho. Mais tranquila, foge do agito do centro.', interests: ['beach', 'relaxation', 'family'] },
     { name: 'Aldeota', neighborhood: 'Aldeota', whyGood: 'Bairro nobre e central, perto da Beira-Mar e do CEART. Bons restaurantes e comercio.', interests: ['shopping', 'gastronomy', 'culture'] },
   ],
+  'maceió': [
+    { name: 'Pajuçara', neighborhood: 'Pajuçara', whyGood: 'Jangadas para as piscinas naturais, feirinha e o calçadão. O centro turístico.', interests: ['beach', 'family', 'budget', 'shopping'] },
+    { name: 'Ponta Verde', neighborhood: 'Ponta Verde', whyGood: 'A praia urbana mais bonita do Nordeste, restaurantes e quiosques a pé.', interests: ['beach', 'gastronomy', 'romantic', 'nightlife'] },
+    { name: 'Jatiúca', neighborhood: 'Jatiúca', whyGood: 'Hotéis e resorts de frente para o mar, barracas e vida noturna.', interests: ['beach', 'family', 'nightlife'] },
+    { name: 'Lagoa da Anta', neighborhood: 'Lagoa da Anta', whyGood: 'Resort entre a praia e a lagoa, no fim de Cruz das Almas. O mais completo.', interests: ['family', 'relaxation', 'beach'] },
+  ],
+  'foz do iguaçu': [
+    { name: 'Centro', neighborhood: 'Centro', whyGood: 'Restaurantes, bares e o JL Shopping a pé. 20 min do parque.', interests: ['gastronomy', 'nightlife', 'budget', 'shopping'] },
+    { name: 'Rodovia das Cataratas', neighborhood: 'Vila Yolanda', whyGood: 'Resorts com piscinas termais no caminho do parque e do Parque das Aves.', interests: ['family', 'relaxation', 'nature'] },
+    { name: 'Parque Nacional', neighborhood: 'Parque Nacional', whyGood: 'O único hotel dentro do parque: as Cataratas antes da abertura e depois do fechamento.', interests: ['nature', 'romantic', 'adventure'] },
+  ],
 };
 
 // ── Hotel Recommendations — Real hotel names by destination × budget tier ──
