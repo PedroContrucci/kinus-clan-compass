@@ -41,7 +41,7 @@ describe('artefato de tiers (src/data/generated/landmarkTiers.ts)', () => {
     expect(Object.keys(LANDMARKS).sort()).toEqual([...CURATED_CITIES].sort());
   });
 
-  it('os 21 slugs são estes — chave de troféu não muda depois de gravada', () => {
+  it('os 28 slugs são estes — chave de troféu não muda depois de gravada', () => {
     const slugs = Object.fromEntries(
       Object.entries(LANDMARKS).map(([city, data]) => [city, data.slug]),
     );
@@ -67,6 +67,13 @@ describe('artefato de tiers (src/data/generated/landmarkTiers.ts)', () => {
       'Bangkok': 'bangkok',
       'Marrakech': 'marrakech',
       'Singapura': 'singapura',
+      'Porto': 'porto',
+      'Madri': 'madri',
+      'Santiago': 'santiago',
+      'Miami': 'miami',
+      'Florianópolis': 'florianopolis',
+      'Maceió': 'maceio',
+      'Foz do Iguaçu': 'foz-do-iguacu',
     });
   });
 

@@ -1079,20 +1079,20 @@
     "theme": "🎭 Descobertas",
     "activities": [
      {
-      "id": "day-4-lis2-dear-breakfast",
-      "name": "Dear Breakfast",
+      "id": "day-4-lis-copenhagen-coffee",
+      "name": "Copenhagen Coffee Lab (Príncipe Real)",
       "type": "breakfast",
       "timeSlot": "breakfast",
       "estimatedCost": 80,
       "costPerPerson": 40,
       "time": "08:00",
       "duration": "1h",
-      "location": "Santos (2 pax)",
-      "rating": 4.4,
+      "location": "Príncipe Real (2 pax)",
+      "rating": 4.2,
       "status": "suggestion",
       "tips": [
        "Sugestão de café externo para variar",
-       "Brunch bonito e caprichado — a versão moderna do café da manhã lisboeta"
+       "Café dinamarquês com cardamomo buns e pão de fermentação natural; terraço na praça do Príncipe Real"
       ],
       "source": "kinu"
      },
@@ -1277,21 +1277,19 @@
       "source": "kinu"
      },
      {
-      "id": "day-6-lis-ze-da-mouraria",
-      "name": "Zé da Mouraria",
+      "id": "day-6-lis-velho-eurico",
+      "name": "O Velho Eurico (Castelo)",
       "type": "lunch",
       "timeSlot": "lunch",
-      "estimatedCost": 170,
-      "costPerPerson": 85,
+      "estimatedCost": 180,
+      "costPerPerson": 90,
       "time": "12:30",
       "duration": "1.5h",
-      "location": "Mouraria (2 pax)",
-      "rating": 4.6,
+      "location": "Castelo (2 pax)",
+      "rating": 4.4,
       "status": "suggestion",
       "tips": [
-       "Tasca tradicional com doses fartas",
-       "O bacalhau assado é referência na cidade",
-       "Só almoço e fecha domingo — chegue antes das 13h"
+       "Tasca moderna aos pés do castelo, petiscos e vinho a copo; reserva só pelo Instagram, vale a tentativa"
       ],
       "source": "kinu"
      },
@@ -1333,7 +1331,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 500
+    "totalCost": 510
    },
    {
     "dayNumber": 8,
@@ -1342,21 +1340,19 @@
     "theme": "✈️ Dia de Partida",
     "activities": [
      {
-      "id": "day-7-lis-pasteis-belem",
-      "name": "Pastéis de Belém (café da manhã)",
+      "id": "day-7-lis2-dear-breakfast",
+      "name": "Dear Breakfast",
       "type": "breakfast",
       "timeSlot": "breakfast",
-      "estimatedCost": 70,
-      "costPerPerson": 35,
+      "estimatedCost": 80,
+      "costPerPerson": 40,
       "time": "08:00",
       "duration": "1h",
-      "location": "Belém (2 pax)",
-      "rating": 4.7,
+      "location": "Santos (2 pax)",
+      "rating": 4.4,
       "status": "suggestion",
       "tips": [
-       "A receita original e secreta desde 1837",
-       "Coma quente com canela e açúcar em pó",
-       "A fila do balcão para viagem anda mais rápido que a das mesas"
+       "Brunch bonito e caprichado — a versão moderna do café da manhã lisboeta"
       ],
       "source": "kinu"
      },
@@ -1461,7 +1457,7 @@
       "source": "kinu"
      }
     ],
-    "totalCost": 4598
+    "totalCost": 4608
    }
   ],
   "breakdown": {
@@ -1481,12 +1477,12 @@
     "status": "estimated"
    },
    "food": {
-    "amount": 4950,
+    "amount": 4970,
     "percent": 25,
     "status": "estimated"
    },
-   "total": 22478,
-   "available": -2478,
+   "total": 22498,
+   "available": -2498,
    "trustZonePercent": 112
   },
   "meta": {
@@ -1785,27 +1781,25 @@
       "source": "kinu"
      },
      {
-      "id": "day-3-tokyo-gyukaku",
-      "name": "Gyukaku (yakiniku)",
+      "id": "day-3-tok-zauo",
+      "name": "Zauo (pesque o seu peixe)",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 320,
-      "costPerPerson": 160,
+      "estimatedCost": 440,
+      "costPerPerson": 220,
       "time": "19:30",
       "duration": "2h",
-      "location": "Shibuya (2 pax)",
-      "rating": 4.5,
+      "location": "Shinjuku (2 pax)",
+      "rating": 4.2,
       "status": "suggestion",
       "tips": [
        "Perto do hotel, para a volta do bate-volta",
-       "Churrasco japonês grelhado na própria mesa",
-       "Peça o combo de cortes para provar variedade",
-       "Experiência interativa que diverte a família toda"
+       "Restaurante-barco onde a família pesca o peixe do tanque e a cozinha prepara; crianças adoram, reserve"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 560
+    "totalCost": 680
    },
    {
     "dayNumber": 5,
@@ -1886,26 +1880,24 @@
       "source": "kinu"
      },
      {
-      "id": "day-4-tokyo-kura-sushi",
-      "name": "Kura Sushi (esteira gigante)",
+      "id": "day-4-tok-tsunahachi",
+      "name": "Tempura Tsunahachi (Shinjuku, 1923)",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 160,
-      "costPerPerson": 80,
+      "estimatedCost": 400,
+      "costPerPerson": 200,
       "time": "19:30",
       "duration": "1.5h",
-      "location": "Asakusa (2 pax)",
-      "rating": 4.5,
+      "location": "Shinjuku (2 pax)",
+      "rating": 4.2,
       "status": "suggestion",
       "tips": [
-       "A cada 5 pratos, um gashapon de brinde — jantar vira brincadeira",
-       "Cardápio com fotos, fácil para crianças",
-       "Sistema de senha no app evita fila"
+       "Tempurá frito na sua frente num balcão de 1923; peça o set e deixe o chef mandar na ordem"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 680
+    "totalCost": 920
    },
    {
     "dayNumber": 6,
@@ -1949,27 +1941,27 @@
       "source": "kinu"
      },
      {
-      "id": "day-5-tokyo-afuri",
-      "name": "Afuri Ramen (yuzu)",
+      "id": "day-5-tokyo-gyukaku",
+      "name": "Gyukaku (yakiniku)",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 150,
-      "costPerPerson": 75,
+      "estimatedCost": 320,
+      "costPerPerson": 160,
       "time": "20:45",
-      "duration": "1h",
-      "location": "Ebisu (2 pax)",
-      "rating": 4.6,
+      "duration": "2h",
+      "location": "Shibuya (2 pax)",
+      "rating": 4.5,
       "status": "suggestion",
       "tips": [
        "Perto do hotel, para a volta do bate-volta",
-       "Ramen leve de caldo com yuzu — refrescante e único",
-       "Pedido na máquina de tickets na entrada",
-       "Balcão minimalista, experiência tóquio raiz"
+       "Churrasco japonês grelhado na própria mesa",
+       "Peça o combo de cortes para provar variedade",
+       "Experiência interativa que diverte a família toda"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 650
+    "totalCost": 820
    },
    {
     "dayNumber": 7,
@@ -2046,25 +2038,26 @@
       "source": "kinu"
      },
      {
-      "id": "day-6-tokyo-gonpachi",
-      "name": "Gonpachi (Kill Bill)",
+      "id": "day-6-tokyo-kura-sushi",
+      "name": "Kura Sushi (esteira gigante)",
       "type": "dinner",
       "timeSlot": "dinner",
-      "estimatedCost": 500,
-      "costPerPerson": 250,
+      "estimatedCost": 160,
+      "costPerPerson": 80,
       "time": "19:30",
-      "duration": "2h",
-      "location": "Roppongi (2 pax)",
-      "rating": 4.4,
+      "duration": "1.5h",
+      "location": "Asakusa (2 pax)",
+      "rating": 4.5,
       "status": "suggestion",
       "tips": [
-       "Cenário do filme Kill Bill",
-       "Yakitori e soba são excelentes"
+       "A cada 5 pratos, um gashapon de brinde — jantar vira brincadeira",
+       "Cardápio com fotos, fácil para crianças",
+       "Sistema de senha no app evita fila"
       ],
       "source": "kinu"
      }
     ],
-    "totalCost": 740
+    "totalCost": 400
    },
    {
     "dayNumber": 8,
@@ -2207,13 +2200,13 @@
     "status": "estimated"
    },
    "food": {
-    "amount": 9178,
-    "percent": 46,
+    "amount": 9368,
+    "percent": 47,
     "status": "estimated"
    },
-   "total": 30746,
-   "available": -10746,
-   "trustZonePercent": 154
+   "total": 30936,
+   "available": -10936,
+   "trustZonePercent": 155
   },
   "meta": {
    "michelinCount": 1

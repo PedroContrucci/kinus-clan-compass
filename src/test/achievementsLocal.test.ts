@@ -129,7 +129,9 @@ describe('resolveCity — o texto do evento vira cidade canônica', () => {
   });
 
   it('não casa por pedaço — "Porto" não é "Porto Seguro"', () => {
-    expect(resolveCity('Porto')).toBeNull();
+    expect(resolveCity('Porto')).toBe('Porto');
+    expect(resolveCity('Porto Seguro')).toBe('Porto Seguro');
+    expect(resolveCity('Porto Alegre')).toBeNull();
   });
 
   it('cidade fora das classificadas não resolve', () => {
@@ -283,7 +285,7 @@ describe('fonte da vivência', () => {
 
 describe('o catálogo local', () => {
   it('é 5 moldes por cidade classificada, sem número escrito à mão', () => {
-    expect(LOCAL_CITIES).toHaveLength(21);
+    expect(LOCAL_CITIES).toHaveLength(28);
     expect(LOCAL_ACHIEVEMENTS).toHaveLength(5 * LOCAL_CITIES.length);
   });
 
@@ -293,14 +295,14 @@ describe('o catálogo local', () => {
     for (const key of keys) expect(key).toMatch(/^local\.[a-z0-9-]+\.(carimbo|icone|coracao|garfo|segredo)$/);
   });
 
-  it('as 21 cidades têm nome-ícone próprio — nenhuma cai no template', () => {
+  it('as 28 cidades têm nome-ícone próprio — nenhuma cai no template', () => {
     for (const city of LOCAL_CITIES) {
       const icone = localAchievementsOf(city)[1];
       expect(icone.name).not.toBe(`Ícone de ${city}`);
     }
   });
 
-  it('as 21 têm garfo batizado; só Orlando usa o nome da cidade, e de propósito', () => {
+  it('as 28 têm garfo batizado; só Orlando usa o nome da cidade, e de propósito', () => {
     const genericos = LOCAL_CITIES.filter(
       (city) => localAchievementsOf(city)[3].name === `Garfo de ${city}`,
     );
