@@ -78,6 +78,7 @@ export const CITY_TIMEZONES: Record<string, string> = {
   'Rio de Janeiro': 'America/Sao_Paulo',
   'Salvador': 'America/Bahia',
   'Florianópolis': 'America/Sao_Paulo',
+  'Maceió': 'America/Maceio',
   'Recife': 'America/Recife',
   'Fortaleza': 'America/Fortaleza',
   'Foz do Iguaçu': 'America/Sao_Paulo',
