@@ -55,6 +55,13 @@ const DEFAULT_CITIES = [
   'Rome',
   'Salvador',
   'Tokyo',
+  'Porto',
+  'Madri',
+  'Santiago',
+  'Miami',
+  'Florianópolis',
+  'Maceió',
+  'Foz do Iguaçu',
 ];
 
 /**
