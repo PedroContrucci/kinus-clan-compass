@@ -1,6 +1,6 @@
 // GERADO por scripts/build-kinu-catalog.ts — NÃO EDITAR À MÃO.
 // Fonte: src/data/destinationActivities.ts + src/data/curatedHotels.ts
-// 21 cidades · 1234 atividades · 178 hotéis
+// 28 cidades · 1652 atividades · 250 hotéis
 //
 // Este arquivo é o que permite ao KINU responder sobre uma cidade curada SEM viagem
 // ativa e SEM o front ter adivinhado a cidade na mensagem. Ele viaja com o deploy da
@@ -49,6 +49,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Saint-Germain",
         "costBRL": 0,
         "tip": "A loja de departamentos mais antiga de Paris (1852), elegante e sem a multidão da Lafayette; La Grande Épicerie ao lado"
+      },
+      {
+        "name": "Bouillon Chartier (1896)",
+        "category": "lunch",
+        "neighborhood": "Grands Boulevards",
+        "costBRL": 80,
+        "tip": "Salão de 1896 com garçons de colete e conta escrita na toalha; prato do dia a preço de bouillon, fila que anda"
       },
       {
         "name": "Parc des Buttes-Chaumont",
@@ -610,6 +617,18 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 900-1.500",
         "tip": "Boutique gastronômico com pátio - o hype certo"
+      },
+      {
+        "name": "Hôtel Jeanne d'Arc Le Marais",
+        "zone": "Marais",
+        "tier": "budget",
+        "personaTags": [
+          "couple",
+          "family",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 600-900",
+        "tip": "Hotel de família numa rua tranquila do Marais, quartos pequenos e limpos; reserve com meses, lota"
       },
       {
         "name": "Novotel Paris Les Halles",
@@ -1790,6 +1809,17 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Rooftop com piscina de frente para a praia de Copacabana"
       },
       {
+        "name": "Atlantis Copacabana Hotel",
+        "zone": "Copacabana",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 300-500",
+        "tip": "Hotel simples a 2 quadras da praia, na divisa com Ipanema; piscina no terraço e preço de Copacabana de antigamente"
+      },
+      {
         "name": "Copacabana Palace",
         "zone": "Copacabana",
         "tier": "resort",
@@ -1938,11 +1968,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Fado autêntico na Alfama com jantar completo · Silêncio absoluto durante as canções — é a etiqueta"
       },
       {
+        "name": "Confeitaria Nacional (1829)",
+        "category": "breakfast",
+        "neighborhood": "Rossio",
+        "costBRL": 30,
+        "tip": "A confeitaria mais antiga de Lisboa, no Rossio, com bolo-rei o ano inteiro e pastéis no balcão de madeira"
+      },
+      {
         "name": "Conserveira de Lisboa",
         "category": "afternoon",
         "neighborhood": "Baixa",
         "costBRL": 0,
         "tip": "Loja de 1930 que embrulha latas de sardinha e atum em papel como antigamente — o presente comestível de Lisboa"
+      },
+      {
+        "name": "Copenhagen Coffee Lab (Príncipe Real)",
+        "category": "breakfast",
+        "neighborhood": "Príncipe Real",
+        "costBRL": 40,
+        "tip": "Café dinamarquês com cardamomo buns e pão de fermentação natural; terraço na praça do Príncipe Real"
       },
       {
         "name": "El Corte Inglés Lisboa",
@@ -2202,6 +2246,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Graça a Estrela",
         "costBRL": 20,
         "tip": "O bonde amarelo atravessa os bairros históricos · Pegue no início da linha (Martim Moniz) para conseguir lugar"
+      },
+      {
+        "name": "O Velho Eurico (Castelo)",
+        "category": "lunch",
+        "neighborhood": "Castelo",
+        "costBRL": 90,
+        "tip": "Tasca moderna aos pés do castelo, petiscos e vinho a copo; reserva só pelo Instagram, vale a tentativa"
       },
       {
         "name": "A Vida Portuguesa (Chiado)",
@@ -2479,6 +2530,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Frutos do mar à beira do lago do Disney Springs · Os carros anfíbios saem do deck do restaurante"
       },
       {
+        "name": "Briarpatch (Winter Park)",
+        "category": "breakfast",
+        "neighborhood": "Winter Park",
+        "costBRL": 90,
+        "tip": "Café da manhã na Park Avenue com mesas na calçada e fatias de bolo exageradas; combine com o passeio de barco"
+      },
+      {
         "name": "Cafe Tu Tu Tango",
         "category": "dinner",
         "neighborhood": "International Drive",
@@ -2575,6 +2633,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "International Drive",
         "costBRL": 0,
         "tip": "O outlet do começo da I-Drive, Nike, Coach e Tommy com desconto; vá de manhã em dia de semana"
+      },
+      {
+        "name": "Keke's Breakfast Cafe",
+        "category": "breakfast",
+        "neighborhood": "International Drive",
+        "costBRL": 70,
+        "tip": "Rede local de café da manhã com pancakes e omeletes gigantes; porções para dividir antes do parque"
       },
       {
         "name": "Lake Eola Park (Downtown)",
@@ -2856,6 +2921,28 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Piscina-caverna com tobogãs a minutos da Disney"
       },
       {
+        "name": "Holiday Inn Express & Suites Lake Buena Vista",
+        "zone": "Lake Buena Vista",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 450-750",
+        "tip": "Café da manhã incluído e 10 min da Disney Springs; o budget de família que não parece budget"
+      },
+      {
+        "name": "Rosen Inn International",
+        "zone": "I-Drive",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 350-600",
+        "tip": "Clássico da I-Drive com piscina, estacionamento grátis e ônibus para os parques; quartos simples, localização que resolve"
+      },
+      {
         "name": "Rosen Shingle Creek",
         "zone": "Universal Blvd",
         "tier": "resort",
@@ -2864,6 +2951,17 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 700-1.200",
         "tip": "Resort gigante com golfe e piscinas - espaço de sobra"
+      },
+      {
+        "name": "Waldorf Astoria Orlando",
+        "zone": "Disney World",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 2.500-4.500",
+        "tip": "Hotel de luxo em Bonnet Creek, dentro da área da Disney, com transfer para os parques e campo de golfe"
       }
     ]
   },
@@ -2885,6 +2983,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A filial japonesa do clube de jazz de Nova York, com nomes internacionais; dois shows por noite, reserve"
       },
       {
+        "name": "Café de l'Ambre (Ginza, 1948)",
+        "category": "breakfast",
+        "neighborhood": "Ginza",
+        "costBRL": 50,
+        "tip": "Kissaten de 1948 que só serve café, com grãos envelhecidos por décadas; balcão, silêncio e xícara pequena"
+      },
+      {
         "name": "Jardim do Hotel Chinzanso (mar de nuvens)",
         "category": "night",
         "neighborhood": "Mejiro",
@@ -2904,6 +3009,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Asakusa",
         "costBRL": 0,
         "tip": "800 m de lojas de facas, cerâmica e comida de plástico entre Asakusa e Ueno; o souvenir de quem cozinha"
+      },
+      {
+        "name": "Komeda's Coffee (morning set)",
+        "category": "breakfast",
+        "neighborhood": "Shinjuku",
+        "costBRL": 40,
+        "tip": "Rede de Nagoya onde o café de manhã vem com torrada grossa e ovo de graça (morning set); sofás e jornal"
       },
       {
         "name": "New York Bar (Park Hyatt)",
@@ -2934,11 +3046,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Museu imersivo onde se anda descalço pela água entre luzes; reserve o horário com dias de antecedência"
       },
       {
+        "name": "Tempura Tsunahachi (Shinjuku, 1923)",
+        "category": "dinner",
+        "neighborhood": "Shinjuku",
+        "costBRL": 200,
+        "tip": "Tempurá frito na sua frente num balcão de 1923; peça o set e deixe o chef mandar na ordem"
+      },
+      {
         "name": "Yakatabune (jantar em barco tradicional na baía)",
         "category": "night",
         "neighborhood": "Asakusa",
         "costBRL": 450,
         "tip": "Barco de madeira com tatames, tempurá e saquê navegando sob a Rainbow Bridge; reserve com a Amisei ou Funasei"
+      },
+      {
+        "name": "Zauo (pesque o seu peixe)",
+        "category": "dinner",
+        "neighborhood": "Shinjuku",
+        "costBRL": 220,
+        "tip": "Restaurante-barco onde a família pesca o peixe do tanque e a cozinha prepara; crianças adoram, reserve"
       },
       {
         "name": "Ameyoko (mercado de rua)",
@@ -3368,6 +3494,18 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Em cima do cruzamento de Shibuya - localização cinematográfica"
       },
       {
+        "name": "Hotel Sunroute Plaza Shinjuku",
+        "zone": "Shinjuku",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 450-700",
+        "tip": "Hotel grande e eficiente a 3 min da saída sul da estação Shinjuku, com ônibus direto para Narita e Haneda; quartos compactos"
+      },
+      {
         "name": "Tokyu Stay Shinjuku",
         "zone": "Shinjuku",
         "tier": "mid",
@@ -3429,6 +3567,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Empório de 1932 com café no balcão e tudo de comida italiana para levar; a rua é a de compras de Prati, perto do Vaticano"
       },
       {
+        "name": "Cesare al Casaletto (Monteverde)",
+        "category": "dinner",
+        "neighborhood": "Monteverde",
+        "costBRL": 140,
+        "tip": "Trattoria de bairro no fim da linha do bonde 8, a preferida dos romanos: fritti, carbonara e vinho natural; reserve"
+      },
+      {
         "name": "Cinecittà si Mostra (estúdios de cinema)",
         "category": "morning",
         "neighborhood": "Cinecittà",
@@ -3441,6 +3586,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Ostiense",
         "costBRL": 0,
         "tip": "Quatro andares de comida italiana para levar — azeite, massa, queijo — e restaurantes por tema; metrô Piramide"
+      },
+      {
+        "name": "Faro (café de especialidade)",
+        "category": "breakfast",
+        "neighborhood": "Esquilino",
+        "costBRL": 40,
+        "tip": "O primeiro café de especialidade de Roma, filtrado e brunch, perto de Termini; a alternativa ao espresso em pé"
       },
       {
         "name": "Galleria Alberto Sordi",
@@ -3497,6 +3649,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Cinecittà",
         "costBRL": 0,
         "tip": "Campo aberto com os aquedutos romanos de 2.000 anos — cenário de La Grande Bellezza; metrô Giulio Agricola, leve água"
+      },
+      {
+        "name": "Pasticceria Boccione (Ghetto)",
+        "category": "breakfast",
+        "neighborhood": "Ghetto Ebraico",
+        "costBRL": 25,
+        "tip": "Confeitaria judaica sem placa, de balcão, com a torta de ricota e cereja; abre cedo, fecha ao esgotar"
       },
       {
         "name": "Rinascente (Via del Tritone)",
@@ -3886,6 +4045,18 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Jardins secretos entre o Popolo e a Spagna - refúgio de estrelas"
       },
       {
+        "name": "Generator Rome",
+        "zone": "Termini",
+        "tier": "budget",
+        "personaTags": [
+          "solo",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 300-550",
+        "tip": "Hostel de design perto de Termini com quartos privativos e bar no terraço; bom para quem chega de trem"
+      },
+      {
         "name": "Nerva Boutique Hotel",
         "zone": "Monti",
         "tier": "mid",
@@ -3992,6 +4163,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Pelourinho",
         "costBRL": 90,
         "tip": "Moqueca honesta escondida num sobrado do Pelô — favorito de quem trabalha no Centro Histórico"
+      },
+      {
+        "name": "Bahia Café House (Pelourinho)",
+        "category": "breakfast",
+        "neighborhood": "Pelourinho",
+        "costBRL": 40,
+        "tip": "Café num sobrado colonial do Pelourinho com cuscuz, tapioca e café da Chapada; comece o dia no centro histórico"
       },
       {
         "name": "Bahia Outlet Center",
@@ -4379,6 +4557,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O bairro boêmio de Salvador — largo, mar e música · Casa de Iemanjá e os pescadores no largo"
       },
       {
+        "name": "Rubi Café (Rio Vermelho)",
+        "category": "breakfast",
+        "neighborhood": "Rio Vermelho",
+        "costBRL": 40,
+        "tip": "Cafeteria de bairro no Rio Vermelho com pão de queijo, bolo de aipim e café coado; a manhã do bairro boêmio"
+      },
+      {
         "name": "Salvador Shopping",
         "category": "afternoon",
         "neighborhood": "Caminho das Árvores",
@@ -4581,6 +4766,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O shopping mais movimentado da cidade, marcas argentinas de roupa e couro; metrô Bulnes, linha D"
       },
       {
+        "name": "Atalaya (medialunas de Palermo)",
+        "category": "breakfast",
+        "neighborhood": "Palermo",
+        "costBRL": 40,
+        "tip": "A confeitaria das melhores medialunas de Palermo, fila na porta de manhã; peça as de manteiga"
+      },
+      {
         "name": "El Ateneo Grand Splendid",
         "category": "afternoon",
         "neighborhood": "Recoleta",
@@ -4651,6 +4843,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Feira de artesãos nos fins de semana ao lado do Cemitério da Recoleta; mate, couro e prata com quem faz"
       },
       {
+        "name": "Fervor (parrilla e peixes)",
+        "category": "dinner",
+        "neighborhood": "Recoleta",
+        "costBRL": 220,
+        "tip": "Brasa clássica de Recoleta que faz tão bem peixe quanto carne; salão elegante, reserve"
+      },
+      {
         "name": "Calle Florida e Galerías Pacífico",
         "category": "afternoon",
         "neighborhood": "Centro",
@@ -4705,6 +4904,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Palermo",
         "costBRL": 260,
         "tip": "Parrilla famosa pelas guarnições que lotam a mesa · Porções gigantes — um corte serve dois"
+      },
+      {
+        "name": "Confitería La Ideal (1912)",
+        "category": "breakfast",
+        "neighborhood": "Centro",
+        "costBRL": 60,
+        "tip": "Confeitaria art nouveau restaurada, cenário de filmes de tango; medialunas e café com leite sob os lustres"
       },
       {
         "name": "Cabaña Las Lilas",
@@ -5012,6 +5218,17 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 500-900",
         "tip": "O boutique que inventou Palermo Hollywood - jardim com piscina"
+      },
+      {
+        "name": "Ibis Buenos Aires Obelisco",
+        "zone": "Centro",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 250-400",
+        "tip": "Ibis a 1 quadra do Obelisco e da Corrientes; metrô na porta, padrão previsível"
       },
       {
         "name": "Milhouse Hostel Avenue",
@@ -5555,6 +5772,17 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O hostel querido de Getsemaní — social, seguro e na rua certa"
       },
       {
+        "name": "Media Luna Hostel",
+        "zone": "Getsemaní",
+        "tier": "budget",
+        "personaTags": [
+          "solo",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 120-300",
+        "tip": "O hostel mais famoso de Getsemaní, com piscina e festa na quarta; quartos privativos existem, mas é barulhento"
+      },
+      {
         "name": "Radisson Cartagena Ocean Pavillion",
         "zone": "La Boquilla",
         "tier": "resort",
@@ -5892,6 +6120,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O cookie de 170g que mudou o conceito de cookie · Chocolate chip walnut ainda morno — vá cedo"
       },
       {
+        "name": "Lombardi's Pizza (1905)",
+        "category": "dinner",
+        "neighborhood": "Little Italy",
+        "costBRL": 120,
+        "tip": "A primeira pizzaria dos Estados Unidos, forno a carvão; só pizza inteira, só dinheiro"
+      },
+      {
         "name": "Los Tacos No.1",
         "category": "lunch",
         "neighborhood": "Chelsea/Times Sq",
@@ -5941,11 +6176,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O Central Park do Brooklyn, dos mesmos arquitetos e com menos turistas; lago, gramado para piquenique e carrossel"
       },
       {
+        "name": "Russ & Daughters (Lower East Side)",
+        "category": "breakfast",
+        "neighborhood": "Lower East Side",
+        "costBRL": 90,
+        "tip": "Loja de 1914 de salmão defumado e bagels; pegue senha, peça o bagel com lox e coma no Seward Park"
+      },
+      {
         "name": "Saks Fifth Avenue",
         "category": "afternoon",
         "neighborhood": "Midtown",
         "costBRL": 0,
         "tip": "A loja de departamentos da Quinta Avenida em frente ao Rockefeller Center; em dezembro, o show de luzes na fachada"
+      },
+      {
+        "name": "Sarabeth's (Upper West Side)",
+        "category": "breakfast",
+        "neighborhood": "Upper West Side",
+        "costBRL": 110,
+        "tip": "O brunch clássico nova-iorquino, pancakes e ovos; chegue antes das 10h ou enfrente a fila, ao lado do Central Park"
       },
       {
         "name": "Serendipity 3 (frozen hot chocolate)",
@@ -6004,6 +6253,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A melhor vista DO Empire State é daqui · Compre horário marcado — fim de tarde é o mais disputado"
       },
       {
+        "name": "Via Carota (West Village)",
+        "category": "dinner",
+        "neighborhood": "West Village",
+        "costBRL": 250,
+        "tip": "Trattoria de esquina com a salada verde mais famosa de Nova York e cacio e pepe; sem reserva, fila a partir das 17h"
+      },
+      {
         "name": "Westlight (rooftop no Brooklyn)",
         "category": "night",
         "neighborhood": "Williamsburg",
@@ -6016,6 +6272,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Central Valley",
         "costBRL": 150,
         "tip": "O maior outlet da região, 1h de ônibus do Port Authority; 250 lojas, dia inteiro, vá de semana"
+      },
+      {
+        "name": "Xi'an Famous Foods",
+        "category": "lunch",
+        "neighborhood": "Midtown",
+        "costBRL": 70,
+        "tip": "Macarrão feito à mão com cominho e cordeiro, de uma barraca de Flushing que virou rede; rápido, picante, barato"
       }
     ],
     "hotels": [
@@ -6092,6 +6355,18 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 450-700",
         "tip": "Cabines espertas pra quem só quer dormir e explorar"
+      },
+      {
+        "name": "Pod Times Square",
+        "zone": "Times Square",
+        "tier": "budget",
+        "personaTags": [
+          "solo",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 700-1.100",
+        "tip": "Quartos minúsculos e bem desenhados a 5 min da Times Square; o budget possível em Manhattan"
       }
     ]
   },
@@ -6125,6 +6400,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Centro",
         "costBRL": 0,
         "tip": "A maior loja da marca, com cafeteria, fonte de chocolate e espaço para crianças"
+      },
+      {
+        "name": "Café Colonial Mirante (Canela)",
+        "category": "breakfast",
+        "neighborhood": "Canela",
+        "costBRL": 90,
+        "tip": "Mesa farta de café colonial com cucas, geleias e embutidos, com vista para o vale; vá com fome, substitui o almoço"
       },
       {
         "name": "Cantina Pastasciutta",
@@ -6195,6 +6477,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Centro",
         "costBRL": 120,
         "tip": "Bistrô de comida alemã descomplicada · As salsichas artesanais com chucrute são o carro-chefe"
+      },
+      {
+        "name": "Hofbier (cervejaria)",
+        "category": "dinner",
+        "neighborhood": "Centro",
+        "costBRL": 110,
+        "tip": "Cervejaria de estilo alemão no centro, com chope próprio, joelho de porco e música ao vivo nos fins de semana"
       },
       {
         "name": "Josephina Café",
@@ -6630,6 +6919,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O indiano estilo café de Bombaim que virou obsessão em Londres · O black daal cozinha 24 horas — obrigatório"
       },
       {
+        "name": "Dishoom (Covent Garden)",
+        "category": "breakfast",
+        "neighborhood": "Covent Garden",
+        "costBRL": 80,
+        "tip": "Café indiano de Bombaim com o bacon naan roll mais famoso de Londres; sem reserva no café da manhã, chegue antes das 9h"
+      },
+      {
+        "name": "E Pellicci (1900)",
+        "category": "breakfast",
+        "neighborhood": "Bethnal Green",
+        "costBRL": 50,
+        "tip": "Caff italiano de 1900 com interior art déco tombado e o full English servido por três gerações da mesma família"
+      },
+      {
         "name": "Ffiona's",
         "category": "dinner",
         "neighborhood": "Kensington",
@@ -6840,6 +7143,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Arte moderna numa usina elétrica — gratuita · O mirante do 10º andar tem vista da St Pauls"
       },
       {
+        "name": "The Barbary (Neal's Yard)",
+        "category": "dinner",
+        "neighborhood": "Covent Garden",
+        "costBRL": 200,
+        "tip": "Balcão em ferradura com cozinha do norte da África e do Levante em brasa; sem reserva, fila vale a pena"
+      },
+      {
         "name": "Westminster, Big Ben e troca da guarda",
         "category": "morning",
         "neighborhood": "Westminster",
@@ -6996,6 +7306,16 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Ao lado do London Eye por preço de rede — o segredo das famílias"
       },
       {
+        "name": "Rosewood London",
+        "zone": "Holborn",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 4.000-7.000",
+        "tip": "Palácio eduardiano de 1914 em Holborn, pátio de pedra e o Scarfes Bar; a 10 min a pé de Covent Garden"
+      },
+      {
         "name": "The Savoy",
         "zone": "Strand",
         "tier": "upscale",
@@ -7038,6 +7358,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Barceloneta/Born",
         "costBRL": 190,
         "tip": "A casa histórica da paella barcelonesa · A paella Parellada (sem cascas) é a assinatura"
+      },
+      {
+        "name": "Bar Cañete (Raval)",
+        "category": "dinner",
+        "neighborhood": "Raval",
+        "costBRL": 180,
+        "tip": "Balcão de tapas de alto nível atrás do Liceu, movimento até tarde; reserve ou chegue às 20h"
       },
       {
         "name": "Bar del Pla",
@@ -7215,6 +7542,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O show de água, luz e música aos pés do MNAC · Confira dias e horários da temporada"
       },
       {
+        "name": "Forn Mistral (ensaïmada)",
+        "category": "breakfast",
+        "neighborhood": "Sant Antoni",
+        "costBRL": 30,
+        "tip": "Padaria de 1879 na Ronda de Sant Antoni, a ensaïmada mais famosa da cidade; leve para comer na praça"
+      },
+      {
         "name": "Praia de Garraf",
         "category": "afternoon",
         "neighborhood": "Garraf",
@@ -7367,6 +7701,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Poble-sec",
         "costBRL": 120,
         "tip": "Teatro de 1943 virou a casa de shows e festas mais querida da cidade; a Nasty Mondays das segundas é instituição"
+      },
+      {
+        "name": "Satan's Coffee Corner (Gòtic)",
+        "category": "breakfast",
+        "neighborhood": "Gòtic",
+        "costBRL": 50,
+        "tip": "Café de especialidade com brunch japonês-catalão numa viela do Gòtic; sem wi-fi de propósito"
       },
       {
         "name": "Bate-volta a Sitges",
@@ -7852,6 +8193,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A maior barraca da Praia de Taperapuã, com show de axé e lambaeróbica à noite; a alternativa ao Tôa Tôa"
       },
       {
+        "name": "Beco das Cores (Arraial d'Ajuda)",
+        "category": "afternoon",
+        "neighborhood": "Arraial d Ajuda",
+        "costBRL": 0,
+        "tip": "Viela de lojas coloridas de moda praia, biojoias e artesanato no centro de Arraial; combine com a Rua do Mucugê à noite"
+      },
+      {
+        "name": "Café Cultura (Trancoso)",
+        "category": "breakfast",
+        "neighborhood": "Trancoso",
+        "costBRL": 45,
+        "tip": "Café da manhã e lanches em Trancoso: tapiocas, pães artesanais e café especial antes do Quadrado"
+      },
+      {
         "name": "Falésias de Taípe (Arraial d'Ajuda)",
         "category": "afternoon",
         "neighborhood": "Arraial d'Ajuda",
@@ -7859,11 +8214,39 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Paredão de falésias coloridas de 50 m sobre a praia deserta de Taípe; caminhe a partir de Pitinga na maré baixa"
       },
       {
+        "name": "Feirinha da Coroa Vermelha (artesanato indígena)",
+        "category": "afternoon",
+        "neighborhood": "Santa Cruz Cabrália",
+        "costBRL": 0,
+        "tip": "Barracas de artesanato pataxó na praia onde foi rezada a primeira missa, 20 min ao norte; colares de semente, cocares, cerâmica"
+      },
+      {
+        "name": "Natural Trancoso (café no Quadrado)",
+        "category": "breakfast",
+        "neighborhood": "Trancoso",
+        "costBRL": 50,
+        "tip": "Café de frutas, tapioca e pão de queijo numa casinha do Quadrado; o lugar de começar o dia em Trancoso"
+      },
+      {
         "name": "Praia dos Nativos (Trancoso)",
         "category": "morning",
         "neighborhood": "Trancoso",
         "costBRL": 0,
         "tip": "A praia do Quadrado, com a foz do rio Trancoso, coqueiral e barracas simples; desça pela trilha da igreja ao amanhecer"
+      },
+      {
+        "name": "Santo Café (Trancoso)",
+        "category": "breakfast",
+        "neighborhood": "Trancoso",
+        "costBRL": 40,
+        "tip": "Cafeteria de Trancoso com café especial e bolos; o começo de dia calmo antes da praia"
+      },
+      {
+        "name": "Silvana & Cia (Trancoso)",
+        "category": "dinner",
+        "neighborhood": "Trancoso",
+        "costBRL": 180,
+        "tip": "Moqueca baiana e peixe fresco numa casa do Quadrado, mesas no jardim; a tradicional de Trancoso"
       }
     ],
     "hotels": [
@@ -7937,6 +8320,40 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 1.500-2.800",
         "tip": "Pé na areia charmoso a caminhada do Quadrado"
+      },
+      {
+        "name": "Pousada Capim Santo",
+        "zone": "Trancoso",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 700-1.300",
+        "tip": "Pousada no Quadrado com o restaurante do mesmo nome e piscina no jardim; café da manhã que vira almoço"
+      },
+      {
+        "name": "Pousada Erva Doce",
+        "zone": "Arraial d Ajuda",
+        "tier": "budget",
+        "personaTags": [
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 250-450",
+        "tip": "Pousada de jardim na Estrada do Mucugê, a 10 min a pé das praias; café da manhã farto, dona presente"
+      },
+      {
+        "name": "Pousada Quarto Crescente",
+        "zone": "Trancoso",
+        "tier": "budget",
+        "personaTags": [
+          "couple",
+          "solo",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 300-550",
+        "tip": "Pousada de 1990 a 300 m do Quadrado, piscina pequena e preço honesto para Trancoso"
       }
     ]
   },
@@ -8126,6 +8543,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O café de especialidade que abriu o movimento em Dubai · Brunch australiano num galpão industrial"
       },
       {
+        "name": "Al Mallah (shawarma de Satwa)",
+        "category": "lunch",
+        "neighborhood": "Satwa",
+        "costBRL": 40,
+        "tip": "Shawarma e suco de frutas na calçada de Satwa desde 1979; o almoço de 15 minutos que os locais fazem"
+      },
+      {
         "name": "Al Mamzar Beach Park",
         "category": "morning",
         "neighborhood": "Al Mamzar",
@@ -8140,11 +8564,25 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Lagos artificiais no deserto a 45 min, com pôr do sol, bicicleta e piquenique; vá de carro, leve água e lanterna"
       },
       {
+        "name": "Arrows & Sparrows",
+        "category": "breakfast",
+        "neighborhood": "The Greens",
+        "costBRL": 70,
+        "tip": "Brunch de bairro em The Greens, ovos e pães de fermentação natural; o café da manhã dos moradores, longe dos hotéis"
+      },
+      {
         "name": "Atmosphere (lounge no 122º andar do Burj Khalifa)",
         "category": "night",
         "neighborhood": "Downtown",
         "costBRL": 250,
         "tip": "Chá da tarde ou coquetel no andar 122 — sai mais barato que o deck de observação e tem mesa; reserve e vá de roupa elegante"
+      },
+      {
+        "name": "Bait Maryam (cozinha levantina caseira)",
+        "category": "dinner",
+        "neighborhood": "JLT",
+        "costBRL": 150,
+        "tip": "Restaurante de família com Bib Gourmand, pratos da mãe palestina-jordaniana da dona; sem álcool, reserve"
       },
       {
         "name": "Bla Bla Dubai (JBR)",
@@ -8159,6 +8597,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Al Sufouh",
         "costBRL": 0,
         "tip": "Praia escondida entre palácios, sem estrutura e sem multidão, com a Palm ao fundo; leve tudo"
+      },
+      {
+        "name": "Boston Lane (Al Quoz)",
+        "category": "breakfast",
+        "neighborhood": "Al Quoz",
+        "costBRL": 70,
+        "tip": "Café australiano num galpão de Al Quoz, entre galerias de arte; combine com a Alserkal Avenue"
       },
       {
         "name": "CÉ LA VI Dubai (rooftop do Address Sky View)",
@@ -8250,6 +8695,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Al Warqa",
         "costBRL": 80,
         "tip": "Zoológico moderno com safári de ônibus entre leões e girafas; fecha no verão (junho a setembro)"
+      },
+      {
+        "name": "Zuma Dubai",
+        "category": "dinner",
+        "neighborhood": "DIFC",
+        "costBRL": 450,
+        "tip": "Izakaya contemporâneo no DIFC, o jantar de celebração da cidade; robata e sushi, reserve com dias"
       },
       {
         "name": "Day-trip a Abu Dhabi",
@@ -8408,6 +8860,28 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 2.200-3.800",
         "tip": "A onda de vidro com praia privada e Wild Wadi grátis"
+      },
+      {
+        "name": "Manzil Downtown",
+        "zone": "Downtown",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 700-1.200",
+        "tip": "Hotel boutique de arquitetura árabe a 10 min a pé do Dubai Mall e do Burj Khalifa; piscina no pátio"
+      },
+      {
+        "name": "Palace Downtown",
+        "zone": "Downtown",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 2.000-3.500",
+        "tip": "Palácio árabe à beira do lago da Dubai Fountain, com vista do show das fontes do quarto; a 5 min do Dubai Mall"
       },
       {
         "name": "Premier Inn Ibn Battuta",
@@ -8657,6 +9131,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Um dos jardins botânicos mais bonitos do planeta, na encosta da montanha · A passarela Boomslang serpenteia sobre as copas"
       },
       {
+        "name": "Kleinsky's Delicatessen (bagels)",
+        "category": "breakfast",
+        "neighborhood": "Sea Point",
+        "costBRL": 60,
+        "tip": "Deli judaica de Sea Point com bagels, salmão e latkes; combine com a caminhada na promenade"
+      },
+      {
         "name": "Kloof Street House",
         "category": "dinner",
         "neighborhood": "Gardens",
@@ -8685,6 +9166,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Carnes de caça (springbok, kudu) com marimba ao vivo · Turístico e divertido na medida"
       },
       {
+        "name": "Marco's African Place (Bo-Kaap)",
+        "category": "dinner",
+        "neighborhood": "Bo-Kaap",
+        "costBRL": 150,
+        "tip": "Jantar africano com música ao vivo e dança desde 1997; peça o prato de carnes de caça para dividir"
+      },
+      {
+        "name": "Mariam's Kitchen (Cape Malay)",
+        "category": "lunch",
+        "neighborhood": "City Bowl",
+        "costBRL": 60,
+        "tip": "Curries e samosas da cozinha Cape Malay, almoço de balcão no centro; o sabor do Bo-Kaap no prato"
+      },
+      {
         "name": "Praia de Muizenberg (cabines coloridas)",
         "category": "morning",
         "neighborhood": "Muizenberg",
@@ -8711,6 +9206,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Woodstock",
         "costBRL": 40,
         "tip": "Antiga fábrica de biscoitos com o Neighbourgoods Market aos sábados: comida, design e música; lota, chegue às 9h"
+      },
+      {
+        "name": "Origin Coffee Roasting (De Waterkant)",
+        "category": "breakfast",
+        "neighborhood": "De Waterkant",
+        "costBRL": 50,
+        "tip": "A torrefação que começou o café de especialidade na cidade, em De Waterkant; brunch e cursos de barista"
       },
       {
         "name": "Panama Jack's",
@@ -8999,6 +9501,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O ponto mais alto do lado asiático, com a cidade e o Bósforo inteiros aos pés; chá no café do alto ao pôr do sol"
       },
       {
+        "name": "Çınaraltı (kahvaltı sob o plátano, Çengelköy)",
+        "category": "breakfast",
+        "neighborhood": "Çengelköy",
+        "costBRL": 70,
+        "tip": "Café da manhã turco à beira do Bósforo sob um plátano de 800 anos, no lado asiático; vá de balsa e fique a manhã"
+      },
+      {
         "name": "Cisterna da Basílica",
         "category": "morning",
         "neighborhood": "Sultanahmet",
@@ -9011,6 +9520,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Kadıköy",
         "costBRL": 90,
         "tip": "O restaurante que resgata receitas perdidas da Anatólia · Aponte no balcão de cozidos do dia"
+      },
+      {
+        "name": "Çiya Kebap (Kadıköy)",
+        "category": "dinner",
+        "neighborhood": "Kadıköy",
+        "costBRL": 110,
+        "tip": "A casa de kebabs do mesmo dono do Çiya Sofrası, do outro lado da rua; a noite no mercado de Kadıköy, volte de balsa"
       },
       {
         "name": "Palácio de Dolmabahçe",
@@ -9167,6 +9683,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A Turquia inteira em miniatura à beira do Chifre de Ouro; a 10 min do Museu Rahmi Koç, dá para emendar"
       },
       {
+        "name": "Namlı Gurme (Karaköy)",
+        "category": "breakfast",
+        "neighborhood": "Karaköy",
+        "costBRL": 60,
+        "tip": "Empório-restaurante com o kahvaltı de balcão mais farto do cais: queijos, mel, pastırma; escolha e pese"
+      },
+      {
         "name": "Nardis Jazz Club",
         "category": "night",
         "neighborhood": "Galata",
@@ -9179,6 +9702,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Beyoğlu",
         "costBRL": 150,
         "tip": "A viela das tavernas turcas — mesas na rua e bandejas de mezes · Escolha os pratinhos frios da bandeja e o peixe do dia"
+      },
+      {
+        "name": "Pandeli (1901, Bazar das Especiarias)",
+        "category": "lunch",
+        "neighborhood": "Eminönü",
+        "costBRL": 150,
+        "tip": "Salão de azulejos turquesa sobre a entrada do Bazar das Especiarias, cozinha otomana desde 1901; só almoço"
       },
       {
         "name": "Museu Rahmi M. Koç",
@@ -9444,6 +9974,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Três parques emendados ao lado do mercado de Chatuchak, com lagos e jardim botânico; a pausa verde do fim de semana de compras"
       },
       {
+        "name": "Err Urban Rustic Thai",
+        "category": "dinner",
+        "neighborhood": "Tha Tien",
+        "costBRL": 120,
+        "tip": "Street food tailandês elevado pelos chefs do Bo.lan, a 2 min do Wat Pho; cerveja gelada e pratos para dividir"
+      },
+      {
         "name": "Grand Palace e Wat Phra Kaew (Buda de Esmeralda)",
         "category": "morning",
         "neighborhood": "Phra Nakhon",
@@ -9479,6 +10016,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A casa de teca do americano que reviveu a seda tailandesa — e sumiu misteriosamente · Tour guiado incluso conta a história"
       },
       {
+        "name": "Jok Prince (mingau de arroz desde 1960)",
+        "category": "breakfast",
+        "neighborhood": "Charoen Krung",
+        "costBRL": 25,
+        "tip": "Jok (mingau de arroz com porco e ovo) de barraca com Bib Gourmand, aberto desde 6h; coma no balcão"
+      },
+      {
         "name": "Khao San Road à noite",
         "category": "night",
         "neighborhood": "Banglamphu",
@@ -9498,6 +10042,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Dusit",
         "costBRL": 90,
         "tip": "A cozinha tailandesa caseira que já serviu a família real · A omelete de caranguejo é lendária"
+      },
+      {
+        "name": "Luka Cafe (Sathorn)",
+        "category": "breakfast",
+        "neighborhood": "Sathorn",
+        "costBRL": 60,
+        "tip": "Brunch australiano num prédio de concreto de Sathorn; ovos benedict e café de especialidade, lota aos fins de semana"
       },
       {
         "name": "Parque Lumpini",
@@ -9561,6 +10112,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Pratunam",
         "costBRL": 0,
         "tip": "Seis andares de roupa no atacado e varejo a preço de fábrica; leve dinheiro, negocie a partir de 3 peças"
+      },
+      {
+        "name": "Prachak Pet Yang (pato assado desde 1909)",
+        "category": "lunch",
+        "neighborhood": "Bang Rak",
+        "costBRL": 40,
+        "tip": "Pato assado e macarrão de ovo numa casa de 1909 em Charoen Krung; almoço rápido e barato a caminho do rio"
       },
       {
         "name": "Roast Coffee & Eatery",
@@ -9925,6 +10483,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Jardim do século XVIII a 5 min da Koutoubia, com fontes, sombra e wi-fi gratuito; pausa fácil entre a medina e Guéliz"
       },
       {
+        "name": "Dar Cherifa (café literário)",
+        "category": "lunch",
+        "neighborhood": "Medina",
+        "costBRL": 110,
+        "tip": "Riad do século XVI com pátio de cedro esculpido, exposições e almoço marroquino leve; silêncio no meio dos souks"
+      },
+      {
         "name": "Dar Yacout",
         "category": "dinner",
         "neighborhood": "Medina",
@@ -10000,6 +10565,20 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Medina (Bab Doukkala)",
         "costBRL": 160,
         "tip": "Marroquino contemporâneo num pátio elegante · Releituras leves dos clássicos"
+      },
+      {
+        "name": "Le Foundouk",
+        "category": "dinner",
+        "neighborhood": "Medina",
+        "costBRL": 200,
+        "tip": "Antigo caravançarai virou restaurante de velas e terraço na medina; cozinha franco-marroquina, reserve"
+      },
+      {
+        "name": "Le Jardin (café no riad)",
+        "category": "breakfast",
+        "neighborhood": "Medina",
+        "costBRL": 60,
+        "tip": "Pátio verde com tartarugas no meio dos souks, café da manhã marroquino à sombra das bananeiras"
       },
       {
         "name": "Jardim Majorelle e Museu YSL",
@@ -10105,6 +10684,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Hivernage",
         "costBRL": 150,
         "tip": "Teatro antigo virou a boate mais famosa da cidade, dentro do Hotel Es Saadi; abre à meia-noite"
+      },
+      {
+        "name": "Zwin Zwin Café (Guéliz)",
+        "category": "breakfast",
+        "neighborhood": "Guéliz",
+        "costBRL": 50,
+        "tip": "Café moderno de Guéliz com msemen, amlou e suco de laranja; a versão fora da medina"
       }
     ],
     "hotels": [
@@ -10250,6 +10836,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Praia de pescadores com coqueiros e churrasqueiras, onde os locais veem os aviões pousarem; combine com Pulau Ubin"
       },
       {
+        "name": "Chin Mee Chin Confectionery (Katong)",
+        "category": "breakfast",
+        "neighborhood": "Katong",
+        "costBRL": 30,
+        "tip": "Confeitaria de 1925 em Katong, kaya toast no carvão e café no copo de vidro; a versão original, antes das redes"
+      },
+      {
         "name": "Chinatown e Templo do Dente de Buda",
         "category": "morning",
         "neighborhood": "Chinatown",
@@ -10339,6 +10932,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Katong",
         "costBRL": 45,
         "tip": "A laksa que venceu Gordon Ramsay em disputa televisionada · Macarrão cortado — come-se só de colher"
+      },
+      {
+        "name": "Keng Eng Kee Seafood (zi char)",
+        "category": "dinner",
+        "neighborhood": "Bukit Merah",
+        "costBRL": 120,
+        "tip": "Zi char de bairro desde 1970, caranguejo com pimenta e \"moonlight hor fun\"; o jantar que os singapurianos fazem em família"
       },
       {
         "name": "Killiney Kopitiam",
@@ -10523,6 +11123,13 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Água, laser e música na frente do MBS — gratuito · Dois horários por noite; chegue 20 min antes"
       },
       {
+        "name": "Swee Choon Tim Sum (madrugada)",
+        "category": "dinner",
+        "neighborhood": "Jalan Besar",
+        "costBRL": 80,
+        "tip": "Dim sum de 1962 aberto até as 6h; o jantar tardio depois da noite em Little India, fila que anda"
+      },
+      {
         "name": "Tanjong Beach Club (Sentosa)",
         "category": "afternoon",
         "neighborhood": "Sentosa",
@@ -10673,6 +11280,3168 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O hotel colonial de 1887 onde nasceu o Singapore Sling"
       }
     ]
+  },
+  "Porto": {
+    "city": "Porto",
+    "items": [
+      {
+        "name": "Abadia do Porto (1939)",
+        "category": "dinner",
+        "neighborhood": "Baixa",
+        "costBRL": 120,
+        "tip": "Salão de azulejos de 1939 com tripas à moda do Porto e bacalhau à Gomes de Sá; cozinha de sempre"
+      },
+      {
+        "name": "Adega São Nicolau (Ribeira)",
+        "category": "dinner",
+        "neighborhood": "Ribeira",
+        "costBRL": 130,
+        "tip": "Peixe grelhado e polvo numa adega de pedra escondida na Ribeira; reserve a mesa da rua"
+      },
+      {
+        "name": "Mercado Municipal da Afurada",
+        "category": "afternoon",
+        "neighborhood": "Vila Nova de Gaia",
+        "costBRL": 60,
+        "tip": "Vila de pescadores na foz, do lado de Gaia, com sardinha na brasa na rua e roupa secando ao vento; vá de barco a partir da Ribeira"
+      },
+      {
+        "name": "Antiqvvm (Palácio de Cristal)",
+        "category": "dinner",
+        "neighborhood": "Massarelos",
+        "costBRL": 600,
+        "tip": "Duas estrelas Michelin nos jardins do Palácio de Cristal, com vista para o Douro; menu degustação, reserve com semanas"
+      },
+      {
+        "name": "Base (jardim-bar dos Clérigos)",
+        "category": "night",
+        "neighborhood": "Clérigos",
+        "costBRL": 50,
+        "tip": "Bar ao ar livre no jardim das Oliveiras, atrás dos Clérigos, com espreguiçadeiras; primavera a outono"
+      },
+      {
+        "name": "Bate-volta a Braga e Bom Jesus do Monte",
+        "category": "morning",
+        "neighborhood": "Braga",
+        "costBRL": 60,
+        "tip": "A escadaria barroca do Bom Jesus (ou o elevador a água de 1882) e a cidade das igrejas; 1h de trem"
+      },
+      {
+        "name": "Estação Ferroviária do Pinhão (bate-volta Vale do Douro)",
+        "category": "morning",
+        "neighborhood": "Pinhão",
+        "costBRL": 250,
+        "tip": "Trem da Linha do Douro até o Pinhão beirando o rio, almoço numa quinta e barco rabelo; o dia mais bonito de Portugal"
+      },
+      {
+        "name": "Castelo de Guimarães (bate-volta)",
+        "category": "morning",
+        "neighborhood": "Guimarães",
+        "costBRL": 60,
+        "tip": "A cidade onde Portugal nasceu, 1h de trem: castelo, Paço dos Duques e centro medieval Patrimônio da Humanidade"
+      },
+      {
+        "name": "Café Santiago (francesinha)",
+        "category": "lunch",
+        "neighborhood": "Baixa",
+        "costBRL": 80,
+        "tip": "A francesinha de referência da cidade, molho secreto e fila na porta; peça com ovo e batata, divida se for a primeira"
+      },
+      {
+        "name": "Cantina 32",
+        "category": "dinner",
+        "neighborhood": "Baixa",
+        "costBRL": 140,
+        "tip": "Cozinha portuguesa de partilha na Rua das Flores, com o \"vaso de chocolate\" de sobremesa; reserve, lota todo dia"
+      },
+      {
+        "name": "Cantinho do Avillez",
+        "category": "dinner",
+        "neighborhood": "Baixa",
+        "costBRL": 200,
+        "tip": "A casa do chef José Avillez no Porto, cozinha portuguesa moderna; reserve, perto da estação São Bento"
+      },
+      {
+        "name": "Casa da Música (visita guiada)",
+        "category": "afternoon",
+        "neighborhood": "Boavista",
+        "costBRL": 60,
+        "tip": "O prédio de Rem Koolhaas por dentro, com a sala de concertos de vidro ondulado; visitas diárias em inglês e português"
+      },
+      {
+        "name": "Casa Guedes (sandes de pernil)",
+        "category": "lunch",
+        "neighborhood": "Poveiros",
+        "costBRL": 40,
+        "tip": "Sandes de pernil com queijo da serra, o lanche mais famoso do Porto; balcão, rápido, barato"
+      },
+      {
+        "name": "Caves Graham's (vinho do Porto)",
+        "category": "afternoon",
+        "neighborhood": "Vila Nova de Gaia",
+        "costBRL": 120,
+        "tip": "Visita e prova numa das caves mais bonitas de Gaia, no alto, com vista para o Porto; reserve o horário"
+      },
+      {
+        "name": "Centro Comercial Bombarda (Rua Miguel Bombarda)",
+        "category": "afternoon",
+        "neighborhood": "Cedofeita",
+        "costBRL": 0,
+        "tip": "Galeria de lojas de design, joias e ilustração na rua das galerias de arte; no sábado de inauguração simultânea a rua inteira abre"
+      },
+      {
+        "name": "Cervejaria Brasão Aliados",
+        "category": "lunch",
+        "neighborhood": "Aliados",
+        "costBRL": 90,
+        "tip": "Francesinha e pratos do dia num salão bonito perto dos Aliados; alternativa com reserva ao Santiago"
+      },
+      {
+        "name": "Claus Porto (Rua das Flores)",
+        "category": "afternoon",
+        "neighborhood": "Baixa",
+        "costBRL": 0,
+        "tip": "A loja-museu dos sabonetes de 1887 na Rua das Flores 22, três andares de embalagens art déco; o souvenir do Porto, de verdade"
+      },
+      {
+        "name": "Combi Coffee Roasters",
+        "category": "breakfast",
+        "neighborhood": "Bonfim",
+        "costBRL": 40,
+        "tip": "Torrefação de especialidade que começou numa Kombi; brunch e café filtrado no bairro do Bonfim"
+      },
+      {
+        "name": "Confeitaria do Bolhão (1896)",
+        "category": "breakfast",
+        "neighborhood": "Bolhão",
+        "costBRL": 25,
+        "tip": "Pastelaria histórica em frente ao mercado; pão de ló, bolinhos de bacalhau e café ao balcão com os portuenses"
+      },
+      {
+        "name": "Cruzeiro das Seis Pontes no Douro",
+        "category": "afternoon",
+        "neighborhood": "Ribeira",
+        "costBRL": 90,
+        "tip": "50 minutos de barco rabelo passando sob as seis pontes; saída do cais da Ribeira ou de Gaia, sem reserva"
+      },
+      {
+        "name": "Fado in Porto (Caves Cálem)",
+        "category": "night",
+        "neighborhood": "Vila Nova de Gaia",
+        "costBRL": 150,
+        "tip": "Espetáculo de fado dentro das caves Cálem, com prova de vinho do Porto; todos os dias às 18h30, reserve"
+      },
+      {
+        "name": "Foz do Douro (orla e Pérgola)",
+        "category": "afternoon",
+        "neighborhood": "Foz do Douro",
+        "costBRL": 0,
+        "tip": "Onde o rio encontra o mar: o bonde 1 da Ribeira até a Foz, a Pérgola, o farol e as esplanadas; pôr do sol"
+      },
+      {
+        "name": "Galerias de Paris (rua dos bares)",
+        "category": "night",
+        "neighborhood": "Baixa",
+        "costBRL": 60,
+        "tip": "A rua dos bares da Baixa, que enche depois das 23h; comece no Galeria de Paris (o bar-museu) e vá de porta em porta"
+      },
+      {
+        "name": "Gazela (cachorrinhos)",
+        "category": "lunch",
+        "neighborhood": "Batalha",
+        "costBRL": 40,
+        "tip": "Os \"cachorrinhos\" (hot dog prensado com molho picante) desde 1962, ao lado do Coliseu; Anthony Bourdain veio aqui"
+      },
+      {
+        "name": "Hot Five Jazz & Blues Club",
+        "category": "night",
+        "neighborhood": "Batalha",
+        "costBRL": 80,
+        "tip": "Clube de jazz e blues com shows todas as noites de quarta a sábado; pequeno, reserve mesa"
+      },
+      {
+        "name": "Igreja de São Francisco (talha dourada)",
+        "category": "morning",
+        "neighborhood": "Ribeira",
+        "costBRL": 50,
+        "tip": "Interior gótico coberto por 300 kg de ouro em talha barroca, e as catacumbas no subsolo"
+      },
+      {
+        "name": "Jardim Botânico do Porto",
+        "category": "afternoon",
+        "neighborhood": "Campo Alegre",
+        "costBRL": 0,
+        "tip": "Jardim da universidade com estufas, cactos e a casa de Sophia de Mello Breyner; gratuito e quase vazio"
+      },
+      {
+        "name": "Jardins do Palácio de Cristal",
+        "category": "afternoon",
+        "neighborhood": "Massarelos",
+        "costBRL": 0,
+        "tip": "Jardins românticos com pavões soltos e os melhores miradouros sobre o Douro; gratuito, pôr do sol"
+      },
+      {
+        "name": "Livraria Lello",
+        "category": "morning",
+        "neighborhood": "Clérigos",
+        "costBRL": 40,
+        "tip": "A livraria de 1906 da escadaria vermelha; ingresso com hora marcada pelo site, descontado se comprar um livro; vá na abertura"
+      },
+      {
+        "name": "Majestic Café (1921)",
+        "category": "breakfast",
+        "neighborhood": "Santa Catarina",
+        "costBRL": 60,
+        "tip": "O café art nouveau mais famoso de Portugal; caro para o que serve, mas a sala vale o café com rabanada; vá cedo"
+      },
+      {
+        "name": "Manteigaria (pastel de nata)",
+        "category": "breakfast",
+        "neighborhood": "Baixa",
+        "costBRL": 20,
+        "tip": "Pastel de nata saindo do forno a cada 20 min, com sino; a filial do Porto fica ao lado dos Clérigos"
+      },
+      {
+        "name": "Maus Hábitos",
+        "category": "night",
+        "neighborhood": "Baixa",
+        "costBRL": 60,
+        "tip": "Espaço cultural no 4º andar de uma garagem: exposições, shows, festas e um restaurante; a noite alternativa do Porto"
+      },
+      {
+        "name": "Mercado Beira-Rio (Gaia)",
+        "category": "afternoon",
+        "neighborhood": "Vila Nova de Gaia",
+        "costBRL": 60,
+        "tip": "Mercado gastronômico no cais de Gaia, bancas de petiscos e vinho do Porto com a Ribeira em frente"
+      },
+      {
+        "name": "Mercado do Bolhão",
+        "category": "lunch",
+        "neighborhood": "Bolhão",
+        "costBRL": 50,
+        "tip": "Mercado de 1914 restaurado em 2022; bancas de peixe, queijo e flores, e balcões para almoçar; feche com uma ginjinha"
+      },
+      {
+        "name": "NorteShopping",
+        "category": "afternoon",
+        "neighborhood": "Matosinhos",
+        "costBRL": 0,
+        "tip": "O maior shopping da região, com cinema e marcas europeias; metrô linha A ou B, estação Sete Bicas"
+      },
+      {
+        "name": "O Gaveto (marisqueira, Matosinhos)",
+        "category": "dinner",
+        "neighborhood": "Matosinhos",
+        "costBRL": 220,
+        "tip": "A marisqueira clássica de Matosinhos, sapateira e peixe do dia; metrô até Mercado, 25 min do centro"
+      },
+      {
+        "name": "Padaria Ribeiro (1878)",
+        "category": "breakfast",
+        "neighborhood": "Baixa",
+        "costBRL": 25,
+        "tip": "A padaria mais antiga da cidade, na Praça Guilherme Gomes Fernandes; pão de Deus e croissant brioche"
+      },
+      {
+        "name": "Palácio da Bolsa (Salão Árabe)",
+        "category": "morning",
+        "neighborhood": "Ribeira",
+        "costBRL": 80,
+        "tip": "Visita guiada obrigatória ao palácio da associação comercial, com o Salão Árabe dourado; combine com São Francisco ao lado"
+      },
+      {
+        "name": "Parque da Cidade",
+        "category": "morning",
+        "neighborhood": "Boavista",
+        "costBRL": 0,
+        "tip": "O maior parque urbano do país, 83 hectares de lagos e trilhas que desembocam na praia; bicicleta e piquenique"
+      },
+      {
+        "name": "A Pérola do Bolhão (1917)",
+        "category": "afternoon",
+        "neighborhood": "Bolhão",
+        "costBRL": 0,
+        "tip": "Mercearia de 1917 com fachada art nouveau em frente ao mercado; bacalhau, frutos secos, vinho do Porto e chocolates para levar"
+      },
+      {
+        "name": "Ponte Luís I (travessia pelo tabuleiro superior)",
+        "category": "afternoon",
+        "neighborhood": "Ribeira",
+        "costBRL": 0,
+        "tip": "Atravesse a pé pelo tabuleiro de cima (60 m) até o Jardim do Morro, em Gaia, e desça pelo teleférico ou pelas escadas"
+      },
+      {
+        "name": "Praia da Luz (Foz do Douro)",
+        "category": "afternoon",
+        "neighborhood": "Foz do Douro",
+        "costBRL": 0,
+        "tip": "Pequena praia de rochas na Foz com o bar-esplanada do mesmo nome em cima; o pôr do sol da Foz com os pés na areia"
+      },
+      {
+        "name": "Praia do Homem do Leme (Foz)",
+        "category": "morning",
+        "neighborhood": "Foz do Douro",
+        "costBRL": 0,
+        "tip": "A praia de família da Foz, areia larga, parque infantil e a estátua do homem do leme; bonde 1 até o fim da linha"
+      },
+      {
+        "name": "Praia dos Ingleses (Foz)",
+        "category": "afternoon",
+        "neighborhood": "Foz do Douro",
+        "costBRL": 0,
+        "tip": "Pequena enseada de areia entre rochas na Foz, com o Praia da Luz ao lado para o fim de tarde; água fria, sol bom"
+      },
+      {
+        "name": "Praia de Matosinhos",
+        "category": "morning",
+        "neighborhood": "Matosinhos",
+        "costBRL": 0,
+        "tip": "A praia grande do Porto, de areia larga e escolas de surf; metrô linha A, e o almoço nas grelhas de peixe da Rua Heróis de França"
+      },
+      {
+        "name": "Ribeira (cais e casario)",
+        "category": "afternoon",
+        "neighborhood": "Ribeira",
+        "costBRL": 0,
+        "tip": "Patrimônio da Humanidade: casas coloridas, cais e esplanadas de frente para Gaia; melhor no fim da tarde, com a luz no rio"
+      },
+      {
+        "name": "Rua de Santa Catarina (compras)",
+        "category": "afternoon",
+        "neighborhood": "Santa Catarina",
+        "costBRL": 0,
+        "tip": "A rua de pedestres do comércio, do Majestic à Capela das Almas (azulejos azuis); Via Catarina shopping no meio"
+      },
+      {
+        "name": "Estação de São Bento (azulejos)",
+        "category": "morning",
+        "neighborhood": "Baixa",
+        "costBRL": 0,
+        "tip": "20 mil azulejos contando a história de Portugal no saguão da estação; gratuito, 15 minutos que valem a cidade"
+      },
+      {
+        "name": "Sé do Porto e claustro",
+        "category": "morning",
+        "neighborhood": "Sé",
+        "costBRL": 25,
+        "tip": "Catedral-fortaleza do século XII no alto da cidade velha; o claustro de azulejos e o terreiro com vista para o rio"
+      },
+      {
+        "name": "Sea Life Porto",
+        "category": "morning",
+        "neighborhood": "Foz do Douro",
+        "costBRL": 90,
+        "tip": "Aquário com túnel de tubarões junto ao Parque da Cidade; o programa de chuva com crianças pequenas"
+      },
+      {
+        "name": "Serralves (museu e parque)",
+        "category": "morning",
+        "neighborhood": "Boavista",
+        "costBRL": 80,
+        "tip": "Museu de arte contemporânea de Siza Vieira, a casa art déco e 18 hectares de parque com passarela nas copas"
+      },
+      {
+        "name": "Taberna dos Mercadores",
+        "category": "lunch",
+        "neighborhood": "Ribeira",
+        "costBRL": 120,
+        "tip": "Taberna minúscula na Ribeira com arroz de polvo e bacalhau no forno; reserve, são 8 mesas"
+      },
+      {
+        "name": "Taberna Santo António",
+        "category": "dinner",
+        "neighborhood": "Virtudes",
+        "costBRL": 110,
+        "tip": "Tasca familiar nas Virtudes com rojões, tripas e vinho verde; lota, reserve ou vá cedo"
+      },
+      {
+        "name": "Tapabento (São Bento)",
+        "category": "dinner",
+        "neighborhood": "Baixa",
+        "costBRL": 150,
+        "tip": "Tapas portuguesas e risotos num espaço pequeno ao lado da estação; reserve, lota todo dia"
+      },
+      {
+        "name": "Tasquinha Zé Povinho",
+        "category": "lunch",
+        "neighborhood": "Bolhão",
+        "costBRL": 70,
+        "tip": "Tasca de bairro ao lado do Bolhão: tripas à moda do Porto, bacalhau e vinho da casa; preço de portuense"
+      },
+      {
+        "name": "Teleférico de Gaia",
+        "category": "afternoon",
+        "neighborhood": "Vila Nova de Gaia",
+        "costBRL": 40,
+        "tip": "5 minutos entre o Jardim do Morro e o cais de Gaia, com a Ribeira inteira do outro lado; combine com as caves"
+      },
+      {
+        "name": "Torre dos Clérigos",
+        "category": "morning",
+        "neighborhood": "Clérigos",
+        "costBRL": 50,
+        "tip": "225 degraus até a vista de 360º da cidade; a igreja barroca e o museu entram no mesmo bilhete"
+      },
+      {
+        "name": "Vila do Conde Porto Fashion Outlet",
+        "category": "morning",
+        "neighborhood": "Vila do Conde",
+        "costBRL": 0,
+        "tip": "Outlet de 150 lojas a 30 min pelo metrô (estação Modivas Centro); marcas europeias e esportivas, devolução de IVA"
+      },
+      {
+        "name": "World of Discoveries",
+        "category": "afternoon",
+        "neighborhood": "Miragaia",
+        "costBRL": 110,
+        "tip": "Museu interativo dos Descobrimentos com passeio de barco por cenários; feito para crianças de 5 a 12"
+      }
+    ],
+    "hotels": [
+      {
+        "name": "Hotel Teatro",
+        "zone": "Ribeira/Centro",
+        "tier": "mid",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 700-1.100",
+        "tip": "Boutique inspirado no teatro que existiu no prédio, a 2 min dos Aliados; bar escuro e bonito"
+      },
+      {
+        "name": "InterContinental Porto — Palácio das Cardosas",
+        "zone": "Ribeira/Centro",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 1.800-3.200",
+        "tip": "Palácio do século XVIII na Praça da Liberdade, de frente para os Aliados; o grande hotel clássico do centro"
+      },
+      {
+        "name": "Mercure Porto Centro Aliados",
+        "zone": "Cedofeita/Bolhao",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 600-1.000",
+        "tip": "Rede francesa a 3 min dos Aliados e de São Bento; padrão previsível, bom para família"
+      },
+      {
+        "name": "Moov Hotel Porto Centro",
+        "zone": "Cedofeita/Bolhao",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 300-500",
+        "tip": "Antigo cinema virou hotel econômico a 5 min do Bolhão; quartos pequenos, limpos, preço honesto"
+      },
+      {
+        "name": "The Passenger Hostel (São Bento)",
+        "zone": "Ribeira/Centro",
+        "tier": "budget",
+        "personaTags": [
+          "solo",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 200-400",
+        "tip": "Hostel de design dentro da estação de São Bento, quartos privativos e cozinha; não dá para ficar mais central"
+      },
+      {
+        "name": "Pestana Vintage Porto",
+        "zone": "Ribeira/Centro",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 1.500-2.800",
+        "tip": "Casario do século XVI na Praça da Ribeira, quartos com o rio e a Ponte Luís I na janela"
+      },
+      {
+        "name": "Porto A.S. 1829 Hotel",
+        "zone": "Ribeira/Centro",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 700-1.200",
+        "tip": "Antiga papelaria de 1829 na Rua das Flores, com o balcão original na recepção; a rua mais bonita para ficar"
+      },
+      {
+        "name": "The Yeatman",
+        "zone": "Vila Nova de Gaia",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 2.500-4.500",
+        "tip": "Hotel vínico no alto de Gaia, piscina infinita de frente para o Porto e restaurante com 2 estrelas Michelin"
+      }
+    ]
+  },
+  "Madri": {
+    "city": "Madri",
+    "items": [
+      {
+        "name": "Catedral de la Almudena",
+        "category": "morning",
+        "neighborhood": "Ópera",
+        "costBRL": 40,
+        "tip": "A catedral ao lado do Palácio Real, terminada em 1993; suba à cúpula pelo museu para a vista da Casa de Campo"
+      },
+      {
+        "name": "Bar La Campana (bocadillo de calamares)",
+        "category": "lunch",
+        "neighborhood": "Sol",
+        "costBRL": 30,
+        "tip": "O sanduíche de calamares da Plaza Mayor, na Calle Botoneras; de pé, com uma caña, 5 euros"
+      },
+      {
+        "name": "Casa Museo Lope de Vega (Barrio de las Letras)",
+        "category": "afternoon",
+        "neighborhood": "Huertas",
+        "costBRL": 0,
+        "tip": "A casa onde Lope de Vega viveu 25 anos, visita guiada grátis com reserva; saia andando pela Calle Huertas com versos no chão e as tabernas do bairro"
+      },
+      {
+        "name": "Bate-volta a El Escorial",
+        "category": "morning",
+        "neighborhood": "San Lorenzo de El Escorial",
+        "costBRL": 100,
+        "tip": "O mosteiro-palácio de Felipe II, 1h de trem Cercanías; a biblioteca e o panteão dos reis"
+      },
+      {
+        "name": "Bate-volta a Segóvia (aqueduto e Alcázar)",
+        "category": "morning",
+        "neighborhood": "Segóvia",
+        "costBRL": 120,
+        "tip": "28 min de AVE: aqueduto romano intacto, o Alcázar que inspirou a Disney e o leitão do Mesón de Cándido"
+      },
+      {
+        "name": "Catedral Primada de Toledo (bate-volta)",
+        "category": "morning",
+        "neighborhood": "Toledo",
+        "costBRL": 120,
+        "tip": "33 min de AVE até a cidade das três culturas: catedral, El Greco, sinagogas e a vista do Mirador del Valle"
+      },
+      {
+        "name": "Tour Estadio Santiago Bernabéu",
+        "category": "morning",
+        "neighborhood": "Chamartín",
+        "costBRL": 180,
+        "tip": "O estádio reformado do Real Madrid, museu com as 15 Champions e o túnel do gramado; compre antes, lota nos fins de semana"
+      },
+      {
+        "name": "Bodega de la Ardosa (1892)",
+        "category": "dinner",
+        "neighborhood": "Malasaña",
+        "costBRL": 90,
+        "tip": "Taberna de 1892 com a melhor tortilha de Malasaña e vermute de barril; passe por baixo do balcão para o salão de trás"
+      },
+      {
+        "name": "Sobrino de Botín (1725)",
+        "category": "dinner",
+        "neighborhood": "La Latina",
+        "costBRL": 250,
+        "tip": "O restaurante mais antigo do mundo em funcionamento (Guinness), leitão no forno a lenha; reserve, peça o andar de baixo"
+      },
+      {
+        "name": "Café Central (jazz)",
+        "category": "night",
+        "neighborhood": "Huertas",
+        "costBRL": 100,
+        "tip": "Clube de jazz art déco na Plaza del Ángel desde 1982, show todas as noites às 21h; reserve a mesa"
+      },
+      {
+        "name": "Café Comercial (1887)",
+        "category": "breakfast",
+        "neighborhood": "Malasaña",
+        "costBRL": 50,
+        "tip": "O café mais antigo de Madri, na Glorieta de Bilbao; espelhos, mármore e tostada com tomate"
+      },
+      {
+        "name": "Calle de Serrano (compras de luxo)",
+        "category": "afternoon",
+        "neighborhood": "Salamanca",
+        "costBRL": 0,
+        "tip": "A milha de ouro de Madri: Loewe, Zara flagship, El Corte Inglés e as ruas Ortega y Gasset e Claudio Coello ao lado"
+      },
+      {
+        "name": "Cardamomo Tablao Flamenco",
+        "category": "night",
+        "neighborhood": "Huertas",
+        "costBRL": 250,
+        "tip": "Flamenco mais cru e perto do público, no Barrio de las Letras; três sessões por noite, bom para quem não quer jantar"
+      },
+      {
+        "name": "Casa Dani (Mercado de la Paz)",
+        "category": "lunch",
+        "neighborhood": "Salamanca",
+        "costBRL": 50,
+        "tip": "A tortilha de batata mais premiada da Espanha, numa banca do Mercado de la Paz; menu do dia barato no bairro caro"
+      },
+      {
+        "name": "Casa Labra (1860)",
+        "category": "lunch",
+        "neighborhood": "Sol",
+        "costBRL": 40,
+        "tip": "Taberna de 1860 ao lado da Puerta del Sol, onde o PSOE foi fundado; tapas de bacalhau empanado e croquetes, de pé, fila que anda"
+      },
+      {
+        "name": "Casa Lucio (huevos rotos)",
+        "category": "dinner",
+        "neighborhood": "La Latina",
+        "costBRL": 220,
+        "tip": "Os ovos estrelados com batata que viraram prato nacional, na Cava Baja; reserve com dias, celebridades na mesa ao lado"
+      },
+      {
+        "name": "Casa Revuelta (bacalao rebozado)",
+        "category": "lunch",
+        "neighborhood": "La Latina",
+        "costBRL": 40,
+        "tip": "Taberna de bairro com o bacalhau empanado mais famoso da cidade; só balcão, vá antes das 13h"
+      },
+      {
+        "name": "Azotea del Círculo de Bellas Artes",
+        "category": "night",
+        "neighborhood": "Gran Vía",
+        "costBRL": 40,
+        "tip": "O terraço no alto do Círculo, com a Gran Vía e o Metrópolis aos pés; drinque ao pôr do sol, ingresso de 5 euros"
+      },
+      {
+        "name": "Corral de la Morería (flamenco)",
+        "category": "night",
+        "neighborhood": "Ópera",
+        "costBRL": 350,
+        "tip": "O tablao mais premiado do mundo, desde 1956; dois shows por noite, jantar opcional com estrela Michelin, reserve"
+      },
+      {
+        "name": "DiverXO (Dabiz Muñoz)",
+        "category": "dinner",
+        "neighborhood": "Chamartín",
+        "costBRL": 2500,
+        "tip": "Três estrelas Michelin e eleito melhor restaurante do mundo; reservas abrem meses antes, menu único; o jantar da vida"
+      },
+      {
+        "name": "El Corte Inglés Callao (Gourmet Experience)",
+        "category": "afternoon",
+        "neighborhood": "Gran Vía",
+        "costBRL": 0,
+        "tip": "A loja de departamentos da Espanha; o terraço Gourmet Experience do 9º andar tem a vista da Gran Vía e tapas"
+      },
+      {
+        "name": "El Rastro (feira de domingo)",
+        "category": "morning",
+        "neighborhood": "La Latina",
+        "costBRL": 0,
+        "tip": "A feira de rua de 500 anos, todo domingo de manhã na Ribera de Curtidores; antiguidades nas galerias, vermute em La Latina depois"
+      },
+      {
+        "name": "Mirador Faro de Moncloa",
+        "category": "afternoon",
+        "neighborhood": "Moncloa",
+        "costBRL": 20,
+        "tip": "Mirante de 92 m com vista 360º da cidade e da serra; barato e vazio, ao lado do Museo de América"
+      },
+      {
+        "name": "Gran Vía (caminhada)",
+        "category": "afternoon",
+        "neighborhood": "Gran Vía",
+        "costBRL": 0,
+        "tip": "A Broadway madrilena: Metrópolis, Telefónica, cinemas e teatros; caminhe do Alcalá até a Plaza de España ao anoitecer"
+      },
+      {
+        "name": "HanSo Café",
+        "category": "breakfast",
+        "neighborhood": "Malasaña",
+        "costBRL": 50,
+        "tip": "Café de especialidade e brunch asiático-espanhol em Malasaña; matcha e bolos, lota no fim de semana"
+      },
+      {
+        "name": "Real Jardín Botánico",
+        "category": "afternoon",
+        "neighborhood": "Paseo del Arte",
+        "costBRL": 30,
+        "tip": "Jardim de 1781 ao lado do Prado, estufas e bonsais; o respiro entre dois museus"
+      },
+      {
+        "name": "Juana La Loca (pintxos)",
+        "category": "dinner",
+        "neighborhood": "La Latina",
+        "costBRL": 150,
+        "tip": "Pintxos bascos na Puerta de Moros, com a tortilha de cebola caramelizada que todo mundo pede; mesas na rua"
+      },
+      {
+        "name": "La Barraca (paella, 1935)",
+        "category": "dinner",
+        "neighborhood": "Chueca",
+        "costBRL": 200,
+        "tip": "A casa de paellas de Madri desde 1935, azulejos valencianos e arroz feito na hora; reserve"
+      },
+      {
+        "name": "La Mallorquina (Puerta del Sol)",
+        "category": "breakfast",
+        "neighborhood": "Sol",
+        "costBRL": 25,
+        "tip": "Pastelaria de 1894 na Puerta del Sol; napolitana de chocolate ao balcão, de pé, como os madrilenos"
+      },
+      {
+        "name": "Las Rozas Village (outlet)",
+        "category": "morning",
+        "neighborhood": "Las Rozas",
+        "costBRL": 0,
+        "tip": "Outlet de marcas europeias a 30 min do centro, ônibus Shopping Express saindo da Plaza de Oriente; devolução de IVA no local"
+      },
+      {
+        "name": "Lhardy (1839)",
+        "category": "lunch",
+        "neighborhood": "Sol",
+        "costBRL": 250,
+        "tip": "Restaurante de 1839 na Carrera de San Jerónimo, o cozido madrileno dos reis; a loja da frente serve consomé de pé"
+      },
+      {
+        "name": "Madrid Río (parque linear)",
+        "category": "afternoon",
+        "neighborhood": "Arganzuela",
+        "costBRL": 0,
+        "tip": "10 km de parque sobre a rodovia enterrada, pontes, fontes para crianças e aluguel de bicicleta; termina no Matadero"
+      },
+      {
+        "name": "Matadero Madrid",
+        "category": "afternoon",
+        "neighborhood": "Arganzuela",
+        "costBRL": 0,
+        "tip": "Antigo matadouro virou centro cultural de 150 mil m²: exposições grátis, cinema, feiras e o Madrid Río ao lado"
+      },
+      {
+        "name": "Mercado de San Antón",
+        "category": "lunch",
+        "neighborhood": "Chueca",
+        "costBRL": 80,
+        "tip": "Mercado de três andares em Chueca: compras embaixo, tapas no meio e terraço em cima"
+      },
+      {
+        "name": "Mercado de San Miguel",
+        "category": "lunch",
+        "neighborhood": "Sol",
+        "costBRL": 100,
+        "tip": "Mercado de ferro de 1916 ao lado da Plaza Mayor, só bancas de tapas; caro e cheio, mas é a melhor primeira hora na cidade"
+      },
+      {
+        "name": "Museo del Ferrocarril de Madrid",
+        "category": "morning",
+        "neighborhood": "Delicias",
+        "costBRL": 40,
+        "tip": "Locomotivas a vapor na antiga estação de Delicias; o programa de criança pequena que os adultos gostam"
+      },
+      {
+        "name": "Palacio Real de Madrid",
+        "category": "morning",
+        "neighborhood": "Ópera",
+        "costBRL": 80,
+        "tip": "O maior palácio real da Europa Ocidental, 3.000 salas; compre com hora, veja a Armaria e a troca da guarda às quartas"
+      },
+      {
+        "name": "Parque Warner Madrid",
+        "category": "morning",
+        "neighborhood": "San Martín de la Vega",
+        "costBRL": 350,
+        "tip": "Parque dos Looney Tunes, Batman e Superman a 30 km do centro; trem C-3 + ônibus ou carro, dia inteiro"
+      },
+      {
+        "name": "Plaza Mayor",
+        "category": "afternoon",
+        "neighborhood": "Sol",
+        "costBRL": 0,
+        "tip": "A praça fechada de 1619, com a Casa de la Panadería pintada; evite os restaurantes da praça, use-a só como palco"
+      },
+      {
+        "name": "Museo del Prado",
+        "category": "morning",
+        "neighborhood": "Paseo del Arte",
+        "costBRL": 90,
+        "tip": "Velázquez, Goya e Bosch numa das três maiores pinacotecas do mundo; grátis nas últimas 2h do dia, compre antes para pular fila"
+      },
+      {
+        "name": "Primark Gran Vía",
+        "category": "afternoon",
+        "neighborhood": "Gran Vía",
+        "costBRL": 0,
+        "tip": "A maior Primark do mundo num palácio de 1924 com o átrio restaurado; roupa barata para a mala de volta"
+      },
+      {
+        "name": "Puerta del Sol (Km 0 e El Oso y el Madroño)",
+        "category": "afternoon",
+        "neighborhood": "Sol",
+        "costBRL": 0,
+        "tip": "O centro da Espanha: o quilômetro zero no chão, o urso e o medronheiro e o relógio da virada do ano"
+      },
+      {
+        "name": "Museo Reina Sofía (Guernica)",
+        "category": "afternoon",
+        "neighborhood": "Atocha",
+        "costBRL": 70,
+        "tip": "O Guernica de Picasso, Dalí e Miró no antigo hospital; grátis das 19h às 21h, de segunda a sábado"
+      },
+      {
+        "name": "Parque de El Retiro (Palacio de Cristal e lago)",
+        "category": "afternoon",
+        "neighborhood": "Retiro",
+        "costBRL": 0,
+        "tip": "Barco a remo no lago, o Palácio de Cristal e o Anjo Caído; Patrimônio da Humanidade com o Paseo del Prado"
+      },
+      {
+        "name": "Sala de Despiece",
+        "category": "dinner",
+        "neighborhood": "Chamberí",
+        "costBRL": 180,
+        "tip": "Balcão de aço inox onde cada prato é montado na sua frente; sem reserva, chegue às 20h30"
+      },
+      {
+        "name": "Sala Equis",
+        "category": "night",
+        "neighborhood": "La Latina",
+        "costBRL": 60,
+        "tip": "Antigo cinema de filme adulto virou bar com telão, redes e sessões de cinema; a noite alternativa perto de Tirso de Molina"
+      },
+      {
+        "name": "Chocolatería San Ginés (1894)",
+        "category": "breakfast",
+        "neighborhood": "Sol",
+        "costBRL": 40,
+        "tip": "Chocolate com churros desde 1894, aberto 24h; a fila é parte do rito, vá antes das 9h ou depois da meia-noite"
+      },
+      {
+        "name": "StreetXO (El Corte Inglés Serrano)",
+        "category": "dinner",
+        "neighborhood": "Salamanca",
+        "costBRL": 350,
+        "tip": "A versão street food do DiverXO no último andar do El Corte Inglés de Serrano; balcão, fila, música alta"
+      },
+      {
+        "name": "Templo de Debod (pôr do sol)",
+        "category": "afternoon",
+        "neighborhood": "Moncloa",
+        "costBRL": 0,
+        "tip": "Templo egípcio do século II a.C. doado à Espanha, no alto do Parque del Oeste; o pôr do sol mais fotografado de Madri"
+      },
+      {
+        "name": "Museo Thyssen-Bornemisza",
+        "category": "morning",
+        "neighborhood": "Paseo del Arte",
+        "costBRL": 75,
+        "tip": "Coleção particular do gótico ao pop, o mais fácil dos três museus para quem não é de museu; segunda grátis"
+      },
+      {
+        "name": "Toma Café",
+        "category": "breakfast",
+        "neighborhood": "Malasaña",
+        "costBRL": 40,
+        "tip": "A torrefação que começou a terceira onda em Madri; café filtrado e poucos lugares, para levar"
+      },
+      {
+        "name": "Zoo Aquarium de Madrid",
+        "category": "morning",
+        "neighborhood": "Casa de Campo",
+        "costBRL": 160,
+        "tip": "Zoológico com pandas, aquário e golfinário dentro da Casa de Campo; metrô Casa de Campo, combine com o teleférico"
+      }
+    ],
+    "hotels": [
+      {
+        "name": "Catalonia Puerta del Sol",
+        "zone": "Sol/Centro",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 800-1.300",
+        "tip": "Palácio do século XVIII com pátio interno e piscina no terraço, na Calle Atocha a 3 min do Sol"
+      },
+      {
+        "name": "Four Seasons Hotel Madrid",
+        "zone": "Sol/Centro",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 4.500-8.000",
+        "tip": "Sete prédios históricos da Calle de Alcalá unidos em 2020, com a Galería Canalejas embaixo; o rooftop Dani Brasserie"
+      },
+      {
+        "name": "Hostal Persal",
+        "zone": "Sol/Centro",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 400-650",
+        "tip": "Hostal de família na Plaza del Ángel, quartos limpos com banheiro privativo a 3 min da Puerta del Sol"
+      },
+      {
+        "name": "Only YOU Hotel Atocha",
+        "zone": "La Latina/Lavapies",
+        "tier": "mid",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 900-1.500",
+        "tip": "Hotel de design em frente à estação de Atocha e ao Reina Sofía; o Trotamundos no térreo é ponto da cidade"
+      },
+      {
+        "name": "Petit Palace Puerta del Sol",
+        "zone": "Sol/Centro",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 500-800",
+        "tip": "Rede espanhola econômica a 1 min da Puerta del Sol, quartos familiares com beliche"
+      },
+      {
+        "name": "Room Mate Alba",
+        "zone": "Sol/Centro",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "solo"
+        ],
+        "priceRangeBRL": "R$ 700-1.100",
+        "tip": "Boutique de design no Barrio de las Letras, terraço no telhado e café da manhã até meio-dia"
+      },
+      {
+        "name": "Rosewood Villa Magna",
+        "zone": "Salamanca",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 4.000-7.000",
+        "tip": "O palácio moderno do Paseo de la Castellana, a 2 min da Calle Serrano; serviço de referência da cidade"
+      },
+      {
+        "name": "The Westin Palace, Madrid",
+        "zone": "Sol/Centro",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 2.000-3.500",
+        "tip": "O grande hotel de 1912 entre o Prado e o Thyssen, com a cúpula de vitral na rotunda do café"
+      }
+    ]
+  },
+  "Santiago": {
+    "city": "Santiago",
+    "items": [
+      {
+        "name": "Ambrosía Bistró",
+        "category": "dinner",
+        "neighborhood": "Providencia",
+        "costBRL": 350,
+        "tip": "A chef Carolina Bazán no Latin America's 50 Best, cozinha de mercado com vinhos naturais; reserve"
+      },
+      {
+        "name": "Aquí Está Coco",
+        "category": "dinner",
+        "neighborhood": "Providencia",
+        "costBRL": 280,
+        "tip": "A marisqueira clássica de Santiago, congrio e centolla num casarão reconstruído; família chilena há 40 anos"
+      },
+      {
+        "name": "Baco Vino y Bistró",
+        "category": "dinner",
+        "neighborhood": "Providencia",
+        "costBRL": 220,
+        "tip": "Bistrô francês com a melhor carta de vinhos por taça de Providencia; steak tartare e bife chorizo, reserve"
+      },
+      {
+        "name": "Bar Nacional (Centro)",
+        "category": "lunch",
+        "neighborhood": "Centro",
+        "costBRL": 60,
+        "tip": "Restaurante de balcão de 1950 na Bandera, onde o centro almoça: lomo a lo pobre e cazuela; rápido e honesto"
+      },
+      {
+        "name": "Bar The Clinic",
+        "category": "night",
+        "neighborhood": "Lastarria",
+        "costBRL": 70,
+        "tip": "O bar do jornal satírico, pisco sour e humor político nas paredes; o happy hour de Lastarria"
+      },
+      {
+        "name": "Barrio Bellavista e Patio Bellavista",
+        "category": "afternoon",
+        "neighborhood": "Bellavista",
+        "costBRL": 0,
+        "tip": "Bairro boêmio de casas coloridas entre o Mapocho e o San Cristóbal; o Patio Bellavista concentra restaurantes e artesanato"
+      },
+      {
+        "name": "Barrio Italia (design e antiquários)",
+        "category": "afternoon",
+        "neighborhood": "Providencia",
+        "costBRL": 0,
+        "tip": "Ruas de antiquários, lojas de design e cafés em casarões; o bairro para comprar o que não tem em shopping"
+      },
+      {
+        "name": "Centro Gabriela Mistral GAM (Barrio Lastarria)",
+        "category": "afternoon",
+        "neighborhood": "Lastarria",
+        "costBRL": 0,
+        "tip": "O centro cultural GAM é a porta do bairro mais bonito do centro: feira de livros, cafés nas calçadas, o Santa Lucía em frente; onde ficar hospedado"
+      },
+      {
+        "name": "Bate-volta ao Cajón del Maipo (Embalse El Yeso)",
+        "category": "morning",
+        "neighborhood": "San José de Maipo",
+        "costBRL": 250,
+        "tip": "Vale andino a 1h30 com a represa turquesa El Yeso a 2.500 m; tour ou carro 4x4, leve casaco mesmo no verão"
+      },
+      {
+        "name": "Bate-volta a Isla Negra (casa de Neruda)",
+        "category": "morning",
+        "neighborhood": "El Quisco",
+        "costBRL": 200,
+        "tip": "A casa-museu de Neruda de frente para o Pacífico, 1h30 de ônibus; combine com as praias de El Quisco e Algarrobo"
+      },
+      {
+        "name": "Bate-volta a Valle Nevado (neve)",
+        "category": "morning",
+        "neighborhood": "Lo Barnechea",
+        "costBRL": 400,
+        "tip": "A estação de esqui a 1h30 do centro, junho a setembro; fora da temporada, o passeio é a estrada de 60 curvas e a vista"
+      },
+      {
+        "name": "Paseo 21 de Mayo, Valparaíso (bate-volta Valparaíso e Viña del Mar)",
+        "category": "morning",
+        "neighborhood": "Valparaíso",
+        "costBRL": 150,
+        "tip": "1h30 de ônibus: os elevadores e murais de Valparaíso de manhã, a praia e o relógio de flores de Viña à tarde"
+      },
+      {
+        "name": "Museo Nacional de Bellas Artes",
+        "category": "morning",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "Palácio de 1910 inspirado no Petit Palais, no Parque Forestal; gratuito, arte chilena e exposições temporárias"
+      },
+      {
+        "name": "Bistró de la Barra",
+        "category": "breakfast",
+        "neighborhood": "Lastarria",
+        "costBRL": 50,
+        "tip": "Café de esquina em frente ao Bellas Artes, ovos, waffles e café de verdade; o café da manhã de Lastarria, lota no fim de semana"
+      },
+      {
+        "name": "Bocanáriz (vinhos chilenos)",
+        "category": "dinner",
+        "neighborhood": "Lastarria",
+        "costBRL": 200,
+        "tip": "Wine bar com 300 vinhos chilenos por taça e voos de degustação; a aula de vinho do Chile num jantar, reserve"
+      },
+      {
+        "name": "Boragó (Rodolfo Guzmán)",
+        "category": "dinner",
+        "neighborhood": "Vitacura",
+        "costBRL": 900,
+        "tip": "O restaurante do Chile no World's 50 Best, ingredientes endêmicos do deserto à Patagônia; menu único, reserve com semanas"
+      },
+      {
+        "name": "Buin Zoo",
+        "category": "morning",
+        "neighborhood": "Buin",
+        "costBRL": 110,
+        "tip": "O maior zoológico do Chile, 40 min ao sul de carro ou trem Metrotren até Buin Zoo; dia inteiro com crianças"
+      },
+      {
+        "name": "Café Cultura (Providencia)",
+        "category": "breakfast",
+        "neighborhood": "Providencia",
+        "costBRL": 45,
+        "tip": "Café de bairro com livros e café da manhã completo em Providencia; o jeito calmo de começar o dia"
+      },
+      {
+        "name": "Castaño (padaria)",
+        "category": "breakfast",
+        "neighborhood": "Providencia",
+        "costBRL": 25,
+        "tip": "A rede de padarias dos chilenos, em toda esquina; marraqueta quente, café e pastel de folhado, de pé e barato"
+      },
+      {
+        "name": "Cementerio General (tour)",
+        "category": "morning",
+        "neighborhood": "Recoleta",
+        "costBRL": 0,
+        "tip": "O cemitério-museu onde estão Allende, Violeta Parra e os presidentes do Chile; tours guiados nos fins de semana"
+      },
+      {
+        "name": "Centro Cultural La Moneda",
+        "category": "morning",
+        "neighborhood": "Centro",
+        "costBRL": 30,
+        "tip": "Centro cultural subterrâneo sob a praça do palácio, exposições internacionais e a Cineteca Nacional"
+      },
+      {
+        "name": "Cerro San Cristóbal (funicular e teleférico)",
+        "category": "morning",
+        "neighborhood": "Bellavista",
+        "costBRL": 60,
+        "tip": "Funicular de 1925 em Bellavista até a Virgem, teleférico até Providencia; vá cedo antes da neblina, mote con huesillo no topo"
+      },
+      {
+        "name": "Cerro Santa Lucía",
+        "category": "afternoon",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "O morro onde Santiago foi fundada em 1541, escadarias, fontes e mirante no meio do centro; gratuito"
+      },
+      {
+        "name": "Chipe Libre (pisco)",
+        "category": "dinner",
+        "neighborhood": "Lastarria",
+        "costBRL": 150,
+        "tip": "A \"república independente do pisco\": piscos chilenos e peruanos lado a lado, pátio em Lastarria"
+      },
+      {
+        "name": "Club La Feria",
+        "category": "night",
+        "neighborhood": "Bellavista",
+        "costBRL": 100,
+        "tip": "A pista de música eletrônica de Bellavista desde 1998, DJs internacionais; abre depois da meia-noite"
+      },
+      {
+        "name": "Colmado Coffee & Bakery (Merced, Lastarria)",
+        "category": "breakfast",
+        "neighborhood": "Lastarria",
+        "costBRL": 50,
+        "tip": "Café de especialidade e padaria própria em Lastarria; o brunch de sábado com pão de fermentação natural"
+      },
+      {
+        "name": "Viña Concha y Toro (Casillero del Diablo)",
+        "category": "afternoon",
+        "neighborhood": "Pirque",
+        "costBRL": 150,
+        "tip": "A vinícola mais visitada do Chile, 1h ao sul: tour com a lenda da adega do diabo e degustação; metrô Las Mercedes + táxi"
+      },
+      {
+        "name": "Costanera Center",
+        "category": "afternoon",
+        "neighborhood": "Providencia",
+        "costBRL": 0,
+        "tip": "O maior shopping da América do Sul, embaixo da torre do Sky Costanera; Falabella, Paris e marcas que não chegam ao Brasil"
+      },
+      {
+        "name": "El Hoyo (1912)",
+        "category": "lunch",
+        "neighborhood": "Estación Central",
+        "costBRL": 80,
+        "tip": "Picada de 1912 perto da Estación Central, pernil, arrollado e o terremoto original; só almoço, feche com o vinho da casa"
+      },
+      {
+        "name": "Fuente Alemana (lomito)",
+        "category": "lunch",
+        "neighborhood": "Centro",
+        "costBRL": 60,
+        "tip": "O lomito e o churrasco italiano mais famosos do Chile, no balcão da Alameda desde 1958; Anthony Bourdain veio aqui"
+      },
+      {
+        "name": "Galindo (Bellavista)",
+        "category": "lunch",
+        "neighborhood": "Bellavista",
+        "costBRL": 70,
+        "tip": "Picada de 1960 em Bellavista com pastel de choclo, porotos granados e terremoto; comida chilena de casa"
+      },
+      {
+        "name": "La Chascona (casa de Pablo Neruda)",
+        "category": "afternoon",
+        "neighborhood": "Bellavista",
+        "costBRL": 60,
+        "tip": "A casa que Neruda construiu para a amante no pé do San Cristóbal, labirinto de objetos; audioguia incluído"
+      },
+      {
+        "name": "La Mar Cebichería (Vitacura)",
+        "category": "dinner",
+        "neighborhood": "Vitacura",
+        "costBRL": 250,
+        "tip": "A cevicheria de Gastón Acurio em Vitacura, peixe do Pacífico chileno com técnica peruana; terraço"
+      },
+      {
+        "name": "Palacio de La Moneda",
+        "category": "morning",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "O palácio presidencial de 1805; troca da guarda em dias alternados às 10h, visita guiada grátis com agendamento"
+      },
+      {
+        "name": "La Vega Central",
+        "category": "lunch",
+        "neighborhood": "Recoleta",
+        "costBRL": 40,
+        "tip": "O mercado popular de frutas e comida do outro lado do Mapocho; cazuela e pastel de choclo no andar de cima, preço de chileno"
+      },
+      {
+        "name": "Liguria (Providencia)",
+        "category": "lunch",
+        "neighborhood": "Providencia",
+        "costBRL": 90,
+        "tip": "Bar-restaurante boêmio com paredes de cartazes antigos, comida chilena e pisco sour; lota à noite, almoce tranquilo"
+      },
+      {
+        "name": "Mercado Central de Santiago",
+        "category": "lunch",
+        "neighborhood": "Centro",
+        "costBRL": 100,
+        "tip": "Mercado de ferro de 1872, peixe e frutos do mar; coma nas bancas da periferia, não no centro turístico (Donde Augusto é a exceção)"
+      },
+      {
+        "name": "Museo Interactivo Mirador (MIM)",
+        "category": "morning",
+        "neighborhood": "La Granja",
+        "costBRL": 70,
+        "tip": "O melhor museu de ciência interativo da América do Sul, 14 salas para tocar em tudo; metrô Mirador, dia de chuva resolvido"
+      },
+      {
+        "name": "Museo de la Memoria y los Derechos Humanos",
+        "category": "afternoon",
+        "neighborhood": "Quinta Normal",
+        "costBRL": 0,
+        "tip": "Museu da ditadura de 1973–1990, gratuito e necessário; pesado para crianças pequenas, essencial para adultos"
+      },
+      {
+        "name": "Museo Chileno de Arte Precolombino",
+        "category": "morning",
+        "neighborhood": "Centro",
+        "costBRL": 50,
+        "tip": "O melhor museu da cidade: 3.000 anos de arte das Américas, a sala Chile antes de Chile no subsolo"
+      },
+      {
+        "name": "Parque Arauco",
+        "category": "afternoon",
+        "neighborhood": "Las Condes",
+        "costBRL": 0,
+        "tip": "O shopping de luxo de Las Condes, Distrito de Lujo e boulevard de restaurantes ao ar livre"
+      },
+      {
+        "name": "Parque Bicentenario",
+        "category": "afternoon",
+        "neighborhood": "Vitacura",
+        "costBRL": 0,
+        "tip": "Parque de Vitacura com lagoa de flamingos e cisnes, parquinhos e a cordilheira ao fundo; piquenique de domingo"
+      },
+      {
+        "name": "Parque Quinta Normal (Museo de Historia Natural)",
+        "category": "morning",
+        "neighborhood": "Quinta Normal",
+        "costBRL": 0,
+        "tip": "Parque de 1841 com lago de pedalinho e o Museu de História Natural gratuito; o esqueleto de baleia é o ímã das crianças"
+      },
+      {
+        "name": "Peumayén Ancestral Food",
+        "category": "dinner",
+        "neighborhood": "Bellavista",
+        "costBRL": 250,
+        "tip": "Cozinha dos povos originários (mapuche, rapa nui, aimará) em Bellavista; comece pela cesta de pães ancestrais"
+      },
+      {
+        "name": "Plaza de Armas e Catedral Metropolitana",
+        "category": "morning",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "A praça fundadora com a catedral, o Correio Central e os artistas de rua; comece a cidade aqui"
+      },
+      {
+        "name": "Pueblito Los Dominicos (artesanato)",
+        "category": "afternoon",
+        "neighborhood": "Las Condes",
+        "costBRL": 0,
+        "tip": "Vila de artesãos ao lado da igreja colonial, lápis-lazúli, cerâmica e lã; fim da linha 1 do metrô, o souvenir certo"
+      },
+      {
+        "name": "Siete Negronis",
+        "category": "night",
+        "neighborhood": "Providencia",
+        "costBRL": 90,
+        "tip": "Coquetelaria de autor em Providencia, sempre no ranking dos melhores bares da América Latina; reserve"
+      },
+      {
+        "name": "Sky Costanera",
+        "category": "afternoon",
+        "neighborhood": "Providencia",
+        "costBRL": 110,
+        "tip": "O mirante mais alto da América Latina (300 m) na Gran Torre; vá ao pôr do sol para ver a cordilheira acender"
+      },
+      {
+        "name": "Teatro Municipal de Santiago",
+        "category": "night",
+        "neighborhood": "Centro",
+        "costBRL": 150,
+        "tip": "A ópera de 1857, temporada de ópera, balé e concertos; ingressos baratos na galeria, visitas guiadas de dia"
+      },
+      {
+        "name": "Thelonious, Lugar de Jazz",
+        "category": "night",
+        "neighborhood": "Bellavista",
+        "costBRL": 80,
+        "tip": "O clube de jazz de Santiago numa casa antiga de Bellavista, show todas as noites; pequeno, chegue cedo"
+      },
+      {
+        "name": "Wonderland Café",
+        "category": "breakfast",
+        "neighborhood": "Lastarria",
+        "costBRL": 50,
+        "tip": "Café temático de Alice no País das Maravilhas, mesas no pátio; waffles e chocolate quente, crianças adoram"
+      }
+    ],
+    "hotels": [
+      {
+        "name": "Hotel Cumbres Lastarria",
+        "zone": "Lastarria/Bellas Artes",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 700-1.100",
+        "tip": "Rede chilena no coração de Lastarria, piscina no terraço e quartos amplos; bom para família"
+      },
+      {
+        "name": "Hostal Forestal",
+        "zone": "Lastarria/Bellas Artes",
+        "tier": "budget",
+        "personaTags": [
+          "solo",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 150-350",
+        "tip": "Hostel em casarão em frente ao Parque Forestal, quartos privativos e terraço; a 2 min do metrô Bellas Artes"
+      },
+      {
+        "name": "Ibis Santiago Providencia",
+        "zone": "Providencia",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 300-450",
+        "tip": "Ibis a 3 min do metrô Manuel Montt, padrão previsível e café da manhã barato; base segura para família"
+      },
+      {
+        "name": "Hotel Boutique Le Rêve",
+        "zone": "Providencia",
+        "tier": "mid",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 600-1.000",
+        "tip": "Casa francesa de 1920 em Providencia com jardim e 31 quartos; café da manhã elogiado, rua tranquila"
+      },
+      {
+        "name": "Hotel Magnolia",
+        "zone": "Lastarria/Bellas Artes",
+        "tier": "mid",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 800-1.300",
+        "tip": "Casarão de 1929 em Lastarria com anexo de vidro e terraço com vista do Santa Lucía; o boutique da cidade"
+      },
+      {
+        "name": "Mandarin Oriental, Santiago",
+        "zone": "Las Condes/Vitacura",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 1.800-3.200",
+        "tip": "O antigo Grand Hyatt, torre com átrio de 24 andares e a piscina de lagoa com cascata; família com crianças aprova"
+      },
+      {
+        "name": "The Ritz-Carlton, Santiago",
+        "zone": "Las Condes/Vitacura",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 2.000-3.500",
+        "tip": "Ritz no bairro El Golf, piscina sob cúpula de vidro no último andar; metrô El Golf na porta"
+      },
+      {
+        "name": "The Singular Santiago, Lastarria",
+        "zone": "Lastarria/Bellas Artes",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 1.800-3.000",
+        "tip": "O hotel de luxo de Lastarria, estilo parisiense, rooftop com piscina e bar de vista; serviço chileno de ponta"
+      }
+    ]
+  },
+  "Miami": {
+    "city": "Miami",
+    "items": [
+      {
+        "name": "Art Deco Walking Tour (Miami Design Preservation League)",
+        "category": "morning",
+        "neighborhood": "South Beach",
+        "costBRL": 150,
+        "tip": "Tour guiado diário às 10h30 saindo do Art Deco Welcome Center, Ocean Drive; o jeito de entender os prédios pastel"
+      },
+      {
+        "name": "Aventura Mall (19501 Biscayne Blvd)",
+        "category": "afternoon",
+        "neighborhood": "Aventura",
+        "costBRL": 0,
+        "tip": "O terceiro maior shopping dos EUA, 300 lojas, Apple, Zara e o escorregador de 28 m; 30 min ao norte"
+      },
+      {
+        "name": "Bal Harbour Shops",
+        "category": "afternoon",
+        "neighborhood": "Bal Harbour",
+        "costBRL": 0,
+        "tip": "O shopping de luxo ao ar livre com carpas e jardins, Chanel a Gucci; só olhar já vale, almoce no Makoto"
+      },
+      {
+        "name": "Ball & Chain (Little Havana)",
+        "category": "night",
+        "neighborhood": "Little Havana",
+        "costBRL": 120,
+        "tip": "O clube de 1935 da Calle Ocho reaberto com salsa ao vivo e o palco em forma de abacaxi; mojito e dança, sem ingresso"
+      },
+      {
+        "name": "Bate-volta ao Everglades National Park (aerobarco)",
+        "category": "morning",
+        "neighborhood": "Everglades",
+        "costBRL": 250,
+        "tip": "1h a oeste: aerobarco entre os jacarés em Everglades Safari Park ou Shark Valley de bicicleta; leve repelente, vá de manhã"
+      },
+      {
+        "name": "Bate-volta a Fort Lauderdale (canais e Las Olas)",
+        "category": "morning",
+        "neighborhood": "Fort Lauderdale",
+        "costBRL": 150,
+        "tip": "A Veneza da América a 40 min pela Brightline: barco pelos canais das mansões, Las Olas Boulevard e a praia mais calma"
+      },
+      {
+        "name": "Bate-volta a Key West",
+        "category": "morning",
+        "neighborhood": "Key West",
+        "costBRL": 400,
+        "tip": "3h30 pela Overseas Highway e a Ponte das 7 Milhas até o fim dos EUA; a casa de Hemingway e o pôr do sol em Mallory Square. Longo: considere dormir lá"
+      },
+      {
+        "name": "Bayside Marketplace e passeio de barco pela baía",
+        "category": "afternoon",
+        "neighborhood": "Downtown",
+        "costBRL": 200,
+        "tip": "Centro de compras na marina de Downtown, saída dos barcos de 90 min pela Biscayne Bay com as mansões de Star Island"
+      },
+      {
+        "name": "Big Pink (South Beach)",
+        "category": "breakfast",
+        "neighborhood": "South Beach",
+        "costBRL": 90,
+        "tip": "Diner rosa gigante de South Beach com panquecas de prato e cardápio de 200 itens; aberto até tarde, crianças adoram"
+      },
+      {
+        "name": "Bill Baggs Cape Florida State Park (farol)",
+        "category": "afternoon",
+        "neighborhood": "Key Biscayne",
+        "costBRL": 50,
+        "tip": "A ponta de Key Biscayne com o farol de 1825 e a praia sempre entre as melhores dos EUA; suba os 109 degraus do farol"
+      },
+      {
+        "name": "Bodega Taqueria y Tequila (South Beach)",
+        "category": "night",
+        "neighborhood": "South Beach",
+        "costBRL": 120,
+        "tip": "Taqueria de frente, speakeasy atrás da porta de banheiro químico; tacos e tequila até as 3h"
+      },
+      {
+        "name": "Brickell City Centre",
+        "category": "afternoon",
+        "neighborhood": "Brickell",
+        "costBRL": 0,
+        "tip": "Shopping aberto de arquitetura moderna no coração de Brickell, Saks e restaurantes; ande pela Brickell Avenue depois"
+      },
+      {
+        "name": "Carbone Miami",
+        "category": "dinner",
+        "neighborhood": "South Beach",
+        "costBRL": 600,
+        "tip": "O ítalo-americano de Nova York em South Beach, rigatoni à vodca e garçons de smoking; reservas abrem 30 dias antes e somem"
+      },
+      {
+        "name": "Coconut Grove (CocoWalk e Peacock Park)",
+        "category": "afternoon",
+        "neighborhood": "Coconut Grove",
+        "costBRL": 0,
+        "tip": "O bairro mais antigo e arborizado de Miami, à beira da baía; CocoWalk, pavões soltos e o Peacock Park"
+      },
+      {
+        "name": "COTE Miami",
+        "category": "dinner",
+        "neighborhood": "Design District",
+        "costBRL": 500,
+        "tip": "Churrasco coreano com estrela Michelin no Design District; o Butcher's Feast para dividir, reserve"
+      },
+      {
+        "name": "Coyo Taco (Wynwood)",
+        "category": "lunch",
+        "neighborhood": "Wynwood",
+        "costBRL": 80,
+        "tip": "Tacos de rua em Wynwood com bar escondido atrás; fila, mas anda rápido"
+      },
+      {
+        "name": "Crandon Park Beach (Key Biscayne)",
+        "category": "morning",
+        "neighborhood": "Key Biscayne",
+        "costBRL": 40,
+        "tip": "Praia de família em Key Biscayne, água rasa e calma, palmeiras e churrasqueiras; estacionamento pago, chegue antes das 10h"
+      },
+      {
+        "name": "Institute of Contemporary Art Miami (Design District)",
+        "category": "afternoon",
+        "neighborhood": "Design District",
+        "costBRL": 0,
+        "tip": "Museu de arte contemporânea gratuito no meio do bairro de lojas de luxo e arquitetura de assinatura; saia andando até o Fly's Eye Dome"
+      },
+      {
+        "name": "Do Not Sit On The Furniture",
+        "category": "night",
+        "neighborhood": "South Beach",
+        "costBRL": 150,
+        "tip": "Clube pequeno de house e techno em South Beach, sem VIP e sem celebridade; a pista para quem quer dançar, não ser visto"
+      },
+      {
+        "name": "Dolphin Mall (outlet)",
+        "category": "afternoon",
+        "neighborhood": "Sweetwater",
+        "costBRL": 0,
+        "tip": "O outlet mais perto do centro, 240 lojas e preço de outlet; o shopping dos brasileiros, com motivo"
+      },
+      {
+        "name": "Fairchild Tropical Botanic Garden",
+        "category": "morning",
+        "neighborhood": "Coral Gables",
+        "costBRL": 140,
+        "tip": "Jardim botânico tropical de 34 hectares, estufa de borboletas e o bonde que percorre os lagos; manhã, antes do calor"
+      },
+      {
+        "name": "Frost Science Museum",
+        "category": "morning",
+        "neighborhood": "Downtown",
+        "costBRL": 170,
+        "tip": "Museu de ciência com aquário de 3 andares que se olha por baixo e planetário; ao lado do PAMM, meio dia com crianças"
+      },
+      {
+        "name": "Garcia's Seafood Grille & Fish Market",
+        "category": "lunch",
+        "neighborhood": "Downtown",
+        "costBRL": 130,
+        "tip": "Peixaria com mesas no deck do Miami River, peixe do dia grelhado e stone crab na temporada; só almoço e começo de noite"
+      },
+      {
+        "name": "Haulover Beach Park",
+        "category": "morning",
+        "neighborhood": "Bal Harbour",
+        "costBRL": 40,
+        "tip": "Praia larga e tranquila ao norte com o Haulover Inlet (os barcos pulando onda são atração); a parte norte é naturista, fique ao sul"
+      },
+      {
+        "name": "Joe's Stone Crab (1913)",
+        "category": "dinner",
+        "neighborhood": "South Beach",
+        "costBRL": 450,
+        "tip": "A instituição de 1913 em South Beach, garras de stone crab com mostarda (outubro a maio); sem reserva, fila de 1h, ou o take away ao lado"
+      },
+      {
+        "name": "Jungle Island",
+        "category": "morning",
+        "neighborhood": "Watson Island",
+        "costBRL": 250,
+        "tip": "Parque de animais e aventura na ilha entre Downtown e South Beach, tirolesa e preguiças; dia inteiro com crianças pequenas"
+      },
+      {
+        "name": "KYU (Wynwood)",
+        "category": "dinner",
+        "neighborhood": "Wynwood",
+        "costBRL": 400,
+        "tip": "Asiático na brasa de madeira em Wynwood, as costelas e o bolo de coco que todo mundo pede; reserve com dias"
+      },
+      {
+        "name": "La Sandwicherie (South Beach)",
+        "category": "lunch",
+        "neighborhood": "South Beach",
+        "costBRL": 70,
+        "tip": "Balcão francês de sanduíches em South Beach desde 1988, aberto até as 5h; peça com o molho da casa"
+      },
+      {
+        "name": "Lagniappe House",
+        "category": "night",
+        "neighborhood": "Midtown",
+        "costBRL": 120,
+        "tip": "Jardim de luzes com vinho, queijo e jazz ao vivo todas as noites em Midtown; a noite sem fila de Miami"
+      },
+      {
+        "name": "Las Olas Café (South Beach)",
+        "category": "breakfast",
+        "neighborhood": "South Beach",
+        "costBRL": 40,
+        "tip": "Janela cubana a 2 quadras da praia: cafecito, pastelito de goiaba e sanduíche cubano; de pé, barato"
+      },
+      {
+        "name": "Lincoln Road Mall",
+        "category": "afternoon",
+        "neighborhood": "South Beach",
+        "costBRL": 0,
+        "tip": "Rua de pedestres de compras e cafés de South Beach, da praia à baía; o Lincoln Road 1111 (garagem de Herzog & de Meuron) no fim"
+      },
+      {
+        "name": "Little Havana (Calle Ocho e Domino Park)",
+        "category": "afternoon",
+        "neighborhood": "Little Havana",
+        "costBRL": 0,
+        "tip": "A Calle Ocho entre a 12th e a 17th Avenue: Domino Park, charutarias, Ball & Chain e o sorvete Azucar; sexta é o Viernes Culturales"
+      },
+      {
+        "name": "Mandolin Aegean Bistro",
+        "category": "lunch",
+        "neighborhood": "Design District",
+        "costBRL": 200,
+        "tip": "Pátio grego-turco de azul e branco no Design District, o almoço bonito de Miami; reserve a mesa do jardim"
+      },
+      {
+        "name": "Mango's Tropical Cafe",
+        "category": "night",
+        "neighborhood": "South Beach",
+        "costBRL": 200,
+        "tip": "O show de dança latina de Ocean Drive, turístico e divertido; jantar com espetáculo, famílias cabem cedo"
+      },
+      {
+        "name": "Michael's Genuine Food & Drink",
+        "category": "dinner",
+        "neighborhood": "Design District",
+        "costBRL": 300,
+        "tip": "O restaurante que inventou o Design District gastronômico, cozinha americana de produto; pátio, bom para família"
+      },
+      {
+        "name": "Ocean Drive",
+        "category": "afternoon",
+        "neighborhood": "South Beach",
+        "costBRL": 0,
+        "tip": "A avenida art déco de frente para a praia, com a Villa Casa Casuarina (Versace); caminhe ao anoitecer com os neons acesos, coma em outro lugar"
+      },
+      {
+        "name": "Pérez Art Museum Miami (PAMM)",
+        "category": "morning",
+        "neighborhood": "Downtown",
+        "costBRL": 90,
+        "tip": "Museu de arte contemporânea de Herzog & de Meuron com jardins suspensos sobre a baía; o deck é o melhor lugar da cidade para um café"
+      },
+      {
+        "name": "Panther Coffee (Wynwood)",
+        "category": "breakfast",
+        "neighborhood": "Wynwood",
+        "costBRL": 50,
+        "tip": "A torrefação que fez Wynwood acordar; café filtrado e pátio, antes de ver os murais"
+      },
+      {
+        "name": "Prime 112",
+        "category": "dinner",
+        "neighborhood": "South Beach",
+        "costBRL": 600,
+        "tip": "A steakhouse de celebridades de South Beach, no hotel Browns de 1915; caro, barulhento e exatamente o que promete"
+      },
+      {
+        "name": "Puerto Sagua (cubano em South Beach)",
+        "category": "lunch",
+        "neighborhood": "South Beach",
+        "costBRL": 80,
+        "tip": "Diner cubano de 1962 na Collins, o antídoto aos preços de Ocean Drive; vaca frita e batido de mamey"
+      },
+      {
+        "name": "Rusty Pelican (Key Biscayne)",
+        "category": "dinner",
+        "neighborhood": "Key Biscayne",
+        "costBRL": 350,
+        "tip": "A vista do skyline de Miami sobre a baía, a partir da ilha de Key Biscayne; vá para o pôr do sol, peça o terraço"
+      },
+      {
+        "name": "Sanguich de Miami (Little Havana)",
+        "category": "lunch",
+        "neighborhood": "Little Havana",
+        "costBRL": 80,
+        "tip": "O sanduíche cubano levado a sério, pão e carnes feitos na casa, na Calle Ocho; balcão pequeno, fila que vale"
+      },
+      {
+        "name": "Sawgrass Mills (outlet)",
+        "category": "morning",
+        "neighborhood": "Sunrise",
+        "costBRL": 0,
+        "tip": "O maior outlet dos EUA, 350 lojas e o Colonnade de luxo, 50 min ao norte; dia inteiro, vá de carro ou shuttle"
+      },
+      {
+        "name": "South Beach (praia e guaritas coloridas)",
+        "category": "morning",
+        "neighborhood": "South Beach",
+        "costBRL": 0,
+        "tip": "A praia dos postais, da 5th à 15th Street; cadeiras alugadas são caras, leve a sua, e fotografe as guaritas de salva-vidas"
+      },
+      {
+        "name": "South Pointe Park",
+        "category": "afternoon",
+        "neighborhood": "South Beach",
+        "costBRL": 0,
+        "tip": "O parque na ponta sul de South Beach, onde os navios de cruzeiro passam colados; parquinho com água, pôr do sol"
+      },
+      {
+        "name": "Stubborn Seed",
+        "category": "dinner",
+        "neighborhood": "South Beach",
+        "costBRL": 550,
+        "tip": "Estrela Michelin do chef Jeremy Ford em South Beach, menu degustação de 7 pratos; reserve"
+      },
+      {
+        "name": "Sugar (rooftop do EAST Miami)",
+        "category": "night",
+        "neighborhood": "Brickell",
+        "costBRL": 150,
+        "tip": "Jardim-bar no 40º andar do EAST, em Brickell, a vista mais alta da noite; drinques asiáticos, vá cedo para pegar lugar"
+      },
+      {
+        "name": "Threefold Café (Coral Gables)",
+        "category": "breakfast",
+        "neighborhood": "Coral Gables",
+        "costBRL": 80,
+        "tip": "Brunch australiano em Coral Gables, avocado toast e café flat white; fila no fim de semana"
+      },
+      {
+        "name": "Venetian Pool (Coral Gables)",
+        "category": "afternoon",
+        "neighborhood": "Coral Gables",
+        "costBRL": 120,
+        "tip": "Piscina pública de 1924 escavada numa pedreira de coral, com cavernas e cascatas; crianças a partir de 3 anos, fecha no inverno"
+      },
+      {
+        "name": "Versailles Restaurant (Little Havana)",
+        "category": "lunch",
+        "neighborhood": "Little Havana",
+        "costBRL": 90,
+        "tip": "O restaurante cubano mais famoso do mundo, desde 1971; ropa vieja, moros e a janela de cafecito onde Miami discute política"
+      },
+      {
+        "name": "Vizcaya Museum & Gardens",
+        "category": "morning",
+        "neighborhood": "Coconut Grove",
+        "costBRL": 130,
+        "tip": "Vila renascentista italiana de 1916 na baía, com jardins formais e a barcaça de pedra; compre antes, fecha terça"
+      },
+      {
+        "name": "Wynwood Walls",
+        "category": "morning",
+        "neighborhood": "Wynwood",
+        "costBRL": 70,
+        "tip": "O museu a céu aberto de grafite que transformou o bairro de armazéns; ingresso para o pátio, as ruas em volta são grátis"
+      },
+      {
+        "name": "Zak the Baker",
+        "category": "breakfast",
+        "neighborhood": "Wynwood",
+        "costBRL": 60,
+        "tip": "Padaria kosher de fermentação natural, a melhor de Miami; babka, challah e sanduíches, fecha no sábado"
+      },
+      {
+        "name": "Zoo Miami",
+        "category": "morning",
+        "neighborhood": "South Miami-Dade",
+        "costBRL": 150,
+        "tip": "O maior zoológico da Flórida, sem jaulas, 45 min do centro de carro; alugue o carrinho elétrico, o parque é enorme"
+      }
+    ],
+    "hotels": [
+      {
+        "name": "1 Hotel South Beach",
+        "zone": "South Beach",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 3.500-6.000",
+        "tip": "Hotel sustentável de madeira e plantas na Collins com a 23rd, 4 piscinas e a melhor rooftop de South Beach"
+      },
+      {
+        "name": "Hotel Croydon",
+        "zone": "South Beach",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 800-1.300",
+        "tip": "Art déco de 1937 restaurado em Mid-Beach, piscina e praia a 1 quadra; o preço justo de Miami Beach"
+      },
+      {
+        "name": "Fontainebleau Miami Beach",
+        "zone": "South Beach",
+        "tier": "upscale",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 2.500-4.500",
+        "tip": "O resort de 1954 de Frank Sinatra, 11 piscinas, praia privativa e a LIV; grande, cheio e icônico"
+      },
+      {
+        "name": "Four Seasons Hotel Miami",
+        "zone": "Brickell",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 3.000-5.000",
+        "tip": "Torre de 70 andares em Brickell com terraço de piscinas no 7º andar e vista da baía; o luxo da cidade, não da praia"
+      },
+      {
+        "name": "Freehand Miami",
+        "zone": "South Beach",
+        "tier": "budget",
+        "personaTags": [
+          "solo",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 500-900",
+        "tip": "Hostel de design em Mid-Beach com quartos privativos, piscina e o Broken Shaker, um dos melhores bares dos EUA"
+      },
+      {
+        "name": "Generator Miami",
+        "zone": "South Beach",
+        "tier": "budget",
+        "personaTags": [
+          "solo",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 450-800",
+        "tip": "Hostel-hotel na Collins com piscina e quartos privativos; a 2 quadras da praia, preço de hostel em Miami Beach"
+      },
+      {
+        "name": "Hyatt Centric South Beach Miami",
+        "zone": "South Beach",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 1.200-2.000",
+        "tip": "Hyatt moderno na Collins com a 16th, piscina no terraço e 3 min da praia e da Lincoln Road"
+      },
+      {
+        "name": "Novotel Miami Brickell",
+        "zone": "Brickell",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 800-1.300",
+        "tip": "Novotel no coração de Brickell com piscina no 10º andar, a 5 min do Brickell City Centre; base para quem vai de carro aos outlets"
+      }
+    ]
+  },
+  "Florianópolis": {
+    "city": "Florianópolis",
+    "items": [
+      {
+        "name": "Fortaleza de Anhatomirim (escuna)",
+        "category": "morning",
+        "neighborhood": "Canasvieiras",
+        "costBRL": 150,
+        "tip": "Escuna de Canasvieiras com golfinhos no caminho até a fortaleza de 1744 numa ilha; parada para banho, dia inteiro"
+      },
+      {
+        "name": "Arbor Café (Lagoa da Conceição)",
+        "category": "breakfast",
+        "neighborhood": "Lagoa da Conceição",
+        "costBRL": 45,
+        "tip": "Cafeteria de especialidade no Centro com brunch e pães da casa; mesa na rua, bom para trabalhar"
+      },
+      {
+        "name": "Artusi Ristorante (Centro)",
+        "category": "dinner",
+        "neighborhood": "Centro",
+        "costBRL": 160,
+        "tip": "Italiano clássico do Centro, massas frescas e carta de vinhos; o jantar de ocasião perto da Beira-Mar"
+      },
+      {
+        "name": "Bar do Arante (Pântano do Sul)",
+        "category": "lunch",
+        "neighborhood": "Pântano do Sul",
+        "costBRL": 120,
+        "tip": "Restaurante de pé na areia desde 1958 com o teto coberto de bilhetes dos clientes; peixe frito e sequência de camarão"
+      },
+      {
+        "name": "Projeto Tamar (Barra da Lagoa)",
+        "category": "afternoon",
+        "neighborhood": "Barra da Lagoa",
+        "costBRL": 40,
+        "tip": "Centro de visitantes das tartarugas marinhas na Barra da Lagoa; combine com a ponte pênsil e a Prainha"
+      },
+      {
+        "name": "Basílico Pizzaria (Lagoa da Conceição)",
+        "category": "dinner",
+        "neighborhood": "Lagoa da Conceição",
+        "costBRL": 90,
+        "tip": "Pizza napolitana na Lagoa, forno a lenha e fila na porta; crianças e grupos, sem reserva"
+      },
+      {
+        "name": "Bate-volta ao Beto Carrero World (Penha)",
+        "category": "morning",
+        "neighborhood": "Penha",
+        "costBRL": 350,
+        "tip": "O maior parque temático da América Latina, 1h30 ao norte; compre online, chegue na abertura, dia inteiro"
+      },
+      {
+        "name": "Bate-volta à Guarda do Embaú",
+        "category": "morning",
+        "neighborhood": "Palhoça",
+        "costBRL": 50,
+        "tip": "Vila de surfe 50 min ao sul: atravesse o rio de canoa até a praia e suba a Pedra do Urubu; reserva mundial de surfe"
+      },
+      {
+        "name": "Bate-volta a Balneário Camboriú (Parque Unipraias)",
+        "category": "morning",
+        "neighborhood": "Balneário Camboriú",
+        "costBRL": 200,
+        "tip": "Bondinho sobre a mata até a Praia de Laranjeiras e a roda-gigante da orla; 1h30 de carro, combine com o Beto Carrero no dia seguinte"
+      },
+      {
+        "name": "Beira-Mar Norte (orla à noite)",
+        "category": "night",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "A avenida da orla do Centro iluminada, caminhada e bares com a Ponte Hercílio Luz acesa ao fundo"
+      },
+      {
+        "name": "Beiramar Shopping",
+        "category": "afternoon",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "O shopping da Beira-Mar Norte, cinema e praça de alimentação; o programa de chuva do Centro"
+      },
+      {
+        "name": "Box 32 (Mercado Público)",
+        "category": "lunch",
+        "neighborhood": "Centro",
+        "costBRL": 80,
+        "tip": "O bar mais famoso do Mercado Público, bolinho de bacalhau e chope no vão central; lota na sexta à tarde"
+      },
+      {
+        "name": "Café Cultura (Lagoa da Conceição)",
+        "category": "breakfast",
+        "neighborhood": "Lagoa da Conceição",
+        "costBRL": 45,
+        "tip": "A rede de cafés da ilha, pão na chapa e café coado; a unidade da Lagoa é a base para o dia de praia do leste"
+      },
+      {
+        "name": "Café das Artes (Lagoa da Conceição)",
+        "category": "breakfast",
+        "neighborhood": "Lagoa da Conceição",
+        "costBRL": 50,
+        "tip": "Café com ateliê e livros na Lagoa, bolos caseiros e brunch no fim de semana"
+      },
+      {
+        "name": "Praia do Campeche",
+        "category": "morning",
+        "neighborhood": "Campeche",
+        "costBRL": 0,
+        "tip": "Praia longa e aberta do sul, com a Ilha do Campeche em frente; o Riozinho tem água calma para crianças"
+      },
+      {
+        "name": "Chef Fedoca (Praia Mole)",
+        "category": "lunch",
+        "neighborhood": "Praia Mole",
+        "costBRL": 130,
+        "tip": "Frutos do mar na beira da Praia Mole, o almoço depois do mar; o chef comanda a cozinha aberta"
+      },
+      {
+        "name": "Costa da Lagoa (barco pela Lagoa)",
+        "category": "afternoon",
+        "neighborhood": "Costa da Lagoa",
+        "costBRL": 30,
+        "tip": "Barco de linha da Lagoa da Conceição pelos vilarejos sem carro da costa; desça para a cachoeira e volte no fim da tarde"
+      },
+      {
+        "name": "Casa da Alfândega (artesanato)",
+        "category": "afternoon",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "Artesanato catarinense na antiga alfândega de 1875 ao lado do Mercado Público: renda de bilro, cerâmica, cestaria"
+      },
+      {
+        "name": "Floripa Shopping",
+        "category": "afternoon",
+        "neighborhood": "Saco Grande",
+        "costBRL": 0,
+        "tip": "Shopping da SC-401, a caminho das praias do norte; Decathlon e supermercado para abastecer a casa de praia"
+      },
+      {
+        "name": "Fogo e Mar (Jurerê Internacional)",
+        "category": "dinner",
+        "neighborhood": "Jurerê Internacional",
+        "costBRL": 200,
+        "tip": "Frutos do mar e carnes na brasa em Jurerê Internacional; o jantar do norte da ilha, reserve no verão"
+      },
+      {
+        "name": "Fortaleza de São José da Ponta Grossa",
+        "category": "morning",
+        "neighborhood": "Jurerê",
+        "costBRL": 20,
+        "tip": "Forte de 1740 entre Jurerê e a Daniela, canhões e vista da baía; trilha curta, ingresso barato"
+      },
+      {
+        "name": "Freguesia Oyster Bar (Santo Antônio de Lisboa)",
+        "category": "dinner",
+        "neighborhood": "Santo Antônio de Lisboa",
+        "costBRL": 150,
+        "tip": "Ostras frescas e drinques de frente para a baía, no vilarejo açoriano; o pôr do sol vira jantar"
+      },
+      {
+        "name": "Iguatemi Florianópolis",
+        "category": "afternoon",
+        "neighborhood": "Santa Mônica",
+        "costBRL": 0,
+        "tip": "O shopping das marcas na Santa Mônica, a caminho da Lagoa; Zara, Apple e restaurantes"
+      },
+      {
+        "name": "Ilha do Campeche",
+        "category": "morning",
+        "neighborhood": "Campeche",
+        "costBRL": 150,
+        "tip": "Barco da Armação ou da Barra da Lagoa até a ilha de água transparente e inscrições rupestres; vagas limitadas, compre antes"
+      },
+      {
+        "name": "Bistrô Isadora Duncan",
+        "category": "breakfast",
+        "neighborhood": "Lagoa da Conceição",
+        "costBRL": 70,
+        "tip": "Bistrô de brunch de frente para a Lagoa, ovos, waffles e mesa no jardim; reserve no domingo"
+      },
+      {
+        "name": "Praia da Joaquina e Dunas",
+        "category": "morning",
+        "neighborhood": "Joaquina",
+        "costBRL": 30,
+        "tip": "Praia do surfe e as dunas de sandboard ao lado (prancha alugada na entrada); vento forte, leve casaco mesmo no verão"
+      },
+      {
+        "name": "John Bull Pub (Lagoa da Conceição)",
+        "category": "night",
+        "neighborhood": "Lagoa da Conceição",
+        "costBRL": 80,
+        "tip": "O pub de rock da Lagoa desde 1998, shows ao vivo quase toda noite; o começo da noite da ilha"
+      },
+      {
+        "name": "Praia de Jurerê Internacional",
+        "category": "afternoon",
+        "neighborhood": "Jurerê Internacional",
+        "costBRL": 0,
+        "tip": "A praia de mar calmo e beach clubs do norte, Open Shopping e mansões; família de manhã, festa à tarde"
+      },
+      {
+        "name": "Lagoinha do Leste (trilha)",
+        "category": "morning",
+        "neighborhood": "Pântano do Sul",
+        "costBRL": 0,
+        "tip": "Trilha de 1h30 a partir do Pântano do Sul até a praia deserta mais bonita da ilha; água, protetor, sem estrutura"
+      },
+      {
+        "name": "Lighthouse Coffee (Centro)",
+        "category": "breakfast",
+        "neighborhood": "Centro",
+        "costBRL": 40,
+        "tip": "Café de especialidade no Centro, torra própria e métodos; para começar o dia antes do Mercado Público"
+      },
+      {
+        "name": "Macarronada Italiana (Centro)",
+        "category": "dinner",
+        "neighborhood": "Centro",
+        "costBRL": 100,
+        "tip": "Cantina do Centro desde 1979, massas de família e pizza; o jantar barato e farto depois do Mercado"
+      },
+      {
+        "name": "Mangue Seco (Lagoa da Conceição)",
+        "category": "dinner",
+        "neighborhood": "Lagoa da Conceição",
+        "costBRL": 120,
+        "tip": "Moqueca e frutos do mar na Avenida das Rendeiras, de frente para a Lagoa; mesa na rua no verão"
+      },
+      {
+        "name": "Mercado Público de Florianópolis",
+        "category": "breakfast",
+        "neighborhood": "Centro",
+        "costBRL": 30,
+        "tip": "Mercado de 1899 restaurado, café da manhã nos boxes do vão central com pastel de camarão e café; o Centro começa aqui"
+      },
+      {
+        "name": "Mirante do Morro da Cruz",
+        "category": "afternoon",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "O mirante sobre o Centro, as duas pontes e o continente; de carro ou táxi, pôr do sol"
+      },
+      {
+        "name": "Restaurante Oliveira (sequência de camarão)",
+        "category": "lunch",
+        "neighborhood": "Lagoa da Conceição",
+        "costBRL": 110,
+        "tip": "A sequência de camarão da Lagoa: casquinha, à milanesa, ao bafo, no alho; preço fixo, divide a mesa inteira"
+      },
+      {
+        "name": "Jurerê Open Shopping",
+        "category": "afternoon",
+        "neighborhood": "Jurerê Internacional",
+        "costBRL": 0,
+        "tip": "Shopping a céu aberto de Jurerê, moda praia, restaurantes e sorvete; a tarde de compras do norte"
+      },
+      {
+        "name": "Ostradamus (Ribeirão da Ilha)",
+        "category": "dinner",
+        "neighborhood": "Ribeirão da Ilha",
+        "costBRL": 200,
+        "tip": "A casa das ostras de Santa Catarina, deck sobre o mar no Ribeirão da Ilha; 12 preparos de ostra, reserve"
+      },
+      {
+        "name": "P12 Parador (Jurerê Internacional)",
+        "category": "night",
+        "neighborhood": "Jurerê Internacional",
+        "costBRL": 300,
+        "tip": "O beach club de Jurerê, piscina, DJs e festas de verão; ingresso antecipado, dress code de praia chique"
+      },
+      {
+        "name": "Pirão Restaurante (Ingleses)",
+        "category": "lunch",
+        "neighborhood": "Ingleses",
+        "costBRL": 90,
+        "tip": "Frutos do mar e pirão na praia dos Ingleses, o almoço do norte depois do mar; família, porções grandes"
+      },
+      {
+        "name": "Ponta das Caranhas (Lagoa da Conceição)",
+        "category": "dinner",
+        "neighborhood": "Lagoa da Conceição",
+        "costBRL": 130,
+        "tip": "Peixe e camarão num casarão na ponta da Lagoa, mesas na água; reserve a varanda"
+      },
+      {
+        "name": "Ponte Hercílio Luz",
+        "category": "afternoon",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "A ponte pênsil de 1926 reaberta em 2019, símbolo da ilha; atravesse a pé no fim da tarde e veja iluminada da Beira-Mar"
+      },
+      {
+        "name": "Praça XV de Novembro e Catedral Metropolitana",
+        "category": "morning",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "A figueira centenária de 1871, a catedral e o Palácio Cruz e Sousa (museu grátis); o Centro histórico num quarteirão"
+      },
+      {
+        "name": "Praia Mole (Leste da Ilha)",
+        "category": "morning",
+        "neighborhood": "Praia Mole",
+        "costBRL": 0,
+        "tip": "A praia da juventude, ondas fortes e areia fofa; bares na encosta, cuidado com o mar para crianças"
+      },
+      {
+        "name": "Rancho Açoriano (Santo Antônio de Lisboa)",
+        "category": "lunch",
+        "neighborhood": "Santo Antônio de Lisboa",
+        "costBRL": 130,
+        "tip": "Ostras e peixe num casarão açoriano de frente para o pôr do sol da baía norte; combine com a caminhada pelo vilarejo"
+      },
+      {
+        "name": "Ribeirão da Ilha (freguesia e fazendas de ostra)",
+        "category": "afternoon",
+        "neighborhood": "Ribeirão da Ilha",
+        "costBRL": 0,
+        "tip": "A freguesia açoriana do sul, casario colorido, igreja de 1806 e as fazendas de ostra na água; dia de almoço longo"
+      },
+      {
+        "name": "Rosso Restaurante (Santo Antônio de Lisboa)",
+        "category": "dinner",
+        "neighborhood": "Santo Antônio de Lisboa",
+        "costBRL": 180,
+        "tip": "Frutos do mar contemporâneos no vilarejo açoriano, de frente para o pôr do sol da baía norte; reserve"
+      },
+      {
+        "name": "Santo Antônio de Lisboa (vilarejo açoriano)",
+        "category": "afternoon",
+        "neighborhood": "Santo Antônio de Lisboa",
+        "costBRL": 0,
+        "tip": "Vilarejo colonial de 1750 na baía norte, igreja, casario, ateliês e o melhor pôr do sol da ilha; vá para ficar para o jantar"
+      },
+      {
+        "name": "Teatro Álvaro de Carvalho (TAC)",
+        "category": "night",
+        "neighborhood": "Centro",
+        "costBRL": 60,
+        "tip": "O teatro de 1875 do Centro, programação de música e teatro a preço baixo; veja a agenda do mês"
+      }
+    ],
+    "hotels": [
+      {
+        "name": "Costão do Santinho Resort",
+        "zone": "Jurere/Canasvieiras",
+        "tier": "upscale",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 1.800-3.500",
+        "tip": "Resort all-inclusive de pé na praia do Santinho, recreação para todas as idades, golfe e inscrições rupestres na trilha"
+      },
+      {
+        "name": "Hotel Faial Prime",
+        "zone": "Centro/Beira-Mar",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 250-400",
+        "tip": "Hotel tradicional do Centro a 2 quadras da Praça XV, quartos simples e café farto; honesto"
+      },
+      {
+        "name": "Ibis Florianópolis",
+        "zone": "Centro/Beira-Mar",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 250-400",
+        "tip": "Ibis na Beira-Mar Norte, a 10 min a pé do Mercado Público; base de preço fixo para quem vai de carro às praias"
+      },
+      {
+        "name": "Il Campanario Villaggio Resort",
+        "zone": "Jurere/Canasvieiras",
+        "tier": "upscale",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 1.500-2.800",
+        "tip": "Resort de estilo italiano no coração de Jurerê, piscinas, spa e Open Shopping ao lado; o verão de Jurerê"
+      },
+      {
+        "name": "Jurerê Beach Village",
+        "zone": "Jurere/Canasvieiras",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 700-1.200",
+        "tip": "Hotel de pé na areia em Jurerê Internacional, piscinas e recreação infantil; a família no norte"
+      },
+      {
+        "name": "LK Design Hotel",
+        "zone": "Centro/Beira-Mar",
+        "tier": "upscale",
+        "personaTags": [
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 900-1.500",
+        "tip": "Boutique de design na Beira-Mar Norte, rooftop com piscina e vista da ponte; o hotel para casal no Centro"
+      },
+      {
+        "name": "Majestic Palace Hotel",
+        "zone": "Centro/Beira-Mar",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 500-800",
+        "tip": "O hotel da Beira-Mar Norte com vista da baía e piscina; o clássico do Centro para quem quer cidade e praia"
+      },
+      {
+        "name": "Pousada Natur Campeche",
+        "zone": "Campeche/Morro das Pedras",
+        "tier": "mid",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 500-900",
+        "tip": "Pousada de jardim a 200 m da Praia do Campeche, café da manhã caseiro; o sul da ilha sem resort"
+      }
+    ]
+  },
+  "Maceió": {
+    "city": "Maceió",
+    "items": [
+      {
+        "name": "Armazém Guimarães (Jatiúca)",
+        "category": "dinner",
+        "neighborhood": "Jatiúca",
+        "costBRL": 100,
+        "tip": "Bar-restaurante de Jatiúca com música ao vivo e feira de arte nos fins de semana; o jantar que vira noite"
+      },
+      {
+        "name": "Bate-volta a Barra de São Miguel",
+        "category": "morning",
+        "neighborhood": "Barra de São Miguel",
+        "costBRL": 100,
+        "tip": "Praia de água calma de piscina natural a 35 km, barracas e o rio; o dia fácil com crianças pequenas"
+      },
+      {
+        "name": "Praia do Gunga",
+        "category": "morning",
+        "neighborhood": "Roteiro",
+        "costBRL": 120,
+        "tip": "A praia de coqueiral entre a lagoa e o mar, 1h ao sul; barco de Barra de São Miguel ou buggy pelas falésias coloridas"
+      },
+      {
+        "name": "Galés de Maragogi (piscinas naturais)",
+        "category": "morning",
+        "neighborhood": "Maragogi",
+        "costBRL": 250,
+        "tip": "2h ao norte até as piscinas naturais das Galés, o \"Caribe brasileiro\"; só na maré baixa, tour inclui catamarã e almoço"
+      },
+      {
+        "name": "Praia do Patacho",
+        "category": "morning",
+        "neighborhood": "Porto de Pedras",
+        "costBRL": 200,
+        "tip": "A praia deserta de coqueiros da Rota Ecológica, eleita entre as mais bonitas do país; sem estrutura, leve o que precisar"
+      },
+      {
+        "name": "Praia do Toque (São Miguel dos Milagres)",
+        "category": "morning",
+        "neighborhood": "São Miguel dos Milagres",
+        "costBRL": 200,
+        "tip": "Rota Ecológica a 1h30: praias vazias, piscinas naturais do Toque e jangadas; o litoral mais bonito de Alagoas, sem resort"
+      },
+      {
+        "name": "Bodega do Sertão (Pajuçara)",
+        "category": "lunch",
+        "neighborhood": "Pajuçara",
+        "costBRL": 90,
+        "tip": "Buffet de comida nordestina num cenário de bodega do interior, forró ao vivo; baião de dois e carne de sol, bom com crianças"
+      },
+      {
+        "name": "Casa Nunes Marisqueira (Jaraguá)",
+        "category": "dinner",
+        "neighborhood": "Jaraguá",
+        "costBRL": 130,
+        "tip": "Marisqueira do bairro histórico de Jaraguá, camarão e lagosta sem frescura; combine com a noite do bairro"
+      },
+      {
+        "name": "Catedral Metropolitana de Maceió e Praça Dom Pedro II",
+        "category": "morning",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "A catedral de 1859 e a praça do Centro histórico; combine com o Museu Théo Brandão e o comércio de rua"
+      },
+      {
+        "name": "Divina Gula (Jatiúca)",
+        "category": "dinner",
+        "neighborhood": "Jatiúca",
+        "costBRL": 130,
+        "tip": "O restaurante mineiro-nordestino mais famoso da cidade, pratos para dividir e fila na porta; vá cedo ou reserve"
+      },
+      {
+        "name": "Dunas de Marapé (buggy)",
+        "category": "morning",
+        "neighborhood": "Jequiá da Praia",
+        "costBRL": 150,
+        "tip": "Buggy pelas dunas e pela lagoa de Marapé, com esquibunda e banho de rio; 1h ao sul, tour sai dos hotéis"
+      },
+      {
+        "name": "Feirinha de Pajuçara (artesanato à noite)",
+        "category": "afternoon",
+        "neighborhood": "Pajuçara",
+        "costBRL": 0,
+        "tip": "A feira de artesanato da orla que abre no fim da tarde: filé, redes, cerâmica e tapioca; a caminhada de todo dia"
+      },
+      {
+        "name": "Imperador dos Camarões (Pajuçara)",
+        "category": "lunch",
+        "neighborhood": "Pajuçara",
+        "costBRL": 120,
+        "tip": "Camarão em todas as versões há 30 anos na orla de Pajuçara; peça a sequência para dividir"
+      },
+      {
+        "name": "Janga Praia (Jatiúca)",
+        "category": "dinner",
+        "neighborhood": "Jatiúca",
+        "costBRL": 140,
+        "tip": "Frutos do mar de frente para a praia de Jatiúca, música ao vivo no fim de semana; moqueca alagoana"
+      },
+      {
+        "name": "Associação Comercial de Maceió (Jaraguá)",
+        "category": "afternoon",
+        "neighborhood": "Jaraguá",
+        "costBRL": 0,
+        "tip": "O antigo porto com casarões e armazéns restaurados, a Associação Comercial e museus pequenos; vivo à noite"
+      },
+      {
+        "name": "Kanoa Beach Bar (Ponta Verde)",
+        "category": "lunch",
+        "neighborhood": "Ponta Verde",
+        "costBRL": 130,
+        "tip": "Beach bar de pé na areia em Cruz das Almas, cadeiras na praia e pratos de peixe; o dia inteiro na praia com estrutura"
+      },
+      {
+        "name": "Kanoa Beach Bar à noite (Ponta Verde)",
+        "category": "night",
+        "neighborhood": "Ponta Verde",
+        "costBRL": 120,
+        "tip": "Festas de sunset e DJs no beach bar de Cruz das Almas; o fim de tarde que vira noite na areia"
+      },
+      {
+        "name": "Le Corbu (francês, Ponta Verde)",
+        "category": "dinner",
+        "neighborhood": "Ponta Verde",
+        "costBRL": 180,
+        "tip": "Bistrô francês em Ponta Verde, poucas mesas e carta curta; o jantar de casal da cidade, reserve"
+      },
+      {
+        "name": "Lopana (quiosque, Ponta Verde)",
+        "category": "lunch",
+        "neighborhood": "Ponta Verde",
+        "costBRL": 120,
+        "tip": "O quiosque mais famoso da orla, pé na areia em Ponta Verde; camarão, peixe e caipirinha, e o pôr do sol depois"
+      },
+      {
+        "name": "Pôr do sol no Lopana (Ponta Verde)",
+        "category": "night",
+        "neighborhood": "Ponta Verde",
+        "costBRL": 80,
+        "tip": "O quiosque vira bar ao pôr do sol, música ao vivo e drinques na areia; o happy hour da cidade"
+      },
+      {
+        "name": "Maikai Maceió (beach club)",
+        "category": "night",
+        "neighborhood": "Jatiúca",
+        "costBRL": 150,
+        "tip": "Beach club de Jatiúca com festas, shows e pôr do sol; ingresso antecipado nos fins de semana"
+      },
+      {
+        "name": "Marechal Deodoro (centro histórico)",
+        "category": "afternoon",
+        "neighborhood": "Marechal Deodoro",
+        "costBRL": 0,
+        "tip": "A antiga capital de Alagoas, igrejas barrocas e a casa do primeiro presidente; combine com a Praia do Francês e a Massagueira"
+      },
+      {
+        "name": "Maria Antonieta (café da manhã)",
+        "category": "breakfast",
+        "neighborhood": "Ponta Verde",
+        "costBRL": 60,
+        "tip": "Restaurante-padaria de Ponta Verde com café da manhã servido, pães, tapiocas e cuscuz; o brunch da orla"
+      },
+      {
+        "name": "Maria Antonieta (jantar)",
+        "category": "dinner",
+        "neighborhood": "Ponta Verde",
+        "costBRL": 150,
+        "tip": "Cozinha italiana e frutos do mar num casarão de Ponta Verde; o jantar bonito da orla, reserve"
+      },
+      {
+        "name": "Massagueirinha (sururu, Ponta Verde)",
+        "category": "lunch",
+        "neighborhood": "Ponta Verde",
+        "costBRL": 90,
+        "tip": "A filial de Ponta Verde do restaurante do sururu e da caldeirada; a matriz fica na beira da Lagoa Manguaba, em Marechal Deodoro"
+      },
+      {
+        "name": "Massarella Cantina (Jatiúca)",
+        "category": "dinner",
+        "neighborhood": "Jatiúca",
+        "costBRL": 110,
+        "tip": "Cantina italiana de Jatiúca, massas e pizzas de família; barato e bom com crianças"
+      },
+      {
+        "name": "Mercado do Artesanato de Maceió",
+        "category": "lunch",
+        "neighborhood": "Levada",
+        "costBRL": 40,
+        "tip": "Mercado coberto de filé, renda e cerâmica com lanchonetes de comida regional; combine compras e almoço rápido"
+      },
+      {
+        "name": "Mirante de São Gonçalo",
+        "category": "afternoon",
+        "neighborhood": "São Gonçalo",
+        "costBRL": 0,
+        "tip": "A vista da lagoa Mundaú, do mar e da cidade inteira do alto do tabuleiro; pôr do sol, vá de carro"
+      },
+      {
+        "name": "Orla de Pajuçara à noite",
+        "category": "night",
+        "neighborhood": "Pajuçara",
+        "costBRL": 0,
+        "tip": "Calçadão iluminado, feirinha, sorvete no Bali e jangadas na areia; a noite de família na orla"
+      },
+      {
+        "name": "Padaria Pão de Açúcar Ponta Verde",
+        "category": "breakfast",
+        "neighborhood": "Ponta Verde",
+        "costBRL": 30,
+        "tip": "Padaria de bairro da orla de Ponta Verde, pão quente e café coado para começar o dia de praia"
+      },
+      {
+        "name": "Parmegianno Ponta Verde",
+        "category": "dinner",
+        "neighborhood": "Ponta Verde",
+        "costBRL": 100,
+        "tip": "Parmegianas e carne de sol com queijo coalho em porções para dividir; o jantar farto da orla"
+      },
+      {
+        "name": "Parque Municipal de Maceió",
+        "category": "morning",
+        "neighborhood": "Bebedouro",
+        "costBRL": 0,
+        "tip": "Mata atlântica no meio da cidade, trilhas, lago e parquinho; gratuito, manhã fresca com crianças"
+      },
+      {
+        "name": "Parque Shopping Maceió",
+        "category": "afternoon",
+        "neighborhood": "Cruz das Almas",
+        "costBRL": 0,
+        "tip": "Shopping mais novo, ao lado de Cruz das Almas, com marcas nacionais e boa praça de alimentação"
+      },
+      {
+        "name": "Picuí (carne de sol, Jaraguá)",
+        "category": "lunch",
+        "neighborhood": "Jaraguá",
+        "costBRL": 110,
+        "tip": "A casa da carne de sol alagoana desde 1989, com macaxeira e manteiga de garrafa; o almoço sertanejo na praia"
+      },
+      {
+        "name": "Piscinas Naturais da Pajuçara",
+        "category": "morning",
+        "neighborhood": "Pajuçara",
+        "costBRL": 60,
+        "tip": "Jangada da orla de Pajuçara até as piscinas de coral a 2 km da praia, na maré baixa; confira a tábua das marés, leve máscara"
+      },
+      {
+        "name": "Pontal da Barra (rendeiras de filé)",
+        "category": "afternoon",
+        "neighborhood": "Pontal da Barra",
+        "costBRL": 0,
+        "tip": "Bairro de pescadores onde as rendeiras fazem o filé alagoano nas calçadas; compre direto, veja o pôr do sol na lagoa"
+      },
+      {
+        "name": "Praia do Francês, Alagoas",
+        "category": "morning",
+        "neighborhood": "Marechal Deodoro",
+        "costBRL": 0,
+        "tip": "A praia de piscinas naturais e barracas a 25 min do centro, lado esquerdo calmo para crianças, direito com ondas; vá de manhã"
+      },
+      {
+        "name": "Praia de Ipioca e Riacho Doce",
+        "category": "morning",
+        "neighborhood": "Ipioca",
+        "costBRL": 0,
+        "tip": "As praias de coqueiral do litoral norte da cidade, 30 min do centro; barracas simples, água morna, pouca gente"
+      },
+      {
+        "name": "Praia de Jatiúca",
+        "category": "morning",
+        "neighborhood": "Jatiúca",
+        "costBRL": 0,
+        "tip": "A praia dos hotéis e das barracas, com ondas um pouco maiores; o calçadão segue até Cruz das Almas"
+      },
+      {
+        "name": "Praia de Ponta Verde (orla)",
+        "category": "morning",
+        "neighborhood": "Ponta Verde",
+        "costBRL": 0,
+        "tip": "A praia urbana mais bonita do Nordeste, mar verde e calçadão de coqueiros; água rasa e calma para crianças"
+      },
+      {
+        "name": "Maceió Shopping",
+        "category": "afternoon",
+        "neighborhood": "Mangabeiras",
+        "costBRL": 0,
+        "tip": "O shopping grande da cidade, cinema e praça de alimentação; o programa de chuva, 10 min da orla"
+      },
+      {
+        "name": "Sorveteria Bali (Pajuçara)",
+        "category": "breakfast",
+        "neighborhood": "Pajuçara",
+        "costBRL": 25,
+        "tip": "A sorveteria clássica da orla de Pajuçara, sabores de frutas da região; mangaba e cajá, qualquer hora do dia"
+      },
+      {
+        "name": "Feirinha de Pajuçara (tapiocas)",
+        "category": "breakfast",
+        "neighborhood": "Pajuçara",
+        "costBRL": 20,
+        "tip": "As barracas de tapioca da feirinha da orla, com recheios de coco, queijo coalho e carne de sol; de pé, com a praia na frente"
+      },
+      {
+        "name": "Teatro Deodoro",
+        "category": "night",
+        "neighborhood": "Centro",
+        "costBRL": 40,
+        "tip": "O teatro de 1910 do Centro, programação de música e dança a preço baixo; confira a agenda do mês"
+      },
+      {
+        "name": "Wanchako (peruano, Ponta Verde)",
+        "category": "dinner",
+        "neighborhood": "Ponta Verde",
+        "costBRL": 200,
+        "tip": "Cozinha peruana com peixe alagoano, o melhor restaurante da cidade nos rankings; ceviche e tiradito, reserve"
+      }
+    ],
+    "hotels": [
+      {
+        "name": "Brisa Tower Hotel",
+        "zone": "Jatiúca",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 400-700",
+        "tip": "Torre na orla de Jatiúca com quartos amplos e vista do mar; bom custo para família"
+      },
+      {
+        "name": "Ibis Maceió Pajuçara",
+        "zone": "Pajuçara",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 250-400",
+        "tip": "Ibis de frente para a praia de Pajuçara, a 2 min da feirinha e das jangadas; preço fixo, quarto simples"
+      },
+      {
+        "name": "Jatiúca Hotel & Resort",
+        "zone": "Jatiúca",
+        "tier": "upscale",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 1.000-1.800",
+        "tip": "Resort de pé na areia de Jatiúca com piscinas, recreação infantil e restaurante; o clássico de luxo da cidade"
+      },
+      {
+        "name": "Maceió Mar Hotel",
+        "zone": "Pajuçara",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 450-750",
+        "tip": "Hotel grande de frente para Pajuçara com piscina e recreação; família que quer praia urbana"
+      },
+      {
+        "name": "Meliá Maceió",
+        "zone": "Jatiúca",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 900-1.600",
+        "tip": "Hotel internacional de frente para Jatiúca, piscina na cobertura com vista e serviço de rede; casal e família"
+      },
+      {
+        "name": "Hotel Ponta Verde Maceió",
+        "zone": "Ponta Verde",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 400-700",
+        "tip": "Hotel de frente para a praia mais bonita da cidade, piscina no terraço; o meio-termo da orla"
+      },
+      {
+        "name": "Hotel Praia Bonita Jatiúca",
+        "zone": "Jatiúca",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 250-450",
+        "tip": "Hotel simples a 1 quadra da praia de Jatiúca, piscina e café da manhã nordestino farto"
+      },
+      {
+        "name": "Ritz Lagoa da Anta Hotel & Spa",
+        "zone": "Lagoa da Anta",
+        "tier": "upscale",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 1.200-2.200",
+        "tip": "Resort entre a praia e a lagoa, no fim de Cruz das Almas, com spa e recreação; o mais completo de Maceió"
+      }
+    ]
+  },
+  "Foz do Iguaçu": {
+    "city": "Foz do Iguaçu",
+    "items": [
+      {
+        "name": "Bar do Alemão (Jardim Central)",
+        "category": "night",
+        "neighborhood": "Jardim Central",
+        "costBRL": 90,
+        "tip": "Bar e restaurante de cozinha alemã com chope e música ao vivo; o jantar tardio que vira noite"
+      },
+      {
+        "name": "Restaurante Barracão (Vila A)",
+        "category": "lunch",
+        "neighborhood": "Vila A",
+        "costBRL": 60,
+        "tip": "Buffet caseiro brasileiro na Vila A, perto de Itaipu; almoço de família a preço de Foz"
+      },
+      {
+        "name": "Bate-volta às Cataratas argentinas (Puerto Iguazú)",
+        "category": "morning",
+        "neighborhood": "Puerto Iguazú",
+        "costBRL": 250,
+        "tip": "O lado de cima das quedas: trem até a Garganta do Diabo, circuitos superior e inferior; passaporte ou RG, dia inteiro, leve pesos"
+      },
+      {
+        "name": "Bate-volta a Ciudad del Este (compras)",
+        "category": "morning",
+        "neighborhood": "Ciudad del Este",
+        "costBRL": 0,
+        "tip": "A cidade das compras pela Ponte da Amizade: Shopping China, Paris, Monalisa e as galerias; vá de manhã cedo, cota de US$ 500"
+      },
+      {
+        "name": "Bate-volta ao Salto del Monday (Paraguai)",
+        "category": "afternoon",
+        "neighborhood": "Presidente Franco",
+        "costBRL": 60,
+        "tip": "Cachoeira de 40 m a 20 min de Ciudad del Este, com mirantes e rapel; o parque que ninguém conhece, quase vazio"
+      },
+      {
+        "name": "Bendito Bar e Restaurante (Centro)",
+        "category": "lunch",
+        "neighborhood": "Centro",
+        "costBRL": 70,
+        "tip": "Executivos no almoço e buffet no fim de semana, no Centro; onde Foz come de segunda a sexta"
+      },
+      {
+        "name": "Black Bill Smokedhouse",
+        "category": "dinner",
+        "neighborhood": "Vila Yolanda",
+        "costBRL": 120,
+        "tip": "Churrasco texano defumado e cerveja; o jantar descontraído com adolescentes"
+      },
+      {
+        "name": "Blue Park (parque aquático)",
+        "category": "morning",
+        "neighborhood": "Rodovia das Cataratas",
+        "costBRL": 200,
+        "tip": "Parque aquático de águas termais do complexo Mabu, piscina de ondas e toboáguas; aberto a não hóspedes, dia inteiro"
+      },
+      {
+        "name": "Búfalo Branco Churrascaria",
+        "category": "lunch",
+        "neighborhood": "Centro",
+        "costBRL": 130,
+        "tip": "A churrascaria tradicional de Foz desde 1992, rodízio com buffet de saladas e sobremesas; família depois do parque"
+      },
+      {
+        "name": "Café Colonial Bavária",
+        "category": "breakfast",
+        "neighborhood": "Vila Yolanda",
+        "costBRL": 70,
+        "tip": "Café colonial de mesa farta com cucas, embutidos e geleias; o café que vira almoço, bom com crianças"
+      },
+      {
+        "name": "Capitão Bar",
+        "category": "night",
+        "neighborhood": "Centro",
+        "costBRL": 80,
+        "tip": "O bar mais tradicional do Centro, música ao vivo e varanda na Avenida Jorge Schimmelpfeng; o começo da noite de Foz"
+      },
+      {
+        "name": "Castelo Libanês (almoço)",
+        "category": "lunch",
+        "neighborhood": "Centro",
+        "costBRL": 90,
+        "tip": "Restaurante libanês da família Khalil, quibe, charuto de folha de uva e cordeiro; a cozinha da colônia árabe de Foz"
+      },
+      {
+        "name": "Castelo Libanês (café árabe)",
+        "category": "breakfast",
+        "neighborhood": "Centro",
+        "costBRL": 50,
+        "tip": "A comunidade árabe de Foz à mesa: pão sírio quente, zaatar, labneh e café; o café da manhã que só existe aqui"
+      },
+      {
+        "name": "Parque Nacional do Iguaçu (Cataratas, lado brasileiro)",
+        "category": "morning",
+        "neighborhood": "Parque Nacional",
+        "costBRL": 120,
+        "tip": "A trilha de 1,2 km com a vista panorâmica e a passarela da Garganta do Diabo; compre com hora, vá na abertura, leve capa de chuva"
+      },
+      {
+        "name": "Catedral São João Batista e Praça da Paz",
+        "category": "afternoon",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "A catedral do Centro e a praça; o Centro de Foz é pequeno, 20 minutos de caminhada o resolvem"
+      },
+      {
+        "name": "Chef Lopes Restaurante",
+        "category": "lunch",
+        "neighborhood": "Centro",
+        "costBRL": 90,
+        "tip": "Buffet por quilo de qualidade no Centro, pratos regionais e peixe de rio; onde Foz almoça"
+      },
+      {
+        "name": "Dona Maria Ranch Steakhouse",
+        "category": "dinner",
+        "neighborhood": "Rodovia das Cataratas",
+        "costBRL": 180,
+        "tip": "Steakhouse em estilo rancho na Rodovia das Cataratas, cortes nobres e música ao vivo; reserve"
+      },
+      {
+        "name": "Dreamland Museu de Cera",
+        "category": "afternoon",
+        "neighborhood": "Rodovia das Cataratas",
+        "costBRL": 90,
+        "tip": "Museu de cera de celebridades no complexo Dreams Park Show; programa de chuva com adolescentes"
+      },
+      {
+        "name": "Dreams Park Show (noite no complexo)",
+        "category": "night",
+        "neighborhood": "Rodovia das Cataratas",
+        "costBRL": 120,
+        "tip": "Complexo com Museu de Cera, Movie Cars, bar de gelo e ultravioleta; a noite de família com adolescentes"
+      },
+      {
+        "name": "Duty Free Shop Puerto Iguazú",
+        "category": "afternoon",
+        "neighborhood": "Puerto Iguazú",
+        "costBRL": 0,
+        "tip": "Free shop argentino logo depois da ponte Tancredo Neves, perfumes e bebidas sem imposto; combine com o lado argentino"
+      },
+      {
+        "name": "Ecomuseu de Itaipu",
+        "category": "afternoon",
+        "neighborhood": "Itaipu",
+        "costBRL": 0,
+        "tip": "Museu gratuito sobre a construção da usina e a natureza da região; bom para crianças antes da visita à barragem"
+      },
+      {
+        "name": "Eliane Balena Pastifício",
+        "category": "lunch",
+        "neighborhood": "Vila Yolanda",
+        "costBRL": 100,
+        "tip": "Massas frescas vênetas feitas na casa; o almoço italiano de Foz, reserve no fim de semana"
+      },
+      {
+        "name": "Empório com Arte (café)",
+        "category": "breakfast",
+        "neighborhood": "Centro",
+        "costBRL": 50,
+        "tip": "Café de especialidade com loja de arte e design no Centro, café da manhã servido e brunch de domingo"
+      },
+      {
+        "name": "Feirinha do Jardim Jupira (artesanato paraguaio)",
+        "category": "afternoon",
+        "neighborhood": "Jardim Jupira",
+        "costBRL": 0,
+        "tip": "Feira de rua com artesanato e produtos paraguaios sem atravessar a ponte; roupas, erva-mate e chipas"
+      },
+      {
+        "name": "Voo panorâmico de helicóptero (Helisul)",
+        "category": "afternoon",
+        "neighborhood": "Rodovia das Cataratas",
+        "costBRL": 700,
+        "tip": "10 minutos sobre as Cataratas a partir do heliponto ao lado do Parque das Aves; o ângulo que só se vê do céu"
+      },
+      {
+        "name": "Ipê Grill (Belmond Hotel das Cataratas)",
+        "category": "dinner",
+        "neighborhood": "Parque Nacional",
+        "costBRL": 350,
+        "tip": "Churrasco e buffet no hotel dentro do parque, com show de folclore; o jantar com as Cataratas ao lado, reserve"
+      },
+      {
+        "name": "Itaipu Binacional (visita panorâmica)",
+        "category": "afternoon",
+        "neighborhood": "Itaipu",
+        "costBRL": 80,
+        "tip": "Ônibus pelo alto da barragem da maior hidrelétrica em geração do mundo; o circuito especial entra na usina, reserve"
+      },
+      {
+        "name": "Cataratas JL Shopping",
+        "category": "afternoon",
+        "neighborhood": "Centro",
+        "costBRL": 0,
+        "tip": "O shopping do Centro, cinema e praça de alimentação; programa de chuva e compras nacionais"
+      },
+      {
+        "name": "La Mafia Trattoria",
+        "category": "dinner",
+        "neighborhood": "Centro",
+        "costBRL": 130,
+        "tip": "Trattoria italiana no Centro com massas frescas e ambiente de filme; reserve no fim de semana"
+      },
+      {
+        "name": "Le Mir (árabe, menu degustação)",
+        "category": "dinner",
+        "neighborhood": "Centro",
+        "costBRL": 180,
+        "tip": "Menu degustação árabe-libanês, o jantar de ocasião da colônia árabe de Foz; reserve"
+      },
+      {
+        "name": "Luigia Napoletana (pizza)",
+        "category": "dinner",
+        "neighborhood": "Maracanã",
+        "costBRL": 90,
+        "tip": "Pizza napolitana de forno a lenha no Centro; a alternativa sem fila à Vó Bertila"
+      },
+      {
+        "name": "Macuco Safari (barco sob as quedas)",
+        "category": "morning",
+        "neighborhood": "Parque Nacional",
+        "costBRL": 400,
+        "tip": "Jipe pela mata e bote até debaixo das cataratas; molha tudo, leve roupa seca; crianças a partir de 7 anos"
+      },
+      {
+        "name": "Marco das Três Fronteiras à noite (show de luzes)",
+        "category": "night",
+        "neighborhood": "Porto Meira",
+        "costBRL": 50,
+        "tip": "Show de água e luzes e apresentações de folclore das três fronteiras no fim da tarde; jantar nos restaurantes do marco"
+      },
+      {
+        "name": "Marco das Três Fronteiras",
+        "category": "afternoon",
+        "neighborhood": "Porto Meira",
+        "costBRL": 50,
+        "tip": "O encontro dos rios Iguaçu e Paraná, com Argentina e Paraguai do outro lado; pôr do sol e show de luzes à noite"
+      },
+      {
+        "name": "Mercado Municipal de Foz do Iguaçu",
+        "category": "breakfast",
+        "neighborhood": "Centro",
+        "costBRL": 40,
+        "tip": "Mercado revitalizado com cafés, padarias e comida das três fronteiras; café da manhã antes de ir às Cataratas"
+      },
+      {
+        "name": "Mesquita Omar Ibn Al-Khattab",
+        "category": "morning",
+        "neighborhood": "Jardim Central",
+        "costBRL": 0,
+        "tip": "A mesquita da comunidade árabe de Foz, visitas gratuitas fora do horário de oração; mulheres com véu, fornecido na entrada"
+      },
+      {
+        "name": "Panificadora Ikeda (Centro)",
+        "category": "breakfast",
+        "neighborhood": "Centro",
+        "costBRL": 30,
+        "tip": "Padaria tradicional do Centro, pão de queijo e café coado de balcão; para quem sai cedo para o parque"
+      },
+      {
+        "name": "Parque das Aves",
+        "category": "morning",
+        "neighborhood": "Rodovia das Cataratas",
+        "costBRL": 110,
+        "tip": "Viveiros de imersão com tucanos, araras e flamingos ao lado da entrada do parque; faça antes ou depois das Cataratas"
+      },
+      {
+        "name": "Restaurante Porto Canoas (dentro do parque)",
+        "category": "lunch",
+        "neighborhood": "Parque Nacional",
+        "costBRL": 150,
+        "tip": "Buffet no fim da trilha das Cataratas, com deck sobre o rio Iguaçu acima das quedas; o único almoço dentro do parque"
+      },
+      {
+        "name": "Rafain Churrascaria Show",
+        "category": "dinner",
+        "neighborhood": "Rodovia das Cataratas",
+        "costBRL": 250,
+        "tip": "Churrascaria com show de danças latino-americanas todas as noites; turístico e a família adora, reserve"
+      },
+      {
+        "name": "Refúgio Biológico Bela Vista",
+        "category": "morning",
+        "neighborhood": "Itaipu",
+        "costBRL": 60,
+        "tip": "Trilha guiada no refúgio da Itaipu com onças, antas e harpias resgatadas; reserve, horários fixos"
+      },
+      {
+        "name": "Shopping China (Ciudad del Este)",
+        "category": "afternoon",
+        "neighborhood": "Ciudad del Este",
+        "costBRL": 0,
+        "tip": "A loja de departamentos mais organizada do Paraguai, logo depois da Ponte da Amizade; eletrônicos, perfumes e bebidas, pague em dólar"
+      },
+      {
+        "name": "Restaurante Tempero da Bahia",
+        "category": "dinner",
+        "neighborhood": "Centro",
+        "costBRL": 120,
+        "tip": "Moqueca e bobó de camarão em Foz há mais de 20 anos, no Centro; o jantar de ocasião da cidade, reserve"
+      },
+      {
+        "name": "Templo Budista Chen Tien",
+        "category": "morning",
+        "neighborhood": "Jardim Califórnia",
+        "costBRL": 0,
+        "tip": "Templo chinês com o Buda de 7 m e 120 estátuas no jardim, vista de Ciudad del Este; gratuito, roupa discreta"
+      },
+      {
+        "name": "Vale dos Dinossauros",
+        "category": "afternoon",
+        "neighborhood": "Rodovia das Cataratas",
+        "costBRL": 90,
+        "tip": "Dinossauros animatrônicos em tamanho real num bosque; crianças de 3 a 10 anos, combine com o Dreamland ao lado"
+      },
+      {
+        "name": "Vó Bertila (pizza e massas)",
+        "category": "lunch",
+        "neighborhood": "Centro",
+        "costBRL": 90,
+        "tip": "A pizzaria mais famosa de Foz, massas de família e fila na porta desde 1995; rodízio à noite, almoço mais calmo"
+      },
+      {
+        "name": "Vó Bertila (rodízio de pizza à noite)",
+        "category": "dinner",
+        "neighborhood": "Centro",
+        "costBRL": 80,
+        "tip": "Rodízio de pizza da casa mais famosa de Foz, fila a partir das 19h30; o jantar barato com crianças"
+      },
+      {
+        "name": "Zeppelin Old Bar",
+        "category": "night",
+        "neighborhood": "Centro",
+        "costBRL": 80,
+        "tip": "Bar de rock com shows ao vivo no Centro, cerveja e petiscos; quando o Capitão lota"
+      }
+    ],
+    "hotels": [
+      {
+        "name": "Hotel das Cataratas, A Belmond Hotel",
+        "zone": "Parque Nacional",
+        "tier": "upscale",
+        "personaTags": [
+          "couple",
+          "family"
+        ],
+        "priceRangeBRL": "R$ 2.500-5.000",
+        "tip": "O único hotel dentro do parque, as Cataratas a 5 min a pé antes da abertura e depois do fechamento; o luxo que vale o preço"
+      },
+      {
+        "name": "Bourbon Cataratas do Iguaçu Thermas Eco Resort",
+        "zone": "Rodovia das Cataratas",
+        "tier": "upscale",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 900-1.600",
+        "tip": "Resort de família na Rodovia das Cataratas, piscinas termais, trilha e recreação o dia inteiro; o preferido com crianças"
+      },
+      {
+        "name": "Del Rey Quality Hotel",
+        "zone": "Centro",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 250-400",
+        "tip": "Hotel de família no Centro com piscina e café da manhã elogiado; o budget que não parece budget"
+      },
+      {
+        "name": "Ibis Foz do Iguaçu",
+        "zone": "Centro",
+        "tier": "budget",
+        "personaTags": [
+          "family",
+          "couple",
+          "budget"
+        ],
+        "priceRangeBRL": "R$ 200-350",
+        "tip": "Ibis no Centro ao lado do JL Shopping, a 20 min do parque; preço fixo e padrão previsível"
+      },
+      {
+        "name": "Mabu Thermas Grand Resort",
+        "zone": "Rodovia das Cataratas",
+        "tier": "upscale",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 1.000-1.800",
+        "tip": "Resort com o Blue Park aquático incluído na hospedagem, piscinas termais e recreação; família de férias"
+      },
+      {
+        "name": "Nadai Confort Hotel & Spa",
+        "zone": "Centro",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 400-650",
+        "tip": "Hotel do Centro com spa e piscina na cobertura; bom para quem quer sair à noite a pé"
+      },
+      {
+        "name": "Recanto Cataratas Thermas Resort & Convention",
+        "zone": "Rodovia das Cataratas",
+        "tier": "mid",
+        "personaTags": [
+          "family"
+        ],
+        "priceRangeBRL": "R$ 600-1.000",
+        "tip": "Resort de águas termais com piscinas e recreação, a 10 min do parque; família que quer piscina depois das Cataratas"
+      },
+      {
+        "name": "Viale Cataratas Hotel & Eventos",
+        "zone": "Rodovia das Cataratas",
+        "tier": "mid",
+        "personaTags": [
+          "family",
+          "couple"
+        ],
+        "priceRangeBRL": "R$ 400-700",
+        "tip": "Hotel moderno na Rodovia das Cataratas, piscina e café farto, a 10 min do parque; o meio-termo da cidade"
+      }
+    ]
   }
 };
 
@@ -10685,7 +14454,9 @@ export const CATALOG_INDEX: Record<string, string> = {
   "cartagena": "Cartagena",
   "cidade do cabo": "Cidade do Cabo",
   "dubai": "Dubai",
+  "florianopolis": "Florianópolis",
   "fortaleza": "Fortaleza",
+  "foz do iguacu": "Foz do Iguaçu",
   "gramado": "Gramado",
   "istambul": "Istambul",
   "istanbul": "Istambul",
@@ -10693,19 +14464,24 @@ export const CATALOG_INDEX: Record<string, string> = {
   "lisbon": "Lisboa",
   "london": "Londres",
   "londres": "Londres",
+  "maceio": "Maceió",
+  "madri": "Madri",
   "marrakech": "Marrakech",
   "marrakesh": "Marrakech",
+  "miami": "Miami",
   "new york": "Nova York",
   "nova iorque": "Nova York",
   "nova york": "Nova York",
   "orlando": "Orlando",
   "paris": "Paris",
+  "porto": "Porto",
   "porto seguro": "Porto Seguro",
   "rio": "Rio de Janeiro",
   "rio de janeiro": "Rio de Janeiro",
   "roma": "Roma",
   "rome": "Roma",
   "salvador": "Salvador",
+  "santiago": "Santiago",
   "singapore": "Singapura",
   "singapura": "Singapura",
   "tokyo": "Tóquio",
@@ -10734,5 +14510,12 @@ export const CATALOG_CITIES: string[] = [
   "Istambul",
   "Bangkok",
   "Marrakech",
-  "Singapura"
+  "Singapura",
+  "Porto",
+  "Madri",
+  "Santiago",
+  "Miami",
+  "Florianópolis",
+  "Maceió",
+  "Foz do Iguaçu"
 ];
