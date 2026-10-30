@@ -25,7 +25,7 @@ const TAG_BY_KEY: Partial<Record<Key, string>> = {
 };
 const CATEGORY_BY_KEY: Partial<Record<Key, string>> = { cafe: 'breakfast', almoco: 'lunch', jantar: 'dinner', passeios: 'passeios', cat_noite: 'night' };
 
-const NO_BEACH = new Set(['Bangkok', 'Buenos Aires', 'Gramado', 'Londres', 'Marrakech', 'Orlando', 'Paris', 'Tokyo', 'Istambul', 'Rome', 'Nova York']);
+const NO_BEACH = new Set(['Bangkok', 'Buenos Aires', 'Gramado', 'Londres', 'Marrakech', 'Orlando', 'Paris', 'Tokyo', 'Istambul', 'Rome', 'Nova York', 'Foz do Iguaçu', 'Madri', 'Santiago']);
 const NO_NIGHTLIFE = new Set(['Gramado', 'Porto Seguro', 'Orlando']);
 
 // [red abaixo de, green a partir de]
