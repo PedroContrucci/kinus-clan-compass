@@ -153,8 +153,8 @@ describe('rankHotelsForTrip', () => {
     expect(ranked.some((r) => r.isCurrent)).toBe(false);
   });
 
-  it('devolve vazio, sem lançar, nas 5 cidades sem curadoria (Natal, Florianópolis, Recife, Manaus, Jericoacoara)', () => {
-    for (const cidade of ['Natal', 'Florianópolis', 'Recife', 'Manaus', 'Jericoacoara']) {
+  it('devolve vazio, sem lançar, nas 5 cidades sem curadoria (Natal, Sevilha, Recife, Manaus, Jericoacoara)', () => {
+    for (const cidade of ['Natal', 'Sevilha', 'Recife', 'Manaus', 'Jericoacoara']) {
       expect(cidade in curatedHotels).toBe(false);
       expect(rankHotelsForTrip(cidade, makeTrip({ destination: cidade }))).toEqual([]);
       expect(getCuratedHotelsForCity(cidade)).toEqual([]);

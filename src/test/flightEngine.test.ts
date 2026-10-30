@@ -96,9 +96,9 @@ describe('getTimezoneDiff — fuso na data da viagem (§1, R-V3/R-V7)', () => {
 });
 
 describe('cityTimezones — o mapa e o catálogo batem', () => {
-  it('cobre as 82 cidades do catálogo com o mesmo IANA, mais São Paulo', () => {
+  it('cobre as 83 cidades do catálogo com o mesmo IANA, mais São Paulo', () => {
     const cities = getAllCities();
-    expect(cities).toHaveLength(82);
+    expect(cities).toHaveLength(83);
     for (const c of cities) expect(CITY_TIMEZONES[c.name], c.name).toBe(c.timezone);
     expect(CITY_TIMEZONES['São Paulo']).toBe('America/Sao_Paulo');
   });

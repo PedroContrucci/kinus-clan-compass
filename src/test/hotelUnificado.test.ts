@@ -121,7 +121,7 @@ describe('buildDraftTrip — cidade com curadoria no tier pedido', () => {
 describe('buildDraftTrip — cidade sem curadoria no tier: nada muda', () => {
   // Desde o catálogo de 177 hotéis, todas as 21 cidades curadas têm os tiers pedidos
   // pelo wizard; o caminho "sem curado" só existe em cidade fora do catálogo (Natal,
-  // Florianópolis). O Rio, que antes não tinha `budget`, agora tem — e o mochileiro
+  // Sevilha). O Rio, que antes não tinha `budget`, agora tem — e o mochileiro
   // recebe ESSE, nunca o Copacabana Palace (R$ 4.500/noite).
   it('Natal (sem curadoria) segue no HOTEL_RECOMMENDATIONS, sem proveniência curada', async () => {
     const trip = await buildDraftTrip(draftInput({ destinationCity: 'Natal', destinationAirportCode: 'NAT' }));
@@ -130,11 +130,11 @@ describe('buildDraftTrip — cidade sem curadoria no tier: nada muda', () => {
     expect(trip.accommodation!.name).toContain('Natal');
   });
 
-  it('Florianópolis (sem curadoria) mantém o nome com sufixo de bairro/cidade do gerador antigo', async () => {
-    const trip = await buildDraftTrip(draftInput({ destinationCity: 'Florianópolis', destinationAirportCode: 'FLN' }));
-    expect(getCuratedHotelsForCity('Florianópolis')).toHaveLength(0);
+  it('Sevilha (sem curadoria) mantém o nome com sufixo de bairro/cidade do gerador antigo', async () => {
+    const trip = await buildDraftTrip(draftInput({ destinationCity: 'Sevilha', destinationAirportCode: 'SVQ' }));
+    expect(getCuratedHotelsForCity('Sevilha')).toHaveLength(0);
     expect(curatedIdOf(trip)).toBeUndefined();
-    expect(trip.accommodation!.name).toMatch(/ — .+, Florianópolis$/);
+    expect(trip.accommodation!.name).toMatch(/ — .+, Sevilha$/);
   });
 
   it('Rio/Mochileiro NÃO é promovido a hotel de luxo curado: recebe o `budget` curado', async () => {

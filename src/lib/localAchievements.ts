@@ -129,6 +129,13 @@ const ICON_NAMES: Record<string, string> = {
   'Singapura': 'Jardim do Futuro',
   'Bangkok': 'Guardião da Esmeralda',
   'Cidade do Cabo': 'Topo da Mesa',
+  'Porto': 'Arco sobre o Douro',
+  'Madri': 'Guarda Real',
+  'Santiago': 'Vigia dos Andes',
+  'Miami': 'Neon de South Beach',
+  'Florianópolis': 'Luz sobre a Baía',
+  'Maceió': 'Jangadeiro de Pajuçara',
+  'Foz do Iguaçu': 'Garganta do Diabo',
 };
 
 /**
@@ -158,6 +165,13 @@ const FORK_NAMES: Record<string, string> = {
   'Singapura': 'Garfo Singapurense',
   'Bangkok': 'Garfo Tailandês',
   'Cidade do Cabo': 'Garfo Capetoniano',
+  'Porto': 'Garfo Portuense',
+  'Madri': 'Garfo Madrilenho',
+  'Santiago': 'Garfo Santiaguino',
+  'Miami': 'Garfo da Flórida',
+  'Florianópolis': 'Garfo Manezinho',
+  'Maceió': 'Garfo Maceioense',
+  'Foz do Iguaçu': 'Garfo das Três Fronteiras',
 };
 
 // ---------------------------------------------------------------------------
