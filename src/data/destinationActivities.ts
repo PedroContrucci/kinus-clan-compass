@@ -236,6 +236,35 @@ const lisboaActivities: SuggestedActivity[] = [
   { id: 'lis2-telecabine', name: 'Telecabine do Parque das Nações', category: 'afternoon', neighborhood: 'Parque das Nações', rating: 4.5, estimatedCostBRL: 40, durationHours: 1, tips: ['Teleférico sobre o Tejo ligando o Oceanário à Torre Vasco da Gama'], styleTags: ['family', 'relaxation'] },
 ];
 
+// Porto activities
+const portoActivities: SuggestedActivity[] = [
+];
+
+// Madri activities
+const madriActivities: SuggestedActivity[] = [
+];
+
+// Santiago activities
+const santiagoActivities: SuggestedActivity[] = [
+];
+
+// Miami activities
+const miamiActivities: SuggestedActivity[] = [
+];
+
+// Florianópolis activities
+const florianopolisActivities: SuggestedActivity[] = [
+];
+
+// Maceió activities
+const maceioActivities: SuggestedActivity[] = [
+];
+
+// Foz do Iguaçu activities
+const fozDoIguacuActivities: SuggestedActivity[] = [
+];
+
+
 // Orlando activities
 const orlandoActivities: SuggestedActivity[] = [
   { id: 'orl-4rivers', name: '4 Rivers Smokehouse', category: 'lunch', neighborhood: 'Winter Park', rating: 4.7, estimatedCostBRL: 120, durationHours: 1.5, tips: ['O melhor barbecue texano da Flórida', 'Brisket defumado 18 horas é o pedido certo', 'Porções gigantes — uma serve dois'], styleTags: ['gastronomy', 'family'] },
@@ -1358,6 +1387,41 @@ export const destinationActivities: Record<string, DestinationData> = {
     cityName: 'Lisboa',
     cityCode: 'LIS',
     activities: lisboaActivities,
+  },
+  'Porto': {
+    cityName: 'Porto',
+    cityCode: 'OPO',
+    activities: portoActivities,
+  },
+  'Madri': {
+    cityName: 'Madri',
+    cityCode: 'MAD',
+    activities: madriActivities,
+  },
+  'Santiago': {
+    cityName: 'Santiago',
+    cityCode: 'SCL',
+    activities: santiagoActivities,
+  },
+  'Miami': {
+    cityName: 'Miami',
+    cityCode: 'MIA',
+    activities: miamiActivities,
+  },
+  'Florianópolis': {
+    cityName: 'Florianópolis',
+    cityCode: 'FLN',
+    activities: florianopolisActivities,
+  },
+  'Maceió': {
+    cityName: 'Maceió',
+    cityCode: 'MCZ',
+    activities: maceioActivities,
+  },
+  'Foz do Iguaçu': {
+    cityName: 'Foz do Iguaçu',
+    cityCode: 'IGU',
+    activities: fozDoIguacuActivities,
   },
   'Orlando': {
     cityName: 'Orlando',
