@@ -15,6 +15,7 @@ import Conta from "./pages/Conta";
 import DestinationDetail from "./pages/DestinationDetail";
 import NotFound from "./pages/NotFound";
 import Privacidade from "./pages/Privacidade";
+import RedefinirSenha from "./pages/RedefinirSenha";
 import SmokeTest from "./pages/SmokeTest";
 import Onda from "./pages/Onda";
 import { TripAdoptionDialog } from "@/components/shared/TripAdoptionDialog";
@@ -125,6 +126,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Login />} />
               <Route path="/privacidade" element={<Privacidade />} />
+              <Route path="/redefinir-senha" element={<RedefinirSenha />} />
               <Route path="/inicio" element={<Inicio />} />
               <Route path="/dashboard" element={<RedirectInicio />} />
               <Route path="/viagens" element={<RedirectInicio />} />

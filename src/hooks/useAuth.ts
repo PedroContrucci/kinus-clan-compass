@@ -147,6 +147,20 @@ export function useAuth() {
     if (error) throw error;
   }, []);
 
+  // Recuperação de senha. Ao contrário de signIn/signUp, devolvem { error } em
+  // vez de lançar — quem chama decide o que mostrar.
+  const resetPassword = useCallback(async (email: string) => {
+    const { error } = await kinuBeta.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/redefinir-senha`,
+    });
+    return { error };
+  }, []);
+
+  const updatePassword = useCallback(async (password: string) => {
+    const { error } = await kinuBeta.auth.updateUser({ password });
+    return { error };
+  }, []);
+
   // Alias histórico de signIn — ver a nota de assinatura no topo do arquivo.
   const login = useCallback(
     (email: string, password: string) => signIn(email, password),
@@ -180,5 +194,7 @@ export function useAuth() {
     signIn,
     signUp,
     signInWithGoogle,
+    resetPassword,
+    updatePassword,
   };
 }

@@ -63,8 +63,10 @@ function mapAuthError(error: unknown, mode: 'entrar' | 'criar'): string {
 
 const Login = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading, signIn, signUp, signInWithGoogle } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgot, setIsForgot] = useState(false);
+  const [forgotNotice, setForgotNotice] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -143,6 +145,35 @@ const Login = () => {
     }
   };
 
+  // Anti-enumeração: a mensagem é SEMPRE a mesma, com ou sem erro. O erro real
+  // vai só para o console.
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotNotice('');
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail.includes('@')) {
+      setError('Email inválido');
+      return;
+    }
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const { error: resetError } = await resetPassword(trimmedEmail);
+      if (resetError) console.error('[login] resetPassword falhou', resetError);
+    } catch (err) {
+      console.error('[login] resetPassword falhou', err);
+    } finally {
+      setForgotNotice('Se existir uma conta com esse e-mail, enviamos um link para redefinir a senha.');
+      setIsSubmitting(false);
+    }
+  };
+
+  const closeForgot = () => {
+    setIsForgot(false);
+    setForgotNotice('');
+    setError('');
+  };
+
   // signInWithGoogle redireciona o browser inteiro; em caso de sucesso esta
   // página some antes do finally, então o isSubmitting só volta no erro — o
   // botão fica travado durante o redirect, que é o comportamento desejado.
@@ -203,6 +234,46 @@ const Login = () => {
         )}
 
         {/* Form */}
+        {isForgot ? (
+        <form onSubmit={handleForgot} className="glass-card p-6 space-y-4">
+          <p className="text-sm text-muted-foreground font-['Plus_Jakarta_Sans'] leading-relaxed">
+            Informe seu e-mail e enviaremos um link para redefinir a senha.
+          </p>
+
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+          />
+
+          {error && (
+            <p className="text-destructive text-sm">{error}</p>
+          )}
+
+          {forgotNotice && (
+            <p className="text-primary text-sm">{forgotNotice}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-3.5 btn-primary font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isSubmitting && <Loader2 size={18} className="animate-spin" />}
+            <span>Enviar link</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={closeForgot}
+            className="w-full text-center text-sm text-primary hover:underline font-medium"
+          >
+            Voltar
+          </button>
+        </form>
+        ) : (
         <form onSubmit={handleSubmit} className="glass-card p-6 space-y-4">
           {!isLogin && (
             <div>
@@ -242,6 +313,18 @@ const Login = () => {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
+
+          {isLogin && (
+            <div className="text-right -mt-2">
+              <button
+                type="button"
+                onClick={() => { setIsForgot(true); setError(''); setNotice(''); }}
+                className="text-sm text-primary hover:underline font-['Plus_Jakarta_Sans']"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
+          )}
 
           {error && (
             <p className="text-destructive text-sm">{error}</p>
@@ -307,8 +390,10 @@ const Login = () => {
             <span>Entrar com Google</span>
           </button>
         </form>
+        )}
 
         {/* Toggle */}
+        {!isForgot && (
         <p className="text-center mt-6 text-muted-foreground font-['Plus_Jakarta_Sans']">
           {isLogin ? 'Ainda não faz parte do clã? ' : 'Já tem conta? '}
           <button
@@ -319,6 +404,7 @@ const Login = () => {
             {isLogin ? 'Junte-se a nós →' : 'Entrar'}
           </button>
         </p>
+        )}
       </div>
 
       {/* Footer */}
