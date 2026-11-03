@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, HelpCircle, Star, Info, Loader2, Shield, Trash2, Compass } from 'lucide-react';
+import { LogOut, User, HelpCircle, Star, Info, Loader2, Shield, Trash2, Compass, KeyRound, ChevronDown } from 'lucide-react';
 import { trackOnboarding } from '@/lib/onboarding';
 import { BottomNav } from '@/components/shared/BottomNav';
 import { toast } from '@/hooks/use-toast';
@@ -15,11 +15,16 @@ import { AchievementsPanel } from '@/components/conquistas/AchievementsPanel';
 
 const Conta = () => {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading, logout } = useAuth();
+  const { user, isLoading: authLoading, logout, updatePassword } = useAuth();
   const [stats, setStats] = useState({ trips: 0, countries: 0, activities: 0 });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMessage, setPwMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
   // Guard ASSÍNCRONO — a diferença que importa: só redireciona depois que a
   // sessão resolveu. Antes, o guard era síncrono (loadJson do mock) e mandaria
@@ -70,6 +75,34 @@ const Conta = () => {
         variant: 'destructive',
       });
       setIsDeleting(false);
+    }
+  };
+
+  // Alterar senha: valida antes de chamar; erro do servidor vira mensagem genérica.
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pwSaving) return;
+    if (newPassword.length < 6) {
+      setPwMessage({ kind: 'error', text: 'A senha precisa ter pelo menos 6 caracteres.' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwMessage({ kind: 'error', text: 'As senhas não são iguais.' });
+      return;
+    }
+    setPwSaving(true);
+    setPwMessage(null);
+    try {
+      const { error } = await updatePassword(newPassword);
+      if (error) throw error;
+      setNewPassword('');
+      setConfirmPassword('');
+      setPwMessage({ kind: 'ok', text: 'Senha alterada com sucesso' });
+    } catch (err) {
+      console.error('[conta] updatePassword falhou', err);
+      setPwMessage({ kind: 'error', text: 'Não foi possível alterar a senha. Tente de novo.' });
+    } finally {
+      setPwSaving(false);
     }
   };
 
@@ -171,7 +204,56 @@ const Conta = () => {
               <span className="text-foreground font-['Plus_Jakarta_Sans']">{item.label}</span>
             </button>
           ))}
-          
+
+          {/* Alterar senha (colapsada) */}
+          <div className="bg-card border border-border rounded-xl">
+            <button
+              type="button"
+              onClick={() => setPwOpen(o => !o)}
+              aria-expanded={pwOpen}
+              className="w-full flex items-center gap-3 p-4 text-left hover:bg-card/80 transition-colors rounded-xl"
+            >
+              <KeyRound size={20} className="text-muted-foreground" />
+              <span className="flex-1 text-foreground font-['Plus_Jakarta_Sans']">Alterar senha</span>
+              <ChevronDown size={18} className={`text-muted-foreground transition-transform ${pwOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {pwOpen && (
+              <form onSubmit={handleChangePassword} className="px-4 pb-4 space-y-3">
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Nova senha"
+                  aria-label="Nova senha"
+                  autoComplete="new-password"
+                  className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+                />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirmar nova senha"
+                  aria-label="Confirmar nova senha"
+                  autoComplete="new-password"
+                  className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+                />
+                {pwMessage && (
+                  <p role="status" className={`text-sm font-['Plus_Jakarta_Sans'] ${pwMessage.kind === 'ok' ? 'text-primary' : 'text-destructive'}`}>
+                    {pwMessage.text}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={pwSaving}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {pwSaving && <Loader2 size={16} className="animate-spin" />}
+                  Salvar nova senha
+                </button>
+              </form>
+            )}
+          </div>
+
           {/* Logout */}
           <button
             onClick={handleLogout}
