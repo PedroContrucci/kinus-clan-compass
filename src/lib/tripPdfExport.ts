@@ -10,6 +10,7 @@ import { getTopMichelinForCity } from '@/lib/michelinData';
 import { getExpandedCityData } from '@/data/destinationPdfData';
 
 import { findCityInfo } from '@/data/destinationCatalog';
+import { pdfSafe, cuisinePt, localizeCuisineTip, plural, stopsLabel, baggageLabel, packingClimate, monthOf } from '@/lib/pdfText';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { getDocsForDestination } from '@/data/destinationDocs';
 import { tripTimezone, formatTzDiff, formatTzInfo, airportCity } from '@/lib/timezone';
@@ -536,7 +537,7 @@ function composeDayNarrative(day: any): string {
 
   const cleanName = (a: any) => cleanText((a.name || '').replace(/^(Almoco|Jantar|Cafe|Almoço|Café):\s*/i, ''));
   const essence = (a: any): string => {
-    const raw = Array.isArray(a?.tips) && a.tips.length ? a.tips[0] : '';
+    const raw = Array.isArray(a?.tips) && a.tips.length ? localizeCuisineTip(String(a.tips[0])) : '';
     if (!raw) return '';
     const stripped = String(raw).replace(/[⚠️✨🌟🔴🟡🟢📍•\-–—]+/g, '').trim();
     const firstSentence = stripped.split(/[.!?]/)[0].trim();
@@ -768,6 +769,23 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   const ph = doc.internal.pageSize.getHeight(); // 297
   let y = 0;
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  // M8a: uma só porta de saída — texto fora da WinAnsi (⭐, setas, NFD) quebraria a string inteira.
+  const safeArg = (v: any): any => (Array.isArray(v) ? v.map(pdfSafe) : typeof v === 'string' ? pdfSafe(v) : v);
+  const _text = doc.text.bind(doc);
+  (doc as any).text = (t: any, ...r: any[]) => _text(safeArg(t), ...r);
+  const _split = doc.splitTextToSize.bind(doc);
+  (doc as any).splitTextToSize = (t: any, ...r: any[]) => _split(safeArg(t), ...r);
+  if (typeof doc.textWithLink === 'function') {
+    const _link = doc.textWithLink.bind(doc);
+    (doc as any).textWithLink = (t: any, ...r: any[]) => _link(safeArg(t), ...r);
+  }
+  if (typeof doc.getTextWidth === 'function') {
+    const _w = doc.getTextWidth.bind(doc);
+    (doc as any).getTextWidth = (t: any) => _w(safeArg(t));
+  }
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+
   // Fetch cover photos in parallel — try destination-specific unsplash first,
   // fall back to curated hardcoded arrays if the edge function fails.
   const fallbackUrls = getDestCoverPhotos(trip.destination);
@@ -897,7 +915,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   doc.setFontSize(11.5);
   doc.text(dateRange, pw / 2, y, { align: 'center' });
   y += 6;
-  doc.text(`${totalDays} dias  |  ${trip.travelers} viajante(s)  |  Faixa ${tierLabel}`, pw / 2, y, { align: 'center' });
+  doc.text(`${totalDays} dias  |  ${plural(Number(trip.travelers) || 1, 'viajante', 'viajantes')}  |  Faixa ${tierLabel}`, pw / 2, y, { align: 'center' });
 
   // Personalizacao — nome de quem exporta, recebido por argumento.
   // A leitura crua de `kinu_user` morreu aqui (Arco 3c): a lib nao pode usar
@@ -971,7 +989,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     const durationKnown = (trip.flights?.outbound as any)?.durationKnown !== false;
     // "3h25", nunca "3.42h": o gravado segue decimal, a capa formata.
     const flightDurMin = durationTextToMinutes(flightDuration);
-    const durLabel = durationKnown ? (flightDurMin > 0 ? `~${formatDurationHM(flightDurMin)}` : '~?h') : 'duracao a confirmar';
+    const durLabel = durationKnown ? (flightDurMin > 0 ? `~${formatDurationHM(flightDurMin)}` : '~?h') : 'duração a confirmar';
     const originIata = trip.flights?.outbound?.origin || 'GRU';
     const originCity = airportCity(originIata)?.city ?? originIata;
     const destCity = trip.destination || '';
@@ -981,7 +999,9 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
       setC(B.horizon, false);
       doc.setFontSize(11.5);
       doc.setFont('helvetica', 'bold');
-      const flightLine = `Voo: ${cleanText(originCity)} › ${cleanText(destCity)}  |  ${durLabel}  |  Fuso: ${formatTzDiff(tz)}`;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const heroOpt = (trip as any).outboundFlight?.option;
+      const flightLine = `Voo: ${cleanText(originCity)} › ${cleanText(destCity)}  |  ${durLabel}  |  ${stopsLabel(heroOpt)}  |  ${baggageLabel(heroOpt)}  |  Fuso: ${formatTzDiff(tz)}`;
       doc.text(flightLine, 14, y);
       y += 5;
 
@@ -1105,7 +1125,8 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
       if (airlines.length) parts.push(Array.from(new Set(airlines)).join(' / '));
       const outTime = realOutb?.departureTime || outb?.departureTime;
       const retTime = realRet?.departureTime || ret?.departureTime;
-      if (outTime) parts.push(`saida ${outTime}`);
+      parts.push(stopsLabel(realOutb ?? null));
+      if (outTime) parts.push(`saída ${outTime}`);
       if (retTime) parts.push(`retorno ${retTime}`);
       const line = cleanText(parts.join(' · '));
       ((outb?.status === 'confirmed') ? confirmedItems : pendingItems).push(line);
@@ -1305,7 +1326,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
         })
         .map((a: any) => {
           const n = (a.name || '');
-          return n.replace(/^(Almoco|Jantar|Cafe|Almoço|Café):\s*/i, '').substring(0, 20);
+          return pdfSafe(n.replace(/^(Almoco|Jantar|Cafe|Almoço|Café):\s*/i, '')).substring(0, 20);
         });
       if (routeStops.length >= 2) {
         checkPage(5.5);
@@ -1503,7 +1524,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
       setC(B.gray400, false);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10.5);
-      const details = `${r.cuisine}  |  ${r.priceRange}${r.neighborhood ? '  |  ' + r.neighborhood : ''}`;
+      const details = `${cuisinePt(r.cuisine)}  |  ${r.priceRange}${r.neighborhood ? '  |  ' + r.neighborhood : ''}`;
       doc.text(details, 20, y + 3.5);
 
       y += 10;
@@ -1682,7 +1703,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
       setC(B.emerald, false);
       doc.setFontSize(11.5);
       doc.setFont('helvetica', 'bold');
-      doc.text('FRASES UTEIS', 14, y);
+      doc.text('FRASES ÚTEIS', 14, y);
       y += 6;
 
       tips.phrases.forEach(phrase => {
@@ -1704,7 +1725,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
       setC(B.emerald, false);
       doc.setFontSize(11.5);
       doc.setFont('helvetica', 'bold');
-      doc.text('EMERGENCIA', 14, y);
+      doc.text('EMERGÊNCIA', 14, y);
       y += 6;
 
       setC(B.white, false);
@@ -1747,34 +1768,38 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   doc.text('CHECKLIST DE VIAGEM', 14, y);
   y += 8;
 
-  // Determine climate from destination info or month
-  const tripMonth = trip.startDate ? new Date(trip.startDate).getMonth() : 6;
-  const isColdClimate = [11, 0, 1, 2].includes(tripMonth); // Dec-Mar for northern hemisphere
-  const destKey = normalizeForMatch(trip.destination);
-  const isNorthernHemisphere = !['buenos aires', 'santiago', 'sydney', 'melbourne', 'auckland', 'cidade do cabo', 'bali'].some(c => destKey.includes(normalizeForMatch(c)));
-  const isCold = isNorthernHemisphere ? isColdClimate : !isColdClimate;
+  // M8a: clima por hemisfério (país do catálogo) + mês; praia só em cidade de praia.
+  const { cold: isCold, beach: isBeach } = packingClimate({
+    destination: trip.destination,
+    country: findCityInfo(trip.destination)?.country.country,
+    month: monthOf(trip.startDate),
+  });
 
   const packingCategories: Array<{ title: string; items: string[] }> = [
     {
       title: 'Documentos',
       items: isDomesticBrazil(trip)
-        ? ['RG ou CNH validos (voo domestico)', 'Copias digitais dos documentos', 'Comprovante de hospedagem', 'Passagens aereas impressas', 'Seguro viagem']
-        : ['Passaporte (validade > 6 meses)', 'Copias digitais dos documentos', 'Comprovante de hospedagem', 'Passagens aereas impressas', 'Seguro viagem', 'Carteira de vacinacao internacional', 'Cartao de credito internacional'],
+        ? ['RG ou CNH válidos (voo doméstico)', 'Cópias digitais dos documentos', 'Comprovante de hospedagem', 'Passagens aéreas impressas', 'Seguro viagem']
+        : ['Passaporte (validade > 6 meses)', 'Cópias digitais dos documentos', 'Comprovante de hospedagem', 'Passagens aéreas impressas', 'Seguro viagem', 'Carteira de vacinação internacional', 'Cartão de crédito internacional'],
     },
 
     {
-      title: 'Eletronicos',
+      title: 'Eletrônicos',
       items: ['Carregador de celular', 'Adaptador de tomada', 'Power bank', 'Fones de ouvido', 'Cabo USB extra'],
     },
     {
       title: 'Roupas',
-      items: isCold
-        ? ['Casaco pesado / parka', 'Luvas e gorro', 'Cachecol', 'Calcas compridas (3-4)', 'Camisetas termicas', 'Meias grossas', 'Botas impermeaveis', 'Roupa intima (7+ unidades)']
-        : ['Camisetas leves (5-7)', 'Shorts / bermudas', 'Roupa de banho', 'Vestido / roupa de passeio', 'Chinelo', 'Tenis confortavel', 'Roupa intima (7+ unidades)', 'Bone / chapeu'],
+      items: [
+        ...(isCold
+          ? ['Casaco pesado / parka', 'Luvas e gorro', 'Cachecol', 'Calças compridas (3-4)', 'Camisetas térmicas', 'Meias grossas', 'Botas impermeáveis']
+          : ['Camisetas leves (5-7)', 'Shorts / bermudas', 'Vestido / roupa de passeio', 'Boné / chapéu']),
+        ...(isBeach ? ['Roupa de banho', 'Chinelo', 'Canga / toalha de praia'] : []),
+        'Guarda-chuva compacto', 'Tênis confortável', 'Roupa íntima (7+ unidades)',
+      ],
     },
     {
-      title: 'Higiene & Saude',
-      items: ['Protetor solar', 'Repelente de insetos', 'Kit de remedios basicos', 'Escova e pasta de dente', 'Shampoo / condicionador (viagem)', 'Desodorante'],
+      title: 'Higiene & Saúde',
+      items: ['Protetor solar', 'Repelente de insetos', 'Kit de remédios básicos', 'Escova e pasta de dente', 'Shampoo / condicionador (viagem)', 'Desodorante'],
     },
   ];
 
