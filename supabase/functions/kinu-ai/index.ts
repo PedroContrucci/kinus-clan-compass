@@ -357,6 +357,13 @@ interface RequestBody {
     hotelConfirmed?: boolean;
     interests?: string[];
     flightDuration?: string;
+    // Arco DURANTE: fase, dia atual e plano do dia chegam prontos do app.
+    tripPhase?: string;
+    currentDayIndex?: number;
+    itineraryDays?: unknown;
+    todayDate?: string;
+    todayPlan?: unknown;
+    todayHotel?: unknown;
   };
   history?: ChatMessage[];
   isEmergency?: boolean;

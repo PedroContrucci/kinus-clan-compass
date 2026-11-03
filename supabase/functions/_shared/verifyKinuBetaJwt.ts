@@ -75,7 +75,7 @@ function safeLabel(value: unknown): string {
     : "none";
 }
 
-function b64urlToBytes(seg: string): Uint8Array | null {
+function b64urlToBytes(seg: string): Uint8Array<ArrayBuffer> | null {
   const rest = seg.length % 4;
   if (rest === 1) return null;
   const pad = rest === 2 ? "==" : rest === 3 ? "=" : "";
