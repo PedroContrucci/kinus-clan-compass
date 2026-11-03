@@ -46,7 +46,7 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'paris-tour-eiffel-top': 'icon',
       'paris-trocadero-sunset': 'essential',
     },
-    food: ['par-bouillon-chartier', 'par3-baratin', 'par3-du-pain-idees', 'par3-enfants-rouges', 'par3-procope', 'par3-stohrer', 'paris-angelina', 'paris-bistrot-paul-bert', 'paris-bouillon-pigalle', 'paris-breizh-cafe', 'paris-cafe-flore', 'paris-cafe-kitsune', 'paris-chartier', 'paris-chez-janou', 'paris-comptoir', 'paris-deux-magots', 'paris-falafel', 'paris-laduree', 'paris-petit-cler', 'paris-pink-mamma', 'paris-relais-entrecote', 'paris-septime'],
+    food: ['par-bouillon-chartier', 'par3-baratin', 'par3-du-pain-idees', 'par3-procope', 'par3-stohrer', 'paris-angelina', 'paris-bistrot-paul-bert', 'paris-bouillon-pigalle', 'paris-breizh-cafe', 'paris-cafe-flore', 'paris-chartier', 'paris-chez-janou', 'paris-comptoir', 'paris-deux-magots', 'paris-falafel', 'paris-laduree', 'paris-petit-cler', 'paris-pink-mamma', 'paris-relais-entrecote', 'paris-septime'],
   },
   'Fortaleza': {
     slug: 'fortaleza',
@@ -66,7 +66,7 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'for-taiba': 'hidden_gem',
       'for-theatro-jose-alencar': 'essential',
     },
-    food: ['for-cabana-del-primo', 'for-cafe-beira-mar', 'for-cafe-santa-clara', 'for-cantinho-faustino', 'for-caranguejada-iate', 'for-caravaggio-cucina', 'for-carneiro-ordones', 'for-cemoara', 'for-coco-bambu-beira-mar', 'for-coco-bambu-varjota', 'for-giz-cozinha', 'for-mar-e-terra-varjota', 'for-mercado-peixes', 'for-picanha-do-cowboy', 'for-pipo', 'for-pulcinella', 'for-recanto-praiano', 'for-rest-boteco-praia', 'for-rest-cabana-del-primo', 'for-rest-chico-aldeota', 'for-rest-geppos', 'for-rest-lo', 'for-rest-moleskine', 'for-rest-ryori', 'for-rest-santa-grelha', 'for-rest-vasto', 'for-tapioqueiras', 'for-varjota', 'for-vojnilo', 'for2-cafe-viriato', 'for2-moendo-cafe'],
+    food: ['for-cabana-del-primo', 'for-cafe-beira-mar', 'for-cantinho-faustino', 'for-caranguejada-iate', 'for-caravaggio-cucina', 'for-carneiro-ordones', 'for-cemoara', 'for-coco-bambu-beira-mar', 'for-coco-bambu-varjota', 'for-giz-cozinha', 'for-mar-e-terra-varjota', 'for-mercado-peixes', 'for-picanha-do-cowboy', 'for-pipo', 'for-pulcinella', 'for-recanto-praiano', 'for-rest-boteco-praia', 'for-rest-cabana-del-primo', 'for-rest-chico-aldeota', 'for-rest-geppos', 'for-rest-lo', 'for-rest-moleskine', 'for-rest-ryori', 'for-rest-santa-grelha', 'for-rest-vasto', 'for-tapioqueiras', 'for-varjota', 'for2-cafe-viriato', 'for2-moendo-cafe'],
   },
   'Rio de Janeiro': {
     slug: 'rio-de-janeiro',
@@ -194,7 +194,7 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'ssa-sao-francisco': 'essential',
       'ssa-terca-da-bencao': 'hidden_gem',
     },
-    food: ['ssa-acaraje-dinha', 'ssa-amado', 'ssa-axego', 'ssa-bahia-cafe-house', 'ssa-boteco-franca', 'ssa-cafelier', 'ssa-camafeu', 'ssa-carvao', 'ssa-casa-de-tereza', 'ssa-coffeetown', 'ssa-dona-mariquita', 'ssa-dulce-vanille', 'ssa-la-taperia', 'ssa-mamma-jamma', 'ssa-maria-mata-mouro', 'ssa-mini-pastel', 'ssa-mistura', 'ssa-ori', 'ssa-origem', 'ssa-paraiso-tropical', 'ssa-pasta-em-casa', 'ssa-pereira', 'ssa-perini', 'ssa-rubi-cafe', 'ssa-senac-pelourinho', 'ssa-soho', 'ssa-yemanja'],
+    food: ['ssa-acaraje-dinha', 'ssa-amado', 'ssa-axego', 'ssa-bahia-cafe-house', 'ssa-boteco-franca', 'ssa-cafelier', 'ssa-camafeu', 'ssa-carvao', 'ssa-casa-de-tereza', 'ssa-coffeetown', 'ssa-dona-mariquita', 'ssa-dulce-vanille', 'ssa-la-taperia', 'ssa-mamma-jamma', 'ssa-mini-pastel', 'ssa-mistura', 'ssa-ori', 'ssa-origem', 'ssa-pasta-em-casa', 'ssa-pereira', 'ssa-perini', 'ssa-rubi-cafe', 'ssa-senac-pelourinho', 'ssa-soho', 'ssa-yemanja'],
   },
   'Buenos Aires': {
     slug: 'buenos-aires',
@@ -239,7 +239,7 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'ctg-portal-dulces': 'essential',
       'ctg-rosario': 'essential',
     },
-    food: ['ctg-abaco', 'ctg-alma-san-agustin', 'ctg-cafe-del-mural', 'ctg-cande', 'ctg-carmen', 'ctg-celele', 'ctg-cevicheria', 'ctg-cocina-pepina', 'ctg-crepes-waffles', 'ctg-demente', 'ctg-di-silvio', 'ctg-el-baron', 'ctg-epoca-cafe', 'ctg-espiritu-santo', 'ctg-juan-del-mar', 'ctg-la-mulata', 'ctg-mar-y-zielo', 'ctg-maria', 'ctg-pezetarian', 'ctg-san-alberto', 'ctg-stepping-stone'],
+    food: ['ctg-abaco', 'ctg-alma-san-agustin', 'ctg-cafe-del-mural', 'ctg-cande', 'ctg-carmen', 'ctg-celele', 'ctg-cevicheria', 'ctg-cocina-pepina', 'ctg-crepes-waffles', 'ctg-di-silvio', 'ctg-el-baron', 'ctg-epoca-cafe', 'ctg-espiritu-santo', 'ctg-juan-del-mar', 'ctg-la-mulata', 'ctg-mar-y-zielo', 'ctg-maria', 'ctg-pezetarian', 'ctg-san-alberto', 'ctg-stepping-stone'],
   },
   'Nova York': {
     slug: 'nova-york',
@@ -280,7 +280,7 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'gra5-snowland': 'essential',
       'gra5-vale-quilombo': 'hidden_gem',
     },
-    food: ['gra-bela-vista', 'gra-belle-du-valais', 'gra-cafe-colonial-mirante', 'gra-cantina-pastasciutta', 'gra-casa-di-paolo', 'gra-coffee-motion', 'gra-colosseo', 'gra-edelweiss', 'gra-fritz-frida', 'gra-hofbier', 'gra-josephina', 'gra-la-caceria', 'gra-lugano', 'gra-madero', 'gra-mamma-gema', 'gra-per-voi', 'gra-prawer', 'gra-tarantino', 'gra5-coelho-colonial', 'gra5-empanadas'],
+    food: ['gra-bela-vista', 'gra-belle-du-valais', 'gra-cafe-colonial-mirante', 'gra-cantina-pastasciutta', 'gra-casa-di-paolo', 'gra-coffee-motion', 'gra-colosseo', 'gra-edelweiss', 'gra-fritz-frida', 'gra-hofbier', 'gra-josephina', 'gra-madero', 'gra-mamma-gema', 'gra-per-voi', 'gra-prawer', 'gra-tarantino', 'gra5-coelho-colonial', 'gra5-empanadas'],
   },
   'Londres': {
     slug: 'londres',
@@ -301,7 +301,7 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'lon6-st-dunstan': 'hidden_gem',
       'lon6-tower': 'essential',
     },
-    food: ['lon-bao', 'lon-borough-market', 'lon-breakfast-club', 'lon-burger-lobster', 'lon-dishoom', 'lon-dishoom-covent', 'lon-e-pellicci', 'lon-ffionas', 'lon-flat-iron', 'lon-franco-manca', 'lon-hawksmoor', 'lon-monmouth', 'lon-ottolenghi', 'lon-padella', 'lon-poppies', 'lon-regency-cafe', 'lon-rules', 'lon-seven-dials', 'lon-the-barbary', 'lon6-leadenhall'],
+    food: ['lon-bao', 'lon-borough-market', 'lon-breakfast-club', 'lon-burger-lobster', 'lon-dishoom', 'lon-dishoom-covent', 'lon-e-pellicci', 'lon-ffionas', 'lon-flat-iron', 'lon-franco-manca', 'lon-hawksmoor', 'lon-monmouth', 'lon-padella', 'lon-poppies', 'lon-regency-cafe', 'lon-rules', 'lon-seven-dials', 'lon-the-barbary', 'lon6-leadenhall'],
   },
   'Barcelona': {
     slug: 'barcelona',
@@ -318,11 +318,10 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'bcn-park-guell': 'essential',
       'bcn-sagrada-familia': 'icon',
       'bcn-xampanyet': 'hidden_gem',
-      'bcn6-laberint': 'hidden_gem',
       'bcn6-sant-antoni': 'hidden_gem',
       'bcn6-sant-pau': 'hidden_gem',
     },
-    food: ['bcn-7-portes', 'bcn-bar-canete', 'bcn-bar-del-pla', 'bcn-bo-de-b', 'bcn-brunch-cake', 'bcn-cal-pep', 'bcn-can-culleretes', 'bcn-cerveceria-catalana', 'bcn-ciudad-condal', 'bcn-el-nacional', 'bcn-federal', 'bcn-forn-mistral', 'bcn-la-paradeta', 'bcn-la-pepita', 'bcn-la-puntual', 'bcn-pallaresa', 'bcn-quatre-gats', 'bcn-satans-coffee', 'bcn-xampanyet'],
+    food: ['bcn-7-portes', 'bcn-bar-canete', 'bcn-bar-del-pla', 'bcn-bo-de-b', 'bcn-brunch-cake', 'bcn-cal-pep', 'bcn-can-culleretes', 'bcn-cerveceria-catalana', 'bcn-ciudad-condal', 'bcn-el-nacional', 'bcn-federal', 'bcn-forn-mistral', 'bcn-la-pepita', 'bcn-la-puntual', 'bcn-pallaresa', 'bcn-quatre-gats', 'bcn-satans-coffee', 'bcn-xampanyet'],
   },
   'Porto Seguro': {
     slug: 'porto-seguro',
@@ -343,7 +342,7 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'pse-taperapua': 'essential',
       'pse-tia-nenzinha': 'hidden_gem',
     },
-    food: ['ps5-caraiva-almoco', 'ps5-tres-cabanas', 'pse-acai-orla', 'pse-axe-moi-almoco', 'pse-beco-das-cores', 'pse-cacau-trancoso', 'pse-cafe-mucuge', 'pse-capim-santo', 'pse-colher-de-pau', 'pse-ilha-aquarios', 'pse-la-tarrafa', 'pse-manguti', 'pse-paulinho-pescador', 'pse-portinha', 'pse-rabanete', 'pse-recanto-sol', 'pse-tapiocas-passarela', 'pse-tia-nenzinha', 'psg-cafe-cultura-trancoso', 'psg-natural-trancoso', 'psg-santo-cafe-trancoso', 'psg-silvana-cia'],
+    food: ['ps5-caraiva-almoco', 'ps5-tres-cabanas', 'pse-acai-orla', 'pse-axe-moi-almoco', 'pse-beco-das-cores', 'pse-cacau-trancoso', 'pse-cafe-mucuge', 'pse-capim-santo', 'pse-colher-de-pau', 'pse-la-tarrafa', 'pse-manguti', 'pse-paulinho-pescador', 'pse-portinha', 'pse-rabanete', 'pse-tapiocas-passarela', 'pse-tia-nenzinha', 'psg-cafe-cultura-trancoso', 'psg-natural-trancoso', 'psg-santo-cafe-trancoso', 'psg-silvana-cia'],
   },
   'Dubai': {
     slug: 'dubai',
@@ -385,13 +384,12 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'cpt-truth-coffee': 'hidden_gem',
       'cpt-waterfront': 'essential',
     },
-    food: ['cpt-bootlegger', 'cpt-clarkes', 'cpt-codfather', 'cpt-den-anker', 'cpt-el-burro', 'cpt-gold', 'cpt-harbour-house', 'cpt-jason-bakery', 'cpt-kalkys', 'cpt-kleinskys', 'cpt-kloof-street-house', 'cpt-mama-africa', 'cpt-marcos-african-place', 'cpt-mariams-kitchen', 'cpt-ocean-basket', 'cpt-origin-coffee', 'cpt-panama-jacks', 'cpt-pot-luck-club', 'cpt-truth-coffee', 'cpt-va-food-market'],
+    food: ['cpt-bootlegger', 'cpt-clarkes', 'cpt-codfather', 'cpt-den-anker', 'cpt-el-burro', 'cpt-gold', 'cpt-harbour-house', 'cpt-jason-bakery', 'cpt-kalkys', 'cpt-kleinskys', 'cpt-kloof-street-house', 'cpt-mama-africa', 'cpt-marcos-african-place', 'cpt-mariams-kitchen', 'cpt-ocean-basket', 'cpt-origin-coffee', 'cpt-pot-luck-club', 'cpt-truth-coffee'],
   },
   'Istambul': {
     slug: 'istambul',
     aliases: ['Istambul'],
     tiers: {
-      'ist-asitane': 'hidden_gem',
       'ist-balat': 'hidden_gem',
       'ist-bosforo': 'essential',
       'ist-cisterna': 'essential',
@@ -406,7 +404,7 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'ist-topkapi': 'essential',
       'ist-zubeyir': 'hidden_gem',
     },
-    food: ['ist-360', 'ist-asitane', 'ist-balik-ekmek', 'ist-cinaralti-cengelkoy', 'ist-ciya', 'ist-ciya-kebap', 'ist-durumzade', 'ist-hafiz-mustafa', 'ist-hamdi', 'ist-karabatak', 'ist-karakoy-lokantasi', 'ist-mikla', 'ist-namli-gurme', 'ist-nevizade', 'ist-pandeli', 'ist-simit-cay', 'ist-sultanahmet-koftecisi', 'ist-sur-balik', 'ist-van-kahvalti', 'ist-zubeyir'],
+    food: ['ist-360', 'ist-balik-ekmek', 'ist-cinaralti-cengelkoy', 'ist-ciya', 'ist-ciya-kebap', 'ist-durumzade', 'ist-hafiz-mustafa', 'ist-hamdi', 'ist-karakoy-lokantasi', 'ist-mikla', 'ist-namli-gurme', 'ist-nevizade', 'ist-pandeli', 'ist-simit-cay', 'ist-sultanahmet-koftecisi', 'ist-sur-balik', 'ist-van-kahvalti', 'ist-zubeyir'],
   },
   'Bangkok': {
     slug: 'bangkok',
@@ -427,7 +425,7 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'bkk-wattana-panich': 'hidden_gem',
       'bkk-yaowarat': 'essential',
     },
-    food: ['bkk-baan-khanitha', 'bkk-baan-phadthai', 'bkk-blue-elephant', 'bkk-cabbages-condoms', 'bkk-err-urban-rustic', 'bkk-jay-fai', 'bkk-jok-prince', 'bkk-krua-apsorn', 'bkk-luka-cafe', 'bkk-on-lok-yun', 'bkk-or-tor-kor', 'bkk-prachak-pet-yang', 'bkk-roast', 'bkk-roti-mataba', 'bkk-somtam-nua', 'bkk-sook-siam', 'bkk-supanniga', 'bkk-thipsamai', 'bkk-wattana-panich', 'bkk-yaowarat'],
+    food: ['bkk-baan-khanitha', 'bkk-baan-phadthai', 'bkk-blue-elephant', 'bkk-cabbages-condoms', 'bkk-err-urban-rustic', 'bkk-jay-fai', 'bkk-jok-prince', 'bkk-krua-apsorn', 'bkk-luka-cafe', 'bkk-on-lok-yun', 'bkk-or-tor-kor', 'bkk-prachak-pet-yang', 'bkk-roast', 'bkk-somtam-nua', 'bkk-sook-siam', 'bkk-supanniga', 'bkk-thipsamai', 'bkk-wattana-panich', 'bkk-yaowarat'],
   },
   'Marrakech': {
     slug: 'marrakech',
@@ -439,7 +437,6 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'mrk-barracas-jemaa': 'essential',
       'mrk-ben-youssef': 'essential',
       'mrk-cafe-clock': 'hidden_gem',
-      'mrk-chez-lamine': 'hidden_gem',
       'mrk-hammam': 'essential',
       'mrk-jardin-secret': 'essential',
       'mrk-jemaa-el-fna': 'icon',
@@ -448,7 +445,7 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'mrk-menara': 'hidden_gem',
       'mrk-nomad': 'essential',
     },
-    food: ['mrk-al-fassia', 'mrk-amal', 'mrk-amandine', 'mrk-atay-cafe', 'mrk-bacha-coffee', 'mrk-barracas-jemaa', 'mrk-cafe-clock', 'mrk-chez-lamine', 'mrk-comptoir-darna', 'mrk-dar-cherifa', 'mrk-dar-yacout', 'mrk-kasbah-cafe', 'mrk-la-famille', 'mrk-latitude31', 'mrk-le-foundouk', 'mrk-le-jardin-cafe', 'mrk-naranj', 'mrk-nomad', 'mrk-terrasse-epices', 'mrk-zwin-zwin'],
+    food: ['mrk-al-fassia', 'mrk-amal', 'mrk-amandine', 'mrk-atay-cafe', 'mrk-bacha-coffee', 'mrk-barracas-jemaa', 'mrk-cafe-clock', 'mrk-comptoir-darna', 'mrk-dar-cherifa', 'mrk-dar-yacout', 'mrk-kasbah-cafe', 'mrk-la-famille', 'mrk-le-foundouk', 'mrk-le-jardin-cafe', 'mrk-naranj', 'mrk-nomad', 'mrk-terrasse-epices', 'mrk-zwin-zwin'],
   },
   'Singapura': {
     slug: 'singapura',
@@ -469,7 +466,7 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'sin-spectra': 'essential',
       'sin-tiong-bahru': 'hidden_gem',
     },
-    food: ['sin-candlenut', 'sin-chin-mee-chin', 'sin-din-tai-fung', 'sin-hawker-chan', 'sin-jumbo', 'sin-katong-laksa', 'sin-keng-eng-kee', 'sin-killiney', 'sin-komala', 'sin-lau-pa-sat', 'sin-maxwell', 'sin-newton', 'sin-old-airport', 'sin-song-fa', 'sin-swee-choon', 'sin-tiong-bahru', 'sin-violet-oon', 'sin-ya-kun'],
+    food: ['sin-candlenut', 'sin-chin-mee-chin', 'sin-din-tai-fung', 'sin-jumbo', 'sin-katong-laksa', 'sin-keng-eng-kee', 'sin-killiney', 'sin-komala', 'sin-lau-pa-sat', 'sin-maxwell', 'sin-newton', 'sin-old-airport', 'sin-song-fa', 'sin-swee-choon', 'sin-tiong-bahru', 'sin-violet-oon'],
   },
   'Porto': {
     slug: 'porto',

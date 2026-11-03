@@ -15,6 +15,7 @@ vi.mock('@/data/generated/booking', async (importOriginal) => {
       'tst-partner': { mode: 'partner', url: 'https://parceiro.example/p?aff=kinu' },
       'tst-online-sem-url': { mode: 'online' },
       'tst-tel': { mode: 'phone', phone: '+55 (85) 3242-0000' },
+      'tst-tel-sem-numero': { mode: 'phone' },
       'tst-walk-sem-note': { mode: 'walk_in' },
       'tst-incluido': { mode: 'included' },
     },
@@ -188,7 +189,7 @@ describe('C.5d — modo de reserva por atividade (catálogo → ação honesta)'
   });
 
   it('(b) restaurante phone sem telefone → texto, nenhum botão; com telefone → Ligar (tel:)', () => {
-    const { row } = one(rest('for-caravaggio-cucina', 'Jantar no Caravaggio'));
+    const { row } = one(rest('tst-tel-sem-numero', 'Jantar sem telefone'));
     expect(within(row).getByText('Reserva por telefone · número a cadastrar')).toBeTruthy();
     expect(within(row).queryByRole('link')).toBeNull();
     cleanup();

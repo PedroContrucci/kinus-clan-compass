@@ -1,6 +1,6 @@
 // GERADO por scripts/build-kinu-catalog.ts — NÃO EDITAR À MÃO.
 // Fonte: src/data/destinationActivities.ts + src/data/curatedHotels.ts
-// 28 cidades · 1652 atividades · 250 hotéis
+// 28 cidades · 1626 atividades · 247 hotéis
 //
 // Este arquivo é o que permite ao KINU responder sobre uma cidade curada SEM viagem
 // ativa e SEM o front ter adivinhado a cidade na mensagem. Ele viaja com o deploy da
@@ -184,13 +184,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A boulangerie de peregrinação — o escargot pistache-chocolate é lendário · Fecha fim de semana: vá seg-sex"
       },
       {
-        "name": "Marché des Enfants Rouges",
-        "category": "lunch",
-        "neighborhood": "Marais",
-        "costBRL": 50,
-        "tip": "O mercado coberto mais antigo de Paris (1615) — almoce entre bancas do mundo todo"
-      },
-      {
         "name": "Galerie Vivienne",
         "category": "afternoon",
         "neighborhood": "Palais-Royal",
@@ -315,13 +308,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Saint-Germain-des-Prés",
         "costBRL": 120,
         "tip": "Peça o croissant aux amandes - é divino! · Chegue antes das 9h para pegar mesa externa"
-      },
-      {
-        "name": "Café Kitsuné",
-        "category": "breakfast",
-        "neighborhood": "Palais Royal",
-        "costBRL": 90,
-        "tip": "Hipster e moderno · Ótimo café especial"
       },
       {
         "name": "Catacumbas de Paris",
@@ -753,13 +739,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Tapioca e cuscuz cearense são a pedida local · Caminhada matinal no calçadão antes do calor"
       },
       {
-        "name": "Café Santa Clara (Dragão do Mar)",
-        "category": "breakfast",
-        "neighborhood": "Praia de Iracema",
-        "costBRL": 35,
-        "tip": "Torrefação tradicional cearense · Peça o café coado na hora com tapioca"
-      },
-      {
         "name": "Bate-volta a Canoa Quebrada",
         "category": "morning",
         "neighborhood": "Aracati",
@@ -1108,13 +1087,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Sapiranga",
         "costBRL": 0,
         "tip": "Shopping de bairro na saída para as praias do leste; parada prática antes de Aquiraz ou Porto das Dunas"
-      },
-      {
-        "name": "Vojnilô (frutos do mar)",
-        "category": "lunch",
-        "neighborhood": "Varjota",
-        "costBRL": 130,
-        "tip": "Frutos do mar frescos com toque autoral, queridinho dos locais · O polvo grelhado é o prato-assinatura"
       },
       {
         "name": "Café Viriato",
@@ -2092,13 +2064,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Monsanto",
         "costBRL": 0,
         "tip": "O pulmão verde de Lisboa, com trilhas e o miradouro sobre o Tejo e a Ponte 25 de Abril; vá de táxi ou carro"
-      },
-      {
-        "name": "Museu Nacional do Azulejo",
-        "category": "afternoon",
-        "neighborhood": "Xabregas",
-        "costBRL": 45,
-        "tip": "A história de Portugal contada em azulejos · O painel panorâmico de Lisboa pré-terremoto é o destaque"
       },
       {
         "name": "O Trevo (bifanas)",
@@ -3142,13 +3107,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Nakameguro",
         "costBRL": 20,
         "tip": "Na sakura, o túnel rosa mais bonito de Tóquio; fora dela, cafés e lojinhas na margem · Sazonal no auge (fim mar-início abr)"
-      },
-      {
-        "name": "Miraikan (Museu do Futuro)",
-        "category": "morning",
-        "neighborhood": "Odaiba",
-        "costBRL": 60,
-        "tip": "Robôs, espaço e o globo de LED gigante — ciência que criança e adulto amam"
       },
       {
         "name": "Santuário Nezu (torii escondidos)",
@@ -4403,13 +4361,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A pizza napolitana mais consistente de Salvador — programa certo com família"
       },
       {
-        "name": "Maria Mata Mouro",
-        "category": "dinner",
-        "neighborhood": "Pelourinho",
-        "costBRL": 150,
-        "tip": "Refúgio elegante com jardim escondido no Pelô · Boa parada após noite de música no centro histórico"
-      },
-      {
         "name": "Cuco Bistrô do Pelô",
         "category": "dinner",
         "neighborhood": "Santo Antônio Além do Carmo",
@@ -4450,13 +4401,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Graça",
         "costBRL": 20,
         "tip": "Palacete com esculturas de Rodin e jardins — respiro elegante na Graça"
-      },
-      {
-        "name": "Paraíso Tropical",
-        "category": "lunch",
-        "neighborhood": "Cabula",
-        "costBRL": 160,
-        "tip": "Premiado — cozinha baiana com frutas do pomar próprio · A moqueca de aratu é a assinatura"
       },
       {
         "name": "Parque da Cidade (Joventino Silva)",
@@ -5369,13 +5313,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Alta gastronomia num pátio colonial — o jantar de celebração"
       },
       {
-        "name": "Passeio noturno pela cidade iluminada",
-        "category": "night",
-        "neighborhood": "Centro Histórico",
-        "costBRL": 60,
-        "tip": "A cidade murada iluminada é outro cenário — caminhada leve pós-jantar com as crianças · Ruas cheias e seguras no circuito central à noite"
-      },
-      {
         "name": "Castillo San Felipe de Barajas",
         "category": "morning",
         "neighborhood": "Pie de la Popa",
@@ -5430,13 +5367,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Bocagrande",
         "costBRL": 40,
         "tip": "A rede latino-americana que TODA família ama — menu infantil, rápido e confiável · Salva refeição em qualquer aperto; tem sorveteria própria"
-      },
-      {
-        "name": "Demente (tapas no rooftop)",
-        "category": "dinner",
-        "neighborhood": "Getsemaní",
-        "costBRL": 90,
-        "tip": "Tapas e forno a lenha com teto retrátil na Plaza Trinidad — descontraído e delicioso"
       },
       {
         "name": "Di Silvio Trattoria",
@@ -6493,13 +6423,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Casinha charmosa com brunch e pratos leves · As tortas da vitrine são perigosas"
       },
       {
-        "name": "La Caceria",
-        "category": "dinner",
-        "neighborhood": "Hotel Casa da Montanha",
-        "costBRL": 220,
-        "tip": "Carnes de caça e cozinha de montanha premiada · Ambiente rústico-chique com lareira"
-      },
-      {
         "name": "Lago Joaquina Rita Bier",
         "category": "afternoon",
         "neighborhood": "Centro",
@@ -6519,13 +6442,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Serra Grande",
         "costBRL": 60,
         "tip": "Campos de lavanda com a serra ao fundo · Sorvete de lavanda na saída é ritual"
-      },
-      {
-        "name": "Chocolate Lugano (café)",
-        "category": "breakfast",
-        "neighborhood": "Centro",
-        "costBRL": 45,
-        "tip": "Café da manhã com o chocolate quente símbolo da cidade · A vitrine de trufas é uma armadilha deliciosa"
       },
       {
         "name": "Madero Steak House Gramado",
@@ -6738,26 +6654,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         ],
         "priceRangeBRL": "R$ 1.300-2.300",
         "tip": "Clima alpino no centro — lareira, vinho quente na recepção e serviço afiado"
-      },
-      {
-        "name": "Gramado Hostel",
-        "zone": "Piratini",
-        "tier": "budget",
-        "personaTags": [
-          "solo"
-        ],
-        "priceRangeBRL": "R$ 90-180",
-        "tip": "A opção mochileira da serra — quartos compartilhados e cozinha equipada · A 1,5 km do centro — leve isso na conta do deslocamento"
-      },
-      {
-        "name": "Jardim Secreto Pousada",
-        "zone": "Planalto",
-        "tier": "mid",
-        "personaTags": [
-          "couple"
-        ],
-        "priceRangeBRL": "R$ 500-800",
-        "tip": "Charme escondido com hidro e lareira — casal em conta"
       },
       {
         "name": "Laghetto Golden",
@@ -7057,13 +6953,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Notting Hill",
         "costBRL": 0,
         "tip": "As casas coloridas do filme e o mercado de antiguidades · Sábado é o dia cheio do Portobello Market"
-      },
-      {
-        "name": "Ottolenghi Spitalfields",
-        "category": "dinner",
-        "neighborhood": "Spitalfields",
-        "costBRL": 190,
-        "tip": "A cozinha mediterrânea vibrante do chef mais influente da cidade · Os pratos de legumes roubam a cena da proteína"
       },
       {
         "name": "Padella",
@@ -7584,13 +7473,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Jardim de cactos na encosta de Montjuïc sobre o porto; ao lado do teleférico, melhor na luz do fim de tarde"
       },
       {
-        "name": "La Paradeta",
-        "category": "lunch",
-        "neighborhood": "El Born/Sagrada Família",
-        "costBRL": 110,
-        "tip": "Frutos do mar por peso, estilo peixaria: escolha, pese, aguarde a senha · Preço de mercado, frescor de barco"
-      },
-      {
         "name": "La Pepita",
         "category": "dinner",
         "neighborhood": "Gràcia",
@@ -7750,13 +7632,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Sarrià",
         "costBRL": 30,
         "tip": "Floresta amazônica indoor e ciência mão-na-massa — o melhor dia de chuva com filhos"
-      },
-      {
-        "name": "Parc del Laberint d Horta",
-        "category": "morning",
-        "neighborhood": "Horta",
-        "costBRL": 15,
-        "tip": "O labirinto de ciprestes escondido — romântico e ótimo com crianças"
       },
       {
         "name": "Day-trip a Montserrat",
@@ -8081,13 +7956,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Onde foi rezada a primeira missa do Brasil · Artesanato Pataxó direto dos indígenas"
       },
       {
-        "name": "Ilha dos Aquários (jantar na ilha)",
-        "category": "dinner",
-        "neighborhood": "Ilha no Rio Buranhém",
-        "costBRL": 150,
-        "tip": "Barco à noite até a ilha com aquários gigantes e restaurantes · Funciona em dias específicos — confirme a programação"
-      },
-      {
         "name": "La Tarrafa (Arraial)",
         "category": "dinner",
         "neighborhood": "Arraial d'Ajuda",
@@ -8156,13 +8024,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Quadrado de Trancoso",
         "costBRL": 140,
         "tip": "Restaurante-fazenda no Quadrado, do forno a lenha · Ingredientes da horta própria"
-      },
-      {
-        "name": "Recanto do Sol (Centro)",
-        "category": "dinner",
-        "neighborhood": "Centro de Porto Seguro",
-        "costBRL": 100,
-        "tip": "Cozinha regional farta perto da Passarela · Boa opção nas noites de centro"
       },
       {
         "name": "Praia de Taperapuã (barracas)",
@@ -8842,16 +8703,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O resort-ícone com Aquaventure e aquário inclusos — férias dentro do hotel"
       },
       {
-        "name": "Burj Al Arab",
-        "zone": "Jumeirah",
-        "tier": "resort",
-        "personaTags": [
-          "couple"
-        ],
-        "priceRangeBRL": "R$ 8.000-15.000",
-        "tip": "A vela mais famosa do mundo — mordomo, Rolls e mar privado"
-      },
-      {
         "name": "Jumeirah Beach Hotel",
         "zone": "Jumeirah",
         "tier": "resort",
@@ -9215,13 +9066,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A torrefação que começou o café de especialidade na cidade, em De Waterkant; brunch e cursos de barista"
       },
       {
-        "name": "Panama Jack's",
-        "category": "dinner",
-        "neighborhood": "Porto (docas)",
-        "costBRL": 190,
-        "tip": "Taverna de frutos do mar escondida no porto de trabalho · Lagostas e ostras sem frescura desde 1989"
-      },
-      {
         "name": "The Pot Luck Club",
         "category": "dinner",
         "neighborhood": "Old Biscuit Mill (Woodstock)",
@@ -9283,13 +9127,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Waterfront",
         "costBRL": 140,
         "tip": "Os dois oceanos da região em tanques espetaculares · O túnel dos predadores impressiona"
-      },
-      {
-        "name": "V&A Food Market",
-        "category": "lunch",
-        "neighborhood": "Waterfront",
-        "costBRL": 90,
-        "tip": "Mercado gastronômico no armazém histórico do porto · Do biltong ao curry malaio — cada um monta o seu"
       },
       {
         "name": "V&A Waterfront",
@@ -9450,13 +9287,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Sultanahmet",
         "costBRL": 0,
         "tip": "Bazar pequeno e tranquilo atrás da Mesquita Azul, com tapetes, cerâmica de İznik e preços sem o assédio do Grand Bazaar"
-      },
-      {
-        "name": "Asitane",
-        "category": "dinner",
-        "neighborhood": "Edirnekapı",
-        "costBRL": 210,
-        "tip": "Receitas dos banquetes dos palácios otomanos, pesquisadas em arquivos · Jantar-viagem-no-tempo ao lado da igreja de Chora"
       },
       {
         "name": "Babylon (Bomontiada)",
@@ -9639,13 +9469,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Levent",
         "costBRL": 0,
         "tip": "Shopping a céu aberto em forma de cânion, premiado de arquitetura; metrô Levent, cinemas e restaurantes"
-      },
-      {
-        "name": "Karabatak",
-        "category": "breakfast",
-        "neighborhood": "Karaköy",
-        "costBRL": 55,
-        "tip": "O café que ancorou a cena descolada de Karaköy · Mesas nas vielas de paralelepípedo"
       },
       {
         "name": "Karaköy Lokantası",
@@ -10128,13 +9951,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O brunch moderno queridinho de Bangkok · Café de especialidade e panquecas"
       },
       {
-        "name": "Roti Mataba",
-        "category": "lunch",
-        "neighborhood": "Phra Athit",
-        "costBRL": 50,
-        "tip": "Rotis e currys muçulmano-tailandeses desde 1943 · O mataba de frango é o pedido"
-      },
-      {
         "name": "Safari World e Marine Park",
         "category": "morning",
         "neighborhood": "Khlong Sam Wa",
@@ -10462,13 +10278,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Shopping moderno de Guéliz com marcas internacionais, cafés e ar-condicionado; a tarde fora da medina"
       },
       {
-        "name": "Chez Lamine Hadj Mustapha (mechoui)",
-        "category": "lunch",
-        "neighborhood": "Medina (beco do mechoui)",
-        "costBRL": 90,
-        "tip": "O cordeiro assado em forno subterrâneo — tradição secular · Pede-se por peso, come-se com pão e cominho"
-      },
-      {
         "name": "Comptoir Darna",
         "category": "dinner",
         "neighborhood": "Hivernage",
@@ -10558,13 +10367,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Medina",
         "costBRL": 110,
         "tip": "Jardim secreto vegetariano de mesas sob as oliveiras · Menu curto do dia, sempre fresco"
-      },
-      {
-        "name": "Latitude31",
-        "category": "dinner",
-        "neighborhood": "Medina (Bab Doukkala)",
-        "costBRL": 160,
-        "tip": "Marroquino contemporâneo num pátio elegante · Releituras leves dos clássicos"
       },
       {
         "name": "Le Foundouk",
@@ -10892,13 +10694,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A cachoeira indoor de 35m do Cloud Forest é surreal · As Supertrees se visitam de graça por fora"
       },
       {
-        "name": "Hawker Chan (Chinatown)",
-        "category": "lunch",
-        "neighborhood": "Chinatown",
-        "costBRL": 35,
-        "tip": "O frango com molho de soja que fez história mundial · A refeição premiada mais barata que existe"
-      },
-      {
         "name": "ION Orchard",
         "category": "afternoon",
         "neighborhood": "Orchard Road",
@@ -11170,13 +10965,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Sentosa",
         "costBRL": 80,
         "tip": "Show noturno de água, laser e fogos na praia de Siloso; sessões às 19h40 e 20h40, fecha o dia em Sentosa"
-      },
-      {
-        "name": "Ya Kun Kaya Toast",
-        "category": "breakfast",
-        "neighborhood": "Chinatown/Várias",
-        "costBRL": 30,
-        "tip": "O café da manhã nacional: kaya toast, ovos moles e kopi · Mergulhe a torrada no ovo com shoyu — confie"
       },
       {
         "name": "Singapore Zoo (habitat aberto)",
