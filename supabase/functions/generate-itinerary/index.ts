@@ -136,7 +136,7 @@ IMPORTANTE: Todos os costs já devem estar multiplicados por ${travelers} viajan
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
+        "x-api-key": ANTHROPIC_API_KEY as string,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
@@ -193,10 +193,12 @@ IMPORTANTE: Todos os costs já devem estar multiplicados por ${travelers} viajan
     });
 
   } catch (error) {
-    console.error("generate-itinerary error:", error instanceof Error ? sanitizeUrl(error.message) : 'Unknown error');
+    // Bloco inerte (a função retorna 403 antes): em código inalcançável o TS do
+    // deno check não estreita o catch, daí os casts explícitos — só tipos, runtime igual.
+    console.error("generate-itinerary error:", error instanceof Error ? sanitizeUrl((error as Error).message) : 'Unknown error');
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Erro desconhecido ao gerar roteiro",
+        error: error instanceof Error ? (error as Error).message : "Erro desconhecido ao gerar roteiro",
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
