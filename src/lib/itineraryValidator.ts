@@ -243,6 +243,7 @@ export function validateItinerary(
     for (const a of day.activities) {
       if (LOGISTIC_TYPES.has(a.type) || isTransfer(a)) continue;
       if (a.name.startsWith('Descanso') || a.name.startsWith('Caminhada leve')) continue;
+      if (['breakfast', 'lunch', 'dinner', 'restaurant'].includes(a.type) || ['breakfast', 'lunch', 'dinner'].includes(a.timeSlot)) continue; // M6: refeição não é vida noturna (ARRIVAL_DINNER_MAX já permite jantar tardio)
       const m = toMinutes(a.time);
       const isNight = a.type === 'night' || (m >= 0 && m >= 21 * 60);
       if (isNight && !wantsNight) {
