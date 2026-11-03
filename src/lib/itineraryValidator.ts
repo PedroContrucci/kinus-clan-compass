@@ -3,7 +3,7 @@ import { normalizePlaceName } from '@/lib/placeIdentity';
 import { catalogFor } from '@/lib/interestsFor';
 import { matchesPriority } from '@/lib/claChips';
 import { catalogIdOf, resolveCity } from '@/lib/localAchievements';
-import { LANDMARKS } from '@/data/generated/landmarkTiers';
+import { LANDMARKS, type LandmarkTier } from '@/data/generated/landmarkTiers';
 import { CURATED_DAYS_OF_WEEK } from '@/data/generated/daysOfWeek';
 import { curatedCoordOf } from '@/lib/routeCoords';
 import { getMichelinCountForCity } from '@/lib/michelinData';
@@ -814,6 +814,12 @@ export function essentialsOf(city: string): string[] {
   const canon = resolveCity(city);
   const tiers = canon ? LANDMARKS[canon]?.tiers ?? {} : {};
   return Object.entries(tiers).filter(([, t]) => t === 'icon' || t === 'essential').map(([id]) => id).sort();
+}
+
+/** M6: id do catálogo → tier (icon/essential/hidden_gem) da cidade; vazio para cidade sem classificação. */
+export function tiersOf(city: string): Record<string, LandmarkTier> {
+  const canon = resolveCity(city);
+  return (canon ? LANDMARKS[canon]?.tiers : undefined) ?? {};
 }
 
 /** R17 só pesa em viagem com pelo menos isto de dias de exploração. */

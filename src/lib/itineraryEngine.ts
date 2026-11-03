@@ -29,8 +29,9 @@ import { getHotelRecommendation } from '@/lib/hotelZones';
 import { interestsFor, catalogFor, splitInterests, interestLabel } from '@/lib/interestsFor';
 import { matchesPriority } from '@/lib/claChips';
 import { curatedCoordOf, resolveHotelCoord } from '@/lib/routeCoords';
-import { maxHopKmFor, haversineKm, travelMinutes, isSnack, opensOn, weekdayOf, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, durationMinutesOf, defaultMinutesOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
+import { maxHopKmFor, haversineKm, travelMinutes, isSnack, opensOn, weekdayOf, tiersOf, ESSENTIALS_MIN_DAYS, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, durationMinutesOf, defaultMinutesOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
 import { catalogIdOf } from '@/lib/localAchievements';
+import type { LandmarkTier } from '@/data/generated/landmarkTiers';
 import { rulesContextOf } from '@/lib/cockpitLines';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { CURATED_DAYS_OF_WEEK } from '@/data/generated/daysOfWeek';
@@ -735,6 +736,16 @@ export function generateItinerary(
   const matchesTop2 = (a: SuggestedActivity) =>
     top2.some((p) => matchesPriority({ category: a.category, styleTags: a.styleTags ?? [] }, p));
 
+  // M6: noite e compras só entram com interesse explícito (a tag de um item não vira interesse do usuário).
+  const wantsNightlife = travelInterests.some((ti) => /noturna|noite|nightlife/i.test(ti));
+  const wantsShopping = travelInterests.some((ti) => /shopping|compras/i.test(ti));
+  // M6: tier de paisagem (icon/essential) como critério de escolha, antes da ordenação do pickActivity.
+  const tiers = tiersOf(destination);
+  const isTierEssential = (id: string) => tiers[id] === 'icon' || tiers[id] === 'essential';
+  let iconPlaced = false;
+  let essentialsPlaced = 0;
+  const releasedIcons = new Set<string>();
+
   // Bate-volta: âncora (não-refeição com tag daytrip) e seus pares `<id>-almoco` / `<id>-jantar`.
   const poolIds = new Set(pool.map((a) => a.id));
   const isDaytripAnchor = (a: SuggestedActivity) => isDaytripTagged(a) && EXP_CATEGORIES.has(a.category);
@@ -765,7 +776,7 @@ export function generateItinerary(
     'Gastronomia': ['gastronomy'],
     'Passeios': ['nature', 'romantic', 'shopping'],
     'Aventura': ['adventure', 'nature'],
-    'Descobertas': ['culture', 'shopping', 'art'],
+    'Descobertas': ['culture', 'art'],
   };
 
   interface PickOpts {
@@ -781,7 +792,23 @@ export function generateItinerary(
     accept?: (a: SuggestedActivity) => boolean;
     /** Âncora do dia: prefere quem tem almoço inédito a ≤ maxHop (dia que fecha a corrente). */
     anchor?: boolean;
+    /** M6: dia de exploração — prefere esses tiers (dentro do salto; `force` ignora o salto) e conta o que sai. */
+    tierPlan?: { tiers: Set<LandmarkTier>; force: boolean; fits: (a: SuggestedActivity) => boolean };
   }
+
+  // M6: o que o dia de exploração `n` pede ao tier. icon até sair um (força no último dia se ainda não saiu);
+  // icon|essential nos 3 primeiros dias de exploração até 4 essenciais, em viagem com ≥ 3 dias (preferência).
+  const explorationTotal = Math.max(0, totalDays - 1 - explorationStart);
+  const minHours = (cat: string) => Math.min(...pool.filter((a) => a.category === cat && !isPairMeal(a)).map((a) => a.durationHours || 1), 3);
+  const mealReserve = minHours('lunch') + minHours('dinner') + 2 * HOP_HOURS;
+  const tierPlanFor = (n: number, hoursUsed: () => number): { tiers: Set<LandmarkTier>; force: boolean; fits: (a: SuggestedActivity) => boolean } => {
+    const want = new Set<LandmarkTier>();
+    if (!iconPlaced) want.add('icon');
+    if (explorationTotal >= ESSENTIALS_MIN_DAYS && n >= 0 && n < 3 && essentialsPlaced < 4) { want.add('icon'); want.add('essential'); }
+    // Cabe = o que já está no dia + o item + almoço e jantar (os menores) + saltos ≤ janela; senão a janela o cortaria.
+    const fits = (a: SuggestedActivity) => hoursUsed() + HOP_HOURS + (a.durationHours || 0) + mealReserve <= EXPLORATION_WINDOW_HOURS;
+    return { tiers: want, force: !iconPlaced && n === explorationTotal - 1, fits };
+  };
 
   function pickActivity(
     category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner',
@@ -797,12 +824,15 @@ export function generateItinerary(
     };
     const target = priceTargets[priceLevel]?.[category] ?? 150;
     const isExp = EXP_CATEGORIES.has(category);
-    const isFresh = (a: SuggestedActivity) => !usedPlaces.isUsed(a.name);
+    // M6: ícone cortado pela janela volta ao pool (nunca chegou ao roteiro).
+    const isFresh = (a: SuggestedActivity) => !usedPlaces.isUsed(a.name) || releasedIcons.has(a.id);
 
     // Bate-volta só entra como âncora explícita; seus pares só junto dele.
     const eligible = (a: SuggestedActivity) => {
       if (isPairMeal(a) || !opensToday(a)) return false;
       if (isDaytripAnchor(a)) return !!opts.daytripOk?.(a);
+      // M6: compras não ocupam slot de passeio sem interesse de compras (ícone/essencial passam).
+      if (isExp && !wantsShopping && (a.styleTags ?? []).includes('shopping') && !isTierEssential(a.id)) return false;
       return a.category === category && (!opts.accept || opts.accept(a));
     };
     let candidates = pool.filter((a) => eligible(a) && isFresh(a));
@@ -869,6 +899,15 @@ export function generateItinerary(
         return 0;
       });
       candidates = keyed.map((x) => x.a);
+      // M6: tier como critério — restringe o conjunto já ordenado (a ordem segue a de sempre). Exceção: pôr do sol
+      // ou lanche na frente da fila continua mandando; é ele que vira o item de fim de tarde (17:30).
+      if (opts.tierPlan && opts.tierPlan.tiers.size > 0) {
+        const want = opts.tierPlan.tiers;
+        const byTier = candidates.filter((a) => tiers[a.id] && want.has(tiers[a.id]) && opts.tierPlan!.fits(a) && (opts.tierPlan!.force || hopKey(a) === 0));
+        const first = candidates[0];
+        const lateSlot = /(p[ôo]r do sol|sunset)/i.test(first.name) || isSnack(first);
+        if (byTier.length && !(lateSlot && !byTier.includes(first))) candidates = byTier;
+      }
     } else if (opts.near) {
       // Repetição forçada: o menos usado continua mandando (espalha as repetições); entre os
       // igualmente usados, o que está dentro do salto vem antes da ordem de espaçamento.
@@ -879,6 +918,10 @@ export function generateItinerary(
     }
     const picked = candidates[0];
     usedPlaces.mark(picked.name, currentPickDayIndex, category);
+    if (opts.tierPlan && isExp && isTierEssential(picked.id)) {
+      essentialsPlaced++;
+      if (tiers[picked.id] === 'icon') iconPlaced = true;
+    }
     return picked;
   }
 
@@ -1385,6 +1428,7 @@ export function generateItinerary(
       const morningActivity = pickActivity('morning', dayTheme.title, {
         quota: true,
         anchor: true,
+        tierPlan: tierPlanFor(explorationDay, () => dayHoursUsed(activities)),
         daytripOk: daytripDayOk ? daytripFits : undefined,
       });
 
@@ -1472,7 +1516,7 @@ export function generateItinerary(
           const notLong = (a: SuggestedActivity) =>
             a.dayOccupancy !== 'full' && a.dayOccupancy !== 'half' && (a.durationHours || 0) * 60 < LONG_ITEM_MINUTES;
 
-          let afternoonActivity = pickActivity('afternoon', dayTheme.title, { near: morningAt, quota: true, accept: notLong });
+          let afternoonActivity = pickActivity('afternoon', dayTheme.title, { near: morningAt, quota: true, accept: notLong, tierPlan: tierPlanFor(explorationDay, () => dayHoursUsed(activities)) });
 
           // Sunset activities MUST occupy the last afternoon slot (17:30), never 15:00.
           // If the initial afternoon pick is a sunset, draw a non-sunset for 15:00.
@@ -1480,7 +1524,7 @@ export function generateItinerary(
           if (isSunsetActivity(afternoonActivity)) {
             sunsetActivity = afternoonActivity;
             afternoonActivity = pickActivity('afternoon', dayTheme.title, {
-              near: morningAt, quota: true, accept: (a) => notLong(a) && !isSunsetActivity(a),
+              near: morningAt, quota: true, accept: (a) => notLong(a) && !isSunsetActivity(a), tierPlan: tierPlanFor(explorationDay, () => dayHoursUsed(activities)),
             });
           }
           const afternoonAt = curatedCoordOf((afternoonActivity ?? sunsetActivity)?.id ?? '') ?? null;
@@ -1551,20 +1595,9 @@ export function generateItinerary(
 
         // 🌙 NIGHT ACTIVITY - Optional (21:30) — only on nightlife-themed days or when the user
         // explicitly likes nightlife, to keep daily density realistic
-        const isNightlifeDay = /noturna|noite|nightlife/i.test(dayTheme.title);
-        const wantsNightlife = travelInterests.some(ti => /noturna|noite|nightlife/i.test(ti));
-        // Noite também abre quando há item noturno inédito do interesse que cabe na janela.
-        const fitsNight = (a: SuggestedActivity) =>
-          dayHoursUsed(activities) + HOP_HOURS + (a.durationHours || 0) <= EXPLORATION_WINDOW_HOURS;
-        const interestNight = (a: SuggestedActivity) => matchesTop2(a) && fitsNight(a);
-        const hasInterestNight = top2.length > 0 &&
-          pool.some((a) => a.category === 'night' && !usedPlaces.isUsed(a.name) && !isPairMeal(a) && !isDaytripTagged(a) && interestNight(a));
-        const shouldAddNightActivity = isNightlifeDay || wantsNightlife || hasInterestNight;
-
-        if (shouldAddNightActivity && !(earlyExit && i === totalDays - 2) && morningOccupancy !== 'full' && morningOccupancy !== 'half' && afternoonOccupancy !== 'full' && afternoonOccupancy !== 'half') {
-          const nightActivity = pickActivity('night', dayTheme.title, {
-            near: last, quota: true, accept: isNightlifeDay || wantsNightlife ? undefined : interestNight,
-          });
+        // M6: noite só com interesse explícito de vida noturna (a tag de um item não conta como interesse).
+        if (wantsNightlife && !(earlyExit && i === totalDays - 2) && morningOccupancy !== 'full' && morningOccupancy !== 'half' && afternoonOccupancy !== 'full' && afternoonOccupancy !== 'half') {
+          const nightActivity = pickActivity('night', dayTheme.title, { near: last, quota: true });
           if (nightActivity) {
             const act = place(nightActivity, 'night', '21:30');
             act.tips = ['(Opcional)', ...(act.tips || [])];
@@ -1595,6 +1628,8 @@ export function generateItinerary(
         const out = removable[0];
         activities.splice(activities.indexOf(out), 1);
         dayTotal -= out.estimatedCost;
+        const outId = catalogIdOf(out.id);
+        if (tiers[outId] === 'icon') releasedIcons.add(outId);
       }
     }
 
@@ -1618,7 +1653,19 @@ export function generateItinerary(
       ...(isArrivalDay ? { startMin: arrivalStartMin, dinnerMax: ARRIVAL_DINNER_MAX } : {}),
     });
     for (const out of laid.dropped) dayTotal -= out.estimatedCost;
-    activities.splice(0, activities.length, ...laid.items);
+    // M6: sem interesse de vida noturna, nada que não seja logística/refeição começa às 21:00 ou depois
+    // (o layout pode empurrar o item para a noite). O nome continua usado: perde-se uma opção, nunca repete.
+    const LATE_EXEMPT_TYPES = new Set(['flight', 'checkin', 'checkout', 'hotel', 'transfer']);
+    const LATE_EXEMPT_SLOTS = new Set(['breakfast', 'lunch', 'dinner']);
+    const keptItems = wantsNightlife ? laid.items : laid.items.filter((a) => {
+      if (LATE_EXEMPT_TYPES.has(a.type) || LATE_EXEMPT_SLOTS.has(a.timeSlot) || /-slot-(transfer|checkout|checkin|flight)/.test(a.id)) return true;
+      if (a.name.startsWith('Descanso') || a.name.startsWith('Caminhada leve')) return true;
+      const m = /^(\d{1,2}):(\d{2})/.exec(a.time ?? '');
+      if (!m || +m[1] * 60 + +m[2] < 21 * 60) return true;
+      dayTotal -= a.estimatedCost;
+      return false;
+    });
+    activities.splice(0, activities.length, ...keptItems);
     if (earlyExit && i === totalDays - 2) {
       const dinner = activities.find((a) => a.timeSlot === 'dinner');
       if (dinner) dinner.tips = [exitTip, ...(dinner.tips || [])];
@@ -1636,6 +1683,11 @@ export function generateItinerary(
       activities,
       totalCost: dayTotal,
     });
+    // M6: os contadores do tier seguem o que ficou no roteiro (o que a janela/layout cortou não conta).
+    const keptIds = days.flatMap((d) => d.activities.map((a) => catalogIdOf(a.id)));
+    iconPlaced = keptIds.some((id) => tiers[id] === 'icon');
+    essentialsPlaced = keptIds.filter(isTierEssential).length;
+    for (const id of keptIds) releasedIcons.delete(id);
   }
 
   // Calculate actual totals from generated activities
