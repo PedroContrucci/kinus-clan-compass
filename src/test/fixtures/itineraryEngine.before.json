@@ -79,20 +79,20 @@
             ]
           },
           {
-            "id": "day-1-ctg-castillo",
-            "name": "Castillo San Felipe de Barajas",
+            "id": "day-1-ctg-cidade-murada",
+            "name": "Passeio pela Cidade Murada (Centro)",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 120,
-            "costPerPerson": 60,
+            "estimatedCost": 40,
+            "costPerPerson": 20,
             "time": "09:30",
             "duration": "2h",
-            "location": "Pie de la Popa (2 pax)",
-            "rating": 4.7,
+            "location": "Centro Histórico (2 pax)",
+            "rating": 4.8,
             "status": "suggestion",
             "tips": [
-              "A maior fortaleza espanhola das Américas — túneis que crianças ADORAM explorar",
-              "Vá na ABERTURA (8h): sombra zero depois das 10h; leve água e boné"
+              "Sacadas floridas, praças e as palenqueras de frutas — o cartão-postal vivo",
+              "Foto com palenquera: combine e PAGUE (é o trabalho delas); calçadas de pedra = carrinho de bebê sofre, prefira canguru"
             ],
             "source": "kinu"
           },
@@ -148,7 +148,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 1000
+        "totalCost": 920
       },
       {
         "dayNumber": 3,
@@ -173,20 +173,20 @@
             ]
           },
           {
-            "id": "day-2-ctg-cidade-murada",
-            "name": "Passeio pela Cidade Murada (Centro)",
+            "id": "day-2-ctg-castillo",
+            "name": "Castillo San Felipe de Barajas",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 40,
-            "costPerPerson": 20,
+            "estimatedCost": 120,
+            "costPerPerson": 60,
             "time": "09:30",
             "duration": "2h",
-            "location": "Centro Histórico (2 pax)",
-            "rating": 4.8,
+            "location": "Pie de la Popa (2 pax)",
+            "rating": 4.7,
             "status": "suggestion",
             "tips": [
-              "Sacadas floridas, praças e as palenqueras de frutas — o cartão-postal vivo",
-              "Foto com palenquera: combine e PAGUE (é o trabalho delas); calçadas de pedra = carrinho de bebê sofre, prefira canguru"
+              "A maior fortaleza espanhola das Américas — túneis que crianças ADORAM explorar",
+              "Vá na ABERTURA (8h): sombra zero depois das 10h; leve água e boné"
             ],
             "source": "kinu"
           },
@@ -262,7 +262,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 850
+        "totalCost": 930
       },
       {
         "dayNumber": 4,
@@ -833,19 +833,19 @@
             ]
           },
           {
-            "id": "day-1-lis-castelo-sao-jorge",
-            "name": "Castelo de São Jorge",
+            "id": "day-1-lis-torre-belem",
+            "name": "Torre de Belém",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 190,
-            "costPerPerson": 95,
+            "estimatedCost": 100,
+            "costPerPerson": 50,
             "time": "09:30",
-            "duration": "2.5h",
-            "location": "Alfama (2 pax)",
+            "duration": "1.5h",
+            "location": "Belém (2 pax)",
             "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Vista panorâmica; subida íngreme — com crianças pequenas, considere tuk-tuk"
+              "Combine com Jerónimos na mesma manhã — 15 min a pé entre eles"
             ],
             "source": "kinu"
           },
@@ -907,7 +907,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 790
+        "totalCost": 700
       },
       {
         "dayNumber": 3,
@@ -932,19 +932,19 @@
             ]
           },
           {
-            "id": "day-2-lis-jeronimos",
-            "name": "Mosteiro dos Jerónimos",
+            "id": "day-2-lis-castelo-sao-jorge",
+            "name": "Castelo de São Jorge",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 150,
-            "costPerPerson": 75,
+            "estimatedCost": 190,
+            "costPerPerson": 95,
             "time": "09:30",
-            "duration": "2h",
-            "location": "Belém (2 pax)",
-            "rating": 4.4,
+            "duration": "2.5h",
+            "location": "Alfama (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Compre ingresso online e chegue antes das 10h — a fila cresce rápido; fecha às segundas"
+              "Vista panorâmica; subida íngreme — com crianças pequenas, considere tuk-tuk"
             ],
             "source": "kinu"
           },
@@ -1022,7 +1022,7 @@
             ]
           }
         ],
-        "totalCost": 2190
+        "totalCost": 2230
       },
       {
         "dayNumber": 4,
@@ -1051,38 +1051,40 @@
             "source": "kinu"
           },
           {
-            "id": "day-3-lis-torre-belem",
-            "name": "Torre de Belém",
+            "id": "day-3-lis-oceanario",
+            "name": "Oceanário de Lisboa",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 100,
-            "costPerPerson": 50,
+            "estimatedCost": 260,
+            "costPerPerson": 130,
             "time": "09:30",
-            "duration": "1.5h",
-            "location": "Belém (2 pax)",
-            "rating": 4.5,
+            "duration": "3h",
+            "location": "Parque das Nações (2 pax)",
+            "rating": 4.8,
             "status": "suggestion",
             "tips": [
-              "Combine com Jerónimos na mesma manhã — 15 min a pé entre eles"
+              "Um dos melhores aquários do mundo — tanque central gigante",
+              "Ótimo programa com crianças",
+              "O teleférico do Parque das Nações complementa o passeio"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-3-lis-ponto-final",
-            "name": "Ponto Final (Cacilhas)",
+            "id": "day-3-lis-timeout-market",
+            "name": "Time Out Market (Mercado da Ribeira)",
             "type": "lunch",
             "timeSlot": "lunch",
-            "estimatedCost": 240,
-            "costPerPerson": 120,
-            "time": "12:30",
-            "duration": "2.5h",
-            "location": "Almada (barco de 10min) (2 pax)",
-            "rating": 4.6,
+            "estimatedCost": 200,
+            "costPerPerson": 100,
+            "time": "13:00",
+            "duration": "1.5h",
+            "location": "Cais do Sodré (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Atravesse o Tejo de barco no Cais do Sodré",
-              "Mesas na beira do rio com Lisboa inteira de frente",
-              "Reserve — as mesas do cais são disputadas"
+              "Os melhores chefs de Lisboa em bancas num mercado histórico",
+              "Cada um pede numa banca e senta junto nas mesas comunitárias",
+              "Vá fora do horário de pico — lota"
             ],
             "source": "kinu"
           },
@@ -1093,7 +1095,7 @@
             "timeSlot": "afternoon",
             "estimatedCost": 40,
             "costPerPerson": 20,
-            "time": "15:20",
+            "time": "15:00",
             "duration": "1.5h",
             "location": "Príncipe Real (2 pax)",
             "rating": 4,
@@ -1123,7 +1125,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 780
+        "totalCost": 900
       },
       {
         "dayNumber": 5,
@@ -1212,40 +1214,38 @@
             ]
           },
           {
-            "id": "day-5-lis-oceanario",
-            "name": "Oceanário de Lisboa",
+            "id": "day-5-lis-botanico-tropical",
+            "name": "Jardim Botânico Tropical (Belém)",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 260,
-            "costPerPerson": 130,
+            "estimatedCost": 40,
+            "costPerPerson": 20,
             "time": "09:30",
-            "duration": "3h",
-            "location": "Parque das Nações (2 pax)",
-            "rating": 4.8,
+            "duration": "1.5h",
+            "location": "Belém (2 pax)",
+            "rating": 4.3,
             "status": "suggestion",
             "tips": [
-              "Um dos melhores aquários do mundo — tanque central gigante",
-              "Ótimo programa com crianças",
-              "O teleférico do Parque das Nações complementa o passeio"
+              "Palmeiras, pavões e plantas das antigas colônias ao lado do Mosteiro dos Jerónimos; a pausa verde do circuito de Belém"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-5-lis-timeout-market",
-            "name": "Time Out Market (Mercado da Ribeira)",
+            "id": "day-5-lis-ponto-final",
+            "name": "Ponto Final (Cacilhas)",
             "type": "lunch",
             "timeSlot": "lunch",
-            "estimatedCost": 200,
-            "costPerPerson": 100,
-            "time": "13:00",
-            "duration": "1.5h",
-            "location": "Cais do Sodré (2 pax)",
-            "rating": 4.5,
+            "estimatedCost": 240,
+            "costPerPerson": 120,
+            "time": "12:30",
+            "duration": "2.5h",
+            "location": "Almada (barco de 10min) (2 pax)",
+            "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "Os melhores chefs de Lisboa em bancas num mercado histórico",
-              "Cada um pede numa banca e senta junto nas mesas comunitárias",
-              "Vá fora do horário de pico — lota"
+              "Atravesse o Tejo de barco no Cais do Sodré",
+              "Mesas na beira do rio com Lisboa inteira de frente",
+              "Reserve — as mesas do cais são disputadas"
             ],
             "source": "kinu"
           },
@@ -1256,7 +1256,7 @@
             "timeSlot": "afternoon",
             "estimatedCost": 0,
             "costPerPerson": 0,
-            "time": "15:00",
+            "time": "15:15",
             "duration": "1.5h",
             "location": "Estrela (2 pax)",
             "rating": 4.6,
@@ -1286,7 +1286,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 780
+        "totalCost": 600
       },
       {
         "dayNumber": 7,
@@ -1311,21 +1311,19 @@
             ]
           },
           {
-            "id": "day-6-lis-gulbenkian",
-            "name": "Museu Calouste Gulbenkian",
+            "id": "day-6-lis-jeronimos",
+            "name": "Mosteiro dos Jerónimos",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 120,
-            "costPerPerson": 60,
+            "estimatedCost": 150,
+            "costPerPerson": 75,
             "time": "09:30",
-            "duration": "2.5h",
-            "location": "Avenidas Novas (2 pax)",
-            "rating": 4.7,
+            "duration": "2h",
+            "location": "Belém (2 pax)",
+            "rating": 4.4,
             "status": "suggestion",
             "tips": [
-              "Coleção de arte do Egito antigo a Monet",
-              "Os jardins do museu são um oásis na cidade",
-              "Domingo a partir das 14h é gratuito"
+              "Compre ingresso online e chegue antes das 10h — a fila cresce rápido; fecha às segundas"
             ],
             "source": "kinu"
           },
@@ -1384,7 +1382,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 480
+        "totalCost": 510
       },
       {
         "dayNumber": 8,
@@ -1525,7 +1523,7 @@
         "status": "estimated"
       },
       "experiences": {
-        "amount": 1678,
+        "amount": 1598,
         "percent": 8,
         "status": "estimated"
       },
@@ -1534,8 +1532,8 @@
         "percent": 25,
         "status": "estimated"
       },
-      "total": 22438,
-      "available": -2438,
+      "total": 22358,
+      "available": -2358,
       "trustZonePercent": 112
     },
     "meta": {
@@ -1660,20 +1658,20 @@
             "source": "kinu"
           },
           {
-            "id": "day-1-tokyo-akihabara",
-            "name": "Akihabara Electric Town",
+            "id": "day-1-tokyo-shibuya-crossing",
+            "name": "Shibuya Crossing",
             "type": "experience",
             "timeSlot": "afternoon",
             "estimatedCost": 0,
             "costPerPerson": 0,
             "time": "15:00",
-            "duration": "3h",
-            "location": "Akihabara (2 pax)",
-            "rating": 4.4,
+            "duration": "1h",
+            "location": "Shibuya (2 pax)",
+            "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "Paraíso de eletrônicos e anime",
-              "Maid cafés são experiência única"
+              "Atravessamento mais movimentado do mundo",
+              "Starbucks no 2º andar tem melhor vista"
             ],
             "source": "kinu"
           },
@@ -1899,38 +1897,36 @@
             "source": "kinu"
           },
           {
-            "id": "day-4-tokyo-tempura-kondo",
-            "name": "Tempura Kondo",
+            "id": "day-4-tok3-hoppy",
+            "name": "Hoppy Street (Asakusa)",
             "type": "lunch",
             "timeSlot": "lunch",
-            "estimatedCost": 700,
-            "costPerPerson": 350,
-            "time": "13:00",
+            "estimatedCost": 120,
+            "costPerPerson": 60,
+            "time": "13:15",
             "duration": "1.5h",
-            "location": "Ginza (2 pax)",
-            "rating": 4.8,
+            "location": "Asakusa (2 pax)",
+            "rating": 4.3,
             "status": "suggestion",
             "tips": [
-              "Melhor tempura de Tóquio",
-              "Reserve com antecedência"
+              "A rua dos izakayas diurnos — guisado de carne e cerveja depois do Senso-ji"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-4-tokyo-shibuya-crossing",
-            "name": "Shibuya Crossing",
+            "id": "day-4-tok-teamlab-planets",
+            "name": "teamLab Planets",
             "type": "experience",
             "timeSlot": "afternoon",
-            "estimatedCost": 0,
-            "costPerPerson": 0,
-            "time": "15:00",
-            "duration": "1h",
-            "location": "Shibuya (2 pax)",
-            "rating": 4.6,
+            "estimatedCost": 300,
+            "costPerPerson": 150,
+            "time": "15:15",
+            "duration": "2h",
+            "location": "Toyosu (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Atravessamento mais movimentado do mundo",
-              "Starbucks no 2º andar tem melhor vista"
+              "Museu imersivo onde se anda descalço pela água entre luzes; reserve o horário com dias de antecedência"
             ],
             "source": "kinu"
           },
@@ -1954,7 +1950,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 1360
+        "totalCost": 1080
       },
       {
         "dayNumber": 6,
@@ -2061,36 +2057,37 @@
             "source": "kinu"
           },
           {
-            "id": "day-6-tok3-hoppy",
-            "name": "Hoppy Street (Asakusa)",
+            "id": "day-6-tok3-yadoroku",
+            "name": "Onigiri Asakusa Yadoroku",
             "type": "lunch",
             "timeSlot": "lunch",
-            "estimatedCost": 120,
-            "costPerPerson": 60,
+            "estimatedCost": 60,
+            "costPerPerson": 30,
             "time": "12:30",
-            "duration": "1.5h",
+            "duration": "0.5h",
             "location": "Asakusa (2 pax)",
-            "rating": 4.3,
+            "rating": 4.4,
             "status": "suggestion",
             "tips": [
-              "A rua dos izakayas diurnos — guisado de carne e cerveja depois do Senso-ji"
+              "A casa de onigiri mais antiga de Tóquio (1954) — o triângulo de arroz elevado a arte"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-6-tok-teamlab-planets",
-            "name": "teamLab Planets",
+            "id": "day-6-tok3-teamlab-planets",
+            "name": "teamLab Planets (Toyosu)",
             "type": "experience",
             "timeSlot": "afternoon",
-            "estimatedCost": 300,
-            "costPerPerson": 150,
+            "estimatedCost": 240,
+            "costPerPerson": 120,
             "time": "15:00",
             "duration": "2h",
             "location": "Toyosu (2 pax)",
-            "rating": 4.5,
+            "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "Museu imersivo onde se anda descalço pela água entre luzes; reserve o horário com dias de antecedência"
+              "A versão descalça-na-água do teamLab — imersão total, joelhos molhados",
+              "Diferente do Borderless; compre datado"
             ],
             "source": "kinu"
           },
@@ -2114,7 +2111,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 680
+        "totalCost": 560
       },
       {
         "dayNumber": 8,
@@ -2141,6 +2138,24 @@
             "source": "kinu"
           },
           {
+            "id": "day-7-tok3-yanaka",
+            "name": "Yanaka Ginza (Tóquio retrô)",
+            "type": "experience",
+            "timeSlot": "morning",
+            "estimatedCost": 80,
+            "costPerPerson": 40,
+            "time": "09:30",
+            "duration": "2h",
+            "location": "Yanaka (2 pax)",
+            "rating": 4.5,
+            "status": "suggestion",
+            "tips": [
+              "Aproveite as últimas horas!",
+              "O bairro que sobreviveu ao tempo — comércio de rua, gatos e croquetes de 100 ienes"
+            ],
+            "source": "kinu"
+          },
+          {
             "id": "day-7-slot-checkout",
             "name": "Check-out do hotel",
             "type": "transport",
@@ -2157,21 +2172,20 @@
             "source": "kinu"
           },
           {
-            "id": "day-7-tokyo-maisen",
-            "name": "Tonkatsu Maisen",
+            "id": "day-7-tokyo-tempura-kondo",
+            "name": "Tempura Kondo",
             "type": "lunch",
             "timeSlot": "lunch",
-            "estimatedCost": 220,
-            "costPerPerson": 110,
-            "time": "12:45",
+            "estimatedCost": 700,
+            "costPerPerson": 350,
+            "time": "12:55",
             "duration": "1.5h",
-            "location": "Omotesando (2 pax)",
-            "rating": 4.6,
+            "location": "Ginza (2 pax)",
+            "rating": 4.8,
             "status": "suggestion",
             "tips": [
-              "O tonkatsu mais famoso de Tóquio, num antigo balneário",
-              "Corte kurobuta derrete na boca",
-              "Perto de Harajuku — combine os passeios"
+              "Melhor tempura de Tóquio",
+              "Reserve com antecedência"
             ],
             "source": "kinu"
           },
@@ -2220,7 +2234,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 4888
+        "totalCost": 5448
       }
     ],
     "breakdown": {
@@ -2235,18 +2249,18 @@
         "status": "estimated"
       },
       "experiences": {
-        "amount": 2168,
-        "percent": 11,
+        "amount": 2488,
+        "percent": 12,
         "status": "estimated"
       },
       "food": {
-        "amount": 9528,
-        "percent": 48,
+        "amount": 9368,
+        "percent": 47,
         "status": "estimated"
       },
-      "total": 30896,
-      "available": -10896,
-      "trustZonePercent": 154
+      "total": 31056,
+      "available": -11056,
+      "trustZonePercent": 155
     },
     "meta": {
       "michelinCount": 1

@@ -19,6 +19,17 @@ const CITIES = ['Porto', 'Paris', 'Lisboa', 'Londres', 'Tóquio', 'Orlando'];
 const mins = (t: string) => { const m = /^(\d+):(\d+)/.exec(t); return m ? +m[1] * 60 + +m[2] : -1; };
 
 describe('M6 — tiers, noite, compras', () => {
+  it('Paris 10→15/12 (voo 23:00/14:00): Torre Eiffel (ícone) entra num dia de exploração', () => {
+    const r = runItineraryEngine({
+      departureDate: new Date('2026-12-10T12:00:00'), returnDate: new Date('2026-12-15T12:00:00'),
+      destination: 'Paris', origin: 'São Paulo',
+      outboundFlight: flight('2026-12-10T12:00:00', '23:00'), returnFlight: flight('2026-12-15T12:00:00', '14:00'),
+      budget: 20000, travelers: 2, interests: ['gastronomia', 'cultura'], jetLagSeverity: 'MODERADO', priceLevel: 'midrange',
+    });
+    const ids = r.days.filter((d) => d.label === 'Exploração').flatMap((d) => d.activities.map((a) => catalogIdOf(a.id)));
+    expect(ids).toContain('paris-tour-eiffel-top');
+  });
+
   for (const city of CITIES) {
     it(`${city}: ≥ 1 ícone no roteiro quando algum ícone cabe num dia`, () => {
       const tiers = tiersOf(city);

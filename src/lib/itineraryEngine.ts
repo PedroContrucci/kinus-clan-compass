@@ -903,7 +903,13 @@ export function generateItinerary(
       // ou lanche na frente da fila continua mandando; é ele que vira o item de fim de tarde (17:30).
       if (opts.tierPlan && opts.tierPlan.tiers.size > 0) {
         const want = opts.tierPlan.tiers;
-        const byTier = candidates.filter((a) => tiers[a.id] && want.has(tiers[a.id]) && opts.tierPlan!.fits(a) && (opts.tierPlan!.force || hopKey(a) === 0));
+        let byTier = candidates.filter((a) => tiers[a.id] && want.has(tiers[a.id]) && opts.tierPlan!.fits(a) && (opts.tierPlan!.force || hopKey(a) === 0));
+        // M6-fix: ícone ainda não encaixado passa na frente dos essenciais (sort estável preserva a ordem geral);
+        // com `force` (último dia de exploração sem ícone, vale desde a manhã) restringe ao tier icon se houver.
+        if (want.has('icon') && !iconPlaced) {
+          const icons = byTier.filter((a) => tiers[a.id] === 'icon');
+          if (icons.length) byTier = opts.tierPlan.force ? icons : [...icons, ...byTier.filter((a) => tiers[a.id] !== 'icon')];
+        }
         const first = candidates[0];
         const lateSlot = /(p[ôo]r do sol|sunset)/i.test(first.name) || isSnack(first);
         if (byTier.length && !(lateSlot && !byTier.includes(first))) candidates = byTier;
