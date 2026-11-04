@@ -27,6 +27,9 @@ describe('culinária / plural', () => {
     expect(cuisinePt('Klingon')).toBe('Klingon');
     expect(localizeCuisineTip('Cozinha French')).toBe('Cozinha Francesa');
     expect(localizeCuisineTip('Cozinha Klingon')).toBe('Cozinha Klingon');
+    // dica por atividade chega ao PDF como description (draftItinerary: tips[0]); L'Ambroisie = 'French'
+    expect(localizeCuisineTip(' Cozinha French ')).toBe('Cozinha Francesa');
+    expect(localizeCuisineTip('Reserve com 2-3 semanas')).toBe('Reserve com 2-3 semanas');
   });
   it('plural', () => {
     expect(plural(1, 'viajante', 'viajantes')).toBe('1 viajante');

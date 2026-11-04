@@ -1366,7 +1366,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
         ? logisticsLine(itemCoord(act, trip.destination), itemCoord(nextAct, trip.destination)) : undefined;
       const hasDistanceHint = !!distHint;
 
-      const rawDescription = cleanText(act.description || '');
+      const rawDescription = cleanText(localizeCuisineTip(String(act.description || '')));
       const hasDescription = rawDescription && rawDescription !== cleanText(act.name || '') && !isLogistics && rawDescription.length > 5;
 
       const actName = cleanText(act.name || '');
