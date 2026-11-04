@@ -51,6 +51,7 @@ import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer'
 import { TabErrorBoundary } from '@/components/shared/TabErrorBoundary';
 import { ClaProof } from '@/components/cla/ClaProof';
 import { catalogIdOf } from '@/lib/localAchievements';
+import { catalogVerifiedLabel } from '@/lib/catalogVerified';
 import { HotelPlanBlock } from '@/components/hotel/HotelPlanBlock';
 import { applyHotelSwap, type AccommodationLike } from '@/lib/hotelSwap';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -1349,6 +1350,13 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
               />
 
 
+
+              {(() => {
+                const verifiedLabel = catalogVerifiedLabel(selectedTrip.destination);
+                return verifiedLabel ? (
+                  <p className="text-xs text-muted-foreground mb-2">{verifiedLabel}</p>
+                ) : null;
+              })()}
 
               {/* Category Quick Filters */}
               <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide">

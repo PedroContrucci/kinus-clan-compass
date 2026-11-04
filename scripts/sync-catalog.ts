@@ -52,6 +52,7 @@ const TIERS_FILE = resolve(ROOT, 'src/data/generated/landmarkTiers.ts');
 const COORDS_FILE = resolve(ROOT, 'src/data/generated/coords.ts');
 const BOOKING_FILE = resolve(ROOT, 'src/data/generated/booking.ts');
 const DOW_FILE = resolve(ROOT, 'src/data/generated/daysOfWeek.ts');
+const VERIFIED_FILE = resolve(ROOT, 'src/data/generated/catalogVerified.ts');
 const TSCONFIG = 'tsconfig.app.json';
 
 /** O SQL que cria as colunas de coordenada. Aparece na mensagem de erro quando elas faltam. */
@@ -122,6 +123,8 @@ interface DbRow {
   booking_note: string | null;
   /** B.3.1 (R18): 0=dom…6=sáb; null = qualquer dia. */
   days_of_week: (number | string)[] | null;
+  /** M5b: quando o Google foi consultado pela última vez para este item. */
+  google_checked_at: string | null;
 }
 
 /** O mínimo que o mapa de coordenadas precisa saber sobre um hotel curado. */
@@ -132,7 +135,7 @@ interface HotelCoordRow {
 }
 
 const SELECT =
-  'id,city,name,category,neighborhood,rating,google_rating,estimated_cost_brl,duration_hours,tips,style_tags,landmark_tier,lat,lng,booking_mode,booking_url,booking_phone,booking_note,days_of_week';
+  'id,city,name,category,neighborhood,rating,google_rating,estimated_cost_brl,duration_hours,tips,style_tags,landmark_tier,lat,lng,booking_mode,booking_url,booking_phone,booking_note,days_of_week,google_checked_at';
 
 // ---------------------------------------------------------------------------
 // Utilidades
@@ -673,6 +676,34 @@ ${entries.map((e) => e.line).join('\n')}${entries.length ? '\n' : ''}};
   return { content, count: entries.length };
 }
 
+/**
+ * Gera `src/data/generated/catalogVerified.ts` — M5b: por cidade canônica, a data mais recente de
+ * `google_checked_at` entre as atividades published ('YYYY-MM-DD'). Cidade sem data não entra.
+ */
+function renderVerified(rows: DbRow[], registry: Map<string, string>): { content: string; count: number } {
+  const maxByCity = new Map<string, string>();
+  for (const r of rows) {
+    const m = /^(\d{4}-\d{2}-\d{2})/.exec(String(r.google_checked_at ?? ''));
+    if (!m) continue;
+    const city = canonicalCity(r.city, registry);
+    const cur = maxByCity.get(city);
+    if (!cur || m[1] > cur) maxByCity.set(city, m[1]);
+  }
+  const lines = CURATED_CITIES.filter((c) => maxByCity.has(c)).map((c) => `  ${q(c)}: ${q(maxByCity.get(c))},`);
+  const content = `// GERADO por scripts/sync-catalog.ts --apply — não edite à mão.
+//
+// M5b — quando o catálogo de cada cidade foi conferido no Google pela última vez: a data máxima de
+// \`google_checked_at\` entre as atividades published de \`curated_activities\` no kinu-beta.
+// Cidade sem data = ausente. Dado do catálogo, nunca inferência.
+// Consumidor: \`catalogVerifiedLabel\` em \`src/lib/catalogVerified.ts\`.
+
+/** Chaveado pelo nome canônico de \`CURATED_CITIES\`; valor 'YYYY-MM-DD'. */
+export const CATALOG_VERIFIED_AT: Record<string, string> = {
+${lines.join('\n')}${lines.length ? '\n' : ''}};
+`;
+  return { content, count: lines.length };
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -823,6 +854,13 @@ async function main(): Promise<void> {
       `${dowBefore === null ? 'ARQUIVO NOVO' : dowBefore !== dow.content ? 'muda' : 'sem mudança'}\n`
   );
 
+  const verified = renderVerified(rows, registry);
+  const verifiedBefore = existsSync(VERIFIED_FILE) ? readFileSync(VERIFIED_FILE, 'utf8') : null;
+  console.log(
+    `catalogVerified.ts: ${verified.count}/${CURATED_CITIES.length} cidades com data — ` +
+      `${verifiedBefore === null ? 'ARQUIVO NOVO' : verifiedBefore !== verified.content ? 'muda' : 'sem mudança'}\n`
+  );
+
   if (!apply) {
     console.log(`Dry-run — nada foi escrito. Para aplicar:\n\n   npx tsx scripts/sync-catalog.ts --apply\n`);
     return;
@@ -848,6 +886,7 @@ async function main(): Promise<void> {
   writeFileSync(COORDS_FILE, coords.content, 'utf8');
   writeFileSync(BOOKING_FILE, booking.content, 'utf8');
   writeFileSync(DOW_FILE, dow.content, 'utf8');
+  writeFileSync(VERIFIED_FILE, verified.content, 'utf8');
 
   // Restaura os CINCO. Meio-caminho é o pior estado possível: o app compila com um catálogo,
   // classifica com o outro e desenha o mapa com um terceiro.
@@ -859,6 +898,8 @@ async function main(): Promise<void> {
     else unlinkSync(BOOKING_FILE);
     if (dowBefore !== null) writeFileSync(DOW_FILE, dowBefore, 'utf8');
     else unlinkSync(DOW_FILE);
+    if (verifiedBefore !== null) writeFileSync(VERIFIED_FILE, verifiedBefore, 'utf8');
+    else unlinkSync(VERIFIED_FILE);
   };
 
   // --- Revalidação a partir do arquivo escrito ---
@@ -884,6 +925,7 @@ async function main(): Promise<void> {
   );
   console.log(`   • src/data/generated/booking.ts — ${bookingTotal} modos de reserva`);
   console.log(`   • src/data/generated/daysOfWeek.ts — ${dow.count} itens com dia da semana`);
+  console.log(`   • src/data/generated/catalogVerified.ts — ${verified.count} cidades com data`);
   console.log(`   • rodando type-check (tsc -p ${TSCONFIG} --noEmit)…`);
   try {
     execSync(`npx tsc -p ${TSCONFIG} --noEmit`, { cwd: ROOT, stdio: 'inherit' });
