@@ -49,6 +49,7 @@
             "rating": 4.8,
             "status": "suggestion",
             "tips": [
+              "Perto do hotel",
               "Jantar no pátio de um hotel colonial do século XVII, à luz de velas; cozinha caribenha contemporânea, reserve"
             ],
             "source": "kinu"
@@ -371,6 +372,23 @@
             "source": "kinu"
           },
           {
+            "id": "day-4-ctg-cerro-de-la-popa",
+            "name": "Cerro de la Popa (convento e mirante)",
+            "type": "experience",
+            "timeSlot": "afternoon",
+            "estimatedCost": 100,
+            "costPerPerson": 50,
+            "time": "15:00",
+            "duration": "1.5h",
+            "location": "La Popa (2 pax)",
+            "rating": 4.6,
+            "status": "suggestion",
+            "tips": [
+              "O ponto mais alto da cidade, com convento do século XVII e vista de toda a baía; vá de táxi e combine a volta"
+            ],
+            "source": "kinu"
+          },
+          {
             "id": "day-4-ctg-el-baron",
             "name": "El Barón Café & Liquor Bar",
             "type": "dinner",
@@ -388,7 +406,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 800
+        "totalCost": 900
       },
       {
         "dayNumber": 6,
@@ -624,19 +642,20 @@
             "source": "kinu"
           },
           {
-            "id": "day-7-ctg-cerro-de-la-popa",
-            "name": "Cerro de la Popa (convento e mirante)",
+            "id": "day-7-ctg-popa",
+            "name": "Convento de la Popa",
             "type": "experience",
             "timeSlot": "afternoon",
-            "estimatedCost": 100,
-            "costPerPerson": 50,
+            "estimatedCost": 80,
+            "costPerPerson": 40,
             "time": "15:00",
             "duration": "1.5h",
             "location": "La Popa (2 pax)",
-            "rating": 4.6,
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "O ponto mais alto da cidade, com convento do século XVII e vista de toda a baía; vá de táxi e combine a volta"
+              "A vista mais completa de Cartagena do alto do morro",
+              "Vá e volte de táxi/app combinado — não suba a pé"
             ],
             "source": "kinu"
           },
@@ -668,7 +687,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 4582
+        "totalCost": 4562
       }
     ],
     "breakdown": {
@@ -683,8 +702,8 @@
         "status": "estimated"
       },
       "experiences": {
-        "amount": 1882,
-        "percent": 9,
+        "amount": 1962,
+        "percent": 10,
         "status": "estimated"
       },
       "food": {
@@ -692,9 +711,9 @@
         "percent": 21,
         "status": "estimated"
       },
-      "total": 19622,
-      "available": 378,
-      "trustZonePercent": 98
+      "total": 19702,
+      "available": 298,
+      "trustZonePercent": 99
     },
     "meta": {
       "michelinCount": 0
@@ -738,26 +757,27 @@
             ]
           },
           {
-            "id": "day-0-lis-clube-fado",
-            "name": "Jantar com Fado ao vivo (Clube de Fado)",
+            "id": "day-0-lis-solar-presuntos",
+            "name": "Solar dos Presuntos",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 560,
-            "costPerPerson": 280,
+            "estimatedCost": 340,
+            "costPerPerson": 170,
             "time": "19:30",
-            "duration": "3h",
-            "location": "Alfama (2 pax)",
-            "rating": 4.5,
+            "duration": "2h",
+            "location": "Restauradores (2 pax)",
+            "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "Fado autêntico na Alfama com jantar completo",
-              "Silêncio absoluto durante as canções — é a etiqueta",
-              "Reserve com antecedência, especialmente sexta e sábado"
+              "Perto do hotel",
+              "Clássico lisboeta de cozinha minhota e mariscos",
+              "As paredes têm caricaturas de todos os famosos que passaram",
+              "Reserve — é instituição da cidade"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 4560
+        "totalCost": 4340
       },
       {
         "dayNumber": 2,
@@ -837,26 +857,26 @@
             "source": "kinu"
           },
           {
-            "id": "day-1-lis-solar-presuntos",
-            "name": "Solar dos Presuntos",
+            "id": "day-1-lis-clube-fado",
+            "name": "Jantar com Fado ao vivo (Clube de Fado)",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 340,
-            "costPerPerson": 170,
+            "estimatedCost": 560,
+            "costPerPerson": 280,
             "time": "19:30",
-            "duration": "2h",
-            "location": "Restauradores (2 pax)",
-            "rating": 4.6,
+            "duration": "3h",
+            "location": "Alfama (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Clássico lisboeta de cozinha minhota e mariscos",
-              "As paredes têm caricaturas de todos os famosos que passaram",
-              "Reserve — é instituição da cidade"
+              "Fado autêntico na Alfama com jantar completo",
+              "Silêncio absoluto durante as canções — é a etiqueta",
+              "Reserve com antecedência, especialmente sexta e sábado"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 700
+        "totalCost": 920
       },
       {
         "dayNumber": 3,
@@ -1528,25 +1548,25 @@
             ]
           },
           {
-            "id": "day-0-tokyo-gonpachi",
-            "name": "Gonpachi (Kill Bill)",
+            "id": "day-0-tok-tsunahachi",
+            "name": "Tempura Tsunahachi (Shinjuku, 1923)",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 500,
-            "costPerPerson": 250,
+            "estimatedCost": 400,
+            "costPerPerson": 200,
             "time": "19:30",
-            "duration": "2h",
-            "location": "Roppongi (2 pax)",
-            "rating": 4.4,
+            "duration": "1.5h",
+            "location": "Shinjuku (2 pax)",
+            "rating": 4.2,
             "status": "suggestion",
             "tips": [
-              "Cenário do filme Kill Bill",
-              "Yakitori e soba são excelentes"
+              "Perto do hotel",
+              "Tempurá frito na sua frente num balcão de 1923; peça o set e deixe o chef mandar na ordem"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 4500
+        "totalCost": 4400
       },
       {
         "dayNumber": 2,
@@ -1626,24 +1646,25 @@
             "source": "kinu"
           },
           {
-            "id": "day-1-tok-tsunahachi",
-            "name": "Tempura Tsunahachi (Shinjuku, 1923)",
+            "id": "day-1-tokyo-gonpachi",
+            "name": "Gonpachi (Kill Bill)",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 400,
-            "costPerPerson": 200,
+            "estimatedCost": 500,
+            "costPerPerson": 250,
             "time": "19:30",
-            "duration": "1.5h",
-            "location": "Shinjuku (2 pax)",
-            "rating": 4.2,
+            "duration": "2h",
+            "location": "Roppongi (2 pax)",
+            "rating": 4.4,
             "status": "suggestion",
             "tips": [
-              "Tempurá frito na sua frente num balcão de 1923; peça o set e deixe o chef mandar na ordem"
+              "Cenário do filme Kill Bill",
+              "Yakitori e soba são excelentes"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 580
+        "totalCost": 680
       },
       {
         "dayNumber": 3,
@@ -2238,24 +2259,27 @@
             ]
           },
           {
-            "id": "day-0-for-pipo",
-            "name": "Pipo Restaurante",
+            "id": "day-0-for-caravaggio-cucina",
+            "name": "Caravaggio Cucina (Varjota)",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 400,
-            "costPerPerson": 200,
+            "estimatedCost": 240,
+            "costPerPerson": 120,
             "time": "19:30",
             "duration": "2h",
-            "location": "Meireles (2 pax)",
-            "rating": 4.6,
+            "location": "Varjota (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Cozinha contemporânea com frutos do mar da costa cearense, num dos jantares mais elogiados da cidade; reserve"
+              "Perto do hotel",
+              "Italiano romantico de ambiente intimista",
+              "Camarao na vodka e tournedos com risoto sao destaques",
+              "Otimo para um jantar a dois"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 4400
+        "totalCost": 4240
       },
       {
         "dayNumber": 2,
@@ -2515,25 +2539,25 @@
             "source": "kinu"
           },
           {
-            "id": "day-3-for-pulcinella",
-            "name": "Pulcinella (Varjota)",
+            "id": "day-3-for-pipo",
+            "name": "Pipo Restaurante",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 320,
-            "costPerPerson": 160,
+            "estimatedCost": 400,
+            "costPerPerson": 200,
             "time": "19:35",
             "duration": "2h",
-            "location": "Varjota (2 pax)",
+            "location": "Meireles (2 pax)",
             "rating": 4.6,
             "status": "suggestion",
             "tips": [
               "Perto do hotel, para a volta do bate-volta",
-              "Italiano tradicional da Varjota, salão discreto e massa feita na casa; o jantar a dois da cidade"
+              "Cozinha contemporânea com frutos do mar da costa cearense, num dos jantares mais elogiados da cidade; reserve"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 620
+        "totalCost": 700
       },
       {
         "dayNumber": 5,
@@ -2581,6 +2605,25 @@
             "source": "kinu"
           },
           {
+            "id": "day-4-for-catedral-metropolitana",
+            "name": "Catedral Metropolitana de Fortaleza",
+            "type": "experience",
+            "timeSlot": "afternoon",
+            "estimatedCost": 0,
+            "costPerPerson": 0,
+            "time": "15:15",
+            "duration": "1.5h",
+            "location": "Centro (2 pax)",
+            "rating": 4.6,
+            "status": "suggestion",
+            "tips": [
+              "Arquitetura neogótica impressionante com vitrais coloridos",
+              "A poucos passos do Mercado Central — combine os dois",
+              "Entrada gratuita"
+            ],
+            "source": "kinu"
+          },
+          {
             "id": "day-4-for-rest-chico-aldeota",
             "name": "Chico do Caranguejo Aldeota",
             "type": "dinner",
@@ -2623,20 +2666,20 @@
             ]
           },
           {
-            "id": "day-5-for-rest-lo",
-            "name": "L'Ô Restaurante",
+            "id": "day-5-for-pulcinella",
+            "name": "Pulcinella (Varjota)",
             "type": "dinner",
             "timeSlot": "dinner",
             "estimatedCost": 320,
             "costPerPerson": 160,
             "time": "19:30",
             "duration": "2h",
-            "location": "Centro (2 pax)",
+            "location": "Varjota (2 pax)",
             "rating": 4.6,
             "status": "suggestion",
             "tips": [
               "Perto do hotel, para a volta do bate-volta",
-              "Franco-contemporâneo na Av. Pessoa Anta — o fine dining do Centro histórico"
+              "Italiano tradicional da Varjota, salão discreto e massa feita na casa; o jantar a dois da cidade"
             ],
             "source": "kinu"
           }
@@ -2702,43 +2745,60 @@
             "source": "kinu"
           },
           {
-            "id": "day-6-for-catedral-metropolitana",
-            "name": "Catedral Metropolitana de Fortaleza",
+            "id": "day-6-for-jardim-japones",
+            "name": "Jardim Japonês da Beira-Mar",
             "type": "experience",
             "timeSlot": "afternoon",
             "estimatedCost": 0,
             "costPerPerson": 0,
             "time": "15:00",
-            "duration": "1.5h",
-            "location": "Centro (2 pax)",
-            "rating": 4.6,
+            "duration": "0.5h",
+            "location": "Meireles (2 pax)",
+            "rating": 4.2,
             "status": "suggestion",
             "tips": [
-              "Arquitetura neogótica impressionante com vitrais coloridos",
-              "A poucos passos do Mercado Central — combine os dois",
-              "Entrada gratuita"
+              "Pequeno jardim com lago e ponte vermelha na Avenida Beira-Mar; pausa de sombra entre a praia e a Feirinha"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-6-for-rest-santa-grelha",
-            "name": "Santa Grelha",
-            "type": "dinner",
-            "timeSlot": "dinner",
-            "estimatedCost": 300,
-            "costPerPerson": 150,
-            "time": "19:30",
+            "id": "day-6-for-veleiro-por-do-sol",
+            "name": "Passeio de veleiro ao pôr do sol",
+            "type": "experience",
+            "timeSlot": "afternoon",
+            "estimatedCost": 200,
+            "costPerPerson": 100,
+            "time": "17:30",
             "duration": "2h",
-            "location": "Aldeota (2 pax)",
-            "rating": 4.7,
+            "location": "Beira-Mar (2 pax)",
+            "rating": 4.8,
             "status": "suggestion",
             "tips": [
-              "Carnes premium e ambiente de ocasião — o jantar de fechamento da viagem"
+              "Saída do Iate Clube ou Marina Park no fim da tarde",
+              "O pôr do sol visto do mar é o cartão-postal da viagem",
+              "Leve casaco leve — venta no mar"
+            ],
+            "source": "kinu"
+          },
+          {
+            "id": "day-6-for-rest-lo",
+            "name": "L'Ô Restaurante",
+            "type": "dinner",
+            "timeSlot": "dinner",
+            "estimatedCost": 320,
+            "costPerPerson": 160,
+            "time": "19:50",
+            "duration": "2h",
+            "location": "Centro (2 pax)",
+            "rating": 4.6,
+            "status": "suggestion",
+            "tips": [
+              "Franco-contemporâneo na Av. Pessoa Anta — o fine dining do Centro histórico"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 680
+        "totalCost": 900
       },
       {
         "dayNumber": 8,
@@ -2761,26 +2821,6 @@
             "tips": [
               "Tapioca e cuscuz cearense são a pedida local",
               "Caminhada matinal no calçadão antes do calor"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-7-for-veleiro-por-do-sol",
-            "name": "Passeio de veleiro ao pôr do sol",
-            "type": "experience",
-            "timeSlot": "morning",
-            "estimatedCost": 200,
-            "costPerPerson": 100,
-            "time": "09:30",
-            "duration": "2h",
-            "location": "Beira-Mar (2 pax)",
-            "rating": 4.8,
-            "status": "suggestion",
-            "tips": [
-              "Aproveite as últimas horas!",
-              "Saída do Iate Clube ou Marina Park no fim da tarde",
-              "O pôr do sol visto do mar é o cartão-postal da viagem",
-              "Leve casaco leve — venta no mar"
             ],
             "source": "kinu"
           },
@@ -2820,23 +2860,6 @@
             "source": "kinu"
           },
           {
-            "id": "day-7-for-jardim-japones",
-            "name": "Jardim Japonês da Beira-Mar",
-            "type": "experience",
-            "timeSlot": "afternoon",
-            "estimatedCost": 0,
-            "costPerPerson": 0,
-            "time": "15:00",
-            "duration": "0.5h",
-            "location": "Meireles (2 pax)",
-            "rating": 4.2,
-            "status": "suggestion",
-            "tips": [
-              "Pequeno jardim com lago e ponte vermelha na Avenida Beira-Mar; pausa de sombra entre a praia e a Feirinha"
-            ],
-            "source": "kinu"
-          },
-          {
             "id": "day-7-slot-transfer",
             "name": "Transfer para Aeroporto",
             "type": "transport",
@@ -2864,7 +2887,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 4730
+        "totalCost": 4530
       }
     ],
     "breakdown": {
@@ -2884,12 +2907,12 @@
         "status": "estimated"
       },
       "food": {
-        "amount": 3150,
-        "percent": 16,
+        "amount": 3090,
+        "percent": 15,
         "status": "estimated"
       },
-      "total": 22860,
-      "available": -2860,
+      "total": 22800,
+      "available": -2800,
       "trustZonePercent": 114
     },
     "meta": {

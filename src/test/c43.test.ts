@@ -4,6 +4,7 @@ import { buildDraftTrip } from '@/lib/createTrip';
 import { buildFlowInput } from '@/lib/onboardingFlow';
 import { itemCoord, logisticsLine, stayHotelCoord } from '@/lib/itineraryEngine';
 import { validateDaysOfWeek } from '@/lib/itineraryValidator';
+import { getDestinationActivities } from '@/data/destinationActivities';
 import { cityToIata, flightSearchRoute } from '@/lib/timezone';
 
 // C.4.3 — IATA sempre · hotel no salto · bônus do dia certo.
@@ -47,18 +48,26 @@ describe('C.4.3 — IATA sempre', () => {
   });
 });
 
+const TRIP_IDS = new Set(getDestinationActivities('Fortaleza')
+  .filter((a) => (a.styleTags ?? []).includes('daytrip') && !/-(almoco|jantar)$/.test(a.id)).map((a) => a.id));
+
 describe('C.4.3 — hotel no salto', () => {
-  it('Fortaleza D11 (11 noites): café no hotel → Águas Belas ≥ 10:00 e "~1h de carro" na tela', async () => {
+  // M6b (C.20) — reescrito: o teste fixava `days[10]` e o Praia de Águas Belas; a cota de bate-volta (⌊exploração/3⌋) e a
+  // véspera leve mudaram quais bate-voltas entram. Vale para qualquer bate-volta de Fortaleza e exige ≥ 2 em 11 noites.
+  it('Fortaleza D11 (11 noites): ≥ 2 bate-voltas; em cada um, café no hotel → bate-volta ≥ 10:00 e "~1h de carro" na tela', async () => {
     const days = await draft('Fortaleza', new Date(2026, 10, 10), 11);
-    const d4 = days[10].activities;
-    const k = d4.findIndex((a) => a.id.endsWith('-for-aguas-belas'));
-    expect(k).toBeGreaterThan(0);
-    const cafe = d4[k - 1];
-    expect(cafe.id).toMatch(/-slot-breakfast$/);
-    expect(mins(d4[k].time)).toBeGreaterThanOrEqual(10 * 60);
+    const trips = days.filter((d) => d.activities.some((a) => TRIP_IDS.has(a.id.replace(/^day-\d+-/, ''))));
+    expect(trips.length).toBeGreaterThanOrEqual(2);
     const hotel = stayHotelCoord(days, 'Fortaleza');
     expect(hotel).not.toBeNull();
-    expect(logisticsLine(itemCoord(cafe, 'Fortaleza', hotel), itemCoord(d4[k], 'Fortaleza', hotel))).toBe('~1h de carro');
+    for (const day of trips) {
+      const d4 = day.activities;
+      const k = d4.findIndex((a) => TRIP_IDS.has(a.id.replace(/^day-\d+-/, '')));
+      const cafe = d4[k - 1];
+      expect(cafe.id).toMatch(/-slot-breakfast$/);
+      expect(mins(d4[k].time)).toBeGreaterThanOrEqual(10 * 60);
+      expect(logisticsLine(itemCoord(cafe, 'Fortaleza', hotel), itemCoord(d4[k], 'Fortaleza', hotel))).toMatch(/de carro$/);
+    }
   });
 
   it('itemCoord: incluído no hotel sem hotel conhecido = null (nunca a mediana)', () => {

@@ -409,6 +409,8 @@ export interface PlanRulesContext {
   /** Partida do voo de volta (HH:mm). */
   returnDepartureTime?: string;
   domestic: boolean;
+  /** M6b (R21): coordenada do hotel — sem ela o aviso de jantar de chegada longe do hotel não roda. */
+  hotelCoord?: { lat: number; lng: number } | null;
 }
 
 const MEALS = new Set(['breakfast', 'lunch', 'dinner']);
@@ -842,7 +844,7 @@ export function weekdayOf(date: unknown): number {
 }
 
 export interface ExtraRuleResult {
-  rule: 'R17 ESSENCIAIS' | 'R18 DIA DA SEMANA';
+  rule: 'R17 ESSENCIAIS' | 'R18 DIA DA SEMANA' | 'R20 DIA DENSO' | 'R21 VÉSPERA';
   status: 'PASS' | 'WARN' | 'FAIL' | 'SKIP';
   detail: string;
   /** R17: ids essenciais ausentes que cabiam. R18: ids fora do dia. */
@@ -899,4 +901,67 @@ export function validateEssentials(days: PlanDay[], ctx: PlanRulesContext): Extr
   const head = `${essentials.length - missing.length}/${essentials.length}`;
   if (fitting.length) return { rule: 'R17 ESSENCIAIS', status: 'WARN', detail: `${head} · cabiam: ${fitting.join(', ')}`, ids: fitting };
   return { rule: 'R17 ESSENCIAIS', status: 'PASS', detail: missing.length ? `${head} · sem espaço: ${missing.join(', ')}` : head };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// M6b (C.20) — R20 dia denso · R21 véspera de voo cedo. Fora de validatePlanRules (como R17/R19).
+// ─────────────────────────────────────────────────────────────────────────────
+
+const isDaytripItem = (a: PlanDayItem, index: Map<string, SuggestedActivity>) =>
+  (index.get(catalogIdOf(a.id))?.styleTags ?? []).some((t) => t.toLowerCase() === 'daytrip') && !/-(almoco|jantar)$/.test(a.id);
+/** Passeio de manhã/tarde de verdade: nem logística, nem refeição, nem "livre", nem caminhada/descanso sintético. */
+const isExpItem = (a: PlanDayItem) =>
+  (a.timeSlot === 'morning' || a.timeSlot === 'afternoon') && !isLogistic(a) && !/-slot-/.test(a.id) && !/^(descanso|caminhada leve)/i.test(a.name);
+
+/** Mesma conta do R10/R11 do motor: check-out < 06:00 (voo cedo) = véspera leve. */
+export function isEarlyReturn(ctx: PlanRulesContext): boolean {
+  const dep = toMinutes(ctx.returnDepartureTime);
+  const transfer = (dep >= 0 ? dep : 14 * 60) - (ctx.domestic ? 2 : 3) * 60 - 45;
+  return Math.min(transfer - 30, 12 * 60) < 6 * 60;
+}
+
+/** R20 (WARN): dia de exploração sem bate-volta com menos de 2 passeios (manhã + tarde). */
+export function validateDenseDays(days: PlanDay[], ctx: PlanRulesContext): ExtraRuleResult {
+  const index = catalogIndex(ctx.destination);
+  const lastIdx = days.length - 1;
+  const arrivalIdx = arrivalIndexOf(days, ctx);
+  const exploration = days.map((_, i) => i).filter((i) =>
+    i > arrivalIdx && i < lastIdx && !/recupera|descanso|trânsito/i.test(days[i].title ?? ''));
+  if (exploration.length === 0) return { rule: 'R20 DIA DENSO', status: 'SKIP', detail: 'sem dia de exploração' };
+  const thin = exploration.filter((i) => {
+    const acts = days[i].activities;
+    return !acts.some((a) => isDaytripItem(a, index)) && acts.filter(isExpItem).length < 2;
+  });
+  return thin.length
+    ? { rule: 'R20 DIA DENSO', status: 'WARN', detail: `${thin.length}/${exploration.length} dia(s) com < 2 passeios: ${thin.map((i) => days[i].day).join(', ')}` }
+    : { rule: 'R20 DIA DENSO', status: 'PASS', detail: `${exploration.length} dia(s) com ≥ 2 passeios (ou bate-volta)` };
+}
+
+/**
+ * R21: voo de volta cedo → a véspera é leve. FAIL: bate-volta, ou passeio terminando depois das 17:00, na véspera.
+ * WARN: jantar do dia de chegada a mais de 2 km do hotel (só com ctx.hotelCoord).
+ */
+export function validateEve(days: PlanDay[], ctx: PlanRulesContext): ExtraRuleResult {
+  const index = catalogIndex(ctx.destination);
+  const notes: string[] = [];
+  let fail = false;
+  if (isEarlyReturn(ctx) && days.length >= 3) {
+    const eve = days[days.length - 2];
+    if (eve.activities.some((a) => isDaytripItem(a, index))) { fail = true; notes.push(`dia ${eve.day}: bate-volta na véspera`); }
+    for (const a of eve.activities.filter(isExpItem)) {
+      const start = toMinutes(a.time);
+      if (start < 0) continue;
+      const cat = index.get(catalogIdOf(a.id)) ?? null;
+      if (start + Math.round(planHours(a, cat) * 60) > 17 * 60) { fail = true; notes.push(`dia ${eve.day}: ${a.name} termina depois das 17:00`); }
+    }
+  }
+  if (ctx.hotelCoord && days.length > 0) {
+    const arr = days[arrivalIndexOf(days, ctx)];
+    const dinner = arr?.activities.find((a) => a.timeSlot === 'dinner');
+    const c = dinner ? curatedCoordOf(catalogIdOf(dinner.id)) : null;
+    if (dinner && c && haversineKm(ctx.hotelCoord, c) > 2) notes.push(`dia ${arr.day}: jantar de chegada a ${fmt(haversineKm(ctx.hotelCoord, c))} km do hotel`);
+  }
+  if (fail) return { rule: 'R21 VÉSPERA', status: 'FAIL', detail: notes.join(' · ') };
+  if (notes.length) return { rule: 'R21 VÉSPERA', status: 'WARN', detail: notes.join(' · ') };
+  return { rule: 'R21 VÉSPERA', status: 'PASS', detail: isEarlyReturn(ctx) ? 'véspera leve' : 'volta não é cedo' };
 }

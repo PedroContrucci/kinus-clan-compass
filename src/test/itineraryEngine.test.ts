@@ -24,7 +24,7 @@ import { normalizePlaceName } from '@/lib/placeIdentity';
 import { getDestinationActivities } from '@/data/destinationActivities';
 import { matchesPriority } from '@/lib/claChips';
 import { curatedCoordOf } from '@/lib/routeCoords';
-import { haversineKm } from '@/lib/itineraryValidator';
+import { haversineKm, validateDenseDays, validateEve } from '@/lib/itineraryValidator';
 import { getHotelRecommendation } from '@/lib/hotelZones';
 import { getActivityPrice } from '@/lib/activityPricing';
 import { addDays } from 'date-fns';
@@ -324,19 +324,29 @@ describe('C.4 — layoutDay: a hora vem da sequência', () => {
   const GC = ['gastronomy', 'culture'];
 
   // B.3.1: o R17 puxa os essenciais para o começo, o dia longo muda de lugar — acha-se pelo item.
-  it('Fortaleza gc: Crocobeach ocupa o dia — sem tarde; almoço depois do fim + deslocamento ou "no local"', async () => {
+  // M6b (C.20) — mudança intencional: o item longo ocupa a MANHÃ; a tarde recebe no máximo 1 EXP curto (≤ 2,5 h) que
+  // começa depois do fim do longo e termina até 18:30. Antes: a tarde ficava sempre vazia (assert `afternoon` = []).
+  it('Fortaleza gc: Crocobeach ocupa a manhã — tarde só com 1 EXP curto (≤ 2,5 h, fim ≤ 18:30); almoço depois do fim + deslocamento ou "no local"', async () => {
     const d2 = (await draft('Fortaleza', GC)).find((d) => d.activities.some((a) => /Crocobeach/.test(a.name)))!.activities;
     const beach = d2.find((a) => /Crocobeach/.test(a.name))!;
     expect(beach).toBeDefined();
-    expect(d2.filter((a) => a.timeSlot === 'afternoon')).toEqual([]);
+    const afternoon = d2.filter((a) => a.timeSlot === 'afternoon');
+    expect(afternoon.length).toBeLessThanOrEqual(1);
+    for (const a of afternoon) {
+      expect(dur(a)).toBeLessThanOrEqual(150);
+      expect(mins(a.time)).toBeGreaterThanOrEqual(mins(beach.time) + dur(beach) + 5);
+      expect(mins(a.time) + dur(a)).toBeLessThanOrEqual(18 * 60 + 30);
+    }
     const lunch = d2.find((a) => a.timeSlot === 'lunch');
     if (lunch) expect(mins(lunch.time)).toBeGreaterThanOrEqual(mins(beach.time) + dur(beach) + 5);
     else expect(beach.description).toMatch(new RegExp(LUNCH_ON_SITE_TIP));
   });
 
-  it('Paris gc D2: Septime 19:30 é o último item; "Descanso" virou a dica do jantar', async () => {
+  // M6b (C.20) — o jantar de chegada agora é o mais perto do hotel (≤ 1 km): em Paris vira Chez Janou, não mais Septime.
+  // O que o teste prova (19:30, dica de descanso, último item, sem "Descanso") segue igual; só o nome deixou de ser fixo.
+  it('Paris gc D2: o jantar de chegada 19:30 é o último item; "Descanso" virou a dica do jantar', async () => {
     const d2 = (await draft('Paris', GC))[1].activities;
-    const septime = d2.find((a) => a.name === 'Septime')!;
+    const septime = d2.find((a) => a.timeSlot === 'dinner')!;
     expect(septime.time).toBe('19:30');
     expect(septime.description).toBe(REST_DINNER_TIP);
     expect(d2.some((a) => /Descanso/.test(a.name))).toBe(false);
@@ -386,5 +396,89 @@ describe('C.4 — layoutDay: a hora vem da sequência', () => {
     expect(r.items.map((a) => a.id)).toEqual(['x-manha', 'x-almoco', 'x-tarde', 'x-jantar']);
     expect(r.dropped.map((a) => a.id)).toEqual(['x-tarde2']);
     expect(r.items.map((a) => a.time)).toEqual(['09:30', '12:30', '15:00', '19:30']);
+  });
+});
+
+// M6b (C.20) — roteiro denso parte 2: tarde após item longo, jantar de chegada perto do hotel, véspera leve, cota de bate-volta.
+describe('itineraryEngine — M6b roteiro denso parte 2', () => {
+  const runM = (city: string, dep = '21:00', sev: JetLagSeverity = 'BAIXO', interests = ['gastronomia', 'cultura']) => runItineraryEngine({
+    departureDate: new Date('2026-11-10T12:00:00'), returnDate: new Date('2026-11-17T12:00:00'),
+    destination: city, origin: 'São Paulo',
+    outboundFlight: flight('2026-11-10T12:00:00', '08:00'), returnFlight: flight('2026-11-17T12:00:00', dep),
+    budget: 20000, travelers: 2, interests, jetLagSeverity: sev, priceLevel: 'midrange',
+  });
+  const MC = ['Lisboa', 'Tóquio', 'Cartagena', 'Fortaleza', 'Paris', 'Porto', 'Londres', 'Bangkok'];
+  const idOf = (a: { id: string }) => a.id.replace(/^day-\d+-/, '');
+  const isTripId = (city: string, id: string) =>
+    (getDestinationActivities(city).find((c) => c.id === idOf({ id }))?.styleTags ?? []).includes('daytrip') && !/-(almoco|jantar)$/.test(id);
+  const endMin = (a: { time?: string; duration?: string }) => {
+    const m = String(a.time ?? '').match(/^(\d{2}):(\d{2})/);
+    return m ? Number(m[1]) * 60 + Number(m[2]) + Math.round(parseFloat(String(a.duration ?? '0')) * 60) : -1;
+  };
+  const isExp = (a: { id: string; timeSlot: string; type?: string }) =>
+    (a.timeSlot === 'morning' || a.timeSlot === 'afternoon') && !/-slot-/.test(a.id) && a.type !== 'transport';
+
+  it('(ii) jantar do dia de chegada: a ≤ 2 km do hotel, ou a dica traz a distância real ("a X,X km do hotel")', () => {
+    for (const city of MC) {
+      const r = runM(city);
+      const hotel = engineHotelCoord(city, getHotelRecommendation(city, 'midrange', ['gastronomia', 'cultura'])?.name);
+      const arrival = r.days.find((d) => d.activities.some((a) => a.type === 'checkin'))!;
+      const dinner = arrival.activities.find((a) => a.timeSlot === 'dinner');
+      const c = dinner ? curatedCoordOf(idOf(dinner)) : null;
+      if (!dinner || !c || !hotel) continue;
+      const km = haversineKm(hotel, c);
+      if (km > 2) expect((dinner.tips ?? []).join(' '), `${city} ${km.toFixed(1)} km`).toMatch(/km do hotel/);
+    }
+  });
+
+  it('(iii) volta antes das 09:00: véspera leve — sem bate-volta, passeio termina até 17:00, sem noite, meta.lightEve', () => {
+    for (const city of MC) {
+      const r = runM(city, '06:00');
+      expect(r.meta.lightEve, city).toBe(true);
+      const eve = r.days[r.days.length - 2];
+      expect(eve.activities.some((a) => isTripId(city, a.id)), `${city} bate-volta na véspera`).toBe(false);
+      expect(eve.activities.filter((a) => a.timeSlot === 'night'), city).toEqual([]);
+      for (const a of eve.activities.filter(isExp)) expect(endMin(a), `${city} ${a.name}`).toBeLessThanOrEqual(17 * 60);
+    }
+    expect(runM('Paris', '21:00').meta.lightEve).toBe(false);
+  });
+
+  it('(iv) bate-volta: ≤ ⌊dias de exploração / 3⌋; nunca no dia seguinte à chegada com jet lag ALTO/SEVERO', () => {
+    for (const city of MC) for (const sev of ['BAIXO', 'ALTO', 'SEVERO'] as JetLagSeverity[]) for (const ints of [['natureza', 'familia'], ['cultura', 'historia'], ['gastronomia', 'cultura']]) {
+      const r = runM(city, '21:00', sev, ints);
+      const expl = r.days.filter((d) => d.label === 'Exploração');
+      const trips = expl.filter((d) => d.activities.some((a) => isTripId(city, a.id)));
+      expect(trips.length, `${city} ${sev}`).toBeLessThanOrEqual(Math.floor(expl.length / 3));
+      if (sev !== 'BAIXO' && expl.length) expect(trips.includes(expl[0]), `${city} ${sev} D+1`).toBe(false);
+    }
+  });
+
+  it('(i) dia de exploração sem bate-volta tem ≥ 2 EXP — ou o motivo está em meta.thinDays', () => {
+    for (const city of MC) {
+      const r = runM(city);
+      for (const d of r.days.filter((x) => x.label === 'Exploração')) {
+        if (d.activities.some((a) => isTripId(city, a.id))) continue;
+        if (d.activities.filter(isExp).length >= 2) continue;
+        expect(r.meta.thinDays.some((t) => t.day === d.dayNumber), `${city} dia ${d.dayNumber} ralo sem motivo`).toBe(true);
+      }
+    }
+  });
+
+  it('R20/R21: dia ralo = WARN; véspera cedo com bate-volta ou passeio após 17:00 = FAIL; véspera leve = PASS', () => {
+    const ctx = { destination: 'Paris', interests: [], arrivalDate: '2026-11-10', domestic: false, returnDepartureTime: '06:00' };
+    const item = (id: string, slot: string, time: string, duration: string) => ({ id, name: id, timeSlot: slot, time, duration });
+    const days = [
+      { day: 1, date: '2026-11-10', title: 'Chegada', activities: [] },
+      { day: 2, date: '2026-11-11', title: 'Exploração', activities: [item('day-1-x1', 'morning', '10:00', '2h')] },
+      { day: 3, date: '2026-11-12', title: 'Exploração', activities: [item('day-2-x2', 'morning', '10:00', '2h'), item('day-2-x3', 'afternoon', '15:00', '3h')] },
+      { day: 4, date: '2026-11-13', title: 'Volta', activities: [] },
+    ];
+    const dense = validateDenseDays(days, ctx);
+    expect(dense.status).toBe('WARN');
+    expect(dense.detail).toMatch(/2/);
+    expect(validateEve(days, ctx).status).toBe('FAIL'); // x3 termina 18:00 na véspera (dia 3)
+    days[2].activities[1] = item('day-2-x3', 'afternoon', '15:00', '2h');
+    expect(validateEve(days, ctx).status).toBe('PASS');
+    expect(validateEve(days, { ...ctx, returnDepartureTime: '21:00' }).status).toBe('PASS');
   });
 });
