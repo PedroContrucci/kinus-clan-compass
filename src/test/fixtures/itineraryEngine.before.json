@@ -509,72 +509,21 @@
             ]
           },
           {
-            "id": "day-6-ctg-muralhas",
-            "name": "Caminhada pelas Muralhas",
+            "id": "day-6-ctg-rosario",
+            "name": "Day-trip Islas del Rosario (beach club)",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 0,
-            "costPerPerson": 0,
-            "time": "09:30",
-            "duration": "1.5h",
-            "location": "Centro Histórico (2 pax)",
-            "rating": 4.8,
-            "status": "suggestion",
-            "tips": [
-              "4km de muralhas do século XVII — gratuito e cinematográfico",
-              "Com crianças pequenas: trecho curto de manhã cedo; pôr do sol é a versão dos adultos"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-6-ctg-la-mulata",
-            "name": "La Mulata",
-            "type": "lunch",
-            "timeSlot": "lunch",
-            "estimatedCost": 180,
-            "costPerPerson": 90,
-            "time": "12:30",
-            "duration": "1.5h",
-            "location": "Centro Histórico (2 pax)",
+            "estimatedCost": 500,
+            "costPerPerson": 250,
+            "time": "09:15",
+            "duration": "7h",
+            "location": "Islas del Rosario (2 pax)",
             "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "Almoço caribenho de bandeja — chegue antes do meio-dia, a fila do executivo é real"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-6-ctg-cerro-de-la-popa",
-            "name": "Cerro de la Popa (convento e mirante)",
-            "type": "experience",
-            "timeSlot": "afternoon",
-            "estimatedCost": 100,
-            "costPerPerson": 50,
-            "time": "15:00",
-            "duration": "1.5h",
-            "location": "La Popa (2 pax)",
-            "rating": 4.6,
-            "status": "suggestion",
-            "tips": [
-              "O ponto mais alto da cidade, com convento do século XVII e vista de toda a baía; vá de táxi e combine a volta"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-6-ctg-veleiro-baia",
-            "name": "Passeio de barco ao pôr do sol na baía",
-            "type": "experience",
-            "timeSlot": "afternoon",
-            "estimatedCost": 300,
-            "costPerPerson": 150,
-            "time": "17:30",
-            "duration": "2h",
-            "location": "Marina (2 pax)",
-            "rating": 4.6,
-            "status": "suggestion",
-            "tips": [
-              "A cidade murada dourada vista do mar — o momento uau da viagem",
-              "Versões família saem mais cedo (17h); confirme colete infantil"
+              "Bate-volta: ocupa o dia inteiro",
+              "Mar caribenho manso e cristalino — escolha um beach club com day pass e estrutura kids",
+              "Lancha 45min: assentos na parte de trás balançam menos; protetor reef-safe"
             ],
             "source": "kinu"
           },
@@ -585,19 +534,20 @@
             "timeSlot": "dinner",
             "estimatedCost": 260,
             "costPerPerson": 130,
-            "time": "19:40",
+            "time": "19:30",
             "duration": "2h",
             "location": "San Diego (2 pax)",
             "rating": 4.4,
             "status": "suggestion",
             "tips": [
+              "Perto do hotel, para a volta do bate-volta",
               "Jantar na praça mais charmosa — as crianças correm na praça enquanto os pratos chegam",
               "A fórmula mágica de jantar com filhos pequenos: praça + mesa externa"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 840
+        "totalCost": 760
       },
       {
         "dayNumber": 8,
@@ -657,37 +607,36 @@
             "source": "kinu"
           },
           {
-            "id": "day-7-ctg-di-silvio",
-            "name": "Di Silvio Trattoria",
+            "id": "day-7-ctg-la-mulata",
+            "name": "La Mulata",
             "type": "lunch",
             "timeSlot": "lunch",
-            "estimatedCost": 140,
-            "costPerPerson": 70,
+            "estimatedCost": 180,
+            "costPerPerson": 90,
             "time": "12:45",
             "duration": "1.5h",
-            "location": "Getsemaní (2 pax)",
+            "location": "Centro Histórico (2 pax)",
             "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "Pizza napolitana honesta em Getsemaní — o coringa quando as crianças pedem \"comida normal\""
+              "Almoço caribenho de bandeja — chegue antes do meio-dia, a fila do executivo é real"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-7-ctg-popa",
-            "name": "Convento de la Popa",
+            "id": "day-7-ctg-cerro-de-la-popa",
+            "name": "Cerro de la Popa (convento e mirante)",
             "type": "experience",
             "timeSlot": "afternoon",
-            "estimatedCost": 80,
-            "costPerPerson": 40,
+            "estimatedCost": 100,
+            "costPerPerson": 50,
             "time": "15:00",
             "duration": "1.5h",
             "location": "La Popa (2 pax)",
-            "rating": 4.5,
+            "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "A vista mais completa de Cartagena do alto do morro",
-              "Vá e volte de táxi/app combinado — não suba a pé"
+              "O ponto mais alto da cidade, com convento do século XVII e vista de toda a baía; vá de táxi e combine a volta"
             ],
             "source": "kinu"
           },
@@ -719,7 +668,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 4522
+        "totalCost": 4582
       }
     ],
     "breakdown": {
@@ -734,17 +683,17 @@
         "status": "estimated"
       },
       "experiences": {
-        "amount": 1762,
+        "amount": 1882,
         "percent": 9,
         "status": "estimated"
       },
       "food": {
-        "amount": 4280,
+        "amount": 4140,
         "percent": 21,
         "status": "estimated"
       },
-      "total": 19642,
-      "available": 358,
+      "total": 19622,
+      "available": 378,
       "trustZonePercent": 98
     },
     "meta": {
@@ -949,23 +898,23 @@
             "source": "kinu"
           },
           {
-            "id": "day-2-lis-cevicheria",
-            "name": "A Cevicheria",
+            "id": "day-2-michelin-alma",
+            "name": "ALMA ⭐ Michelin",
             "type": "lunch",
             "timeSlot": "lunch",
-            "estimatedCost": 300,
-            "costPerPerson": 150,
+            "estimatedCost": 1700,
+            "costPerPerson": 850,
             "time": "12:30",
-            "duration": "1.5h",
-            "location": "Príncipe Real (2 pax)",
-            "rating": 4.5,
-            "status": "suggestion",
+            "duration": "2h",
+            "location": "Lisboa",
+            "status": "defined",
+            "source": "kinu",
             "tips": [
-              "Ceviches criativos do chef Kiko sob o polvo gigante do teto",
-              "Não aceita reserva — a fila anda rápido",
-              "Príncipe Real é ótimo para passear depois"
-            ],
-            "source": "kinu"
+              "Cozinha Portuguese",
+              "Menu de almoço — mais acessível que o jantar",
+              "Reserve com 2-3 semanas de antecedência",
+              "Valor estimado por pessoa"
+            ]
           },
           {
             "id": "day-2-lis-lx-factory",
@@ -1004,25 +953,26 @@
             "source": "kinu"
           },
           {
-            "id": "day-2-michelin-alma",
-            "name": "ALMA ⭐ Michelin",
+            "id": "day-2-lis-ramiro",
+            "name": "Cervejaria Ramiro",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 1700,
-            "costPerPerson": 850,
+            "estimatedCost": 400,
+            "costPerPerson": 200,
             "time": "19:30",
-            "duration": "2.5h",
-            "location": "Lisboa",
-            "status": "defined",
-            "source": "kinu",
+            "duration": "2h",
+            "location": "Intendente (2 pax)",
+            "rating": 4.6,
+            "status": "suggestion",
             "tips": [
-              "Cozinha Portuguese",
-              "Reserve com 2-3 semanas de antecedência",
-              "Menu degustação — valor estimado por pessoa"
-            ]
+              "A catedral do marisco em Lisboa",
+              "Gambas al ajillo, sapateira e o prego no final como sobremesa",
+              "Fila grande — pegue senha e espere no balcão"
+            ],
+            "source": "kinu"
           }
         ],
-        "totalCost": 2230
+        "totalCost": 2330
       },
       {
         "dayNumber": 4,
@@ -1070,21 +1020,21 @@
             "source": "kinu"
           },
           {
-            "id": "day-3-lis-timeout-market",
-            "name": "Time Out Market (Mercado da Ribeira)",
+            "id": "day-3-lis-cevicheria",
+            "name": "A Cevicheria",
             "type": "lunch",
             "timeSlot": "lunch",
-            "estimatedCost": 200,
-            "costPerPerson": 100,
+            "estimatedCost": 300,
+            "costPerPerson": 150,
             "time": "13:00",
             "duration": "1.5h",
-            "location": "Cais do Sodré (2 pax)",
+            "location": "Príncipe Real (2 pax)",
             "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Os melhores chefs de Lisboa em bancas num mercado histórico",
-              "Cada um pede numa banca e senta junto nas mesas comunitárias",
-              "Vá fora do horário de pico — lota"
+              "Ceviches criativos do chef Kiko sob o polvo gigante do teto",
+              "Não aceita reserva — a fila anda rápido",
+              "Príncipe Real é ótimo para passear depois"
             ],
             "source": "kinu"
           },
@@ -1125,7 +1075,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 900
+        "totalCost": 1000
       },
       {
         "dayNumber": 5,
@@ -1443,21 +1393,21 @@
             "source": "kinu"
           },
           {
-            "id": "day-7-lis-ze-da-mouraria",
-            "name": "Zé da Mouraria",
+            "id": "day-7-lis-timeout-market",
+            "name": "Time Out Market (Mercado da Ribeira)",
             "type": "lunch",
             "timeSlot": "lunch",
-            "estimatedCost": 170,
-            "costPerPerson": 85,
+            "estimatedCost": 200,
+            "costPerPerson": 100,
             "time": "12:45",
             "duration": "1.5h",
-            "location": "Mouraria (2 pax)",
-            "rating": 4.6,
+            "location": "Cais do Sodré (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Tasca tradicional com doses fartas",
-              "O bacalhau assado é referência na cidade",
-              "Só almoço e fecha domingo — chegue antes das 13h"
+              "Os melhores chefs de Lisboa em bancas num mercado histórico",
+              "Cada um pede numa banca e senta junto nas mesas comunitárias",
+              "Vá fora do horário de pico — lota"
             ],
             "source": "kinu"
           },
@@ -1508,7 +1458,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 4538
+        "totalCost": 4568
       }
     ],
     "breakdown": {
@@ -1528,13 +1478,13 @@
         "status": "estimated"
       },
       "food": {
-        "amount": 5060,
-        "percent": 25,
+        "amount": 5290,
+        "percent": 26,
         "status": "estimated"
       },
-      "total": 22358,
-      "available": -2358,
-      "trustZonePercent": 112
+      "total": 22588,
+      "available": -2588,
+      "trustZonePercent": 113
     },
     "meta": {
       "michelinCount": 1
@@ -1718,13 +1668,78 @@
             ]
           },
           {
-            "id": "day-2-tokyo-senso-ji",
+            "id": "day-2-tok3-hakone",
+            "name": "Day-trip a Hakone (onsen + Fuji)",
+            "type": "experience",
+            "timeSlot": "morning",
+            "estimatedCost": 500,
+            "costPerPerson": 250,
+            "time": "10:30",
+            "duration": "10h",
+            "location": "Hakone (2 pax)",
+            "rating": 4.6,
+            "status": "suggestion",
+            "tips": [
+              "Bate-volta: ocupa o dia inteiro",
+              "Teleférico, lago com vista do Fuji e banho termal — o respiro das montanhas",
+              "Hakone Free Pass compensa; Fuji aparece de manhã"
+            ],
+            "source": "kinu"
+          },
+          {
+            "id": "day-2-tok-zauo",
+            "name": "Zauo (pesque o seu peixe)",
+            "type": "dinner",
+            "timeSlot": "dinner",
+            "estimatedCost": 440,
+            "costPerPerson": 220,
+            "time": "20:45",
+            "duration": "2h",
+            "location": "Shinjuku (2 pax)",
+            "rating": 4.2,
+            "status": "suggestion",
+            "tips": [
+              "Perto do hotel, para a volta do bate-volta",
+              "Restaurante-barco onde a família pesca o peixe do tanque e a cozinha prepara; crianças adoram, reserve"
+            ],
+            "source": "kinu"
+          }
+        ],
+        "totalCost": 940
+      },
+      {
+        "dayNumber": 4,
+        "date": "2026-11-13T12:00:00.000Z",
+        "label": "Exploração",
+        "theme": "🚶 Passeios",
+        "activities": [
+          {
+            "id": "day-3-tokyo-bills",
+            "name": "Bills (Pancakes)",
+            "type": "breakfast",
+            "timeSlot": "breakfast",
+            "estimatedCost": 240,
+            "costPerPerson": 120,
+            "time": "08:00",
+            "duration": "1h",
+            "location": "Omotesando (2 pax)",
+            "rating": 4.6,
+            "status": "suggestion",
+            "tips": [
+              "Sugestão de café externo para variar",
+              "Ricotta pancakes mundialmente famosos",
+              "Fila de 30min nos fins de semana"
+            ],
+            "source": "kinu"
+          },
+          {
+            "id": "day-3-tokyo-senso-ji",
             "name": "Templo Senso-ji",
             "type": "experience",
             "timeSlot": "morning",
             "estimatedCost": 0,
             "costPerPerson": 0,
-            "time": "09:35",
+            "time": "09:30",
             "duration": "2h",
             "location": "Asakusa (2 pax)",
             "rating": 4.7,
@@ -1736,7 +1751,7 @@
             "source": "kinu"
           },
           {
-            "id": "day-2-tokyo-sushi-dai",
+            "id": "day-3-tokyo-sushi-dai",
             "name": "Sushi Dai",
             "type": "lunch",
             "timeSlot": "lunch",
@@ -1754,104 +1769,42 @@
             "source": "kinu"
           },
           {
-            "id": "day-2-tok3-skytree",
-            "name": "Tokyo Skytree",
+            "id": "day-3-tok-teamlab-planets",
+            "name": "teamLab Planets",
             "type": "experience",
             "timeSlot": "afternoon",
             "estimatedCost": 300,
             "costPerPerson": 150,
             "time": "15:00",
             "duration": "2h",
-            "location": "Sumida (2 pax)",
-            "rating": 4.4,
+            "location": "Toyosu (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "A torre mais alta do Japão — 634m com aquário e shopping na base"
+              "Museu imersivo onde se anda descalço pela água entre luzes; reserve o horário com dias de antecedência"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-2-michelin-sukiyabashi-jiro",
-            "name": "Sukiyabashi Jiro ⭐⭐⭐ Michelin",
+            "id": "day-3-tokyo-izakaya",
+            "name": "Izakaya em Yurakucho",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 5488,
-            "costPerPerson": 2744,
-            "time": "19:30",
-            "duration": "2.5h",
-            "location": "Tóquio",
-            "status": "defined",
-            "source": "kinu",
-            "tips": [
-              "Cozinha Sushi",
-              "Reserve com 2-3 semanas de antecedência",
-              "Menu degustação — valor estimado por pessoa"
-            ]
-          }
-        ],
-        "totalCost": 6188
-      },
-      {
-        "dayNumber": 4,
-        "date": "2026-11-13T12:00:00.000Z",
-        "label": "Exploração",
-        "theme": "🚶 Passeios",
-        "activities": [
-          {
-            "id": "day-3-slot-breakfast",
-            "name": "Café da manhã no hotel",
-            "type": "breakfast",
-            "timeSlot": "breakfast",
-            "estimatedCost": 0,
-            "costPerPerson": 0,
-            "time": "08:00",
-            "duration": "1h",
-            "location": "Hotel",
-            "status": "defined",
-            "source": "kinu",
-            "tips": [
-              "Incluso na diária do hotel"
-            ]
-          },
-          {
-            "id": "day-3-tok3-kamakura",
-            "name": "Day-trip a Kamakura",
-            "type": "experience",
-            "timeSlot": "morning",
-            "estimatedCost": 240,
-            "costPerPerson": 120,
-            "time": "09:55",
-            "duration": "8h",
-            "location": "Kamakura (2 pax)",
-            "rating": 4.7,
-            "status": "suggestion",
-            "tips": [
-              "Bate-volta: ocupa o dia inteiro",
-              "O Grande Buda de bronze + templos + praia — 1h de trem",
-              "Alugue bici ou use o trenzinho Enoden até Enoshima"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-3-tok-zauo",
-            "name": "Zauo (pesque o seu peixe)",
-            "type": "dinner",
-            "timeSlot": "dinner",
-            "estimatedCost": 440,
-            "costPerPerson": 220,
+            "estimatedCost": 300,
+            "costPerPerson": 150,
             "time": "19:30",
             "duration": "2h",
-            "location": "Shinjuku (2 pax)",
-            "rating": 4.2,
+            "location": "Yurakucho (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Perto do hotel, para a volta do bate-volta",
-              "Restaurante-barco onde a família pesca o peixe do tanque e a cozinha prepara; crianças adoram, reserve"
+              "Debaixo dos trilhos do trem",
+              "Atmosfera autêntica de salaryman"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 680
+        "totalCost": 1240
       },
       {
         "dayNumber": 5,
@@ -1914,19 +1867,20 @@
             "source": "kinu"
           },
           {
-            "id": "day-4-tok-teamlab-planets",
-            "name": "teamLab Planets",
+            "id": "day-4-tok3-teamlab-planets",
+            "name": "teamLab Planets (Toyosu)",
             "type": "experience",
             "timeSlot": "afternoon",
-            "estimatedCost": 300,
-            "costPerPerson": 150,
+            "estimatedCost": 240,
+            "costPerPerson": 120,
             "time": "15:15",
             "duration": "2h",
             "location": "Toyosu (2 pax)",
-            "rating": 4.5,
+            "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "Museu imersivo onde se anda descalço pela água entre luzes; reserve o horário com dias de antecedência"
+              "A versão descalça-na-água do teamLab — imersão total, joelhos molhados",
+              "Diferente do Borderless; compre datado"
             ],
             "source": "kinu"
           },
@@ -1950,7 +1904,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 1080
+        "totalCost": 1020
       },
       {
         "dayNumber": 6,
@@ -1975,21 +1929,21 @@
             ]
           },
           {
-            "id": "day-5-tok3-hakone",
-            "name": "Day-trip a Hakone (onsen + Fuji)",
+            "id": "day-5-tok3-kamakura",
+            "name": "Day-trip a Kamakura",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 500,
-            "costPerPerson": 250,
-            "time": "10:30",
-            "duration": "10h",
-            "location": "Hakone (2 pax)",
-            "rating": 4.6,
+            "estimatedCost": 240,
+            "costPerPerson": 120,
+            "time": "09:55",
+            "duration": "8h",
+            "location": "Kamakura (2 pax)",
+            "rating": 4.7,
             "status": "suggestion",
             "tips": [
               "Bate-volta: ocupa o dia inteiro",
-              "Teleférico, lago com vista do Fuji e banho termal — o respiro das montanhas",
-              "Hakone Free Pass compensa; Fuji aparece de manhã"
+              "O Grande Buda de bronze + templos + praia — 1h de trem",
+              "Alugue bici ou use o trenzinho Enoden até Enoshima"
             ],
             "source": "kinu"
           },
@@ -2000,7 +1954,7 @@
             "timeSlot": "dinner",
             "estimatedCost": 320,
             "costPerPerson": 160,
-            "time": "20:45",
+            "time": "19:30",
             "duration": "2h",
             "location": "Shibuya (2 pax)",
             "rating": 4.5,
@@ -2014,7 +1968,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 820
+        "totalCost": 560
       },
       {
         "dayNumber": 7,
@@ -2074,20 +2028,19 @@
             "source": "kinu"
           },
           {
-            "id": "day-6-tok3-teamlab-planets",
-            "name": "teamLab Planets (Toyosu)",
+            "id": "day-6-tok3-yanaka",
+            "name": "Yanaka Ginza (Tóquio retrô)",
             "type": "experience",
             "timeSlot": "afternoon",
-            "estimatedCost": 240,
-            "costPerPerson": 120,
+            "estimatedCost": 80,
+            "costPerPerson": 40,
             "time": "15:00",
             "duration": "2h",
-            "location": "Toyosu (2 pax)",
-            "rating": 4.6,
+            "location": "Yanaka (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "A versão descalça-na-água do teamLab — imersão total, joelhos molhados",
-              "Diferente do Borderless; compre datado"
+              "O bairro que sobreviveu ao tempo — comércio de rua, gatos e croquetes de 100 ienes"
             ],
             "source": "kinu"
           },
@@ -2111,7 +2064,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 560
+        "totalCost": 400
       },
       {
         "dayNumber": 8,
@@ -2120,38 +2073,19 @@
         "theme": "✈️ Dia de Partida",
         "activities": [
           {
-            "id": "day-7-tokyo-bills",
-            "name": "Bills (Pancakes)",
+            "id": "day-7-tok-cafe-de-lambre",
+            "name": "Café de l'Ambre (Ginza, 1948)",
             "type": "breakfast",
             "timeSlot": "breakfast",
-            "estimatedCost": 240,
-            "costPerPerson": 120,
+            "estimatedCost": 100,
+            "costPerPerson": 50,
             "time": "08:00",
-            "duration": "1h",
-            "location": "Omotesando (2 pax)",
-            "rating": 4.6,
+            "duration": "0.5h",
+            "location": "Ginza (2 pax)",
+            "rating": 4.3,
             "status": "suggestion",
             "tips": [
-              "Ricotta pancakes mundialmente famosos",
-              "Fila de 30min nos fins de semana"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-7-tok3-yanaka",
-            "name": "Yanaka Ginza (Tóquio retrô)",
-            "type": "experience",
-            "timeSlot": "morning",
-            "estimatedCost": 80,
-            "costPerPerson": 40,
-            "time": "09:30",
-            "duration": "2h",
-            "location": "Yanaka (2 pax)",
-            "rating": 4.5,
-            "status": "suggestion",
-            "tips": [
-              "Aproveite as últimas horas!",
-              "O bairro que sobreviveu ao tempo — comércio de rua, gatos e croquetes de 100 ienes"
+              "Kissaten de 1948 que só serve café, com grãos envelhecidos por décadas; balcão, silêncio e xícara pequena"
             ],
             "source": "kinu"
           },
@@ -2234,7 +2168,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 5448
+        "totalCost": 5228
       }
     ],
     "breakdown": {
@@ -2249,21 +2183,21 @@
         "status": "estimated"
       },
       "experiences": {
-        "amount": 2488,
-        "percent": 12,
+        "amount": 2188,
+        "percent": 11,
         "status": "estimated"
       },
       "food": {
-        "amount": 9368,
-        "percent": 47,
+        "amount": 4280,
+        "percent": 21,
         "status": "estimated"
       },
-      "total": 31056,
-      "available": -11056,
-      "trustZonePercent": 155
+      "total": 25668,
+      "available": -5668,
+      "trustZonePercent": 128
     },
     "meta": {
-      "michelinCount": 1
+      "michelinCount": 0
     }
   },
   "Fortaleza": {

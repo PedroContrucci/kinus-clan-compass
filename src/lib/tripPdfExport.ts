@@ -6,7 +6,6 @@ import QRCode from 'qrcode';
 import type { SavedTrip } from '@/types/trip';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { getTopMichelinForCity } from '@/lib/michelinData';
 import { getExpandedCityData } from '@/data/destinationPdfData';
 
 import { findCityInfo } from '@/data/destinationCatalog';
@@ -15,7 +14,7 @@ import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { getDocsForDestination } from '@/data/destinationDocs';
 import { tripTimezone, formatTzDiff, formatTzInfo, airportCity } from '@/lib/timezone';
 import { formatDurationHM, durationTextToMinutes } from '@/lib/flightModel';
-import { logisticsLine, itemCoord } from '@/lib/itineraryEngine';
+import { logisticsLine, itemCoord, michelinForTier } from '@/lib/itineraryEngine';
 import { razaoLines, razaoTotals } from '@/lib/razaoLines';
 
 // ── Branding colors (RGB) ──
@@ -846,7 +845,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   };
 
   const tierLabels: Record<string, string> = { backpacker: 'Mochileiro', economic: 'Economico', comfort: 'Conforto', luxury: 'Luxo' };
-  const tierLabel = tierLabels[(trip as any).budgetTier || trip.budgetType || 'comfort'] || 'Conforto';
+  const tierLabel = tierLabels[(trip as unknown as { budgetTier?: string }).budgetTier || trip.budgetType || 'comfort'] || 'Conforto';
   const totalDays = trip.days?.length || 0;
 
   // ════════════════════════════════════════
@@ -1490,7 +1489,10 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   // ════════════════════════════════════════
   // GASTRONOMIA MICHELIN
   // ════════════════════════════════════════
-  const michelinList = getTopMichelinForCity(trip.destination, 5);
+  // M7: a mesma faixa do roteiro (Conforto 1★, Luxo 2–3★); Econômico ou sem estrela da faixa omite a seção.
+  const michelinTier = (trip as unknown as { budgetTier?: string }).budgetTier || trip.budgetType || 'comfort';
+  const michelinLevel = michelinTier === 'luxury' ? 'luxury' : michelinTier === 'backpacker' || michelinTier === 'economic' ? 'budget' : 'midrange';
+  const michelinList = michelinForTier(trip.destination, michelinLevel).slice(0, 5);
   if (michelinList && michelinList.length > 0) {
     checkPage(40);
     drawRect(14, y, pw - 28, 0.3, B.surface);
@@ -1505,7 +1507,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     setC(B.gray400, false);
     doc.setFontSize(11.5);
     doc.setFont('helvetica', 'italic');
-    doc.text('Restaurantes com estrela Michelin proximos ao seu roteiro', 14, y);
+    doc.text(michelinLevel === 'luxury' ? 'Restaurantes 2 e 3 estrelas Michelin - faixa Luxo' : 'Restaurantes 1 estrela Michelin - faixa Conforto', 14, y);
     y += 7;
 
     michelinList.forEach((r) => {

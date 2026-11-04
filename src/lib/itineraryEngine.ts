@@ -23,7 +23,7 @@ import {
   type SuggestedActivity,
   type DestinationTheme
 } from '@/data/destinationActivities';
-import { getTopMichelinForCity } from '@/lib/michelinData';
+import { getTopMichelinForCity, type MichelinRestaurant } from '@/lib/michelinData';
 import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '@/lib/placeIdentity';
 import { getHotelRecommendation } from '@/lib/hotelZones';
 import { interestsFor, catalogFor, splitInterests, interestLabel } from '@/lib/interestsFor';
@@ -146,6 +146,19 @@ export interface EngineHotel {
   /** Diária da viagem (`acc.nightlyRate`, gravada uma vez no createTrip). O motor só multiplica pelas noites. */
   nightlyRate?: number;
 }
+
+/**
+ * M7 (C.21): Michelin por faixa. Econômico → nenhum (os dados não têm Bib Gourmand); Conforto → só 1★;
+ * Luxo → 2–3★. Sem queda entre faixas: cidade sem estrela da faixa = nenhum Michelin injetado.
+ */
+export function michelinForTier(city: string, level: PriceLevel): MichelinRestaurant[] {
+  if (level === 'budget') return [];
+  const all = getTopMichelinForCity(city, Infinity);
+  return level === 'luxury' ? all.filter((m) => m.stars >= 2) : all.filter((m) => m.stars === 1);
+}
+
+const isCatalogMichelin = (a: { name: string; tips?: string[] }) =>
+  /michelin/i.test(a.name) || (a.tips ?? []).some((t) => /michelin/i.test(t));
 
 /** Slug estável de um nome de lugar para compor ids (`day-N-michelin-<slug>`). */
 export function placeSlug(name: string): string {
@@ -810,6 +823,16 @@ export function generateItinerary(
     return { tiers: want, force: !iconPlaced && n === explorationTotal - 1, fits };
   };
 
+  // M7: Michelin do catálogo governado por preço, não por rótulo. Econômico nunca; Conforto no jantar só
+  // até 2× o ticket médio do jantar da faixa (acima disso, só almoço); Luxo livre.
+  const dinnerTicket = getActivityPrice('restaurant_dinner', destination, priceLevel);
+  // Michelin do catálogo, governado por preço: Econômico (qualquer refeição) e Conforto acima de 2× o ticket
+  // no jantar vão para o ÚLTIMO da fila. Não somem: o pool da categoria tem que esgotar antes de qualquer
+  // repetição (trava do gerador, generatorNoRepeat), então só entram quando não resta outro lugar inédito.
+  const michelinOverCap = (a: SuggestedActivity, category: string) =>
+    isCatalogMichelin(a) && (priceLevel === 'budget' ||
+      (priceLevel === 'midrange' && category === 'dinner' && (a.estimatedCostBRL || 0) > 2 * dinnerTicket));
+
   function pickActivity(
     category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner',
     themeName: string,
@@ -893,7 +916,7 @@ export function generateItinerary(
         if (priceLevel === 'luxury') return -p;
         return Math.abs(p - target);
       };
-      const keyed = candidates.map((a) => ({ a, k: [hopKey(a), interestKey(a), weekdayKey(a), themeKey(a), dualKey(a), priceKey(a)] }));
+      const keyed = candidates.map((a) => ({ a, k: [michelinOverCap(a, category) ? 1 : 0, hopKey(a), interestKey(a), weekdayKey(a), themeKey(a), dualKey(a), priceKey(a)] }));
       keyed.sort((x, y) => {
         for (let j = 0; j < x.k.length; j++) if (x.k[j] !== y.k[j]) return x.k[j] - y.k[j];
         return 0;
@@ -933,9 +956,15 @@ export function generateItinerary(
 
   // Jantar do dia de chegada: perto do hotel e, se der, curto o bastante para a janela chegada → 22 h.
   function pickArrivalDinner(): SuggestedActivity | null {
+    // M7: nunca Michelin (pelo nome; a dica 'estrela acessível' do Septime fica, decisão do fundador) e ≤ 2× o ticket
+    // médio da faixa; se nada passar, cai sem o teto de preço (mas sem Michelin).
+    const plain = (a: SuggestedActivity) => !/michelin/i.test(a.name);
+    const cheap = (a: SuggestedActivity) => plain(a) && (a.estimatedCostBRL || 0) <= 2 * dinnerTicket;
+    const free = (a: SuggestedActivity) => a.category === 'dinner' && !usedPlaces.isUsed(a.name) && !isPairMeal(a);
     const fits = (a: SuggestedActivity) => (a.durationHours || 0) <= arrivalWindow;
-    const anyFits = pool.some((a) => a.category === 'dinner' && !usedPlaces.isUsed(a.name) && !isPairMeal(a) && fits(a));
-    return pickActivity('dinner', 'Gastronomia', { near: hotelCoord, accept: anyFits ? fits : undefined });
+    const tryAccept = [(a: SuggestedActivity) => cheap(a) && fits(a), cheap, (a: SuggestedActivity) => plain(a) && fits(a), plain]
+      .find((f) => pool.some((a) => free(a) && f(a)));
+    return pickActivity('dinner', 'Gastronomia', { near: hotelCoord, accept: tryAccept ?? plain });
   }
 
   // Build a free-slot ItineraryActivity for exhausted EXP pools (morning/afternoon).
@@ -1393,7 +1422,32 @@ export function generateItinerary(
       dayThemeTitle = dayTheme.title;
       const isGastroDay = dayTheme.title.toLowerCase().includes('gastron');
       const wantsGastronomy = travelInterests.some(ti => ti.toLowerCase().includes('gastronom'));
-      const michelinPending = isGastroDay && wantsGastronomy && priceLevel !== 'budget' && michelinCount < 1;
+      const michelinList = isGastroDay && wantsGastronomy && michelinCount < 1 ? michelinForTier(destination, priceLevel) : [];
+      const michelinPending = priceLevel === 'luxury' && michelinList.length > 0;          // jantar 2–3★
+      const michelinLunchPending = priceLevel === 'midrange' && michelinList.length > 0;   // almoço 1★ (menu de almoço)
+
+      // M7: almoço Michelin 1★ do Conforto (menu de almoço). Empurra no dia e conta no cap de 1 por viagem.
+      const placeMichelinLunch = () => {
+        const m = michelinList[0];
+        const perPerson = Math.max(dinnerTicket * 2.5, 850);
+        const total = perPerson * travelers;
+        activities.push({
+          id: `day-${i}-michelin-${placeSlug(m.name)}`,
+          name: `${m.name} ${'⭐'.repeat(m.stars)} Michelin`,
+          type: 'lunch',
+          timeSlot: 'lunch',
+          estimatedCost: total,
+          costPerPerson: perPerson,
+          time: '13:00',
+          duration: '2h',
+          location: m.neighborhood || destination,
+          status: 'defined',
+          source: 'kinu',
+          tips: [`Cozinha ${m.cuisine}`, 'Menu de almoço — mais acessível que o jantar', 'Reserve com 2-3 semanas de antecedência', 'Valor estimado por pessoa'],
+        });
+        dayTotal += total;
+        michelinCount++;
+      };
 
       // Corrente geográfica do dia: cada pick nasce perto da parada anterior com coordenada.
       let last: Coord | null = null;
@@ -1428,7 +1482,7 @@ export function generateItinerary(
         const stops = 2 + pairs.length + (hasDinnerPair ? 0 : 1);
         return hours + HOP_HOURS * (stops - 1) <= EXPLORATION_WINDOW_HOURS;
       };
-      const daytripDayOk = lastDaytripDay < i - 1 && !michelinPending;
+      const daytripDayOk = lastDaytripDay < i - 1 && !michelinPending && !michelinLunchPending;
 
       // 🏛️ MORNING ACTIVITY (10:00) — âncora do dia; decide o formato do dia
       const morningActivity = pickActivity('morning', dayTheme.title, {
@@ -1504,7 +1558,9 @@ export function generateItinerary(
           const longEnd = longLaid ? clockMinutes(longLaid.time) + layoutMinutesOf(longLaid, layoutIndex) : Infinity;
           const lunchFits = (a: SuggestedActivity) =>
             !!longLaid && longEnd + hopMinutes(longLaid, { id: `day-${i}-${a.id}`, name: a.name }, layoutIndex, stayCoord) <= SLOT_RULES.lunch.max;
-          if (pool.some((a) => a.category === 'lunch' && !usedPlaces.isUsed(a.name) && !isPairMeal(a) && lunchFits(a))) {
+          if (michelinLunchPending && michelinCount < 1 && longLaid && longEnd + DEFAULT_HOP_MIN <= SLOT_RULES.lunch.max) {
+            placeMichelinLunch();
+          } else if (pool.some((a) => a.category === 'lunch' && !usedPlaces.isUsed(a.name) && !isPairMeal(a) && lunchFits(a))) {
             const lunchActivity = pickActivity('lunch', dayTheme.title, { near: last, accept: lunchFits });
             if (lunchActivity) place(lunchActivity, 'lunch', '13:00');
           } else if (morningAct && longMorning) {
@@ -1535,8 +1591,12 @@ export function generateItinerary(
           }
           const afternoonAt = curatedCoordOf((afternoonActivity ?? sunsetActivity)?.id ?? '') ?? null;
 
-          const lunchActivity = pickActivity('lunch', dayTheme.title, { near: morningAt, alsoNear: afternoonAt });
-          if (lunchActivity) place(lunchActivity, 'lunch', '13:00');
+          if (michelinLunchPending && michelinCount < 1) {
+            placeMichelinLunch();
+          } else {
+            const lunchActivity = pickActivity('lunch', dayTheme.title, { near: morningAt, alsoNear: afternoonAt });
+            if (lunchActivity) place(lunchActivity, 'lunch', '13:00');
+          }
 
           if (afternoonActivity) {
             afternoonOccupancy = afternoonActivity.dayOccupancy;
@@ -1557,18 +1617,7 @@ export function generateItinerary(
         let michelinPlaced = false;
 
         if (michelinPending) {
-          const michelin = getTopMichelinForCity(destination, 10);
-          const available = michelin;
-          let preferred: typeof available;
-          if (priceLevel === 'luxury') {
-            preferred = available.filter(m => m.stars >= 2);
-            if (preferred.length === 0) preferred = available;
-          } else {
-            // midrange → prefer 1 star, fall back to higher
-            preferred = available.filter(m => m.stars === 1);
-            if (preferred.length === 0) preferred = available;
-          }
-          const availableMichelin = preferred[0];
+          const availableMichelin = michelinList[0];
           if (availableMichelin) {
             const MICHELIN_MULTIPLIER: Record<number, number> = { 1: 2.5, 2: 4.5, 3: 7 };
             const MICHELIN_FLOOR: Record<number, number> = { 1: 850, 2: 1400, 3: 2200 };
