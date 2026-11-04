@@ -31,6 +31,18 @@ describe('culinária / plural', () => {
     expect(localizeCuisineTip(' Cozinha French ')).toBe('Cozinha Francesa');
     expect(localizeCuisineTip('Reserve com 2-3 semanas')).toBe('Reserve com 2-3 semanas');
   });
+  it('M8b: culinárias novas e valores revisados', () => {
+    expect(cuisinePt('French-Chinese')).toBe('Franco-chinesa');
+    expect(cuisinePt('Lebanese')).toBe('Libanesa');
+    expect(cuisinePt('Asian')).toBe('Asiática');
+  });
+  it('M8b: Modern French → Francesa contemporânea; Steakhouse → Churrascaria', () => {
+    expect(cuisinePt('Modern French')).toBe('Francesa contemporânea');
+    expect(localizeCuisineTip('Cozinha Steakhouse')).toBe('Cozinha Churrascaria');
+  });
+  it('M8b: culinária desconhecida segue intacta', () => {
+    expect(cuisinePt('Ethiopian')).toBe('Ethiopian');
+  });
   it('plural', () => {
     expect(plural(1, 'viajante', 'viajantes')).toBe('1 viajante');
     expect(plural(2, 'viajante', 'viajantes')).toBe('2 viajantes');

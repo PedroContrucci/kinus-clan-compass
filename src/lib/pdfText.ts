@@ -22,10 +22,11 @@ const CUISINE_PT: Record<string, string> = {
   modern: 'Contemporânea', contemporary: 'Contemporânea', creative: 'Criativa', innovative: 'Inovadora',
   seafood: 'Frutos do mar', chinese: 'Chinesa', thai: 'Tailandesa', korean: 'Coreana', indian: 'Indiana',
   mexican: 'Mexicana', peruvian: 'Peruana', brazilian: 'Brasileira', british: 'Britânica', american: 'Americana',
-  german: 'Alemã', greek: 'Grega', turkish: 'Turca', moroccan: 'Marroquina', sushi: 'Sushi', steakhouse: 'Churrasco',
+  german: 'Alemã', greek: 'Grega', turkish: 'Turca', moroccan: 'Marroquina', sushi: 'Sushi', steakhouse: 'Churrascaria',
   vegetarian: 'Vegetariana', mediterranean: 'Mediterrânea', cantonese: 'Cantonesa', argentinian: 'Argentina',
+  lebanese: 'Libanesa', asian: 'Asiática', 'french-chinese': 'Franco-chinesa',
   traditional: 'Tradicional', classic: 'Clássica', fusion: 'Fusão', 'french contemporary': 'Francesa contemporânea',
-  'modern french': 'Francesa moderna', 'modern cuisine': 'Contemporânea', 'creative french': 'Francesa criativa',
+  'modern french': 'Francesa contemporânea', 'modern cuisine': 'Contemporânea', 'creative french': 'Francesa criativa',
 };
 
 export function cuisinePt(v: string): string {

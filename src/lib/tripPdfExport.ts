@@ -109,332 +109,332 @@ const DESTINATION_COVER_PHOTOS: Record<string, string[]> = {
   ],
 };
 
-// ── Destination descriptions (NO accents to avoid jsPDF encoding issues) ──
+// ── Destination descriptions (acentos ok: helvetica/WinAnsi codifica Latin-1; M8b) ──
 const DESTINATION_DESCRIPTIONS: Record<string, string> = {
-  'cairo': 'Cairo, capital do Egito, e uma das cidades mais antigas e fascinantes do mundo. Com mais de 20 milhoes de habitantes, a cidade e o coracao cultural do Oriente Medio. As lendarias Piramides de Giza, o Museu Egipcio e o vibrante bazar Khan el-Khalili sao imperdiveis. A culinaria local vai do koshari nas ruas ate sofisticados restaurantes a beira do Nilo.',
-  'paris': 'Paris, a Cidade Luz, e sinonimo de arte, gastronomia e romance. Dos cafes de Montmartre a grandiosidade do Louvre, cada bairro conta uma historia. A Torre Eiffel, os Champs-Elysees e Notre-Dame sao apenas o comeco de uma cidade que abriga alguns dos melhores restaurantes e museus do mundo.',
-  'roma': 'Roma, a Cidade Eterna, oferece uma jornada atraves de 2.800 anos de historia. Do Coliseu ao Vaticano, da Fontana di Trevi ao Pantheon, cada esquina revela uma obra-prima. A culinaria romana — carbonara, cacio e pepe, suppli — e tao iconica quanto seus monumentos.',
-  'toquio': 'Toquio e onde o futuro encontra a tradicao. Templos milenares convivem com arranha-ceus futuristas. De Shibuya a Asakusa, Akihabara a Harajuku, cada bairro e um mundo proprio. A culinaria japonesa — do sushi ao ramen — eleva qualquer refeicao a uma experiencia memoravel.',
+  'cairo': 'Cairo, capital do Egito, é uma das cidades mais antigas e fascinantes do mundo. Com mais de 20 milhões de habitantes, a cidade é o coração cultural do Oriente Médio. As lendárias Pirâmides de Giza, o Museu Egípcio e o vibrante bazar Khan el-Khalili são imperdíveis. A culinária local vai do koshari nas ruas até sofisticados restaurantes a beira do Nilo.',
+  'paris': 'Paris, a Cidade Luz, é sinônimo de arte, gastronomia e romance. Dos cafés de Montmartre a grandiosidade do Louvre, cada bairro conta uma história. A Torre Eiffel, os Champs-Elysees e Notre-Dame são apenas o começo de uma cidade que abriga alguns dos melhores restaurantes e museus do mundo.',
+  'roma': 'Roma, a Cidade Eterna, oferece uma jornada através de 2.800 anos de história. Do Coliseu ao Vaticano, da Fontana di Trevi ao Pantheon, cada esquina revela uma obra-prima. A culinária romana — carbonara, cacio e pepe, suppli — é tão icônica quanto seus monumentos.',
+  'toquio': 'Tóquio é onde o futuro encontra a tradição. Templos milenares convivem com arranha-céus futuristas. De Shibuya a Asakusa, Akihabara a Harajuku, cada bairro é um mundo próprio. A culinária japonesa — do sushi ao ramen — eleva qualquer refeição a uma experiência memorável.',
   'tokyo': 'Tokyo is where the future meets tradition. Centuries-old temples stand beside futuristic skyscrapers. From Shibuya to Asakusa, Akihabara to Harajuku, each neighborhood offers a uniquely Japanese blend of innovation and culture.',
-  'londres': 'Londres e uma metropole global que combina historia regia com vanguarda cultural. Do Palacio de Buckingham ao Tate Modern, do Borough Market aos pubs centenarios, a cidade oferece experiencias para todos os gostos e orcamentos em qualquer estacao do ano.',
-  'nova york': 'Nova York, a cidade que nunca dorme, e o epicentro cultural do mundo ocidental. Manhattan, Brooklyn, Queens — cada borough tem sua personalidade. De Broadway a Central Park, do MET ao Chelsea Market, a energia desta cidade e verdadeiramente inigualavel.',
-  'barcelona': 'Barcelona combina praia, arquitetura e gastronomia como poucas cidades no mundo. As obras de Gaudi — Sagrada Familia, Park Guell, Casa Batllo — definem a paisagem urbana. Las Ramblas, o Bairro Gotico e o Mercado de La Boqueria completam uma experiencia incomparavel.',
-  'buenos aires': 'Buenos Aires, o Paris da America do Sul, pulsa com tango, churrasco e cultura. De San Telmo a Palermo, a cidade combina elegancia europeia com energia latina. Os cafes historicos, as casas de tango e a cena gastronomica fazem desta cidade um destino inesquecivel.',
-  'bangkok': 'Bangkok e um festival sensorial: templos dourados, mercados flutuantes, street food lendaria e uma vida noturna vibrante. Do Grande Palacio ao Wat Pho, de Chinatown a Sukhumvit, a capital tailandesa surpreende a cada esquina com sabores e cores unicas.',
-  'dubai': 'Dubai e onde o impossivel se torna realidade. O Burj Khalifa, o Dubai Mall, as ilhas artificiais — tudo e superlativo. Mas alem do luxo, ha o Dubai historico: o Creek, os souks de ouro e especiarias, e a calorosa hospitalidade arabe.',
-  'lisboa': 'Lisboa e uma das capitais mais charmosas da Europa. Os bondes historicos sobem as colinas entre miradouros com vistas deslumbrantes. O pasteis de nata, o fado nos bares de Alfama e os azulejos nas fachadas criam uma atmosfera unica que mistura nostalgia e modernidade.',
-  'amsterdam': 'Amsterdam encanta com seus canais, bicicletas e museus de classe mundial. O Rijksmuseum, o Museu Van Gogh e a Casa de Anne Frank estao a uma pedalada de distancia. A cidade e conhecida por sua tolerancia, vida noturna animada e mercados flutuantes coloridos.',
-  'phuket': 'Phuket, a maior ilha da Tailandia, e um paraiso tropical que combina praias de areia branca, templos budistas e uma vibrante cultura local. De Patong Beach ao centro historico de Old Phuket Town, a ilha oferece desde aventuras aquaticas ate experiencias gastronomicas autenticas.',
-  'milao': 'Milao e a capital da moda e do design, mas tambem guarda tesouros culturais impressionantes. O Duomo, a maior catedral gotica da Italia, domina a paisagem. La Scala e referencia mundial em opera. Os canais de Navigli, a Pinacoteca di Brera e a efervescente cena gastronomica fazem de Milao muito mais do que um destino de compras.',
+  'londres': 'Londres é uma metrópole global que combina história régia com vanguarda cultural. Do Palácio de Buckingham ao Tate Modern, do Borough Market aos pubs centenários, a cidade oferece experiências para todos os gostos e orçamentos em qualquer estação do ano.',
+  'nova york': 'Nova York, a cidade que nunca dorme, é o epicentro cultural do mundo ocidental. Manhattan, Brooklyn, Queens — cada borough tem sua personalidade. De Broadway a Central Park, do MET ao Chelsea Market, a energia desta cidade e verdadeiramente inigualável.',
+  'barcelona': 'Barcelona combina praia, arquitetura e gastronomia como poucas cidades no mundo. As obras de Gaudí — Sagrada Família, Park Güell, Casa Batllo — definem a paisagem urbana. Las Ramblas, o Bairro Gótico e o Mercado de La Boqueria completam uma experiência incomparável.',
+  'buenos aires': 'Buenos Aires, o Paris da America do Sul, pulsa com tango, churrasco e cultura. De San Telmo a Palermo, a cidade combina elegância europeia com energia latina. Os cafés históricos, as casas de tango e a cena gastronômica fazem desta cidade um destino inesquecível.',
+  'bangkok': 'Bangkok é um festival sensorial: templos dourados, mercados flutuantes, street food lendária é uma vida noturna vibrante. Do Grande Palácio ao Wat Pho, de Chinatown a Sukhumvit, a capital tailandesa surpreende a cada esquina com sabores e cores únicas.',
+  'dubai': 'Dubai é onde o impossível se torna realidade. O Burj Khalifa, o Dubai Mall, as ilhas artificiais — tudo e superlativo. Mas além do luxo, há o Dubai histórico: o Creek, os souks de ouro e especiarias, e a calorosa hospitalidade árabe.',
+  'lisboa': 'Lisboa é uma das capitais mais charmosas da Europa. Os bondes históricos sobem as colinas entre miradouros com vistas deslumbrantes. O pastéis de nata, o fado nos bares de Alfama e os azulejos nas fachadas criam uma atmosfera única que mistura nostalgia e modernidade.',
+  'amsterdam': 'Amsterdam encanta com seus canais, bicicletas e museus de classe mundial. O Rijksmuseum, o Museu Van Gogh e a Casa de Anne Frank estão a uma pedalada de distância. A cidade e conhecida por sua tolerância, vida noturna animada e mercados flutuantes coloridos.',
+  'phuket': 'Phuket, a maior ilha da Tailândia, é um paraíso tropical que combina praias de areia branca, templos budistas e uma vibrante cultura local. De Patong Beach ao centro histórico de Old Phuket Town, a ilha oferece desde aventuras aquáticas até experiências gastronômicas autênticas.',
+  'milao': 'Milão é a capital da moda e do design, mas também guarda tesouros culturais impressionantes. O Duomo, a maior catedral gótica da Itália, domina a paisagem. La Scala e referência mundial em opera. Os canais de Navigli, a Pinacoteca di Brera e a efervescente cena gastronômica fazem de Milão muito mais do que um destino de compras.',
 };
 
 // ── Day narratives by destination + theme ──
 const DESTINATION_DAY_NARRATIVES: Record<string, Record<string, string>> = {
   'bangkok': {
-    'Embarque': 'Saida de Guarulhos rumo a capital tailandesa. O voo para Bangkok dura em media 20 horas com conexao.',
-    'Chegada': 'Bem-vindo a Bangkok! A cidade recebe voce com seu calor tropical e energia contagiante. Apos o transfer ao hotel, um passeio leve pelo bairro revela as primeiras impressoes: templos dourados, vendedores de rua e o aroma inconfundivel da culinaria thai.',
-    'Cultura': 'Dia dedicado a riqueza cultural de Bangkok. O Grand Palace e o Wat Phra Kaew sao obrigatorios — o Buda de Esmeralda e a imagem mais sagrada da Tailandia, esculpida no seculo XV. O Wat Pho abriga o impressionante Buda Reclinado de 46 metros.',
-    'Gastronomia': 'Bangkok e unanime entre chefs do mundo como a capital mundial do street food. Do pad thai na Rua Yaowarat ao som tam nos mercados de Chatuchak, cada refeicao e uma experiencia. Prove o mango sticky rice — a sobremesa mais iconica da Tailandia.',
-    'Passeios': 'Explore os canais de Thonburi, o lado menos turistico de Bangkok que preserva o charme da "Veneza do Oriente". Os mercados flutuantes de Damnoen Saduak oferecem uma janela para o modo de vida tradicional thailandes.',
-    'Descobertas': 'Descubra o lado contemporaneo de Bangkok: galerias de arte em Charoen Krung, rooftop bars em Silom, e o vibrante bairro de Ari com seus cafes artesanais.',
-    'Aventura': 'Explore os arredores de Bangkok — um day trip ao mercado ferroviario de Maeklong ou ao parque historico de Ayutthaya (patrimonio UNESCO) revela outra dimensao da Tailandia.',
-    'Retorno': 'Ultimo cafe da manha em Bangkok. Aproveite para compras de ultima hora no MBK Center ou Chatuchak Weekend Market antes do transfer ao aeroporto.',
+    'Embarque': 'Saída de Guarulhos rumo à capital tailandesa. O voo para Bangkok dura em media 20 horas com conexão.',
+    'Chegada': 'Bem-vindo a Bangkok! A cidade recebe você com seu calor tropical e energia contagiante. Após o transfer ao hotel, um passeio leve pelo bairro revela as primeiras impressões: templos dourados, vendedores de rua e o aroma inconfundível da culinária thai.',
+    'Cultura': 'Dia dedicado à riqueza cultural de Bangkok. O Grand Palace e o Wat Phra Kaew são obrigatórios — o Buda de Esmeralda é a imagem mais sagrada da Tailândia, esculpida no século XV. O Wat Pho abriga o impressionante Buda Reclinado de 46 metros.',
+    'Gastronomia': 'Bangkok é unânime entre chefs do mundo como a capital mundial do street food. Do pad thai na Rua Yaowarat ao som tam nos mercados de Chatuchak, cada refeição é uma experiência. Prove o mango sticky rice — a sobremesa mais icônica da Tailândia.',
+    'Passeios': 'Explore os canais de Thonburi, o lado menos turístico de Bangkok que preserva o charme da "Veneza do Oriente". Os mercados flutuantes de Damnoen Saduak oferecem uma janela para o modo de vida tradicional thailandes.',
+    'Descobertas': 'Descubra o lado contemporâneo de Bangkok: galerias de arte em Charoen Krung, rooftop bars em Silom, é o vibrante bairro de Ari com seus cafés artesanais.',
+    'Aventura': 'Explore os arredores de Bangkok — um day trip ao mercado ferroviario de Maeklong ou ao parque histórico de Ayutthaya (patrimônio UNESCO) revela outra dimensão da Tailândia.',
+    'Retorno': 'Último café da manhã em Bangkok. Aproveite para compras de última hora no MBK Center ou Chatuchak Weekend Market antes do transfer ao aeroporto.',
   },
   'phuket': {
-    'Embarque': 'Saida rumo ao paraiso tailandes. O voo para Phuket dura em media 22 horas com conexao, geralmente via Bangkok ou Singapura.',
-    'Chegada': 'Bem-vindo a Phuket! A maior ilha da Tailandia recebe voce com praias de areia branca e agua cristalina. O centro historico de Old Phuket Town, com arquitetura sino-portuguesa, e uma surpresa charmosa.',
-    'Cultura': 'Phuket guarda mais historia do que aparenta. O templo Wat Chalong, o mais importante da ilha, e o Big Buddha de 45 metros no topo da colina Nakkerd oferecem uma perspectiva contemplativa alem das praias.',
-    'Gastronomia': 'A culinaria de Phuket tem identidade propria — o mee hokkien (macarrao frito), o oh tao (ostra frita) e o kanom jeen (curry com noodles) sao especialidades locais. O Night Market de Chillva e imperdivel.',
-    'Passeios': 'As praias de Phuket sao diversas: Patong para agitacao, Kata para familias, Freedom Beach para isolamento. O mirante de Promthep Cape ao por do sol e uma das vistas mais bonitas da Tailandia.',
-    'Descobertas': 'Explore Old Phuket Town — grafites coloridos, cafes artesanais e galerias escondidas nas ruas Thalang e Soi Romanee. Aos domingos, a Walking Street Market ganha vida com comida e artesanato.',
-    'Aventura': 'Um dia nas ilhas Phi Phi e obrigatorio — Maya Bay (cenario do filme "A Praia"), snorkeling em Bamboo Island e almoco em Phi Phi Don. Outra opcao imperdivel: a baia de Phang Nga com seus monolitos calcarios.',
-    'Retorno': 'Ultimo mergulho antes de partir! Aproveite o cafe da manha com vista para o mar e faca compras de ultima hora no Jungceylon Mall.',
+    'Embarque': 'Saída rumo ao paraíso tailandês. O voo para Phuket dura em media 22 horas com conexão, geralmente via Bangkok ou Singapura.',
+    'Chegada': 'Bem-vindo a Phuket! A maior ilha da Tailândia recebe você com praias de areia branca e água cristalina. O centro histórico de Old Phuket Town, com arquitetura sino-portuguesa, é uma surpresa charmosa.',
+    'Cultura': 'Phuket guarda mais história do que aparenta. O templo Wat Chalong, o mais importante da ilha, e o Big Buddha de 45 metros no topo da colina Nakkerd oferecem uma perspectiva contemplativa além das praias.',
+    'Gastronomia': 'A culinária de Phuket tem identidade própria — o mee hokkien (macarrão frito), o oh tao (ostra frita) e o kanom jeen (curry com noodles) são especialidades locais. O Night Market de Chillva e imperdível.',
+    'Passeios': 'As praias de Phuket são diversas: Patong para agitação, Kata para famílias, Freedom Beach para isolamento. O mirante de Promthep Cape ao por do sol é uma das vistas mais bonitas da Tailândia.',
+    'Descobertas': 'Explore Old Phuket Town — grafites coloridos, cafés artesanais e galerias escondidas nas ruas Thalang e Soi Romanee. Aos domingos, a Walking Street Market ganha vida com comida e artesanato.',
+    'Aventura': 'Um dia nas ilhas Phi Phi é obrigatório — Maya Bay (cenário do filme "A Praia"), snorkeling em Bamboo Island e almoço em Phi Phi Don. Outra opção imperdível: a baía de Phang Nga com seus monólitos calcários.',
+    'Retorno': 'Último mergulho antes de partir! Aproveite o café da manhã com vista para o mar e faça compras de última hora no Jungceylon Mall.',
   },
   'paris': {
-    'Embarque': 'Saida rumo a Cidade Luz. O voo para Paris dura em media 11 horas direto de Guarulhos.',
-    'Chegada': 'Bienvenue a Paris! Mesmo a primeira caminhada pelo bairro do hotel revela a elegancia parisiense — as boulangeries, os cafes nas calcadas e a arquitetura haussmanniana.',
-    'Cultura': 'O Louvre merece um dia inteiro, mas se o tempo e curto, foque na ala Denon (Mona Lisa, Venus de Milo). Pela tarde, o Museu dOrsay abriga a maior colecao impressionista do mundo.',
-    'Gastronomia': 'Paris e a capital mundial da gastronomia. Dos bistrots classicos de Saint-Germain aos mercados de rua do Marais, cada refeicao e uma celebracao.',
-    'Passeios': 'Montmartre e o coracao boemio de Paris. Suba ate a Basilica de Sacre-Coeur para a melhor vista da cidade. Um cruzeiro pelo Sena ao por do sol revela Paris de um angulo inesquecivel.',
-    'Descobertas': 'Paris fora do obvio: a Sainte-Chapelle tem os vitrais mais impressionantes da Europa (sec. XIII). O Canal Saint-Martin e o bairro preferido dos parisienses — bistrots e boutiques longe dos turistas. O rooftop das Galeries Lafayette oferece vista gratuita de 360 graus.',
-    'Aventura': 'Versalhes merece um dia inteiro. O Palacio de Luis XIV tem 2.300 salas, mas o jardim de 800 hectares e onde a magia acontece. Alugue bicicleta para explorar o Grand e Petit Trianon — o refugio privado de Maria Antonieta.',
-    'Retorno': 'Dernier jour! Um cafe final nos Champs-Elysees antes de partir. Bon voyage!',
+    'Embarque': 'Saída rumo à Cidade Luz. O voo para Paris dura em media 11 horas direto de Guarulhos.',
+    'Chegada': 'Bienvenue a Paris! Mesmo a primeira caminhada pelo bairro do hotel revela a elegância parisiense — as boulangeries, os cafés nas calçadas e a arquitetura haussmanniana.',
+    'Cultura': 'O Louvre merece um dia inteiro, mas se o tempo e curto, foque na ala Denon (Mona Lisa, Venus de Milo). Pela tarde, o Museu dOrsay abriga a maior coleção impressionista do mundo.',
+    'Gastronomia': 'Paris é a capital mundial da gastronomia. Dos bistrots clássicos de Saint-Germain aos mercados de rua do Marais, cada refeição é uma celebração.',
+    'Passeios': 'Montmartre é o coração boêmio de Paris. Suba até a Basílica de Sacré-Coeur para a melhor vista da cidade. Um cruzeiro pelo Sena ao por do sol revela Paris de um angulo inesquecível.',
+    'Descobertas': 'Paris fora do óbvio: a Sainte-Chapelle tem os vitrais mais impressionantes da Europa (sec. XIII). O Canal Saint-Martin é o bairro preferido dos parisienses — bistrots e boutiques longe dos turistas. O rooftop das Galeries Lafayette oferece vista gratuita de 360 graus.',
+    'Aventura': 'Versalhes merece um dia inteiro. O Palácio de Luis XIV tem 2.300 salas, mas o jardim de 800 hectares é onde a magia acontece. Alugue bicicleta para explorar o Grand e Petit Trianon — o refúgio privado de Maria Antonieta.',
+    'Retorno': 'Dernier jour! Um café final nos Champs-Elysees antes de partir. Bon voyage!',
   },
   'roma': {
-    'Embarque': 'Saida rumo a Cidade Eterna. O voo para Roma dura em media 12 horas com conexao.',
-    'Chegada': 'Benvenuti a Roma! A cidade milenar revela sua historia a cada esquina — ruinas romanas convivem com trattorias animadas.',
-    'Cultura': 'O Coliseu, o Forum Romano e o Palatino formam o coracao da Roma antiga. Construido em 80 d.C., o Coliseu podia receber 50 mil espectadores. O Vaticano, com a Capela Sistina de Michelangelo, e uma experiencia transcendente.',
-    'Gastronomia': 'A culinaria romana e simples e genial. Carbonara, cacio e pepe, amatriciana — cada prato e uma aula de sabor com poucos ingredientes. Prove um suppli na rua.',
-    'Passeios': 'Trastevere e o bairro mais charmoso de Roma — ruelas de paralelepipedos, fachadas cobertas de hera e cantinas onde os romanos de verdade jantam.',
-    'Descobertas': 'A Galleria Borghese exige reserva antecipada mas e a colecao de arte mais preciosa de Roma — Bernini, Caravaggio, Raphael em uma villa renascentista. A Via Appia Antica oferece catacumbas e ruinas fora do circuito turistico.',
-    'Aventura': 'Tivoli, a 30km de Roma, abriga duas joias UNESCO: a Villa dEste com suas 500 fontes renascentistas e a Villa Adriana, o retiro do imperador Adriano. O jardim da Villa dEste e o mais fotografado da Italia.',
-    'Retorno': 'Ultimo espresso italiano. Arrivederci, Roma!',
+    'Embarque': 'Saída rumo à Cidade Eterna. O voo para Roma dura em media 12 horas com conexão.',
+    'Chegada': 'Benvenuti a Roma! A cidade milenar revela sua história a cada esquina — ruínas romanas convivem com trattorias animadas.',
+    'Cultura': 'O Coliseu, o Forum Romano e o Palatino formam o coração da Roma antiga. Construído em 80 d.C., o Coliseu podia receber 50 mil espectadores. O Vaticano, com a Capela Sistina de Michelangelo, é uma experiência transcendente.',
+    'Gastronomia': 'A culinária romana é simples e genial. Carbonara, cacio e pepe, amatriciana — cada prato é uma aula de sabor com poucos ingredientes. Prove um suppli na rua.',
+    'Passeios': 'Trastevere é o bairro mais charmoso de Roma — ruelas de paralelepípedos, fachadas cobertas de hera e cantinas onde os romanos de verdade jantam.',
+    'Descobertas': 'A Galleria Borghese exige reserva antecipada mas é a coleção de arte mais preciosa de Roma — Bernini, Caravaggio, Raphael em uma villa renascentista. A Via Appia Antica oferece catacumbas e ruínas fora do circuito turístico.',
+    'Aventura': 'Tivoli, a 30km de Roma, abriga duas joias UNESCO: a Villa dEste com suas 500 fontes renascentistas e a Villa Adriana, o retiro do imperador Adriano. O jardim da Villa dEste é o mais fotografado da Itália.',
+    'Retorno': 'Último espresso italiano. Arrivederci, Roma!',
   },
   'toquio': {
-    'Embarque': 'Saida rumo ao Japao. O voo para Toquio dura em media 24 horas com conexao.',
-    'Chegada': 'Yokoso! Toquio impressiona desde o aeroporto — a organizacao, a limpeza e a gentileza japonesa sao impactantes.',
-    'Cultura': 'Asakusa e o coracao tradicional de Toquio. O templo Senso-ji, fundado em 645 d.C., e o mais antigo da cidade. O santuario Meiji em Harajuku oferece um oasis de paz.',
-    'Gastronomia': 'Toquio tem mais estrelas Michelin que qualquer cidade do mundo. Do sushi no Tsukiji ao ramen em Shinjuku, cada refeicao e uma obra-prima.',
-    'Passeios': 'Shibuya, Akihabara, Ginza — cada bairro e um universo. O cruzamento de Shibuya e o mais movimentado do mundo.',
-    'Descobertas': 'TeamLab Borderless e arte digital imersiva que redefine museus — caminhe dentro das obras. Akihabara e o epicentro da cultura otaku. Ginza Six combina arte contemporanea com compras de luxo.',
-    'Aventura': 'Kamakura, a 1h de trem, foi a capital do Japao medieval. O Grande Buda de bronze (13m, 1252 d.C.) e impressionante. A ilha de Enoshima oferece grutas, santuarios e vista do Monte Fuji em dias claros.',
-    'Retorno': 'Sayonara! Um ultimo bento no aeroporto de Narita e a despedida perfeita.',
+    'Embarque': 'Saída rumo ao Japão. O voo para Tóquio dura em media 24 horas com conexão.',
+    'Chegada': 'Yokoso! Tóquio impressiona desde o aeroporto — a organização, a limpeza e a gentileza japonesa são impactantes.',
+    'Cultura': 'Asakusa é o coração tradicional de Tóquio. O templo Senso-ji, fundado em 645 d.C., é o mais antigo da cidade. O santuário Meiji em Harajuku oferece um oasis de paz.',
+    'Gastronomia': 'Tóquio tem mais estrelas Michelin que qualquer cidade do mundo. Do sushi no Tsukiji ao ramen em Shinjuku, cada refeição é uma obra-prima.',
+    'Passeios': 'Shibuya, Akihabara, Ginza — cada bairro é um universo. O cruzamento de Shibuya é o mais movimentado do mundo.',
+    'Descobertas': 'TeamLab Borderless é arte digital imersiva que redefine museus — caminhe dentro das obras. Akihabara é o epicentro da cultura otaku. Ginza Six combina arte contemporânea com compras de luxo.',
+    'Aventura': 'Kamakura, a 1h de trem, foi a capital do Japão medieval. O Grande Buda de bronze (13m, 1252 d.C.) e impressionante. A ilha de Enoshima oferece grutas, santuários e vista do Monte Fuji em dias claros.',
+    'Retorno': 'Sayonara! Um último bento no aeroporto de Narita é a despedida perfeita.',
   },
   'londres': {
-    'Embarque': 'Saida rumo ao Reino Unido. O voo para Londres dura em media 11 horas direto.',
-    'Chegada': 'Welcome to London! A cidade combina historia regia com vanguarda cultural. Dos black cabs aos pubs centenarios, Londres tem uma energia unica.',
-    'Cultura': 'O British Museum e gratuito e abriga tesouros de toda a historia humana. A Tower of London guarda as Joias da Coroa e 1.000 anos de historia.',
-    'Gastronomia': 'Borough Market e obrigatorio — queijos artesanais, ostras frescas e o melhor fish and chips. Brick Lane oferece o melhor curry fora da India.',
+    'Embarque': 'Saída rumo ao Reino Unido. O voo para Londres dura em media 11 horas direto.',
+    'Chegada': 'Welcome to London! A cidade combina história régia com vanguarda cultural. Dos black cabs aos pubs centenários, Londres tem uma energia única.',
+    'Cultura': 'O British Museum é gratuito e abriga tesouros de toda a história humana. A Tower of London guarda as Joias da Coroa e 1.000 anos de história.',
+    'Gastronomia': 'Borough Market é obrigatório — queijos artesanais, ostras frescas e o melhor fish and chips. Brick Lane oferece o melhor curry fora da Índia.',
     'Passeios': 'Um passeio pelo Thames Path revela Londres de outra perspectiva — do Big Ben ao Tate Modern, da St Pauls ao Shakespeare Globe.',
-    'Descobertas': 'Notting Hill encanta com casas coloridas e o Portobello Road Market (sabados). Camden Town mistura punk, street food e mercados alternativos. O Sky Garden (gratuito com reserva) tem a melhor vista de Londres.',
-    'Aventura': 'Stonehenge e Bath em um dia: o misterio neolitico de 5.000 anos seguido dos banhos romanos mais preservados do mundo. A cidade georgiana de Bath e um charme a parte.',
-    'Retorno': 'Cheerio! Um ultimo afternoon tea antes de partir.',
+    'Descobertas': 'Notting Hill encanta com casas coloridas e o Portobello Road Market (sábados). Camden Town mistura punk, street food e mercados alternativos. O Sky Garden (gratuito com reserva) tem a melhor vista de Londres.',
+    'Aventura': 'Stonehenge e Bath em um dia: o mistério neolítico de 5.000 anos seguido dos banhos romanos mais preservados do mundo. A cidade georgiana de Bath é um charme a parte.',
+    'Retorno': 'Cheerio! Um último afternoon tea antes de partir.',
   },
   'dubai': {
-    'Embarque': 'Saida rumo aos Emirados. O voo para Dubai dura em media 14 horas com conexao.',
+    'Embarque': 'Saída rumo aos Emirados. O voo para Dubai dura em media 14 horas com conexão.',
     'Chegada': 'Ahlan wa sahlan! Dubai impressiona desde a chegada — o skyline futurista com o Burj Khalifa dominando o horizonte.',
-    'Cultura': 'Alem do luxo, Dubai guarda historia no bairro Al Fahidi — casas tradicionais com torres de vento, o Creek e os souks de ouro e especiarias.',
-    'Gastronomia': 'A culinaria de Dubai e um mosaico do Oriente Medio — shawarma, falafel, machboos. Restaurantes como Al Mallah em Satwa oferecem comida autentica.',
-    'Passeios': 'O deserto e tao impressionante quanto a cidade. Um safari com jantar beduino sob as estrelas e uma experiencia transformadora.',
-    'Descobertas': 'O bairro de Alserkal Avenue e o polo de arte contemporanea de Dubai — galerias, estudio de artistas e cafes criativos escondidos em armazens industriais.',
-    'Aventura': 'Safari no deserto com 4x4, sandboarding nas dunas e jantar beduino sob as estrelas. O por do sol sobre as dunas e hipnotizante.',
-    'Retorno': 'Ma al-salama! Ultimas compras no Dubai Mall antes do voo.',
+    'Cultura': 'Além do luxo, Dubai guarda história no bairro Al Fahidi — casas tradicionais com torres de vento, o Creek e os souks de ouro e especiarias.',
+    'Gastronomia': 'A culinária de Dubai é um mosaico do Oriente Médio — shawarma, falafel, machboos. Restaurantes como Al Mallah em Satwa oferecem comida autêntica.',
+    'Passeios': 'O deserto é tão impressionante quanto a cidade. Um safari com jantar beduíno sob as estrelas é uma experiência transformadora.',
+    'Descobertas': 'O bairro de Alserkal Avenue é o polo de arte contemporânea de Dubai — galerias, estudio de artistas e cafés criativos escondidos em armazéns industriais.',
+    'Aventura': 'Safari no deserto com 4x4, sandboarding nas dunas e jantar beduíno sob as estrelas. O por do sol sobre as dunas e hipnotizante.',
+    'Retorno': 'Ma al-salama! Últimas compras no Dubai Mall antes do voo.',
   },
   'milao': {
-    'Embarque': 'Saida de Guarulhos rumo a capital da moda italiana. O voo para Milao (Malpensa) dura em media 12 horas com conexao.',
-    'Chegada': 'Benvenuti a Milano! A cidade surpreende ja na chegada — o design italiano esta em cada detalhe, da arquitetura do aeroporto ate o metro elegante.',
-    'Cultura': 'Dia dedicado a grandiosidade de Milao. O Duomo levou 6 seculos para ser construido — suba ao terraco para vistas de tirar o folego. A Pinacoteca di Brera abriga obras de Caravaggio e Raphael.',
-    'Gastronomia': 'Milao tem uma cena gastronomica surpreendente. O risotto alla milanese (com acafrao), o ossobuco e a cotoletta sao os classicos. O Mercato Centrale e obrigatorio.',
-    'Passeios': 'A Galleria Vittorio Emanuele II e o shopping mais bonito do mundo — mosaicos no teto, lojas de luxo e o famoso touro da sorte no chao. O Castelo Sforzesco abriga a ultima escultura de Michelangelo.',
-    'Descobertas': 'O bairro Isola e o novo polo criativo de Milao — Bosco Verticale, galerias independentes e restaurantes de autor. Navigli ao por do sol e imperdivel para aperitivo.',
-    'Aventura': 'O Lago di Como esta a apenas 1h de trem. Bellagio, a perola do lago, tem vilas historicas, jardins e vistas que parecem pintura.',
-    'Retorno': 'Ultimo espresso italiano! Aproveite para compras de ultima hora na Via Montenapoleone ou no Eataly Milano antes do transfer a Malpensa.',
+    'Embarque': 'Saída de Guarulhos rumo à capital da moda italiana. O voo para Milão (Malpensa) dura em media 12 horas com conexão.',
+    'Chegada': 'Benvenuti a Milano! A cidade surpreende já na chegada — o design italiano está em cada detalhe, da arquitetura do aeroporto até o metrô elegante.',
+    'Cultura': 'Dia dedicado a grandiosidade de Milão. O Duomo levou 6 séculos para ser construído — suba ao terraco para vistas de tirar o fôlego. A Pinacoteca di Brera abriga obras de Caravaggio e Raphael.',
+    'Gastronomia': 'Milão tem uma cena gastronômica surpreendente. O risotto alla milanese (com açafrão), o ossobuco e a cotoletta são os clássicos. O Mercato Centrale é obrigatório.',
+    'Passeios': 'A Galleria Vittorio Emanuele II é o shopping mais bonito do mundo — mosaicos no teto, lojas de luxo e o famoso touro da sorte no chao. O Castelo Sforzesco abriga a última escultura de Michelangelo.',
+    'Descobertas': 'O bairro Isola é o novo polo criativo de Milão — Bosco Verticale, galerias independentes e restaurantes de autor. Navigli ao por do sol e imperdível para aperitivo.',
+    'Aventura': 'O Lago di Como está a apenas 1h de trem. Bellagio, a pérola do lago, tem vilas históricas, jardins e vistas que parecem pintura.',
+    'Retorno': 'Último espresso italiano! Aproveite para compras de última hora na Via Montenapoleone ou no Eataly Milano antes do transfer a Malpensa.',
   },
   'barcelona': {
-    'Embarque': 'Saida rumo a capital catala. O voo para Barcelona dura em media 12 horas com conexao.',
-    'Chegada': 'Benvinguts a Barcelona! A cidade de Gaudi recebe voce com sol, mar e uma energia contagiante.',
-    'Cultura': 'A Sagrada Familia e a obra-prima inacabada de Gaudi — 140 anos em construcao. As fachadas contam a historia de Cristo em pedra. A Casa Batllo e a Casa Mila completam o trio modernista.',
-    'Gastronomia': 'La Boqueria e um dos mercados mais vibrantes do mundo — frutas exoticas, presunto iberico, frutos do mar. As tapas no El Born sao uma experiencia social: bar em bar, prato a prato.',
-    'Passeios': 'Park Guell e Gaudi em modo natureza — mosaicos ondulantes, colunas inclinadas e a melhor vista de Barcelona. Barceloneta ao por do sol e obrigatoria.',
-    'Descobertas': 'O Bunkers del Carmel e o segredo mais mal guardado de Barcelona — mirante 360 graus. O Palau de la Musica e art nouveau em estado puro.',
-    'Aventura': 'Montserrat, a 1h de trem, e uma montanha sagrada com mosteiro beneditino e trilhas com vistas absurdas. O coral Escolania canta ao meio-dia.',
-    'Retorno': 'Adeu Barcelona! Um ultimo passeio pela Barceloneta antes de partir.',
+    'Embarque': 'Saída rumo à capital catalã. O voo para Barcelona dura em media 12 horas com conexão.',
+    'Chegada': 'Benvinguts a Barcelona! A cidade de Gaudí recebe você com sol, mar e uma energia contagiante.',
+    'Cultura': 'A Sagrada Família é a obra-prima inacabada de Gaudí — 140 anos em construção. As fachadas contam a história de Cristo em pedra. A Casa Batllo e a Casa Mila completam o trio modernista.',
+    'Gastronomia': 'La Boqueria é um dos mercados mais vibrantes do mundo — frutas exóticas, presunto ibérico, frutos do mar. As tapas no El Born são uma experiência social: bar em bar, prato a prato.',
+    'Passeios': 'Park Güell e Gaudí em modo natureza — mosaicos ondulantes, colunas inclinadas e a melhor vista de Barcelona. Barceloneta ao por do sol é obrigatória.',
+    'Descobertas': 'O Bunkers del Carmel é o segredo mais mal guardado de Barcelona — mirante 360 graus. O Palau de la Musica e art nouveau em estado puro.',
+    'Aventura': 'Montserrat, a 1h de trem, é uma montanha sagrada com mosteiro beneditino e trilhas com vistas absurdas. O coral Escolania canta ao meio-dia.',
+    'Retorno': 'Adeu Barcelona! Um último passeio pela Barceloneta antes de partir.',
   },
   'lisboa': {
-    'Embarque': 'Saida rumo a capital portuguesa. O voo para Lisboa dura em media 10 horas direto.',
-    'Chegada': 'Bem-vindo a Lisboa! A cidade das sete colinas recebe voce com luz dourada, azulejos e o aroma de pasteis de nata.',
-    'Cultura': 'O Mosteiro dos Jeronimos (1502) e obra-prima do estilo manuelino. A Torre de Belem guardava a entrada do Tejo. O Castelo de Sao Jorge oferece a melhor vista de Lisboa.',
-    'Gastronomia': 'O Time Out Market (Mercado da Ribeira) reune os melhores chefs de Portugal sob um teto. O pastel de nata da fabrica original em Belem usa receita secreta de monges do sec. XVIII.',
-    'Passeios': 'O Bonde 28 corta os bairros historicos — Alfama, Graca, Baixa. Os miradouros de Lisboa sao o melhor programa gratuito da cidade.',
-    'Descobertas': 'LX Factory e uma antiga fabrica convertida em polo criativo — livrarias, restaurantes, galerias. O Museu Nacional do Azulejo conta 5 seculos de historia.',
-    'Aventura': 'Sintra e magia pura: o Palacio da Pena, a Quinta da Regaleira (tuneis secretos) e o Cabo da Roca — o ponto mais ocidental da Europa continental.',
-    'Retorno': 'Ate breve, Lisboa! Um ultimo cafe no Chiado e pasteis de nata para levar.',
+    'Embarque': 'Saída rumo à capital portuguesa. O voo para Lisboa dura em media 10 horas direto.',
+    'Chegada': 'Bem-vindo a Lisboa! A cidade das sete colinas recebe você com luz dourada, azulejos e o aroma de pastéis de nata.',
+    'Cultura': 'O Mosteiro dos Jerónimos (1502) é obra-prima do estilo manuelino. A Torre de Belém guardava a entrada do Tejo. O Castelo de São Jorge oferece a melhor vista de Lisboa.',
+    'Gastronomia': 'O Time Out Market (Mercado da Ribeira) reune os melhores chefs de Portugal sob um teto. O pastel de nata da fábrica original em Belém usa receita secreta de monges do sec. XVIII.',
+    'Passeios': 'O Bonde 28 corta os bairros históricos — Alfama, Graça, Baixa. Os miradouros de Lisboa são o melhor programa gratuito da cidade.',
+    'Descobertas': 'LX Factory é uma antiga fábrica convertida em polo criativo — livrarias, restaurantes, galerias. O Museu Nacional do Azulejo conta 5 séculos de história.',
+    'Aventura': 'Sintra é magia pura: o Palácio da Pena, a Quinta da Regaleira (túneis secretos) é o Cabo da Roca — o ponto mais ocidental da Europa continental.',
+    'Retorno': 'Até breve, Lisboa! Um último café no Chiado e pastéis de nata para levar.',
   },
   'nova york': {
-    'Embarque': 'Saida rumo a Big Apple. O voo para Nova York dura em media 10 horas direto de GRU.',
-    'Chegada': 'Welcome to New York! A energia e palpavel desde o momento em que voce sai do JFK. O skyline de Manhattan e hipnotizante.',
-    'Cultura': 'O MET e um dos maiores museus do mundo — 2 milhoes de obras. O MoMA abriga Starry Night de Van Gogh. Central Park e o pulmao verde de Manhattan.',
-    'Gastronomia': 'NY e a capital culinaria mais diversa do mundo — pizza artesanal no Village, pastrami no Katzs, dim sum em Chinatown.',
-    'Passeios': 'O High Line transformou uma ferrovia abandonada em parque aereo. Brooklyn Bridge a pe oferece vistas iconicas. DUMBO tem as melhores fotos de Manhattan.',
-    'Descobertas': 'Top of the Rock supera o Empire State em vistas. SoHo e Greenwich Village sao o coracao criativo de NY. Little Italy e Chinatown ficam a metros uma da outra.',
-    'Aventura': 'A Estatua da Liberdade e Ellis Island contam a historia da imigracao americana. Reserve ingresso para a coroa com antecedencia.',
-    'Retorno': 'See you later, NYC! Um ultimo bagel e cafe no Upper West Side antes do JFK.',
+    'Embarque': 'Saída rumo à Big Apple. O voo para Nova York dura em media 10 horas direto de GRU.',
+    'Chegada': 'Welcome to New York! A energia é palpável desde o momento em que você sai do JFK. O skyline de Manhattan e hipnotizante.',
+    'Cultura': 'O MET é um dos maiores museus do mundo — 2 milhões de obras. O MoMA abriga Starry Night de Van Gogh. Central Park é o pulmão verde de Manhattan.',
+    'Gastronomia': 'NY é a capital culinária mais diversa do mundo — pizza artesanal no Village, pastrami no Katzs, dim sum em Chinatown.',
+    'Passeios': 'O High Line transformou uma ferrovia abandonada em parque aéreo. Brooklyn Bridge a pe oferece vistas icônicas. DUMBO tem as melhores fotos de Manhattan.',
+    'Descobertas': 'Top of the Rock supera o Empire State em vistas. SoHo e Greenwich Village são o coração criativo de NY. Little Italy e Chinatown ficam a metros uma da outra.',
+    'Aventura': 'A Estátua da Liberdade e Ellis Island contam a história da imigração americana. Reserve ingresso para a coroa com antecedência.',
+    'Retorno': 'See you later, NYC! Um último bagel e café no Upper West Side antes do JFK.',
   },
   'buenos aires': {
-    'Embarque': 'Saida rumo a capital argentina. O voo para Buenos Aires dura apenas 3 horas direto.',
-    'Chegada': 'Bienvenido a Buenos Aires! A energia portena e contagiante desde a primeira empanada.',
-    'Cultura': 'O Teatro Colon e um dos teatros de opera mais importantes do mundo. O MALBA abriga arte latino-americana contemporanea. O Cemiterio da Recoleta e arte e historia a ceu aberto.',
-    'Gastronomia': 'Buenos Aires e a capital do asado. Don Julio e La Cabrera sao referencias de parrilla. O alfajor e sobremesa obrigatoria.',
-    'Passeios': 'San Telmo aos domingos e uma festa — feira de antiguidades, tango na rua e parillas. La Boca (Caminito) e pura cor e energia.',
-    'Descobertas': 'Palermo Soho e o bairro mais descolado — restaurantes de autor, bares craft, design argentino. Os murais de street art estao em cada esquina.',
-    'Aventura': 'Tigre, a 1h de trem, e o delta do Parana com canais, ilhas e natureza. Passeio de barco e almoco a beira do rio.',
-    'Retorno': 'Hasta luego, Buenos Aires! Ultimo cafe com medialunas antes de partir.',
+    'Embarque': 'Saída rumo à capital argentina. O voo para Buenos Aires dura apenas 3 horas direto.',
+    'Chegada': 'Bienvenido a Buenos Aires! A energia portenha e contagiante desde a primeira empanada.',
+    'Cultura': 'O Teatro Colon é um dos teatros de opera mais importantes do mundo. O MALBA abriga arte latino-americana contemporânea. O Cemitério da Recoleta é arte e história a céu aberto.',
+    'Gastronomia': 'Buenos Aires é a capital do asado. Don Julio e La Cabrera são referências de parrilla. O alfajor e sobremesa obrigatória.',
+    'Passeios': 'San Telmo aos domingos é uma festa — feira de antiguidades, tango na rua e parillas. La Boca (Caminito) e pura cor e energia.',
+    'Descobertas': 'Palermo Soho é o bairro mais descolado — restaurantes de autor, bares craft, design argentino. Os murais de street art estao em cada esquina.',
+    'Aventura': 'Tigre, a 1h de trem, é o delta do Parana com canais, ilhas e natureza. Passeio de barco e almoço a beira do rio.',
+    'Retorno': 'Hasta luego, Buenos Aires! Último café com medialunas antes de partir.',
   },
   'amsterdam': {
-    'Embarque': 'Saida rumo a Holanda. O voo para Amsterdam dura em media 12 horas com conexao.',
-    'Chegada': 'Welkom in Amsterdam! A cidade dos canais e bicicletas recebe voce com charme e liberdade.',
-    'Cultura': 'O Rijksmuseum e o museu mais importante da Holanda — A Ronda Noturna de Rembrandt e monumental. O Museu Van Gogh e a Casa de Anne Frank completam o trio cultural.',
-    'Gastronomia': 'O Albert Cuyp Market e o maior mercado de rua de Amsterdam. Stroopwafels frescos, arenque, bitterballen. O Foodhallen reune o melhor street food sob um teto.',
-    'Passeios': 'Um passeio de barco pelos canais e a melhor forma de conhecer Amsterdam. Jordaan e o bairro mais charmoso — galerias, cafes acolhedores e flores.',
-    'Descobertas': 'De Pijp e o bairro mais multicultural — Heineken Experience, restaurantes surinameses e indonesios. Vondelpark e o Central Park de Amsterdam.',
-    'Aventura': 'Zaanse Schans (30min de trem) tem os classicos moinhos holandeses, fabricas de queijo e tamancos. Edam e o paraiso do queijo holandes.',
-    'Retorno': 'Tot ziens! Ultimo pannenkoek e compras de queijo antes do voo.',
+    'Embarque': 'Saída rumo a Holanda. O voo para Amsterdam dura em media 12 horas com conexão.',
+    'Chegada': 'Welkom in Amsterdam! A cidade dos canais e bicicletas recebe você com charme e liberdade.',
+    'Cultura': 'O Rijksmuseum é o museu mais importante da Holanda — A Ronda Noturna de Rembrandt e monumental. O Museu Van Gogh e a Casa de Anne Frank completam o trio cultural.',
+    'Gastronomia': 'O Albert Cuyp Market é o maior mercado de rua de Amsterdam. Stroopwafels frescos, arenque, bitterballen. O Foodhallen reune o melhor street food sob um teto.',
+    'Passeios': 'Um passeio de barco pelos canais é a melhor forma de conhecer Amsterdam. Jordaan é o bairro mais charmoso — galerias, cafés acolhedores e flores.',
+    'Descobertas': 'De Pijp é o bairro mais multicultural — Heineken Experience, restaurantes surinameses e indonésios. Vondelpark é o Central Park de Amsterdam.',
+    'Aventura': 'Zaanse Schans (30min de trem) tem os clássicos moinhos holandeses, fábricas de queijo e tamancos. Edam é o paraíso do queijo holandês.',
+    'Retorno': 'Tot ziens! Último pannenkoek e compras de queijo antes do voo.',
   },
   'cairo': {
-    'Embarque': 'Saida rumo ao Egito. O voo para Cairo dura em media 14 horas com conexao.',
-    'Chegada': 'Ahlan wa sahlan! O Cairo e caos e magia — buzinas, minaretes e as Piramides no horizonte.',
-    'Cultura': 'As Piramides de Giza e a Esfinge sao a unica Maravilha do Mundo Antigo que sobreviveu. O Museu Egipcio abriga o tesouro de Tutankhamon.',
-    'Gastronomia': 'O koshari e o prato nacional — arroz, lentilha, macarrao e molho de tomate. Prove o ful medames (fava) e o ta\'amiya (falafel egipcio).',
-    'Passeios': 'Khan el-Khalili e o bazar mais antigo do Oriente Medio — especiarias, perfumes, artesanato. Pechinche sem medo!',
-    'Descobertas': 'Zamalek, a ilha no Nilo, e o bairro mais cosmopolita — galerias, restaurantes e a vista do Cairo Tower.',
-    'Aventura': 'Um passeio de felucca (barco a vela) pelo Nilo ao por do sol e uma experiencia atemporal.',
-    'Retorno': 'Ma al-salama! Ultimas compras no Khan el-Khalili antes do aeroporto.',
+    'Embarque': 'Saída rumo ao Egito. O voo para Cairo dura em media 14 horas com conexão.',
+    'Chegada': 'Ahlan wa sahlan! O Cairo e caos e magia — buzinas, minaretes é as Pirâmides no horizonte.',
+    'Cultura': 'As Pirâmides de Giza é a Esfinge são a única Maravilha do Mundo Antigo que sobreviveu. O Museu Egípcio abriga o tesouro de Tutankhamon.',
+    'Gastronomia': 'O koshari é o prato nacional — arroz, lentilha, macarrão e molho de tomate. Prove o ful medames (fava) é o ta\'amiya (falafel egípcio).',
+    'Passeios': 'Khan el-Khalili é o bazar mais antigo do Oriente Médio — especiarias, perfumes, artesanato. Pechinche sem medo!',
+    'Descobertas': 'Zamalek, a ilha no Nilo, é o bairro mais cosmopolita — galerias, restaurantes e a vista do Cairo Tower.',
+    'Aventura': 'Um passeio de felucca (barco a vela) pelo Nilo ao por do sol é uma experiência atemporal.',
+    'Retorno': 'Ma al-salama! Últimas compras no Khan el-Khalili antes do aeroporto.',
   },
 };
 
 const GENERIC_DAY_NARRATIVES: Record<string, string> = {
-  'Embarque': 'Dia de embarque! Confira documentos, pesos de bagagem e chegue ao aeroporto com antecedencia.',
-  'Chegada': 'Primeiro contato com o destino. Apos o transfer ao hotel, um passeio leve pelo bairro e a melhor forma de sentir a energia local.',
-  'Cultura': 'Dia dedicado a cultura local — museus, monumentos e sitios historicos que contam a historia deste lugar fascinante.',
-  'Gastronomia': 'Dia de explorar a culinaria local. Mercados, restaurantes tipicos e street food revelam a alma gastronomica do destino.',
-  'Passeios': 'Dia de explorar o destino a pe ou de transporte local. Bairros historicos, parques e mirantes oferecem perspectivas unicas.',
-  'Descobertas': 'Dia de descobertas — galerias, bairros alternativos e experiencias fora do roteiro convencional.',
-  'Aventura': 'Dia de aventura! Excursoes aos arredores, trilhas ou experiencias ao ar livre para quem quer explorar alem da cidade.',
-  'Retorno': 'Ultimo dia. Aproveite para compras, um ultimo passeio pelo bairro e prepare a bagagem para o voo de volta.',
+  'Embarque': 'Dia de embarque! Confira documentos, pesos de bagagem e chegue ao aeroporto com antecedência.',
+  'Chegada': 'Primeiro contato com o destino. Após o transfer ao hotel, um passeio leve pelo bairro é a melhor forma de sentir a energia local.',
+  'Cultura': 'Dia dedicado a cultura local — museus, monumentos e sítios históricos que contam a história deste lugar fascinante.',
+  'Gastronomia': 'Dia de explorar a culinária local. Mercados, restaurantes típicos e street food revelam a alma gastronômica do destino.',
+  'Passeios': 'Dia de explorar o destino a pe ou de transporte local. Bairros históricos, parques e mirantes oferecem perspectivas únicas.',
+  'Descobertas': 'Dia de descobertas — galerias, bairros alternativos e experiências fora do roteiro convencional.',
+  'Aventura': 'Dia de aventura! Excursões aos arredores, trilhas ou experiências ao ar livre para quem quer explorar além da cidade.',
+  'Retorno': 'Último dia. Aproveite para compras, um último passeio pelo bairro e prepare a bagagem para o voo de volta.',
 };
 
 // ── Destination practical info ──
 const DESTINATION_INFO: Record<string, { timezone: string; voltage: string; language: string; currency: string; visa: string }> = {
-  'bangkok': { timezone: 'UTC+7 (10h a frente do Brasil)', voltage: '220V - Tomada tipo A/B/C', language: 'Tailandes (ingles turistico)', currency: 'Baht Tailandes (THB)', visa: 'Isento para brasileiros ate 90 dias' },
-  'phuket': { timezone: 'UTC+7 (10h a frente do Brasil)', voltage: '220V - Tomada tipo A/B/C', language: 'Tailandes (ingles turistico)', currency: 'Baht Tailandes (THB)', visa: 'Isento para brasileiros ate 90 dias' },
-  'paris': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/E', language: 'Frances', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
-  'roma': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F/L', language: 'Italiano', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
-  'toquio': { timezone: 'UTC+9 (12h a frente do Brasil)', voltage: '100V - Tomada tipo A/B', language: 'Japones', currency: 'Iene Japones (JPY)', visa: 'Isento para brasileiros ate 90 dias' },
-  'londres': { timezone: 'UTC+0 (3h a frente do Brasil)', voltage: '230V - Tomada tipo G', language: 'Ingles', currency: 'Libra Esterlina (GBP)', visa: 'Necessario ETA (autorizacao eletronica)' },
-  'dubai': { timezone: 'UTC+4 (7h a frente do Brasil)', voltage: '220V - Tomada tipo G', language: 'Arabe (ingles universal)', currency: 'Dirham (AED)', visa: 'Isento para brasileiros ate 90 dias' },
+  'bangkok': { timezone: 'UTC+7 (10h a frente do Brasil)', voltage: '220V - Tomada tipo A/B/C', language: 'Tailandês (inglês turístico)', currency: 'Baht Tailandês (THB)', visa: 'Isento para brasileiros até 90 dias' },
+  'phuket': { timezone: 'UTC+7 (10h a frente do Brasil)', voltage: '220V - Tomada tipo A/B/C', language: 'Tailandês (inglês turístico)', currency: 'Baht Tailandês (THB)', visa: 'Isento para brasileiros até 90 dias' },
+  'paris': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/E', language: 'Francês', currency: 'Euro (EUR)', visa: 'Isento para brasileiros até 90 dias (Schengen)' },
+  'roma': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F/L', language: 'Italiano', currency: 'Euro (EUR)', visa: 'Isento para brasileiros até 90 dias (Schengen)' },
+  'toquio': { timezone: 'UTC+9 (12h a frente do Brasil)', voltage: '100V - Tomada tipo A/B', language: 'Japonês', currency: 'Iene Japonês (JPY)', visa: 'Isento para brasileiros até 90 dias' },
+  'londres': { timezone: 'UTC+0 (3h a frente do Brasil)', voltage: '230V - Tomada tipo G', language: 'Inglês', currency: 'Libra Esterlina (GBP)', visa: 'Necessário ETA (autorização eletrônica)' },
+  'dubai': { timezone: 'UTC+4 (7h a frente do Brasil)', voltage: '220V - Tomada tipo G', language: 'Árabe (inglês universal)', currency: 'Dirham (AED)', visa: 'Isento para brasileiros até 90 dias' },
   'buenos aires': { timezone: 'UTC-3 (mesmo fuso do Brasil)', voltage: '220V - Tomada tipo C/I', language: 'Espanhol', currency: 'Peso Argentino (ARS)', visa: 'Isento para brasileiros - apenas RG' },
-  'lisboa': { timezone: 'UTC+0 (3h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Portugues', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
-  'nova york': { timezone: 'UTC-5 (2h atras do Brasil)', voltage: '120V - Tomada tipo A/B', language: 'Ingles', currency: 'Dolar Americano (USD)', visa: 'Necessario visto B1/B2' },
-  'barcelona': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Espanhol/Catalao', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
-  'amsterdam': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Holandes (ingles universal)', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
-  'cairo': { timezone: 'UTC+2 (5h a frente do Brasil)', voltage: '220V - Tomada tipo C/F', language: 'Arabe', currency: 'Libra Egipcia (EGP)', visa: 'Visto na chegada (USD 25)' },
-  'milao': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F/L', language: 'Italiano', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
-  'bali': { timezone: 'UTC+8 (11h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Indonesio (ingles turistico)', currency: 'Rupia Indonesa (IDR)', visa: 'Isento para brasileiros ate 30 dias' },
-  'cancun': { timezone: 'UTC-5 (2h atras do Brasil)', voltage: '127V - Tomada tipo A/B', language: 'Espanhol', currency: 'Peso Mexicano (MXN)', visa: 'Isento para brasileiros com visto EUA valido ou autorizacao eletronica' },
-  'miami': { timezone: 'UTC-5 (2h atras do Brasil)', voltage: '120V - Tomada tipo A/B', language: 'Ingles/Espanhol', currency: 'Dolar Americano (USD)', visa: 'Necessario visto B1/B2' },
-  'singapura': { timezone: 'UTC+8 (11h a frente do Brasil)', voltage: '230V - Tomada tipo G', language: 'Ingles/Mandarim/Malaio/Tamil', currency: 'Dolar de Singapura (SGD)', visa: 'Isento para brasileiros ate 30 dias' },
-  'seul': { timezone: 'UTC+9 (12h a frente do Brasil)', voltage: '220V - Tomada tipo C/F', language: 'Coreano', currency: 'Won Sul-Coreano (KRW)', visa: 'Isento para brasileiros ate 90 dias' },
-  'berlim': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Alemao', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
-  'marrakech': { timezone: 'UTC+1', voltage: '220V - Tomada tipo C/E', language: 'Arabe/Frances', currency: 'Dirham Marroquino (MAD)', visa: 'Isento para brasileiros ate 90 dias' },
-  'santorini': { timezone: 'UTC+2 (5h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Grego', currency: 'Euro (EUR)', visa: 'Isento para brasileiros ate 90 dias (Schengen)' },
+  'lisboa': { timezone: 'UTC+0 (3h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Português', currency: 'Euro (EUR)', visa: 'Isento para brasileiros até 90 dias (Schengen)' },
+  'nova york': { timezone: 'UTC-5 (2h atrás do Brasil)', voltage: '120V - Tomada tipo A/B', language: 'Inglês', currency: 'Dólar Americano (USD)', visa: 'Necessário visto B1/B2' },
+  'barcelona': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Espanhol/Catalão', currency: 'Euro (EUR)', visa: 'Isento para brasileiros até 90 dias (Schengen)' },
+  'amsterdam': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Holandês (inglês universal)', currency: 'Euro (EUR)', visa: 'Isento para brasileiros até 90 dias (Schengen)' },
+  'cairo': { timezone: 'UTC+2 (5h a frente do Brasil)', voltage: '220V - Tomada tipo C/F', language: 'Árabe', currency: 'Libra Egípcia (EGP)', visa: 'Visto na chegada (USD 25)' },
+  'milao': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F/L', language: 'Italiano', currency: 'Euro (EUR)', visa: 'Isento para brasileiros até 90 dias (Schengen)' },
+  'bali': { timezone: 'UTC+8 (11h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Indonésio (inglês turístico)', currency: 'Rupia Indonesa (IDR)', visa: 'Isento para brasileiros até 30 dias' },
+  'cancun': { timezone: 'UTC-5 (2h atrás do Brasil)', voltage: '127V - Tomada tipo A/B', language: 'Espanhol', currency: 'Peso Mexicano (MXN)', visa: 'Isento para brasileiros com visto EUA válido ou autorização eletrônica' },
+  'miami': { timezone: 'UTC-5 (2h atrás do Brasil)', voltage: '120V - Tomada tipo A/B', language: 'Inglês/Espanhol', currency: 'Dólar Americano (USD)', visa: 'Necessário visto B1/B2' },
+  'singapura': { timezone: 'UTC+8 (11h a frente do Brasil)', voltage: '230V - Tomada tipo G', language: 'Inglês/Mandarim/Malaio/Tamil', currency: 'Dólar de Singapura (SGD)', visa: 'Isento para brasileiros até 30 dias' },
+  'seul': { timezone: 'UTC+9 (12h a frente do Brasil)', voltage: '220V - Tomada tipo C/F', language: 'Coreano', currency: 'Won Sul-Coreano (KRW)', visa: 'Isento para brasileiros até 90 dias' },
+  'berlim': { timezone: 'UTC+1 (4h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Alemão', currency: 'Euro (EUR)', visa: 'Isento para brasileiros até 90 dias (Schengen)' },
+  'marrakech': { timezone: 'UTC+1', voltage: '220V - Tomada tipo C/E', language: 'Árabe/Francês', currency: 'Dirham Marroquino (MAD)', visa: 'Isento para brasileiros até 90 dias' },
+  'santorini': { timezone: 'UTC+2 (5h a frente do Brasil)', voltage: '230V - Tomada tipo C/F', language: 'Grego', currency: 'Euro (EUR)', visa: 'Isento para brasileiros até 90 dias (Schengen)' },
 };
 
 // ── Destination tips (phrases, embassy, tipping, water) ──
 const DESTINATION_TIPS: Record<string, { tips: string; water: string; tipping: string; phrases: string[]; embassy: string }> = {
   'paris': {
-    tips: 'Sempre cumprimente com "Bonjour" ao entrar em lojas. Metro e o transporte mais eficiente.',
+    tips: 'Sempre cumprimente com "Bonjour" ao entrar em lojas. Metrô é o transporte mais eficiente.',
     water: 'Segura da torneira',
     tipping: 'Service compris (gorjeta inclusa). Arredondar a conta e gentileza.',
-    phrases: ['Bonjour (Ola)', 'Merci (Obrigado)', 'Sil vous plait (Por favor)', 'Combien? (Quanto?)', 'Parlez-vous anglais? (Fala ingles?)', 'Au revoir (Adeus)'],
+    phrases: ['Bonjour (Olá)', 'Merci (Obrigado)', "S'il vous plaît (Por favor)", 'Combien? (Quanto?)', 'Parlez-vous anglais? (Fala inglês?)', 'Au revoir (Adeus)'],
     embassy: 'Embaixada do Brasil: +33 1 45 61 63 00 | 34 Cours Albert 1er, 75008',
   },
   'roma': {
-    tips: 'Cuidado com golpes perto do Coliseu. Fontes nasoni tem agua potavel gratis pela cidade.',
+    tips: 'Cuidado com golpes perto do Coliseu. Fontes nasoni tem água potável grátis pela cidade.',
     water: 'Segura da torneira (e das fontes)',
-    tipping: 'Coperto (taxa de servico) ja incluso. Gorjeta extra nao e esperada.',
-    phrases: ['Buongiorno (Bom dia)', 'Grazie (Obrigado)', 'Per favore (Por favor)', 'Quanto costa? (Quanto custa?)', 'Il conto (A conta)', 'Scusi (Com licenca)'],
+    tipping: 'Coperto (taxa de serviço) já incluso. Gorjeta extra não e esperada.',
+    phrases: ['Buongiorno (Bom dia)', 'Grazie (Obrigado)', 'Per favore (Por favor)', 'Quanto costa? (Quanto custa?)', 'Il conto (A conta)', 'Scusi (Com licença)'],
     embassy: 'Embaixada do Brasil: +39 06 6835 7800 | Piazza Navona 14',
   },
   'milao': {
-    tips: 'Reserve a Ultima Ceia de Da Vinci com meses de antecedencia. Metro linha M1 (vermelha) conecta tudo.',
+    tips: 'Reserve a Última Ceia de Da Vinci com meses de antecedência. Metrô linha M1 (vermelha) conecta tudo.',
     water: 'Segura da torneira',
-    tipping: 'Nao obrigatoria. Coperto incluso na conta.',
-    phrases: ['Buongiorno (Bom dia)', 'Grazie (Obrigado)', 'Quanto costa? (Quanto custa?)', 'Il conto (A conta)', 'Dove...? (Onde fica...?)', 'Scusi (Com licenca)'],
-    embassy: 'Consulado do Brasil em Milao: +39 02 7602 5524 | Corso Europa 12',
+    tipping: 'Não obrigatória. Coperto incluso na conta.',
+    phrases: ['Buongiorno (Bom dia)', 'Grazie (Obrigado)', 'Quanto costa? (Quanto custa?)', 'Il conto (A conta)', 'Dove...? (Onde fica...?)', 'Scusi (Com licença)'],
+    embassy: 'Consulado do Brasil em Milão: +39 02 7602 5524 | Corso Europa 12',
   },
   'londres': {
-    tips: 'Oyster Card ou contactless no transporte. Museus nacionais sao gratuitos.',
+    tips: 'Oyster Card ou contactless no transporte. Museus nacionais são gratuitos.',
     water: 'Segura da torneira',
-    tipping: '10-12.5% em restaurantes (verifique se service charge ja esta incluso).',
-    phrases: ['Cheers (Obrigado/Saude)', 'Excuse me (Com licenca)', 'Could I have the bill? (A conta?)', 'Mind the gap (Cuidado com o vao)'],
+    tipping: '10-12.5% em restaurantes (verifique se service charge já esta incluso).',
+    phrases: ['Cheers (Obrigado/Saúde)', 'Excuse me (Com licença)', 'Could I have the bill? (A conta?)', 'Mind the gap (Cuidado com o vão)'],
     embassy: 'Embaixada do Brasil: +44 20 7399 9000 | 14-16 Cockspur Street, SW1',
   },
   'toquio': {
     tips: 'Compre Suica/Pasmo card para transporte. Sapatos saem antes de entrar em casas e templos.',
     water: 'Segura da torneira',
-    tipping: 'NUNCA de gorjeta — e considerado ofensivo no Japao.',
-    phrases: ['Konnichiwa (Ola)', 'Arigatou gozaimasu (Muito obrigado)', 'Sumimasen (Com licenca)', 'Ikura desu ka? (Quanto custa?)', 'Oishii! (Delicioso!)'],
+    tipping: 'NUNCA de gorjeta — e considerado ofensivo no Japão.',
+    phrases: ['Konnichiwa (Olá)', 'Arigatou gozaimasu (Muito obrigado)', 'Sumimasen (Com licença)', 'Ikura desu ka? (Quanto custa?)', 'Oishii! (Delicioso!)'],
     embassy: 'Embaixada do Brasil: +81 3 5488 5531 | 2-11-12 Kita-Aoyama, Minato-ku',
   },
   'barcelona': {
-    tips: 'Cuidado com batedores de carteira em Las Ramblas e metro. Jantar so comeca as 21h.',
+    tips: 'Cuidado com batedores de carteira em Las Ramblas e metrô. Jantar só começa as 21h.',
     water: 'Segura mas com gosto. Muitos preferem engarrafada.',
     tipping: 'Arredondar a conta. 5-10% em restaurantes finos.',
-    phrases: ['Hola (Ola)', 'Gracias (Obrigado)', 'La cuenta (A conta)', 'Cuanto cuesta? (Quanto custa?)', 'Perdon (Com licenca)'],
+    phrases: ['Hola (Olá)', 'Gracias (Obrigado)', 'La cuenta (A conta)', 'Cuanto cuesta? (Quanto custa?)', 'Perdon (Com licença)'],
     embassy: 'Consulado do Brasil: +34 93 488 2288 | Av. Diagonal 468',
   },
   'lisboa': {
-    tips: 'Use calcados confortaveis — Lisboa e feita de ladeiras. Bonde 28 lota rapido, va cedo.',
+    tips: 'Use calçados confortáveis — Lisboa é feita de ladeiras. Bonde 28 lota rápido, va cedo.',
     water: 'Segura da torneira',
-    tipping: '5-10% em restaurantes. Nao obrigatoria.',
-    phrases: ['Ola (Ola)', 'Obrigado/a', 'Por favor', 'A conta (A conta)', 'Quanto custa? (Quanto custa?)'],
+    tipping: '5-10% em restaurantes. Não obrigatória.',
+    phrases: ['Olá (Olá)', 'Obrigado/a', 'Por favor', 'A conta (A conta)', 'Quanto custa? (Quanto custa?)'],
     embassy: 'Embaixada do Brasil: +351 21 724 8510 | Estrada das Laranjeiras 144',
   },
   'amsterdam': {
     tips: 'Bike e rei. Cuidado ao cruzar ciclovias. OV-chipkaart para transporte.',
     water: 'Segura da torneira',
     tipping: 'Arredondar a conta. 5-10% em restaurantes.',
-    phrases: ['Hallo (Ola)', 'Dank je wel (Obrigado)', 'Alsjeblieft (Por favor)', 'Hoeveel? (Quanto?)', 'Spreekt u Engels? (Fala ingles?)'],
+    phrases: ['Hallo (Olá)', 'Dank je wel (Obrigado)', 'Alsjeblieft (Por favor)', 'Hoeveel? (Quanto?)', 'Spreekt u Engels? (Fala inglês?)'],
     embassy: 'Embaixada do Brasil: +31 70 302 3959 | Mauritskade 19, Haia',
   },
   'bangkok': {
-    tips: 'Wai (curvatura com maos juntas) e o cumprimento local. Nunca toque a cabeca de alguem.',
-    water: 'NAO beba da torneira. Use engarrafada.',
-    tipping: 'Nao obrigatoria. 20-50 baht em restaurantes e gentileza.',
-    phrases: ['Sawadee krap/ka (Ola)', 'Khop khun krap/ka (Obrigado)', 'Tao rai? (Quanto?)', 'Aroy! (Delicioso!)', 'Mai phet (Sem pimenta)'],
+    tips: 'Wai (curvatura com mãos juntas) e o cumprimento local. Nunca toque a cabeça de alguem.',
+    water: 'NÃO beba da torneira. Use engarrafada.',
+    tipping: 'Não obrigatória. 20-50 baht em restaurantes e gentileza.',
+    phrases: ['Sawadee krap/ka (Olá)', 'Khop khun krap/ka (Obrigado)', 'Tao rai? (Quanto?)', 'Aroy! (Delicioso!)', 'Mai phet (Sem pimenta)'],
     embassy: 'Embaixada do Brasil: +66 2 285 6081 | Sathorn 34, Sathorn Road',
   },
   'phuket': {
-    tips: 'Negocie preco de longtail boats. Cuidado com golpes de tuk-tuk. Protetor solar e obrigatorio.',
-    water: 'NAO beba da torneira. Use engarrafada.',
-    tipping: 'Nao obrigatoria. 20-50 baht em restaurantes.',
-    phrases: ['Sawadee krap/ka (Ola)', 'Khop khun krap/ka (Obrigado)', 'Tao rai? (Quanto?)', 'Aroy! (Delicioso!)'],
+    tips: 'Negocie preço de longtail boats. Cuidado com golpes de tuk-tuk. Protetor solar é obrigatório.',
+    water: 'NÃO beba da torneira. Use engarrafada.',
+    tipping: 'Não obrigatória. 20-50 baht em restaurantes.',
+    phrases: ['Sawadee krap/ka (Olá)', 'Khop khun krap/ka (Obrigado)', 'Tao rai? (Quanto?)', 'Aroy! (Delicioso!)'],
     embassy: 'Embaixada do Brasil em Bangkok: +66 2 285 6081',
   },
   'dubai': {
-    tips: 'Vestimenta modesta fora dos resorts. Alcool so em bares de hotel licenciados.',
+    tips: 'Vestimenta modesta fora dos resorts. Álcool só em bares de hotel licenciados.',
     water: 'Dessalinizada, segura mas com sabor. Engarrafada recomendada.',
-    tipping: '10-15% em restaurantes (verifique se service charge ja esta).',
+    tipping: '10-15% em restaurantes (verifique se service charge já esta).',
     phrases: ['As-salamu alaykum (Paz)', 'Shukran (Obrigado)', 'Bikam? (Quanto?)', 'Yalla! (Vamos!)', 'Inshallah (Se Deus quiser)'],
     embassy: 'Embaixada do Brasil: +971 2 632 6600 | Abu Dhabi (cobre Dubai)',
   },
   'nova york': {
-    tips: 'MetroCard ou OMNY (contactless) no subway. Gorjeta e obrigatoria em restaurantes.',
+    tips: 'MetroCard ou OMNY (contactless) no subway. Gorjeta é obrigatória em restaurantes.',
     water: 'Segura da torneira (famosa por ser boa)',
-    tipping: '18-22% OBRIGATORIO em restaurantes. $1-2 por drink em bares.',
-    phrases: ['How much? (Quanto?)', 'Check please (A conta)', 'Excuse me (Com licenca)', 'Thank you (Obrigado)'],
+    tipping: '18-22% OBRIGATÓRIO em restaurantes. $1-2 por drink em bares.',
+    phrases: ['How much? (Quanto?)', 'Check please (A conta)', 'Excuse me (Com licença)', 'Thank you (Obrigado)'],
     embassy: 'Consulado do Brasil: +1 917 777 7777 | 225 E 41st Street, Manhattan',
   },
   'buenos aires': {
-    tips: 'Leve dolares em especie — cambio paralelo (dolar blue) pode ser vantajoso.',
+    tips: 'Leve dólares em espécie — câmbio paralelo (dólar blue) pode ser vantajoso.',
     water: 'Segura da torneira',
     tipping: '10% em restaurantes (propina).',
     phrases: ['Che! (informal, Ei!)', 'Gracias (Obrigado)', 'La cuenta (A conta)', 'Cuanto sale? (Quanto custa?)', 'Barbaro! (Legal!)'],
     embassy: 'Embaixada do Brasil: +54 11 4515 2400 | Cerrito 1350',
   },
   'cairo': {
-    tips: 'Pechinche SEMPRE nos bazares. Leve dolares em especie para cambio.',
-    water: 'NAO beba da torneira. Use engarrafada.',
+    tips: 'Pechinche SEMPRE nos bazares. Leve dólares em espécie para câmbio.',
+    water: 'NÃO beba da torneira. Use engarrafada.',
     tipping: 'Baksheesh e esperado em toda parte. 10-15% em restaurantes.',
-    phrases: ['Marhaba (Ola)', 'Shukran (Obrigado)', 'Bikam? (Quanto?)', 'La shukran (Nao obrigado)', 'Inshallah (Se Deus quiser)'],
+    phrases: ['Marhaba (Olá)', 'Shukran (Obrigado)', 'Bikam? (Quanto?)', 'La shukran (Não obrigado)', 'Inshallah (Se Deus quiser)'],
     embassy: 'Embaixada do Brasil: +20 2 2749 6688 | 1125 Corniche El Nil, Cairo',
   },
   'bali': {
-    tips: 'Alugue scooter so com CNH internacional. Templos exigem sarong (disponivel na entrada).',
-    water: 'NAO beba da torneira. Use engarrafada.',
-    tipping: 'Nao obrigatoria. 5-10% em restaurantes finos.',
+    tips: 'Alugue scooter só com CNH internacional. Templos exigem sarong (disponível na entrada).',
+    water: 'NÃO beba da torneira. Use engarrafada.',
+    tipping: 'Não obrigatória. 5-10% em restaurantes finos.',
     phrases: ['Selamat siang (Boa tarde)', 'Terima kasih (Obrigado)', 'Berapa? (Quanto?)', 'Tolong (Por favor)'],
     embassy: 'Embaixada do Brasil em Jacarta: +62 21 526 5656',
   },
   'cancun': {
     tips: 'Negocie passeios na praia. Leve pesos mexicanos para mercados locais.',
-    water: 'NAO beba da torneira. Use engarrafada.',
+    water: 'NÃO beba da torneira. Use engarrafada.',
     tipping: '10-15% em restaurantes. Propina e esperada.',
-    phrases: ['Hola (Ola)', 'Gracias (Obrigado)', 'La cuenta (A conta)', 'Cuanto cuesta? (Quanto custa?)'],
+    phrases: ['Hola (Olá)', 'Gracias (Obrigado)', 'La cuenta (A conta)', 'Cuanto cuesta? (Quanto custa?)'],
     embassy: 'Embaixada do Brasil: +52 55 5164 5959 | Cidade do Mexico',
   },
   'miami': {
-    tips: 'Uber e Lyft funcionam bem. Outlets sao mais baratos que os shoppings.',
+    tips: 'Uber e Lyft funcionam bem. Outlets são mais baratos que os shoppings.',
     water: 'Segura da torneira',
-    tipping: '18-22% OBRIGATORIO em restaurantes. $1-2 por drink.',
+    tipping: '18-22% OBRIGATÓRIO em restaurantes. $1-2 por drink.',
     phrases: ['How much? (Quanto?)', 'Check please (A conta)', 'Thank you (Obrigado)'],
     embassy: 'Consulado do Brasil em Miami: +1 305 285 6200 | 80 SW 8th Street',
   },
   'singapura': {
-    tips: 'Mascar chiclete e proibido. Metro (MRT) e o transporte mais eficiente.',
+    tips: 'Mascar chiclete e proibido. Metrô (MRT) e o transporte mais eficiente.',
     water: 'Segura da torneira',
-    tipping: 'Nao esperada. Service charge de 10% ja incluso.',
-    phrases: ['Hello (Ola)', 'Thank you (Obrigado)', 'How much? (Quanto?)', 'Can lah! (Pode sim!)'],
+    tipping: 'Não esperada. Service charge de 10% já incluso.',
+    phrases: ['Hello (Olá)', 'Thank you (Obrigado)', 'How much? (Quanto?)', 'Can lah! (Pode sim!)'],
     embassy: 'Embaixada do Brasil: +65 6256 6001 | 101 Thomson Road',
   },
 };
@@ -556,13 +556,13 @@ function composeDayNarrative(day: any): string {
   const evening = acts.find((a: any) => slotOf(a) === 'noite');
 
   const chosen: Array<{ label: string; act: any }> = [];
-  if (morning) chosen.push({ label: 'A manha comeca em', act: morning });
+  if (morning) chosen.push({ label: 'A manhã começa em', act: morning });
   if (afternoon) chosen.push({ label: 'A tarde segue em', act: afternoon });
   if (evening) chosen.push({ label: 'A noite fecha com', act: evening });
 
   if (chosen.length === 0) {
     acts.slice(0, 3).forEach((a: any, i: number) => {
-      const label = i === 0 ? 'O dia comeca em' : i === 1 ? 'Depois, passe por' : 'Para fechar,';
+      const label = i === 0 ? 'O dia começa em' : i === 1 ? 'Depois, passe por' : 'Para fechar,';
       chosen.push({ label, act: a });
     });
   }
@@ -763,6 +763,10 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
  *   nome — sai "Preparado para você" (B.3.1 D4).
  */
 export async function exportTripPDF(trip: SavedTrip, displayName?: string, email?: string) {
+  // M8b: corpo do PDF (+2 pt sobre 10.5/9.5). Títulos, capa e rodapé ficam; passo de linha acompanha (LH_*).
+  const FS_BODY = 12.5;
+  const FS_SMALL = 11;
+  const LH_SMALL = 4.8; // mm por linha de FS_SMALL (jsPDF usa 1.15 × corpo ≈ 4.5)
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.getWidth();  // 210
   const ph = doc.internal.pageSize.getHeight(); // 297
@@ -844,7 +848,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     if (y + needed > ph - 22) addPage();
   };
 
-  const tierLabels: Record<string, string> = { backpacker: 'Mochileiro', economic: 'Economico', comfort: 'Conforto', luxury: 'Luxo' };
+  const tierLabels: Record<string, string> = { backpacker: 'Mochileiro', economic: 'Econômico', comfort: 'Conforto', luxury: 'Luxo' };
   const tierLabel = tierLabels[(trip as unknown as { budgetTier?: string }).budgetTier || trip.budgetType || 'comfort'] || 'Conforto';
   const totalDays = trip.days?.length || 0;
 
@@ -1073,7 +1077,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     { label: 'Confirmado', value: `R$ ${fmt(confirmedVal)}`, color: B.emerald },
     { label: 'Planejado', value: `R$ ${fmt(plannedVal)}`, color: B.gold },
     {
-      label: isOverBudget ? 'Acima do orcamento' : 'Disponivel',
+      label: isOverBudget ? 'Acima do orçamento' : 'Disponível',
       value: isOverBudget
         ? `R$ ${fmt(Math.abs(availableCalc))}`
         : `R$ ${fmt(availableCalc)}`,
@@ -1175,21 +1179,21 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
 
       const renderBlock = (title: string, items: string[], dotColor: readonly number[]) => {
         if (items.length === 0) return;
-        checkPage(6 + items.length * 5);
+        checkPage(6 + items.length * 6);
         setC(dotColor, false);
         doc.setFontSize(10.5);
         doc.setFont('helvetica', 'bold');
         doc.text(title, 16, y);
         y += 5;
         items.forEach((it) => {
-          checkPage(5);
-          drawStatusDot(18, y - 1, dotColor);
-          setC(B.white, false);
-          doc.setFontSize(9.8);
+          doc.setFontSize(FS_SMALL);
           doc.setFont('helvetica', 'normal');
           const wrapped = doc.splitTextToSize(it, pw - 44);
+          checkPage(wrapped.length * LH_SMALL + 1);
+          drawStatusDot(18, y - 1, dotColor);
+          setC(B.white, false);
           doc.text(wrapped, 22, y);
-          y += wrapped.length * 4 + 1;
+          y += wrapped.length * LH_SMALL + 1;
         });
         y += 3;
       };
@@ -1253,11 +1257,12 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
 
    if (hotelDescription) {
       setC(B.gray500, false);
-      doc.setFontSize(10.5);
+      doc.setFontSize(FS_SMALL);
       doc.setFont('helvetica', 'italic');
       const descLines = doc.splitTextToSize(hotelDescription, pw - 40);
+      checkPage(descLines.length * LH_SMALL + 2);
       doc.text(descLines, 20, y);
-      y += descLines.length * 3.2 + 2;
+      y += descLines.length * LH_SMALL + 2;
     }
 
     // Google Maps link for hotel
@@ -1345,11 +1350,18 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     if (narrative) {
       checkPage(12);
       setC(B.gray400, false);
-      doc.setFontSize(9.5);
+      doc.setFontSize(FS_SMALL);
       doc.setFont('helvetica', 'italic');
       const narrativeLines = doc.splitTextToSize(narrative, pw - 32);
-      doc.text(narrativeLines, 16, y);
-      y += narrativeLines.length * 3.8 + 3;
+      narrativeLines.forEach((ln: string) => {
+        checkPage(LH_SMALL + 1);
+        setC(B.gray400, false);
+        doc.setFontSize(FS_SMALL);
+        doc.setFont('helvetica', 'italic');
+        doc.text(ln, 16, y);
+        y += LH_SMALL;
+      });
+      y += 3;
     }
 
     (day.activities || []).forEach((act) => {
@@ -1372,7 +1384,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
       const hasMapsLink = !isLogistics && actName && !actName.toLowerCase().includes('cafe da manha');
 
       const hasSubLine = hasDistanceHint || hasDescription || hasMapsLink;
-      const blockHeight = 5.5 + (hasDistanceHint ? 4.8 : 0) + (hasDescription ? 4.4 : 0) + (hasMapsLink ? 4.4 : 0) + (hasSubLine ? 2 : 0);
+      const blockHeight = 5.5 + (hasDistanceHint ? 5.4 : 0) + (hasDescription ? 5.2 : 0) + (hasMapsLink ? 5.2 : 0) + (hasSubLine ? 2 : 0);
       checkPage(blockHeight);
 
       setC(isLogistics ? B.gray500 : B.white, false);
@@ -1424,20 +1436,20 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
       // ── Distance hint between activities ──
       if (hasDistanceHint) {
         setC(B.gray500, false);
-        doc.setFontSize(10.5);
+        doc.setFontSize(FS_SMALL);
         doc.setFont('helvetica', 'italic');
         doc.text(cleanText(distHint as string), 30, y);
-        y += 4.8;
+        y += 5.4;
       }
 
       // Activity description line
       if (hasDescription) {
         setC(B.gray500, false);
-        doc.setFontSize(9.5);
+        doc.setFontSize(FS_SMALL);
         doc.setFont('helvetica', 'italic');
         const descText = rawDescription.length > 80 ? rawDescription.substring(0, 77) + '...' : rawDescription;
         doc.text(descText, 30, y);
-        y += 4.4;
+        y += 5.2;
       }
 
       // Google Maps link for non-logistics activities
@@ -1446,10 +1458,10 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
         const actMapsQuery = encodeURIComponent(cleanActName + ', ' + trip.destination);
         const actMapsUrl = 'https://www.google.com/maps/search/' + actMapsQuery;
         setC(B.horizon, false);
-        doc.setFontSize(9.5);
+        doc.setFontSize(FS_SMALL);
         doc.setFont('helvetica', 'normal');
         doc.textWithLink('Ver no Maps', 30, y, { url: actMapsUrl });
-        y += 4.4;
+        y += 5.2;
       }
 
       if (hasSubLine) {
@@ -1473,7 +1485,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
       doc.setFillColor(B.deep[0], B.deep[1], B.deep[2]);
       doc.roundedRect(16, y, pw - 32, 10, 2, 2, 'F');
       setC(B.emerald, false);
-      doc.setFontSize(9.5);
+      doc.setFontSize(FS_SMALL);
       doc.setFont('helvetica', 'bold');
       const waypoints = dayVisitables
         .map((a: any) => encodeURIComponent((a.name || '') + ', ' + trip.destination))
@@ -1511,7 +1523,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     y += 7;
 
     michelinList.forEach((r) => {
-      checkPage(10);
+      checkPage(11);
       const starsStr = Array(r.stars).fill('*').join('');
 
       setC(B.white, false);
@@ -1525,11 +1537,11 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
 
       setC(B.gray400, false);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10.5);
+      doc.setFontSize(FS_SMALL);
       const details = `${cuisinePt(r.cuisine)}  |  ${r.priceRange}${r.neighborhood ? '  |  ' + r.neighborhood : ''}`;
-      doc.text(details, 20, y + 3.5);
+      doc.text(details, 20, y + 4.5);
 
-      y += 10;
+      y += 11;
     });
 
     y += 3;
@@ -1553,7 +1565,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
 
     const infoItems = [
       // Fuso calculado na data (R-V7); a string fixa da tabela não é lida (R-V6 acima da tabela).
-      { label: 'Fuso horario', value: formatTzInfo(tripTimezone(trip)) },
+      { label: 'Fuso horário', value: formatTzInfo(tripTimezone(trip)) },
       { label: 'Voltagem / Tomada', value: destInfo.voltage },
       { label: 'Idioma', value: destInfo.language },
       { label: 'Moeda', value: destInfo.currency },
@@ -1561,15 +1573,15 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     ];
 
     infoItems.forEach(({ label, value }) => {
-      checkPage(7);
+      checkPage(8);
       setC(B.gray400, false);
-      doc.setFontSize(9.5);
+      doc.setFontSize(FS_SMALL);
       doc.setFont('helvetica', 'normal');
       doc.text(label, 16, y);
       setC(B.white, false);
       doc.setFont('helvetica', 'bold');
-      doc.text(value, 55, y);
-      y += 6;
+      doc.text(value, 58, y);
+      y += 7;
     });
   }
 
@@ -1586,7 +1598,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     doc.text('DOCUMENTAÇÃO', 14, y);
     y += 4;
     setC(B.gray400, false);
-    doc.setFontSize(9.5);
+    doc.setFontSize(FS_SMALL);
     doc.setFont('helvetica', 'italic');
     doc.text(`Regras para brasileiros · ${docs.country}`, 14, y);
     y += 6;
@@ -1600,8 +1612,10 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     ];
 
     docRows.forEach(({ label, value, accent }) => {
+      doc.setFontSize(FS_SMALL);
+      doc.setFont('helvetica', 'normal');
       const wrapped = doc.splitTextToSize(cleanText(value), pw - 50);
-      const rowH = Math.max(9, 5 + wrapped.length * 3.6);
+      const rowH = Math.max(9, 5 + wrapped.length * LH_SMALL);
       checkPage(rowH + 2);
       drawRect(14, y, pw - 28, rowH, B.deep);
       drawRect(14, y, 1.5, rowH, accent);
@@ -1610,7 +1624,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
       doc.setFont('helvetica', 'bold');
       doc.text(label.toUpperCase(), 18, y + 5);
       setC(B.white, false);
-      doc.setFontSize(9.5);
+      doc.setFontSize(FS_SMALL);
       doc.setFont('helvetica', 'normal');
       doc.text(wrapped, 46, y + 5);
       y += rowH + 2;
@@ -1636,10 +1650,12 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     const protocolContent = jetLagSev === 'SEVERO'
       ? 'Dia 1: descanso total. Dia 2: atividades leves. Dia 3: 70% intensidade. Dia 4+: roteiro completo.'
       : jetLagSev === 'ALTO'
-        ? 'Dia 1: descanso ate 15h. Dia 2: retomada gradual. Evite alcool nas primeiras 24h.'
+        ? 'Dia 1: descanso até 15h. Dia 2: retomada gradual. Evite álcool nas primeiras 24h.'
         : 'Dia 1: atividades leves. Dia 2+: roteiro normal. Hidrate-se!';
+    doc.setFontSize(FS_SMALL);
+    doc.setFont('helvetica', 'normal');
     const protocolLines = doc.splitTextToSize(protocolContent, pw - 44);
-    const boxH2 = 12 + protocolLines.length * 3.8;
+    const boxH2 = 12 + protocolLines.length * LH_SMALL;
 
     drawRect(14, boxStartY, pw - 28, boxH2, B.deep);
     drawRect(14, boxStartY, 2, boxH2, protocolColor);
@@ -1648,10 +1664,10 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     setC(protocolColor, false);
     doc.setFontSize(10.5);
     doc.setFont('helvetica', 'bold');
-    doc.text('Biology AI — Protocolo de Adaptacao', 20, boxStartY + 6);
+    doc.text('Biology AI — Protocolo de Adaptação', 20, boxStartY + 6);
 
     setC(B.gray400, false);
-    doc.setFontSize(9.5);
+    doc.setFontSize(FS_SMALL);
     doc.setFont('helvetica', 'normal');
     doc.text(protocolLines, 20, boxStartY + 12);
 
@@ -1664,37 +1680,38 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     y += 4;
 
     // Dica local
-    checkPage(10);
+    doc.setFontSize(FS_SMALL);
+    doc.setFont('helvetica', 'normal');
+    const tipLines = doc.splitTextToSize(tips.tips, pw - 52);
+    checkPage(tipLines.length * LH_SMALL + 3);
     setC(B.white, false);
-    doc.setFontSize(9.5);
     doc.setFont('helvetica', 'bold');
     doc.text('Dica local:', 16, y);
     setC(B.gray400, false);
     doc.setFont('helvetica', 'normal');
-    const tipLines = doc.splitTextToSize(tips.tips, pw - 50);
-    doc.text(tipLines, 38, y);
-    y += tipLines.length * 3.5 + 3;
+    doc.text(tipLines, 40, y);
+    y += tipLines.length * LH_SMALL + 3;
 
     // Agua
-    checkPage(6);
+    checkPage(7);
     setC(B.white, false);
     doc.setFont('helvetica', 'bold');
-    doc.text('Agua:', 16, y);
+    doc.text('Água:', 16, y);
     setC(B.gray400, false);
     doc.setFont('helvetica', 'normal');
-    doc.text(tips.water, 38, y);
-    y += 5;
+    doc.text(tips.water, 40, y);
+    y += 6;
 
     // Gorjeta
-    checkPage(6);
+    const tipTipLines = doc.splitTextToSize(tips.tipping, pw - 52);
+    checkPage(tipTipLines.length * LH_SMALL + 3);
     setC(B.white, false);
     doc.setFont('helvetica', 'bold');
     doc.text('Gorjeta:', 16, y);
     setC(B.gray400, false);
     doc.setFont('helvetica', 'normal');
-    const tipTipLines = doc.splitTextToSize(tips.tipping, pw - 50);
-    doc.text(tipTipLines, 38, y);
-    y += tipTipLines.length * 3.5 + 3;
+    doc.text(tipTipLines, 40, y);
+    y += tipTipLines.length * LH_SMALL + 3;
 
     // Frases uteis
     if (tips.phrases && tips.phrases.length > 0) {
@@ -1709,12 +1726,12 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
       y += 6;
 
       tips.phrases.forEach(phrase => {
-        checkPage(5);
+        checkPage(6);
         setC(B.white, false);
-        doc.setFontSize(9.5);
+        doc.setFontSize(FS_SMALL);
         doc.setFont('helvetica', 'normal');
         doc.text(`- ${phrase}`, 16, y);
-        y += 4.5;
+        y += 5.3;
       });
       y += 2;
     }
@@ -1731,30 +1748,31 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
       y += 6;
 
       setC(B.white, false);
-      doc.setFontSize(9.5);
+      doc.setFontSize(FS_SMALL);
       doc.setFont('helvetica', 'bold');
       doc.text('Consulado/Embaixada do Brasil:', 16, y);
-      y += 4;
+      y += 5;
       setC(B.gray400, false);
       doc.setFont('helvetica', 'normal');
       const embLines = doc.splitTextToSize(tips.embassy, pw - 36);
+      checkPage(embLines.length * LH_SMALL + 14);
       doc.text(embLines, 16, y);
-      y += embLines.length * 3.5 + 4;
+      y += embLines.length * LH_SMALL + 4;
 
       setC(B.white, false);
       doc.setFont('helvetica', 'bold');
       doc.text(
         isDomesticBrazil(trip)
-          ? `Emergencia: ${getEmergencyNumber(trip)}`
-          : 'Emergencia geral (padrao internacional): 112',
+          ? `Emergência: ${getEmergencyNumber(trip)}`
+          : 'Emergência geral (padrão internacional): 112',
         16,
         y
       );
 
-      y += 4;
+      y += 5;
       setC(B.gray400, false);
       doc.setFont('helvetica', 'normal');
-      doc.text('Seguro viagem: ligue para a central do cartao ou seguradora ANTES do atendimento', 16, y);
+      doc.text('Seguro viagem: ligue para a central do cartão ou seguradora ANTES do atendimento', 16, y);
       y += 5;
     }
   }
@@ -1806,7 +1824,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   ];
 
   packingCategories.forEach(({ title, items }) => {
-    checkPage(10 + items.length * 5);
+    checkPage(10 + items.length * 6.2);
 
     setC(B.white, false);
     doc.setFontSize(10.5);
@@ -1815,12 +1833,12 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     y += 6;
 
     items.forEach(item => {
-      checkPage(6);
+      checkPage(7);
       setC(B.gray400, false);
-      doc.setFontSize(11.5);
+      doc.setFontSize(FS_BODY);
       doc.setFont('helvetica', 'normal');
       doc.text(`[ ]  ${item}`, 20, y);
-      y += 5;
+      y += 6.2;
     });
 
     y += 4;
@@ -1848,21 +1866,22 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     doc.text('Embaixada / Consulado do Brasil', 16, y);
     y += 5;
 
-    drawRect(14, y, pw - 28, 14, B.deep);
-    drawRect(14, y, 2, 14, B.emerald);
-    setC(B.gray400, false);
-    doc.setFontSize(9.5);
+    doc.setFontSize(FS_SMALL);
     doc.setFont('helvetica', 'normal');
     const embLines = doc.splitTextToSize(tipsData.embassy, pw - 40);
-    doc.text(embLines, 20, y + 5);
-    y += 18;
+    const embBoxH = Math.max(14, 6 + embLines.length * LH_SMALL);
+    drawRect(14, y, pw - 28, embBoxH, B.deep);
+    drawRect(14, y, 2, embBoxH, B.emerald);
+    setC(B.gray400, false);
+    doc.text(embLines, 20, y + 6);
+    y += embBoxH + 4;
   }
 
   // Emergency numbers
   setC(B.white, false);
   doc.setFontSize(10.5);
   doc.setFont('helvetica', 'bold');
-  doc.text('Numeros de Emergencia', 16, y);
+  doc.text('Números de Emergência', 16, y);
   y += 5;
 
   const emergencyNum = getEmergencyNumber(trip);
@@ -1884,7 +1903,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   drawRect(14, y, pw - 28, 18, B.deep);
   drawRect(14, y, 2, 18, B.gold);
   setC(B.gray400, false);
-  doc.setFontSize(9.5);
+  doc.setFontSize(FS_SMALL);
   doc.setFont('helvetica', 'normal');
   doc.text('Operadora: ___________________________________________', 20, y + 6);
   doc.text('Telefone:    ___________________________________________', 20, y + 12);
@@ -1894,13 +1913,13 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   setC(B.white, false);
   doc.setFontSize(10.5);
   doc.setFont('helvetica', 'bold');
-  doc.text('Contatos de Emergencia', 16, y);
+  doc.text('Contatos de Emergência', 16, y);
   y += 5;
 
   drawRect(14, y, pw - 28, 30, B.deep);
   drawRect(14, y, 2, 30, B.horizon);
   setC(B.gray400, false);
-  doc.setFontSize(9.5);
+  doc.setFontSize(FS_SMALL);
   doc.setFont('helvetica', 'normal');
   doc.text('Nome 1:    ___________________________________________', 20, y + 6);
   doc.text('Telefone:   ___________________________________________', 20, y + 12);
@@ -1915,7 +1934,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   doc.setFont('helvetica', 'italic');
   doc.text('Ligue para a central do seguro ANTES de ir ao hospital.', 16, y);
   y += 4;
-  doc.text('Tenha sempre uma copia digital dos documentos no celular.', 16, y);
+  doc.text('Tenha sempre uma cópia digital dos documentos no celular.', 16, y);
 
   // ════════════════════════════════════════
   // FINAL FOOTER
@@ -1927,7 +1946,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   setC(B.gray500, false);
   doc.setFontSize(10.5);
   doc.setFont('helvetica', 'italic');
-  doc.text('Este roteiro foi criado com inteligencia artificial e deve ser validado antes da viagem.', 14, y);
+  doc.text('Este roteiro foi criado com inteligência artificial e deve ser validado antes da viagem.', 14, y);
 
   addFooter();
 
