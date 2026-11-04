@@ -358,6 +358,10 @@ export const FLIGHT_DURATION: Record<string, number> = {
   'São Paulo-Las Vegas': 14,
   'São Paulo-Cusco': 6,
   'São Paulo-Fortaleza': 3.2,
+  'São Paulo-Porto': 10,
+  'São Paulo-Florianópolis': 1.25,
+  'São Paulo-Maceió': 3,
+  'São Paulo-Foz do Iguaçu': 1.75,
   // Reverse mappings (Brasil prefix)
   'Brasil-Paris': 11.5,
   'Brasil-Tóquio': 24,
