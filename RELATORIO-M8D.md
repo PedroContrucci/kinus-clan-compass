@@ -15,3 +15,9 @@
 - Nenhuma edge function tocada; sem arquivos intocáveis alterados.
 
 ## Push
+
+## Adendo — saída literal do push
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   6df9d54..98b1dd9  main -> main
+```
