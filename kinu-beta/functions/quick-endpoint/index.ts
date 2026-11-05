@@ -732,8 +732,8 @@ async function handleRecheck(body: Record<string, unknown>): Promise<Response> {
 const SQL_HORARIOS = "alter table curated_activities add column if not exists hours_checked_at timestamptz; alter table curated_activities add column if not exists weekday_descriptions jsonb;";
 
 async function placeHorarios(placeId: string): Promise<{ days: number[] | null; temHorario: boolean; descricoes: unknown[] | null }> {
-  const r = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
-    headers: { "X-Goog-Api-Key": GOOGLE_KEY, "X-Goog-FieldMask": "regularOpeningHours", "X-Goog-Language-Code": "pt-BR" },
+  const r = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?languageCode=pt-BR`, {
+    headers: { "X-Goog-Api-Key": GOOGLE_KEY, "X-Goog-FieldMask": "regularOpeningHours" },
   });
   const j = await r.json();
   if (j.error) throw new Error(`details/horarios: ${j.error.message ?? JSON.stringify(j.error)}`);
