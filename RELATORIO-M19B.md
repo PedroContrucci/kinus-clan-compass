@@ -37,3 +37,9 @@ Cartagena e Tóquio sem diferença.
 
 ## Push
 (ver abaixo)
+
+## Adendo — saída do push
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   8c8fe35..84ddf23  main -> main
+```
