@@ -907,7 +907,13 @@ export function generateItinerary(
       const wantInterest = !!opts.quota && top2.length > 0;
       const interestKey = (a: SuggestedActivity) => (wantInterest && !matchesTop2(a) ? 1 : 0);
       // C.4.3: item com dia da semana no catálogo que chegou aqui abre HOJE (opensToday) — é o dia dele.
-      const weekdayKey = (a: SuggestedActivity) => (CURATED_DAYS_OF_WEEK[a.id] ? 0 : 1);
+      // Por especificidade, só para itens realmente raros (≤ 3 dias por semana): menos dias = encaixado antes.
+      // "Fecha um dia" (4–6 dias) não é urgência e vale igual a sem restrição (7) — senão passa na frente de
+      // ícone/interesse. Fortaleza: "só quinta" (1 dia) tem que vencer o resto na quinta.
+      const weekdayKey = (a: SuggestedActivity) => {
+        const n = CURATED_DAYS_OF_WEEK[a.id]?.length;
+        return n && n <= 3 ? n : 7;
+      };
       const themeKey = (a: SuggestedActivity) =>
         targetTags.length === 0 || (a.styleTags && a.styleTags.some(t => targetTags.includes(t))) ? 0 : 1;
       // Casa com dois papéis no catálogo (ex.: Cabaña del Primo almoço e jantar) vai por último:

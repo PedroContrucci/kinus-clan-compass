@@ -1104,37 +1104,74 @@
         "theme": "🎭 Descobertas",
         "activities": [
           {
-            "id": "day-4-slot-breakfast",
-            "name": "Café da manhã no hotel",
+            "id": "day-4-lis-copenhagen-coffee",
+            "name": "Copenhagen Coffee Lab (Príncipe Real)",
             "type": "breakfast",
             "timeSlot": "breakfast",
-            "estimatedCost": 0,
-            "costPerPerson": 0,
+            "estimatedCost": 80,
+            "costPerPerson": 40,
             "time": "08:00",
             "duration": "1h",
-            "location": "Hotel",
-            "status": "defined",
-            "source": "kinu",
-            "tips": [
-              "Incluso na diária do hotel"
-            ]
-          },
-          {
-            "id": "day-4-lis2-sintra",
-            "name": "Bate-volta a Sintra (Palácio da Pena)",
-            "type": "experience",
-            "timeSlot": "morning",
-            "estimatedCost": 360,
-            "costPerPerson": 180,
-            "time": "09:15",
-            "duration": "8h",
-            "location": "Sintra (2 pax)",
-            "rating": 4.8,
+            "location": "Príncipe Real (2 pax)",
+            "rating": 4.2,
             "status": "suggestion",
             "tips": [
-              "Bate-volta: ocupa o dia inteiro",
-              "Trem da Estação do Rossio (40 min) — o palácio de conto de fadas nas montanhas",
-              "Compre ingresso do Pena com antecedência e vá CEDO; Quinta da Regaleira na sequência"
+              "Sugestão de café externo para variar",
+              "Café dinamarquês com cardamomo buns e pão de fermentação natural; terraço na praça do Príncipe Real"
+            ],
+            "source": "kinu"
+          },
+          {
+            "id": "day-4-lis2-feira-ladra",
+            "name": "Feira da Ladra",
+            "type": "experience",
+            "timeSlot": "morning",
+            "estimatedCost": 40,
+            "costPerPerson": 20,
+            "time": "09:30",
+            "duration": "2h",
+            "location": "Alfama (2 pax)",
+            "rating": 4.3,
+            "status": "suggestion",
+            "tips": [
+              "O mercado de pulgas histórico — terças e sábados, atrás do Panteão",
+              "Pechinche com simpatia; azulejos antigos são o souvenir raiz"
+            ],
+            "source": "kinu"
+          },
+          {
+            "id": "day-4-lis-velho-eurico",
+            "name": "O Velho Eurico (Castelo)",
+            "type": "lunch",
+            "timeSlot": "lunch",
+            "estimatedCost": 180,
+            "costPerPerson": 90,
+            "time": "12:30",
+            "duration": "1.5h",
+            "location": "Castelo (2 pax)",
+            "rating": 4.4,
+            "status": "suggestion",
+            "tips": [
+              "Tasca moderna aos pés do castelo, petiscos e vinho a copo; reserva só pelo Instagram, vale a tentativa"
+            ],
+            "source": "kinu"
+          },
+          {
+            "id": "day-4-lis-santa-justa-carmo",
+            "name": "Elevador de Santa Justa e Convento do Carmo",
+            "type": "experience",
+            "timeSlot": "afternoon",
+            "estimatedCost": 90,
+            "costPerPerson": 45,
+            "time": "15:00",
+            "duration": "2h",
+            "location": "Baixa/Chiado (2 pax)",
+            "rating": 4.5,
+            "status": "suggestion",
+            "tips": [
+              "O elevador de ferro de 1902 liga a Baixa ao Chiado",
+              "As ruínas góticas do Carmo a céu aberto são únicas",
+              "Suba pelo elevador e desça a pé pelo Chiado"
             ],
             "source": "kinu"
           },
@@ -1151,7 +1188,6 @@
             "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Perto do hotel, para a volta do bate-volta",
               "Petiscos portugueses com toque contemporâneo",
               "Menu no quadro muda todo dia",
               "Casa minúscula — vá cedo e coloque o nome na lista"
@@ -1159,7 +1195,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 620
+        "totalCost": 650
       },
       {
         "dayNumber": 6,
@@ -1184,55 +1220,21 @@
             ]
           },
           {
-            "id": "day-5-lis-botanico-tropical",
-            "name": "Jardim Botânico Tropical (Belém)",
+            "id": "day-5-lis2-sintra",
+            "name": "Bate-volta a Sintra (Palácio da Pena)",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 40,
-            "costPerPerson": 20,
-            "time": "09:30",
-            "duration": "1.5h",
-            "location": "Belém (2 pax)",
-            "rating": 4.3,
+            "estimatedCost": 360,
+            "costPerPerson": 180,
+            "time": "09:15",
+            "duration": "8h",
+            "location": "Sintra (2 pax)",
+            "rating": 4.8,
             "status": "suggestion",
             "tips": [
-              "Palmeiras, pavões e plantas das antigas colônias ao lado do Mosteiro dos Jerónimos; a pausa verde do circuito de Belém"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-5-lis-ponto-final",
-            "name": "Ponto Final (Cacilhas)",
-            "type": "lunch",
-            "timeSlot": "lunch",
-            "estimatedCost": 240,
-            "costPerPerson": 120,
-            "time": "12:30",
-            "duration": "2.5h",
-            "location": "Almada (barco de 10min) (2 pax)",
-            "rating": 4.6,
-            "status": "suggestion",
-            "tips": [
-              "Atravesse o Tejo de barco no Cais do Sodré",
-              "Mesas na beira do rio com Lisboa inteira de frente",
-              "Reserve — as mesas do cais são disputadas"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-5-lis-jardim-estrela",
-            "name": "Jardim da Estrela",
-            "type": "experience",
-            "timeSlot": "afternoon",
-            "estimatedCost": 0,
-            "costPerPerson": 0,
-            "time": "15:15",
-            "duration": "1.5h",
-            "location": "Estrela (2 pax)",
-            "rating": 4.6,
-            "status": "suggestion",
-            "tips": [
-              "Jardim romântico do século XIX em frente à Basílica, com coreto, lago de patos e parque infantil; o favorito das famílias lisboetas"
+              "Bate-volta: ocupa o dia inteiro",
+              "Trem da Estação do Rossio (40 min) — o palácio de conto de fadas nas montanhas",
+              "Compre ingresso do Pena com antecedência e vá CEDO; Quinta da Regaleira na sequência"
             ],
             "source": "kinu"
           },
@@ -1249,6 +1251,7 @@
             "rating": 4.4,
             "status": "suggestion",
             "tips": [
+              "Perto do hotel, para a volta do bate-volta",
               "Clássico moderno da cozinha portuguesa no andar do mercado",
               "A açorda de marisco dá nome à casa",
               "A mousse de chocolate é servida da travessa, à moda antiga"
@@ -1256,7 +1259,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 600
+        "totalCost": 680
       },
       {
         "dayNumber": 7,
@@ -1281,55 +1284,58 @@
             ]
           },
           {
-            "id": "day-6-lis-jeronimos",
-            "name": "Mosteiro dos Jerónimos",
+            "id": "day-6-lis-gulbenkian",
+            "name": "Museu Calouste Gulbenkian",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 150,
-            "costPerPerson": 75,
+            "estimatedCost": 120,
+            "costPerPerson": 60,
             "time": "09:30",
-            "duration": "2h",
-            "location": "Belém (2 pax)",
-            "rating": 4.4,
+            "duration": "2.5h",
+            "location": "Avenidas Novas (2 pax)",
+            "rating": 4.7,
             "status": "suggestion",
             "tips": [
-              "Compre ingresso online e chegue antes das 10h — a fila cresce rápido; fecha às segundas"
+              "Coleção de arte do Egito antigo a Monet",
+              "Os jardins do museu são um oásis na cidade",
+              "Domingo a partir das 14h é gratuito"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-6-lis-velho-eurico",
-            "name": "O Velho Eurico (Castelo)",
+            "id": "day-6-lis-ze-da-mouraria",
+            "name": "Zé da Mouraria",
             "type": "lunch",
             "timeSlot": "lunch",
-            "estimatedCost": 180,
-            "costPerPerson": 90,
+            "estimatedCost": 170,
+            "costPerPerson": 85,
             "time": "12:30",
             "duration": "1.5h",
-            "location": "Castelo (2 pax)",
-            "rating": 4.4,
+            "location": "Mouraria (2 pax)",
+            "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "Tasca moderna aos pés do castelo, petiscos e vinho a copo; reserva só pelo Instagram, vale a tentativa"
+              "Tasca tradicional com doses fartas",
+              "O bacalhau assado é referência na cidade",
+              "Só almoço e fecha domingo — chegue antes das 13h"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-6-lis-santa-justa-carmo",
-            "name": "Elevador de Santa Justa e Convento do Carmo",
+            "id": "day-6-lis2-maat",
+            "name": "MAAT — Museu de Arte, Arquitetura e Tecnologia",
             "type": "experience",
             "timeSlot": "afternoon",
             "estimatedCost": 90,
             "costPerPerson": 45,
             "time": "15:00",
             "duration": "2h",
-            "location": "Baixa/Chiado (2 pax)",
-            "rating": 4.5,
+            "location": "Belém (2 pax)",
+            "rating": 4.4,
             "status": "suggestion",
             "tips": [
-              "O elevador de ferro de 1902 liga a Baixa ao Chiado",
-              "As ruínas góticas do Carmo a céu aberto são únicas",
-              "Suba pelo elevador e desça a pé pelo Chiado"
+              "O prédio-onda à beira do Tejo — arte contemporânea e telhado-mirante",
+              "Encaixa no dia de Belém, entre os Pastéis e a Torre"
             ],
             "source": "kinu"
           },
@@ -1352,7 +1358,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 510
+        "totalCost": 470
       },
       {
         "dayNumber": 8,
@@ -1361,38 +1367,39 @@
         "theme": "✈️ Dia de Partida",
         "activities": [
           {
-            "id": "day-7-lis-copenhagen-coffee",
-            "name": "Copenhagen Coffee Lab (Príncipe Real)",
+            "id": "day-7-lis2-dear-breakfast",
+            "name": "Dear Breakfast",
             "type": "breakfast",
             "timeSlot": "breakfast",
             "estimatedCost": 80,
             "costPerPerson": 40,
             "time": "08:00",
             "duration": "1h",
-            "location": "Príncipe Real (2 pax)",
-            "rating": 4.2,
+            "location": "Santos (2 pax)",
+            "rating": 4.4,
             "status": "suggestion",
             "tips": [
-              "Café dinamarquês com cardamomo buns e pão de fermentação natural; terraço na praça do Príncipe Real"
+              "Brunch bonito e caprichado — a versão moderna do café da manhã lisboeta"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-7-lis2-maat",
-            "name": "MAAT — Museu de Arte, Arquitetura e Tecnologia",
+            "id": "day-7-lis-miradouros",
+            "name": "Miradouros: Senhora do Monte e Graça",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 90,
-            "costPerPerson": 45,
+            "estimatedCost": 0,
+            "costPerPerson": 0,
             "time": "09:30",
             "duration": "2h",
-            "location": "Belém (2 pax)",
-            "rating": 4.4,
+            "location": "Graça (2 pax)",
+            "rating": 4.7,
             "status": "suggestion",
             "tips": [
               "Aproveite as últimas horas!",
-              "O prédio-onda à beira do Tejo — arte contemporânea e telhado-mirante",
-              "Encaixa no dia de Belém, entre os Pastéis e a Torre"
+              "Os dois miradouros mais bonitos, a 10 minutos um do outro",
+              "Fim de tarde tem a luz dourada sobre o casario",
+              "Leve uma ginjinha para brindar o pôr do sol"
             ],
             "source": "kinu"
           },
@@ -1432,21 +1439,19 @@
             "source": "kinu"
           },
           {
-            "id": "day-7-lis-miradouros",
-            "name": "Miradouros: Senhora do Monte e Graça",
+            "id": "day-7-lis-jardim-estrela",
+            "name": "Jardim da Estrela",
             "type": "experience",
             "timeSlot": "afternoon",
             "estimatedCost": 0,
             "costPerPerson": 0,
             "time": "15:00",
-            "duration": "2h",
-            "location": "Graça (2 pax)",
-            "rating": 4.7,
+            "duration": "1.5h",
+            "location": "Estrela (2 pax)",
+            "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "Os dois miradouros mais bonitos, a 10 minutos um do outro",
-              "Fim de tarde tem a luz dourada sobre o casario",
-              "Leve uma ginjinha para brindar o pôr do sol"
+              "Jardim romântico do século XIX em frente à Basílica, com coreto, lago de patos e parque infantil; o favorito das famílias lisboetas"
             ],
             "source": "kinu"
           },
@@ -1478,7 +1483,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 4568
+        "totalCost": 4478
       }
     ],
     "breakdown": {
@@ -1493,17 +1498,17 @@
         "status": "estimated"
       },
       "experiences": {
-        "amount": 1598,
+        "amount": 1568,
         "percent": 8,
         "status": "estimated"
       },
       "food": {
-        "amount": 5290,
-        "percent": 26,
+        "amount": 5300,
+        "percent": 27,
         "status": "estimated"
       },
-      "total": 22588,
-      "available": -2588,
+      "total": 22568,
+      "available": -2568,
       "trustZonePercent": 113
     },
     "meta": {
@@ -2709,21 +2714,21 @@
             ]
           },
           {
-            "id": "day-6-for-museu-fotografia",
-            "name": "Museu da Fotografia Fortaleza",
+            "id": "day-6-for-praia-iracema",
+            "name": "Praia de Iracema e Ponte dos Ingleses",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 80,
-            "costPerPerson": 40,
+            "estimatedCost": 0,
+            "costPerPerson": 0,
             "time": "09:30",
             "duration": "2h",
-            "location": "Varjota (2 pax)",
-            "rating": 4.8,
+            "location": "Praia de Iracema (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Um dos acervos fotográficos mais relevantes da América Latina",
-              "Climatizado — ótima opção para fugir do calor",
-              "Fica na Varjota: combine com almoço no bairro"
+              "Caminhada histórica com a estátua de Iracema e vista do mar",
+              "A Ponte dos Ingleses é o point do pôr do sol",
+              "Região boêmia com cafés e galerias"
             ],
             "source": "kinu"
           },
@@ -2798,7 +2803,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 900
+        "totalCost": 820
       },
       {
         "dayNumber": 8,
@@ -2902,7 +2907,7 @@
         "status": "estimated"
       },
       "experiences": {
-        "amount": 1210,
+        "amount": 1130,
         "percent": 6,
         "status": "estimated"
       },
@@ -2911,8 +2916,8 @@
         "percent": 15,
         "status": "estimated"
       },
-      "total": 22800,
-      "available": -2800,
+      "total": 22720,
+      "available": -2720,
       "trustZonePercent": 114
     },
     "meta": {

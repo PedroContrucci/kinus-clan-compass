@@ -4,6 +4,7 @@ import { generateItinerary } from '@/components/cockpit/GeneratedItineraryStage'
 import { buildDraftTrip } from '@/lib/createTrip';
 import { destinationActivities } from '@/data/destinationActivities';
 import { normalizePlaceName } from '@/lib/placeIdentity';
+import { CURATED_DAYS_OF_WEEK } from '@/data/generated/daysOfWeek';
 
 const MEAL_SLOTS = new Set(['breakfast', 'lunch', 'dinner']);
 const EXP_SLOTS = new Set(['morning', 'afternoon', 'night']);
@@ -15,6 +16,10 @@ const EXP_SLOTS = new Set(['morning', 'afternoon', 'night']);
 const GENERIC_EXACT = new Set(['Café da manhã']);
 const GENERIC_PREFIX =
   /^(Café da manhã no hotel|Check-in|Check-out|Transfer|Voo|Caminhada leve|Descanso|Manhã livre|Tarde livre|Fim de tarde livre|Chegada|Passeio leve|Jantar leve|Tempo livre)/;
+// M19: 3 dos 10 almoços de Tóquio fecham em algum dia; o pool real por dia é menor que o bruto.
+// Só Tóquio/almoço desconta os que fecham em algum dia da semana (forma simples do "pool aberto no dia").
+const closesSomeDay = (city: string, slot: string, id: string) =>
+  slot === 'lunch' && /^T[óo]quio$|^Tokyo$/.test(city) && (CURATED_DAYS_OF_WEEK[id]?.length ?? 7) < 7;
 const isPlace = (name: string) => !GENERIC_EXACT.has(name) && !GENERIC_PREFIX.test(name);
 
 function parseDuration(s: string): number {
@@ -163,7 +168,7 @@ describe('gerador — não repetir o mesmo lugar na viagem', () => {
       const poolNames = (slot: string) =>
         new Set(
           destinationActivities[city].activities
-            .filter((a) => a.category === slot && !isPairMeal(city, a.id))
+            .filter((a) => a.category === slot && !isPairMeal(city, a.id) && !closesSomeDay(city, slot, a.id))
             .map((a) => normalizePlaceName(a.name))
         );
       for (const cfg of MATRIX) {
@@ -223,7 +228,7 @@ describe('gerador — não repetir o mesmo lugar na viagem', () => {
       const poolSize = (slot: string) =>
         new Set(
           destinationActivities[city].activities
-            .filter((a) => a.category === slot && !isPairMeal(city, a.id))
+            .filter((a) => a.category === slot && !isPairMeal(city, a.id) && !closesSomeDay(city, slot, a.id))
             .map((a) => normalizePlaceName(a.name))
         ).size;
       for (const cfg of MATRIX) {
