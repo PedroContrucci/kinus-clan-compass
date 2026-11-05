@@ -28,6 +28,7 @@ import { startTripCompletion } from "@/lib/tripEvents";
 import { startAchievements } from "@/lib/achievementEngine";
 import { ClaSuggestHost } from "@/components/cla/ClaSuggestHost";
 import { AchievementCelebration } from "@/components/conquistas/AchievementCelebration";
+import { isAuthScreen } from "@/lib/publicRoutes";
 
 // Boot, no escopo do módulo: roda uma vez na avaliação de App.tsx, portanto ANTES do
 // `createRoot(...).render()` do main.tsx — nenhum componente que lê trips chegou a montar.
@@ -93,7 +94,7 @@ function KinuAIWrapper() {
     }
   }, [wizardPrefill, location.pathname, navigate]);
 
-  if (location.pathname === "/") return null;
+  if (isAuthScreen(location.pathname)) return null;
   return (
     <>
       <KinuAIButton />
@@ -104,7 +105,7 @@ function KinuAIWrapper() {
 
 function BetaFeedbackWrapper() {
   const location = useLocation();
-  if (location.pathname === "/") return null;
+  if (isAuthScreen(location.pathname)) return null;
   return <FeedbackButton />;
 }
 

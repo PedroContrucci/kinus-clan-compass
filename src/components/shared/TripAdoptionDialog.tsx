@@ -29,6 +29,7 @@ import {
   subscribeAdoption,
   type AdoptionPrompt,
 } from '@/lib/tripAdoption';
+import { isAuthScreen } from '@/lib/publicRoutes';
 
 export function TripAdoptionDialog() {
   const location = useLocation();
@@ -43,7 +44,7 @@ export function TripAdoptionDialog() {
   // Mesma regra do KinuAIWrapper e do BetaFeedbackWrapper: a tela de login não recebe modal
   // por cima. O pedido NÃO se perde — ele vive no módulo, e o Login manda todo autenticado
   // para /dashboard com `replace`, onde o diálogo aparece.
-  if (location.pathname === '/') return null;
+  if (isAuthScreen(location.pathname)) return null;
   if (!prompt) return null;
 
   const count = prompt.tripIds.length;

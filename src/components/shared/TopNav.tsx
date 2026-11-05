@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import kinuLogo from '@/assets/KINU_logo.png';
+import { isAuthScreen } from '@/lib/publicRoutes';
 
 const navItems = [
   { id: 'inicio', icon: '🏠', label: 'Início', path: '/inicio' },
@@ -10,7 +11,7 @@ const navItems = [
 export const TopNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isLoginPage = location.pathname === '/';
+  const isLoginPage = isAuthScreen(location.pathname);
 
   if (isLoginPage) return null;
 

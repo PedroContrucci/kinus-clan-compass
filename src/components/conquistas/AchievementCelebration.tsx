@@ -14,10 +14,11 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { subscribeAchievements } from '@/lib/achievementEngine';
+import { isAuthScreen } from '@/lib/publicRoutes';
 
 export function AchievementCelebration() {
   const location = useLocation();
-  const onLogin = location.pathname === '/';
+  const onLogin = isAuthScreen(location.pathname);
 
   useEffect(() => subscribeAchievements((_progress, unlockedNow) => {
     if (unlockedNow.length === 0) return;
