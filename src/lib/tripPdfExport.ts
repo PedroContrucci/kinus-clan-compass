@@ -9,6 +9,7 @@ import { ptBR } from 'date-fns/locale';
 import { getExpandedCityData } from '@/data/destinationPdfData';
 
 import { findCityInfo } from '@/data/destinationCatalog';
+import { catalogVerifiedLabel } from '@/lib/catalogVerified';
 import { pdfSafe, cuisinePt, localizeCuisineTip, plural, stopsLabel, baggageLabel, packingClimate, monthOf } from '@/lib/pdfText';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { getDocsForDestination } from '@/data/destinationDocs';
@@ -1290,7 +1291,16 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.text('ROTEIRO DIA A DIA', 14, y);
-  y += 8;
+  y += 5;
+  const verifiedLabel = catalogVerifiedLabel(trip.destination);
+  if (verifiedLabel) {
+    setC(B.gray400, false);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(pdfSafe(verifiedLabel), 14, y);
+    y += 5;
+  }
+  y += 3;
 
   (trip.days || []).forEach((day) => {
     checkPage(22);
@@ -1819,7 +1829,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     },
     {
       title: 'Higiene & Saúde',
-      items: ['Protetor solar', 'Repelente de insetos', 'Kit de remédios básicos', 'Escova e pasta de dente', 'Shampoo / condicionador (viagem)', 'Desodorante'],
+      items: [...(isBeach ? ['Protetor solar', 'Repelente de insetos'] : []), 'Kit de remédios básicos', 'Escova e pasta de dente', 'Shampoo / condicionador (viagem)', 'Desodorante'],
     },
   ];
 
