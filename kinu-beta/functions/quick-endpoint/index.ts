@@ -733,7 +733,7 @@ const SQL_HORARIOS = "alter table curated_activities add column if not exists ho
 
 async function placeHorarios(placeId: string): Promise<{ days: number[] | null; temHorario: boolean; descricoes: unknown[] | null }> {
   const r = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
-    headers: { "X-Goog-Api-Key": GOOGLE_KEY, "X-Goog-FieldMask": "regularOpeningHours" },
+    headers: { "X-Goog-Api-Key": GOOGLE_KEY, "X-Goog-FieldMask": "regularOpeningHours", "X-Goog-Language-Code": "pt-BR" },
   });
   const j = await r.json();
   if (j.error) throw new Error(`details/horarios: ${j.error.message ?? JSON.stringify(j.error)}`);
@@ -767,16 +767,16 @@ async function handleHorarios(body: Record<string, unknown>): Promise<Response> 
   }
 
   const base = () => {
-    let q = supabase.from("curated_activities").select("id,name,place_id,city", { count: "exact" })
+    let q = supabase.from("curated_activities").select("id,name,place_id,city,days_of_week", { count: "exact" })
       .eq("status", "published").not("place_id", "is", null).is("hours_checked_at", null);
     if (city) q = q.eq("city", city);
     return q;
   };
   const sel = await base().order("id").limit(limite);
   if (sel.error) throw sel.error;
-  const rows = (sel.data ?? []) as Array<{ id: string; name: string; place_id: string }>;
+  const rows = (sel.data ?? []) as Array<{ id: string; name: string; place_id: string; days_of_week: number[] | null }>;
 
-  const stats = { processadas: 0, com_restricao: 0, sem_restricao: 0, sem_horario: 0, erros: 0 };
+  const stats = { processadas: 0, com_restricao: 0, sem_restricao: 0, sem_horario: 0, curado_mantido: 0, erros: 0 };
   const amostra: Array<{ id: string; name: string; days_of_week: number[] | null }> = [];
   const falhas: Record<string, string> = {};
   let cortou = false;
@@ -785,18 +785,18 @@ async function handleHorarios(body: Record<string, unknown>): Promise<Response> 
     if (Date.now() - inicio > TETO_MS) { cortou = true; break; }
     try {
       const h = await placeHorarios(row.place_id);
+      const curado = row.days_of_week != null;
       if (!dryRun) {
-        const { error } = await supabase.from("curated_activities").update({
-          days_of_week: h.days,
-          hours_checked_at: new Date().toISOString(),
-          weekday_descriptions: h.descricoes,
-        }).eq("id", row.id);
+        // curadoria humana vence: days_of_week só é gravado se estiver nulo
+        const upd: Record<string, unknown> = { hours_checked_at: new Date().toISOString(), weekday_descriptions: h.descricoes };
+        if (curado) stats.curado_mantido++; else upd.days_of_week = h.days;
+        const { error } = await supabase.from("curated_activities").update(upd).eq("id", row.id);
         if (error) throw error;
-      }
+      } else if (curado) stats.curado_mantido++;
       if (!h.temHorario) stats.sem_horario++;
       else if (h.days) stats.com_restricao++;
       else stats.sem_restricao++;
-      if (amostra.length < 10) amostra.push({ id: row.id, name: row.name, days_of_week: h.days });
+      if (amostra.length < 10) amostra.push({ id: row.id, name: row.name, days_of_week: curado ? row.days_of_week : h.days });
     } catch (e) {
       stats.erros++;
       falhas[row.id] = e instanceof Error ? e.message : JSON.stringify(e);

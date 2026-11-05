@@ -36,3 +36,7 @@ Prompt: "Redeploy da edge function quick-endpoint a partir de kinu-beta/function
 To https://github.com/PedroContrucci/kinus-clan-compass
    ae6833e..5205f00  main -> main
 ```
+
+## Adendo (correção M19a)
+- `days_of_week` já curado (não nulo) é mantido e contado em `curado_mantido`; `hours_checked_at` e `weekday_descriptions` gravam sempre.
+- `placeHorarios` agora envia `X-Goog-Language-Code: pt-BR` (como o recheck). `deno check` segue sem rodar (sem deno); sintaxe OK.
