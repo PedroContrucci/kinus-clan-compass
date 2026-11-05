@@ -23,6 +23,16 @@
 //                "table": "activities" | "hotels" | "both" (padrão both) · "dry_run": true
 //     corta em ~50 s e devolve `restantes`; repita o POST até restantes = 0 (idempotente).
 //
+//   modo horarios (M19a):  POST { "mode": "horarios" }                     -> todas as cidades
+//                          POST { "mode": "horarios", "city": "Paris" }    -> só uma cidade
+//     opcional: "limite": 150 · "dry_run": true. Só curated_activities published com place_id e hours_checked_at nulo.
+//     Place Details (regularOpeningHours) → days_of_week (0=dom…6=sáb; null = qualquer dia, 7 dias ou sem dado),
+//     weekday_descriptions (jsonb) e hours_checked_at. Corta em ~50 s e devolve `restantes`; repita até 0 (idempotente).
+//
+// Pré-requisito do modo horarios (uma vez, no SQL Editor do kinu-beta):
+//   alter table curated_activities add column if not exists hours_checked_at timestamptz;
+//   alter table curated_activities add column if not exists weekday_descriptions jsonb;
+//
 // Pré-requisito do catálogo vivo (uma vez, no SQL Editor do kinu-beta, aba "30 - ONDA"):
 //   alter table curated_activities
 //     add column if not exists google_website text,
@@ -714,6 +724,99 @@ async function handleRecheck(body: Record<string, unknown>): Promise<Response> {
   });
 }
 
+// ───────────────────────────────── modo horarios (M19a) ─────────────────────────────────
+//
+// Preenche days_of_week (int[] 0=dom…6=sáb) a partir de regularOpeningHours, para o motor nunca marcar
+// um lugar em dia fechado. Ausente/7 dias = null (qualquer dia). Só activities; hotéis não.
+
+const SQL_HORARIOS = "alter table curated_activities add column if not exists hours_checked_at timestamptz; alter table curated_activities add column if not exists weekday_descriptions jsonb;";
+
+async function placeHorarios(placeId: string): Promise<{ days: number[] | null; temHorario: boolean; descricoes: unknown[] | null }> {
+  const r = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
+    headers: { "X-Goog-Api-Key": GOOGLE_KEY, "X-Goog-FieldMask": "regularOpeningHours" },
+  });
+  const j = await r.json();
+  if (j.error) throw new Error(`details/horarios: ${j.error.message ?? JSON.stringify(j.error)}`);
+  const roh = j.regularOpeningHours;
+  const periods: Array<{ open?: { day?: number; hour?: number }; close?: unknown }> = Array.isArray(roh?.periods) ? roh.periods : [];
+  const descricoes = Array.isArray(roh?.weekdayDescriptions) ? roh.weekdayDescriptions : null;
+  if (periods.length === 0) return { days: null, temHorario: false, descricoes };
+  // 24 h todos os dias: o Google manda um único período open dom 00:00 sem close
+  if (periods.length === 1 && !periods[0].close && periods[0].open?.day === 0 && (periods[0].open?.hour ?? 0) === 0) {
+    return { days: null, temHorario: true, descricoes };
+  }
+  const set = new Set<number>();
+  for (const p of periods) {
+    const d = p.open?.day;
+    if (typeof d === "number" && d >= 0 && d <= 6) set.add(d);
+  }
+  if (set.size === 0) return { days: null, temHorario: false, descricoes };
+  return { days: set.size === 7 ? null : [...set].sort((a, b) => a - b), temHorario: true, descricoes };
+}
+
+async function handleHorarios(body: Record<string, unknown>): Promise<Response> {
+  const city = String(body.city ?? "").trim();
+  const limite = Math.max(1, Math.min(1000, Number(body.limite ?? 150)));
+  const dryRun = body.dry_run === true;
+  const inicio = Date.now();
+
+  // 424: coluna ausente → devolve o alter table (a function não executa DDL)
+  const sonda = await supabase.from("curated_activities").select("hours_checked_at,weekday_descriptions").limit(1);
+  if (sonda.error) {
+    return json({ error: "coluna hours_checked_at/weekday_descriptions ausente", detalhe: sonda.error.message, sql: SQL_HORARIOS }, 424);
+  }
+
+  const base = () => {
+    let q = supabase.from("curated_activities").select("id,name,place_id,city", { count: "exact" })
+      .eq("status", "published").not("place_id", "is", null).is("hours_checked_at", null);
+    if (city) q = q.eq("city", city);
+    return q;
+  };
+  const sel = await base().order("id").limit(limite);
+  if (sel.error) throw sel.error;
+  const rows = (sel.data ?? []) as Array<{ id: string; name: string; place_id: string }>;
+
+  const stats = { processadas: 0, com_restricao: 0, sem_restricao: 0, sem_horario: 0, erros: 0 };
+  const amostra: Array<{ id: string; name: string; days_of_week: number[] | null }> = [];
+  const falhas: Record<string, string> = {};
+  let cortou = false;
+
+  for (const row of rows) {
+    if (Date.now() - inicio > TETO_MS) { cortou = true; break; }
+    try {
+      const h = await placeHorarios(row.place_id);
+      if (!dryRun) {
+        const { error } = await supabase.from("curated_activities").update({
+          days_of_week: h.days,
+          hours_checked_at: new Date().toISOString(),
+          weekday_descriptions: h.descricoes,
+        }).eq("id", row.id);
+        if (error) throw error;
+      }
+      if (!h.temHorario) stats.sem_horario++;
+      else if (h.days) stats.com_restricao++;
+      else stats.sem_restricao++;
+      if (amostra.length < 10) amostra.push({ id: row.id, name: row.name, days_of_week: h.days });
+    } catch (e) {
+      stats.erros++;
+      falhas[row.id] = e instanceof Error ? e.message : JSON.stringify(e);
+    }
+    stats.processadas++;
+    await new Promise((res) => setTimeout(res, 120));
+  }
+
+  // restantes = ainda sem hours_checked_at (inclui o que passou do limite); em dry_run nada foi gravado
+  let restantes = 0;
+  if (dryRun) restantes = (sel.count ?? rows.length);
+  else {
+    const c = await base().limit(1);
+    restantes = c.count ?? 0;
+  }
+
+  return json({ modo: "horarios", city: city || null, dry_run: dryRun, ...stats, restantes, concluida: !cortou && restantes === 0, amostra, falhas });
+}
+
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
@@ -729,6 +832,7 @@ Deno.serve(async (req) => {
     if (body?.mode === "fotos") return await handleFotos(body);
     if (body?.mode === "tudo") return await handleTudo(body, req);
     if (body?.mode === "recheck") return await handleRecheck(body);
+    if (body?.mode === "horarios") return await handleHorarios(body);
 
     const { city, limit = 50 } = body;
     if (!city) {
