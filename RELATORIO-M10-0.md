@@ -37,3 +37,10 @@ Também: o hero usa o `found_at` mais antigo entre ida e volta (conservador). O 
 To https://github.com/PedroContrucci/kinus-clan-compass
    9873642..348d005  main -> main
 ```
+
+## Adendo (saída do push do relatório e correção do prompt de redeploy)
+O prompt de redeploy deve nomear o `_shared` que a function importa: `supabase/functions/_shared/http.ts` (`corsGate`). Nenhum `_shared` foi alterado; o redeploy é da `amadeus-flights/index.ts`.
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   348d005..2342a1d  main -> main
+```
