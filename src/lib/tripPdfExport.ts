@@ -15,6 +15,7 @@ import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { getDocsForDestination } from '@/data/destinationDocs';
 import { tripTimezone, formatTzDiff, formatTzInfo, airportCity } from '@/lib/timezone';
 import { formatDurationHM, durationTextToMinutes } from '@/lib/flightModel';
+import { paxOf, paxLabel } from '@/lib/pax';
 import { logisticsLine, itemCoord, michelinForTier } from '@/lib/itineraryEngine';
 import { razaoLines, razaoTotals } from '@/lib/razaoLines';
 
@@ -919,7 +920,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   doc.setFontSize(11.5);
   doc.text(dateRange, pw / 2, y, { align: 'center' });
   y += 6;
-  doc.text(`${totalDays} dias  |  ${plural(Number(trip.travelers) || 1, 'viajante', 'viajantes')}  |  Faixa ${tierLabel}`, pw / 2, y, { align: 'center' });
+  doc.text(`${totalDays} dias  |  ${(() => { const px = paxOf(trip); return px.children > 0 ? cleanText(paxLabel(px)) : plural(Number(trip.travelers) || 1, 'viajante', 'viajantes'); })()}  |  Faixa ${tierLabel}`, pw / 2, y, { align: 'center' });
 
   // Personalizacao — nome de quem exporta, recebido por argumento.
   // A leitura crua de `kinu_user` morreu aqui (Arco 3c): a lib nao pode usar
@@ -1393,8 +1394,12 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
       const actName = cleanText(act.name || '');
       const hasMapsLink = !isLogistics && actName && !actName.toLowerCase().includes('cafe da manha');
 
-      const hasSubLine = hasDistanceHint || hasDescription || hasMapsLink;
-      const blockHeight = 5.5 + (hasDistanceHint ? 5.4 : 0) + (hasDescription ? 5.2 : 0) + (hasMapsLink ? 5.2 : 0) + (hasSubLine ? 2 : 0);
+      // M20: ingresso com criança mostra o label de pax e o aviso (o preço infantil nunca é inventado).
+      const paxMatch = !isLogistics ? /\((\d+ adultos?[^()]*crian[^()]*)\)/i.exec(String((act as { location?: string }).location || '')) : null;
+      const paxHint = paxMatch ? cleanText(`${paxMatch[1]} - ingresso infantil a confirmar`) : '';
+
+      const hasSubLine = hasDistanceHint || hasDescription || hasMapsLink || !!paxHint;
+      const blockHeight = 5.5 + (paxHint ? 5.2 : 0) + (hasDistanceHint ? 5.4 : 0) + (hasDescription ? 5.2 : 0) + (hasMapsLink ? 5.2 : 0) + (hasSubLine ? 2 : 0);
       checkPage(blockHeight);
 
       setC(isLogistics ? B.gray500 : B.white, false);
@@ -1450,6 +1455,14 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
         doc.setFont('helvetica', 'italic');
         doc.text(cleanText(distHint as string), 30, y);
         y += 5.4;
+      }
+
+      if (paxHint) {
+        setC(B.gray500, false);
+        doc.setFontSize(FS_SMALL);
+        doc.setFont('helvetica', 'italic');
+        doc.text(paxHint, 30, y);
+        y += 5.2;
       }
 
       // Activity description line

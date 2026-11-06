@@ -14,6 +14,7 @@ import {
 } from '@/lib/itineraryEngine';
 import { itineraryToTripDays, tripDaysToItinerary } from '@/lib/draftItinerary';
 import { followPlanEnvelope } from '@/lib/planTotals';
+import { paxOf } from '@/lib/pax';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DraftLike = Record<string, any>;
@@ -110,7 +111,7 @@ export function swapDraftItem<T extends DraftLike>(trip: T, dayNumber: number, a
   const days = itineraryOf(trip);
   const current = days.find((d) => d.dayNumber === dayNumber)?.activities.find((a) => a.id === activityId);
   if (!current) return trip;
-  const next = convertToItineraryActivity(cand.activity, dayNumber - 1, current.timeSlot, current.time ?? '', travelersOf(trip));
+  const next = convertToItineraryActivity(cand.activity, dayNumber - 1, current.timeSlot, current.time ?? '', travelersOf(trip), paxOf(trip));
   return commit(trip, days.map((d) => d.dayNumber !== dayNumber ? d : {
     ...d,
     activities: d.activities.map((a) => (a.id === activityId ? next : a)),

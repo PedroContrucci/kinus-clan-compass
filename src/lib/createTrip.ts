@@ -235,10 +235,19 @@ export async function buildDraftTrip(input: DraftTripInput, deps: DraftTripDeps 
   // O rascunho É o roteiro: voos planejados → SelectedFlight (estimativa) → motor único.
   const outboundFlight = plannedFlightToSelected(trip.flights.outbound, input.departureDate);
   const returnFlight = plannedFlightToSelected(trip.flights.return, input.returnDate);
-  const built = buildItineraryForTrip(trip, { outbound: outboundFlight, return: returnFlight }, { priceLevel });
+  const built = buildItineraryForTrip({ ...trip, adults: input.adults, children: input.children.length, infants: input.infants }, { outbound: outboundFlight, return: returnFlight }, { priceLevel });
 
+  // M20: adultos/crianças/bebês pela index signature (tipo intocável); lidos por paxOf(). Bebê não paga
+  // ingresso; `travelers` segue sendo o total. Entram aqui (e não no literal) para o motor já ler via paxOf.
+  const paxFields = {
+    adults: input.adults,
+    children: input.children.length,
+    infants: input.infants,
+    childrenAges: input.children.map((c) => (c as { age?: unknown } | null)?.age).filter((a): a is number => typeof a === 'number'),
+  };
   return {
     ...trip,
+    ...paxFields,
     budget: built.budget,
     days: built.days,
     finances: built.finances,

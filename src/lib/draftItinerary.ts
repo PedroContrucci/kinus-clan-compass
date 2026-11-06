@@ -16,6 +16,7 @@ import {
 } from '@/lib/itineraryEngine';
 import { followPlanEnvelope } from '@/lib/planTotals';
 import { splitInterests } from '@/lib/interestsFor';
+import { paxOf } from '@/lib/pax';
 
 /** Item de trip.days com os campos do motor gravados por fora do tipo. */
 export type EngineTripActivity = TripDay['activities'][number] & {
@@ -299,6 +300,7 @@ export function buildItineraryForTrip(
     returnFlight: flights.return,
     budget: Number(trip.budget) || 1,
     travelers: Math.max(1, Number(trip.travelers) || 1),
+    pax: paxOf(trip),
     // Só os interesses que o catálogo da cidade oferece (interestsFor); o resto é ignorado.
     interests: splitInterests(trip.destination, trip.travelInterests).used,
     jetLagSeverity,

@@ -24,6 +24,7 @@ import {
   type DestinationTheme
 } from '@/data/destinationActivities';
 import { getTopMichelinForCity, type MichelinRestaurant } from '@/lib/michelinData';
+import { paxLabel, type Pax } from '@/lib/pax';
 import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '@/lib/placeIdentity';
 import { getHotelRecommendation } from '@/lib/hotelZones';
 import { interestsFor, catalogFor, splitInterests, interestLabel } from '@/lib/interestsFor';
@@ -270,7 +271,9 @@ export function convertToItineraryActivity(
   dayIndex: number,
   timeSlot: ItineraryActivity['timeSlot'],
   time: string,
-  travelers: number = 1
+  travelers: number = 1,
+  /** M20: com pax, ingresso (EXP) = × adultos; refeição segue × travelers. Sem pax, comportamento de sempre. */
+  pax?: Pick<Pax, 'adults' | 'children' | 'infants'>
 ): ItineraryActivity {
   const typeMap: Record<string, ItineraryActivity['type']> = {
     breakfast: 'breakfast',
@@ -282,8 +285,13 @@ export function convertToItineraryActivity(
   };
 
   // All activities from destinationActivities are individual (per-person) costs
-  const totalCost = activity.estimatedCostBRL * travelers;
-  const costLabel = travelers > 1 ? ` (${travelers} pax)` : '';
+  const isTicket = !!pax && ['morning', 'afternoon', 'night'].includes(activity.category) && (pax.children > 0 || pax.infants > 0);
+  const payers = isTicket ? Math.max(1, pax!.adults) : travelers;
+  const totalCost = activity.estimatedCostBRL * payers;
+  const costLabel = isTicket && travelers > 1 ? ` (${paxLabel(pax!)})` : travelers > 1 ? ` (${travelers} pax)` : '';
+  const kidTip = isTicket && pax!.children > 0
+    ? `+ ${pax!.children} ${pax!.children === 1 ? 'criança' : 'crianças'}: ingresso infantil a confirmar`
+    : null;
 
   return {
     id: `day-${dayIndex}-${activity.id}`,
@@ -297,7 +305,7 @@ export function convertToItineraryActivity(
     location: `${activity.neighborhood}${costLabel}`,
     rating: activity.rating,
     status: 'suggestion',
-    tips: activity.tips,
+    tips: kidTip ? [...(activity.tips ?? []), kidTip] : activity.tips,
     source: 'kinu',
   };
 }
@@ -673,6 +681,8 @@ export function generateItinerary(
   jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO',
   priceLevelProp?: PriceLevel,
   hotel?: EngineHotel,
+  /** M20: adultos/crianças/bebês. Ingresso × adultos; criança limita o Michelin a 1× no almoço. Ausente = como antes. */
+  pax?: Pick<Pax, 'adults' | 'children' | 'infants'>,
   /** Interno (M19c): pré-passe que gera o dia ideal ignorando o dia da semana. Não usar de fora. */
   _dry?: { ignoreWeekdays?: boolean }
 ): { days: ItineraryDay[]; breakdown: BudgetBreakdown; meta: { michelinCount: number; hotelNights: number; checkoutOnEve: boolean; thinDays: { day: number; reason: string }[]; lightEve: boolean } } {
@@ -792,7 +802,7 @@ export function generateItinerary(
   // Não fura o `force` do ícone nem as regras do bate-volta (daytripOk: cota, véspera, jet lag, dia colado).
   const reserve = new Map<string, number>();
   if (!_dry) {
-    const dry = generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp, hotel, { ignoreWeekdays: true });
+    const dry = generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp, hotel, pax, { ignoreWeekdays: true });
     const exIdx: number[] = [];
     for (let j = explorationStart; j <= totalDays - 2; j++) exIdx.push(j);
     dry.days.forEach((d, j) => {
@@ -870,6 +880,16 @@ export function generateItinerary(
     isCatalogMichelin(a) && (priceLevel === 'budget' ||
       (priceLevel === 'midrange' && category === 'dinner' && (a.estimatedCostBRL || 0) > 2 * dinnerTicket));
 
+  // M20: com criança, Michelin só no almoço e 1× na viagem (injetado + catálogo). Para todos: nunca 2 Michelin
+  // no mesmo dia. `michelinByDay` conta o que já foi escolhido/posto em cada dia; `catalogMichelinTrip`, o do catálogo.
+  const kids = (pax?.children ?? 0) > 0;
+  const michelinByDay = new Map<number, number>();
+  let catalogMichelinTrip = 0;
+  const bumpDayMichelin = (day: number) => michelinByDay.set(day, (michelinByDay.get(day) ?? 0) + 1);
+  const michelinBlocked = (a: SuggestedActivity, category: string) =>
+    isCatalogMichelin(a) && ((michelinByDay.get(currentPickDayIndex) ?? 0) > 0 ||
+      (kids && (category !== 'lunch' || michelinCount + catalogMichelinTrip >= 1)));
+
   function pickActivity(
     category: 'morning' | 'afternoon' | 'night' | 'breakfast' | 'lunch' | 'dinner',
     themeName: string,
@@ -889,7 +909,7 @@ export function generateItinerary(
 
     // Bate-volta só entra como âncora explícita; seus pares só junto dele.
     const eligible = (a: SuggestedActivity) => {
-      if (isPairMeal(a) || !opensToday(a)) return false;
+      if (isPairMeal(a) || !opensToday(a) || michelinBlocked(a, category)) return false;
       if (isDaytripAnchor(a)) return !!opts.daytripOk?.(a);
       // M6: compras não ocupam slot de passeio sem interesse de compras (ícone/essencial passam).
       if (isExp && !wantsShopping && (a.styleTags ?? []).includes('shopping') && !isTierEssential(a.id)) return false;
@@ -905,7 +925,7 @@ export function generateItinerary(
       // Restaurants: every name already used — degrade gracefully rather than
       // leave the slot empty. A repeated dinner beats a day with no dinner.
       candidates = pickReusableByGap(
-        pool.filter(a => a.category === category && !isPairMeal(a) && !isDaytripTagged(a) && opensToday(a)),
+        pool.filter(a => a.category === category && !isPairMeal(a) && !isDaytripTagged(a) && opensToday(a) && !michelinBlocked(a, category)),
         usedPlaces,
         currentPickDayIndex,
         category
@@ -991,6 +1011,7 @@ export function generateItinerary(
     }
     const picked = candidates[0];
     usedPlaces.mark(picked.name, currentPickDayIndex, category);
+    if (isCatalogMichelin(picked)) { bumpDayMichelin(currentPickDayIndex); catalogMichelinTrip++; }
     if (opts.tierPlan && isExp && isTierEssential(picked.id)) {
       essentialsPlaced++;
       if (tiers[picked.id] === 'icon') iconPlaced = true;
@@ -1222,7 +1243,7 @@ export function generateItinerary(
         });
         const dinnerActivity = arrivalBand !== 'night' ? pickArrivalDinner() : null;
         if (dinnerActivity) {
-          const act = convertToItineraryActivity(dinnerActivity, i, 'dinner', arrivalDinnerTime, travelers);
+          const act = convertToItineraryActivity(dinnerActivity, i, 'dinner', arrivalDinnerTime, travelers, pax);
           const nh = nearHotelTip(dinnerActivity);
           if (nh) act.tips = [nh, ...(act.tips || [])];
           activities.push(act); dayTotal += act.estimatedCost;
@@ -1292,7 +1313,7 @@ export function generateItinerary(
 
         const lightDinner = arrivalBand !== 'night' ? pickArrivalDinner() : null;
         if (lightDinner) {
-          const act = convertToItineraryActivity(lightDinner, i, 'dinner', arrivalDinnerTime, travelers);
+          const act = convertToItineraryActivity(lightDinner, i, 'dinner', arrivalDinnerTime, travelers, pax);
           const nh = nearHotelTip(lightDinner);
           act.tips = [REST_DINNER_TIP, ...(act.tips || []), ...(nh ? [nh] : [])];
           activities.push(act);
@@ -1340,7 +1361,7 @@ export function generateItinerary(
 
         const dinnerActivity = arrivalBand !== 'night' ? pickArrivalDinner() : null;
         if (dinnerActivity) {
-          const activity = convertToItineraryActivity(dinnerActivity, i, 'dinner', arrivalDinnerTime, travelers);
+          const activity = convertToItineraryActivity(dinnerActivity, i, 'dinner', arrivalDinnerTime, travelers, pax);
           const nh = nearHotelTip(dinnerActivity);
           if (nh) activity.tips = [nh, ...(activity.tips || [])];
           activities.push(activity);
@@ -1368,7 +1389,7 @@ export function generateItinerary(
         if (lastCheckoutMin >= 9 * 60) {
           const breakfastActivity = pickActivity('breakfast', 'Gastronomia', { near: last });
           if (breakfastActivity) {
-            prevItem = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers);
+            prevItem = convertToItineraryActivity(breakfastActivity, i, 'breakfast', '08:00', travelers, pax);
             add(prevItem);
             last = curatedCoordOf(breakfastActivity.id) ?? last;
             cursor = 8 * 60 + dur(breakfastActivity);
@@ -1399,7 +1420,7 @@ export function generateItinerary(
           });
           if (morningActivity) {
             last = curatedCoordOf(morningActivity.id) ?? last;
-            const activity = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers);
+            const activity = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers, pax);
             activity.tips = ['Aproveite as últimas horas!', ...(activity.tips || [])];
             add(activity);
           }
@@ -1417,7 +1438,7 @@ export function generateItinerary(
             accept: (a) => lunchStart + dur(a) + DEFAULT_HOP_MIN <= lastTransferMin,
           });
           if (lunchActivity) {
-            prevItem = convertToItineraryActivity(lunchActivity, i, 'lunch', '12:30', travelers);
+            prevItem = convertToItineraryActivity(lunchActivity, i, 'lunch', '12:30', travelers, pax);
             add(prevItem);
             last = curatedCoordOf(lunchActivity.id) ?? last;
             after = lunchStart + dur(lunchActivity);
@@ -1434,7 +1455,7 @@ export function generateItinerary(
               return notLongDay(a) && !SUNSET_RE.test(a.name) && st <= SLOT_RULES.afternoon.max && st + dur(a) + DEFAULT_HOP_MIN <= lastTransferMin;
             },
           });
-          if (afternoonActivity) add(convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00', travelers));
+          if (afternoonActivity) add(convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00', travelers, pax));
         }
       } else if (lastCheckoutMin >= 0) {
         // R11: madrugada — o dia de volta só tem check-out, transfer e voo, com horas reais.
@@ -1507,15 +1528,18 @@ export function generateItinerary(
       const isGastroDay = dayTheme.title.toLowerCase().includes('gastron');
       const wantsGastronomy = travelInterests.some(ti => ti.toLowerCase().includes('gastronom'));
       // M6b: véspera leve não recebe o Michelin (jantar ≤ 1 km do hotel, sem noite); vai para outro dia gastronômico.
-      const michelinList = isGastroDay && wantsGastronomy && michelinCount < 1 && !isEve ? michelinForTier(destination, priceLevel) : [];
+      const michelinList = isGastroDay && wantsGastronomy && michelinCount < 1 && !isEve && !(kids && catalogMichelinTrip > 0) && (michelinByDay.get(i) ?? 0) === 0 ? michelinForTier(destination, priceLevel) : [];
       if (isEve && isGastroDay && wantsGastronomy && michelinCount < 1 && michelinForTier(destination, priceLevel).length > 0) thin('michelin-fora-da-vespera');
-      const michelinPending = priceLevel === 'luxury' && michelinList.length > 0;          // jantar 2–3★
-      const michelinLunchPending = priceLevel === 'midrange' && michelinList.length > 0;   // almoço 1★ (menu de almoço)
+      const michelinPending = priceLevel === 'luxury' && !kids && michelinList.length > 0;          // jantar 2–3★ (M20: com criança, almoço)
+      const michelinLunchPending = (priceLevel === 'midrange' || (priceLevel === 'luxury' && kids)) && michelinList.length > 0;   // almoço (menu de almoço)
 
       // M7: almoço Michelin 1★ do Conforto (menu de almoço). Empurra no dia e conta no cap de 1 por viagem.
       const placeMichelinLunch = () => {
         const m = michelinList[0];
-        const perPerson = Math.max(dinnerTicket * 2.5, 850);
+        // M20: Luxo com criança leva o 2–3★ para o almoço, com o preço da estrela (o do Conforto fica como era).
+        const perPerson = priceLevel === 'luxury'
+          ? Math.max(getActivityPrice('restaurant_dinner', destination, priceLevel) * ({ 1: 2.5, 2: 4.5, 3: 7 } as Record<number, number>)[m.stars], ({ 1: 850, 2: 1400, 3: 2200 } as Record<number, number>)[m.stars] || 850)
+          : Math.max(dinnerTicket * 2.5, 850);
         const total = perPerson * travelers;
         activities.push({
           id: `day-${i}-michelin-${placeSlug(m.name)}`,
@@ -1533,12 +1557,13 @@ export function generateItinerary(
         });
         dayTotal += total;
         michelinCount++;
+        bumpDayMichelin(i);
       };
 
       // Corrente geográfica do dia: cada pick nasce perto da parada anterior com coordenada.
       let last: Coord | null = null;
       const place = (sug: SuggestedActivity, slot: ItineraryActivity['timeSlot'], time: string) => {
-        const act = convertToItineraryActivity(sug, i, slot, time, travelers);
+        const act = convertToItineraryActivity(sug, i, slot, time, travelers, pax);
         activities.push(act);
         dayTotal += act.estimatedCost;
         last = curatedCoordOf(sug.id) ?? last;
@@ -1727,12 +1752,13 @@ export function generateItinerary(
 
         // 🍷 DINNER (19:30) — Michelin injection for gastronomy days
         // M6b: véspera leve — jantar a ≤ 1 km do hotel (fallback 2 km, depois o mais próximo), com a dica de distância.
+        const michelinBeforeDinner = michelinByDay.get(i) ?? 0;
         const dinnerActivity = isEve
           ? pickNearHotelDinner([(a) => !isCatalogMichelin(a) || priceLevel === 'luxury', () => true])
           : pickActivity('dinner', dayTheme.title, { near: last });
         let michelinPlaced = false;
 
-        if (michelinPending) {
+        if (michelinPending && michelinBeforeDinner === 0) {
           const availableMichelin = michelinList[0];
           if (availableMichelin) {
             const MICHELIN_MULTIPLIER: Record<number, number> = { 1: 2.5, 2: 4.5, 3: 7 };
@@ -1759,6 +1785,9 @@ export function generateItinerary(
             // (Michelin is capped at 1 per trip via michelinCount; no id-tracking needed.)
             dayTotal += total;
             michelinCount++;
+            // O jantar do catálogo escolhido acima é descartado quando o Michelin injetado entra: desfaz a contagem dele.
+            if (dinnerActivity && isCatalogMichelin(dinnerActivity)) { michelinByDay.set(i, (michelinByDay.get(i) ?? 1) - 1); catalogMichelinTrip--; }
+            bumpDayMichelin(i);
             michelinPlaced = true;
           }
         }
@@ -1922,6 +1951,7 @@ export interface EngineInput {
   priceLevel?: PriceLevel;
   hotel?: EngineHotel;
   hotelPlannedOverride?: number;
+  pax?: Pick<Pax, 'adults' | 'children' | 'infants'>;
 }
 
 /** Ponto de entrada do motor: dias + breakdown + baldes de custo. */
@@ -1929,7 +1959,7 @@ export function runItineraryEngine(input: EngineInput) {
   const r = generateItinerary(
     input.departureDate, input.returnDate, input.destination, input.origin,
     input.outboundFlight, input.returnFlight, input.budget, input.travelers ?? 1,
-    input.interests ?? [], input.jetLagSeverity, input.priceLevel, input.hotel
+    input.interests ?? [], input.jetLagSeverity, input.priceLevel, input.hotel, input.pax
   );
   return { ...r, buckets: computeBuckets(r.days, r.breakdown, input.hotelPlannedOverride) };
 }
