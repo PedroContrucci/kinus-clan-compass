@@ -32,12 +32,12 @@ describe('FlightPriceLines — hero (M20b)', () => {
     travelers: 5, adults: 2, children: 2, infants: 1,
     outboundFlight: { source: 'reference', option: { price: 1000 } },
     returnFlight: { source: 'reference', option: { price: 800 } },
-    kinuFlightSearch: { searchedAt: '2026-11-05T12:00:00Z' },
+    kinuFlightSearch: { searchedAt: '2026-11-05T14:07:00' },
   };
   it('estimativa por pagante, fonte, data, por pessoa e nota do bebê; nunca "total"', () => {
     const { container } = render(<FlightPriceLines trip={trip} amount={7200} confirmed={false} />);
     expect(screen.getByTestId('flight-price-basis').textContent).toBe(
-      'estimativa para 2 adultos + 2 crianças + 1 bebê · preço de referência por adulto (Aviasales, 05/11/2026) × 4 pagantes');
+      'estimativa para 2 adultos + 2 crianças + 1 bebê · preço de referência por adulto (Aviasales, consultado em 05/11 às 14:07) × 4 pagantes');
     expect(screen.getByTestId('flight-price-pp').textContent).toBe('por pessoa ≈ R$ 1.800');
     expect(screen.getByTestId('flight-infant-note').textContent).toBe('bebê de colo: tarifa à parte');
     expect(container.textContent?.toLowerCase()).not.toContain('total');

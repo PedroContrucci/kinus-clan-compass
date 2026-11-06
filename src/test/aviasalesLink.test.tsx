@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { buildAviasalesSearchLink, aviasalesPaxCode, formatFoundAt, formatFoundAtDate, tripFoundAt } from '@/lib/aviasalesLink';
+import { buildAviasalesSearchLink, aviasalesPaxCode, formatFoundAt, formatFoundAtDate, formatConsultedAt, tripFoundAt, tripReferenceStamp } from '@/lib/aviasalesLink';
 import { FlightPriceLines } from '@/components/cockpit/FlightPriceLines';
 import { FlightLiveLink } from '@/components/cockpit/FlightLiveLink';
 
@@ -19,6 +19,26 @@ describe('found_at (M10-0)', () => {
     const trip = { travelers: 2, outboundFlight: { source: 'reference', foundAt: iso }, returnFlight: { source: 'reference', foundAt: iso } };
     const { container } = render(<FlightPriceLines trip={trip} amount={3000} confirmed={false} />);
     expect(screen.getByTestId('flight-price-basis').textContent).toContain('(Aviasales, visto em 05/11 às 14:07)');
+    expect(container.textContent?.toLowerCase()).not.toContain('cotação');
+  });
+});
+
+describe('carimbo consultado em (M10-0b)', () => {
+  const q = '2026-11-05T14:07:00';
+  it('formata e rejeita inválido', () => {
+    expect(formatConsultedAt(q)).toBe('consultado em 05/11 às 14:07');
+    expect(formatConsultedAt('lixo')).toBeNull();
+  });
+  it('sem found_at usa searchedAt; com found_at prevalece; nenhum → null', () => {
+    expect(tripReferenceStamp({ kinuFlightSearch: { searchedAt: q } })?.text).toBe('consultado em 05/11 às 14:07');
+    const both = { outboundFlight: { foundAt: '2026-11-04T09:30:00' }, kinuFlightSearch: { searchedAt: q } };
+    expect(tripReferenceStamp(both)).toMatchObject({ kind: 'seen', text: 'visto em 04/11 às 09:30' });
+    expect(tripReferenceStamp({})).toBeNull();
+  });
+  it('hero sem found_at: "(Aviasales, consultado em …)", sem "cotação"', () => {
+    const trip = { travelers: 2, outboundFlight: { source: 'reference' }, returnFlight: { source: 'reference' }, kinuFlightSearch: { searchedAt: q } };
+    const { container } = render(<FlightPriceLines trip={trip} amount={3000} confirmed={false} />);
+    expect(screen.getByTestId('flight-price-basis').textContent).toContain('(Aviasales, consultado em 05/11 às 14:07)');
     expect(container.textContent?.toLowerCase()).not.toContain('cotação');
   });
 });

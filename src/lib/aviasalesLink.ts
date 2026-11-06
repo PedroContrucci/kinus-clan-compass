@@ -52,6 +52,25 @@ export function formatFoundAt(iso: unknown): string | null {
   return x ? `visto em ${x.dm} às ${x.hm}` : null;
 }
 
+/** "consultado em DD/MM às HH:MM" (fuso do navegador); ilegível → null. */
+export function formatConsultedAt(iso: unknown): string | null {
+  const x = parts(iso);
+  return x ? `consultado em ${x.dm} às ${x.hm}` : null;
+}
+
+/**
+ * Carimbo honesto do preço de referência: found_at ("visto em") quando a fonte informa;
+ * senão a hora da consulta (searchedAt) — "consultado em". Nenhum → null.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function tripReferenceStamp(trip: any): { kind: 'seen' | 'consulted'; text: string; dm: string } | null {
+  const seenIso = tripFoundAt(trip);
+  if (seenIso) return { kind: 'seen', text: formatFoundAt(seenIso)!, dm: formatFoundAtDate(seenIso)! };
+  const q = trip?.kinuFlightSearch?.searchedAt;
+  const text = formatConsultedAt(q);
+  return text ? { kind: 'consulted', text, dm: formatFoundAtDate(q)! } : null;
+}
+
 /** "DD/MM" (fuso do navegador); ilegível → null. */
 export function formatFoundAtDate(iso: unknown): string | null {
   return parts(iso)?.dm ?? null;

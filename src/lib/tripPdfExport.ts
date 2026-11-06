@@ -16,7 +16,7 @@ import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { getDocsForDestination } from '@/data/destinationDocs';
 import { tripTimezone, formatTzDiff, formatTzInfo, airportCity } from '@/lib/timezone';
 import { formatDurationHM, durationTextToMinutes } from '@/lib/flightModel';
-import { formatFoundAtDate, tripFoundAt } from '@/lib/aviasalesLink';
+import { tripReferenceStamp } from '@/lib/aviasalesLink';
 import { paxOf, paxLabel } from '@/lib/pax';
 import { logisticsLine, itemCoord, michelinForTier } from '@/lib/itineraryEngine';
 import { razaoLines, razaoTotals } from '@/lib/razaoLines';
@@ -1008,14 +1008,14 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
       doc.setFont('helvetica', 'bold');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const heroOpt = (trip as any).outboundFlight?.option;
-      const seenOn = formatFoundAtDate(tripFoundAt(trip));
+      const refStamp = tripReferenceStamp(trip);
       const flightLine = `Voo: ${cleanText(originCity)} › ${cleanText(destCity)}  |  ${durLabel}  |  ${stopsLabel(heroOpt)}  |  ${baggageLabel(heroOpt)}  |  Fuso: ${formatTzDiff(tz)}`;
       doc.text(flightLine, 14, y);
       y += 5;
-      if (seenOn) {
+      if (refStamp) {
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text(`referência Aviasales vista em ${seenOn}`, 14, y);
+        doc.text(`referência Aviasales · ${refStamp.text}`, 14, y);
         y += 4;
       }
 
