@@ -35,6 +35,7 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'par3-coulee-verte': 'hidden_gem',
       'par3-galerie-vivienne': 'hidden_gem',
       'par3-mouffetard': 'hidden_gem',
+      'par3-versailles': 'essential',
       'paris-caveau-huchette': 'hidden_gem',
       'paris-champs-elysees': 'essential',
       'paris-louvre': 'essential',
