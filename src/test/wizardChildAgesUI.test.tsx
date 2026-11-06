@@ -5,18 +5,14 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { WizardStep2Travelers } from '@/components/wizard/WizardStep2Travelers';
 import type { WizardData } from '@/components/wizard/types';
 
-// jsdom não implementa pointer capture, que o Radix usa ao abrir o seletor.
-const el = Element.prototype as unknown as Record<string, unknown>;
-el.hasPointerCapture ??= () => false;
-el.setPointerCapture ??= () => {};
-el.releasePointerCapture ??= () => {};
-
 const data = (over: Partial<WizardData> = {}): WizardData =>
   ({ adults: 2, children: [], infants: 0, ...over } as WizardData);
 
+// O Radix abre no "click" (o ponteiro sem tipo é tratado como toque), então um clique
+// simples no gatilho basta para abrir a lista de idades.
 const openAgeSelect = (n: number) => {
   const trigger = screen.getByRole('combobox', { name: `Idade da criança ${n}` });
-  fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+  fireEvent.click(trigger);
   return trigger;
 };
 
