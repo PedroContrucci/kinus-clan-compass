@@ -168,6 +168,8 @@ export interface ReferenceOffer {
   duration: string;
   durationMinutes: number;
   price: number;
+  /** M10-0: quando o Aviasales viu o preço (ISO); null/ausente = desconhecido. */
+  foundAt?: string | null;
   departureTime: string;
   arrivalTime: string;
   departureAirport?: string;
@@ -237,6 +239,7 @@ export function offerToSelected(offer: ReferenceOffer, ctx: OfferContext): Selec
     date: ctx.date,
     source: 'reference',
     priceSource: 'travelpayouts',
+    foundAt: offer.foundAt ?? null,
     tzKnown,
     international,
   };

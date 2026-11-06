@@ -8,6 +8,7 @@ import { WeatherBadge } from './WeatherBadge';
 import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
 import { airfarePaxOf } from '@/lib/pax';
 import { FlightPriceLines } from './FlightPriceLines';
+import { FlightLiveLink } from './FlightLiveLink';
 import { differenceInDays, format } from 'date-fns';
 import { tripTimezone } from '@/lib/timezone';
 import { ptBR } from 'date-fns/locale';
@@ -696,6 +697,9 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
             R$ {fmt(flightTotal)}
           </p>
           <FlightPriceLines trip={trip} amount={flightTotal} confirmed={flightConfirmed} />
+          {!flightConfirmed && (
+            <FlightLiveLink trip={trip} origin={trip.flights?.outbound?.origin || 'GRU'} destination={trip.flights?.outbound?.destination || dest} />
+          )}
           <p className="text-[10px] text-muted-foreground mt-1">
             {flightDuration} · {flightDirect ? 'Direto' : 'Com conexão'}
           </p>

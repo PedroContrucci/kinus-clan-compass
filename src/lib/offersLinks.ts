@@ -46,7 +46,7 @@ const CIVITATIS_CITY_SLUGS: Record<string, string> = {
   'Porto Seguro': 'porto-seguro',
 };
 
-const TRAVELPAYOUTS_MARKER = '742814';
+export const TRAVELPAYOUTS_MARKER = '742814';
 
 function buildKiwiLink(
   origin: string,

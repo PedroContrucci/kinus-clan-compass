@@ -106,6 +106,8 @@ export interface SelectedFlight {
   source?: 'estimate' | 'reference' | 'amadeus' | 'confirmed';
   /** Fonte do preço: 'route'/'tier' (estimativa) ou 'travelpayouts' (preço de referência). */
   priceSource?: 'route' | 'tier' | 'travelpayouts';
+  /** M10-0: quando o Aviasales viu o preço de referência (ISO); null = a fonte não informou. */
+  foundAt?: string | null;
   /** Quem escolheu este voo: o KINU pelo ranking (flightRanking) ou o usuário na lista. */
   chosenBy?: 'kinu' | 'user';
   /** Quando o KINU escolheu: base do "por quê" (média da perna, nº de ofertas, modo). */

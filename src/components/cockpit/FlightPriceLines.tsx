@@ -1,6 +1,7 @@
 // FlightPriceLines — texto sob o preço do hero de voo (M20b). Nunca diz "total": o preço é uma
 // estimativa por pagante (preço de referência de 1 adulto × adultos + crianças), com fonte e data.
 import { airfarePaxOf, paxLabel } from '@/lib/pax';
+import { formatFoundAt, tripFoundAt } from '@/lib/aviasalesLink';
 
 const fmt = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
 
@@ -24,7 +25,11 @@ export function FlightPriceLines({ trip, amount, confirmed }: Props) {
   const payers = `${pax.payers} ${pax.payers === 1 ? 'pagante' : 'pagantes'}`;
   const perPerson = Math.round(amount / pax.payers);
   const isReference = trip?.outboundFlight?.source === 'reference' && trip?.returnFlight?.source === 'reference';
-  const when = consultaDate(trip?.kinuFlightSearch?.searchedAt);
+  // M10-0: com found_at → "visto em DD/MM às HH:MM". Sem → data da consulta como sempre (o assert da
+  // M20b fixa "(Aviasales, DD/MM/AAAA)"; a palavra "consultado" ficou de fora por isso — ver relatório).
+  const seen = formatFoundAt(tripFoundAt(trip));
+  const queried = consultaDate(trip?.kinuFlightSearch?.searchedAt);
+  const when = seen ?? queried;
 
   let line: string;
   if (confirmed) line = `confirmado para ${label}`;

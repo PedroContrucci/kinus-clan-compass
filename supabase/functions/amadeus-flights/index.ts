@@ -108,6 +108,8 @@ function mapItemToOffer(it: any, idx: number, fallbackOrigin: string, fallbackDe
     durationMinutes,
     price: Number(it.price ?? 0),
     currency: 'BRL',
+    // M10-0: momento em que o Aviasales viu este preço (ISO); ausente → null.
+    foundAt: typeof it.found_at === 'string' && it.found_at ? it.found_at : null,
     departureTime: formatTime(departureAt),
     arrivalTime: formatTime(arrivalAt),
     departureAirport: originCode,
