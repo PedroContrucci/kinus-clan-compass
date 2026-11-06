@@ -3,6 +3,7 @@
 // montando; preenchida, ela chega em childrenAges na ordem (0 e 17 inclusos).
 import { describe, it, expect } from 'vitest';
 import { buildDraftTrip, type DraftTripInput } from '@/lib/createTrip';
+import type { StoredTrip } from '@/lib/tripStore';
 
 const input = (children: DraftTripInput['children']): DraftTripInput => ({
   originCity: 'São Paulo', originAirportCode: 'GRU',
