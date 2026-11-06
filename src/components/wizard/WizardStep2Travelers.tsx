@@ -111,7 +111,7 @@ export const WizardStep2Travelers = ({ data, onChange }: WizardStep2Props) => {
             </div>
             <div>
               <p className="font-semibold text-foreground">Crianças</p>
-              <p className="text-sm text-muted-foreground">2-11 anos</p>
+              <p className="text-sm text-muted-foreground">2 a 17 anos · bebês de colo (até 1 ano) vão no contador Bebês</p>
             </div>
           </div>
           
@@ -165,7 +165,7 @@ export const WizardStep2Travelers = ({ data, onChange }: WizardStep2Props) => {
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Array.from({ length: 18 }, (_, i) => i).map((age) => (
+                      {Array.from({ length: 16 }, (_, i) => i + 2).map((age) => (
                         <SelectItem key={age} value={age.toString()}>
                           {age} {age === 1 ? 'ano' : 'anos'}
                         </SelectItem>
