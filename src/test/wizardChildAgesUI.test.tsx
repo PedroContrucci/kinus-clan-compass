@@ -1,5 +1,5 @@
 // O seletor de idade abaixo do contador de Crianças: um por criança, rótulo
-// "Idade da criança N", começa vazio (0–17) e grava em children[i].age.
+// "Idade da criança N", começa vazio (2–17) e grava em children[i].age.
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { WizardStep2Travelers } from '@/components/wizard/WizardStep2Travelers';
@@ -47,7 +47,7 @@ describe('seletor de idade das crianças no passo Viajantes', () => {
     });
   });
 
-  it('o seletor vai de 0 a 17 anos', () => {
+  it('o seletor vai de 2 a 17 anos', () => {
     render(
       <WizardStep2Travelers
         data={data({ children: [{ id: 'c1', type: 'child' }] })}
@@ -56,8 +56,8 @@ describe('seletor de idade das crianças no passo Viajantes', () => {
     );
     openAgeSelect(1);
     const options = screen.getAllByRole('option');
-    expect(options).toHaveLength(18);
-    expect(options[0].textContent).toContain('0 anos');
-    expect(options[17].textContent).toContain('17 anos');
+    expect(options).toHaveLength(16);
+    expect(options[0].textContent).toContain('2 anos');
+    expect(options[15].textContent).toContain('17 anos');
   });
 });

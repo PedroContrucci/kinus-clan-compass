@@ -1,6 +1,6 @@
 // Idade de criança no wizard é opcional: o seletor nasce vazio e o rascunho não pode
 // quebrar por isso. Sem idade preenchida, childrenAges fica vazio e o roteiro continua
-// montando; preenchida, ela chega em childrenAges na ordem (0 e 17 inclusos).
+// montando; preenchida, ela chega em childrenAges na ordem (2 e 17 inclusos).
 import { describe, it, expect } from 'vitest';
 import { buildDraftTrip, type DraftTripInput } from '@/lib/createTrip';
 import type { StoredTrip } from '@/lib/tripStore';
@@ -24,11 +24,11 @@ describe('idade de criança opcional no rascunho', () => {
     expect(trip.days.length).toBeGreaterThan(0);
   });
 
-  it('idades preenchidas → childrenAges na ordem, com 0 e 17', async () => {
+  it('idades preenchidas → childrenAges na ordem, com 2 e 17', async () => {
     const trip = (await buildDraftTrip(input([
-      { id: 'child-1', type: 'child', age: 0 },
+      { id: 'child-1', type: 'child', age: 2 },
       { id: 'child-2', type: 'child', age: 17 },
     ]))) as StoredTrip;
-    expect(trip.childrenAges).toEqual([0, 17]);
+    expect(trip.childrenAges).toEqual([2, 17]);
   });
 });
