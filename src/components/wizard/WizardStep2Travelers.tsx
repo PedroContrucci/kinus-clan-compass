@@ -111,7 +111,7 @@ export const WizardStep2Travelers = ({ data, onChange }: WizardStep2Props) => {
             </div>
             <div>
               <p className="font-semibold text-foreground">Crianças</p>
-              <p className="text-sm text-muted-foreground">2-11 anos</p>
+              <p className="text-sm text-muted-foreground">2 a 17 anos · bebês de colo (até 1 ano) vão no contador Bebês</p>
             </div>
           </div>
           
