@@ -73,6 +73,8 @@ export function buildFlowInput(p: {
   interests?: string[];
   /** C.7: teto do usuário; quando presente vira o orçamento (budgetSource 'user' no chamador). */
   cap?: number;
+  /** Idades opcionais por criança (índice = criança); vazio nunca bloqueia. */
+  childrenAges?: (number | undefined)[];
 }): DraftTripInput {
   const info = findCityInfo(p.city);
   const nights = Math.max(1, differenceInDays(p.to, p.from));
@@ -86,7 +88,7 @@ export function buildFlowInput(p: {
     departureDate: p.from,
     returnDate: p.to,
     adults: p.adults,
-    children: Array.from({ length: p.children }, () => ({ age: 8 })),
+    children: Array.from({ length: p.children }, (_, i) => ({ id: `child-${i + 1}`, type: 'child' as const, age: p.childrenAges?.[i] })),
     infants: 0,
     budgetTier: p.tier,
     travelStyle: p.tier,
