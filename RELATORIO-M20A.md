@@ -34,3 +34,9 @@
 To https://github.com/PedroContrucci/kinus-clan-compass
    9d88fb4..a6de76e  main -> main
 ```
+
+## Adendo — push do relatório (d49e0b5)
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   a6de76e..d49e0b5  main -> main
+```
