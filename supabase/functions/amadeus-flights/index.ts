@@ -35,6 +35,7 @@ interface FlightOffer {
     carrierCode: string;
     duration: string;
   }>;
+  foundAt: string | null;
 }
 
 function sanitizeUrl(url: string): string {
