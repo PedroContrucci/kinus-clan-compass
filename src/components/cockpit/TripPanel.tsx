@@ -27,6 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { supabase } from '@/integrations/supabase/client';
 import { getFlightPlannedTotal, getSelectedFlightPlannedTotal } from '@/lib/flightFinance';
 import { PainelResumo } from './PainelResumo';
+import { SeasonalCard } from './SeasonalCard';
 
 const TIER_DESCRIPTIONS: Record<string, string> = {
   backpacker: 'Hostels, street food, tours gratuitos',
@@ -612,6 +613,8 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
       )}
 
       <PainelResumo trip={trip} onNavigateTab={onNavigateTab} />
+
+      <SeasonalCard trip={trip} />
 
       {/* Section: Voo & Hospedagem */}
       <Collapsible open={vooOpen} onOpenChange={setVooOpen}>

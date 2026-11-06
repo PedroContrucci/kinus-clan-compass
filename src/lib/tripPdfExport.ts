@@ -10,6 +10,7 @@ import { getExpandedCityData } from '@/data/destinationPdfData';
 
 import { findCityInfo } from '@/data/destinationCatalog';
 import { catalogVerifiedLabel } from '@/lib/catalogVerified';
+import { seasonalRows, dayAlert } from '@/lib/seasonal';
 import { pdfSafe, cuisinePt, localizeCuisineTip, plural, stopsLabel, baggageLabel, packingClimate, monthOf } from '@/lib/pdfText';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { getDocsForDestination } from '@/data/destinationDocs';
@@ -1038,6 +1039,28 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
     }
   }
 
+  // ── M18a: NESTA ÉPOCA (sem dado = nada) ──
+  try {
+    const rows = seasonalRows(trip);
+    if (rows.length > 0) {
+      y += 8;
+      for (const r of rows) {
+        const w = pw - 28 - (r.kind === 'item' ? 4 : 0);
+        const size = r.kind === 'title' ? 11.5 : 10;
+        doc.setFontSize(size);
+        doc.setFont('helvetica', r.kind === 'title' || r.kind === 'label' ? 'bold' : 'normal');
+        const lines: string[] = doc.splitTextToSize((r.kind === 'item' ? '• ' : '') + pdfSafe(r.text), w);
+        // título nunca órfão: reserva espaço para ele + 2 linhas seguintes
+        checkPage(r.kind === 'title' ? 20 : lines.length * 4.2 + 1);
+        setC(r.kind === 'title' ? B.emerald : r.kind === 'label' ? B.white : B.gray400, false);
+        doc.setFontSize(size);
+        doc.setFont('helvetica', r.kind === 'title' || r.kind === 'label' ? 'bold' : 'normal');
+        doc.text(lines, r.kind === 'item' ? 18 : 14, y);
+        y += lines.length * 4.2 + (r.kind === 'title' ? 2 : 0);
+      }
+    }
+  } catch { /* sazonalidade nunca derruba o PDF */ }
+
   addFooter();
 
   // ════════════════════════════════════════
@@ -1327,6 +1350,23 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
 
     drawRect(14, y + 2, 40, 0.4, B.emerald);
     y += 6;
+
+    // M18a: alerta de fechamento do dia
+    try {
+      if (trip.startDate) {
+        const d0 = new Date(String(trip.startDate).slice(0, 10) + 'T00:00:00Z');
+        d0.setUTCDate(d0.getUTCDate() + day.day - 1);
+        const alert = dayAlert(trip.destination, d0.toISOString().slice(0, 10));
+        if (alert) {
+          setC(B.amber, false);
+          doc.setFontSize(8.5);
+          doc.setFont('helvetica', 'normal');
+          const al: string[] = doc.splitTextToSize(pdfSafe(`Atenção: ${alert}`), pw - 28);
+          doc.text(al, 14, y + 1);
+          y += al.length * 3.8 + 2;
+        }
+      }
+    } catch { /* alerta nunca derruba o PDF */ }
 
     // ── Daily route summary (non-logistics days only) ──
     const isLogisticsDay = (day.title || '').toLowerCase().includes('embarque') ||

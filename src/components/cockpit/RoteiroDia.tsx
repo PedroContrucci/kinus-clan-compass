@@ -1,3 +1,4 @@
+import { dayAlert } from '@/lib/seasonal';
 import { useState, type ReactNode, type Ref } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -313,6 +314,7 @@ export const RoteiroDia = ({
     `${activities.length} ${activities.length === 1 ? 'item' : 'itens'}`,
     dayTotal > 0 ? brl(dayTotal) : null,
   ].filter(Boolean).join(' · ');
+  const closureAlertText = dayAlert(destination, date);
   const anyOpen = activities.some((a) => expandedIds.has(a.id));
 
   return (
@@ -325,6 +327,12 @@ export const RoteiroDia = ({
           </button>
         )}
       </div>
+
+      {closureAlertText && (
+        <div data-testid="roteiro-closure-badge" className="mb-2 inline-block rounded-lg border border-amber-500/30 bg-amber-500/15 px-2 py-1 text-xs text-amber-600">
+          ⚠️ {closureAlertText}
+        </div>
+      )}
 
       {renderMap && (
         <div ref={mapAnchorRef} className="mb-2">
