@@ -251,7 +251,14 @@ serve(async (req) => {
   const corsHeaders = gate.headers;
 
   try {
-    const { action, origin, destination, date, flexibleDays } = await req.json();
+    const { action, origin, destination, date, flexibleDays, adults, children, infants } = await req.json();
+    // M20b: pax é ECO. Travelpayouts/Aviasales devolve preço de referência de 1 adulto e não aceita
+    // pax; quem multiplica por pagante é o front. Sem pax no corpo = adults 1 (comportamento de sempre).
+    const toInt = (v: unknown, min: number): number => {
+      const n = Math.floor(Number(v));
+      return Number.isFinite(n) && n >= min ? Math.min(n, 20) : min;
+    };
+    const pax = { adults: toInt(adults, 1), children: toInt(children, 0), infants: toInt(infants, 0) };
 
     if (!origin || !destination) {
       return new Response(
@@ -263,7 +270,7 @@ serve(async (req) => {
     if (action === 'flexible') {
       const { ok, results } = await searchFlexibleDates(origin, destination, date, flexibleDays || 3);
       return new Response(
-        JSON.stringify({ success: ok, data: ok ? results : [], timestamp: new Date().toISOString() }),
+        JSON.stringify({ success: ok, data: ok ? results : [], pax, timestamp: new Date().toISOString() }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
@@ -279,14 +286,14 @@ serve(async (req) => {
 
     if (!ok) {
       return new Response(
-        JSON.stringify({ success: false, data: [], offers: [], timestamp: new Date().toISOString() }),
+        JSON.stringify({ success: false, data: [], offers: [], pax, timestamp: new Date().toISOString() }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
     if (offers.length === 0) {
       return new Response(
-        JSON.stringify({ success: true, data: [], offers: [], timestamp: new Date().toISOString() }),
+        JSON.stringify({ success: true, data: [], offers: [], pax, timestamp: new Date().toISOString() }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
@@ -300,7 +307,7 @@ serve(async (req) => {
     }));
 
     return new Response(
-      JSON.stringify({ success: true, data: result, timestamp: new Date().toISOString() }),
+      JSON.stringify({ success: true, data: result, pax, timestamp: new Date().toISOString() }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (error) {

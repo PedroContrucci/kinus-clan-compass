@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { 
   useFlightSearch, 
   useFlexibleFlightSearch,
+  type SearchPax,
   FlexibleDateResult,
   formatFlightPrice 
 } from '@/hooks/useFlightSearch';
@@ -53,6 +54,8 @@ interface FlightSelectionStageProps {
   embedded?: boolean;
   /** Toque numa opção grava na hora (cockpit: write-through, chosenBy 'user'). Ausente = só no rodapé. */
   onPick?: (type: 'outbound' | 'return', flight: SelectedFlight) => void;
+  /** M20b: pax por idade (airfarePaxOf) mandado à busca; o preço de referência segue sendo de 1 adulto. */
+  pax?: SearchPax;
 }
 
 type ListItem = SelectedFlight & { isEstimate?: boolean };
@@ -153,6 +156,7 @@ export const FlightSelectionStage = ({
   offers,
   embedded = false,
   onPick,
+  pax,
 }: FlightSelectionStageProps) => {
   const [selectedOutbound, setSelectedOutbound] = useState<SelectedFlight | null>(current?.outbound ?? estimate?.outbound ?? null);
   const [selectedReturn, setSelectedReturn] = useState<SelectedFlight | null>(current?.return ?? estimate?.return ?? null);
@@ -180,7 +184,8 @@ export const FlightSelectionStage = ({
     destinationCode,
     formatDateForAPI(departureDate),
     1,
-    offers === undefined
+    offers === undefined,
+    pax
   );
 
   // Fetch return flights from Amadeus API
@@ -194,7 +199,8 @@ export const FlightSelectionStage = ({
     originCode,
     formatDateForAPI(returnDate),
     1,
-    offers === undefined
+    offers === undefined,
+    pax
   );
 
   // Fetch flexible dates for outbound
@@ -204,7 +210,8 @@ export const FlightSelectionStage = ({
     formatDateForAPI(departureDate),
     1,
     3,
-    !!flexibleDatesModal && flexibleDatesModal.type === 'outbound'
+    !!flexibleDatesModal && flexibleDatesModal.type === 'outbound',
+    pax
   );
 
   // Fetch flexible dates for return
@@ -214,7 +221,8 @@ export const FlightSelectionStage = ({
     formatDateForAPI(returnDate),
     1,
     3,
-    !!flexibleDatesModal && flexibleDatesModal.type === 'return'
+    !!flexibleDatesModal && flexibleDatesModal.type === 'return',
+    pax
   );
 
   // Ofertas de referência → SelectedFlight pelo MESMO modelo do voo (fuso, D+n, fonte).

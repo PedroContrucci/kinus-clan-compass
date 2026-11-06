@@ -30,6 +30,7 @@ import { getDestinationActivities } from '@/data/destinationActivities';
 import { createPlaceUsageTracker, normalizePlaceName, pickReusableByGap } from '@/lib/placeIdentity';
 import type { SuggestedActivity } from '@/data/destinationActivities';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
+import { airfarePaxOf } from '@/lib/pax';
 import { getTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
 import { retimeConfirmedLegs, unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
 import { trackEvent } from '@/lib/kinuEvents';
@@ -769,11 +770,11 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
       // C.4.3: porta única da busca — só IATA conhecido; sem ele, não busca.
       const route = flightSearchRoute(trip);
       const date = trip.startDate?.split('T')[0];
-      const adults = trip.travelers || 1;
+      const pax = airfarePaxOf(trip);
       if (!date || !route) return null;
       const { origin, destination } = route;
       const { data, error } = await supabase.functions.invoke('amadeus-flights', {
-        body: { action: 'search', origin, destination, date, adults },
+        body: { action: 'search', origin, destination, date, adults: pax.adults, children: pax.children, infants: pax.infants },
       });
       if (error) return null;
       // Match TripPanel's parsing exactly: accept data.data, data.offers, or a
@@ -809,8 +810,8 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
     (async () => {
       const price = await fetchCheapestFlightPrice(selectedTrip);
       if (cancelled || price == null) return;
-      const travelers = selectedTrip.travelers || 1;
-      const comparable = Math.round(price * 2 * travelers);
+      // M20b: o preço de referência é de 1 adulto; multiplica por pagante (bebê de colo fora).
+      const comparable = Math.round(price * 2 * airfarePaxOf(selectedTrip).payers);
       const anchor = getFlightPlannedTotal(selectedTrip);
       const delta = anchor > 0 ? Math.round(comparable - anchor) : 0;
       const updated: SavedTrip = {

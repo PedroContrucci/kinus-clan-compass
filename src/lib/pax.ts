@@ -36,3 +36,33 @@ export function paxLabel(p: Pick<Pax, 'adults' | 'children' | 'infants'>): strin
   if (p.infants > 0) parts.push(plural(p.infants, 'bebê', 'bebês'));
   return parts.join(' + ');
 }
+
+// ─── Regra da aérea (M20b) ────────────────────────────────────────────────────────────────────
+// Para passagem, a idade manda: ≥ 12 = adulto; 2–11 = criança; < 2 = bebê de colo (infant).
+// Criança sem idade informada conta como criança. `childrenAges` entra pela index signature
+// (createTrip grava só as idades numéricas). Pagantes = adultos + crianças; bebê fica fora.
+
+export interface AirfarePax {
+  adults: number;
+  children: number;
+  infants: number;
+  /** adults + children: quem multiplica o preço de referência (1 adulto). */
+  payers: number;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function airfarePaxOf(trip: any): AirfarePax {
+  const base = paxOf(trip);
+  const rawAges: unknown[] = Array.isArray(trip?.childrenAges) ? trip.childrenAges : [];
+  const ages = rawAges
+    .filter((a): a is number => typeof a === 'number' && Number.isFinite(a) && a >= 0)
+    .slice(0, base.children);
+  let adults = base.adults;
+  let children = base.children;
+  let infants = base.infants;
+  for (const age of ages) {
+    if (age >= 12) { adults += 1; children -= 1; }
+    else if (age < 2) { infants += 1; children -= 1; }
+  }
+  return { adults, children, infants, payers: adults + children };
+}

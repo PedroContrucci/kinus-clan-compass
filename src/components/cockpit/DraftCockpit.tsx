@@ -3,7 +3,7 @@
 // "trocar"/"ver", como painel abaixo da linha; o Ativar do card é o único da tela.
 
 import { budgetFollowsPlan, planBreakdown, envelopeFor, reserveFor } from '@/lib/planTotals';
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { FlightSelectionStage, SelectedFlight } from './FlightSelectionStage';
@@ -17,6 +17,7 @@ import { isKinuBuilt } from '@/lib/kinuBuilt';
 import { plannedFlightToSelected, offerToSelected, writeFlightsThrough, estimateOf } from '@/lib/flightModel';
 import { pickBest, explainPick, flightChoiceLine, flightSearchKey, shouldAutoSearch, type KinuFlightSearch } from '@/lib/flightRanking';
 import { useFlightSearch } from '@/hooks/useFlightSearch';
+import { airfarePaxOf } from '@/lib/pax';
 import { flightSearchRoute } from '@/lib/timezone';
 import { buildItineraryForTrip, countManualEdits, itemIdsOf } from '@/lib/draftItinerary';
 import { replanTrip, unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
@@ -247,8 +248,9 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   // ─── Busca ao abrir o rascunho (D2) + escolha automática pelo ranking (D3) ───
   const searchKey = flightSearchKey(originCode, destinationCode, trip.startDate, trip.endDate);
   const needSearch = !!searchRoute && shouldAutoSearch(trip, searchKey);
-  const outQ = useFlightSearch(originCode, destinationCode, String(trip.startDate).slice(0, 10), 1, needSearch);
-  const retQ = useFlightSearch(destinationCode, originCode, String(trip.endDate).slice(0, 10), 1, needSearch);
+  const searchPax = useMemo(() => airfarePaxOf(trip), [trip]);
+  const outQ = useFlightSearch(originCode, destinationCode, String(trip.startDate).slice(0, 10), 1, needSearch, searchPax);
+  const retQ = useFlightSearch(destinationCode, originCode, String(trip.endDate).slice(0, 10), 1, needSearch, searchPax);
   const searchDone = useRef<string | null>(null);
   useEffect(() => {
     if (!needSearch || searchDone.current === searchKey) return;
@@ -476,6 +478,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
       estimate={stageEstimate}
       current={stageCurrent}
       offers={stageOffers}
+      pax={searchPax}
     />
     </>
   );

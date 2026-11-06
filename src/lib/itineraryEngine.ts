@@ -84,7 +84,7 @@ export interface FlightOption {
   connectionCity?: string;
   duration: string;
   durationMinutes: number;
-  /** Preço por pessoa, por trecho (Travelpayouts devolve 1 adulto; a estimativa idem). Total = × travelers. */
+  /** Preço por pessoa, por trecho (Travelpayouts/Aviasales devolve o preço de referência de 1 adulto; a estimativa idem). Total = × pagantes (adultos + crianças; airfarePaxOf), não × travelers. */
   price: number;
   departureTime: string;
   arrivalTime: string;

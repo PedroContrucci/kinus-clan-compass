@@ -38,16 +38,22 @@ export interface FlexibleDateResult {
 
 export type SortOption = 'price' | 'duration' | 'departure';
 
+/** M20b: pax por idade (airfarePaxOf). A function ecoa; o preço de referência segue sendo de 1 adulto. */
+export interface SearchPax { adults: number; children: number; infants: number }
+const paxBody = (adults: number, pax?: SearchPax) =>
+  pax ? { adults: pax.adults, children: pax.children, infants: pax.infants } : { adults };
+
 // Search flights for a specific date
 export function useFlightSearch(
   origin: string,
   destination: string,
   date: string,
   adults: number = 1,
-  enabled: boolean = true
+  enabled: boolean = true,
+  pax?: SearchPax
 ) {
   return useQuery({
-    queryKey: ['flights', origin, destination, date, adults],
+    queryKey: ['flights', origin, destination, date, adults, pax?.children ?? 0, pax?.infants ?? 0],
     queryFn: async (): Promise<FlightOffer[]> => {
       if (!origin || !destination || !date) {
         return [];
@@ -59,7 +65,7 @@ export function useFlightSearch(
           origin,
           destination,
           date,
-          adults,
+          ...paxBody(adults, pax),
         },
       });
 
@@ -87,10 +93,11 @@ export function useFlexibleFlightSearch(
   baseDate: string,
   adults: number = 1,
   daysRange: number = 3,
-  enabled: boolean = true
+  enabled: boolean = true,
+  pax?: SearchPax
 ) {
   return useQuery({
-    queryKey: ['flexible-flights', origin, destination, baseDate, adults, daysRange],
+    queryKey: ['flexible-flights', origin, destination, baseDate, adults, daysRange, pax?.children ?? 0, pax?.infants ?? 0],
     queryFn: async (): Promise<FlexibleDateResult[]> => {
       if (!origin || !destination || !baseDate) {
         return [];
@@ -102,7 +109,7 @@ export function useFlexibleFlightSearch(
           origin,
           destination,
           date: baseDate,
-          adults,
+          ...paxBody(adults, pax),
           flexibleDays: daysRange,
         },
       });
@@ -149,7 +156,8 @@ export function useFlightSearchManual() {
     origin: string,
     destination: string,
     date: string,
-    adults: number = 1
+    adults: number = 1,
+    pax?: SearchPax
   ): Promise<FlightOffer[]> => {
     setIsLoading(true);
     setError(null);
@@ -161,7 +169,7 @@ export function useFlightSearchManual() {
           origin,
           destination,
           date,
-          adults,
+          ...paxBody(adults, pax),
         },
       });
 
@@ -188,7 +196,8 @@ export function useFlightSearchManual() {
     destination: string,
     baseDate: string,
     adults: number = 1,
-    daysRange: number = 3
+    daysRange: number = 3,
+    pax?: SearchPax
   ): Promise<FlexibleDateResult[]> => {
     setIsLoading(true);
     setError(null);
@@ -200,7 +209,7 @@ export function useFlightSearchManual() {
           origin,
           destination,
           date: baseDate,
-          adults,
+          ...paxBody(adults, pax),
           flexibleDays: daysRange,
         },
       });

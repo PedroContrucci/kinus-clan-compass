@@ -6,6 +6,8 @@ import { CheckinBanner } from '@/components/checkin/CheckinBanner';
 import { TripCheckinDrawer } from '@/components/checkin/TripCheckinDrawer';
 import { WeatherBadge } from './WeatherBadge';
 import { useFlexibleFlightSearch } from '@/hooks/useFlightSearch';
+import { airfarePaxOf } from '@/lib/pax';
+import { FlightPriceLines } from './FlightPriceLines';
 import { differenceInDays, format } from 'date-fns';
 import { tripTimezone } from '@/lib/timezone';
 import { ptBR } from 'date-fns/locale';
@@ -310,7 +312,8 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     flexDate,
     trip.travelers || 1,
     3,
-    showFlexDates
+    showFlexDates,
+    airfarePaxOf(trip)
   );
 
 
@@ -422,8 +425,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
   const flightTotal = flightConfirmed
     ? flightConfirmedTotal
     : flightPlannedTotal;
-  const flightPerPerson = Math.round(flightTotal / (trip.travelers || 1));
-  const flightPrice = flightPerPerson;
+  const flightPrice = Math.round(flightTotal / airfarePaxOf(trip).payers);
 
 
 
@@ -690,9 +692,7 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
           <p className={`text-lg font-bold font-['Outfit'] ${flightConfirmed ? 'text-emerald-400' : 'text-sky-400'}`}>
             R$ {fmt(flightTotal)}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            total · R$ {fmt(flightPerPerson)} por pessoa
-          </p>
+          <FlightPriceLines trip={trip} amount={flightTotal} confirmed={flightConfirmed} />
           <p className="text-[10px] text-muted-foreground mt-1">
             {flightDuration} · {flightDirect ? 'Direto' : 'Com conexão'}
           </p>

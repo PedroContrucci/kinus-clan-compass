@@ -1,3 +1,5 @@
+import { airfarePaxOf } from './pax';
+
 export function getSelectedFlightPlannedTotal(trip: any): number | null {
   const outboundPrice = Number(trip?.outboundFlight?.option?.price);
   const returnPrice = Number(trip?.returnFlight?.option?.price);
@@ -6,7 +8,9 @@ export function getSelectedFlightPlannedTotal(trip: any): number | null {
     return null;
   }
 
-  return Math.round((outboundPrice + returnPrice) * (trip?.travelers || 1));
+  // M20b: preço de referência = 1 adulto; multiplica por pagante (adultos + crianças), bebê de colo fora.
+  // Viagem sem pax por idade: payers = travelers, como sempre.
+  return Math.round((outboundPrice + returnPrice) * airfarePaxOf(trip).payers);
 }
 
 export function getFlightPlannedTotal(trip: any): number {
