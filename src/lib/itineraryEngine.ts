@@ -672,7 +672,9 @@ export function generateItinerary(
   travelInterests: string[] = [],
   jetLagSeverity?: 'BAIXO' | 'MODERADO' | 'ALTO' | 'SEVERO',
   priceLevelProp?: PriceLevel,
-  hotel?: EngineHotel
+  hotel?: EngineHotel,
+  /** Interno (M19c): pré-passe que gera o dia ideal ignorando o dia da semana. Não usar de fora. */
+  _dry?: { ignoreWeekdays?: boolean }
 ): { days: ItineraryDay[]; breakdown: BudgetBreakdown; meta: { michelinCount: number; hotelNights: number; checkoutOnEve: boolean; thinDays: { day: number; reason: string }[]; lightEve: boolean } } {
   const totalDays = differenceInDays(returnDate, departureDate) + 1;
   const domestic = typeof returnFlight.international === 'boolean'
@@ -781,7 +783,33 @@ export function generateItinerary(
   const pairsOf = (anchorId: string) => pool.filter((a) => a.id === `${anchorId}-almoco` || a.id === `${anchorId}-jantar`);
 
   // R18: o item existe no dia da semana do dia sendo montado.
-  const opensToday = (a: SuggestedActivity) => opensOn(a.id, addDays(departureDate, currentPickDayIndex).getDay());
+  const opensToday = (a: SuggestedActivity) => !!_dry?.ignoreWeekdays || opensOn(a.id, addDays(departureDate, currentPickDayIndex).getDay());
+  const opensIdx = (id: string, i: number) => opensOn(id, addDays(departureDate, i).getDay());
+
+  // M19c: item fechado no dia troca de dia em vez de sumir. Pré-passe: gera o dia ideal (sem dia da semana);
+  // ícone/essencial/âncora de bate-volta que caiu em dia fechado fica RESERVADO para o dia de exploração aberto
+  // mais próximo (o anterior; sem anterior, o seguinte). Daí em diante é o primeiro da fila (reservedNow).
+  // Não fura o `force` do ícone nem as regras do bate-volta (daytripOk: cota, véspera, jet lag, dia colado).
+  const reserve = new Map<string, number>();
+  if (!_dry) {
+    const dry = generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp, hotel, { ignoreWeekdays: true });
+    const exIdx: number[] = [];
+    for (let j = explorationStart; j <= totalDays - 2; j++) exIdx.push(j);
+    dry.days.forEach((d, j) => {
+      if (d.label !== 'Exploração') return;
+      for (const a of d.activities) {
+        const id = catalogIdOf(a.id);
+        const sug = pool.find((p) => p.id === id);
+        if (!sug || !(sug.category === 'morning' || sug.category === 'afternoon') || opensIdx(id, j)) continue;
+        if (!(isTierEssential(id) || isDaytripAnchor(sug))) continue;
+        const before = exIdx.filter((k) => k < j && opensIdx(id, k));
+        const after = exIdx.filter((k) => k > j && opensIdx(id, k));
+        const t = before.length ? before[before.length - 1] : after[0];
+        if (t !== undefined) reserve.set(id, t);
+      }
+    });
+  }
+  const reservedNow = (a: SuggestedActivity) => reserve.has(a.id) && currentPickDayIndex >= reserve.get(a.id)!;
 
   const hotelCoord = engineHotelCoord(destination, hotel?.label ?? getHotelRecommendation(destination, priceLevel, travelInterests)?.name);
   // C.4.3: o scheduler salta do hotel só por casamento real (a mediana do engineHotelCoord fica no pick).
@@ -817,13 +845,19 @@ export function generateItinerary(
   const explorationTotal = Math.max(0, totalDays - 1 - explorationStart);
   const minHours = (cat: string) => Math.min(...pool.filter((a) => a.category === cat && !isPairMeal(a)).map((a) => a.durationHours || 1), 3);
   const mealReserve = minHours('lunch') + minHours('dinner') + 2 * HOP_HOURS;
+  // M19c: o `force` do ícone vale no ÚLTIMO dia de exploração em que algum ícone da cidade abre (não por posição).
+  const forceN = (() => {
+    const icons = Object.keys(tiers).filter((id) => tiers[id] === 'icon');
+    for (let n = explorationTotal - 1; n >= 0; n--) if (!icons.length || icons.some((id) => opensIdx(id, explorationStart + n))) return n;
+    return explorationTotal - 1;
+  })();
   const tierPlanFor = (n: number, hoursUsed: () => number): { tiers: Set<LandmarkTier>; force: boolean; fits: (a: SuggestedActivity) => boolean } => {
     const want = new Set<LandmarkTier>();
     if (!iconPlaced) want.add('icon');
     if (explorationTotal >= ESSENTIALS_MIN_DAYS && n >= 0 && n < 3 && essentialsPlaced < 4) { want.add('icon'); want.add('essential'); }
     // Cabe = o que já está no dia + o item + almoço e jantar (os menores) + saltos ≤ janela; senão a janela o cortaria.
     const fits = (a: SuggestedActivity) => hoursUsed() + HOP_HOURS + (a.durationHours || 0) + mealReserve <= EXPLORATION_WINDOW_HOURS;
-    return { tiers: want, force: !iconPlaced && n === explorationTotal - 1, fits };
+    return { tiers: want, force: !iconPlaced && n === forceN, fits };
   };
 
   // M7: Michelin do catálogo governado por preço, não por rótulo. Econômico nunca; Conforto no jantar só
@@ -925,7 +959,7 @@ export function generateItinerary(
         if (priceLevel === 'luxury') return -p;
         return Math.abs(p - target);
       };
-      const keyed = candidates.map((a) => ({ a, k: [michelinOverCap(a, category) ? 1 : 0, hopKey(a), interestKey(a), weekdayKey(a), themeKey(a), dualKey(a), priceKey(a)] }));
+      const keyed = candidates.map((a) => ({ a, k: [reservedNow(a) ? 0 : 1, michelinOverCap(a, category) ? 1 : 0, hopKey(a), interestKey(a), weekdayKey(a), themeKey(a), dualKey(a), priceKey(a)] }));
       keyed.sort((x, y) => {
         for (let j = 0; j < x.k.length; j++) if (x.k[j] !== y.k[j]) return x.k[j] - y.k[j];
         return 0;
@@ -933,7 +967,8 @@ export function generateItinerary(
       candidates = keyed.map((x) => x.a);
       // M6: tier como critério — restringe o conjunto já ordenado (a ordem segue a de sempre). Exceção: pôr do sol
       // ou lanche na frente da fila continua mandando; é ele que vira o item de fim de tarde (17:30).
-      if (opts.tierPlan && opts.tierPlan.tiers.size > 0) {
+      // M19c: reservado na frente da fila → o tier não o desloca (salvo `force`).
+      if (opts.tierPlan && opts.tierPlan.tiers.size > 0 && (opts.tierPlan.force || !reservedNow(candidates[0]))) {
         const want = opts.tierPlan.tiers;
         let byTier = candidates.filter((a) => tiers[a.id] && want.has(tiers[a.id]) && opts.tierPlan!.fits(a) && (opts.tierPlan!.force || hopKey(a) === 0));
         // M6-fix: ícone ainda não encaixado passa na frente dos essenciais (sort estável preserva a ordem geral);

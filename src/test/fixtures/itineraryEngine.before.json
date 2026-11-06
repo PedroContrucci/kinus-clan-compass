@@ -1220,21 +1220,55 @@
             ]
           },
           {
-            "id": "day-5-lis2-sintra",
-            "name": "Bate-volta a Sintra (Palácio da Pena)",
+            "id": "day-5-lis-jeronimos",
+            "name": "Mosteiro dos Jerónimos",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 360,
-            "costPerPerson": 180,
-            "time": "09:15",
-            "duration": "8h",
-            "location": "Sintra (2 pax)",
-            "rating": 4.8,
+            "estimatedCost": 150,
+            "costPerPerson": 75,
+            "time": "09:30",
+            "duration": "2h",
+            "location": "Belém (2 pax)",
+            "rating": 4.4,
             "status": "suggestion",
             "tips": [
-              "Bate-volta: ocupa o dia inteiro",
-              "Trem da Estação do Rossio (40 min) — o palácio de conto de fadas nas montanhas",
-              "Compre ingresso do Pena com antecedência e vá CEDO; Quinta da Regaleira na sequência"
+              "Compre ingresso online e chegue antes das 10h — a fila cresce rápido; fecha às segundas"
+            ],
+            "source": "kinu"
+          },
+          {
+            "id": "day-5-lis-ponto-final",
+            "name": "Ponto Final (Cacilhas)",
+            "type": "lunch",
+            "timeSlot": "lunch",
+            "estimatedCost": 240,
+            "costPerPerson": 120,
+            "time": "12:30",
+            "duration": "2.5h",
+            "location": "Almada (barco de 10min) (2 pax)",
+            "rating": 4.6,
+            "status": "suggestion",
+            "tips": [
+              "Atravesse o Tejo de barco no Cais do Sodré",
+              "Mesas na beira do rio com Lisboa inteira de frente",
+              "Reserve — as mesas do cais são disputadas"
+            ],
+            "source": "kinu"
+          },
+          {
+            "id": "day-5-lis-jardim-estrela",
+            "name": "Jardim da Estrela",
+            "type": "experience",
+            "timeSlot": "afternoon",
+            "estimatedCost": 0,
+            "costPerPerson": 0,
+            "time": "15:15",
+            "duration": "1.5h",
+            "location": "Estrela (2 pax)",
+            "rating": 4.6,
+            "status": "suggestion",
+            "tips": [
+              "Jardim romântico do século XIX em frente à Basílica, com coreto, lago de patos e parque infantil; o favorito das famílias lisboetas"
             ],
             "source": "kinu"
           },
@@ -1251,7 +1285,6 @@
             "rating": 4.4,
             "status": "suggestion",
             "tips": [
-              "Perto do hotel, para a volta do bate-volta",
               "Clássico moderno da cozinha portuguesa no andar do mercado",
               "A açorda de marisco dá nome à casa",
               "A mousse de chocolate é servida da travessa, à moda antiga"
@@ -1259,7 +1292,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 680
+        "totalCost": 710
       },
       {
         "dayNumber": 7,
@@ -1284,58 +1317,21 @@
             ]
           },
           {
-            "id": "day-6-lis-gulbenkian",
-            "name": "Museu Calouste Gulbenkian",
+            "id": "day-6-lis2-sintra",
+            "name": "Bate-volta a Sintra (Palácio da Pena)",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 120,
-            "costPerPerson": 60,
-            "time": "09:30",
-            "duration": "2.5h",
-            "location": "Avenidas Novas (2 pax)",
-            "rating": 4.7,
+            "estimatedCost": 360,
+            "costPerPerson": 180,
+            "time": "09:15",
+            "duration": "8h",
+            "location": "Sintra (2 pax)",
+            "rating": 4.8,
             "status": "suggestion",
             "tips": [
-              "Coleção de arte do Egito antigo a Monet",
-              "Os jardins do museu são um oásis na cidade",
-              "Domingo a partir das 14h é gratuito"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-6-lis-ze-da-mouraria",
-            "name": "Zé da Mouraria",
-            "type": "lunch",
-            "timeSlot": "lunch",
-            "estimatedCost": 170,
-            "costPerPerson": 85,
-            "time": "12:30",
-            "duration": "1.5h",
-            "location": "Mouraria (2 pax)",
-            "rating": 4.6,
-            "status": "suggestion",
-            "tips": [
-              "Tasca tradicional com doses fartas",
-              "O bacalhau assado é referência na cidade",
-              "Só almoço e fecha domingo — chegue antes das 13h"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-6-lis2-maat",
-            "name": "MAAT — Museu de Arte, Arquitetura e Tecnologia",
-            "type": "experience",
-            "timeSlot": "afternoon",
-            "estimatedCost": 90,
-            "costPerPerson": 45,
-            "time": "15:00",
-            "duration": "2h",
-            "location": "Belém (2 pax)",
-            "rating": 4.4,
-            "status": "suggestion",
-            "tips": [
-              "O prédio-onda à beira do Tejo — arte contemporânea e telhado-mirante",
-              "Encaixa no dia de Belém, entre os Pastéis e a Torre"
+              "Bate-volta: ocupa o dia inteiro",
+              "Trem da Estação do Rossio (40 min) — o palácio de conto de fadas nas montanhas",
+              "Compre ingresso do Pena com antecedência e vá CEDO; Quinta da Regaleira na sequência"
             ],
             "source": "kinu"
           },
@@ -1352,13 +1348,14 @@
             "rating": 4.4,
             "status": "suggestion",
             "tips": [
+              "Perto do hotel, para a volta do bate-volta",
               "Petiscar conservas portuguesas premium num antigo armazém de pesca",
               "Experiência 100% portuguesa antes da Pink Street"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 470
+        "totalCost": 450
       },
       {
         "dayNumber": 8,
@@ -1439,19 +1436,19 @@
             "source": "kinu"
           },
           {
-            "id": "day-7-lis-jardim-estrela",
-            "name": "Jardim da Estrela",
+            "id": "day-7-lis-monsanto-montes-claros",
+            "name": "Miradouro dos Montes Claros (Monsanto)",
             "type": "experience",
             "timeSlot": "afternoon",
             "estimatedCost": 0,
             "costPerPerson": 0,
             "time": "15:00",
-            "duration": "1.5h",
-            "location": "Estrela (2 pax)",
-            "rating": 4.6,
+            "duration": "2h",
+            "location": "Monsanto (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Jardim romântico do século XIX em frente à Basílica, com coreto, lago de patos e parque infantil; o favorito das famílias lisboetas"
+              "O pulmão verde de Lisboa, com trilhas e o miradouro sobre o Tejo e a Ponte 25 de Abril; vá de táxi ou carro"
             ],
             "source": "kinu"
           },
@@ -1498,17 +1495,17 @@
         "status": "estimated"
       },
       "experiences": {
-        "amount": 1568,
+        "amount": 1508,
         "percent": 8,
         "status": "estimated"
       },
       "food": {
-        "amount": 5300,
+        "amount": 5370,
         "percent": 27,
         "status": "estimated"
       },
-      "total": 22568,
-      "available": -2568,
+      "total": 22578,
+      "available": -2578,
       "trustZonePercent": 113
     },
     "meta": {

@@ -844,7 +844,7 @@ export function weekdayOf(date: unknown): number {
 }
 
 export interface ExtraRuleResult {
-  rule: 'R17 ESSENCIAIS' | 'R18 DIA DA SEMANA' | 'R20 DIA DENSO' | 'R21 VÉSPERA';
+  rule: 'R17 ESSENCIAIS' | 'R17 ÍCONE' | 'R18 DIA DA SEMANA' | 'R20 DIA DENSO' | 'R21 VÉSPERA';
   status: 'PASS' | 'WARN' | 'FAIL' | 'SKIP';
   detail: string;
   /** R17: ids essenciais ausentes que cabiam. R18: ids fora do dia. */
@@ -894,6 +894,9 @@ export function validateEssentials(days: PlanDay[], ctx: PlanRulesContext): Extr
     const cat = index.get(id)!;
     const probe: PlanDayItem = { id: `day-x-${id}`, name: cat.name, timeSlot: cat.category };
     return exploration.some((i) => {
+      // M19c: dia em que o item está fechado não conta como "cabia".
+      const wd = weekdayOf(days[i].date);
+      if (wd >= 0 && !opensOn(id, wd)) return false;
       const u = dayWindowUsage(days, ctx, i, [probe], index);
       return !!u && u.used <= u.window;
     });
@@ -901,6 +904,37 @@ export function validateEssentials(days: PlanDay[], ctx: PlanRulesContext): Extr
   const head = `${essentials.length - missing.length}/${essentials.length}`;
   if (fitting.length) return { rule: 'R17 ESSENCIAIS', status: 'WARN', detail: `${head} · cabiam: ${fitting.join(', ')}`, ids: fitting };
   return { rule: 'R17 ESSENCIAIS', status: 'PASS', detail: missing.length ? `${head} · sem espaço: ${missing.join(', ')}` : head };
+}
+
+/**
+ * M19c — R17 ÍCONE: o ícone do catálogo (tier `icon`) que abre em pelo menos um dia de exploração da estadia
+ * e não aparece no roteiro = FAIL, com os dias em que abriria. Se não abre em nenhum, PASS com nota.
+ */
+export function validateIcons(days: PlanDay[], ctx: PlanRulesContext): ExtraRuleResult {
+  const index = catalogIndex(ctx.destination);
+  const lastIdx = days.length - 1;
+  const arrivalIdx = arrivalIndexOf(days, ctx);
+  const exploration = days.map((_, i) => i).filter((i) =>
+    i > arrivalIdx && i < lastIdx && !/recupera|descanso|trânsito/i.test(days[i].title ?? ''));
+  const tiers = tiersOf(ctx.destination);
+  const icons = Object.keys(tiers).filter((id) => tiers[id] === 'icon' && index.has(id)).sort();
+  if (exploration.length === 0) return { rule: 'R17 ÍCONE', status: 'SKIP', detail: 'sem dia de exploração' };
+  if (icons.length === 0) return { rule: 'R17 ÍCONE', status: 'SKIP', detail: 'cidade sem ícone' };
+  const used = new Set(days.flatMap((d) => d.activities.map((a) => catalogIdOf(a.id))));
+  const usedNames = new Set(days.flatMap((d) => d.activities.map((a) => normalizePlaceName(a.name))));
+  const absent = icons.filter((id) => !used.has(id) && !usedNames.has(normalizePlaceName(index.get(id)!.name)));
+  const fail: string[] = [];
+  const notes: string[] = [];
+  const closed: string[] = [];
+  for (const id of absent) {
+    const openDays = exploration.filter((i) => { const wd = weekdayOf(days[i].date); return wd < 0 || opensOn(id, wd); });
+    if (openDays.length === 0) { closed.push(id); continue; }
+    fail.push(id);
+    notes.push(`${index.get(id)!.name} abriria: ${openDays.map((i) => { const wd = weekdayOf(days[i].date); return `dia ${days[i].day}${wd >= 0 ? ` (${WEEKDAY_PT[wd]})` : ''}`; }).join(', ')}`);
+  }
+  if (fail.length) return { rule: 'R17 ÍCONE', status: 'FAIL', detail: notes.join(' · '), ids: fail };
+  const head = `${icons.length - absent.length}/${icons.length}`;
+  return { rule: 'R17 ÍCONE', status: 'PASS', detail: closed.length ? `${head} · fechado em toda a estadia: ${closed.join(', ')}` : head };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
