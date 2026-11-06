@@ -50,6 +50,10 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack, backLabel
   };
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
+  const [childrenAges, setChildrenAges] = useState<(number | undefined)[]>([]);
+  useEffect(() => {
+    setChildrenAges((prev) => Array.from({ length: children }, (_, i) => prev[i]));
+  }, [children]);
   const [tier, setTier] = useState<FlowTierId>('comfort');
   const resolved = useMemo(() => resolveOrigin(homeCity), [homeCity]);
   const [origin, setOrigin] = useState<string>(resolved.city);
@@ -85,7 +89,7 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack, backLabel
     setBusy(true);
     try {
       const capValue = Number(cap.replace(/\D/g, '')) || 0;
-      const trip = await buildDraftTrip(buildFlowInput({ city, origin, from, to, adults, children, tier, interests, cap: capValue }));
+      const trip = await buildDraftTrip(buildFlowInput({ city, origin, from, to, adults, children, childrenAges, tier, interests, cap: capValue }));
       const stored = finishFlowTrip(trip as StoredTrip, { cap: capValue, children, originSource: origin === resolved.city ? resolved.source : 'user', createdVia: 'onboarding' });
       addTrip(stored);
       trackTripCreated(stored, 'wizard');
@@ -222,7 +226,10 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack, backLabel
                 <p className="text-sm font-medium text-foreground mb-2">Viajantes</p>
                 {([['Adultos', adults, setAdults, 1], ['Crianças', children, setChildren, 0]] as const).map(([label, val, set, min]) => (
                   <div key={label} className="flex items-center justify-between bg-card border border-border rounded-xl px-3 py-2 mb-2">
-                    <span className="text-foreground">{label}</span>
+                    <span className="flex flex-col">
+                      <span className="text-foreground">{label}</span>
+                      {label === 'Crianças' && <span className="text-xs text-muted-foreground">2 a 17 anos</span>}
+                    </span>
                     <span className="flex items-center gap-3">
                       <button aria-label={`Menos ${label}`} onClick={() => set(Math.max(min, val - 1))} className="p-1 rounded-lg bg-muted"><Minus size={14} /></button>
                       <span className="w-4 text-center text-foreground">{val}</span>
@@ -230,6 +237,29 @@ export const FirstTripFlow = ({ userId, homeCity, initialCity, onBack, backLabel
                     </span>
                   </div>
                 ))}
+                {children > 0 && (
+                  <div className="flex flex-col gap-2 sm:grid sm:grid-cols-2">
+                    {childrenAges.map((age, i) => (
+                      <label key={i} className="flex items-center justify-between gap-3 bg-card border border-border rounded-xl px-3 py-2 text-sm">
+                        <span className="text-foreground">Idade da criança {i + 1}</span>
+                        <select
+                          aria-label={`Idade da criança ${i + 1}`}
+                          value={age ?? ''}
+                          onChange={(e) => {
+                            const v = e.target.value === '' ? undefined : Number(e.target.value);
+                            setChildrenAges((prev) => prev.map((a, j) => (j === i ? v : a)));
+                          }}
+                          className="bg-muted text-foreground rounded-lg px-2 py-1 text-sm border border-border"
+                        >
+                          <option value="">Selecione</option>
+                          {Array.from({ length: 16 }, (_, k) => k + 2).map((n) => (
+                            <option key={n} value={n}>{n} anos</option>
+                          ))}
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
