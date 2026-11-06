@@ -5,6 +5,12 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { WizardStep2Travelers } from '@/components/wizard/WizardStep2Travelers';
 import type { WizardData } from '@/components/wizard/types';
 
+// jsdom não implementa pointer capture, que o Radix usa ao abrir o seletor.
+const el = Element.prototype as unknown as Record<string, unknown>;
+el.hasPointerCapture ??= () => false;
+el.setPointerCapture ??= () => {};
+el.releasePointerCapture ??= () => {};
+
 const data = (over: Partial<WizardData> = {}): WizardData =>
   ({ adults: 2, children: [], infants: 0, ...over } as WizardData);
 
