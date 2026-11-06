@@ -47,3 +47,9 @@ A coluna é `landmark_tier` (valores `icon|essential|hidden_gem`). Efeito espera
 To https://github.com/PedroContrucci/kinus-clan-compass
    5f631f5..1d59ee1  main -> main
 ```
+
+## Adendo — saída do push do relatório (M19c)
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   1d59ee1..2af0971  main -> main
+```
