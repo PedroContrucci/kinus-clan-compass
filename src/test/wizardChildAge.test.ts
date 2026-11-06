@@ -15,20 +15,20 @@ const input = (children: DraftTripInput['children']): DraftTripInput => ({
 
 describe('idade de criança opcional no rascunho', () => {
   it('crianças sem idade → childrenAges vazio e roteiro ainda montado', async () => {
-    const trip = await buildDraftTrip(input([
+    const trip = (await buildDraftTrip(input([
       { id: 'child-1', type: 'child' },
       { id: 'child-2', type: 'child' },
-    ]));
+    ]))) as StoredTrip;
     expect(trip.childrenAges).toEqual([]);
     expect(trip.children).toBe(2);
     expect(trip.days.length).toBeGreaterThan(0);
   });
 
   it('idades preenchidas → childrenAges na ordem, com 0 e 17', async () => {
-    const trip = await buildDraftTrip(input([
+    const trip = (await buildDraftTrip(input([
       { id: 'child-1', type: 'child', age: 0 },
       { id: 'child-2', type: 'child', age: 17 },
-    ]));
+    ]))) as StoredTrip;
     expect(trip.childrenAges).toEqual([0, 17]);
   });
 });
