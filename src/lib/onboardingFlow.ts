@@ -13,6 +13,7 @@ import type { DraftTripInput } from '@/lib/createTrip';
 import { interestLabel, splitInterests } from '@/lib/interestsFor';
 import { flightChoiceLine } from '@/lib/flightRanking';
 import { cityToIata } from '@/lib/timezone';
+import { paxLabel, paxOf } from '@/lib/pax';
 
 export const DEFAULT_ORIGIN = 'São Paulo';
 export type OriginSource = 'profile' | 'default' | 'user';
@@ -165,14 +166,13 @@ export function kinuDidLines(trip: any): KinuDidLines {
     ? `${base} · montei ${used.length ? `por ${used.map(interestLabel).join(', ')}` : 'pelo catálogo da cidade'} — ${ignored.map(interestLabel).join(', ')} ${ignored.length === 1 ? 'não tem' : 'não têm'} catálogo em ${trip.destination}`
     : base;
 
-  const travelers = Number(trip.travelers) || 1;
   const nights = trip.startDate && trip.endDate
     ? Math.max(1, differenceInDays(new Date(trip.endDate), new Date(trip.startDate)))
     : Math.max(1, days.length - 1);
   const amount = Number(trip.budget) || 0;
   const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`;
   const plan = planBreakdown(trip);
-  const budget = `${brl(amount)} — estimativa para ${travelers} ${travelers === 1 ? 'pessoa' : 'pessoas'}, ${nights} noites, perfil ${tierLabel(trip.budgetType)}${realFlight ? '' : ' · fecha ao escolher o voo'}`;
+  const budget = `${brl(amount)} — estimativa para ${paxLabel(paxOf(trip))}, ${nights} noites, perfil ${tierLabel(trip.budgetType)}${realFlight ? '' : ' · fecha ao escolher o voo'}`;
   const reserve = Math.max(0, amount - plan.total);
   const budgetDetail = `Custo estimado ${brl(plan.total)}: voo ${brl(plan.flights)}${realFlight ? '' : ` (${trip.outboundFlight?.priceSource === 'route' ? 'estimativa por rota' : 'estimativa genérica'})`} · hotel ${brl(plan.hotel)} · alimentação ${brl(plan.food)} · passeios ${brl(plan.tours)}`
     + (reserve > 0 && reserve === reserveFor(plan.total) ? ` · inclui reserva de ${Math.round(RESERVE_RATE * 100)}% (${brl(reserve)})` : '');

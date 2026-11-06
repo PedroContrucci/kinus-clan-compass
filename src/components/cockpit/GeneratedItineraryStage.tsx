@@ -62,6 +62,8 @@ interface GeneratedItineraryStageProps {
   returnDate: Date;
   budget: number;
   travelers: number;
+  /** M20c: composição da família (paxOf(trip)); ausente = como antes. */
+  pax?: { adults: number; children: number; infants: number };
   outboundFlight: SelectedFlight;
   returnFlight: SelectedFlight;
   travelInterests?: string[];
@@ -156,6 +158,7 @@ export const GeneratedItineraryStage = ({
   returnDate,
   budget,
   travelers,
+  pax,
   outboundFlight,
   returnFlight,
   travelInterests = [],
@@ -192,10 +195,10 @@ export const GeneratedItineraryStage = ({
       const michelinCount = saved.reduce((n, d) => n + d.activities.filter((a) => /^day-\d+-michelin-/.test(a.id)).length, 0);
       return { days: saved, breakdown: bd, meta: { michelinCount } };
     }
-    return generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp);
+    return generateItinerary(departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp, undefined, pax);
     // Dias salvos: só na montagem (o cockpit remonta a etapa ao regerar).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, hasSavedDays ? [] : [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp]);
+  }, hasSavedDays ? [] : [departureDate, returnDate, destination, origin, outboundFlight, returnFlight, budget, travelers, travelInterests, jetLagSeverity, priceLevelProp, pax]);
 
   const handleRegenerate = () => {
     onRegenerate?.(countManualEdits(engineItemIds, itemIdsOf(days)));
@@ -321,7 +324,7 @@ export const GeneratedItineraryStage = ({
     })),
   });
   const handlePickSwap = (dayNum: number, activity: ItineraryActivity, cand: SwapCandidate) => {
-    const newActivity = convertToItineraryActivity(cand.activity, dayNum - 1, activity.timeSlot, activity.time ?? '', travelers);
+    const newActivity = convertToItineraryActivity(cand.activity, dayNum - 1, activity.timeSlot, activity.time ?? '', travelers, pax);
     commitDays(days.map(d => d.dayNumber !== dayNum ? d : {
       ...d,
       activities: d.activities.map(a => (a.id === activity.id ? newActivity : a)),

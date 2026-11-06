@@ -1,6 +1,6 @@
 // FlightPriceLines — texto sob o preço do hero de voo (M20b). Nunca diz "total": o preço é uma
 // estimativa por pagante (preço de referência de 1 adulto × adultos + crianças), com fonte e data.
-import { airfarePaxOf, paxLabel } from '@/lib/pax';
+import { airfarePaxOf, paxOf, paxLabel } from '@/lib/pax';
 import { tripReferenceStamp } from '@/lib/aviasalesLink';
 
 const fmt = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
@@ -15,7 +15,11 @@ interface Props {
 
 export function FlightPriceLines({ trip, amount, confirmed }: Props) {
   const pax = airfarePaxOf(trip);
-  const label = paxLabel(pax);
+  const family = paxOf(trip);
+  const airfareLabel = paxLabel(pax);
+  const differs = airfareLabel !== paxLabel(family);
+  // M20c: quando a regra da aérea muda a conta (criança ≥ 12 / bebê), mostra a família e o que a tarifa conta.
+  const label = differs ? `${paxLabel(family)} · tarifa aérea conta ${airfareLabel} (12+ paga adulto)` : airfareLabel;
   const payers = `${pax.payers} ${pax.payers === 1 ? 'pagante' : 'pagantes'}`;
   const perPerson = Math.round(amount / pax.payers);
   const isReference = trip?.outboundFlight?.source === 'reference' && trip?.returnFlight?.source === 'reference';
@@ -23,7 +27,7 @@ export function FlightPriceLines({ trip, amount, confirmed }: Props) {
   const when = tripReferenceStamp(trip)?.text ?? null;
 
   let line: string;
-  if (confirmed) line = `confirmado para ${label}`;
+  if (confirmed) line = `confirmado para ${airfareLabel}`;
   else if (isReference) line = `estimativa para ${label} · preço de referência por adulto (Aviasales${when ? `, ${when}` : ''}) × ${payers}`;
   else line = `estimativa para ${label} · estimativa do KINU por adulto × ${payers}`;
 

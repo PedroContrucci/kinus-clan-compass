@@ -698,6 +698,9 @@ export function generateItinerary(
   
   // Prefer the user-chosen budget tier; only recalculate when none was provided
   const priceLevel: PriceLevel = priceLevelProp ?? findBestPriceLevel(destination, totalDays, travelers, budget).level;
+  // M20c: aérea cobra adultos + crianças; bebê de colo fica de fora. Sem bebê, = travelers (idêntico a antes).
+  const flightPayers = pax && pax.infants > 0 ? Math.max(1, travelers - pax.infants) : travelers;
+  const flightPaxTag = flightPayers > 1 ? (flightPayers === travelers ? ` (${travelers} pax)` : ` (${flightPayers} pagantes)`) : '';
 
   // Detect a flight that cannot cross midnight — enables same-day arrival flow
   const depHourStr = outboundFlight.option.departureTime?.split(':')[0];
@@ -730,7 +733,7 @@ export function generateItinerary(
   // Planned flight total (round-trip, per person) = the same source the flight
   // hero card uses. Outbound and return line items each carry their own leg × travelers.
   const plannedFlightTotalPerPerson = outboundLegPrice + returnLegPrice;
-  const flightsCost = plannedFlightTotalPerPerson * travelers;
+  const flightsCost = plannedFlightTotalPerPerson * flightPayers;
   
   // Hotel is SHARED (not multiplied by travelers)
   // C.4.2: diária de fonte única — a da viagem; o motor não estima diária.
@@ -1194,7 +1197,7 @@ export function generateItinerary(
       label = 'Partida';
       theme = '✈️ Dia de Viagem';
       // Cada perna carrega o próprio preço × pax (nunca metade de ida+volta).
-      const outboundCost = outboundLegPrice * travelers;
+      const outboundCost = outboundLegPrice * flightPayers;
       activities.push({
         id: `day-${i}-slot-flight-out`,
         name: outboundFlight.source === 'estimate' ? 'Voo de Ida (estimado)' : 'Voo de Ida',
@@ -1204,7 +1207,7 @@ export function generateItinerary(
         costPerPerson: outboundLegPrice,
         time: outboundFlight.option.departureTime,
         duration: outboundFlight.option.duration,
-        location: outboundFlight.option.route + (travelers > 1 ? ` (${travelers} pax)` : ''),
+        location: outboundFlight.option.route + flightPaxTag,
         status: 'defined',
         source: 'kinu',
         ...flightUnknownTips(outboundFlight),
@@ -1467,7 +1470,7 @@ export function generateItinerary(
       if (lastTransferMin >= 0) add(transferItem(i, lastTransferMin));
 
       // Return flight
-      const returnCost = returnLegPrice * travelers;
+      const returnCost = returnLegPrice * flightPayers;
       activities.push({
         id: `day-${i}-slot-flight-back`,
         name: returnFlight.source === 'estimate' ? 'Voo de Volta (estimado)' : 'Voo de Volta',
@@ -1477,7 +1480,7 @@ export function generateItinerary(
         costPerPerson: returnLegPrice,
         time: returnFlight.option.departureTime,
         duration: returnFlight.option.duration,
-        location: returnFlight.option.route + (travelers > 1 ? ` (${travelers} pax)` : ''),
+        location: returnFlight.option.route + flightPaxTag,
         status: 'defined',
         source: 'kinu',
         ...flightUnknownTips(returnFlight),
