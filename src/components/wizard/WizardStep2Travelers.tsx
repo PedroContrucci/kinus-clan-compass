@@ -104,7 +104,7 @@ export const WizardStep2Travelers = ({ data, onChange }: WizardStep2Props) => {
 
       {/* Children Counter */}
       <div className="bg-card border border-border rounded-2xl p-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center">
               <User size={24} className="text-amber-500" />
