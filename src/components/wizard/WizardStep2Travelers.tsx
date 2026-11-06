@@ -22,10 +22,10 @@ export const WizardStep2Travelers = ({ data, onChange }: WizardStep2Props) => {
     
     if (newCount > currentCount) {
       // Add a child
+      // Idade fica vazia de propósito: é opcional e nunca bloqueia o wizard.
       const newChild: WizardTraveler = {
         id: `child-${Date.now()}`,
         type: 'child',
-        age: 5,
       };
       onChange({ children: [...data.children, newChild] });
     } else if (newCount < currentCount) {
@@ -147,29 +147,34 @@ export const WizardStep2Travelers = ({ data, onChange }: WizardStep2Props) => {
             animate={{ opacity: 1, height: 'auto' }}
             className="mt-4 pt-4 border-t border-border space-y-3"
           >
-            {data.children.map((child, index) => (
-              <div key={child.id} className="flex items-center justify-between bg-muted/50 rounded-xl p-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">👧</span>
-                  <span className="text-sm font-medium text-foreground">Criança {index + 1}</span>
-                </div>
-                <Select
-                  value={child.age?.toString() || '5'}
-                  onValueChange={(value) => handleChildAgeChange(child.id, parseInt(value))}
+            {data.children.map((child, index) => {
+              const triggerId = `child-age-${child.id}`;
+              return (
+                <div
+                  key={child.id}
+                  className="bg-muted/50 rounded-xl p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <SelectTrigger className="w-32 bg-background">
-                    <SelectValue placeholder="Idade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 10 }, (_, i) => i + 2).map((age) => (
-                      <SelectItem key={age} value={age.toString()}>
-                        {age} anos
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+                  <label htmlFor={triggerId} className="text-sm font-medium text-foreground">
+                    Idade da criança {index + 1}
+                  </label>
+                  <Select
+                    value={child.age === undefined ? '' : String(child.age)}
+                    onValueChange={(value) => handleChildAgeChange(child.id, parseInt(value))}
+                  >
+                    <SelectTrigger id={triggerId} className="w-full sm:w-32 bg-background">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 18 }, (_, i) => i).map((age) => (
+                        <SelectItem key={age} value={age.toString()}>
+                          {age} {age === 1 ? 'ano' : 'anos'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            })}
           </motion.div>
         )}
       </div>
