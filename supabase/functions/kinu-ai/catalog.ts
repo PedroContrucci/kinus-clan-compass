@@ -1,6 +1,6 @@
 // GERADO por scripts/build-kinu-catalog.ts — NÃO EDITAR À MÃO.
 // Fonte: src/data/destinationActivities.ts + src/data/curatedHotels.ts
-// 28 cidades · 1626 atividades · 247 hotéis
+// 28 cidades · 1625 atividades · 247 hotéis
 //
 // Este arquivo é o que permite ao KINU responder sobre uma cidade curada SEM viagem
 // ativa e SEM o front ter adivinhado a cidade na mensagem. Ele viaja com o deploy da
@@ -322,13 +322,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Quartier Latin",
         "costBRL": 180,
         "tip": "Clube de jazz desde 1946 · Apareceu em La La Land"
-      },
-      {
-        "name": "Centre Pompidou",
-        "category": "morning",
-        "neighborhood": "Le Marais",
-        "costBRL": 90,
-        "tip": "Arte moderna e contemporânea · Vista do terraço"
       },
       {
         "name": "Champs-Élysées & Arco do Triunfo",

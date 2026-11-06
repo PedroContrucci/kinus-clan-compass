@@ -1176,7 +1176,6 @@ export const CURATED_COORDS: Record<string, CuratedCoord> = {
   'paris-cafe-flore': { lat: 48.8541588, lng: 2.3326046 },
   'paris-catacombes': { lat: 48.8338325, lng: 2.3324222 },
   'paris-caveau-huchette': { lat: 48.8527634, lng: 2.3462818 },
-  'paris-centre-pompidou': { lat: 48.8608316, lng: 2.3517012 },
   'paris-champs-elysees': { lat: 48.8737917, lng: 2.2950275 },
   'paris-chartier': { lat: 48.8719224, lng: 2.3430304 },
   'paris-chez-janou': { lat: 48.8567159, lng: 2.3671983 },
