@@ -41,11 +41,32 @@ function withReturn(deps: DraftTripDeps, returnDeparture?: string): DraftTripDep
 
 export async function runSmokeCase(city: string, profile: SmokeProfile, from: Date, deps: DraftTripDeps = {}, opts: SmokeOpts = {}): Promise<SmokeRow> {
   const interestsUsed = profile.interests.filter((i) => interestsFor(city).some((c) => c.id === i));
+  const input = buildFlowInput({ city, origin: 'São Paulo', from, to: addDays(from, SMOKE_NIGHTS), adults: 2, children: 0, tier: profile.tier });
+  return evaluateSmoke(city, profile.id, interestsUsed, input, withReturn(deps, opts.returnDeparture));
+}
+
+/** Cenário nomeado fora da matriz 21×3 (datas, composição e faixa próprias). */
+export interface SmokeScenario {
+  id: string; city: string; from: Date; nights: number; adults: number; children: number; childrenAges: number[];
+  interests: string[]; tier: FlowTierId;
+}
+/** M19d-fix: o cenário de produção em que o Beach Park saía e a tarde ficava vazia (janela 14 h). */
+export const SMOKE_SCENARIOS: SmokeScenario[] = [
+  { id: 'Fortaleza família dez (2+2)', city: 'Fortaleza', from: new Date(2026, 11, 10), nights: 5, adults: 2, children: 2, childrenAges: [8, 12], interests: ['beach', 'family'], tier: 'comfort' },
+];
+
+export async function runSmokeScenario(sc: SmokeScenario, deps: DraftTripDeps = {}): Promise<SmokeRow> {
+  const interestsUsed = sc.interests.filter((i) => interestsFor(sc.city).some((c) => c.id === i));
+  const input = buildFlowInput({ city: sc.city, origin: 'São Paulo', from: sc.from, to: addDays(sc.from, sc.nights), adults: sc.adults, children: sc.children, tier: sc.tier, childrenAges: sc.childrenAges });
+  return evaluateSmoke(sc.city, sc.id, interestsUsed, input, deps);
+}
+
+async function evaluateSmoke(city: string, profileId: string, interestsUsed: string[], input: ReturnType<typeof buildFlowInput>, deps: DraftTripDeps): Promise<SmokeRow> {
+  const profile = { id: profileId };
   try {
-    const input = buildFlowInput({ city, origin: 'São Paulo', from, to: addDays(from, SMOKE_NIGHTS), adults: 2, children: 0, tier: profile.tier });
     input.travelInterests = interestsUsed;
     input.priorities = interestsUsed;
-    const trip = await buildDraftTrip(input, withReturn(deps, opts.returnDeparture));
+    const trip = await buildDraftTrip(input, deps);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const t = trip as any;
     const days = (t.days ?? []) as PlanDay[];

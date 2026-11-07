@@ -873,11 +873,8 @@ export function generateItinerary(
     if (!iconPlaced) want.add('icon');
     if (explorationTotal >= ESSENTIALS_MIN_DAYS && n >= 0 && n < 3 && essentialsPlaced < 4) { want.add('icon'); want.add('essential'); }
     // Cabe = o que já está no dia + o item + almoço e jantar (os menores) + saltos ≤ janela; senão a janela o cortaria.
-    // M19d: ícone/essencial de 4–6 h (ocupa a tarde; jantar perto do hotel) não carrega a reserva de refeição — janela intacta.
-    const fits = (a: SuggestedActivity) => {
-      const longTier = (tiers[a.id] === 'icon' || tiers[a.id] === 'essential') && (a.durationHours || 0) * 60 >= LONG_ITEM_MINUTES && (a.durationHours || 0) * 60 <= LONG_ICON_MAX_MINUTES;
-      return hoursUsed() + HOP_HOURS + (a.durationHours || 0) + (longTier ? 0 : mealReserve) <= EXPLORATION_WINDOW_HOURS;
-    };
+    // M19d-fix: vale também para o ícone longo (4–6 h) — janela real; se não cabe hoje, fica para forceN / outro dia.
+    const fits = (a: SuggestedActivity) => hoursUsed() + HOP_HOURS + (a.durationHours || 0) + mealReserve <= EXPLORATION_WINDOW_HOURS;
     return { tiers: want, force: !iconPlaced && n === forceN, fits };
   };
 
@@ -1730,6 +1727,23 @@ export function generateItinerary(
         } else {
           // CASE C: normal morning activity + lunch + afternoon + dinner + optional night.
           // A tarde nasce perto da manhã (é ela que pesa na cota); o almoço vem depois, perto das duas.
+          // M19d-fix: manhã ≥ 3 h que impede o ícone longo de caber → tenta uma manhã ≤ 2 h antes de desistir do ícone hoje.
+          // O nome da manhã trocada continua usado (perde-se uma opção, nunca repete).
+          if (morningActivity && !iconPlaced && !isDaytripAnchor(morningActivity) && !isTierEssential(morningActivity.id) &&
+              (morningActivity.durationHours || 0) >= 3 && !morningOccupancy) {
+            const plan = tierPlanFor(explorationDay, () => dayHoursUsed(activities));
+            const swapHours = dayHoursUsed(activities) - (morningActivity.durationHours || 0) + 2;
+            const wantsSwap = pool.some((a) => tiers[a.id] === 'icon' && longIconOk(a) && opensToday(a) && !usedPlaces.isUsed(a.name) &&
+              !plan.fits(a) && swapHours + HOP_HOURS + (a.durationHours || 0) + mealReserve <= EXPLORATION_WINDOW_HOURS);
+            if (wantsSwap) {
+              const shortMorning = pickActivity('morning', dayTheme.title, { quota: true, accept: (a) => (a.durationHours || 0) <= 2 && !a.dayOccupancy });
+              if (shortMorning) {
+                const oldIdx = activities.findIndex((a) => a.id === `day-${i}-${morningActivity.id}`);
+                if (oldIdx >= 0) { dayTotal -= activities[oldIdx].estimatedCost; activities.splice(oldIdx, 1); }
+                place(shortMorning, 'morning', '10:00');
+              }
+            }
+          }
           const morningAt = last;
           // M6b: véspera leve — a tarde termina até 17:00 (≤ 2 h a partir das 15:00) e não há pôr do sol às 17:30.
           const eveFits = (a: SuggestedActivity) => !isEve || (!isSunsetActivity(a) && SLOT_RULES.afternoon.anchor + Math.round((a.durationHours || 0) * 60) <= LIGHT_EVE_END_MIN);
@@ -1743,6 +1757,11 @@ export function generateItinerary(
             afternoonActivity = pickActivity('afternoon', dayTheme.title, {
               near: morningAt, quota: true, accept: (a) => notLong(a) && !isSunsetActivity(a) && eveFits(a), tierPlan: tierPlanFor(explorationDay, () => dayHoursUsed(activities)),
             });
+            // M19d-fix: ícone longo ocupa a tarde — o pôr do sol do dia não cabe junto; volta ao pool (outro dia).
+            if (afternoonActivity && longIconOk(afternoonActivity)) {
+              releasedIcons.add(sunsetActivity.id);
+              sunsetActivity = null;
+            }
           }
           const afternoonAt = curatedCoordOf((afternoonActivity ?? sunsetActivity)?.id ?? '') ?? null;
 
@@ -1848,6 +1867,7 @@ export function generateItinerary(
         const tags = themeStyleMap[dayThemeTitle] || [];
         return sug.styleTags?.some((t) => tags.includes(t)) ? 2 : 1;
       };
+      let droppedAfternoon = false;
       while (dayHoursUsed(activities) > windowHours) {
         const removable = activities.filter((a) =>
           !isLogisticAct(a) && !MEAL_SLOTS.has(a.timeSlot) && !/^day-\d+-michelin-/.test(a.id) &&
@@ -1856,10 +1876,27 @@ export function generateItinerary(
         removable.sort((x, y) => affinity(x) - affinity(y) || itemHoursOf(y) - itemHoursOf(x));
         const out = removable[0];
         if (out.timeSlot === 'morning' || out.timeSlot === 'afternoon') thin('janela-14h');
+        if (out.timeSlot === 'afternoon') droppedAfternoon = true;
         activities.splice(activities.indexOf(out), 1);
         dayTotal -= out.estimatedCost;
         const outId = catalogIdOf(out.id);
         if (tiers[outId] === 'icon') releasedIcons.add(outId);
+      }
+      // M19d-fix: rede de segurança — a janela tirou a tarde → re-escolhe com a regra normal (sem exceção de ícone longo,
+      // sem pôr do sol). Só fica vazia se o pool acabou ('pool').
+      if (droppedAfternoon && label === 'Exploração' &&
+          !activities.some((a) => a.timeSlot === 'afternoon' && !isLogisticAct(a) && !/-slot-/.test(a.id) && !SUNSET_RE.test(a.name))) {
+        const hoursNow = () => dayHoursUsed(activities);
+        const reAft = pickActivity('afternoon', dayThemeTitle, {
+          near: hotelCoord, quota: true,
+          accept: (a) => a.dayOccupancy !== 'full' && a.dayOccupancy !== 'half' && (a.durationHours || 0) * 60 < LONG_ITEM_MINUTES &&
+            !SUNSET_RE.test(a.name) && !isSnack(a) && hoursNow() + HOP_HOURS + (a.durationHours || 0) <= windowHours,
+        });
+        if (reAft) {
+          const act = convertToItineraryActivity(reAft, i, 'afternoon', '15:00', travelers, pax);
+          activities.push(act);
+          dayTotal += act.estimatedCost;
+        } else thin('pool');
       }
     }
 
