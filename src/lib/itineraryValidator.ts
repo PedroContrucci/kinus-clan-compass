@@ -844,7 +844,7 @@ export function weekdayOf(date: unknown): number {
 }
 
 export interface ExtraRuleResult {
-  rule: 'R17 ESSENCIAIS' | 'R17 ÍCONE' | 'R18 DIA DA SEMANA' | 'R20 DIA DENSO' | 'R21 VÉSPERA';
+  rule: 'R17 ESSENCIAIS' | 'R17 ÍCONE' | 'R18 DIA DA SEMANA' | 'R20 DIA DENSO' | 'R21 VÉSPERA' | 'R22 HORÁRIO NATURAL';
   status: 'PASS' | 'WARN' | 'FAIL' | 'SKIP';
   detail: string;
   /** R17: ids essenciais ausentes que cabiam. R18: ids fora do dia. */
@@ -944,6 +944,12 @@ export function validateIcons(days: PlanDay[], ctx: PlanRulesContext): ExtraRule
 
 const isDaytripItem = (a: PlanDayItem, index: Map<string, SuggestedActivity>) =>
   (index.get(catalogIdOf(a.id))?.styleTags ?? []).some((t) => t.toLowerCase() === 'daytrip') && !/-(almoco|jantar)$/.test(a.id);
+/** M19e: item de fim de tarde/noite pelo que o catálogo diz (categoria `night`, tag `snack`) e pelo nome
+ *  (pôr do sol, "à noite", by night, anoitecer). Não existe categoria `evening`; o nome é a rede de segurança. */
+const EVENING_NAME_RE = /(p[ôo]r do sol|sunset|(?:^|\s)(?:à|a)\s+noite|\bnoite\b|by night|anoitecer)/i;
+export const isEveningItem = (a: { name: string; category?: string; styleTags?: string[] } | null | undefined): boolean =>
+  !!a && (a.category === 'night' || (a.styleTags ?? []).includes('snack') || EVENING_NAME_RE.test(a.name ?? ''));
+
 /** Passeio de manhã/tarde de verdade: nem logística, nem refeição, nem "livre", nem caminhada/descanso sintético. */
 const isExpItem = (a: PlanDayItem) =>
   (a.timeSlot === 'morning' || a.timeSlot === 'afternoon') && !isLogistic(a) && !/-slot-/.test(a.id) && !/^(descanso|caminhada leve)/i.test(a.name);
@@ -1006,4 +1012,25 @@ export function validateEve(days: PlanDay[], ctx: PlanRulesContext): ExtraRuleRe
   if (fail) return { rule: 'R21 VÉSPERA', status: 'FAIL', detail: notes.join(' · ') };
   if (notes.length) return { rule: 'R21 VÉSPERA', status: 'WARN', detail: notes.join(' · ') };
   return { rule: 'R21 VÉSPERA', status: 'PASS', detail: isEarlyReturn(ctx) ? 'véspera leve' : 'volta não é cedo' };
+}
+
+/**
+ * R22 (M19e): HORÁRIO NATURAL. Item de fim de tarde/noite (categoria night, snack, pôr do sol, "à noite") antes das 15:00,
+ * ou item de manhã (category morning) depois das 18:00. Só passeios (manhã/tarde de verdade).
+ */
+export function validateNaturalTime(days: PlanDay[], ctx: PlanRulesContext, failStatus: 'FAIL' | 'WARN' = 'FAIL'): ExtraRuleResult {
+  const index = catalogIndex(ctx.destination);
+  const notes: string[] = [];
+  for (const d of days) {
+    for (const a of d.activities.filter(isExpItem)) {
+      const start = toMinutes(a.time);
+      if (start < 0) continue;
+      const cat = catalogItemOf(a, index);
+      if (start < 15 * 60 && (isEveningItem(cat) || (!cat && isEveningItem({ name: a.name })))) notes.push(`dia ${d.day}: ${a.name} às ${a.time} (fim de tarde/noite antes das 15:00)`);
+      else if (cat?.category === 'morning' && start > 18 * 60) notes.push(`dia ${d.day}: ${a.name} às ${a.time} (manhã depois das 18:00)`);
+    }
+  }
+  return notes.length
+    ? { rule: 'R22 HORÁRIO NATURAL', status: failStatus, detail: notes.join(' · ') }
+    : { rule: 'R22 HORÁRIO NATURAL', status: 'PASS', detail: 'nenhum item fora do horário natural' };
 }

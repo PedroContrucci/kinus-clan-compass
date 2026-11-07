@@ -30,7 +30,7 @@ import { getHotelRecommendation } from '@/lib/hotelZones';
 import { interestsFor, catalogFor, splitInterests, interestLabel } from '@/lib/interestsFor';
 import { matchesPriority } from '@/lib/claChips';
 import { curatedCoordOf, resolveHotelCoord } from '@/lib/routeCoords';
-import { maxHopKmFor, haversineKm, travelMinutes, isSnack, opensOn, weekdayOf, tiersOf, ESSENTIALS_MIN_DAYS, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, durationMinutesOf, defaultMinutesOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
+import { isEveningItem, maxHopKmFor, haversineKm, travelMinutes, isSnack, opensOn, weekdayOf, tiersOf, ESSENTIALS_MIN_DAYS, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, durationMinutesOf, defaultMinutesOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
 import { catalogIdOf } from '@/lib/localAchievements';
 import type { LandmarkTier } from '@/data/generated/landmarkTiers';
 import { rulesContextOf } from '@/lib/cockpitLines';
@@ -1424,9 +1424,13 @@ export function generateItinerary(
         if (morningRoom >= 60) {
           const morningActivity = pickActivity('afternoon', 'Descobertas', {
             near: last,
-            accept: (a) => notLongDay(a) && startAfter(a, SLOT_RULES.morning.anchor) + dur(a) + DEFAULT_HOP_MIN <= lastCheckoutMin,
+            // M19e: fim de tarde/noite (pôr do sol, snack, night, "à noite") nunca ocupa a manhã do último dia.
+            accept: (a) => notLongDay(a) && !isEveningItem(a) && startAfter(a, SLOT_RULES.morning.anchor) + dur(a) + DEFAULT_HOP_MIN <= lastCheckoutMin,
           });
-          if (morningActivity) {
+          if (!morningActivity) {
+            // Sem candidato após o filtro: espaço livre (nunca um item de fim de tarde).
+            add(buildFreeSlotActivity(i, 'morning', '10:00'));
+          } else {
             last = curatedCoordOf(morningActivity.id) ?? last;
             const activity = convertToItineraryActivity(morningActivity, i, 'morning', '10:00', travelers, pax);
             activity.tips = ['Aproveite as últimas horas!', ...(activity.tips || [])];
@@ -1460,7 +1464,7 @@ export function generateItinerary(
             near: last,
             accept: (a) => {
               const st = startAfter(a, SLOT_RULES.afternoon.anchor);
-              return notLongDay(a) && !SUNSET_RE.test(a.name) && st <= SLOT_RULES.afternoon.max && st + dur(a) + DEFAULT_HOP_MIN <= lastTransferMin;
+              return notLongDay(a) && !isEveningItem(a) && st <= SLOT_RULES.afternoon.max && st + dur(a) + DEFAULT_HOP_MIN <= lastTransferMin;
             },
           });
           if (afternoonActivity) add(convertToItineraryActivity(afternoonActivity, i, 'afternoon', '15:00', travelers, pax));
@@ -1608,6 +1612,7 @@ export function generateItinerary(
       const morningActivity = pickActivity('morning', dayTheme.title, {
         quota: true,
         anchor: true,
+        accept: (a) => !isEveningItem(a), // M19e: fim de tarde/noite nunca de manhã, em dia nenhum
         tierPlan: tierPlanFor(explorationDay, () => dayHoursUsed(activities)),
         daytripOk: daytripDayOk ? daytripFits : undefined,
       });

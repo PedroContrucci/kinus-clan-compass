@@ -2777,22 +2777,20 @@
             "source": "kinu"
           },
           {
-            "id": "day-7-for-veleiro-por-do-sol",
-            "name": "Passeio de veleiro ao pôr do sol",
+            "id": "day-7-for-jardim-japones",
+            "name": "Jardim Japonês da Beira-Mar",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 200,
-            "costPerPerson": 100,
+            "estimatedCost": 0,
+            "costPerPerson": 0,
             "time": "09:30",
-            "duration": "2h",
-            "location": "Beira-Mar (2 pax)",
-            "rating": 4.8,
+            "duration": "0.5h",
+            "location": "Meireles (2 pax)",
+            "rating": 4.2,
             "status": "suggestion",
             "tips": [
               "Aproveite as últimas horas!",
-              "Saída do Iate Clube ou Marina Park no fim da tarde",
-              "O pôr do sol visto do mar é o cartão-postal da viagem",
-              "Leve casaco leve — venta no mar"
+              "Pequeno jardim com lago e ponte vermelha na Avenida Beira-Mar; pausa de sombra entre a praia e a Feirinha"
             ],
             "source": "kinu"
           },
@@ -2859,7 +2857,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 4730
+        "totalCost": 4530
       }
     ],
     "breakdown": {
@@ -2874,8 +2872,8 @@
         "status": "estimated"
       },
       "experiences": {
-        "amount": 1770,
-        "percent": 9,
+        "amount": 1570,
+        "percent": 8,
         "status": "estimated"
       },
       "food": {
@@ -2883,9 +2881,9 @@
         "percent": 15,
         "status": "estimated"
       },
-      "total": 23240,
-      "available": -3240,
-      "trustZonePercent": 116
+      "total": 23040,
+      "available": -3040,
+      "trustZonePercent": 115
     },
     "meta": {
       "michelinCount": 0
