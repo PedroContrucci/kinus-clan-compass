@@ -2443,42 +2443,6 @@
             "source": "kinu"
           },
           {
-            "id": "day-2-for-beira-mar",
-            "name": "Calçadão da Beira-Mar",
-            "type": "experience",
-            "timeSlot": "afternoon",
-            "estimatedCost": 0,
-            "costPerPerson": 0,
-            "time": "15:00",
-            "duration": "2h",
-            "location": "Meireles (2 pax)",
-            "rating": 4.5,
-            "status": "suggestion",
-            "tips": [
-              "Calçadão renovado, ótimo para caminhar",
-              "Feirinha de artesanato à noite",
-              "Clima familiar e seguro"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-2-for-doce-50-sabores",
-            "name": "Sorveteria 50 Sabores",
-            "type": "experience",
-            "timeSlot": "afternoon",
-            "estimatedCost": 60,
-            "costPerPerson": 30,
-            "time": "17:30",
-            "duration": "1h",
-            "location": "Meireles (2 pax)",
-            "rating": 4.6,
-            "status": "suggestion",
-            "tips": [
-              "A sorveteria símbolo da cidade — prove os sabores regionais: cajá, seriguela, tapioca"
-            ],
-            "source": "kinu"
-          },
-          {
             "id": "day-2-for-caranguejada-iate",
             "name": "Caranguejada de quinta (Iate Clube)",
             "type": "dinner",
@@ -2498,7 +2462,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 680
+        "totalCost": 620
       },
       {
         "dayNumber": 4,
@@ -2747,60 +2711,46 @@
             "source": "kinu"
           },
           {
-            "id": "day-6-for-jardim-japones",
-            "name": "Jardim Japonês da Beira-Mar",
+            "id": "day-6-for-beach-park",
+            "name": "Beach Park",
             "type": "experience",
             "timeSlot": "afternoon",
-            "estimatedCost": 0,
-            "costPerPerson": 0,
+            "estimatedCost": 700,
+            "costPerPerson": 350,
             "time": "15:00",
-            "duration": "0.5h",
-            "location": "Meireles (2 pax)",
-            "rating": 4.2,
+            "duration": "5h",
+            "location": "Aquiraz (2 pax)",
+            "rating": 4.7,
             "status": "suggestion",
             "tips": [
-              "Pequeno jardim com lago e ponte vermelha na Avenida Beira-Mar; pausa de sombra entre a praia e a Feirinha"
+              "Ocupa a tarde inteira — jantar perto do hotel",
+              "Maior parque aquático da América Latina",
+              "Obrigatório se for com crianças",
+              "Compre ingresso antecipado para evitar fila"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-6-for-veleiro-por-do-sol",
-            "name": "Passeio de veleiro ao pôr do sol",
-            "type": "experience",
-            "timeSlot": "afternoon",
-            "estimatedCost": 200,
-            "costPerPerson": 100,
-            "time": "17:30",
-            "duration": "2h",
-            "location": "Beira-Mar (2 pax)",
-            "rating": 4.8,
-            "status": "suggestion",
-            "tips": [
-              "Saída do Iate Clube ou Marina Park no fim da tarde",
-              "O pôr do sol visto do mar é o cartão-postal da viagem",
-              "Leve casaco leve — venta no mar"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-6-for-rest-lo",
-            "name": "L'Ô Restaurante",
+            "id": "day-6-for-mar-e-terra-varjota",
+            "name": "Mar & Terra (Varjota)",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 320,
-            "costPerPerson": 160,
-            "time": "19:50",
+            "estimatedCost": 200,
+            "costPerPerson": 100,
+            "time": "20:30",
             "duration": "2h",
-            "location": "Centro (2 pax)",
-            "rating": 4.6,
+            "location": "Varjota (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Franco-contemporâneo na Av. Pessoa Anta — o fine dining do Centro histórico"
+              "Melhor custo-beneficio de frutos do mar na Varjota",
+              "Mais autentico e tranquilo que os grandes",
+              "Funciona por ordem de chegada"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 820
+        "totalCost": 1200
       },
       {
         "dayNumber": 8,
@@ -2823,6 +2773,26 @@
             "tips": [
               "Tapioca e cuscuz cearense são a pedida local",
               "Caminhada matinal no calçadão antes do calor"
+            ],
+            "source": "kinu"
+          },
+          {
+            "id": "day-7-for-veleiro-por-do-sol",
+            "name": "Passeio de veleiro ao pôr do sol",
+            "type": "experience",
+            "timeSlot": "morning",
+            "estimatedCost": 200,
+            "costPerPerson": 100,
+            "time": "09:30",
+            "duration": "2h",
+            "location": "Beira-Mar (2 pax)",
+            "rating": 4.8,
+            "status": "suggestion",
+            "tips": [
+              "Aproveite as últimas horas!",
+              "Saída do Iate Clube ou Marina Park no fim da tarde",
+              "O pôr do sol visto do mar é o cartão-postal da viagem",
+              "Leve casaco leve — venta no mar"
             ],
             "source": "kinu"
           },
@@ -2889,7 +2859,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 4530
+        "totalCost": 4730
       }
     ],
     "breakdown": {
@@ -2904,18 +2874,18 @@
         "status": "estimated"
       },
       "experiences": {
-        "amount": 1130,
-        "percent": 6,
+        "amount": 1770,
+        "percent": 9,
         "status": "estimated"
       },
       "food": {
-        "amount": 3090,
+        "amount": 2970,
         "percent": 15,
         "status": "estimated"
       },
-      "total": 22720,
-      "available": -2720,
-      "trustZonePercent": 114
+      "total": 23240,
+      "available": -3240,
+      "trustZonePercent": 116
     },
     "meta": {
       "michelinCount": 0

@@ -405,6 +405,8 @@ export const SLOT_RULES: Record<string, { anchor: number; max: number }> = {
 export const SUNSET_RULE = { anchor: 17 * 60 + 30, max: 18 * 60 + 30 };
 /** Item da manhã que ocupa o dia (≥ 4 h, bate-volta): âncora 09:00. */
 export const LONG_ITEM_MINUTES = 4 * 60;
+/** M19d: ícone/essencial de 4–6 h pode ocupar a tarde inteira (sem noite, jantar perto do hotel). */
+export const LONG_ICON_MAX_MINUTES = 6 * 60;
 export const LONG_ITEM_ANCHOR = 9 * 60;
 /** M6b: EXP curto da tarde após o item longo — duração máxima (h) e fim máximo (18:30). */
 export const SHORT_ITEM_MAX_H = 2.5;
@@ -871,7 +873,11 @@ export function generateItinerary(
     if (!iconPlaced) want.add('icon');
     if (explorationTotal >= ESSENTIALS_MIN_DAYS && n >= 0 && n < 3 && essentialsPlaced < 4) { want.add('icon'); want.add('essential'); }
     // Cabe = o que já está no dia + o item + almoço e jantar (os menores) + saltos ≤ janela; senão a janela o cortaria.
-    const fits = (a: SuggestedActivity) => hoursUsed() + HOP_HOURS + (a.durationHours || 0) + mealReserve <= EXPLORATION_WINDOW_HOURS;
+    // M19d: ícone/essencial de 4–6 h (ocupa a tarde; jantar perto do hotel) não carrega a reserva de refeição — janela intacta.
+    const fits = (a: SuggestedActivity) => {
+      const longTier = (tiers[a.id] === 'icon' || tiers[a.id] === 'essential') && (a.durationHours || 0) * 60 >= LONG_ITEM_MINUTES && (a.durationHours || 0) * 60 <= LONG_ICON_MAX_MINUTES;
+      return hoursUsed() + HOP_HOURS + (a.durationHours || 0) + (longTier ? 0 : mealReserve) <= EXPLORATION_WINDOW_HOURS;
+    };
     return { tiers: want, force: !iconPlaced && n === forceN, fits };
   };
 
@@ -1660,6 +1666,7 @@ export function generateItinerary(
         // Regra 2 (C.4): manhã ≥ 4 h ocupa o dia como o bate-volta — sem tarde; almoço só se cabe até 14:30.
         const longMorning = !!morningActivity && (morningActivity.durationHours || 0) * 60 >= LONG_ITEM_MINUTES;
         let afternoonOccupancy: 'full' | 'half' | undefined;
+        let longIconAfternoon = false;
 
         if (morningActivity) {
           place(morningActivity, 'morning', '10:00');
@@ -1674,8 +1681,14 @@ export function generateItinerary(
           !!a && typeof a.name === 'string' &&
           (/(p[ôo]r do sol|sunset)/i.test(a.name) || isSnack(a));
         // Full/half-day activities must anchor the day from the morning, not the afternoon.
+        // M19d: exceção — ícone/essencial de 4–6 h entra na tarde (não na véspera leve nem no 1º dia com jet lag ALTO/SEVERO).
+        const longIconOk = (a: SuggestedActivity) => {
+          const mins = (a.durationHours || 0) * 60;
+          return !isEve && !(i === explorationStart && jetLagHigh) && (tiers[a.id] === 'icon' || tiers[a.id] === 'essential') &&
+            mins >= LONG_ITEM_MINUTES && mins <= LONG_ICON_MAX_MINUTES && a.dayOccupancy !== 'full' && a.dayOccupancy !== 'half';
+        };
         const notLong = (a: SuggestedActivity) =>
-          a.dayOccupancy !== 'full' && a.dayOccupancy !== 'half' && (a.durationHours || 0) * 60 < LONG_ITEM_MINUTES;
+          longIconOk(a) || (a.dayOccupancy !== 'full' && a.dayOccupancy !== 'half' && (a.durationHours || 0) * 60 < LONG_ITEM_MINUTES);
 
         if (longMorning || morningOccupancy === 'full' || morningOccupancy === 'half') {
           // Dia longo (CASE A/B unificados): café + longo + almoço se termina (+ desloc.) até 14:30 + jantar.
@@ -1742,7 +1755,12 @@ export function generateItinerary(
 
           if (afternoonActivity) {
             afternoonOccupancy = afternoonActivity.dayOccupancy;
-            place(afternoonActivity, 'afternoon', '15:00');
+            if (longIconOk(afternoonActivity)) {
+              afternoonOccupancy = 'full';
+              longIconAfternoon = true;
+            }
+            const placedAft = place(afternoonActivity, 'afternoon', '15:00');
+            if (longIconAfternoon) placedAft.tips = ['Ocupa a tarde inteira — jantar perto do hotel', ...(placedAft.tips || [])];
           } else if (!sunsetActivity) {
             // EXP pool exhausted for afternoon slot — emit free-slot entry.
             activities.push(buildFreeSlotActivity(i, 'afternoon', '15:00'));
@@ -1758,7 +1776,9 @@ export function generateItinerary(
         // 🍷 DINNER (19:30) — Michelin injection for gastronomy days
         // M6b: véspera leve — jantar a ≤ 1 km do hotel (fallback 2 km, depois o mais próximo), com a dica de distância.
         const michelinBeforeDinner = michelinByDay.get(i) ?? 0;
-        const dinnerActivity = isEve
+        // M19d: no dia do ícone longo o jantar fica perto do hotel — salvo jantar de "só N dias" (≤ 3) que abre hoje (bônus do dia certo).
+        const dayBoundDinnerToday = longIconAfternoon && pool.some((a) => a.category === 'dinner' && !usedPlaces.isUsed(a.name) && !isPairMeal(a) && opensToday(a) && (CURATED_DAYS_OF_WEEK[a.id]?.length ?? 7) <= 3);
+        const dinnerActivity = isEve || (longIconAfternoon && !dayBoundDinnerToday)
           ? pickNearHotelDinner([(a) => !isCatalogMichelin(a) || priceLevel === 'luxury', () => true])
           : pickActivity('dinner', dayTheme.title, { near: last });
         let michelinPlaced = false;

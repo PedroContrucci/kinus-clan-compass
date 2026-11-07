@@ -878,6 +878,7 @@ export function validateDaysOfWeek(days: PlanDay[]): ExtraRuleResult {
  */
 export function validateEssentials(days: PlanDay[], ctx: PlanRulesContext): ExtraRuleResult {
   const index = catalogIndex(ctx.destination);
+  const tiers = tiersOf(ctx.destination);
   const lastIdx = days.length - 1;
   const arrivalIdx = arrivalIndexOf(days, ctx);
   const exploration = days.map((_, i) => i).filter((i) =>
@@ -957,6 +958,7 @@ export function isEarlyReturn(ctx: PlanRulesContext): boolean {
 /** R20 (WARN): dia de exploração sem bate-volta com menos de 2 passeios (manhã + tarde). */
 export function validateDenseDays(days: PlanDay[], ctx: PlanRulesContext): ExtraRuleResult {
   const index = catalogIndex(ctx.destination);
+  const tiers = tiersOf(ctx.destination);
   const lastIdx = days.length - 1;
   const arrivalIdx = arrivalIndexOf(days, ctx);
   const exploration = days.map((_, i) => i).filter((i) =>
@@ -964,7 +966,13 @@ export function validateDenseDays(days: PlanDay[], ctx: PlanRulesContext): Extra
   if (exploration.length === 0) return { rule: 'R20 DIA DENSO', status: 'SKIP', detail: 'sem dia de exploração' };
   const thin = exploration.filter((i) => {
     const acts = days[i].activities;
-    return !acts.some((a) => isDaytripItem(a, index)) && acts.filter(isExpItem).length < 2;
+    // M19d: ícone/essencial de ≥ 4 h ocupa o dia (conta como cheio).
+    const longTier = acts.some((a) => {
+      const cat = isExpItem(a) ? catalogItemOf(a, index) : null;
+      const t = cat ? tiers[cat.id] : undefined;
+      return !!cat && (t === 'icon' || t === 'essential') && (cat.durationHours || 0) * 60 >= 4 * 60;
+    });
+    return !longTier && !acts.some((a) => isDaytripItem(a, index)) && acts.filter(isExpItem).length < 2;
   });
   return thin.length
     ? { rule: 'R20 DIA DENSO', status: 'WARN', detail: `${thin.length}/${exploration.length} dia(s) com < 2 passeios: ${thin.map((i) => days[i].day).join(', ')}` }
