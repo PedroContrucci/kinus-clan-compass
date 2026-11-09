@@ -59,3 +59,9 @@ Nenhuma edge function tocada: sem prompt de redeploy.
 To https://github.com/PedroContrucci/kinus-clan-compass
    6a87cec..85d85d3  main -> main
 ```
+
+## Adendo — saída do push do relatório (M19g)
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   85d85d3..a908442  main -> main
+```
