@@ -7,7 +7,7 @@ import { interestsFor } from '@/lib/interestsFor';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { CURATED_CITIES } from '@/lib/curatedCities';
 import { stayHotelCoord } from '@/lib/itineraryEngine';
-import { validatePlanRules, validateDaySequence, validateEssentials, validateIcons, validateDaysOfWeek, validateDenseDays, validateEve, validateNaturalTime, type PlanRuleResult, type PlanDay, type SequenceReport, type ExtraRuleResult } from '@/lib/itineraryValidator';
+import { validatePlanRules, validateDaySequence, validateEssentials, validateIcons, validateDaysOfWeek, validateDenseDays, validateEve, validateNaturalTime, validateSeasonalClosures, type PlanRuleResult, type PlanDay, type SequenceReport, type ExtraRuleResult } from '@/lib/itineraryValidator';
 
 export interface SmokeProfile { id: string; label: string; interests: string[]; tier: FlowTierId }
 export const SMOKE_PROFILES: SmokeProfile[] = [
@@ -17,7 +17,7 @@ export const SMOKE_PROFILES: SmokeProfile[] = [
 ];
 export const SMOKE_NIGHTS = 7;
 
-export interface SmokeRow { city: string; profile: string; interestsUsed: string[]; results: PlanRuleResult[]; r19?: SequenceReport; r17?: ExtraRuleResult; r17icon?: ExtraRuleResult; r18?: ExtraRuleResult; r20?: ExtraRuleResult; r21?: ExtraRuleResult; r22?: ExtraRuleResult; error?: string }
+export interface SmokeRow { city: string; profile: string; interestsUsed: string[]; results: PlanRuleResult[]; r19?: SequenceReport; r17?: ExtraRuleResult; r17icon?: ExtraRuleResult; r18?: ExtraRuleResult; r20?: ExtraRuleResult; r21?: ExtraRuleResult; r22?: ExtraRuleResult; r23?: ExtraRuleResult; error?: string }
 
 // Doméstico = destino no Brasil, por enquanto. O modelo de voo vai carregar uma flag explícita depois.
 export const isDomesticDestination = (city: string) => findCityInfo(city)?.region === 'Brasil';
@@ -56,6 +56,8 @@ export const SMOKE_SCENARIOS: SmokeScenario[] = [
   // M6c+: refeição pela qualidade (com gastronomia) e pela proximidade (sem); bate-volta (Versalhes) com a dica de almoço.
   { id: 'Paris gastrô 2 adultos 10–15/12', city: 'Paris', from: new Date(2026, 11, 10), nights: 5, adults: 2, children: 0, childrenAges: [], interests: ['gastronomy', 'culture'], tier: 'comfort' },
   { id: 'Paris família sem gastronomia 2+2 10–15/12', city: 'Paris', from: new Date(2026, 11, 10), nights: 5, adults: 2, children: 2, childrenAges: [8, 12], interests: ['culture', 'family'], tier: 'comfort' },
+  // M18b: fechamentos sazonais (25/12 Louvre/Orsay/Versalhes; Giverny fechado em dezembro) — R23 deve dar PASS.
+  { id: 'Paris Natal 20–27/12 2+2', city: 'Paris', from: new Date(2026, 11, 20), nights: 7, adults: 2, children: 2, childrenAges: [8, 12], interests: ['culture', 'family'], tier: 'comfort' },
 ];
 
 export async function runSmokeScenario(sc: SmokeScenario, deps: DraftTripDeps = {}): Promise<SmokeRow> {
@@ -85,7 +87,7 @@ async function evaluateSmoke(city: string, profileId: string, interestsUsed: str
       hotelCoord: stayHotelCoord(days as any, city),
     };
     const results = validatePlanRules(days, ctx);
-    return { city, profile: profile.id, interestsUsed, results, r19: validateDaySequence(days, ctx), r17: validateEssentials(days, ctx), r17icon: validateIcons(days, ctx), r18: validateDaysOfWeek(days), r20: validateDenseDays(days, ctx), r21: validateEve(days, ctx), r22: validateNaturalTime(days, ctx) };
+    return { city, profile: profile.id, interestsUsed, results, r19: validateDaySequence(days, ctx), r17: validateEssentials(days, ctx), r17icon: validateIcons(days, ctx), r18: validateDaysOfWeek(days), r20: validateDenseDays(days, ctx), r21: validateEve(days, ctx), r22: validateNaturalTime(days, ctx), r23: validateSeasonalClosures(days, ctx) };
   } catch (e) {
     return { city, profile: profile.id, interestsUsed, results: [], error: String(e) };
   }

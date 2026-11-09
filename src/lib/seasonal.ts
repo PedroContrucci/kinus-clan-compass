@@ -53,6 +53,38 @@ export function closureOnDate(city: string, date?: string | Date): string[] {
   });
 }
 
+/** M18b: a data (dd/mm) cai no prefixo de uma closure? Aceita "DD/MM", "DD/MM e DD/MM" e o intervalo "DD/MM a DD/MM"
+ *  (inclusive; o que atravessa o ano, como 28/12 a 03/01, vale para os dois lados). Não mexe em `closureOnDate` (M18a). */
+export function prefixHasDate(prefix: string, m: number, d: number): boolean {
+  const key = m * 100 + d;
+  let hit = false;
+  const rest = prefix.replace(/(\d{2})\/(\d{2})\s+a\s+(\d{2})\/(\d{2})/g, (_, d1, m1, d2, m2) => {
+    const s = +m1 * 100 + +d1, e = +m2 * 100 + +d2;
+    if (s <= e ? key >= s && key <= e : key >= s || key <= e) hit = true;
+    return ' ';
+  });
+  for (const x of rest.matchAll(/(\d{2})\/(\d{2})/g)) if (+x[2] * 100 + +x[1] === key) hit = true;
+  return hit;
+}
+
+/** M18b: ids do catálogo fechados nesta data — `closedIds` das linhas de `closures` do mês da data que a cobrem
+ *  (data, "e", intervalo) ∪ as linhas "Mês inteiro" (toda data daquele mês). Sem dado ou sem `closedIds` = vazio. */
+export function closedIdsOnDate(city: string, date?: string | Date): Set<string> {
+  const out = new Set<string>();
+  const t = ymd(date);
+  const c = seasonalCity(city);
+  if (!t || !c) return out;
+  const note = seasonalNotesFor(c, t.m);
+  if (!note?.closedIds) return out;
+  for (const [idx, ids] of Object.entries(note.closedIds)) {
+    const line = note.closures[+idx];
+    if (!line) continue;
+    const prefix = line.slice(0, Math.max(line.indexOf(':'), 0));
+    if (/^\s*Mês inteiro/i.test(prefix) || prefixHasDate(prefix, t.m, t.d)) ids.forEach((id) => out.add(id));
+  }
+  return out;
+}
+
 /** "25/12 — Louvre, Orsay e Versalhes fechados" a partir de "25/12: Louvre, ...; quase todos…". */
 export function closureAlert(line: string, date: Date | string): string {
   const t = ymd(date);

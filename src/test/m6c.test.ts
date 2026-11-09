@@ -89,7 +89,7 @@ describe('M6c+ — bate-volta sem par de almoço', () => {
 
 describe('M6c+ — cenários de smoke', () => {
   it('Paris gastrô e Paris família sem gastronomia: R15 sem WARN', async () => {
-    const paris = SMOKE_SCENARIOS.filter((s) => s.city === 'Paris');
+    const paris = SMOKE_SCENARIOS.filter((s) => s.city === 'Paris' && /^Paris (gastrô|família)/.test(s.id)); // M18b: o 'Paris Natal' é de outra missão
     expect(paris.map((s) => s.id)).toEqual(['Paris gastrô 2 adultos 10–15/12', 'Paris família sem gastronomia 2+2 10–15/12']);
     for (const sc of paris) {
       const row = await runSmokeScenario(sc, { routeLookup: async () => null });

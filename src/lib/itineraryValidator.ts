@@ -7,6 +7,7 @@ import { LANDMARKS, type LandmarkTier } from '@/data/generated/landmarkTiers';
 import { CURATED_DAYS_OF_WEEK } from '@/data/generated/daysOfWeek';
 import { curatedCoordOf } from '@/lib/routeCoords';
 import { getMichelinCountForCity } from '@/lib/michelinData';
+import { closedIdsOnDate } from '@/lib/seasonal';
 
 export interface ValidationResult {
   rule: string;
@@ -844,7 +845,7 @@ export function weekdayOf(date: unknown): number {
 }
 
 export interface ExtraRuleResult {
-  rule: 'R17 ESSENCIAIS' | 'R17 ÍCONE' | 'R18 DIA DA SEMANA' | 'R20 DIA DENSO' | 'R21 VÉSPERA' | 'R22 HORÁRIO NATURAL';
+  rule: 'R17 ESSENCIAIS' | 'R17 ÍCONE' | 'R18 DIA DA SEMANA' | 'R20 DIA DENSO' | 'R21 VÉSPERA' | 'R22 HORÁRIO NATURAL' | 'R23 FECHAMENTO SAZONAL';
   status: 'PASS' | 'WARN' | 'FAIL' | 'SKIP';
   detail: string;
   /** R17: ids essenciais ausentes que cabiam. R18: ids fora do dia. */
@@ -852,6 +853,28 @@ export interface ExtraRuleResult {
 }
 
 const WEEKDAY_PT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+
+/**
+ * R23 (M18b): FECHAMENTO SAZONAL. Item do catálogo agendado numa data em que seasonalNotes.closedIds o dá por fechado
+ * (data, "e", intervalo ou "Mês inteiro") = FAIL. Sem `closedIds` para a cidade/mês = PASS (nunca inferir).
+ */
+export function validateSeasonalClosures(days: PlanDay[], ctx: PlanRulesContext): ExtraRuleResult {
+  const notes: string[] = [];
+  const bad: string[] = [];
+  for (const d of days) {
+    const closed = closedIdsOnDate(ctx.destination, d.date as string | Date);
+    if (closed.size === 0) continue;
+    for (const a of d.activities) {
+      const id = catalogIdOf(a.id);
+      if (!closed.has(id)) continue;
+      bad.push(id);
+      notes.push(`dia ${d.day}: ${a.name} fechado nesta data`);
+    }
+  }
+  return bad.length
+    ? { rule: 'R23 FECHAMENTO SAZONAL', status: 'FAIL', detail: notes.join(' · '), ids: bad }
+    : { rule: 'R23 FECHAMENTO SAZONAL', status: 'PASS', detail: 'nenhum item em data de fechamento' };
+}
 
 /** R18: item do catálogo num dia da semana em que não existe = FAIL. */
 export function validateDaysOfWeek(days: PlanDay[]): ExtraRuleResult {

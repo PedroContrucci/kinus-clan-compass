@@ -30,6 +30,7 @@ import { getHotelRecommendation } from '@/lib/hotelZones';
 import { interestsFor, catalogFor, splitInterests, interestLabel } from '@/lib/interestsFor';
 import { matchesPriority } from '@/lib/claChips';
 import { curatedCoordOf, resolveHotelCoord } from '@/lib/routeCoords';
+import { closedIdsOnDate } from '@/lib/seasonal';
 import { isEveningItem, maxHopKmFor, haversineKm, travelMinutes, isSnack, opensOn, weekdayOf, tiersOf, ESSENTIALS_MIN_DAYS, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, durationMinutesOf, defaultMinutesOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
 import { catalogIdOf } from '@/lib/localAchievements';
 import type { LandmarkTier } from '@/data/generated/landmarkTiers';
@@ -637,9 +638,12 @@ export function swapCandidates(trip: any, dayIndex: number, itemId: string): Swa
 
   // R18: só o que existe no dia da semana deste dia.
   const weekday = weekdayOf(day.date);
+  // M18b: nem fechado por fechamento sazonal nesta data.
+  const closedToday = closedIdsOnDate(ctx.destination, day.date as string | Date);
 
   const fits = (a: SuggestedActivity): boolean => {
     if (weekday >= 0 && !opensOn(a.id, weekday)) return false;
+    if (closedToday.has(a.id)) return false;
     const h = a.durationHours || 0;
     const swapped = { id: `day-${dayIndex}-${a.id}`, name: a.name, time: item.time, timeSlot: slot, type: item.type, duration: `${h}h` };
     const acts = day.activities.map((x) => (x.id === item.id ? swapped : x));
@@ -802,8 +806,18 @@ export function generateItinerary(
   const pairsOf = (anchorId: string) => pool.filter((a) => a.id === `${anchorId}-almoco` || a.id === `${anchorId}-jantar`);
 
   // R18: o item existe no dia da semana do dia sendo montado.
-  const opensToday = (a: SuggestedActivity) => !!_dry?.ignoreWeekdays || opensOn(a.id, addDays(departureDate, currentPickDayIndex).getDay());
-  const opensIdx = (id: string, i: number) => opensOn(id, addDays(departureDate, i).getDay());
+  // M18b: fechamento sazonal (seasonalNotes.closedIds) governa o dia pelo mesmo caminho; o pré-passe seco gera o dia ideal
+  // (sem dia da semana e sem fechamento) e o M19c reserva o ícone/essencial/âncora para o dia aberto mais próximo.
+  const closedCache = new Map<number, Set<string>>();
+  const closedOnIdx = (id: string, i: number) => {
+    if (!closedCache.has(i)) closedCache.set(i, closedIdsOnDate(destination, addDays(departureDate, i)));
+    return closedCache.get(i)!.has(id);
+  };
+  const opensToday = (a: SuggestedActivity) => !!_dry?.ignoreWeekdays || (opensOn(a.id, addDays(departureDate, currentPickDayIndex).getDay()) && !closedOnIdx(a.id, currentPickDayIndex));
+  const opensIdx = (id: string, i: number) => opensOn(id, addDays(departureDate, i).getDay()) && !closedOnIdx(id, i);
+  // M18b: o slot (manhã/tarde) ficou vazio e havia item inédito da categoria cortado só pelo fechamento de hoje → 'feriado'.
+  const closedCutToday = (category: 'morning' | 'afternoon') =>
+    pool.some((a) => a.category === category && !isPairMeal(a) && closedOnIdx(a.id, currentPickDayIndex) && !usedPlaces.isUsed(a.name));
 
   // M19c: item fechado no dia troca de dia em vez de sumir. Pré-passe: gera o dia ideal (sem dia da semana);
   // ícone/essencial/âncora de bate-volta que caiu em dia fechado fica RESERVADO para o dia de exploração aberto
@@ -1732,6 +1746,7 @@ export function generateItinerary(
           // EXP pool exhausted for morning slot — emit free-slot entry.
           activities.push(buildFreeSlotActivity(i, 'morning', '10:00'));
           thin('manha-sem-candidato');
+          if (closedCutToday('morning')) thin('feriado');
         }
 
         // Fim de tarde (17:30): pôr do sol ou lanche (tag snack).
@@ -1846,6 +1861,7 @@ export function generateItinerary(
             // EXP pool exhausted for afternoon slot — emit free-slot entry.
             activities.push(buildFreeSlotActivity(i, 'afternoon', '15:00'));
             thin('tarde-sem-candidato');
+            if (closedCutToday('afternoon')) thin('feriado');
           }
 
           if (sunsetActivity) {
@@ -1962,7 +1978,7 @@ export function generateItinerary(
           const act = convertToItineraryActivity(reAft, i, 'afternoon', '15:00', travelers, pax);
           activities.push(act);
           dayTotal += act.estimatedCost;
-        } else thin('pool');
+        } else { thin('pool'); if (closedCutToday('afternoon')) thin('feriado'); }
       }
     }
 
