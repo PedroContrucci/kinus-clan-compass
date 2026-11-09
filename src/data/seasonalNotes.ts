@@ -20,6 +20,9 @@ export interface SeasonalNote {
   climate: string;
   /** datas em que museus/monumentos fecham ou a cidade para — formato 'DD/MM: o quê' */
   closures: string[];
+  /** M18b: ids do catálogo da cidade fechados por cada linha de `closures` (chave = índice da linha). Linha sem
+   *  entrada = só aviso, o motor não agenda nem tira nada. Vale para toda data da linha (e todo o mês em "Mês inteiro"). */
+  closedIds?: Record<number, string[]>;
   /** o que a cidade tem nesse mês, todo ano */
   events: string[];
   /** dica prática de planejamento (reserva, lotação, roupa) */
@@ -39,6 +42,7 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
       '24/12 e 31/12: muitos restaurantes só com menu fechado de festa ou fechados — reservar com antecedência',
       'Mês inteiro: Giverny (casa e jardins de Monet) fechado de novembro a março — bate-volta só de abril a outubro',
     ],
+    closedIds: { 0: ['paris-louvre', 'paris-orsay', 'par3-versailles'], 1: ['paris-louvre', 'par3-versailles'], 3: ['par3-giverny'] },
     events: [
       'Iluminação de Natal dos Champs-Élysées (de fim de novembro até início de janeiro)',
       'Vitrines de Natal das grandes lojas do Boulevard Haussmann',
@@ -62,6 +66,7 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
       '01/01: Louvre e Versalhes fechados; transporte em horário reduzido',
       'Mês inteiro: Giverny (casa e jardins de Monet) fechado de novembro a março',
     ],
+    closedIds: { 0: ['paris-louvre', 'par3-versailles'], 1: ['par3-giverny'] },
     events: [
       'Saldos de inverno (soldes) a partir da segunda semana do mês — lojas lotadas no primeiro fim de semana',
       'Galette des Rois nas padarias durante todo o mês (Epifania, 06/01)',
@@ -84,6 +89,7 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
       '25/12 e 01/01: Mosteiro dos Jerónimos, Torre de Belém e museus nacionais fechados',
       '24/12 à tarde e 31/12 à noite: comércio e muitos restaurantes fecham cedo ou só com menu de festa',
     ],
+    closedIds: { 0: ['lis-jeronimos', 'lis-torre-belem'] },
     events: [
       'Iluminação de Natal e árvore na Praça do Comércio',
       'Réveillon com fogos no Terreiro do Paço (31/12)',
@@ -102,6 +108,7 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
     closures: [
       '01/01: monumentos e museus nacionais fechados',
     ],
+    closedIds: { 0: ['lis-jeronimos', 'lis-torre-belem'] },
     events: [
       'Saldos de inverno no comércio a partir da primeira semana',
       'Bolo-rei nas pastelarias até 06/01 (Dia de Reis)',
@@ -120,6 +127,7 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
     closures: [
       '25/12 e 01/01: museus, Palácio da Bolsa e caves de vinho do Porto fechados ou com horário reduzido',
     ],
+    closedIds: { 0: ['opo-palacio-bolsa'] },
     events: [
       'Árvore e iluminação de Natal na Avenida dos Aliados',
       'Réveillon na Avenida dos Aliados com fogos sobre o Douro (31/12)',
@@ -138,6 +146,7 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
     closures: [
       '01/01: museus e caves fechados',
     ],
+    closedIds: { 0: ['opo-palacio-bolsa'] },
     events: [
       'Saldos de inverno',
       'Cidade vazia de turistas — o Douro e a Ribeira sem fila',
@@ -157,6 +166,7 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
       '25/12 e 26/12: Museus Vaticanos fechados; Coliseu e Fórum fechados em 25/12',
       '01/01: Museus Vaticanos, Coliseu e Fórum fechados',
     ],
+    closedIds: { 1: ['rome-vaticano', 'rome-colosseo'], 2: ['rome-vaticano', 'rome-colosseo'] },
     events: [
       'Presépios nas igrejas e mercado de Natal na Piazza Navona',
       'Missa do Galo e bênção Urbi et Orbi na Praça de São Pedro (24/12 e 25/12)',
@@ -177,6 +187,7 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
       '01/01: Museus Vaticanos, Coliseu e Fórum fechados',
       '06/01: Epifania (feriado) — Museus Vaticanos fechados, comércio fechado',
     ],
+    closedIds: { 0: ['rome-vaticano', 'rome-colosseo'], 1: ['rome-vaticano'] },
     events: [
       'Befana na Piazza Navona (até 06/01) — festa das crianças',
       'Saldos de inverno a partir da primeira semana',
@@ -281,6 +292,7 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
     closures: [
       '25/12 e 01/01: museus e Centro Dragão do Mar fechados; praias e barracas abertas',
     ],
+    closedIds: { 0: ['for-dragao-do-mar'] },
     events: [
       'Réveillon no Aterro da Praia de Iracema com fogos e shows (31/12)',
       'Alta temporada de kitesurf em Cumbuco (vento constante de agosto a janeiro)',
@@ -299,6 +311,7 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
     closures: [
       '01/01: museus e comércio fechados',
     ],
+    closedIds: { 0: ['for-dragao-do-mar'] },
     events: [
       'Férias escolares: parques aquáticos e praias urbanas no pico de lotação',
     ],
