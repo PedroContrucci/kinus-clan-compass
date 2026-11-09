@@ -94,3 +94,9 @@ To https://github.com/PedroContrucci/kinus-clan-compass
    2269971..d29b208  main -> main
 ```
 Sem edge function tocada; sem redeploy.
+
+## Adendo — fechamento (9 duplicatas aposentadas)
+- Catálogo: 9 pares aposentados no kinu-beta; sync rodado (`src/data/generated/*`, `destinationActivities.ts`, `kinu-ai/catalog.ts`) → commit `9ca7b2a`.
+- Falhavam 2 testes, como previsto: (1) `placeIdentity` — removida `KNOWN_DUPLICATES_PENDING_RETIREMENT` (11 linhas = 9 pares; Tóquio/Tokyo contam duas vezes); guarda agora compara só com DUAL_ROLE_PAIRS. (2) snapshot de Tóquio — fixture regerada só para Tóquio (zz-regen, removido): D3 teamLab Planets → Akihabara; D4 Yanaka/Kura Sushi → teamLab (`tok3-`)/Monjayaki; D6 Akihabara → Yanaka. Experiências 1828→1768, comida 4230→4130, total 25258→25098. Nenhuma outra cidade mudou.
+- Ajuste de `poolSize` (Pink Mamma) em `generatorNoRepeat` revertido: suíte verde sem ele, pois o Chartier duplicado saiu.
+- Suíte 81/81 (868 passed), tsc limpo, eslint limpo. `deno.lock` não commitado. Commit de testes: `4599a92`.
