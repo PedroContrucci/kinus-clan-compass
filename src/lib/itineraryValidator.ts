@@ -8,6 +8,7 @@ import { CURATED_DAYS_OF_WEEK } from '@/data/generated/daysOfWeek';
 import { curatedCoordOf } from '@/lib/routeCoords';
 import { getMichelinCountForCity } from '@/lib/michelinData';
 import { closedIdsOnDate } from '@/lib/seasonal';
+import { isMustSee } from '@/lib/mustSee';
 
 export interface ValidationResult {
   rule: string;
@@ -845,7 +846,7 @@ export function weekdayOf(date: unknown): number {
 }
 
 export interface ExtraRuleResult {
-  rule: 'R17 ESSENCIAIS' | 'R17 ÍCONE' | 'R18 DIA DA SEMANA' | 'R20 DIA DENSO' | 'R21 VÉSPERA' | 'R22 HORÁRIO NATURAL' | 'R23 FECHAMENTO SAZONAL';
+  rule: 'R17 ESSENCIAIS' | 'R17 ÍCONE' | 'R17 OBRIGATÓRIO' | 'R18 DIA DA SEMANA' | 'R20 DIA DENSO' | 'R21 VÉSPERA' | 'R22 HORÁRIO NATURAL' | 'R23 FECHAMENTO SAZONAL';
   status: 'PASS' | 'WARN' | 'FAIL' | 'SKIP';
   detail: string;
   /** R17: ids essenciais ausentes que cabiam. R18: ids fora do dia. */
@@ -921,6 +922,8 @@ export function validateEssentials(days: PlanDay[], ctx: PlanRulesContext): Extr
       // M19c: dia em que o item está fechado não conta como "cabia".
       const wd = weekdayOf(days[i].date);
       if (wd >= 0 && !opensOn(id, wd)) return false;
+      // M19g: fechamento sazonal (seasonalNotes.closedIds) também não conta como "cabia".
+      if (closedIdsOnDate(ctx.destination, days[i].date as string | Date).has(id)) return false;
       const u = dayWindowUsage(days, ctx, i, [probe], index);
       return !!u && u.used <= u.window;
     });
@@ -959,6 +962,54 @@ export function validateIcons(days: PlanDay[], ctx: PlanRulesContext): ExtraRule
   if (fail.length) return { rule: 'R17 ÍCONE', status: 'FAIL', detail: notes.join(' · '), ids: fail };
   const head = `${icons.length - absent.length}/${icons.length}`;
   return { rule: 'R17 ÍCONE', status: 'PASS', detail: closed.length ? `${head} · fechado em toda a estadia: ${closed.join(', ')}` : head };
+}
+
+/** M19g: dia de exploração em que o item abre — dia da semana (R18) e fechamento sazonal (closedIds). */
+const opensOnDay = (id: string, day: PlanDay, destination: string) => {
+  const wd = weekdayOf(day.date);
+  return (wd < 0 || opensOn(id, wd)) && !closedIdsOnDate(destination, day.date as string | Date).has(id);
+};
+
+/**
+ * M19g — R17 OBRIGATÓRIO: o essencial "classe Louvre" (`must_see` no catálogo) que abre em ≥ 1 dia de exploração,
+ * numa estadia com ≥ 4 dias de exploração, e não aparece = FAIL, com os dias em que abriria. WARN quando ele e outro
+ * obrigatório presente só abrem na mesma manhã (não cabem os dois). Fechado em toda a estadia = PASS com nota.
+ */
+export const MUST_SEE_MIN_DAYS = 4;
+export function validateMustSee(days: PlanDay[], ctx: PlanRulesContext): ExtraRuleResult {
+  const index = catalogIndex(ctx.destination);
+  const lastIdx = days.length - 1;
+  const arrivalIdx = arrivalIndexOf(days, ctx);
+  const exploration = days.map((_, i) => i).filter((i) =>
+    i > arrivalIdx && i < lastIdx && !/recupera|descanso|trânsito/i.test(days[i].title ?? ''));
+  if (exploration.length < MUST_SEE_MIN_DAYS) {
+    return { rule: 'R17 OBRIGATÓRIO', status: 'SKIP', detail: `${exploration.length} dia(s) de exploração` };
+  }
+  const ms = [...index.keys()].filter(isMustSee).sort();
+  if (ms.length === 0) return { rule: 'R17 OBRIGATÓRIO', status: 'SKIP', detail: 'cidade sem obrigatório' };
+  const used = new Set(days.flatMap((d) => d.activities.map((a) => catalogIdOf(a.id))));
+  const usedNames = new Set(days.flatMap((d) => d.activities.map((a) => normalizePlaceName(a.name))));
+  const present = (id: string) => used.has(id) || usedNames.has(normalizePlaceName(index.get(id)!.name));
+  const openDaysOf = (id: string) => exploration.filter((i) => opensOnDay(id, days[i], ctx.destination));
+  const label = (i: number) => { const wd = weekdayOf(days[i].date); return `dia ${days[i].day}${wd >= 0 ? ` (${WEEKDAY_PT[wd]})` : ''}`; };
+  const absent = ms.filter((id) => !present(id));
+  const fail: string[] = [], warn: string[] = [], notes: string[] = [], closed: string[] = [];
+  for (const id of absent) {
+    const open = openDaysOf(id);
+    if (open.length === 0) { closed.push(id); continue; }
+    const cat = index.get(id)!;
+    // Só cabem na mesma manhã: os dois são de manhã e cada um abre num único dia de exploração, o mesmo.
+    const rival = open.length === 1 && cat.category === 'morning'
+      ? ms.find((o) => o !== id && present(o) && index.get(o)!.category === 'morning' && (() => { const oo = openDaysOf(o); return oo.length === 1 && oo[0] === open[0]; })())
+      : undefined;
+    if (rival) { warn.push(id); notes.push(`${cat.name} e ${index.get(rival)!.name} só abrem na manhã do ${label(open[0])}`); continue; }
+    fail.push(id);
+    notes.push(`${cat.name} abriria: ${open.map(label).join(', ')}`);
+  }
+  if (fail.length) return { rule: 'R17 OBRIGATÓRIO', status: 'FAIL', detail: notes.join(' · '), ids: [...fail, ...warn] };
+  if (warn.length) return { rule: 'R17 OBRIGATÓRIO', status: 'WARN', detail: notes.join(' · '), ids: warn };
+  const head = `${ms.length - absent.length}/${ms.length}`;
+  return { rule: 'R17 OBRIGATÓRIO', status: 'PASS', detail: closed.length ? `${head} · fechado em toda a estadia: ${closed.join(', ')}` : head };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

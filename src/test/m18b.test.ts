@@ -4,7 +4,7 @@ import { runSmokeScenario, SMOKE_SCENARIOS } from '@/lib/smokeMatrix';
 import { closedIdsOnDate, prefixHasDate } from '@/lib/seasonal';
 import { SEASONAL_NOTES } from '@/data/seasonalNotes';
 import { getDestinationActivities } from '@/data/destinationActivities';
-import { validateSeasonalClosures } from '@/lib/itineraryValidator';
+import { validateSeasonalClosures, weekdayOf } from '@/lib/itineraryValidator';
 import { getActivityPrice } from '@/lib/activityPricing';
 
 // M18b — fechamentos sazonais governam o dia (seasonalNotes.closedIds).
@@ -91,7 +91,12 @@ describe('M18b — motor', () => {
     const v = run('Paris', '2026-12-22', '2026-12-28', ['culture', 'family']);
     expect(v.days.filter((d) => ids(d).includes('par3-versailles')).map(dayKey)).toEqual(['2026-12-24']);
     const l = run('Paris', '2026-12-24', '2027-01-02', ['culture', 'family']);
-    expect(l.days.filter((d) => ids(d).includes('paris-louvre')).map(dayKey)).toEqual(['2026-12-31']);
+    // M19g: a M18b garante "não no dia fechado", não "no último dia" (31/12 era acidente da ordenação de então).
+    const louvre = l.days.filter((d) => ids(d).includes('paris-louvre')).map(dayKey);
+    expect(louvre).toHaveLength(1);
+    expect(louvre[0]).not.toBe('2027-01-01');
+    expect(weekdayOf(louvre[0])).not.toBe(2);
+    expect(closedIdsOnDate('Paris', louvre[0]).has('paris-louvre')).toBe(false);
   });
 
   it('R23 PASS no gerado; FAIL quando o Louvre é posto no dia 25', () => {

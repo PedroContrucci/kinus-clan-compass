@@ -31,12 +31,13 @@ import { interestsFor, catalogFor, splitInterests, interestLabel } from '@/lib/i
 import { matchesPriority } from '@/lib/claChips';
 import { curatedCoordOf, resolveHotelCoord } from '@/lib/routeCoords';
 import { closedIdsOnDate } from '@/lib/seasonal';
-import { isEveningItem, maxHopKmFor, haversineKm, travelMinutes, isSnack, opensOn, weekdayOf, tiersOf, ESSENTIALS_MIN_DAYS, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, durationMinutesOf, defaultMinutesOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
+import { isEveningItem, maxHopKmFor, haversineKm, travelMinutes, isSnack, opensOn, weekdayOf, tiersOf, ESSENTIALS_MIN_DAYS, MUST_SEE_MIN_DAYS, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, durationMinutesOf, defaultMinutesOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
 import { catalogIdOf } from '@/lib/localAchievements';
 import type { LandmarkTier } from '@/data/generated/landmarkTiers';
 import { rulesContextOf } from '@/lib/cockpitLines';
 import { findCityInfo } from '@/data/destinationCatalog';
 import { CURATED_DAYS_OF_WEEK } from '@/data/generated/daysOfWeek';
+import { isMustSee } from '@/lib/mustSee';
 
 type Coord = { lat: number; lng: number };
 
@@ -872,9 +873,11 @@ export function generateItinerary(
     meal?: { band: number; ref: Coord | null; alt?: Coord | null; chain?: Coord | null };
     /** Âncora do dia: prefere quem tem almoço inédito a ≤ maxHop (dia que fecha a corrente). */
     anchor?: boolean;
-    /** M6: dia de exploração — prefere esses tiers (dentro do salto; `force` ignora o salto) e conta o que sai. */
-    tierPlan?: { tiers: Set<LandmarkTier>; force: boolean; fits: (a: SuggestedActivity) => boolean };
+    /** M6: dia de exploração — prefere esses tiers (dentro do salto; `force` ignora o salto) e conta o que sai.
+     *  M19g: `mustSeeDue` = obrigatórios cujo último dia aberto é hoje (force próprio; não fura o `force` do ícone). */
+    tierPlan?: TierPlan;
   }
+  type TierPlan = { tiers: Set<LandmarkTier>; force: boolean; fits: (a: SuggestedActivity) => boolean; mustSeeDue?: Set<string> };
 
   // M6: o que o dia de exploração `n` pede ao tier. icon até sair um (força no último dia se ainda não saiu);
   // icon|essential nos 3 primeiros dias de exploração até 4 essenciais, em viagem com ≥ 3 dias (preferência).
@@ -887,14 +890,27 @@ export function generateItinerary(
     for (let n = explorationTotal - 1; n >= 0; n--) if (!icons.length || icons.some((id) => opensIdx(id, explorationStart + n))) return n;
     return explorationTotal - 1;
   })();
-  const tierPlanFor = (n: number, hoursUsed: () => number): { tiers: Set<LandmarkTier>; force: boolean; fits: (a: SuggestedActivity) => boolean } => {
+  // M19g: obrigatório (must_see, essencial do catálogo) ainda fora do roteiro tem `force` próprio no ÚLTIMO dia de
+  // exploração em que abre — fora da cota de 4 essenciais e do n < 3. Fora do pré-passe seco (o mapa da reserva
+  // M19c fica como era) e fora do item já reservado: a reserva é dona dele. Só em estadia com ≥ 4 dias de exploração
+  // (o mesmo piso do R17 OBRIGATÓRIO): abaixo disso as poucas manhãs ficam com ícone, essencial e bate-volta.
+  const mustSeeOn = (id: string) => !_dry && explorationTotal >= MUST_SEE_MIN_DAYS && isMustSee(id) && !reserve.has(id);
+  const mustSeePool = pool.filter((a) => mustSeeOn(a.id) && tiers[a.id] === 'essential');
+  const mustSeeLastOpen = new Map(mustSeePool.map((a) => {
+    let last = -1;
+    for (let n = explorationTotal - 1; n >= 0 && last < 0; n--) if (opensIdx(a.id, explorationStart + n)) last = n;
+    return [a.id, last] as const;
+  }));
+  const tierPlanFor = (n: number, hoursUsed: () => number): TierPlan => {
     const want = new Set<LandmarkTier>();
+    const mustSeeDue = new Set(mustSeePool.filter((a) => mustSeeLastOpen.get(a.id) === n && !usedPlaces.isUsed(a.name)).map((a) => a.id));
+    if (mustSeeDue.size) want.add('essential');
     if (!iconPlaced) want.add('icon');
     if (explorationTotal >= ESSENTIALS_MIN_DAYS && n >= 0 && n < 3 && essentialsPlaced < 4) { want.add('icon'); want.add('essential'); }
     // Cabe = o que já está no dia + o item + almoço e jantar (os menores) + saltos ≤ janela; senão a janela o cortaria.
     // M19d-fix: vale também para o ícone longo (4–6 h) — janela real; se não cabe hoje, fica para forceN / outro dia.
     const fits = (a: SuggestedActivity) => hoursUsed() + HOP_HOURS + (a.durationHours || 0) + mealReserve <= EXPLORATION_WINDOW_HOURS;
-    return { tiers: want, force: !iconPlaced && n === forceN, fits };
+    return { tiers: want, force: !iconPlaced && n === forceN, fits, mustSeeDue };
   };
 
   // M7: Michelin do catálogo governado por preço, não por rótulo. Econômico nunca; Conforto no jantar só
@@ -1045,6 +1061,17 @@ export function generateItinerary(
         if (want.has('icon') && !iconPlaced) {
           const icons = byTier.filter((a) => tiers[a.id] === 'icon');
           if (icons.length) byTier = opts.tierPlan.force ? icons : [...icons, ...byTier.filter((a) => tiers[a.id] !== 'icon')];
+        }
+        // M19g: entre os essenciais, o obrigatório (must_see) vem primeiro, por rating; o ícone pendente segue na frente.
+        const ms = byTier.filter((a) => tiers[a.id] === 'essential' && mustSeeOn(a.id)).sort((x, y) => (y.rating || 0) - (x.rating || 0));
+        if (ms.length) {
+          const head = byTier.filter((a) => tiers[a.id] === 'icon' && !iconPlaced);
+          byTier = [...head, ...ms, ...byTier.filter((a) => !head.includes(a) && !ms.includes(a))];
+        }
+        // M19g: hoje é o último dia aberto de um obrigatório ainda fora → só ele (ignora o salto, respeita a janela).
+        if (!opts.tierPlan.force && opts.tierPlan.mustSeeDue?.size) {
+          const due = candidates.filter((a) => opts.tierPlan!.mustSeeDue!.has(a.id) && opts.tierPlan!.fits(a)).sort((x, y) => (y.rating || 0) - (x.rating || 0));
+          if (due.length) byTier = due;
         }
         const first = candidates[0];
         const lateSlot = /(p[ôo]r do sol|sunset)/i.test(first.name) || isSnack(first);
