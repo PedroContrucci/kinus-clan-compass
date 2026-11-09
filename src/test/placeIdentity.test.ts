@@ -65,23 +65,8 @@ describe('normalizePlaceName', () => {
     'Maceió::feirinha de pajucara (mcz-feirinha-pajucara-noite + mcz-tapioca-pajucara)',
     'Londres::dishoom (lon-dishoom + lon-dishoom-covent)',
   ];
-  // DUPLICATA: mesmo lugar cadastrado duas vezes — a aposentar um id no kinu-beta
-  // (M6d, RELATORIO-M6D). Ao aposentar, REMOVA a linha daqui.
-  const KNOWN_DUPLICATES_PENDING_RETIREMENT = [
-    'Paris::bouillon chartier (par-bouillon-chartier + paris-chartier)',
-    "Paris::jardin d'acclimatation (par-jardin-acclimatation + par3-jardin-acclimatation)",
-    'Tóquio::kappabashi (tok-kappabashi + tok3-kappabashi)',
-    'Tóquio::teamlab planets (tok-teamlab-planets + tok3-teamlab-planets)',
-    'Tokyo::kappabashi (tok-kappabashi + tok3-kappabashi)',
-    'Tokyo::teamlab planets (tok-teamlab-planets + tok3-teamlab-planets)',
-    'Lisboa::feira da ladra (lis-feira-da-ladra + lis2-feira-ladra)',
-    'Salvador::boteco do franca (ssa-boteco-do-franca + ssa-boteco-franca)',
-    'Buenos Aires::feria de mataderos (bue-feria-mataderos + bue2-mataderos)',
-    'Cartagena::bovedas (ctg-bovedas + ctg-las-bovedas)',
-    'Londres::sky garden (lon-sky-garden + lon6-sky-garden)',
-  ];
 
-  it('toda colisão de nome do catálogo está classificada (dual-role ou duplicata pendente)', () => {
+  it('toda colisão de nome do catálogo está classificada (dual-role declarado)', () => {
     const collisions: string[] = [];
     for (const [city, data] of Object.entries(destinationActivities)) {
       const byName = new Map<string, string[]>();
@@ -95,7 +80,7 @@ describe('normalizePlaceName', () => {
       }
     }
     expect([...collisions].sort()).toEqual(
-      [...DUAL_ROLE_PAIRS, ...KNOWN_DUPLICATES_PENDING_RETIREMENT].sort()
+      [...DUAL_ROLE_PAIRS].sort()
     );
   });
 

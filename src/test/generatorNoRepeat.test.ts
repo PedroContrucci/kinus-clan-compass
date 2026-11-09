@@ -226,22 +226,11 @@ describe('gerador — não repetir o mesmo lugar na viagem', () => {
     // chegou a três aparições no PDF. Este é o teto aritmético ótimo.
     const offenders: string[] = [];
     for (const city of CITIES) {
-      // M6d: uma casa cadastrada em duas categorias de refeição (Chartier almoço+jantar)
-      // serve UM papel por viagem (usedInOtherRole) — não conta no pool das duas.
-      const mealNames = (slot: string) =>
-        new Set(
-          destinationActivities[city].activities
-            .filter((a) => a.category === slot)
-            .map((a) => normalizePlaceName(a.name))
-        );
-      const inOtherMealSlot = (slot: string, name: string) =>
-        [...MEAL_SLOTS].some((o) => o !== slot && mealNames(o).has(name));
       const poolSize = (slot: string) =>
         new Set(
           destinationActivities[city].activities
             .filter((a) => a.category === slot && !isPairMeal(city, a.id) && !closesSomeDay(city, slot, a.id))
             .map((a) => normalizePlaceName(a.name))
-            .filter((n) => !inOtherMealSlot(slot, n))
         ).size;
       for (const cfg of MATRIX) {
         const places = run(city, cfg);

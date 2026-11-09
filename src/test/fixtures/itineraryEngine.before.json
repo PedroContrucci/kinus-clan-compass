@@ -1806,19 +1806,20 @@
             "source": "kinu"
           },
           {
-            "id": "day-3-tok-teamlab-planets",
-            "name": "teamLab Planets",
+            "id": "day-3-tokyo-akihabara",
+            "name": "Akihabara Electric Town",
             "type": "experience",
             "timeSlot": "afternoon",
-            "estimatedCost": 300,
-            "costPerPerson": 150,
+            "estimatedCost": 0,
+            "costPerPerson": 0,
             "time": "15:00",
-            "duration": "2h",
-            "location": "Toyosu (2 pax)",
-            "rating": 4.5,
+            "duration": "3h",
+            "location": "Akihabara (2 pax)",
+            "rating": 4.4,
             "status": "suggestion",
             "tips": [
-              "Museu imersivo onde se anda descalço pela água entre luzes; reserve o horário com dias de antecedência"
+              "Paraíso de eletrônicos e anime",
+              "Maid cafés são experiência única"
             ],
             "source": "kinu"
           },
@@ -1835,7 +1836,7 @@
             "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "~20 min de deslocamento (do último passeio) — escolhido pela qualidade (gastronomia nos seus interesses)",
+              "~15 min de deslocamento (do último passeio) — escolhido pela qualidade (gastronomia nos seus interesses)",
               "Ramen leve de caldo com yuzu — refrescante e único",
               "Pedido na máquina de tickets na entrada",
               "Balcão minimalista, experiência tóquio raiz"
@@ -1843,7 +1844,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 750
+        "totalCost": 450
       },
       {
         "dayNumber": 5,
@@ -1908,44 +1909,45 @@
             "source": "kinu"
           },
           {
-            "id": "day-4-tok3-yanaka",
-            "name": "Yanaka Ginza (Tóquio retrô)",
+            "id": "day-4-tok3-teamlab-planets",
+            "name": "teamLab Planets (Toyosu)",
             "type": "experience",
             "timeSlot": "afternoon",
-            "estimatedCost": 80,
-            "costPerPerson": 40,
+            "estimatedCost": 240,
+            "costPerPerson": 120,
             "time": "15:00",
             "duration": "2h",
-            "location": "Yanaka (2 pax)",
-            "rating": 4.5,
+            "location": "Toyosu (2 pax)",
+            "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "O bairro que sobreviveu ao tempo — comércio de rua, gatos e croquetes de 100 ienes"
+              "A versão descalça-na-água do teamLab — imersão total, joelhos molhados",
+              "Diferente do Borderless; compre datado"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-4-tokyo-kura-sushi",
-            "name": "Kura Sushi (esteira gigante)",
+            "id": "day-4-tokyo-monjayaki",
+            "name": "Monjayaki em Tsukishima",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 160,
-            "costPerPerson": 80,
+            "estimatedCost": 200,
+            "costPerPerson": 100,
             "time": "19:30",
-            "duration": "1.5h",
-            "location": "Asakusa (2 pax)",
+            "duration": "2h",
+            "location": "Tsukishima (2 pax)",
             "rating": 4.5,
             "status": "suggestion",
             "tips": [
               "~15 min de deslocamento (do último passeio) — escolhido pela qualidade (gastronomia nos seus interesses)",
-              "A cada 5 pratos, um gashapon de brinde — jantar vira brincadeira",
-              "Cardápio com fotos, fácil para crianças",
-              "Sistema de senha no app evita fila"
+              "A rua Monja Street tem dezenas de casas do prato típico de Tóquio",
+              "Você mesmo prepara na chapa da mesa",
+              "Programa autêntico longe do circuito turístico"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 1400
+        "totalCost": 1600
       },
       {
         "dayNumber": 6,
@@ -2069,44 +2071,44 @@
             "source": "kinu"
           },
           {
-            "id": "day-6-tokyo-akihabara",
-            "name": "Akihabara Electric Town",
+            "id": "day-6-tok3-yanaka",
+            "name": "Yanaka Ginza (Tóquio retrô)",
             "type": "experience",
             "timeSlot": "afternoon",
-            "estimatedCost": 0,
-            "costPerPerson": 0,
+            "estimatedCost": 80,
+            "costPerPerson": 40,
             "time": "15:00",
-            "duration": "3h",
-            "location": "Akihabara (2 pax)",
-            "rating": 4.4,
+            "duration": "2h",
+            "location": "Yanaka (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "Paraíso de eletrônicos e anime",
-              "Maid cafés são experiência única"
+              "O bairro que sobreviveu ao tempo — comércio de rua, gatos e croquetes de 100 ienes"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-6-tokyo-izakaya",
-            "name": "Izakaya em Yurakucho",
+            "id": "day-6-tokyo-kura-sushi",
+            "name": "Kura Sushi (esteira gigante)",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 300,
-            "costPerPerson": 150,
+            "estimatedCost": 160,
+            "costPerPerson": 80,
             "time": "19:30",
-            "duration": "2h",
-            "location": "Yurakucho (2 pax)",
+            "duration": "1.5h",
+            "location": "Asakusa (2 pax)",
             "rating": 4.5,
             "status": "suggestion",
             "tips": [
               "~15 min de deslocamento (do último passeio) — escolhido pela qualidade (gastronomia nos seus interesses)",
-              "Debaixo dos trilhos do trem",
-              "Atmosfera autêntica de salaryman"
+              "A cada 5 pratos, um gashapon de brinde — jantar vira brincadeira",
+              "Cardápio com fotos, fácil para crianças",
+              "Sistema de senha no app evita fila"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 520
+        "totalCost": 460
       },
       {
         "dayNumber": 8,
@@ -2208,18 +2210,18 @@
         "status": "estimated"
       },
       "experiences": {
-        "amount": 1828,
+        "amount": 1768,
         "percent": 9,
         "status": "estimated"
       },
       "food": {
-        "amount": 4230,
+        "amount": 4130,
         "percent": 21,
         "status": "estimated"
       },
-      "total": 25258,
-      "available": -5258,
-      "trustZonePercent": 126
+      "total": 25098,
+      "available": -5098,
+      "trustZonePercent": 125
     },
     "meta": {
       "michelinCount": 0
