@@ -1908,45 +1908,44 @@
             "source": "kinu"
           },
           {
-            "id": "day-4-tok3-teamlab-planets",
-            "name": "teamLab Planets (Toyosu)",
+            "id": "day-4-tok3-yanaka",
+            "name": "Yanaka Ginza (Tóquio retrô)",
             "type": "experience",
             "timeSlot": "afternoon",
-            "estimatedCost": 240,
-            "costPerPerson": 120,
+            "estimatedCost": 80,
+            "costPerPerson": 40,
             "time": "15:00",
             "duration": "2h",
-            "location": "Toyosu (2 pax)",
-            "rating": 4.6,
+            "location": "Yanaka (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "A versão descalça-na-água do teamLab — imersão total, joelhos molhados",
-              "Diferente do Borderless; compre datado"
+              "O bairro que sobreviveu ao tempo — comércio de rua, gatos e croquetes de 100 ienes"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-4-tokyo-monjayaki",
-            "name": "Monjayaki em Tsukishima",
+            "id": "day-4-tokyo-kura-sushi",
+            "name": "Kura Sushi (esteira gigante)",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 200,
-            "costPerPerson": 100,
+            "estimatedCost": 160,
+            "costPerPerson": 80,
             "time": "19:30",
-            "duration": "2h",
-            "location": "Tsukishima (2 pax)",
+            "duration": "1.5h",
+            "location": "Asakusa (2 pax)",
             "rating": 4.5,
             "status": "suggestion",
             "tips": [
               "~15 min de deslocamento (do último passeio) — escolhido pela qualidade (gastronomia nos seus interesses)",
-              "A rua Monja Street tem dezenas de casas do prato típico de Tóquio",
-              "Você mesmo prepara na chapa da mesa",
-              "Programa autêntico longe do circuito turístico"
+              "A cada 5 pratos, um gashapon de brinde — jantar vira brincadeira",
+              "Cardápio com fotos, fácil para crianças",
+              "Sistema de senha no app evita fila"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 1600
+        "totalCost": 1400
       },
       {
         "dayNumber": 6,
@@ -2070,44 +2069,44 @@
             "source": "kinu"
           },
           {
-            "id": "day-6-tok3-yanaka",
-            "name": "Yanaka Ginza (Tóquio retrô)",
+            "id": "day-6-tokyo-akihabara",
+            "name": "Akihabara Electric Town",
             "type": "experience",
             "timeSlot": "afternoon",
-            "estimatedCost": 80,
-            "costPerPerson": 40,
+            "estimatedCost": 0,
+            "costPerPerson": 0,
             "time": "15:00",
-            "duration": "2h",
-            "location": "Yanaka (2 pax)",
-            "rating": 4.5,
+            "duration": "3h",
+            "location": "Akihabara (2 pax)",
+            "rating": 4.4,
             "status": "suggestion",
             "tips": [
-              "O bairro que sobreviveu ao tempo — comércio de rua, gatos e croquetes de 100 ienes"
+              "Paraíso de eletrônicos e anime",
+              "Maid cafés são experiência única"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-6-tokyo-kura-sushi",
-            "name": "Kura Sushi (esteira gigante)",
+            "id": "day-6-tokyo-izakaya",
+            "name": "Izakaya em Yurakucho",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 160,
-            "costPerPerson": 80,
+            "estimatedCost": 300,
+            "costPerPerson": 150,
             "time": "19:30",
-            "duration": "1.5h",
-            "location": "Asakusa (2 pax)",
+            "duration": "2h",
+            "location": "Yurakucho (2 pax)",
             "rating": 4.5,
             "status": "suggestion",
             "tips": [
               "~15 min de deslocamento (do último passeio) — escolhido pela qualidade (gastronomia nos seus interesses)",
-              "A cada 5 pratos, um gashapon de brinde — jantar vira brincadeira",
-              "Cardápio com fotos, fácil para crianças",
-              "Sistema de senha no app evita fila"
+              "Debaixo dos trilhos do trem",
+              "Atmosfera autêntica de salaryman"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 460
+        "totalCost": 520
       },
       {
         "dayNumber": 8,
@@ -2209,18 +2208,18 @@
         "status": "estimated"
       },
       "experiences": {
-        "amount": 2068,
-        "percent": 10,
+        "amount": 1828,
+        "percent": 9,
         "status": "estimated"
       },
       "food": {
-        "amount": 4130,
+        "amount": 4230,
         "percent": 21,
         "status": "estimated"
       },
-      "total": 25398,
-      "available": -5398,
-      "trustZonePercent": 127
+      "total": 25258,
+      "available": -5258,
+      "trustZonePercent": 126
     },
     "meta": {
       "michelinCount": 0

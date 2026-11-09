@@ -11,10 +11,13 @@
 /**
  * Normaliza o nome de um lugar para comparação de identidade.
  *
- * Deliberadamente NÃO remove conteúdo entre parênteses: medido contra o
- * catálogo inteiro, isso não colapsa nenhum par a mais do que a normalização
- * base, e arriscaria fundir casas reais distintas da mesma rede — hoje
- * `Coco Bambu Beira-Mar` × `Coco Bambu (Varjota)`, que devem coexistir.
+ * Remove (M6d): artigo inicial (le, la, les, l', el, los, las, o, a, os, as,
+ * the — uma única vez) e qualquer trecho entre parênteses (ano, apelido,
+ * bairro). Motivo: "Le Bouillon Chartier" e "Bouillon Chartier (1896)" são a
+ * mesma casa com dois ids. Custo aceito: "A Brasileira" vira "brasileira", e
+ * redes distinguidas só pelo parêntese (`Coco Bambu (Varjota)` × `Coco Bambu
+ * (Meireles)`) colidiriam — hoje `Coco Bambu Beira-Mar` × `Coco Bambu (Varjota)`
+ * seguem distintos ("coco bambu beira-mar" × "coco bambu").
  */
 export function normalizePlaceName(name: string): string {
   return (name || '')
@@ -23,7 +26,10 @@ export function normalizePlaceName(name: string): string {
     .toLowerCase()
     // prefixo de refeição que a UI acrescenta ao gravar a atividade no dia
     .replace(/^(cafe|almoco|jantar):\s*/, '')
+    .replace(/\([^)]*\)/g, ' ')
     .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^(?:(?:les|las|los|le|la|el|os|as|the|o|a)\s+|l['’]\s*)/, '')
     .trim();
 }
 

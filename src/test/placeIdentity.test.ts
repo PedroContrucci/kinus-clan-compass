@@ -4,6 +4,7 @@ import {
   createPlaceUsageTracker,
   pickReusableByGap,
 } from '@/lib/placeIdentity';
+import { validateItinerary } from '@/lib/itineraryValidator';
 import { destinationActivities } from '@/data/destinationActivities';
 
 describe('normalizePlaceName', () => {
@@ -50,10 +51,37 @@ describe('normalizePlaceName', () => {
     });
   });
 
-  // Guarda de catálogo: se alguém cadastrar duas casas reais com nome colidente,
-  // ou padronizar Coco Bambu Beira-Mar como "Coco Bambu (Beira-Mar)", este teste
-  // acusa antes que uma delas suma silenciosamente dos roteiros.
-  it('o único par colidente do catálogo é Cabaña del Primo', () => {
+  // Guarda de catálogo: toda colisão de nome normalizado dentro de uma cidade
+  // precisa estar CLASSIFICADA aqui. Colisão nova (ou padronizar Coco Bambu
+  // Beira-Mar como "Coco Bambu (Beira-Mar)") acusa antes de uma casa sumir
+  // silenciosamente dos roteiros.
+  //
+  // DUAL: mesma casa real, papel diferente (almoço/café/jantar) — permitido.
+  const DUAL_ROLE_PAIRS = [
+    'Fortaleza::cabana del primo (for-cabana-del-primo + for-rest-cabana-del-primo)',
+    'Foz do Iguaçu::castelo libanes (igu-castelo-libanes-almoco + igu-castelo-libanes-cafe)',
+    'Foz do Iguaçu::vo bertila (igu-vo-bertila + igu-vo-bertila-jantar)',
+    'Maceió::maria antonieta (mcz-maria-antonieta-cafe + mcz-maria-antonieta-jantar)',
+    'Maceió::feirinha de pajucara (mcz-feirinha-pajucara-noite + mcz-tapioca-pajucara)',
+    'Londres::dishoom (lon-dishoom + lon-dishoom-covent)',
+  ];
+  // DUPLICATA: mesmo lugar cadastrado duas vezes — a aposentar um id no kinu-beta
+  // (M6d, RELATORIO-M6D). Ao aposentar, REMOVA a linha daqui.
+  const KNOWN_DUPLICATES_PENDING_RETIREMENT = [
+    'Paris::bouillon chartier (par-bouillon-chartier + paris-chartier)',
+    "Paris::jardin d'acclimatation (par-jardin-acclimatation + par3-jardin-acclimatation)",
+    'Tóquio::kappabashi (tok-kappabashi + tok3-kappabashi)',
+    'Tóquio::teamlab planets (tok-teamlab-planets + tok3-teamlab-planets)',
+    'Tokyo::kappabashi (tok-kappabashi + tok3-kappabashi)',
+    'Tokyo::teamlab planets (tok-teamlab-planets + tok3-teamlab-planets)',
+    'Lisboa::feira da ladra (lis-feira-da-ladra + lis2-feira-ladra)',
+    'Salvador::boteco do franca (ssa-boteco-do-franca + ssa-boteco-franca)',
+    'Buenos Aires::feria de mataderos (bue-feria-mataderos + bue2-mataderos)',
+    'Cartagena::bovedas (ctg-bovedas + ctg-las-bovedas)',
+    'Londres::sky garden (lon-sky-garden + lon6-sky-garden)',
+  ];
+
+  it('toda colisão de nome do catálogo está classificada (dual-role ou duplicata pendente)', () => {
     const collisions: string[] = [];
     for (const [city, data] of Object.entries(destinationActivities)) {
       const byName = new Map<string, string[]>();
@@ -66,9 +94,39 @@ describe('normalizePlaceName', () => {
         if (ids.length > 1) collisions.push(`${city}::${key} (${ids.join(' + ')})`);
       }
     }
-    expect(collisions).toEqual([
-      'Fortaleza::cabana del primo (for-cabana-del-primo + for-rest-cabana-del-primo)',
-    ]);
+    expect([...collisions].sort()).toEqual(
+      [...DUAL_ROLE_PAIRS, ...KNOWN_DUPLICATES_PENDING_RETIREMENT].sort()
+    );
+  });
+
+  it('Le Bouillon Chartier e Bouillon Chartier (1896) normalizam igual', () => {
+    expect(normalizePlaceName('Le Bouillon Chartier')).toBe('bouillon chartier');
+    expect(normalizePlaceName('Bouillon Chartier (1896)')).toBe(normalizePlaceName('Le Bouillon Chartier'));
+  });
+
+  it('artigo inicial e parênteses saem; o resto permanece', () => {
+    expect(normalizePlaceName("L'As du Fallafel")).toBe('as du fallafel');
+    expect(normalizePlaceName('O Pastéis de Nata')).toBe('pasteis de nata');
+    expect(normalizePlaceName('The Ivy')).toBe('ivy');
+    expect(normalizePlaceName('Coco Bambu (Varjota)')).toBe('coco bambu');
+  });
+});
+
+describe('R5 — duplicata Chartier (M6d)', () => {
+  const act = (name: string, timeSlot: string, time: string) =>
+    ({ id: `x-${name}`, name, timeSlot, type: timeSlot, time, status: 'planned' });
+  const day = (n: number, a: ReturnType<typeof act>) =>
+    ({ dayNumber: n, date: `2026-11-${10 + n}`, label: `D${n}`, theme: '', activities: [a] });
+
+  it('acusa quando os dois Chartier aparecem na mesma viagem', () => {
+    const days = [
+      day(3, act('Le Bouillon Chartier', 'dinner', '19:30')),
+      day(5, act('Bouillon Chartier (1896)', 'lunch', '12:30')),
+    ];
+    const r5 = validateItinerary(days as never, { budget: 20000, travelInterests: [], destination: 'Paris' })
+      .find((r) => r.rule === 'R5 NO DUPLICATES');
+    expect(r5?.status).not.toBe('PASS');
+    expect(r5?.detail).toContain('bouillon chartier');
   });
 });
 
