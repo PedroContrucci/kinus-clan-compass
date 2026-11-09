@@ -26,6 +26,9 @@
  * é um só, por id, e `curatedHotels.ts` continua sendo escrito só pelo `sync-hotels.ts`.
  * As colunas são preenchidas pelo enrich; ver `supabase-beta/ENRICH-COORDS.md`.
  *
+ * **E emite `src/data/generated/mustSee.ts`** (M19g): ids com `must_see = true` — o essencial
+ * "classe Louvre" que o motor coloca primeiro e o R17 OBRIGATÓRIO cobra.
+ *
  * Uso:
  *   npx tsx scripts/sync-catalog.ts            # dry-run: imprime o plano, não escreve
  *   npx tsx scripts/sync-catalog.ts --apply    # escreve, valida, e restaura se falhar
@@ -53,6 +56,7 @@ const COORDS_FILE = resolve(ROOT, 'src/data/generated/coords.ts');
 const BOOKING_FILE = resolve(ROOT, 'src/data/generated/booking.ts');
 const DOW_FILE = resolve(ROOT, 'src/data/generated/daysOfWeek.ts');
 const VERIFIED_FILE = resolve(ROOT, 'src/data/generated/catalogVerified.ts');
+const MUSTSEE_FILE = resolve(ROOT, 'src/data/generated/mustSee.ts');
 const TSCONFIG = 'tsconfig.app.json';
 
 /** O SQL que cria as colunas de coordenada. Aparece na mensagem de erro quando elas faltam. */
@@ -125,6 +129,8 @@ interface DbRow {
   days_of_week: (number | string)[] | null;
   /** M5b: quando o Google foi consultado pela última vez para este item. */
   google_checked_at: string | null;
+  /** M19g: essencial "classe Louvre" (marcado à mão no kinu-beta). */
+  must_see: boolean | null;
 }
 
 /** O mínimo que o mapa de coordenadas precisa saber sobre um hotel curado. */
@@ -135,7 +141,7 @@ interface HotelCoordRow {
 }
 
 const SELECT =
-  'id,city,name,category,neighborhood,rating,google_rating,estimated_cost_brl,duration_hours,tips,style_tags,landmark_tier,lat,lng,booking_mode,booking_url,booking_phone,booking_note,days_of_week,google_checked_at';
+  'id,city,name,category,neighborhood,rating,google_rating,estimated_cost_brl,duration_hours,tips,style_tags,landmark_tier,lat,lng,booking_mode,booking_url,booking_phone,booking_note,days_of_week,google_checked_at,must_see';
 
 // ---------------------------------------------------------------------------
 // Utilidades
@@ -677,6 +683,33 @@ ${entries.map((e) => e.line).join('\n')}${entries.length ? '\n' : ''}};
 }
 
 /**
+ * Gera `src/data/generated/mustSee.ts` — M19g: ids com `must_see = true`, em ordem. Só id de
+ * manhã/tarde publicado; outra categoria aborta (o motor e o R17 OBRIGATÓRIO só olham passeio).
+ */
+function renderMustSee(rows: DbRow[]): { content: string; count: number } {
+  const ids = rows
+    .filter((r) => r.must_see === true)
+    .map((r) => {
+      if (r.category !== 'morning' && r.category !== 'afternoon') {
+        die(`'${r.id}': must_see em categoria '${r.category}' (só morning|afternoon). Nada foi escrito.`);
+      }
+      return r.id;
+    })
+    .sort();
+  const content = `// GERADO por scripts/sync-catalog.ts --apply — não edite à mão.
+//
+// M19g — essenciais "classe Louvre": a coluna \`must_see\` de \`curated_activities\` no kinu-beta,
+// marcada à mão. Dado do catálogo, nunca inferência. Mesma ponte de \`daysOfWeek.ts\`.
+// Consumidores: \`pickActivity\`/\`tierPlanFor\` (motor) e \`validateMustSee\` (R17 OBRIGATÓRIO), via \`isMustSee\`.
+
+/** Ids do catálogo (\`paris-louvre\`). */
+export const CURATED_MUST_SEE: readonly string[] = [
+${ids.map((id) => `  ${q(id)},`).join('\n')}${ids.length ? '\n' : ''}];
+`;
+  return { content, count: ids.length };
+}
+
+/**
  * Gera `src/data/generated/catalogVerified.ts` — M5b: por cidade canônica, a data mais recente de
  * `google_checked_at` entre as atividades published ('YYYY-MM-DD'). Cidade sem data não entra.
  */
@@ -861,6 +894,13 @@ async function main(): Promise<void> {
       `${verifiedBefore === null ? 'ARQUIVO NOVO' : verifiedBefore !== verified.content ? 'muda' : 'sem mudança'}\n`
   );
 
+  const mustSee = renderMustSee(rows);
+  const mustSeeBefore = existsSync(MUSTSEE_FILE) ? readFileSync(MUSTSEE_FILE, 'utf8') : null;
+  console.log(
+    `mustSee.ts: ${mustSee.count} itens must_see — ` +
+      `${mustSeeBefore === null ? 'ARQUIVO NOVO' : mustSeeBefore !== mustSee.content ? 'muda' : 'sem mudança'}\n`
+  );
+
   if (!apply) {
     console.log(`Dry-run — nada foi escrito. Para aplicar:\n\n   npx tsx scripts/sync-catalog.ts --apply\n`);
     return;
@@ -887,8 +927,9 @@ async function main(): Promise<void> {
   writeFileSync(BOOKING_FILE, booking.content, 'utf8');
   writeFileSync(DOW_FILE, dow.content, 'utf8');
   writeFileSync(VERIFIED_FILE, verified.content, 'utf8');
+  writeFileSync(MUSTSEE_FILE, mustSee.content, 'utf8');
 
-  // Restaura os CINCO. Meio-caminho é o pior estado possível: o app compila com um catálogo,
+  // Restaura todos. Meio-caminho é o pior estado possível: o app compila com um catálogo,
   // classifica com o outro e desenha o mapa com um terceiro.
   const restore = () => {
     writeFileSync(CATALOG_FILE, original, 'utf8');
@@ -900,6 +941,8 @@ async function main(): Promise<void> {
     else unlinkSync(DOW_FILE);
     if (verifiedBefore !== null) writeFileSync(VERIFIED_FILE, verifiedBefore, 'utf8');
     else unlinkSync(VERIFIED_FILE);
+    if (mustSeeBefore !== null) writeFileSync(MUSTSEE_FILE, mustSeeBefore, 'utf8');
+    else unlinkSync(MUSTSEE_FILE);
   };
 
   // --- Revalidação a partir do arquivo escrito ---
@@ -926,6 +969,7 @@ async function main(): Promise<void> {
   console.log(`   • src/data/generated/booking.ts — ${bookingTotal} modos de reserva`);
   console.log(`   • src/data/generated/daysOfWeek.ts — ${dow.count} itens com dia da semana`);
   console.log(`   • src/data/generated/catalogVerified.ts — ${verified.count} cidades com data`);
+  console.log(`   • src/data/generated/mustSee.ts — ${mustSee.count} itens must_see`);
   console.log(`   • rodando type-check (tsc -p ${TSCONFIG} --noEmit)…`);
   try {
     execSync(`npx tsc -p ${TSCONFIG} --noEmit`, { cwd: ROOT, stdio: 'inherit' });
