@@ -1,6 +1,6 @@
 // GERADO por scripts/build-kinu-catalog.ts — NÃO EDITAR À MÃO.
 // Fonte: src/data/destinationActivities.ts + src/data/curatedHotels.ts
-// 28 cidades · 1625 atividades · 247 hotéis
+// 28 cidades · 1616 atividades · 247 hotéis
 //
 // Este arquivo é o que permite ao KINU responder sobre uma cidade curada SEM viagem
 // ativa e SEM o front ter adivinhado a cidade na mensagem. Ele viaja com o deploy da
@@ -51,13 +51,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "A loja de departamentos mais antiga de Paris (1852), elegante e sem a multidão da Lafayette; La Grande Épicerie ao lado"
       },
       {
-        "name": "Bouillon Chartier (1896)",
-        "category": "lunch",
-        "neighborhood": "Grands Boulevards",
-        "costBRL": 80,
-        "tip": "Salão de 1896 com garçons de colete e conta escrita na toalha; prato do dia a preço de bouillon, fila que anda"
-      },
-      {
         "name": "Parc des Buttes-Chaumont",
         "category": "afternoon",
         "neighborhood": "19e",
@@ -91,13 +84,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Montorgueil",
         "costBRL": 110,
         "tip": "O speakeasy que abriu a onda de coquetelaria em Paris; porta sem placa na rue Saint-Sauveur"
-      },
-      {
-        "name": "Jardin d'Acclimatation (Bois de Boulogne)",
-        "category": "morning",
-        "neighborhood": "16e",
-        "costBRL": 40,
-        "tip": "Parque de diversões de 1860 dentro do Bois de Boulogne; entrada barata, brinquedos pagos à parte · Metrô Les Sablons"
       },
       {
         "name": "Jardin des Plantes e Ménagerie",
@@ -1982,13 +1968,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Café de especialidade torrado na casa · Brunch com tostas e ovos"
       },
       {
-        "name": "Feira da Ladra (terça e sábado)",
-        "category": "morning",
-        "neighborhood": "Alfama",
-        "costBRL": 0,
-        "tip": "O mercado de pulgas de Lisboa desde o século XIII, no Campo de Santa Clara; azulejos antigos, vinil e bugigangas — negocie"
-      },
-      {
         "name": "O Frade dos Mares",
         "category": "dinner",
         "neighborhood": "Santos",
@@ -2962,13 +2941,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "O shopping de luxo de Ginza com arte no átrio, a livraria Tsutaya e um jardim no terraço; entre no Teatro Kanze no subsolo"
       },
       {
-        "name": "Kappabashi (rua dos utensílios de cozinha)",
-        "category": "afternoon",
-        "neighborhood": "Asakusa",
-        "costBRL": 0,
-        "tip": "800 m de lojas de facas, cerâmica e comida de plástico entre Asakusa e Ueno; o souvenir de quem cozinha"
-      },
-      {
         "name": "Komeda's Coffee (morning set)",
         "category": "breakfast",
         "neighborhood": "Shinjuku",
@@ -2995,13 +2967,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Shinjuku",
         "costBRL": 350,
         "tip": "O sucessor do Robot Restaurant, no mesmo porão de Kabukicho: show de luzes, tambores e robôs; reserve pelo site"
-      },
-      {
-        "name": "teamLab Planets",
-        "category": "afternoon",
-        "neighborhood": "Toyosu",
-        "costBRL": 150,
-        "tip": "Museu imersivo onde se anda descalço pela água entre luzes; reserve o horário com dias de antecedência"
       },
       {
         "name": "Tempura Tsunahachi (Shinjuku, 1923)",
@@ -4151,13 +4116,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "tip": "Amarre a fitinha na grade com três nós e três pedidos · A sala dos milagres é comovente"
       },
       {
-        "name": "Boteco do França (Rio Vermelho)",
-        "category": "night",
-        "neighborhood": "Rio Vermelho",
-        "costBRL": 70,
-        "tip": "Boteco de esquina na Praça da Mariquita, com cerveja gelada e a boemia do Rio Vermelho até tarde; emende com o acarajé"
-      },
-      {
         "name": "Boteco do França",
         "category": "dinner",
         "neighborhood": "Rio Vermelho",
@@ -4764,13 +4722,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Palermo",
         "costBRL": 320,
         "tip": "Eleita a melhor parrilla do mundo — reserve com semanas · Enquanto espera, servem espumante na calçada"
-      },
-      {
-        "name": "Feria de Mataderos (domingo)",
-        "category": "morning",
-        "neighborhood": "Mataderos",
-        "costBRL": 0,
-        "tip": "Feira gaúcha com artesanato de couro e prata, empanadas e folclore ao vivo; só aos domingos, longe do centro, vá de táxi"
       },
       {
         "name": "Feria de Plaza Francia (Recoleta)",
@@ -5451,13 +5402,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "San Diego",
         "costBRL": 0,
         "tip": "Antiga praça de touros de madeira restaurada como shopping de luxo com teatro e restaurantes; vale pela arquitetura"
-      },
-      {
-        "name": "Las Bóvedas (artesanato nas muralhas)",
-        "category": "afternoon",
-        "neighborhood": "Centro Histórico",
-        "costBRL": 0,
-        "tip": "23 antigas celas da muralha viraram lojas de artesanato, mochilas wayuu e esmeraldas; compare preços entre elas"
       },
       {
         "name": "Lucy Jewelry (esmeraldas)",
@@ -6995,13 +6939,6 @@ export const CATALOG: Record<string, CatalogCity> = {
         "neighborhood": "Covent Garden",
         "costBRL": 90,
         "tip": "Food hall moderno num armazém de bananas vitoriano · Do cheeseburger ao taiwanês — cada um pede o seu"
-      },
-      {
-        "name": "Sky Garden (jardim no 35º andar)",
-        "category": "night",
-        "neighborhood": "City",
-        "costBRL": 60,
-        "tip": "Entrada gratuita com reserva pelo site (abre 3 semanas antes); bar com vista 360º — vá ao anoitecer"
       },
       {
         "name": "Old Spitalfields Market",

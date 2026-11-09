@@ -47,7 +47,7 @@ export const LANDMARKS: Record<string, CityLandmarks> = {
       'paris-tour-eiffel-top': 'icon',
       'paris-trocadero-sunset': 'essential',
     },
-    food: ['par-bouillon-chartier', 'par3-baratin', 'par3-du-pain-idees', 'par3-procope', 'par3-stohrer', 'paris-angelina', 'paris-bistrot-paul-bert', 'paris-bouillon-pigalle', 'paris-breizh-cafe', 'paris-cafe-flore', 'paris-chartier', 'paris-chez-janou', 'paris-comptoir', 'paris-deux-magots', 'paris-falafel', 'paris-laduree', 'paris-petit-cler', 'paris-pink-mamma', 'paris-relais-entrecote', 'paris-septime'],
+    food: ['par3-baratin', 'par3-du-pain-idees', 'par3-procope', 'par3-stohrer', 'paris-angelina', 'paris-bistrot-paul-bert', 'paris-bouillon-pigalle', 'paris-breizh-cafe', 'paris-cafe-flore', 'paris-chartier', 'paris-chez-janou', 'paris-comptoir', 'paris-deux-magots', 'paris-falafel', 'paris-laduree', 'paris-petit-cler', 'paris-pink-mamma', 'paris-relais-entrecote', 'paris-septime'],
   },
   'Fortaleza': {
     slug: 'fortaleza',
