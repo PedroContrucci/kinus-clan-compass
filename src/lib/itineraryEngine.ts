@@ -774,6 +774,8 @@ export function generateItinerary(
   // M6: noite e compras só entram com interesse explícito (a tag de um item não vira interesse do usuário).
   const wantsNightlife = travelInterests.some((ti) => /noturna|noite|nightlife/i.test(ti));
   const wantsShopping = travelInterests.some((ti) => /shopping|compras/i.test(ti));
+  // M6c+: com gastronomia nos interesses o restaurante É o passeio — qualidade decide a refeição dentro da faixa de 4 km.
+  const wantsGastro = travelInterests.some((ti) => /gastronom/i.test(ti));
   // M6: tier de paisagem (icon/essential) como critério de escolha, antes da ordenação do pickActivity.
   const tiers = tiersOf(destination);
   const isTierEssential = (id: string) => tiers[id] === 'icon' || tiers[id] === 'essential';
@@ -851,6 +853,9 @@ export function generateItinerary(
     /** Bate-volta pode ser a âncora deste pick (manhã de dia elegível). */
     daytripOk?: (a: SuggestedActivity) => boolean;
     accept?: (a: SuggestedActivity) => boolean;
+    /** M6c+: refeição de dia de exploração. Faixa `band` km da referência (`alt`: ou do hotel); `chain`: a outra ponta
+     *  da corrente, sempre ≤ maxHop (R15). Com gastronomia: Michelin do catálogo → rating → km decidem dentro da faixa. */
+    meal?: { band: number; ref: Coord | null; alt?: Coord | null; chain?: Coord | null };
     /** Âncora do dia: prefere quem tem almoço inédito a ≤ maxHop (dia que fecha a corrente). */
     anchor?: boolean;
     /** M6: dia de exploração — prefere esses tiers (dentro do salto; `force` ignora o salto) e conta o que sai. */
@@ -961,6 +966,13 @@ export function generateItinerary(
         if (!opts.near) return 0;
         const c = curatedCoordOf(a.id);
         if (!c) return 0; // sem coord não quebra a corrente do R15
+        if (opts.meal) {
+          // Salto da cidade (R15) continua o primeiro critério; a faixa da refeição (bandKey) vem depois do dia raro (R18).
+          const { ref, chain } = opts.meal;
+          if (!ref) return 0;
+          const far = Math.max(haversineKm(ref, c), chain ? haversineKm(chain, c) : 0);
+          return far <= maxHop ? 0 : 1 + far;
+        }
         const km = Math.max(haversineKm(opts.near, c), opts.alsoNear ? haversineKm(opts.alsoNear, c) : 0);
         return km <= nearKm ? 0 : 1 + km;
       };
@@ -987,7 +999,22 @@ export function generateItinerary(
         if (priceLevel === 'luxury') return -p;
         return Math.abs(p - target);
       };
-      const keyed = candidates.map((a) => ({ a, k: [reservedNow(a) ? 0 : 1, michelinOverCap(a, category) ? 1 : 0, hopKey(a), interestKey(a), weekdayKey(a), themeKey(a), dualKey(a), priceKey(a)] }));
+      // M6c+: com gastronomia, dentro da faixa a qualidade decide (Michelin do catálogo → rating); km só desempata.
+      const qualityMeal = !!opts.meal && wantsGastro;
+      // Faixa da refeição: 0 dentro dela (referência ou, no jantar sem gastronomia, o hotel); fora, a distância (o mais perto vence).
+      const bandKey = (a: SuggestedActivity) => {
+        const m = opts.meal, c = curatedCoordOf(a.id);
+        if (!m || !m.ref || !c) return 0;
+        const km = m.alt ? Math.min(haversineKm(m.ref, c), haversineKm(m.alt, c)) : haversineKm(m.ref, c);
+        return km <= m.band ? 0 : km;
+      };
+      const mealKm = (a: SuggestedActivity) => {
+        const c = curatedCoordOf(a.id);
+        const ref = opts.meal?.ref;
+        return c && ref ? haversineKm(ref, c) : 0;
+      };
+      const keyed = candidates.map((a) => ({ a, k: [reservedNow(a) ? 0 : 1, michelinOverCap(a, category) ? 1 : 0, hopKey(a),
+        opts.meal ? weekdayKey(a) : 0, bandKey(a), qualityMeal && !isCatalogMichelin(a) ? 1 : 0, qualityMeal ? -(a.rating || 0) : 0, qualityMeal ? mealKm(a) : 0, interestKey(a), weekdayKey(a), themeKey(a), dualKey(a), priceKey(a)] }));
       keyed.sort((x, y) => {
         for (let j = 0; j < x.k.length; j++) if (x.k[j] !== y.k[j]) return x.k[j] - y.k[j];
         return 0;
@@ -1065,6 +1092,25 @@ export function generateItinerary(
     const km = haversineKm(hotelCoord, c);
     return km <= 2 ? 'Perto do hotel' : `Jantar mais próximo disponível: a ${km.toFixed(1).replace('.', ',')} km do hotel`;
   };
+
+  /** M6c+: faixa da refeição — gastronomia 4 km; sem ela, almoço 1,5 km do passeio da manhã e jantar 2 km (tarde ou hotel). */
+  const mealBand = (kind: 'lunch' | 'dinner') => (wantsGastro ? 4 : kind === 'lunch' ? 1.5 : 2);
+  /** M6c+: transparência da escolha. Gastronomia: "~N min" quando > 1,5 km. Sem: a distância real quando fora da faixa. */
+  const mealTip = (a: SuggestedActivity, kind: 'lunch' | 'dinner', refs: Array<{ label: string; c: Coord | null | undefined }>): string | null => {
+    const c = curatedCoordOf(a.id);
+    if (!c) return null;
+    const ds = refs.filter((r) => !!r.c).map((r) => ({ label: r.label, km: haversineKm(r.c as Coord, c) }));
+    if (ds.length === 0) return null;
+    const best = ds.reduce((m, x) => (x.km < m.km ? x : m));
+    if (wantsGastro) {
+      if (best.km <= 1.5) return null;
+      const min = Math.max(5, Math.ceil(travelMinutes(best.km).minutes / 5) * 5);
+      return `~${min} min de deslocamento (${best.label}) — escolhido pela qualidade (gastronomia nos seus interesses)`;
+    }
+    if (best.km <= mealBand(kind)) return null;
+    return `A ${best.km.toFixed(1).replace('.', ',')} km ${best.label} — nenhum restaurante mais perto disponível`;
+  };
+  const addMealTip = (act: ItineraryActivity, tip: string | null) => { if (tip) act.tips = [tip, ...(act.tips || [])]; };
 
   // Build a free-slot ItineraryActivity for exhausted EXP pools (morning/afternoon).
   function buildFreeSlotActivity(
@@ -1629,6 +1675,16 @@ export function generateItinerary(
           usedPlaces.mark(p.name, i, p.category);
           place(p, p.id.endsWith('-jantar') ? 'dinner' : 'lunch', p.id.endsWith('-jantar') ? '19:30' : '13:00');
         }
+        if (!pairs.some((p) => p.id.endsWith('-almoco'))) {
+          // M6c+: o dia inteiro fora não tem item de almoço (R7 o derrubaria); a âncora diz onde/como almoçar. Custo não somado.
+          const nb = normalizePlaceName(morningActivity.neighborhood || '');
+          const local = nb ? pool
+            .filter((a) => a.category === 'lunch' && !isPairMeal(a) && !isDaytripTagged(a) && opensToday(a) && !usedPlaces.isUsed(a.name) &&
+              !michelinBlocked(a, 'lunch') && normalizePlaceName(a.neighborhood || '') === nb)
+            .sort((a, b) => (b.rating || 0) - (a.rating || 0))[0] : undefined;
+          if (local) usedPlaces.mark(local.name, i, 'lunch');
+          trip.tips = [local ? `${LUNCH_ON_SITE_TIP}: ${local.name}` : `${LUNCH_ON_SITE_TIP} — a confirmar`, ...(trip.tips || [])];
+        }
         if (!pairs.some((p) => p.id.endsWith('-jantar'))) {
           const fitsDay = (a: SuggestedActivity) =>
             dayHoursUsed(activities) + HOP_HOURS + (a.durationHours || 0) <= EXPLORATION_WINDOW_HOURS;
@@ -1703,8 +1759,9 @@ export function generateItinerary(
           if (michelinLunchPending && michelinCount < 1 && longLaid && longEnd + DEFAULT_HOP_MIN <= SLOT_RULES.lunch.max) {
             placeMichelinLunch();
           } else if (pool.some((a) => a.category === 'lunch' && !usedPlaces.isUsed(a.name) && !isPairMeal(a) && lunchFits(a))) {
-            const lunchActivity = pickActivity('lunch', dayTheme.title, { near: last, accept: lunchFits });
-            if (lunchActivity) place(lunchActivity, 'lunch', '13:00');
+            const lunchRef = last;
+            const lunchActivity = pickActivity('lunch', dayTheme.title, { near: lunchRef, accept: lunchFits, meal: { band: mealBand('lunch'), ref: lunchRef } });
+            if (lunchActivity) addMealTip(place(lunchActivity, 'lunch', '13:00'), mealTip(lunchActivity, 'lunch', [{ label: 'do passeio da manhã', c: lunchRef }]));
           } else if (morningAct && longMorning) {
             morningAct.tips = [LUNCH_ON_SITE_TIP, ...(morningAct.tips || [])];
           }
@@ -1760,7 +1817,7 @@ export function generateItinerary(
           if (isSunsetActivity(afternoonActivity)) {
             sunsetActivity = afternoonActivity;
             afternoonActivity = pickActivity('afternoon', dayTheme.title, {
-              near: morningAt, quota: true, accept: (a) => notLong(a) && !isSunsetActivity(a) && eveFits(a), tierPlan: tierPlanFor(explorationDay, () => dayHoursUsed(activities)),
+              near: morningAt, alsoNear: curatedCoordOf(sunsetActivity.id) ?? null, quota: true, accept: (a) => notLong(a) && !isSunsetActivity(a) && eveFits(a), tierPlan: tierPlanFor(explorationDay, () => dayHoursUsed(activities)),
             });
             // M19d-fix: ícone longo ocupa a tarde — o pôr do sol do dia não cabe junto; volta ao pool (outro dia).
             if (afternoonActivity && longIconOk(afternoonActivity)) {
@@ -1773,8 +1830,8 @@ export function generateItinerary(
           if (michelinLunchPending && michelinCount < 1) {
             placeMichelinLunch();
           } else {
-            const lunchActivity = pickActivity('lunch', dayTheme.title, { near: morningAt, alsoNear: afternoonAt });
-            if (lunchActivity) place(lunchActivity, 'lunch', '13:00');
+            const lunchActivity = pickActivity('lunch', dayTheme.title, { near: morningAt, alsoNear: afternoonAt, meal: { band: mealBand('lunch'), ref: morningAt, chain: afternoonAt } });
+            if (lunchActivity) addMealTip(place(lunchActivity, 'lunch', '13:00'), mealTip(lunchActivity, 'lunch', [{ label: 'do passeio da manhã', c: morningAt }]));
           }
 
           if (afternoonActivity) {
@@ -1804,7 +1861,8 @@ export function generateItinerary(
         const dayBoundDinnerToday = longIconAfternoon && pool.some((a) => a.category === 'dinner' && !usedPlaces.isUsed(a.name) && !isPairMeal(a) && opensToday(a) && (CURATED_DAYS_OF_WEEK[a.id]?.length ?? 7) <= 3);
         const dinnerActivity = isEve || (longIconAfternoon && !dayBoundDinnerToday)
           ? pickNearHotelDinner([(a) => !isCatalogMichelin(a) || priceLevel === 'luxury', () => true])
-          : pickActivity('dinner', dayTheme.title, { near: last });
+          : pickActivity('dinner', dayTheme.title, { near: last, nearKm: mealBand('dinner'), meal: { band: mealBand('dinner'), ref: last, alt: wantsGastro ? null : hotelCoord, chain: last } });
+        const dinnerRef = last;
         let michelinPlaced = false;
 
         if (michelinPending && michelinBeforeDinner === 0) {
@@ -1844,6 +1902,9 @@ export function generateItinerary(
           const dinnerAct = place(dinnerActivity, 'dinner', '19:30');
           const nh = isEve ? nearHotelTip(dinnerActivity) : null;
           if (nh) dinnerAct.tips = [nh, ...(dinnerAct.tips || [])];
+          else if (!isEve && !(longIconAfternoon && !dayBoundDinnerToday)) {
+            addMealTip(dinnerAct, mealTip(dinnerActivity, 'dinner', [{ label: 'do último passeio', c: dinnerRef }, ...(wantsGastro ? [] : [{ label: 'do hotel', c: hotelCoord }])]));
+          }
         }
 
         // 🌙 NIGHT ACTIVITY - Optional (21:30) — only on nightlife-themed days or when the user

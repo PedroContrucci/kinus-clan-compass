@@ -44,6 +44,8 @@ import { buildFlowInput } from '@/lib/onboardingFlow';
 // Adendo C.4.3: só Fortaleza regravada — café no hotel/check-in/out saltam do hotel real (Gran Marquise):
 // praias 09:15 → 09:20/09:25, Águas Belas 09:15 → 10:00 (D3 perde o almoço pela R7, barraca longa); bônus do
 // dia certo põe a Caranguejada no jantar de quinta (D3) e a cadeia de almoços/jantares anda um dia. Comida 3230 → 2950.
+// Adendo M6c+: as 4 cidades regravadas — refeições pela qualidade (gastronomia, faixa 4 km) / proximidade; só refeições mudam
+// (Tóquio, dia da volta: o almoço mudou e a tarde com o Pokémon deixou de caber — consequência, não regra nova).
 const flight = (d: string, dep: string): SelectedFlight => ({
   date: new Date(d),
   source: 'estimate',

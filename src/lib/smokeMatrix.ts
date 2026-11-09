@@ -53,6 +53,9 @@ export interface SmokeScenario {
 /** M19d-fix: o cenário de produção em que o Beach Park saía e a tarde ficava vazia (janela 14 h). */
 export const SMOKE_SCENARIOS: SmokeScenario[] = [
   { id: 'Fortaleza família dez (2+2)', city: 'Fortaleza', from: new Date(2026, 11, 10), nights: 5, adults: 2, children: 2, childrenAges: [8, 12], interests: ['beach', 'family'], tier: 'comfort' },
+  // M6c+: refeição pela qualidade (com gastronomia) e pela proximidade (sem); bate-volta (Versalhes) com a dica de almoço.
+  { id: 'Paris gastrô 2 adultos 10–15/12', city: 'Paris', from: new Date(2026, 11, 10), nights: 5, adults: 2, children: 0, childrenAges: [], interests: ['gastronomy', 'culture'], tier: 'comfort' },
+  { id: 'Paris família sem gastronomia 2+2 10–15/12', city: 'Paris', from: new Date(2026, 11, 10), nights: 5, adults: 2, children: 2, childrenAges: [8, 12], interests: ['culture', 'family'], tier: 'comfort' },
 ];
 
 export async function runSmokeScenario(sc: SmokeScenario, deps: DraftTripDeps = {}): Promise<SmokeRow> {

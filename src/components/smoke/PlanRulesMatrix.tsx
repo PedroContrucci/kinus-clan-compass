@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { runSmokeMatrix, summarizeSmoke, summarizeR19, type SmokeRow } from '@/lib/smokeMatrix';
+import { runSmokeMatrix, runSmokeScenario, SMOKE_SCENARIOS, summarizeSmoke, summarizeR19, type SmokeRow } from '@/lib/smokeMatrix';
 
 const STATUS_CLASS: Record<string, string> = {
   PASS: 'text-primary',
@@ -13,14 +13,19 @@ export function PlanRulesMatrix() {
   const [rows, setRows] = useState<SmokeRow[] | null>(null);
   useEffect(() => {
     let alive = true;
-    runSmokeMatrix().then((r) => { if (alive) setRows(r); });
+    // M6c+: os cenários nomeados (SMOKE_SCENARIOS) entram como linhas iguais às da matriz.
+    runSmokeMatrix().then(async (r) => {
+      const extra: SmokeRow[] = [];
+      for (const sc of SMOKE_SCENARIOS) extra.push(await runSmokeScenario(sc));
+      if (alive) setRows([...r, ...extra]);
+    });
     return () => { alive = false; };
   }, []);
 
-  if (!rows) return <section className="text-sm text-muted-foreground">R13–R16: montando 63 viagens…</section>;
+  if (!rows) return <section className="text-sm text-muted-foreground">R13–R16: montando {63 + SMOKE_SCENARIOS.length} viagens…</section>;
   return (
     <section className="space-y-2">
-      <h2 className="text-lg font-semibold">R13–R16 · 63 viagens</h2>
+      <h2 className="text-lg font-semibold">R13–R16 · 63 viagens + {SMOKE_SCENARIOS.length} cenários</h2>
       <p className="font-mono text-xs" data-testid="plan-rules-summary">{summarizeSmoke(rows)}</p>
       <p className="font-mono text-xs" data-testid="plan-rules-r19">{summarizeR19(rows)}</p>
       <div className="max-h-96 overflow-auto rounded border border-border text-xs">
