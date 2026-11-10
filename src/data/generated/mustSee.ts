@@ -6,6 +6,27 @@
 
 /** Ids do catálogo (`paris-louvre`). */
 export const CURATED_MUST_SEE: readonly string[] = [
+  'bcn-casa-batllo',
+  'bcn-park-guell',
+  'bue-plaza-mayo',
+  'bue-teatro-colon',
+  'ctg-castillo',
+  'igu-parque-das-aves',
+  'ist-cisterna',
+  'ist-mesquita-azul',
+  'lis-castelo-sao-jorge',
+  'lis-jeronimos',
+  'lon-london-eye',
+  'lon6-tower',
+  'mad-prado',
+  'mad-retiro',
+  'nyc-central-park',
+  'nyc-met',
   'paris-louvre',
   'paris-orsay',
+  'rio-museu-amanha',
+  'rome-pantheon-centro',
+  'rome-vaticano',
+  'tokyo-meiji-shrine',
+  'tokyo-senso-ji',
 ];
