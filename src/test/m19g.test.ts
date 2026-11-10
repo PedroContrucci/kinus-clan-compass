@@ -47,13 +47,18 @@ const toPlan = (r: Out): PlanDay[] => r.days.map((d) => ({
 const lisCtx: PlanRulesContext = { destination: 'Lisboa', interests: [], arrivalDate: '2026-11-10', arrivalTime: '15:00', domestic: false };
 
 describe('M19g — mustSee.ts (gerado pelo sync)', () => {
-  it('Paris: Louvre e Orsay; todo must_see é essencial de manhã/tarde do catálogo', () => {
-    expect([...CURATED_MUST_SEE]).toEqual(['paris-louvre', 'paris-orsay']);
-    const paris = getDestinationActivities('Paris');
+  it('must_see em 13 cidades: Paris = Louvre e Orsay; todo must_see é essencial de manhã/tarde do catálogo; ≤ 3 por cidade', () => {
+    expect([...CURATED_MUST_SEE].filter((id) => id.startsWith('paris-'))).toEqual(['paris-louvre', 'paris-orsay']);
+    const perCity: Record<string, number> = {};
     for (const id of CURATED_MUST_SEE) {
-      expect(LANDMARKS['Paris'].tiers[id]).toBe('essential');
-      expect(['morning', 'afternoon']).toContain(paris.find((a) => a.id === id)?.category);
+      const city = Object.keys(LANDMARKS).find((c) => id in LANDMARKS[c].tiers);
+      expect(city, id).toBeDefined();
+      perCity[city!] = (perCity[city!] ?? 0) + 1;
+      expect(LANDMARKS[city!].tiers[id]).toBe('essential');
+      expect(['morning', 'afternoon']).toContain(getDestinationActivities(city!).find((a) => a.id === id)?.category);
     }
+    expect(Object.keys(perCity)).toHaveLength(13);
+    for (const n of Object.values(perCity)) expect(n).toBeLessThanOrEqual(3);
   });
 });
 

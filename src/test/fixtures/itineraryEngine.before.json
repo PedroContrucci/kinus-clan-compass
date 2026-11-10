@@ -1704,80 +1704,13 @@
             ]
           },
           {
-            "id": "day-2-tok3-hakone",
-            "name": "Day-trip a Hakone (onsen + Fuji)",
-            "type": "experience",
-            "timeSlot": "morning",
-            "estimatedCost": 500,
-            "costPerPerson": 250,
-            "time": "10:30",
-            "duration": "10h",
-            "location": "Hakone (2 pax)",
-            "rating": 4.6,
-            "status": "suggestion",
-            "tips": [
-              "Almoço no local — a confirmar",
-              "Bate-volta: ocupa o dia inteiro",
-              "Teleférico, lago com vista do Fuji e banho termal — o respiro das montanhas",
-              "Hakone Free Pass compensa; Fuji aparece de manhã"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-2-tokyo-gonpachi",
-            "name": "Gonpachi (Kill Bill)",
-            "type": "dinner",
-            "timeSlot": "dinner",
-            "estimatedCost": 500,
-            "costPerPerson": 250,
-            "time": "20:45",
-            "duration": "2h",
-            "location": "Roppongi (2 pax)",
-            "rating": 4.4,
-            "status": "suggestion",
-            "tips": [
-              "Perto do hotel, para a volta do bate-volta",
-              "Cenário do filme Kill Bill",
-              "Yakitori e soba são excelentes"
-            ],
-            "source": "kinu"
-          }
-        ],
-        "totalCost": 1000
-      },
-      {
-        "dayNumber": 4,
-        "date": "2026-11-13T12:00:00.000Z",
-        "label": "Exploração",
-        "theme": "🚶 Passeios",
-        "activities": [
-          {
-            "id": "day-3-tokyo-bills",
-            "name": "Bills (Pancakes)",
-            "type": "breakfast",
-            "timeSlot": "breakfast",
-            "estimatedCost": 240,
-            "costPerPerson": 120,
-            "time": "08:00",
-            "duration": "1h",
-            "location": "Omotesando (2 pax)",
-            "rating": 4.6,
-            "status": "suggestion",
-            "tips": [
-              "Sugestão de café externo para variar",
-              "Ricotta pancakes mundialmente famosos",
-              "Fila de 30min nos fins de semana"
-            ],
-            "source": "kinu"
-          },
-          {
-            "id": "day-3-tokyo-senso-ji",
+            "id": "day-2-tokyo-senso-ji",
             "name": "Templo Senso-ji",
             "type": "experience",
             "timeSlot": "morning",
             "estimatedCost": 0,
             "costPerPerson": 0,
-            "time": "09:30",
+            "time": "09:35",
             "duration": "2h",
             "location": "Asakusa (2 pax)",
             "rating": 4.7,
@@ -1789,7 +1722,7 @@
             "source": "kinu"
           },
           {
-            "id": "day-3-tok3-yadoroku",
+            "id": "day-2-tok3-yadoroku",
             "name": "Onigiri Asakusa Yadoroku",
             "type": "lunch",
             "timeSlot": "lunch",
@@ -1806,45 +1739,108 @@
             "source": "kinu"
           },
           {
-            "id": "day-3-tokyo-akihabara",
-            "name": "Akihabara Electric Town",
+            "id": "day-2-tok3-skytree",
+            "name": "Tokyo Skytree",
             "type": "experience",
             "timeSlot": "afternoon",
-            "estimatedCost": 0,
-            "costPerPerson": 0,
+            "estimatedCost": 300,
+            "costPerPerson": 150,
             "time": "15:00",
-            "duration": "3h",
-            "location": "Akihabara (2 pax)",
+            "duration": "2h",
+            "location": "Sumida (2 pax)",
             "rating": 4.4,
             "status": "suggestion",
             "tips": [
-              "Paraíso de eletrônicos e anime",
-              "Maid cafés são experiência única"
+              "A torre mais alta do Japão — 634m com aquário e shopping na base"
             ],
             "source": "kinu"
           },
           {
-            "id": "day-3-tokyo-afuri",
-            "name": "Afuri Ramen (yuzu)",
+            "id": "day-2-tokyo-kura-sushi",
+            "name": "Kura Sushi (esteira gigante)",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 150,
-            "costPerPerson": 75,
+            "estimatedCost": 160,
+            "costPerPerson": 80,
             "time": "19:30",
-            "duration": "1h",
-            "location": "Ebisu (2 pax)",
-            "rating": 4.6,
+            "duration": "1.5h",
+            "location": "Asakusa (2 pax)",
+            "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "~15 min de deslocamento (do último passeio) — escolhido pela qualidade (gastronomia nos seus interesses)",
-              "Ramen leve de caldo com yuzu — refrescante e único",
-              "Pedido na máquina de tickets na entrada",
-              "Balcão minimalista, experiência tóquio raiz"
+              "~10 min de deslocamento (do último passeio) — escolhido pela qualidade (gastronomia nos seus interesses)",
+              "A cada 5 pratos, um gashapon de brinde — jantar vira brincadeira",
+              "Cardápio com fotos, fácil para crianças",
+              "Sistema de senha no app evita fila"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 450
+        "totalCost": 520
+      },
+      {
+        "dayNumber": 4,
+        "date": "2026-11-13T12:00:00.000Z",
+        "label": "Exploração",
+        "theme": "🚶 Passeios",
+        "activities": [
+          {
+            "id": "day-3-slot-breakfast",
+            "name": "Café da manhã no hotel",
+            "type": "breakfast",
+            "timeSlot": "breakfast",
+            "estimatedCost": 0,
+            "costPerPerson": 0,
+            "time": "08:00",
+            "duration": "1h",
+            "location": "Hotel",
+            "status": "defined",
+            "source": "kinu",
+            "tips": [
+              "Incluso na diária do hotel"
+            ]
+          },
+          {
+            "id": "day-3-tok3-kamakura",
+            "name": "Day-trip a Kamakura",
+            "type": "experience",
+            "timeSlot": "morning",
+            "estimatedCost": 240,
+            "costPerPerson": 120,
+            "time": "09:55",
+            "duration": "8h",
+            "location": "Kamakura (2 pax)",
+            "rating": 4.7,
+            "status": "suggestion",
+            "tips": [
+              "Almoço no local — a confirmar",
+              "Bate-volta: ocupa o dia inteiro",
+              "O Grande Buda de bronze + templos + praia — 1h de trem",
+              "Alugue bici ou use o trenzinho Enoden até Enoshima"
+            ],
+            "source": "kinu"
+          },
+          {
+            "id": "day-3-tokyo-gonpachi",
+            "name": "Gonpachi (Kill Bill)",
+            "type": "dinner",
+            "timeSlot": "dinner",
+            "estimatedCost": 500,
+            "costPerPerson": 250,
+            "time": "19:30",
+            "duration": "2h",
+            "location": "Roppongi (2 pax)",
+            "rating": 4.4,
+            "status": "suggestion",
+            "tips": [
+              "Perto do hotel, para a volta do bate-volta",
+              "Cenário do filme Kill Bill",
+              "Yakitori e soba são excelentes"
+            ],
+            "source": "kinu"
+          }
+        ],
+        "totalCost": 740
       },
       {
         "dayNumber": 5,
@@ -1927,27 +1923,27 @@
             "source": "kinu"
           },
           {
-            "id": "day-4-tokyo-monjayaki",
-            "name": "Monjayaki em Tsukishima",
+            "id": "day-4-tokyo-afuri",
+            "name": "Afuri Ramen (yuzu)",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 200,
-            "costPerPerson": 100,
+            "estimatedCost": 150,
+            "costPerPerson": 75,
             "time": "19:30",
-            "duration": "2h",
-            "location": "Tsukishima (2 pax)",
-            "rating": 4.5,
+            "duration": "1h",
+            "location": "Ebisu (2 pax)",
+            "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "~15 min de deslocamento (do último passeio) — escolhido pela qualidade (gastronomia nos seus interesses)",
-              "A rua Monja Street tem dezenas de casas do prato típico de Tóquio",
-              "Você mesmo prepara na chapa da mesa",
-              "Programa autêntico longe do circuito turístico"
+              "~20 min de deslocamento (do último passeio) — escolhido pela qualidade (gastronomia nos seus interesses)",
+              "Ramen leve de caldo com yuzu — refrescante e único",
+              "Pedido na máquina de tickets na entrada",
+              "Balcão minimalista, experiência tóquio raiz"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 1600
+        "totalCost": 1550
       },
       {
         "dayNumber": 6,
@@ -1972,22 +1968,22 @@
             ]
           },
           {
-            "id": "day-5-tok3-kamakura",
-            "name": "Day-trip a Kamakura",
+            "id": "day-5-tok3-hakone",
+            "name": "Day-trip a Hakone (onsen + Fuji)",
             "type": "experience",
             "timeSlot": "morning",
-            "estimatedCost": 240,
-            "costPerPerson": 120,
-            "time": "09:55",
-            "duration": "8h",
-            "location": "Kamakura (2 pax)",
-            "rating": 4.7,
+            "estimatedCost": 500,
+            "costPerPerson": 250,
+            "time": "10:30",
+            "duration": "10h",
+            "location": "Hakone (2 pax)",
+            "rating": 4.6,
             "status": "suggestion",
             "tips": [
               "Almoço no local — a confirmar",
               "Bate-volta: ocupa o dia inteiro",
-              "O Grande Buda de bronze + templos + praia — 1h de trem",
-              "Alugue bici ou use o trenzinho Enoden até Enoshima"
+              "Teleférico, lago com vista do Fuji e banho termal — o respiro das montanhas",
+              "Hakone Free Pass compensa; Fuji aparece de manhã"
             ],
             "source": "kinu"
           },
@@ -1998,7 +1994,7 @@
             "timeSlot": "dinner",
             "estimatedCost": 440,
             "costPerPerson": 220,
-            "time": "19:30",
+            "time": "20:45",
             "duration": "2h",
             "location": "Shinjuku (2 pax)",
             "rating": 4.2,
@@ -2010,7 +2006,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 680
+        "totalCost": 940
       },
       {
         "dayNumber": 7,
@@ -2088,27 +2084,26 @@
             "source": "kinu"
           },
           {
-            "id": "day-6-tokyo-kura-sushi",
-            "name": "Kura Sushi (esteira gigante)",
+            "id": "day-6-tokyo-izakaya",
+            "name": "Izakaya em Yurakucho",
             "type": "dinner",
             "timeSlot": "dinner",
-            "estimatedCost": 160,
-            "costPerPerson": 80,
+            "estimatedCost": 300,
+            "costPerPerson": 150,
             "time": "19:30",
-            "duration": "1.5h",
-            "location": "Asakusa (2 pax)",
+            "duration": "2h",
+            "location": "Yurakucho (2 pax)",
             "rating": 4.5,
             "status": "suggestion",
             "tips": [
-              "~15 min de deslocamento (do último passeio) — escolhido pela qualidade (gastronomia nos seus interesses)",
-              "A cada 5 pratos, um gashapon de brinde — jantar vira brincadeira",
-              "Cardápio com fotos, fácil para crianças",
-              "Sistema de senha no app evita fila"
+              "~25 min de deslocamento (do último passeio) — escolhido pela qualidade (gastronomia nos seus interesses)",
+              "Debaixo dos trilhos do trem",
+              "Atmosfera autêntica de salaryman"
             ],
             "source": "kinu"
           }
         ],
-        "totalCost": 460
+        "totalCost": 600
       },
       {
         "dayNumber": 8,
@@ -2117,19 +2112,38 @@
         "theme": "✈️ Dia de Partida",
         "activities": [
           {
-            "id": "day-7-tok-cafe-de-lambre",
-            "name": "Café de l'Ambre (Ginza, 1948)",
+            "id": "day-7-tokyo-bills",
+            "name": "Bills (Pancakes)",
             "type": "breakfast",
             "timeSlot": "breakfast",
-            "estimatedCost": 100,
-            "costPerPerson": 50,
+            "estimatedCost": 240,
+            "costPerPerson": 120,
             "time": "08:00",
-            "duration": "0.5h",
-            "location": "Ginza (2 pax)",
-            "rating": 4.3,
+            "duration": "1h",
+            "location": "Omotesando (2 pax)",
+            "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "Kissaten de 1948 que só serve café, com grãos envelhecidos por décadas; balcão, silêncio e xícara pequena"
+              "Ricotta pancakes mundialmente famosos",
+              "Fila de 30min nos fins de semana"
+            ],
+            "source": "kinu"
+          },
+          {
+            "id": "day-7-tok3-pokemon",
+            "name": "Pokémon Center Mega Tokyo",
+            "type": "experience",
+            "timeSlot": "morning",
+            "estimatedCost": 120,
+            "costPerPerson": 60,
+            "time": "09:30",
+            "duration": "1.5h",
+            "location": "Ikebukuro (2 pax)",
+            "rating": 4.5,
+            "status": "suggestion",
+            "tips": [
+              "Aproveite as últimas horas!",
+              "A loja-santuário — Pikachus do chão ao teto; peluche exclusivo garante lágrima de alegria"
             ],
             "source": "kinu"
           },
@@ -2150,20 +2164,40 @@
             "source": "kinu"
           },
           {
-            "id": "day-7-tokyo-sushi-dai",
-            "name": "Sushi Dai",
+            "id": "day-7-tokyo-maisen",
+            "name": "Tonkatsu Maisen",
             "type": "lunch",
             "timeSlot": "lunch",
-            "estimatedCost": 400,
-            "costPerPerson": 200,
-            "time": "13:05",
+            "estimatedCost": 220,
+            "costPerPerson": 110,
+            "time": "12:45",
             "duration": "1.5h",
-            "location": "Toyosu Market (2 pax)",
-            "rating": 4.9,
+            "location": "Omotesando (2 pax)",
+            "rating": 4.6,
             "status": "suggestion",
             "tips": [
-              "Fila de 3h mas vale a pena",
-              "Omakase é a melhor escolha"
+              "O tonkatsu mais famoso de Tóquio, num antigo balneário",
+              "Corte kurobuta derrete na boca",
+              "Perto de Harajuku — combine os passeios"
+            ],
+            "source": "kinu"
+          },
+          {
+            "id": "day-7-tokyo-shinjuku-gyoen",
+            "name": "Jardim Shinjuku Gyoen",
+            "type": "experience",
+            "timeSlot": "afternoon",
+            "estimatedCost": 50,
+            "costPerPerson": 25,
+            "time": "15:00",
+            "duration": "2h",
+            "location": "Shinjuku (2 pax)",
+            "rating": 4.7,
+            "status": "suggestion",
+            "tips": [
+              "Oásis de calma no meio do caos de Shinjuku",
+              "Três jardins: japonês, francês e inglês",
+              "Cenário do filme O Jardim das Palavras"
             ],
             "source": "kinu"
           },
@@ -2195,7 +2229,7 @@
             "source": "kinu"
           }
         ],
-        "totalCost": 4808
+        "totalCost": 4938
       }
     ],
     "breakdown": {
@@ -2210,18 +2244,18 @@
         "status": "estimated"
       },
       "experiences": {
-        "amount": 1768,
-        "percent": 9,
+        "amount": 2238,
+        "percent": 11,
         "status": "estimated"
       },
       "food": {
-        "amount": 4130,
-        "percent": 21,
+        "amount": 3950,
+        "percent": 20,
         "status": "estimated"
       },
-      "total": 25098,
-      "available": -5098,
-      "trustZonePercent": 125
+      "total": 25388,
+      "available": -5388,
+      "trustZonePercent": 127
     },
     "meta": {
       "michelinCount": 0

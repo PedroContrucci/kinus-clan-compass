@@ -33,3 +33,4 @@ src/data/*.js
 *.njsproj
 *.sln
 *.sw?
+deno.lock
