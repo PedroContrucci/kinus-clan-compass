@@ -89,8 +89,10 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
       '25/12 e 01/01: Mosteiro dos Jerónimos, Torre de Belém e museus nacionais fechados',
       '24/12 à tarde e 31/12 à noite: comércio e muitos restaurantes fecham cedo ou só com menu de festa',
       '24/12 e 25/12: Museu Calouste Gulbenkian fechado',
+      '24/12 e 25/12: Castelo de São Jorge fechado',
+      '31/12: Castelo de São Jorge fechado',
     ],
-    closedIds: { 0: ['lis-jeronimos', 'lis-torre-belem'], 2: ['lis-gulbenkian'] },
+    closedIds: { 0: ['lis-jeronimos', 'lis-torre-belem'], 2: ['lis-gulbenkian'], 3: ['lis-castelo-sao-jorge'], 4: ['lis-castelo-sao-jorge'] },
     events: [
       'Iluminação de Natal e árvore na Praça do Comércio',
       'Réveillon com fogos no Terreiro do Paço (31/12)',
@@ -109,8 +111,9 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
     closures: [
       '01/01: monumentos e museus nacionais fechados',
       '01/01: Museu Calouste Gulbenkian fechado',
+      '01/01: Castelo de São Jorge fechado',
     ],
-    closedIds: { 0: ['lis-jeronimos', 'lis-torre-belem'], 1: ['lis-gulbenkian'] },
+    closedIds: { 0: ['lis-jeronimos', 'lis-torre-belem'], 1: ['lis-gulbenkian'], 2: ['lis-castelo-sao-jorge'] },
     events: [
       'Saldos de inverno no comércio a partir da primeira semana',
       'Bolo-rei nas pastelarias até 06/01 (Dia de Reis)',
