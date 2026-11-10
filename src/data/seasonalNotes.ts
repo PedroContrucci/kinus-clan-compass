@@ -88,8 +88,9 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
     closures: [
       '25/12 e 01/01: Mosteiro dos Jerónimos, Torre de Belém e museus nacionais fechados',
       '24/12 à tarde e 31/12 à noite: comércio e muitos restaurantes fecham cedo ou só com menu de festa',
+      '24/12 e 25/12: Museu Calouste Gulbenkian fechado',
     ],
-    closedIds: { 0: ['lis-jeronimos', 'lis-torre-belem'] },
+    closedIds: { 0: ['lis-jeronimos', 'lis-torre-belem'], 2: ['lis-gulbenkian'] },
     events: [
       'Iluminação de Natal e árvore na Praça do Comércio',
       'Réveillon com fogos no Terreiro do Paço (31/12)',
@@ -107,8 +108,9 @@ export const SEASONAL_NOTES: SeasonalNote[] = [
     climate: 'Mês mais chuvoso: médias de 8 a 15 °C, dias curtos, vento no rio.',
     closures: [
       '01/01: monumentos e museus nacionais fechados',
+      '01/01: Museu Calouste Gulbenkian fechado',
     ],
-    closedIds: { 0: ['lis-jeronimos', 'lis-torre-belem'] },
+    closedIds: { 0: ['lis-jeronimos', 'lis-torre-belem'], 1: ['lis-gulbenkian'] },
     events: [
       'Saldos de inverno no comércio a partir da primeira semana',
       'Bolo-rei nas pastelarias até 06/01 (Dia de Reis)',
