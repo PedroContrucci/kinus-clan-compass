@@ -18,7 +18,7 @@ import { tripTimezone, formatTzDiff, formatTzInfo, airportCity } from '@/lib/tim
 import { formatDurationHM, durationTextToMinutes } from '@/lib/flightModel';
 import { tripReferenceStamp } from '@/lib/aviasalesLink';
 import { paxOf, paxLabel } from '@/lib/pax';
-import { logisticsLine, itemCoord, michelinForTier } from '@/lib/itineraryEngine';
+import { logisticsLine, itemCoord, stayHotelCoord, michelinForTier } from '@/lib/itineraryEngine';
 import { razaoLines, razaoTotals } from '@/lib/razaoLines';
 
 // ── Branding colors (RGB) ──
@@ -1334,6 +1334,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
   }
   y += 3;
 
+  const stayCoord = stayHotelCoord(trip.days, trip.destination);
   (trip.days || []).forEach((day) => {
     checkPage(22);
 
@@ -1429,11 +1430,13 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
         act.name?.toLowerCase().includes('transfer');
 
       const actIdx = (day.activities || []).indexOf(act);
-      const nextAct = (day.activities || [])[actIdx + 1];
-      // Logística real (coords nas duas pontas) ou nada — a mesma linha da tela do roteiro.
-      const distHint = !isLogistics && nextAct && nextAct.category !== 'voo' && nextAct.category !== 'hotel' &&
-        !(nextAct.name || '').toLowerCase().includes('transfer')
-        ? logisticsLine(itemCoord(act, trip.destination), itemCoord(nextAct, trip.destination)) : undefined;
+      const prevAct = actIdx > 0 ? (day.activities || [])[actIdx - 1] : undefined;
+      // M21a: logística real (coords nas duas pontas) do item ANTERIOR do dia até este — a mesma linha da tela
+      // do roteiro ("desde o anterior"). Anterior voo/transfer não conta; hotel com coordenada vale.
+      const distLine = !isLogistics && prevAct && prevAct.category !== 'voo' &&
+        !(prevAct.name || '').toLowerCase().includes('transfer')
+        ? logisticsLine(itemCoord(prevAct, trip.destination, stayCoord), itemCoord(act, trip.destination, stayCoord)) : undefined;
+      const distHint = distLine ? `${distLine} desde o anterior` : undefined;
       const hasDistanceHint = !!distHint;
 
       const rawDescription = cleanText(localizeCuisineTip(String(act.description || '')));
