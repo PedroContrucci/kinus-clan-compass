@@ -1,6 +1,8 @@
 // M18a — "Nesta época": junta as notas de sazonalidade de uma viagem e acha fechamentos por dia.
 // Só renderização. Sem dado = [] (nunca inferir). `verify` nunca sai daqui.
 import { seasonalNotesFor, type SeasonalNote } from '@/data/seasonalNotes';
+import { HARD_HOLIDAYS, HARD_HOLIDAY_ALIASES, OPEN_CONFIRMED } from '@/data/openIds';
+import { getDestinationActivities, type SuggestedActivity } from '@/data/destinationActivities';
 
 export type SeasonalView = Pick<SeasonalNote, 'city' | 'month' | 'climate' | 'closures' | 'events' | 'tips'>;
 
@@ -83,6 +85,41 @@ export function closedIdsOnDate(city: string, date?: string | Date): Set<string>
     if (/^\s*Mês inteiro/i.test(prefix) || prefixHasDate(prefix, t.m, t.d)) ids.forEach((id) => out.add(id));
   }
   return out;
+}
+
+/** M18d: "livre" no feriado duro = custo 0 e sem compras (styleTag `shopping`, ou id com `outlet`/`mall`). */
+export const isFreeOnHardHoliday = (a: Pick<SuggestedActivity, 'id' | 'estimatedCostBRL' | 'styleTags'>): boolean =>
+  a.estimatedCostBRL === 0 && !a.styleTags.includes('shopping') && !/outlet|mall/.test(a.id);
+
+/** Cidade da tabela de feriado duro (apelidos `Rome`/`Tokyo` normalizados); undefined = sem regra. */
+export function hardHolidayCity(city: string): string | undefined {
+  const c = seasonalCity(city);
+  const k = HARD_HOLIDAY_ALIASES[c] ?? c;
+  return HARD_HOLIDAYS[k] ? k : undefined;
+}
+
+const unavailableCache = new Map<string, Set<string>>();
+
+/** M18d: indisponíveis na data = `closedIdsOnDate` ∪ (em feriado duro da cidade) toda atividade de manhã/tarde que não
+ *  é livre nem está em OPEN_CONFIRMED. `closedIds` vence. Cidade/data fora de HARD_HOLIDAYS = exatamente `closedIdsOnDate`. */
+export function unavailableIdsOnDate(city: string, date?: string | Date): Set<string> {
+  const closed = closedIdsOnDate(city, date);
+  const k = hardHolidayCity(city);
+  const t = ymd(date);
+  if (!k || !t) return closed;
+  const dd = `${String(t.d).padStart(2, '0')}/${String(t.m).padStart(2, '0')}`;
+  if (!HARD_HOLIDAYS[k].includes(dd)) return closed;
+  const key = `${k}|${dd}|${[...closed].sort().join(',')}`;
+  let out = unavailableCache.get(key);
+  if (!out) {
+    const open = new Set(OPEN_CONFIRMED[k]?.ids ?? []);
+    out = new Set(closed);
+    for (const a of getDestinationActivities(k)) {
+      if ((a.category === 'morning' || a.category === 'afternoon') && !isFreeOnHardHoliday(a) && !open.has(a.id)) out.add(a.id);
+    }
+    unavailableCache.set(key, out);
+  }
+  return new Set(out);
 }
 
 /** "25/12 — Louvre, Orsay e Versalhes fechados" a partir de "25/12: Louvre, ...; quase todos…". */

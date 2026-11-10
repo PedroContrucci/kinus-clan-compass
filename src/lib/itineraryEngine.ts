@@ -30,7 +30,7 @@ import { getHotelRecommendation } from '@/lib/hotelZones';
 import { interestsFor, catalogFor, splitInterests, interestLabel } from '@/lib/interestsFor';
 import { matchesPriority } from '@/lib/claChips';
 import { curatedCoordOf, resolveHotelCoord } from '@/lib/routeCoords';
-import { closedIdsOnDate } from '@/lib/seasonal';
+import { unavailableIdsOnDate } from '@/lib/seasonal';
 import { isEveningItem, maxHopKmFor, haversineKm, travelMinutes, isSnack, opensOn, weekdayOf, tiersOf, ESSENTIALS_MIN_DAYS, MUST_SEE_MIN_DAYS, HOP_HOURS, lastDayWindowHours, dayWindowUsage, catalogItemOf, durationMinutesOf, defaultMinutesOf, type PlanDay, type PlanDayItem } from '@/lib/itineraryValidator';
 import { catalogIdOf } from '@/lib/localAchievements';
 import type { LandmarkTier } from '@/data/generated/landmarkTiers';
@@ -640,7 +640,7 @@ export function swapCandidates(trip: any, dayIndex: number, itemId: string): Swa
   // R18: só o que existe no dia da semana deste dia.
   const weekday = weekdayOf(day.date);
   // M18b: nem fechado por fechamento sazonal nesta data.
-  const closedToday = closedIdsOnDate(ctx.destination, day.date as string | Date);
+  const closedToday = unavailableIdsOnDate(ctx.destination, day.date as string | Date);
 
   const fits = (a: SuggestedActivity): boolean => {
     if (weekday >= 0 && !opensOn(a.id, weekday)) return false;
@@ -811,7 +811,7 @@ export function generateItinerary(
   // (sem dia da semana e sem fechamento) e o M19c reserva o ícone/essencial/âncora para o dia aberto mais próximo.
   const closedCache = new Map<number, Set<string>>();
   const closedOnIdx = (id: string, i: number) => {
-    if (!closedCache.has(i)) closedCache.set(i, closedIdsOnDate(destination, addDays(departureDate, i)));
+    if (!closedCache.has(i)) closedCache.set(i, unavailableIdsOnDate(destination, addDays(departureDate, i)));
     return closedCache.get(i)!.has(id);
   };
   const opensToday = (a: SuggestedActivity) => !!_dry?.ignoreWeekdays || (opensOn(a.id, addDays(departureDate, currentPickDayIndex).getDay()) && !closedOnIdx(a.id, currentPickDayIndex));

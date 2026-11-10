@@ -17,9 +17,13 @@ describe('M18c — Gulbenkian (dado)', () => {
     const dez = SEASONAL_NOTES.find((n) => n.city === 'Lisboa' && n.month === 12)!;
     const jan = SEASONAL_NOTES.find((n) => n.city === 'Lisboa' && n.month === 1)!;
     expect(dez.closures[2]).toBe('24/12 e 25/12: Museu Calouste Gulbenkian fechado');
-    expect(dez.closedIds).toEqual({ 0: ['lis-jeronimos', 'lis-torre-belem'], 2: ['lis-gulbenkian'] });
+    expect(dez.closedIds).toEqual({ 0: ['lis-jeronimos', 'lis-torre-belem'], 2: ['lis-gulbenkian'], 3: ['lis-castelo-sao-jorge'], 4: ['lis-castelo-sao-jorge'] });
+    // M18d: linhas do Castelo de São Jorge acrescentadas no fim.
+    expect(dez.closures[3]).toBe('24/12 e 25/12: Castelo de São Jorge fechado');
+    expect(dez.closures[4]).toBe('31/12: Castelo de São Jorge fechado');
     expect(jan.closures[1]).toBe('01/01: Museu Calouste Gulbenkian fechado');
-    expect(jan.closedIds).toEqual({ 0: ['lis-jeronimos', 'lis-torre-belem'], 1: ['lis-gulbenkian'] });
+    expect(jan.closedIds).toEqual({ 0: ['lis-jeronimos', 'lis-torre-belem'], 1: ['lis-gulbenkian'], 2: ['lis-castelo-sao-jorge'] });
+    expect(jan.closures[2]).toBe('01/01: Castelo de São Jorge fechado');
   });
 });
 

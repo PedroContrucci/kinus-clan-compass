@@ -7,7 +7,7 @@ import { LANDMARKS, type LandmarkTier } from '@/data/generated/landmarkTiers';
 import { CURATED_DAYS_OF_WEEK } from '@/data/generated/daysOfWeek';
 import { curatedCoordOf } from '@/lib/routeCoords';
 import { getMichelinCountForCity } from '@/lib/michelinData';
-import { closedIdsOnDate } from '@/lib/seasonal';
+import { closedIdsOnDate, unavailableIdsOnDate } from '@/lib/seasonal';
 import { isMustSee } from '@/lib/mustSee';
 
 export interface ValidationResult {
@@ -863,13 +863,14 @@ export function validateSeasonalClosures(days: PlanDay[], ctx: PlanRulesContext)
   const notes: string[] = [];
   const bad: string[] = [];
   for (const d of days) {
-    const closed = closedIdsOnDate(ctx.destination, d.date as string | Date);
+    const closed = unavailableIdsOnDate(ctx.destination, d.date as string | Date);
     if (closed.size === 0) continue;
+    const hard = closedIdsOnDate(ctx.destination, d.date as string | Date);
     for (const a of d.activities) {
       const id = catalogIdOf(a.id);
       if (!closed.has(id)) continue;
       bad.push(id);
-      notes.push(`dia ${d.day}: ${a.name} fechado nesta data`);
+      notes.push(`dia ${d.day}: ${a.name} ${hard.has(id) ? 'fechado nesta data' : 'não confirmado aberto no feriado'}`);
     }
   }
   return bad.length
@@ -923,7 +924,7 @@ export function validateEssentials(days: PlanDay[], ctx: PlanRulesContext): Extr
       const wd = weekdayOf(days[i].date);
       if (wd >= 0 && !opensOn(id, wd)) return false;
       // M19g: fechamento sazonal (seasonalNotes.closedIds) também não conta como "cabia".
-      if (closedIdsOnDate(ctx.destination, days[i].date as string | Date).has(id)) return false;
+      if (unavailableIdsOnDate(ctx.destination, days[i].date as string | Date).has(id)) return false;
       const u = dayWindowUsage(days, ctx, i, [probe], index);
       return !!u && u.used <= u.window;
     });
@@ -967,7 +968,7 @@ export function validateIcons(days: PlanDay[], ctx: PlanRulesContext): ExtraRule
 /** M19g: dia de exploração em que o item abre — dia da semana (R18) e fechamento sazonal (closedIds). */
 const opensOnDay = (id: string, day: PlanDay, destination: string) => {
   const wd = weekdayOf(day.date);
-  return (wd < 0 || opensOn(id, wd)) && !closedIdsOnDate(destination, day.date as string | Date).has(id);
+  return (wd < 0 || opensOn(id, wd)) && !unavailableIdsOnDate(destination, day.date as string | Date).has(id);
 };
 
 /**

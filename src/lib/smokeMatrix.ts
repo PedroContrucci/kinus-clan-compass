@@ -62,6 +62,9 @@ export const SMOKE_SCENARIOS: SmokeScenario[] = [
   { id: 'Paris Natal gastrô 20–27/12 2 adultos', city: 'Paris', from: new Date(2026, 11, 20), nights: 7, adults: 2, children: 0, childrenAges: [], interests: ['gastronomy', 'culture'], tier: 'comfort' },
   // M18c: Gulbenkian fecha 24 e 25/12 (e 01/01) — o PDF de produção a pôs na manhã de 25/12.
   { id: 'Lisboa Natal 20–27/12 2 adultos', city: 'Lisboa', from: new Date(2026, 11, 20), nights: 7, adults: 2, children: 0, childrenAges: [], interests: ['culture', 'gastronomy'], tier: 'comfort' },
+  // M18d: feriado duro (01/01) — manhã/tarde só com atividade livre ou confirmada aberta (OPEN_CONFIRMED vazio por ora).
+  { id: 'Roma Réveillon 28/12–02/01 2 adultos', city: 'Roma', from: new Date(2026, 11, 28), nights: 5, adults: 2, children: 0, childrenAges: [], interests: ['culture', 'gastronomy'], tier: 'comfort' },
+  { id: 'Tóquio Réveillon 28/12–03/01 2 adultos', city: 'Tóquio', from: new Date(2026, 11, 28), nights: 6, adults: 2, children: 0, childrenAges: [], interests: ['culture', 'gastronomy'], tier: 'comfort' },
 ];
 
 export async function runSmokeScenario(sc: SmokeScenario, deps: DraftTripDeps = {}): Promise<SmokeRow> {
