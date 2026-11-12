@@ -28,3 +28,9 @@ Prompt: "Faça redeploy da edge function kinu-ai. Arquivos: supabase/functions/k
 To https://github.com/PedroContrucci/kinus-clan-compass
    b97ebcc..f6d68ed  main -> main
 ```
+
+## Push (relatório)
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   f6d68ed..4c932c9  main -> main
+```
