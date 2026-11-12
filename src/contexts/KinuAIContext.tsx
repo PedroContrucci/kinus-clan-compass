@@ -613,7 +613,7 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
         try {
           const trip = await buildDraftTrip(plan.input);
           const stored = finishFlowTrip(trip as StoredTrip, {
-            cap: plan.cap, children: 0, originSource: plan.origin.source, createdVia: 'kinu',
+            cap: plan.cap, children: plan.children, originSource: plan.origin.source, createdVia: 'kinu',
           });
 
           // Funil único: read-modify-write contra o storage + notifica os assinantes.

@@ -89,15 +89,41 @@ export function agentCity(destino: string): string | null {
 export interface AgentPlanParams {
   destino: string; data_ida: string; data_volta: string; viajantes: number;
   estilo?: string; interesses?: string[]; prioridades?: string[]; orcamento_total?: number;
+  /** M22a — só o que o usuário escreveu; `viajantes` segue sendo o total. */
+  adultos?: number; criancas_idades?: number[]; origem?: string;
+}
+
+/** M22a — idades válidas (inteiros 0–17), na ordem dita; qualquer outra coisa é descartada. */
+function kidsAges(raw: unknown): number[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((n) => Number(n)).filter((n) => Number.isInteger(n) && n >= 0 && n <= 17);
+}
+function informedOrigin(raw: unknown): string {
+  if (typeof raw !== 'string') return '';
+  return Array.from(raw).map((ch) => (ch.charCodeAt(0) < 32 ? ' ' : ch)).join('').trim().slice(0, 80);
+}
+
+/** M22a — texto do cartão: "2 adultos + 2 crianças (8 e 12 anos)" ou "N viajante(s)". */
+export function describeTravelers(p: Partial<AgentPlanParams>): string {
+  const ages = kidsAges(p.criancas_idades);
+  if (ages.length === 0) return `${p.viajantes ?? '?'} viajante(s)`;
+  const adults = Number.isInteger(Number(p.adultos)) && Number(p.adultos) >= 1
+    ? Number(p.adultos) : Math.floor(Number(p.viajantes)) - ages.length;
+  const list = ages.length === 1 ? `${ages[0]} ${ages[0] === 1 ? 'ano' : 'anos'}`
+    : `${ages.slice(0, -1).join(', ')} e ${ages[ages.length - 1]} anos`;
+  return `${adults} ${adults === 1 ? 'adulto' : 'adultos'} + ${ages.length} ${ages.length === 1 ? 'criança' : 'crianças'} (${list})`;
 }
 
 /** criar_viagem → o MESMO DraftTripInput do fluxo curto (buildFlowInput). null = dados incompletos. */
 export function planFromAgent(
   p: AgentPlanParams, homeCity: unknown,
-): { input: DraftTripInput; cap: number; origin: { city: string; source: OriginSource } } | null {
+): { input: DraftTripInput; cap: number; children: number; origin: { city: string; source: OriginSource } } | null {
   const city = agentCity(String(p.destino ?? ''));
   const dateRe = /^\d{4}-\d{2}-\d{2}$/;
-  const adults = Math.floor(Number(p.viajantes));
+  const total = Math.floor(Number(p.viajantes));
+  const ages = kidsAges(p.criancas_idades);
+  const adultsRaw = Math.floor(Number(p.adultos));
+  const adults = p.adultos != null && Number.isFinite(adultsRaw) ? adultsRaw : total - ages.length;
   if (!city || !dateRe.test(String(p.data_ida)) || !dateRe.test(String(p.data_volta)) || !Number.isFinite(adults) || adults < 1) return null;
   const day = (s: string) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
   const estilo = normText(String(p.estilo ?? ''));
@@ -111,7 +137,8 @@ export function planFromAgent(
     .filter((id) => offered.has(id));
   const capRaw = Number(p.orcamento_total);
   const cap = Number.isFinite(capRaw) && capRaw > 0 ? Math.round(capRaw) : 0;
-  const origin = resolveOrigin(homeCity);
-  const input = buildFlowInput({ city, origin: origin.city, from: day(p.data_ida), to: day(p.data_volta), adults, children: 0, tier, interests, cap });
-  return { input, cap, origin };
+  const told = informedOrigin(p.origem);
+  const origin: { city: string; source: OriginSource } = told ? { city: told, source: 'user' } : resolveOrigin(homeCity);
+  const input = buildFlowInput({ city, origin: origin.city, from: day(p.data_ida), to: day(p.data_volta), adults, children: ages.length, childrenAges: ages, tier, interests, cap });
+  return { input, cap, children: ages.length, origin };
 }

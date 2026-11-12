@@ -3,6 +3,7 @@ import { KinuMessage, ProposedAction } from "@/types/kinuAI";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useKinuAI } from "@/contexts/KinuAIContext";
+import { describeTravelers } from "@/lib/destinationPicker";
 
 interface KinuAIMessageProps {
   message: KinuMessage;
@@ -28,7 +29,7 @@ function describeAction(action: ProposedAction): string {
       return `Abrir ${labels[p.destino] ?? p.destino ?? '—'}`;
     }
     case 'criar_viagem':
-      return `✈️ Planejar ${p.destino ?? '—'} · ${p.data_ida ?? '—'} → ${p.data_volta ?? '—'} · ${p.viajantes ?? '?'} viajante(s)`;
+      return `✈️ Planejar ${p.destino ?? '—'} · ${p.data_ida ?? '—'} → ${p.data_volta ?? '—'} · ${describeTravelers(p)}${typeof p.origem === 'string' && p.origem.trim() ? ` · saindo de ${p.origem.trim()}` : ''}`;
     case 'verificar_ofertas':
       return '🔍 Verificar ofertas de voo agora';
     default:

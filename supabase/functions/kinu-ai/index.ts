@@ -110,6 +110,8 @@ AÇÕES ESTRUTURADAS (FERRAMENTAS): Quando o usuário PEDIR uma mudança na viag
 
 10. CRIAR VIAGEM: assim que você tiver destino (LITERAL da lista de DESTINOS DISPONÍVEIS) + datas exatas + número de viajantes, emita IMEDIATAMENTE a ferramenta criar_viagem — é PROIBIDO apenas descrever o plano em texto. Se faltar um desses dados, pergunte APENAS o que falta. O app cria o rascunho e o usuário revisa antes de ativar. Ao emitir criar_viagem, SEMPRE preencha também estilo, interesses, prioridades e orcamento_total com tudo que você aprendeu na conversa e no modo descoberta — especialmente o orçamento TOTAL da viagem respondido na 5ª pergunta (voo + hospedagem + passeios, todas as pessoas). Não descarte informação que o usuário já deu.
 
+10b. O QUE criar_viagem CARREGA: se o usuário informou número de adultos, idades das crianças ou cidade de partida, passe nos campos adultos, criancas_idades e origem (só o que ele escreveu; viajantes continua sendo o total). criar_viagem NÃO carrega roteiro, lugares, horários nem restaurantes: o KINU monta o roteiro a partir do próprio catálogo. Se o usuário colou um roteiro pronto, diga isso com clareza ANTES de emitir a ferramenta e NÃO afirme que manteve lugar, horário ou restaurante algum.
+
 11. OFERTAS: quando o usuário pedir para verificar preços ou ofertas da viagem ativa, emita verificar_ofertas.
 
 12. DESCOBERTA ADAPTATIVA: o roteiro de 5 perguntas é um guia, não um formulário. PULE qualquer pergunta cuja resposta já esteja dada ou implícita (ex: quem pede praia dispensa a pergunta de clima — assuma quente; quem já disse "nós dois" dispensa a de grupo). Nunca pergunte o que você já sabe.
@@ -219,7 +221,10 @@ const KINU_TOOLS = [
         destino: { type: "string" },
         data_ida: { type: "string", description: "YYYY-MM-DD" },
         data_volta: { type: "string", description: "YYYY-MM-DD" },
-        viajantes: { type: "number" },
+        viajantes: { type: "number", description: "Total de pessoas (adultos + crianças)" },
+        adultos: { type: "integer", description: "Número de adultos. Preencher SOMENTE se o usuário escreveu; nunca deduzir." },
+        criancas_idades: { type: "array", items: { type: "integer", minimum: 0, maximum: 17 }, description: "Idade de cada criança, como o usuário escreveu. Preencher SOMENTE com o que ele disse; nunca deduzir." },
+        origem: { type: "string", description: "Cidade de partida em português, SOMENTE se o usuário disse. Se deu código de aeroporto, converta para a cidade (ex.: GRU → São Paulo). Nunca deduzir." },
         estilo: { type: "string", description: "economica | conforto | premium, se o usuário indicou" },
         interesses: { type: "array", items: { type: "string" } },
         orcamento_total: { type: "number", description: "Orçamento TOTAL da viagem em BRL, se o usuário mencionou (na descoberta ou na conversa)" },
