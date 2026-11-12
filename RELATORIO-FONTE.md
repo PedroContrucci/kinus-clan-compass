@@ -27,3 +27,9 @@ To https://github.com/PedroContrucci/kinus-clan-compass
    21a5e3c..41729e1  main -> main
 ```
 Sem edge function tocada; sem redeploy. Publish do front é do fundador.
+
+## Push (relatório)
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   41729e1..4226750  main -> main
+```
