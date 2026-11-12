@@ -31,3 +31,32 @@ minutos do OSRM; muda (12→10) se usar `travelMinutes`. +1 teste (8 km/18 min �
 Não toquei nele. Sugestão: `git checkout RELATORIO-M21A.md`.
 
 ## Push
+
+## Adendo — execução (12/11/2026)
+
+**Aplicado:** D1 (modo pela distância), D2 (total único), D3 (texto do botão). D4 fora de escopo. Commit de código `3a7281b`.
+- `roteiroBlocks.ts`: `legBetween` live → km ≤ 1,2 = "~N min a pé" com N = `round(travelMinutes(km))`; km > 1,2 = "~N min de táxi" com os minutos do OSRM. `legBetween` ganhou 5º arg opcional (hotel); novo `hotelLegsMinutes`.
+- `RoteiroDia.tsx`: prop `stayCoord`; faixa = trechos entre itens + hotel→1º + último→hotel. Item "no hotel" É o hotel (o trecho dele ao vizinho entra pelo `legBetween`; o `hotelLegsMinutes` conta 0 nele — sem dupla contagem). Sem hotel: soma só os trechos, como antes. Callers: `Viagens.tsx` e `RoteiroRascunho.tsx` passam `stayHotelCoord(days, destino)`.
+- `DailyRouteMap.tsx`: removido "Tempo total de deslocamento". Botão: "Marcar como reservado".
+- Trecho hotel→1º/último→hotel usa só cálculo por coordenada (o nome do ponto live do hotel não casa com nenhum item).
+
+**Cena Jerónimos → Ponto Final → Santa Justa → Ramiro (print: 18, 17, 5 min)**
+- Antes: "~18 min a pé", "~17 min a pé", "~5 min a pé" (todos ≤45 min ⇒ "a pé"); faixa ~40 min; mapa ~49 min (dois totais).
+- Depois: modo pela distância. Os km do print não foram medidos (sem rede); por regra, os trechos de 18 e 17 min (ponte, carro) têm km > 1,2 ⇒ "~18 min de táxi" e "~17 min de táxi". O de 5 min fica "de táxi" (~5 min) se > 1,2 km, ou "a pé" com `travelMinutes` se ≤ 1,2 km. Total único = faixa (agora com hotel→1º e último→hotel); o do mapa não existe mais.
+- Cobertura por teste (cena à mão): live 8 km/18 min → "~18 min de táxi"; live 0,9 km → "~11 min a pé".
+
+**Assert alterado (autorizado, D1)** `roteiroDia.test.tsx` (deslocamento)
+- Antigo: live 0,9 km/12 min → "~12 min a pé". Novo: "~11 min a pé" (= round(travelMinutes(0,9))). Motivo: minutos do OSRM são de carro.
+
+**Asserts tocados por D3 (consequência do texto; só a string)**: `'Marcar como fechado'` → `'Marcar como reservado'` em `roteiroDia.test.tsx` (4 linhas), `closeLinks.test.tsx` (1), `roteiroRascunho.test.tsx` (regex). Fora D1/D3 nenhum assert mudou.
+
+**Testes novos (4)**: táxi 8 km/18 min · a pé 0,9 km · faixa soma hotel→1º e último→hotel (e 0 sem hotel) · mapa sem "Tempo total".
+
+**Gates:** tsc limpo · vitest 85 arquivos, 903 passed, 0 failed · `npm run build` ok · eslint: 32 problemas antes e depois (nenhum novo).
+**Não tocados:** `src/data/*`, `hotelZones.ts`, `michelinData.ts`, `types/trip.ts`, motor, validador, PDF.
+
+**Push (código):**
+```
+To https://github.com/PedroContrucci/kinus-clan-compass
+   c6aa957..3a7281b  main -> main
+```
