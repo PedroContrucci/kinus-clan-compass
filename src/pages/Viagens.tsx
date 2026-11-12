@@ -46,6 +46,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { DailyRouteMap, RouteLeg } from '@/components/cockpit/DailyRouteMap';
 import { PlaceInfoCard } from '@/components/cockpit/PlaceInfoCard';
 import { RoteiroDia, RoteiroLinha } from '@/components/cockpit/RoteiroDia';
+import { stayHotelCoord } from '@/lib/itineraryEngine';
 import { FinanceiroRazao, FinanceiroTiles, QuandoDinheiroSai } from '@/components/cockpit/FinanceiroRazao';
 import { razaoLines } from '@/lib/razaoLines';
 import { ActivityDetailDrawer } from '@/components/cockpit/ActivityDetailDrawer';
@@ -1526,6 +1527,7 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
                     activities={currentDay.activities}
                     destination={selectedTrip.destination}
                     liveLegs={liveLegs}
+                    stayCoord={stayHotelCoord(selectedTrip.days, selectedTrip.destination)}
                     expandedIds={expandedActivityIds}
                     onToggleExpand={toggleExpandedActivity}
                     onCollapseAll={() => setExpandedActivityIds(new Set())}

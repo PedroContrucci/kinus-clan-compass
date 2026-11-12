@@ -12,7 +12,7 @@ import type { TripActivity } from '@/types/trip';
 import { updateTrip, type StoredTrip } from '@/lib/tripStore';
 import { countManualEdits, itemIdsOf } from '@/lib/draftItinerary';
 import { draftSwapCandidates, removeDraftItem, swapDraftItem } from '@/lib/draftRoteiro';
-import type { SwapCandidate } from '@/lib/itineraryEngine';
+import { stayHotelCoord, type SwapCandidate } from '@/lib/itineraryEngine';
 import { roteiroKind } from '@/lib/roteiroBlocks';
 import { RoteiroDia } from './RoteiroDia';
 import { EnhancedDayTimeline } from './EnhancedDayTimeline';
@@ -121,6 +121,7 @@ export const RoteiroRascunho = ({ trip, onRegenerate }: RoteiroRascunhoProps) =>
             activities={d.activities}
             destination={current.destination}
             liveLegs={liveLegs && liveLegs.day === d.day ? liveLegs.legs : null}
+            stayCoord={stayHotelCoord(days, current.destination)}
             expandedIds={expandedIds}
             onToggleExpand={toggleExpand}
             onCollapseAll={() => setExpandedIds(new Set())}

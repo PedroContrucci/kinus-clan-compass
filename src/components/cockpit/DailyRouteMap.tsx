@@ -446,11 +446,6 @@ export const DailyRouteMap = memo(({ destination, activities, hotelNeighborhood,
             )}
           </MapContainer>
         </div>
-        {segments.length > 0 && (
-          <p className="text-xs text-muted-foreground mt-2 font-['Outfit']">
-            🚶 Tempo total de deslocamento: ~{segments.reduce((s, x) => s + x.durationMin, 0)} min
-          </p>
-        )}
       </MapErrorBoundary>
     </div>
   );

@@ -111,7 +111,7 @@ describe('C.8 — "Onde fechar ▸" no passeio pago do Roteiro', () => {
     fireEvent.click(links[1]);
     fireEvent.click(within(row).getByRole('button', { name: /Fechou\? Registrar valor pago/ }));
     expect(onCheck).toHaveBeenCalledWith(a, 0);
-    expect(within(row).getByRole('button', { name: 'Marcar como fechado' })).toBeTruthy();
+    expect(within(row).getByRole('button', { name: 'Marcar como reservado' })).toBeTruthy();
   });
 });
 

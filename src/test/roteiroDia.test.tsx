@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within, cleanup } from '@testing-library/react';
 import { RoteiroDia } from '@/components/cockpit/RoteiroDia';
-import { legBetween } from '@/lib/roteiroBlocks';
+import { legBetween, hotelLegsMinutes } from '@/lib/roteiroBlocks';
+import { logisticsLine, itemCoord } from '@/lib/itineraryEngine';
+import { travelMinutes } from '@/lib/itineraryValidator';
+import { readFileSync } from 'node:fs';
 import type { TripActivity } from '@/types/trip';
 
 // C.5d: o banco ainda não tem online/partner/telefone — entradas de teste somadas ao gerado real.
@@ -102,7 +105,7 @@ describe('C.5b — Roteiro em blocos', () => {
     expect(screen.getByText(/Chegue cedo/)).toBeTruthy();
     expect(screen.getByText(/estimativa do KINU/)).toBeTruthy();
     expect(renderDetail).toHaveBeenCalledWith(praia);
-    expect(within(row).queryByRole('button', { name: 'Marcar como fechado' })).toBeNull();
+    expect(within(row).queryByRole('button', { name: 'Marcar como reservado' })).toBeNull();
     expect(within(row).queryByRole('button', { name: /Onde fechar/ })).toBeNull();
     fireEvent.click(within(row).getByRole('checkbox'));
     expect(h.onCheck).toHaveBeenCalledWith(praia, 2);
@@ -153,8 +156,54 @@ describe('C.5b — Roteiro em blocos', () => {
 
   it('deslocamento: OSRM do mapa quando já calculou (real), senão nada/estimativa — nunca os dois', () => {
     const live = [{ fromName: praia.name, toName: almoco.name, durationMin: 12, distanceKm: '0.9' }];
-    expect(legBetween(praia, almoco, live, 'Fortaleza')).toEqual({ text: '~12 min a pé', minutes: 12, source: 'osrm' });
+    // M21b: antes '~12 min a pé' (minutos do OSRM); agora o tempo de caminhada, travelMinutes(0,9 km) = 11 — os minutos do OSRM são de carro.
+    expect(legBetween(praia, almoco, live, 'Fortaleza')).toEqual({ text: '~11 min a pé', minutes: 11, source: 'osrm' });
     expect(legBetween(praia, almoco, null, 'Fortaleza')?.source ?? 'estimativa').toBe('estimativa');
+  });
+});
+
+describe('M21b — modo do trecho pela distância e total único', () => {
+  it('live 8 km / 18 min → táxi com os minutos do OSRM', () => {
+    const live = [{ fromName: praia.name, toName: almoco.name, durationMin: 18, distanceKm: '8.0' }];
+    expect(legBetween(praia, almoco, live, 'Fortaleza')).toEqual({ text: '~18 min de táxi', minutes: 18, source: 'osrm' });
+  });
+
+  it('live 0,9 km → a pé com travelMinutes (não os minutos do OSRM)', () => {
+    const live = [{ fromName: praia.name, toName: almoco.name, durationMin: 12, distanceKm: '0.9' }];
+    const n = Math.round(travelMinutes(0.9).minutes);
+    expect(legBetween(praia, almoco, live, 'Fortaleza')?.text).toBe(`~${n} min a pé`);
+  });
+
+  it('a faixa soma hotel → 1º e último → hotel quando há coordenada de hotel', () => {
+    const hotel = { lat: 38.7139, lng: -9.1394 };
+    const cafeH = act('day-1-slot-breakfast', { time: '08:00', name: 'Café da manhã no hotel', category: 'comida', type: 'food' });
+    const a = act('day-1-lis-alfama-walk', { time: '10:00', name: 'Alfama a pé', category: 'passeio' });
+    const b = act('day-1-lis-bairro-alto-noite', { time: '20:00', name: 'Bairro Alto', category: 'passeio' });
+    const mins = (c: { lat: number; lng: number } | null) => Number(logisticsLine(hotel, c)?.match(/~(\d+)/)?.[1] ?? 0);
+    // café "no hotel" É o hotel: hotel→1º entra pelo trecho café→Alfama; o último→hotel é o hotelLegs.
+    const volta = mins(itemCoord(b, 'Lisboa', hotel));
+    const ida = mins(itemCoord(a, 'Lisboa', hotel));
+    expect(ida).toBeGreaterThan(0);
+    expect(volta).toBeGreaterThan(0);
+    expect(hotelLegsMinutes([cafeH, a, b], 'Lisboa', hotel)).toBe(volta);
+    // sem item "no hotel": o 1º item ganha o trecho hotel→1º
+    expect(hotelLegsMinutes([a, b], 'Lisboa', hotel)).toBe(ida + volta);
+    expect(hotelLegsMinutes([cafeH, a, b], 'Lisboa', null)).toBe(0);
+    const { container } = render(
+      <RoteiroDia
+        dayNumber={1} activities={[cafeH, a, b]} destination="Lisboa" liveLegs={null} stayCoord={hotel}
+        expandedIds={new Set()} onToggleExpand={() => {}} onCollapseAll={() => {}}
+        renderMap={() => <div />} routeOpen={false} onRouteToggle={() => {}}
+        onCheck={vi.fn()} onSwap={vi.fn()} onConfirmAnchor={vi.fn()} onOpenDetails={vi.fn()}
+      />,
+    );
+    const entre = Number(legBetween(a, b, null, 'Lisboa')?.minutes ?? 0);
+    expect(container.textContent).toContain(`~${ida + entre + volta} min`);
+  });
+
+  it('DailyRouteMap não renderiza mais "Tempo total de deslocamento"', () => {
+    const src = readFileSync('src/components/cockpit/DailyRouteMap.tsx', 'utf8');
+    expect(src).not.toContain('Tempo total de deslocamento');
   });
 });
 
@@ -232,12 +281,12 @@ describe('C.5d — modo de reserva por atividade (catálogo → ação honesta)'
       );
       return { row: u.container.querySelector<HTMLElement>('[data-roteiro-line="item"]')! };
     })();
-    fireEvent.click(within(row).getByRole('button', { name: 'Marcar como fechado' }));
+    fireEvent.click(within(row).getByRole('button', { name: 'Marcar como reservado' }));
     expect(onCheck).toHaveBeenCalledWith(a, 0);
     cleanup();
     const closed = one({ ...a, status: 'confirmed', paidAmount: 100 }).row;
     expect(within(closed).getByRole('checkbox', { checked: true })).toBeTruthy();
-    expect(within(closed).queryByRole('button', { name: 'Marcar como fechado' })).toBeNull();
+    expect(within(closed).queryByRole('button', { name: 'Marcar como reservado' })).toBeNull();
     expect(within(closed).queryByRole('link')).toBeNull();
   });
 });

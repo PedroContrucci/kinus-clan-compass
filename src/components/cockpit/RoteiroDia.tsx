@@ -5,7 +5,7 @@ import { ptBR } from 'date-fns/locale';
 import { ChevronRight, ChevronDown, Check, Tag, RotateCcw, Phone, Trash2 } from 'lucide-react';
 import type { TripActivity } from '@/types/trip';
 import type { RouteLeg } from '@/components/cockpit/DailyRouteMap';
-import { legBetween, passeioCloseLinks, requiresBooking, roteiroActions, roteiroBooking, roteiroKind, type RoteiroBooking } from '@/lib/roteiroBlocks';
+import { hotelLegsMinutes, legBetween, passeioCloseLinks, requiresBooking, roteiroActions, roteiroBooking, roteiroKind, type RoteiroBooking } from '@/lib/roteiroBlocks';
 import { CLOSE_DISCLOSURE, type CloseLink } from '@/lib/offersLinks';
 
 // C.5b — a aba Roteiro da viagem ativa em blocos: uma linha fechada por item, detalhe e
@@ -229,7 +229,7 @@ export const RoteiroLinha = ({
             <div className="flex gap-2 flex-wrap">
               {canClose && (
                 <button type="button" onClick={onCheck} className={`${btn} bg-background border border-border text-foreground hover:border-primary/50`}>
-                  <Check size={12} /> Marcar como fechado
+                  <Check size={12} /> Marcar como reservado
                 </button>
               )}
               {canConfirm && (
@@ -289,15 +289,17 @@ interface RoteiroDiaProps extends LinhaHandlers {
   anchorActivityId?: string | null;
   anchorRef?: Ref<HTMLDivElement>;
   highlightId?: string | null;
+  /** M21b — coordenada do hotel da estadia: a faixa soma hotel → 1º item e último item → hotel. */
+  stayCoord?: { lat: number; lng: number } | null;
 }
 
 export const RoteiroDia = ({
   dayNumber, date, activities, destination, liveLegs, expandedIds, onToggleExpand, onCollapseAll,
-  renderMap, routeOpen, onRouteToggle, mapAnchorRef, anchorActivityId, anchorRef, highlightId,
+  renderMap, routeOpen, onRouteToggle, mapAnchorRef, anchorActivityId, anchorRef, highlightId, stayCoord,
   onCheck, onSwap, onConfirmAnchor, onOpenDetails, onRemove, renderDetail,
 }: RoteiroDiaProps) => {
-  const legs = activities.map((a, i) => (i > 0 ? legBetween(activities[i - 1], a, liveLegs, destination) : null));
-  const routeMinutes = legs.reduce((s, l) => s + (l?.minutes ?? 0), 0);
+  const legs = activities.map((a, i) => (i > 0 ? legBetween(activities[i - 1], a, liveLegs, destination, stayCoord) : null));
+  const routeMinutes = legs.reduce((s, l) => s + (l?.minutes ?? 0), 0) + hotelLegsMinutes(activities, destination, stayCoord);
   // Numeração das paradas = a mesma dos pins do mapa: não-logística, em ordem de hora.
   const stopNumberById = new Map(
     activities.filter(isStop).slice().sort(byTime).map((a, i) => [a.id, i + 1] as const),

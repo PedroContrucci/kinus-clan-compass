@@ -1,6 +1,7 @@
 import type { TripActivity } from '@/types/trip';
 import type { RouteLeg } from '@/components/cockpit/DailyRouteMap';
 import { itemCoord, logisticsLine } from '@/lib/itineraryEngine';
+import { travelMinutes } from '@/lib/itineraryValidator';
 import { catalogIdOf } from '@/lib/localAchievements';
 import { buildCloseLinks, type CloseLink } from '@/lib/offersLinks';
 import { CURATED_BOOKING, type BookingMode } from '@/data/generated/booking';
@@ -119,16 +120,40 @@ export function legBetween(
   curr: TripActivity,
   liveLegs: RouteLeg[] | null | undefined,
   destination: string,
+  hotel?: { lat: number; lng: number } | null,
 ): RoteiroLeg | null {
   const live = liveLegs?.find((l) => l.fromName === prev.name && l.toName === curr.name);
   if (live) {
-    // Mesma conta que o conector antigo fazia sobre o OSRM.
-    const walk = live.durationMin <= 45;
-    const minutes = walk ? live.durationMin : Math.max(8, Math.round(parseFloat(live.distanceKm) * 2.5));
+    // M21b: o modo vem da DISTÂNCIA (o OSRM público devolve minutos de carro). Até 1,2 km é a pé,
+    // com o tempo de caminhada (travelMinutes); acima, táxi com os minutos do OSRM.
+    const km = parseFloat(live.distanceKm);
+    const walk = Number.isFinite(km) && km <= 1.2;
+    const minutes = walk ? Math.max(1, Math.round(travelMinutes(km).minutes)) : live.durationMin;
     return { text: `~${minutes} min ${walk ? 'a pé' : 'de táxi'}`, minutes, source: 'osrm' };
   }
-  const line = logisticsLine(itemCoord(prev, destination), itemCoord(curr, destination));
+  const line = logisticsLine(itemCoord(prev, destination, hotel), itemCoord(curr, destination, hotel));
   if (!line) return null;
   const minutes = Number(line.match(/~(\d+)/)?.[1] ?? 0);
   return { text: line, minutes, source: 'estimativa' };
+}
+
+type HotelCoord = { lat: number; lng: number };
+
+/** M21b — minutos hotel → 1º item com coordenada e último item com coordenada → hotel, por coordenada
+ *  (o mesmo cálculo do fallback de legBetween). Item "no hotel" já É o hotel: o trecho dele ao vizinho
+ *  entra por legBetween (que recebe o hotel), então aqui conta 0 — nunca duas vezes. Sem hotel: 0. */
+export function hotelLegsMinutes(
+  activities: TripActivity[],
+  destination: string,
+  hotel: HotelCoord | null | undefined,
+): number {
+  if (!hotel) return 0;
+  const sorted = activities.slice().sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+  const coords = sorted.map((a) => itemCoord(a, destination, hotel)).filter((c): c is HotelCoord => !!c);
+  const mins = (c: HotelCoord | undefined) => {
+    if (!c || c === hotel) return 0;
+    const line = logisticsLine(hotel, c);
+    return line ? Number(line.match(/~(\d+)/)?.[1] ?? 0) : 0;
+  };
+  return mins(coords[0]) + (coords.length > 1 ? mins(coords[coords.length - 1]) : 0);
 }

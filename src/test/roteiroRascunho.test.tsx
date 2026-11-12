@@ -86,7 +86,7 @@ describe('C.5e — roteiro do rascunho em blocos', () => {
     const row = rowOf(a.name);
     expect(within(row).getByRole('button', { name: /Trocar/ })).toBeTruthy();
     expect(within(row).getByRole('button', { name: /Remover/ })).toBeTruthy();
-    expect(within(row).queryByRole('button', { name: /Marcar como fechado|^Confirmar|Mais detalhes/ })).toBeNull();
+    expect(within(row).queryByRole('button', { name: /Marcar como reservado|^Confirmar|Mais detalhes/ })).toBeNull();
     // Voo/hotel/logística: nunca 🗑 nem Confirmar.
     const voo = allItems(trip).find((x) => x.category === 'voo')!;
     goDay(dayOf(trip, voo.id));
