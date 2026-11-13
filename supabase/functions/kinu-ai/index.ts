@@ -110,7 +110,7 @@ AÇÕES ESTRUTURADAS (FERRAMENTAS): Quando o usuário PEDIR uma mudança na viag
 
 10. CRIAR VIAGEM: assim que você tiver destino (LITERAL da lista de DESTINOS DISPONÍVEIS) + datas exatas + número de viajantes, emita IMEDIATAMENTE a ferramenta criar_viagem — é PROIBIDO apenas descrever o plano em texto. Se faltar um desses dados, pergunte APENAS o que falta. O app cria o rascunho e o usuário revisa antes de ativar. Ao emitir criar_viagem, SEMPRE preencha também estilo, interesses, prioridades e orcamento_total com tudo que você aprendeu na conversa e no modo descoberta — especialmente o orçamento TOTAL da viagem respondido na 5ª pergunta (voo + hospedagem + passeios, todas as pessoas). Não descarte informação que o usuário já deu.
 
-10b. O QUE criar_viagem CARREGA: se o usuário informou número de adultos, idades das crianças ou cidade de partida, passe nos campos adultos, criancas_idades e origem (só o que ele escreveu; viajantes continua sendo o total). criar_viagem NÃO carrega roteiro, lugares, horários nem restaurantes: o KINU monta o roteiro a partir do próprio catálogo. Se o usuário colou um roteiro pronto, diga isso com clareza ANTES de emitir a ferramenta e NÃO afirme que manteve lugar, horário ou restaurante algum.
+10b. ROTEIRO PRONTO: (a) se a mensagem traz um roteiro organizado por dia (2 ou mais dias com lugares) E o usuário pede para usar ou manter esse roteiro, emita importar_roteiro; caso contrário, criar_viagem (que NÃO carrega roteiro: o KINU monta a partir do próprio catálogo; adultos, criancas_idades e origem seguem como o usuário escreveu, viajantes é o total). (b) Em importar_roteiro, copie os nomes dos lugares EXATAMENTE como o usuário escreveu, sem traduzir nem corrigir. (c) NÃO inclua em itens: voo, chegada, check-in, check-out, ida ao aeroporto, nem linha sem lugar ("jantar livre", "tarde livre") — a logística é do KINU. data_ida é a data do PRIMEIRO dia do roteiro no destino (o dia da chegada) e data_volta a do ÚLTIMO dia no destino. (d) É PROIBIDO afirmar quais lugares existem no catálogo ou que algo foi "mantido": diga em UMA frase que o cartão mostra quantos lugares o KINU reconheceu e quais ficam como "Do seu roteiro", e que a tela da viagem avisa o que cai em dia fechado. (e) Destino fora da lista de DESTINOS DISPONÍVEIS: diga que o KINU ainda não tem catálogo dessa cidade e que a importação não está disponível para ela; não emita ferramenta. (f) Faltando datas ou viajantes, pergunte APENAS o que falta. (g) adultos, criancas_idades e origem seguem valendo como em criar_viagem.
 
 11. OFERTAS: quando o usuário pedir para verificar preços ou ofertas da viagem ativa, emita verificar_ofertas.
 
@@ -231,6 +231,47 @@ const KINU_TOOLS = [
         prioridades: { type: "array", items: { type: "string" }, description: "Prioridades do usuário em palavras simples (ex: conforto, gastronomia, economia)" },
       },
       required: ["destino", "data_ida", "data_volta", "viajantes"],
+    },
+  },
+  {
+    name: "importar_roteiro",
+    description: "Propõe importar o roteiro por dia que o usuário colou, usando destino das DESTINOS DISPONÍVEIS. O app mostra um cartão e o usuário confirma; nada é resolvido no servidor.",
+    input_schema: {
+      type: "object",
+      properties: {
+        destino: { type: "string", description: "LITERAL da lista de DESTINOS DISPONÍVEIS" },
+        data_ida: { type: "string", description: "YYYY-MM-DD — data do PRIMEIRO dia do roteiro no destino (dia da chegada)" },
+        data_volta: { type: "string", description: "YYYY-MM-DD — data do ÚLTIMO dia do roteiro no destino" },
+        viajantes: { type: "number", description: "Total de pessoas (adultos + crianças)" },
+        adultos: { type: "integer", description: "Número de adultos. Preencher SOMENTE se o usuário escreveu; nunca deduzir." },
+        criancas_idades: { type: "array", items: { type: "integer", minimum: 0, maximum: 17 }, description: "Idade de cada criança, como o usuário escreveu. Preencher SOMENTE com o que ele disse; nunca deduzir." },
+        origem: { type: "string", description: "Cidade de partida em português, SOMENTE se o usuário disse. Nunca deduzir." },
+        orcamento_total: { type: "number", description: "Orçamento TOTAL da viagem em BRL, se o usuário mencionou" },
+        dias: {
+          type: "array", maxItems: 10,
+          description: "Dias do roteiro do usuário, na ordem. Máximo 40 itens no total.",
+          items: {
+            type: "object",
+            properties: {
+              dia: { type: "integer", minimum: 1, description: "Número do dia a partir de 1 (1 = dia da chegada)" },
+              itens: {
+                type: "array", maxItems: 8,
+                items: {
+                  type: "object",
+                  properties: {
+                    hora: { type: "string", description: "HH:MM, opcional" },
+                    nome: { type: "string", maxLength: 80, description: "Nome do lugar EXATAMENTE como o usuário escreveu" },
+                    tipo: { type: "string", enum: ["refeicao", "passeio", "outro"] },
+                  },
+                  required: ["nome", "tipo"],
+                },
+              },
+            },
+            required: ["dia", "itens"],
+          },
+        },
+      },
+      required: ["destino", "data_ida", "data_volta", "viajantes", "dias"],
     },
   },
   {
@@ -498,6 +539,10 @@ function resolveConsultarCatalogo(input: Record<string, unknown>): string {
 }
 
 // Input sanitization helpers
+// Limite por mensagem (a nova e cada uma das 10 do histórico). Mantê-los iguais evita que o roteiro colado
+// seja cortado mais cedo ao voltar no histórico do turno seguinte.
+const MAX_MESSAGE_CHARS = 6000;
+
 function sanitizeText(input: unknown, maxLength: number): string {
   if (typeof input !== "string") return "";
   return input.replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, maxLength);
@@ -522,7 +567,7 @@ function sanitizeHistory(input: unknown): ChatMessage[] {
     )
     .map((m) => ({
       role: m.role,
-      content: m.content.slice(0, 5000),
+      content: m.content.slice(0, MAX_MESSAGE_CHARS),
     }));
 }
 
@@ -582,7 +627,11 @@ serve(async (req) => {
     const body: RequestBody = await req.json();
     
     // Validate and sanitize inputs
-    const message = sanitizeText(body.message, 2000);
+    const rawMessage = sanitizeText(body.message, MAX_MESSAGE_CHARS + 1);
+    const wasCut = rawMessage.length > MAX_MESSAGE_CHARS;
+    const message = wasCut
+      ? rawMessage.slice(0, MAX_MESSAGE_CHARS) + "\n\n[Nota do sistema: a mensagem do usuário passou do limite de " + MAX_MESSAGE_CHARS + " caracteres e foi cortada aqui. Avise o usuário de que o final do texto não foi lido e peça que reenvie o que faltou.]"
+      : rawMessage;
     if (!message) {
       return new Response(
         JSON.stringify({ error: "Mensagem não pode estar vazia." }),
@@ -883,7 +932,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-6",
-          max_tokens: 1024,
+          max_tokens: 2048,
           system: systemPrompt,
           tools: KINU_TOOLS,
           messages: messages,

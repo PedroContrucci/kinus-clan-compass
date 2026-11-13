@@ -12,6 +12,7 @@ import { kinuAuthHeaders } from "@/lib/kinuAuthHeader";
 import { buildDraftTrip } from "@/lib/createTrip";
 import { addTrip, listTrips, type StoredTrip } from "@/lib/tripStore";
 import { finishFlowTrip, kinuDidLines } from "@/lib/onboardingFlow";
+import { buildAgentImport, type ImportAgentParams } from "@/lib/importAgent";
 import { agentCity, nearestCatalogCities, planFromAgent } from "@/lib/destinationPicker";
 import { readCachedPrefs } from "@/lib/onboarding";
 import { razaoLines, razaoTotals } from "@/lib/razaoLines";
@@ -639,6 +640,36 @@ export function KinuAIProvider({ children }: { children: ReactNode }) {
             timestamp: new Date(),
           }]);
           setIsOpen(false);
+        }
+      })();
+      return;
+    }
+
+    if (action.type === 'importar_roteiro') {
+      const p = (action.params ?? {}) as ImportAgentParams;
+      setActionStatus(messageId, actionIndex, 'applied');
+      (async () => {
+        try {
+          const out = await buildAgentImport(p, (readCachedPrefs() as Record<string, unknown>).home_city);
+          if (out.ok === false) {
+            setActionStatus(messageId, actionIndex, 'dismissed');
+            setMessages(prev => [...prev, { id: `msg-${Date.now()}-imp-erro`, role: 'assistant', content: out.message, timestamp: new Date() }]);
+            return;
+          }
+          addTrip(out.trip);
+          trackTripCreated(out.trip, 'kinu_ai');
+          setPendingNavigation({ destino: 'painel', ts: Date.now(), tripId: out.trip.id });
+          setMessages(prev => [...prev, {
+            id: `msg-${Date.now()}-ack`,
+            role: 'assistant',
+            content: `✈️ Rascunho de ${out.city} criado com o seu roteiro${out.cut ? ' (cortado em 40 itens)' : ''} — revisa e ativa quando estiver do seu jeito!`,
+            timestamp: new Date(),
+          }]);
+          setIsOpen(false);
+        } catch (err) {
+          console.error('[importar_roteiro] failed', err);
+          setActionStatus(messageId, actionIndex, 'dismissed');
+          setMessages(prev => [...prev, { id: `msg-${Date.now()}-imp-erro`, role: 'assistant', content: 'Não consegui importar esse roteiro. Nada foi criado.', timestamp: new Date() }]);
         }
       })();
       return;

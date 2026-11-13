@@ -7,6 +7,7 @@ export type ProposedActionType =
   | 'sugerir_destinos'
   | 'navegar_para'
   | 'criar_viagem'
+  | 'importar_roteiro'
   | 'verificar_ofertas';
 
 export interface ProposedAction {

@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useKinuAI } from "@/contexts/KinuAIContext";
 import { describeTravelers } from "@/lib/destinationPicker";
+import { importCardLines, type ImportAgentParams } from "@/lib/importAgent";
 
 interface KinuAIMessageProps {
   message: KinuMessage;
@@ -30,6 +31,8 @@ function describeAction(action: ProposedAction): string {
     }
     case 'criar_viagem':
       return `✈️ Planejar ${p.destino ?? '—'} · ${p.data_ida ?? '—'} → ${p.data_volta ?? '—'} · ${describeTravelers(p)}${typeof p.origem === 'string' && p.origem.trim() ? ` · saindo de ${p.origem.trim()}` : ''}`;
+    case 'importar_roteiro':
+      return importCardLines(p as ImportAgentParams).lines.join('\n');
     case 'verificar_ofertas':
       return '🔍 Verificar ofertas de voo agora';
     default:
@@ -76,7 +79,7 @@ export function KinuAIMessage({ message }: KinuAIMessageProps) {
                   key={`${message.id}-act-${idx}`}
                   className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-3 py-2"
                 >
-                  <p className="text-xs text-foreground leading-snug">
+                  <p className="text-xs text-foreground leading-snug whitespace-pre-line">
                     <span className="mr-1">🤖</span>
                     {describeAction(action)}
                   </p>
@@ -87,7 +90,7 @@ export function KinuAIMessage({ message }: KinuAIMessageProps) {
                         onClick={() => applyProposedAction(message.id, idx)}
                         className="px-3 py-3 text-[13px] font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
                       >
-                        {action.type === 'sugerir_destinos' ? '✓ Ver no mapa' : action.type === 'navegar_para' ? 'Abrir' : action.type === 'criar_viagem' ? 'Começar planejamento' : action.type === 'verificar_ofertas' ? 'Verificar' : '✓ Aplicar'}
+                        {action.type === 'sugerir_destinos' ? '✓ Ver no mapa' : action.type === 'navegar_para' ? 'Abrir' : action.type === 'criar_viagem' ? 'Começar planejamento' : action.type === 'importar_roteiro' ? 'Importar roteiro' : action.type === 'verificar_ofertas' ? 'Verificar' : '✓ Aplicar'}
                       </button>
                       <button
                         type="button"
