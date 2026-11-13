@@ -1,4 +1,5 @@
 import { dayAlert } from '@/lib/seasonal';
+import { closedWeekdayOf, WEEKDAY_NAME } from '@/lib/importItinerary';
 import { useState, type ReactNode, type Ref } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -140,6 +141,10 @@ export const RoteiroLinha = ({
   const canClose = !!onCheck && requiresBooking(activity) && activity.status !== 'confirmed' && activity.status !== 'cancelled';
   const closeLinks = onCheck && city ? passeioCloseLinks(activity, city, date) : [];
   const confirmed = activity.status === 'confirmed';
+  const flags = activity as { importedFrom?: unknown; foraDaJanela?: unknown };
+  const isUser = flags.importedFrom === 'user';
+  const foraDaJanela = flags.foraDaJanela === true;
+  const closedWd = date && !isNaN(date.getTime()) ? closedWeekdayOf(activity, format(date, 'yyyy-MM-dd')) : null;
   const price = priceBRL ?? activity.cost;
   const paid = confirmed && activity.paidAmount ? activity.paidAmount : 0;
   const detailId = `roteiro-detalhe-${activity.id}`;
@@ -196,6 +201,8 @@ export const RoteiroLinha = ({
             {activity.duration && <span className="text-muted-foreground font-normal"> · {activity.duration}</span>}
             {paid > 0 ? (
               <span className="text-emerald-400 font-normal"> · ✓ {brl(paid)}</span>
+            ) : (activity as { semValor?: boolean }).semValor === true ? (
+              <span className="text-muted-foreground font-normal"> · sem valor</span>
             ) : price > 0 ? (
               <span className="text-muted-foreground font-normal"> · ~{brl(price)}</span>
             ) : null}
@@ -205,6 +212,24 @@ export const RoteiroLinha = ({
           </span>
         </button>
       </div>
+
+      {(isUser || closedWd !== null || foraDaJanela) && (
+        <div className="pl-9 pr-2 pb-1 flex flex-wrap gap-1">
+          {isUser && (
+            <span data-testid="roteiro-selo-importado" className="rounded-lg border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">Do seu roteiro</span>
+          )}
+          {closedWd !== null && (
+            <span data-testid="roteiro-aviso-fechado" className="rounded-lg border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-600">
+              ⚠️ Fechado neste dia da semana ({WEEKDAY_NAME[closedWd]})
+            </span>
+          )}
+          {foraDaJanela && (
+            <span data-testid="roteiro-aviso-janela" className="rounded-lg border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-600">
+              ⚠️ Não cabe antes do voo de volta
+            </span>
+          )}
+        </div>
+      )}
 
       {expanded && (
         <div id={detailId} className="pl-9 pr-2 pb-3 space-y-2 text-sm">
@@ -307,6 +332,7 @@ export const RoteiroDia = ({
   const routeLabel = routeLabelOf(activities, routeMinutes);
   const isAnchorCost = (a: TripActivity) => a.category === 'voo' || a.category === 'hotel';
   const dayTotal = activities.filter((a) => !isAnchorCost(a)).reduce((s, a) => s + (a.cost || 0), 0);
+  const semValorN = activities.filter((a) => !isAnchorCost(a) && (a as { semValor?: boolean }).semValor === true).length;
   const dateLabel = date && !isNaN(date.getTime())
     ? `${format(date, 'dd/MMM', { locale: ptBR })} (${format(date, 'EEEE', { locale: ptBR }).replace(/-feira$/, '')})`
     : null;
@@ -314,7 +340,7 @@ export const RoteiroDia = ({
     `Dia ${dayNumber}`,
     dateLabel,
     `${activities.length} ${activities.length === 1 ? 'item' : 'itens'}`,
-    dayTotal > 0 ? brl(dayTotal) : null,
+    dayTotal > 0 || semValorN > 0 ? `${dayTotal > 0 ? brl(dayTotal) : ''}${semValorN > 0 ? `${dayTotal > 0 ? ' · ' : ''}${semValorN} sem valor` : ''}` : null,
   ].filter(Boolean).join(' · ');
   const closureAlertText = dayAlert(destination, date);
   const anyOpen = activities.some((a) => expandedIds.has(a.id));

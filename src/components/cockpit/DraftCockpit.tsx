@@ -20,7 +20,8 @@ import { useFlightSearch } from '@/hooks/useFlightSearch';
 import { airfarePaxOf } from '@/lib/pax';
 import { flightSearchRoute } from '@/lib/timezone';
 import { buildItineraryForTrip, countManualEdits, itemIdsOf } from '@/lib/draftItinerary';
-import { replanTrip, unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
+import { unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
+import { replanFor, needsRegenerateConfirm } from '@/lib/importItinerary';
 import { KinuDidCard, type KinuDidRow } from '@/components/onboarding/KinuDidCard';
 import { applyOriginChange } from '@/lib/onboardingFlow';
 import { KinuAnalysisCard } from './KinuAnalysisCard';
@@ -207,7 +208,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   // Regerar: motor único com os voos dados → dias + finanças gravados no rascunho.
   // A etapa de roteiro remonta (regenKey) para renderizar os dias novos.
   const [regenKey, setRegenKey] = useState(0);
-  const [pendingRegen, setPendingRegen] = useState<{ edits: number; run: () => void } | null>(null);
+  const [pendingRegen, setPendingRegen] = useState<{ edits: number; run: () => void; imported?: boolean } | null>(null);
 
   // `preserveEdits` (troca de perna, R-V11): edições reaplicadas; as que não cabem voltam
   // para o aviso e ficam em `unplacedEdits`. Sem ele ("Regerar roteiro"), do zero.
@@ -217,7 +218,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     const legs = { outbound, return: returnFlight };
     const built = opts.preserveEdits
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? replanTrip(withFlights as any, legs)
+      ? replanFor(withFlights as unknown as { importedFrom?: unknown })(withFlights as any, legs)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       : { ...buildItineraryForTrip(withFlights as any, legs), unplaced: [] as UnplacedEdit[] };
     onSave({
@@ -377,11 +378,14 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     const out = selectedOutbound;
     const ret = selectedReturn;
     if (!out || !ret) return;
-    confirmIfEdited(edits, () => {
+    const run = () => {
       regenerateWith(out, ret);
       toast({ title: "Roteiro refeito" });
-    });
-  }, [selectedOutbound, selectedReturn, confirmIfEdited, regenerateWith]);
+    };
+    // Roteiro trazido pelo usuário: sempre confirma (regerar substitui todos os dias).
+    if (needsRegenerateConfirm(trip as unknown as { importedFrom?: unknown })) setPendingRegen({ edits, run, imported: true });
+    else confirmIfEdited(edits, run);
+  }, [trip, selectedOutbound, selectedReturn, confirmIfEdited, regenerateWith]);
 
   // Salvar e Ativar leem a viagem gravada: toda edição (remover/trocar/adicionar) já
   // escreveu em trip.days via updateTrip, e voos/finanças são gravados na escolha/regeração.
@@ -423,13 +427,15 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
         <AlertDialogHeader>
           <AlertDialogTitle>Refazer o roteiro?</AlertDialogTitle>
           <AlertDialogDescription>
-            Isso refaz o roteiro e desfazer {pendingRegen?.edits} {pendingRegen?.edits === 1 ? 'troca sua' : 'trocas suas'}. Continuar?
+            {pendingRegen?.imported
+              ? 'Este roteiro foi trazido por você. Regerar substitui todos os dias por um roteiro montado pelo KINU.'
+              : `Isso refaz o roteiro e desfazer ${pendingRegen?.edits} ${pendingRegen?.edits === 1 ? 'troca sua' : 'trocas suas'}. Continuar?`}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel>{pendingRegen?.imported ? 'Manter meu roteiro' : 'Cancelar'}</AlertDialogCancel>
           <AlertDialogAction onClick={() => { const run = pendingRegen?.run; setPendingRegen(null); run?.(); }}>
-            Continuar
+            {pendingRegen?.imported ? 'Regerar mesmo assim' : 'Continuar'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

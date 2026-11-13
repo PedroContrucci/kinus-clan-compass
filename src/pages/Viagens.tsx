@@ -32,7 +32,8 @@ import type { SuggestedActivity } from '@/data/destinationActivities';
 import { getFlightPlannedTotal } from '@/lib/flightFinance';
 import { airfarePaxOf } from '@/lib/pax';
 import { getTrip, listTrips, normalizeTrip, subscribeTrips, updateTrip, type StoredTrip } from '@/lib/tripStore';
-import { retimeConfirmedLegs, unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
+import { unplacedMessage, type UnplacedEdit } from '@/lib/replanItinerary';
+import { retimeLegsFor } from '@/lib/importItinerary';
 import { trackEvent } from '@/lib/kinuEvents';
 import { addCatalogActivityToDay, applyTripPlannedCostDelta, calculateTripProgress } from '@/lib/tripItineraryOps';
 import { itemKindOf, trackTripActivated, trackTripItemConfirmed } from '@/lib/tripEvents';
@@ -649,7 +650,7 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
 
         // Hora de saída nova → chegada recalculada; se D+n / dia 1 / último dia mudam, o
         // roteiro é replanejado preservando edições (R-V11) e avisado abaixo.
-        const retimed = retimeConfirmedLegs(updatedTrip, legsBefore);
+        const retimed = retimeLegsFor(updatedTrip, legsBefore);
         updatedTrip = retimed.trip;
         if (retimed.replanned) replan = { unplaced: retimed.unplaced };
       } else {
@@ -1755,7 +1756,12 @@ const Viagens = ({ tripId, onExit }: ViagensProps = {}) => {
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-[#94a3b8] text-sm">{confirmModal?.activity.name}</p>
-              {confirmModal?.activity.cost === 0 && (
+              {confirmModal?.activity.cost === 0 && (confirmModal.activity as { semValor?: boolean }).semValor === true && (
+                <p className="text-xs text-muted-foreground bg-muted border border-border rounded-lg px-3 py-2">
+                  Sem valor estimado · item do seu roteiro
+                </p>
+              )}
+              {confirmModal?.activity.cost === 0 && (confirmModal.activity as { semValor?: boolean }).semValor !== true && (
                 <p className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
                   Atividade gratuita — confirme para marcar como concluída
                 </p>

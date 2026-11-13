@@ -14,7 +14,7 @@ import { followPlanEnvelope } from '@/lib/planTotals';
 import { catalogIdOf } from '@/lib/localAchievements';
 import { isCityCurated } from '@/lib/curatedCities';
 import { paxOf } from '@/lib/pax';
-import { replanTrip } from '@/lib/replanItinerary';
+import { replanTrip, retimeConfirmedLegs, type UnplacedEdit } from '@/lib/replanItinerary';
 import { buildDraftTrip, type DraftTripDeps, type DraftTripInput } from '@/lib/createTrip';
 import type { SelectedFlight } from '@/lib/itineraryEngine';
 import type { SavedTrip, TripActivity, TripDay } from '@/types/trip';
@@ -93,7 +93,7 @@ export function closedWeekdayOf(activity: { id: string }, dateISO: string): numb
   return opensOn(catalogIdOf(activity.id), wd) ? null : wd;
 }
 
-const WEEKDAY_NAME = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+export const WEEKDAY_NAME = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
 // ── A3: janela do dia do voo de volta (só avisa) ─────────────────────────────────────────────────
 
@@ -329,13 +329,36 @@ const isImported = (a: object): boolean => {
  */
 export function replanImportedTrip(trip: Parameters<typeof replanTrip>[0], flights: { outbound: SelectedFlight; return: SelectedFlight }): ReturnType<typeof replanTrip> {
   const r = replanTrip(trip, flights);
+  const fixed = restoreImported((trip.days ?? []) as TripDay[], r.days as TripDay[], r.unplaced);
+  return { ...r, days: fixed.days as unknown as typeof r.days, unplaced: fixed.unplaced };
+}
+
+/** Decisão pura: que função de replanejamento vale para esta viagem (troca de voo). */
+export const replanFor = (trip: { importedFrom?: unknown }) => (trip.importedFrom === 'user' ? replanImportedTrip : replanTrip);
+
+/** Viagem importada precisa de confirmação antes de "Regerar roteiro" (apaga todos os dias). */
+export const needsRegenerateConfirm = (trip: { importedFrom?: unknown }): boolean => trip.importedFrom === 'user';
+
+/**
+ * Troca de hora de voo confirmado (Viagens): `retimeConfirmedLegs` replaneja com `replanTrip` (arquivo
+ * intocável); para viagem importada, o resultado é corrigido aqui com a mesma restauração de replanImportedTrip.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function retimeLegsFor<T extends Record<string, any>>(trip: T, before: Parameters<typeof retimeConfirmedLegs>[1]): ReturnType<typeof retimeConfirmedLegs<T>> {
+  const res = retimeConfirmedLegs(trip, before);
+  if (trip.importedFrom !== 'user' || !res.replanned) return res;
+  const fixed = restoreImported((trip.days ?? []) as TripDay[], (res.trip.days ?? []) as TripDay[], res.unplaced);
+  return { ...res, trip: { ...res.trip, days: fixed.days, unplacedEdits: fixed.unplaced }, unplaced: fixed.unplaced };
+}
+
+function restoreImported(originalDays: TripDay[], newDays: TripDay[], unplaced: UnplacedEdit[]): { days: TripDay[]; unplaced: UnplacedEdit[] } {
   type Act = TripActivity & Record<string, unknown>;
   const original = new Map<string, { day: number; a: Act }>();
-  for (const d of (trip.days ?? []) as TripDay[]) {
+  for (const d of originalDays) {
     for (const a of d.activities as Act[]) if (isImported(a)) original.set(a.id, { day: Number(d.day), a });
   }
-  const unplacedIds = new Set(r.unplaced.map((u) => u.id));
-  const days = (r.days as TripDay[]).map((d) => ({
+  const unplacedIds = new Set(unplaced.map((u) => u.id));
+  const days = newDays.map((d) => ({
     ...d,
     activities: (d.activities as Act[])
       .filter((a) => isLogistics(a) || isImported(a))
@@ -353,5 +376,5 @@ export function replanImportedTrip(trip: Parameters<typeof replanTrip>[0], fligh
     d.activities.sort(byTime);
   }
   for (const d of days) d.activities.sort(byTime);
-  return { ...r, days: days as unknown as typeof r.days, unplaced: r.unplaced.filter((u) => !original.has(u.id)) };
+  return { days: days as TripDay[], unplaced: unplaced.filter((u) => !original.has(u.id)) };
 }

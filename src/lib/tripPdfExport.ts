@@ -1473,7 +1473,7 @@ export async function exportTripPDF(trip: SavedTrip, displayName?: string, email
 
       doc.text(nextDay ? `${actName} (+1)` : actName, 38, y);
 
-      const priceStr = act.cost > 0 ? `R$ ${fmt(act.cost)}` : '';
+      const priceStr = (act as { semValor?: boolean }).semValor === true ? 'sem valor' : act.cost > 0 ? `R$ ${fmt(act.cost)}` : '';
       if (priceStr) {
         if (act.status === 'confirmed') {
           drawStatusDot(pw - 16 - doc.getTextWidth(priceStr) - 4, y - 0.5, B.emerald);
