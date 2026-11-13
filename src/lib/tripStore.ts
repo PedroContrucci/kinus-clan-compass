@@ -149,6 +149,11 @@ function normalizeTripDays(days: any[] = []): SavedTrip['days'] {
             ...(activity?.kind ? { kind: activity.kind } : {}),
             ...(activity?.location ? { location: activity.location } : {}),
             ...(activity?.edited ? { edited: true } : {}),
+            // M22b-4: marcas da importação (sem elas a tela perde selo, "sem valor" e aviso de janela).
+            ...(activity?.importedFrom ? { importedFrom: activity.importedFrom } : {}),
+            ...(activity?.importedName ? { importedName: activity.importedName } : {}),
+            ...(activity?.semValor === true ? { semValor: true } : {}),
+            ...(activity?.foraDaJanela === true ? { foraDaJanela: true } : {}),
           } as TripActivity;
         })
       : [];

@@ -161,13 +161,18 @@ export function kinuDidLines(trip: any): KinuDidLines {
     if (/^day-\d+-/.test(String(a?.id ?? '')) && id && (!cityTiers || id.includes('-'))) ids.add(id);
   }
   const imported = trip.importedFrom === 'user';
-  let userItems = 0, recognized = 0;
-  if (imported) for (const d of days) for (const a of d.activities ?? []) {
-    if (a?.importedFrom === 'user') userItems += 1;
-    else if (typeof a?.importedName === 'string') { userItems += 1; recognized += 1; }
+  let userItems = 0, recognized = 0, userDays = 0;
+  if (imported) for (const d of days) {
+    let n = 0;
+    for (const a of d.activities ?? []) {
+      if (a?.importedFrom === 'user') n += 1;
+      else if (typeof a?.importedName === 'string') { n += 1; recognized += 1; }
+    }
+    userItems += n;
+    if (n > 0) userDays += 1;
   }
   const base = imported
-    ? `${days.length} dias com ${userItems} itens do seu roteiro · ${recognized} reconhecidos no catálogo`
+    ? `${userItems} itens do seu roteiro em ${userDays} dias · ${recognized} reconhecidos no catálogo`
     : `${days.length} dias com ${ids.size} atividades do catálogo`;
   const { used, ignored } = splitInterests(trip.destination, trip.travelInterests);
   const itinerary = ignored.length && !imported

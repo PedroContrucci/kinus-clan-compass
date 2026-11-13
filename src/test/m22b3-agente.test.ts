@@ -33,7 +33,7 @@ describe('M22b-3 — importar_roteiro', () => {
     expect(lines[2]).toMatch(/^1 em dia fechado$/);
     expect(lines).toHaveLength(3);
     // "O que o KINU fez": dias da viagem (6, com o dia do voo), não do roteiro; só muda para viagem importada
-    expect(kinuDidLines(out.trip).itinerary).toBe('6 dias com 15 itens do seu roteiro · 12 reconhecidos no catálogo');
+    expect(kinuDidLines(out.trip).itinerary).toBe('15 itens do seu roteiro em 5 dias · 12 reconhecidos no catálogo');
   });
 
   it('Cusco → recusa, nada criado', async () => {
