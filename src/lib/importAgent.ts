@@ -12,7 +12,7 @@ import type { StoredTrip } from '@/lib/tripStore';
 export const AGENT_IMPORT_LIMITS = { dias: 10, itensPorDia: 8, itens: 40 } as const;
 
 export interface ImportAgentParams extends AgentPlanParams {
-  dias?: { dia?: number; itens?: { hora?: string; nome?: string; tipo?: string }[] }[];
+  dias?: { dia?: number; itens?: { hora?: string; nome?: string; tipo?: string; periodo?: string }[] }[];
 }
 
 const ymdParts = (s: string) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
@@ -31,7 +31,7 @@ export function normalizeImportDays(raw: unknown): { days: ImportDay[]; cut: boo
     const itens: ImportItem[] = [];
     for (const i of valid.slice(0, AGENT_IMPORT_LIMITS.itensPorDia)) {
       if (total >= AGENT_IMPORT_LIMITS.itens) { cut = true; break; }
-      itens.push({ nome: i.nome.trim().slice(0, IMPORT_LIMITS.nome), hora: i.hora, tipo: i.tipo as ImportItem['tipo'] });
+      itens.push({ nome: i.nome.trim().slice(0, IMPORT_LIMITS.nome), hora: i.hora, tipo: i.tipo as ImportItem['tipo'], ...(i.periodo ? { periodo: i.periodo } : {}) });
       total += 1;
     }
     days.push({ dia: d.dia, itens });
@@ -47,12 +47,15 @@ export function importCardLines(p: ImportAgentParams): ImportCardInfo {
   const city = agentCity(String(p.destino ?? '')) ?? String(p.destino ?? '');
   const first = /^\d{4}-\d{2}-\d{2}$/.test(String(p.data_ida)) ? ymdParts(p.data_ida) : null;
   const used = new Set<string>();
+  const sameDay = new Set<string>();
   let itens = 0, reconhecidos = 0, fechado = 0;
   for (const d of days) for (const it of d.itens) {
-    itens += 1;
     const m = matchPlace(it.nome, city);
+    const key = m.kind === 'reconhecido' ? matchKey(m.item.name) : '';
+    if (key && sameDay.has(`${d.dia}|${key}`)) continue; // M1: mesmo lugar no mesmo dia = um só
+    itens += 1;
+    if (key) sameDay.add(`${d.dia}|${key}`);
     if (m.kind !== 'reconhecido') continue;
-    const key = matchKey(m.item.name);
     if (used.has(key)) continue;
     used.add(key);
     reconhecidos += 1;

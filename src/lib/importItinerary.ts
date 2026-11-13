@@ -22,7 +22,9 @@ import type { SavedTrip, TripActivity, TripDay } from '@/types/trip';
 // ── Entrada (o que o agente entrega) ─────────────────────────────────────────────────────────────
 
 export type ImportItemKind = 'refeicao' | 'passeio' | 'outro';
-export interface ImportItem { nome: string; hora?: string; tipo?: ImportItemKind }
+export type ImportPeriod = 'cafe_da_manha' | 'manha' | 'almoco' | 'tarde' | 'jantar' | 'noite';
+export const IMPORT_PERIODS: readonly ImportPeriod[] = ['cafe_da_manha', 'manha', 'almoco', 'tarde', 'jantar', 'noite'];
+export interface ImportItem { nome: string; hora?: string; tipo?: ImportItemKind; periodo?: ImportPeriod }
 /** `dia` é 1-based: o dia 1 é o da chegada ao destino (datas do roteiro = datas NO DESTINO). */
 export interface ImportDay { dia: number; itens: ImportItem[] }
 
@@ -142,9 +144,14 @@ function slotFor(meal: boolean, time: string): Slot {
   return h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'night';
 }
 
-/** Sem hora informada: o horário padrão do catálogo da casa (tripItineraryOps.defaultTimeFor), por classe. */
-const DEFAULT_TIME: Record<'meal' | 'tour', string> = { meal: '12:30', tour: '10:00' };
-const CATALOG_DEFAULT_TIME: Record<string, string> = { breakfast: '08:00', lunch: '12:30', dinner: '20:00', morning: '10:00', afternoon: '15:00', night: '21:00' };
+/** T2: hora padrão de cada período (vence a categoria do catálogo). */
+const PERIOD_TIME: Record<ImportPeriod, string> = {
+  cafe_da_manha: '08:00', manha: '10:00', almoco: '12:30', tarde: '15:00', jantar: '20:00', noite: '21:30',
+};
+const FIRST_OF_DAY = '10:00';
+const GAP_MIN = 30;
+const fmtMin = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+const periodOf = (raw: unknown): ImportPeriod | null => (IMPORT_PERIODS as readonly string[]).includes(String(raw)) ? (raw as ImportPeriod) : null;
 
 const byTime = (a: { time?: string }, b: { time?: string }) => (a.time || '99:99').localeCompare(b.time || '99:99');
 
@@ -187,7 +194,7 @@ export function applyImportedDays(base: SavedTrip, userDays: ImportDay[]): Impor
   const days: TripDay[] = baseDays.map((d) => ({ ...d, activities: d.activities.filter((a) => isLogistics(a)) }));
 
   const resumo: ImportSummary = { dias: 0, itens: 0, reconhecidos: [], livres: [], semValor: 0, emDiaFechado: [], foraDaJanela: [] };
-  const usedPlaces = new Set<string>();
+  const usedPlaces = new Map<string, number>(); // chave do lugar → índice do dia (M1)
   const usedIds = new Set<string>();
 
   const sorted = [...userDays].sort((a, b) => a.dia - b.dia);
@@ -199,19 +206,38 @@ export function applyImportedDays(base: SavedTrip, userDays: ImportDay[]): Impor
     const n = Number(day.day) - 1; // `day-<n>-…`: n = dayNumber − 1, como o motor grava
     resumo.dias += 1;
 
+    // T5: no dia da chegada, item sem hora explícita não fica antes do fim do check-in.
+    const ci = day.activities.find((a) => /-slot-checkin$/.test(a.id));
+    const checkinEnd = ci && cleanTime(ci.time) ? toMin(String(ci.time)) + Math.max(durationMinutesOf(ci.duration), 30) : null;
+    let prevEnd: number | null = null; // fim do item anterior do dia, em minutos
+
     for (const raw of ud.itens.slice(0, IMPORT_LIMITS.itensPorDia)) {
       const nome = cleanName(raw?.nome);
       if (!nome) continue;
-      resumo.itens += 1;
       const hora = cleanTime(raw.hora);
+      const periodo = periodOf(raw.periodo);
       const match = matchPlace(nome, city);
       const placeKey = match.kind === 'reconhecido' ? matchKey(match.item.name) : '';
+      // M1: o mesmo lugar do catálogo duas vezes no MESMO dia vira um só (fica o primeiro).
+      if (placeKey && usedPlaces.get(placeKey) === idx) continue;
+      resumo.itens += 1;
+
+      // T1–T5: horário do item, na ordem do usuário.
+      const timeFor = (durationMin: number): string => {
+        if (hora) { prevEnd = toMin(hora) + durationMin; return hora; }
+        let t = periodo ? toMin(PERIOD_TIME[periodo]) : prevEnd !== null ? prevEnd + GAP_MIN : toMin(FIRST_OF_DAY);
+        if (prevEnd !== null && t < prevEnd) t = prevEnd + GAP_MIN; // T4
+        if (checkinEnd !== null && t < checkinEnd) t = checkinEnd + GAP_MIN; // T5 (jantar/noite já passam)
+        prevEnd = t + durationMin;
+        return fmtMin(Math.min(t, 23 * 60 + 59));
+      };
 
       if (match.kind === 'reconhecido' && !usedPlaces.has(placeKey)) {
-        usedPlaces.add(placeKey);
+        usedPlaces.set(placeKey, idx);
         const cat = match.item;
         const meal = cat.category === 'breakfast' || cat.category === 'lunch' || cat.category === 'dinner';
-        const time = hora ?? CATALOG_DEFAULT_TIME[cat.category] ?? DEFAULT_TIME.tour;
+        const catMin = cat.durationHours ? Math.round(cat.durationHours * 60) : defaultMinutesOf({ name: cat.name, type: meal ? cat.category : 'experience' } as PlanDayItem);
+        const time = timeFor(catMin);
         const slot = slotFor(meal, time);
         const act: ItineraryActivity = convertToItineraryActivity(cat, n, slot, time, travelers, pax);
         act.type = meal ? (slot as ItineraryActivity['type']) : slot === 'night' ? 'night' : 'experience';
@@ -228,7 +254,7 @@ export function applyImportedDays(base: SavedTrip, userDays: ImportDay[]): Impor
 
       // Livre: sem casamento, ambíguo, ou segundo item do usuário no mesmo lugar do catálogo.
       const meal = raw.tipo === 'refeicao';
-      const time = hora ?? DEFAULT_TIME[meal ? 'meal' : 'tour'];
+      const time = timeFor(defaultMinutesOf({ name: nome, type: meal ? 'lunch' : 'experience' } as PlanDayItem));
       const slot = slotFor(meal, time);
       const category = meal ? 'comida' : 'passeio';
       const base_id = `day-${n}-import-${slugOf(nome)}`;
