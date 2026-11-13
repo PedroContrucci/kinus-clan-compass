@@ -16,6 +16,10 @@ const lower = (a: TripActivity) => (a.name || '').toLowerCase();
 
 /** Mesmo critério de logística que o cartão antigo usava (voo, check-in/out do hotel, transfer). */
 export function roteiroKind(a: TripActivity): RoteiroKind {
+  // M22b-1 (A5): item que o usuário trouxe nunca é logística nem "incluído" pelo nome — vai pela category.
+  if ((a as { importedFrom?: unknown }).importedFrom === 'user') {
+    return a.category === 'comida' || a.type === 'food' ? 'restaurante' : 'passeio';
+  }
   const n = lower(a);
   if (
     a.isHeroItem ||
