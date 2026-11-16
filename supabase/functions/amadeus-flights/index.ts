@@ -8,7 +8,7 @@ import { corsGate } from "../_shared/http.ts";
 const TP_BASE_URL = 'https://api.travelpayouts.com/aviasales/v3/prices_for_dates';
 
 const AIRLINE_NAMES: Record<string, string> = {
-  LA: 'LATAM', G3: 'GOL', AD: 'Azul', TP: 'TAP Air Portugal',
+  LA: 'LATAM', JJ: 'LATAM', G3: 'GOL', AD: 'Azul', TP: 'TAP Air Portugal',
   AF: 'Air France', EK: 'Emirates', IB: 'Iberia', LH: 'Lufthansa',
   AA: 'American Airlines', UA: 'United', DL: 'Delta', KL: 'KLM',
   BA: 'British Airways', TK: 'Turkish Airlines', QR: 'Qatar Airways',

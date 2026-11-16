@@ -164,19 +164,37 @@ export function explainPick(f: SelectedFlight): string {
 
 /**
  * A linha do voo escolhido, mesma função para os dois sujeitos:
- * "KINU escolheu: Azul · direto · chega 11:12 · R$ 636/pessoa · menor preço" /
- * "Você escolheu: Azul · direto · chega 21:05 · R$ 676/pessoa".
+ * "Você escolheu: Azul · direto · chega 21:05 · R$ 676/pessoa (ida)".
+ * Com `roundTrip` (painel "O que o KINU fez"): o valor é ida + volta por pessoa e o total vem de
+ * `finances.categories.flights.planned`, sem conta nova:
+ * "KINU escolheu: Azul · com escala · chega 11:00 (+1) · ida + volta R$ 7.413/pessoa · R$ 29.652 para 4 pagantes · menor preço".
  */
-export function flightChoiceLine(f: SelectedFlight): string {
+export function flightChoiceLine(
+  f: SelectedFlight,
+  roundTrip?: { returnFlight?: SelectedFlight; total: number; payers: number },
+): string {
   const subject = f.chosenBy === 'user' ? 'Você' : 'KINU';
+  const ret = roundTrip?.returnFlight;
+  const both = roundTrip && ret && Number.isFinite(Number(ret.option?.price)) && roundTrip.total > 0;
+  const estimated = both && (f.source === 'estimate' || ret.source === 'estimate');
+  const price = both
+    ? `ida + volta ${brl(f.option.price + ret.option.price)}/pessoa${estimated ? ' (com estimativa)' : ''} · ${brl(roundTrip.total)} para ${roundTrip.payers} ${roundTrip.payers === 1 ? 'pagante' : 'pagantes'}`
+    : `${brl(f.option.price)}/pessoa (ida)`;
   const parts = [
     f.option.airline,
     f.option.isDirect ? 'direto' : 'com escala',
     arrivalText(f),
-    `${brl(f.option.price)}/pessoa`,
+    price,
     ...(f.chosenBy === 'user' ? [] : pickReasons(f)),
   ];
   return `${subject} escolheu: ${parts.join(' · ')}`;
+}
+
+/** Aviso ao aplicar o voo do KINU: na viagem importada o roteiro do usuário é mantido; só os horários mudam. */
+export function flightAppliedNotice(imported: boolean): { title: string; description: string } {
+  return imported
+    ? { title: 'Voo do KINU aplicado', description: 'Seu roteiro foi mantido; só os horários do voo mudaram.' }
+    : { title: 'Voo do KINU aplicado ✈️', description: 'Roteiro refeito com os horários do voo.' };
 }
 
 /**

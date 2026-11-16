@@ -13,7 +13,7 @@ import type { DraftTripInput } from '@/lib/createTrip';
 import { interestLabel, splitInterests } from '@/lib/interestsFor';
 import { flightChoiceLine } from '@/lib/flightRanking';
 import { cityToIata } from '@/lib/timezone';
-import { paxLabel, paxOf } from '@/lib/pax';
+import { paxLabel, paxOf, airfarePaxOf } from '@/lib/pax';
 
 export const DEFAULT_ORIGIN = 'São Paulo';
 export type OriginSource = 'profile' | 'default' | 'user';
@@ -148,7 +148,11 @@ export function kinuDidLines(trip: any): KinuDidLines {
   const out = trip.outboundFlight;
   // Mesma linha para os dois sujeitos (KINU/Você); a ação "trocar ▸" é do card, não do texto.
   const flight = out?.chosenBy === 'user' || (out?.chosenBy === 'kinu' && out.kinuPick)
-    ? flightChoiceLine(out)
+    ? flightChoiceLine(out, {
+        returnFlight: trip.returnFlight,
+        total: Math.round(Number(trip.finances?.categories?.flights?.planned) || 0),
+        payers: airfarePaxOf(trip).payers,
+      })
     : realFlight
       ? `Voo escolhido · ida ${ddmm(trip.startDate)} · volta ${ddmm(trip.endDate)}`
       : `Voo estimado · ida ${ddmm(trip.startDate)} · volta ${ddmm(trip.endDate)} · ${flightPriceLabel(trip)}`;
@@ -185,7 +189,8 @@ export function kinuDidLines(trip: any): KinuDidLines {
   const amount = Number(trip.budget) || 0;
   const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`;
   const plan = planBreakdown(trip);
-  const budget = `${brl(amount)} — estimativa para ${paxLabel(paxOf(trip))}, ${nights} noites, perfil ${tierLabel(trip.budgetType)}${realFlight ? '' : ' · fecha ao escolher o voo'}`;
+  const budgetBase = `${paxLabel(paxOf(trip))}, ${nights} noites, perfil ${tierLabel(trip.budgetType)}`;
+  const budget = `${trip.budgetSource === 'user' ? `Teto informado: ${brl(amount)} · ${budgetBase}` : `${brl(amount)} — estimativa para ${budgetBase}`}${realFlight ? '' : ' · fecha ao escolher o voo'}`;
   const reserve = Math.max(0, amount - plan.total);
   const budgetDetail = `Custo estimado ${brl(plan.total)}: voo ${brl(plan.flights)}${realFlight ? '' : ` (${trip.outboundFlight?.priceSource === 'route' ? 'estimativa por rota' : 'estimativa genérica'})`} · hotel ${brl(plan.hotel)} · alimentação ${brl(plan.food)} · passeios ${brl(plan.tours)}`
     + (reserve > 0 && reserve === reserveFor(plan.total) ? ` · inclui reserva de ${Math.round(RESERVE_RATE * 100)}% (${brl(reserve)})` : '');

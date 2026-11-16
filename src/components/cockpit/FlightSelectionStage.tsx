@@ -446,7 +446,7 @@ export const FlightSelectionStage = ({
           
           <div className="text-right">
             <p className="font-bold text-lg text-foreground">
-              R$ {option.price.toLocaleString('pt-BR')}<span className="text-xs font-normal text-muted-foreground">/pessoa</span>
+              R$ {option.price.toLocaleString('pt-BR')}<span className="text-xs font-normal text-muted-foreground">/pessoa ({type === 'outbound' ? 'ida' : 'volta'})</span>
             </p>
             {isSelected && (
               <div className="mt-1 flex items-center justify-end text-primary">

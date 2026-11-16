@@ -157,9 +157,11 @@ describe('writeFlightsThrough — um objeto de voo para todo mundo (R-V12)', () 
   it('card e chip 06 dizem "KINU escolheu: …" (mesma linha, sem "· trocar" no texto)', async () => {
     const trip = await buildDraftTrip(draftInput(), { routeLookup: async () => null });
     const next = writeFlightsThrough(trip as unknown as Record<string, unknown>, pickBest(OUT)!, pickBest(OUT)!);
-    const line = 'KINU escolheu: Cia · direto · chega 12:00 (+1) · R$ 6.000/pessoa · menor preço entre os diretos · R$ 1.570 acima da média';
-    expect(kinuDidLines(next).flight).toBe(line);
-    expect(flightPillSubtitle(next as never)).toBe(line);
+    // M25b: o chip 06 é por perna ("(ida)"); o painel soma ida + volta e lê o total de flights.planned.
+    const pill = 'KINU escolheu: Cia · direto · chega 12:00 (+1) · R$ 6.000/pessoa (ida) · menor preço entre os diretos · R$ 1.570 acima da média';
+    const panel = `KINU escolheu: Cia · direto · chega 12:00 (+1) · ida + volta R$ 12.000/pessoa · R$ ${(next as unknown as { finances: { categories: { flights: { planned: number } } } }).finances.categories.flights.planned.toLocaleString('pt-BR')} para 2 pagantes · menor preço entre os diretos · R$ 1.570 acima da média`;
+    expect(kinuDidLines(next).flight).toBe(panel);
+    expect(flightPillSubtitle(next as never)).toBe(pill);
   });
 });
 

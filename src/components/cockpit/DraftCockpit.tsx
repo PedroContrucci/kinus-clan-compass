@@ -15,7 +15,7 @@ import type { StoredTrip } from '@/lib/tripStore';
 import { syncTripFlightPlannedFinances } from '@/lib/flightFinance';
 import { isKinuBuilt } from '@/lib/kinuBuilt';
 import { plannedFlightToSelected, offerToSelected, writeFlightsThrough, estimateOf } from '@/lib/flightModel';
-import { pickBest, explainPick, flightChoiceLine, flightSearchKey, shouldAutoSearch, type KinuFlightSearch } from '@/lib/flightRanking';
+import { pickBest, explainPick, flightChoiceLine, flightAppliedNotice, flightSearchKey, shouldAutoSearch, type KinuFlightSearch } from '@/lib/flightRanking';
 import { useFlightSearch } from '@/hooks/useFlightSearch';
 import { airfarePaxOf } from '@/lib/pax';
 import { flightSearchRoute } from '@/lib/timezone';
@@ -235,9 +235,9 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
   }, [trip, onSave]);
 
   /** Aviso da troca de perna: o que não coube, nunca silêncio. */
-  const toastReplanned = useCallback((unplaced: UnplacedEdit[], title: string) => {
+  const toastReplanned = useCallback((unplaced: UnplacedEdit[], title: string, override?: { title: string; description: string }) => {
     const msg = unplacedMessage(unplaced);
-    toast(msg ?? { title, description: 'Roteiro refeito com os horários do voo.' });
+    toast(msg ?? override ?? { title, description: 'Roteiro refeito com os horários do voo.' });
   }, []);
 
   /** Só pergunta quando há trocas manuais; sem trocas, executa direto. */
@@ -306,7 +306,7 @@ export const DraftCockpit = ({ trip, onSave, onActivate, onClose, onUpdateTrip, 
     setSelectedOutbound(out);
     setSelectedReturn(ret);
     const unplaced = regenerateWith(out, ret, { kinuFlightSearch: { ...rec, pending: false } }, { preserveEdits: true });
-    toastReplanned(unplaced, 'Voo do KINU aplicado ✈️');
+    toastReplanned(unplaced, 'Voo do KINU aplicado ✈️', flightAppliedNotice((trip as { importedFrom?: string }).importedFrom === 'user'));
   }, [trip, regenerateWith, toastReplanned]);
 
   // Ofertas para a lista: gravadas (sem nova chamada) ou em busca agora; senão o estágio busca.

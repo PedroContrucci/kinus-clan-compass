@@ -220,7 +220,7 @@ describe('C.2.1 — escolha do usuário persiste', () => {
 
     fireEvent.click(row()); // fecha pela linha → replaneja
     expect(document.querySelector('[data-panel="flight"]')).toBeNull();
-    expect(screen.getByText('Você escolheu: Gol · direto · chega 03:00 (+1) · R$ 631/pessoa')).toBeTruthy();
+    expect(screen.getByText('Você escolheu: Gol · direto · chega 03:00 (+1) · ida + volta R$ 1.528/pessoa · R$ 3.056 para 2 pagantes')).toBeTruthy();
 
     fireEvent.click(row()); // reabre
     expect(latest.trip.outboundFlight).toMatchObject({ chosenBy: 'user', option: { id: 'Gol-0300', price: 631 } });
