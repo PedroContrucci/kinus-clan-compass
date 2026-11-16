@@ -113,6 +113,34 @@ export function outsideDayWindow(time: string, durationMin: number, returnDepart
   return toMin(time) + Math.max(0, durationMin) > end;
 }
 
+/**
+ * M25a: por que o item do dia do voo de volta é avisado — pelo que a tela mostra (hora + duração do item contra os
+ * itens de logística DO PRÓPRIO DIA). 'voo' = passa da janela ou do início do transfer; 'checkout' = sobrepõe o
+ * check-out; null = sem aviso. Mesma conta na importação e depois da troca de voo.
+ */
+export function janelaMotivoOf(
+  item: { time?: unknown; duration?: unknown; name?: unknown; type?: unknown; timeSlot?: unknown },
+  dayActivities: Array<{ id?: unknown; time?: unknown; duration?: unknown }>,
+  ret: { departureTime?: string; international?: boolean },
+): 'voo' | 'checkout' | null {
+  const time = String(item.time ?? '');
+  if (!/^\d{1,2}:\d{2}/.test(time)) return null;
+  const dur = durationMinutesOf(item.duration as never);
+  const mins = dur > 0 ? dur : defaultMinutesOf({ name: item.name, type: item.type, timeSlot: item.timeSlot } as PlanDayItem);
+  const start = toMin(time);
+  const end = start + Math.max(0, mins);
+  const find = (re: RegExp) => dayActivities.find((x) => re.test(String(x.id ?? '')) && /^\d{1,2}:\d{2}/.test(String(x.time ?? '')));
+  const transfer = find(/-slot-transfer$/);
+  if (outsideDayWindow(time, mins, ret.departureTime, ret.international === false) || (transfer && end > toMin(String(transfer.time)))) return 'voo';
+  const co = find(/-slot-checkout$/);
+  if (co) {
+    const cs = toMin(String(co.time));
+    const ce = cs + Math.max(0, durationMinutesOf(co.duration as never));
+    if (start < ce && cs < end) return 'checkout';
+  }
+  return null;
+}
+
 // ── Montagem ─────────────────────────────────────────────────────────────────────────────────────
 
 type DayActivity = TripActivity & Record<string, unknown>;
@@ -180,10 +208,10 @@ export function applyImportedDays(base: SavedTrip, userDays: ImportDay[]): Impor
   const retDomestic = retFlight?.international === false;
   const warnWindow = (out: DayActivity, nome: string, idx: number, date: string) => {
     if (idx !== backIdx) return;
-    const dur = durationMinutesOf(out.duration);
-    const mins = dur > 0 ? dur : defaultMinutesOf({ name: out.name, type: out.type, timeSlot: out.timeSlot } as PlanDayItem);
-    if (!outsideDayWindow(String(out.time), mins, retDep, retDomestic)) return;
+    const motivo = janelaMotivoOf(out, days[idx].activities, { departureTime: retDep, international: !retDomestic });
+    if (!motivo) return;
     out.foraDaJanela = true;
+    out.janelaMotivo = motivo;
     resumo.foraDaJanela.push({ nome, data: date, motivo: MOTIVO_JANELA });
   };
 
@@ -355,8 +383,20 @@ const isImported = (a: object): boolean => {
  */
 export function replanImportedTrip(trip: Parameters<typeof replanTrip>[0], flights: { outbound: SelectedFlight; return: SelectedFlight }): ReturnType<typeof replanTrip> {
   const r = replanTrip(trip, flights);
-  const fixed = restoreImported((trip.days ?? []) as TripDay[], r.days as TripDay[], r.unplaced);
-  return { ...r, days: fixed.days as unknown as typeof r.days, unplaced: fixed.unplaced };
+  const fixed = restoreImported((trip.days ?? []) as TripDay[], r.days as TripDay[], r.unplaced, {
+    departureTime: flights.return.option.departureTime, international: flights.return.international,
+  });
+  // M25a: comida/passeios = soma dos itens que estão nos dias (a conta da importação), não o envelope do motor.
+  const travelers = Math.max(1, Number(trip.travelers) || 1);
+  const savedFlights = Math.round(Number((trip.finances as { categories?: { flights?: { planned?: number } } } | undefined)?.categories?.flights?.planned) || 0);
+  const breakdown = { flights: { amount: savedFlights || r.buckets.flightsPlanned }, hotel: { amount: r.buckets.hotelPlanned } } as BudgetBreakdown;
+  const buckets = computeBuckets(tripDaysToItinerary(fixed.days, new Date(trip.startDate), travelers), breakdown, r.buckets.hotelPlanned || undefined);
+  const finances = financesFromBuckets(buckets, Number(trip.budget) || 0, trip.finances);
+  const followed = followPlanEnvelope({ ...trip, finances } as Record<string, unknown> & { budget?: number; finances: typeof finances });
+  return {
+    ...r, days: fixed.days as unknown as typeof r.days, unplaced: fixed.unplaced,
+    buckets, finances: followed.finances, budget: Number(followed.budget) || finances.total,
+  };
 }
 
 /** Decisão pura: que função de replanejamento vale para esta viagem (troca de voo). */
@@ -373,11 +413,23 @@ export const needsRegenerateConfirm = (trip: { importedFrom?: unknown }): boolea
 export function retimeLegsFor<T extends Record<string, any>>(trip: T, before: Parameters<typeof retimeConfirmedLegs>[1]): ReturnType<typeof retimeConfirmedLegs<T>> {
   const res = retimeConfirmedLegs(trip, before);
   if (trip.importedFrom !== 'user' || !res.replanned) return res;
-  const fixed = restoreImported((trip.days ?? []) as TripDay[], (res.trip.days ?? []) as TripDay[], res.unplaced);
-  return { ...res, trip: { ...res.trip, days: fixed.days, unplacedEdits: fixed.unplaced }, unplaced: fixed.unplaced };
+  const rf = res.trip.returnFlight as SelectedFlight | undefined;
+  const fixed = restoreImported((trip.days ?? []) as TripDay[], (res.trip.days ?? []) as TripDay[], res.unplaced,
+    { departureTime: rf?.option?.departureTime, international: rf?.international });
+  // M25a: comida/passeios = soma dos itens dos dias finais (delta sobre o planejado, como retimeConfirmedLegs).
+  let finances = res.trip.finances;
+  const cats = finances?.categories;
+  if (cats?.tours && cats?.food) {
+    const b = computeBuckets(tripDaysToItinerary(fixed.days, new Date(String(res.trip.startDate)), Math.max(1, Number(res.trip.travelers) || 1)),
+      { flights: { amount: 0 }, hotel: { amount: 0 } } as BudgetBreakdown);
+    const delta = (b.toursPlanned - (cats.tours.planned || 0)) + (b.foodPlanned - (cats.food.planned || 0));
+    finances = { ...finances, planned: Math.max(0, (finances.planned || 0) + delta),
+      categories: { ...cats, tours: { ...cats.tours, planned: b.toursPlanned }, food: { ...cats.food, planned: b.foodPlanned } } };
+  }
+  return { ...res, trip: { ...res.trip, days: fixed.days, unplacedEdits: fixed.unplaced, ...(finances ? { finances } : {}) }, unplaced: fixed.unplaced };
 }
 
-function restoreImported(originalDays: TripDay[], newDays: TripDay[], unplaced: UnplacedEdit[]): { days: TripDay[]; unplaced: UnplacedEdit[] } {
+function restoreImported(originalDays: TripDay[], newDays: TripDay[], unplaced: UnplacedEdit[], ret?: { departureTime?: string; international?: boolean }): { days: TripDay[]; unplaced: UnplacedEdit[] } {
   type Act = TripActivity & Record<string, unknown>;
   const original = new Map<string, { day: number; a: Act }>();
   for (const d of originalDays) {
@@ -402,5 +454,16 @@ function restoreImported(originalDays: TripDay[], newDays: TripDay[], unplaced: 
     d.activities.sort(byTime);
   }
   for (const d of days) d.activities.sort(byTime);
+  // M25a: dia do voo de volta — a marca de janela vale pela partida ATUAL (põe e limpa).
+  const back = ret?.departureTime ? days.find((d) => d.activities.some((a) => /-slot-flight-back$/.test(String(a.id)))) : undefined;
+  if (back) {
+    back.activities = back.activities.map((a) => {
+      if (!isImported(a)) return a;
+      const motivo = janelaMotivoOf(a, back!.activities, ret!);
+      if (motivo) return { ...a, foraDaJanela: true, janelaMotivo: motivo } as Act;
+      const { foraDaJanela: _drop, janelaMotivo: _drop2, ...rest } = a as Act; // eslint-disable-line @typescript-eslint/no-unused-vars
+      return rest as Act;
+    });
+  }
   return { days: days as TripDay[], unplaced: unplaced.filter((u) => !original.has(u.id)) };
 }

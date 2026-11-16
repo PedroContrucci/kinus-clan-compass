@@ -141,7 +141,7 @@ export const RoteiroLinha = ({
   const canClose = !!onCheck && requiresBooking(activity) && activity.status !== 'confirmed' && activity.status !== 'cancelled';
   const closeLinks = onCheck && city ? passeioCloseLinks(activity, city, date) : [];
   const confirmed = activity.status === 'confirmed';
-  const flags = activity as { importedFrom?: unknown; foraDaJanela?: unknown };
+  const flags = activity as { importedFrom?: unknown; foraDaJanela?: unknown; janelaMotivo?: unknown };
   const isUser = flags.importedFrom === 'user';
   const foraDaJanela = flags.foraDaJanela === true;
   const closedWd = date && !isNaN(date.getTime()) ? closedWeekdayOf(activity, format(date, 'yyyy-MM-dd')) : null;
@@ -225,7 +225,7 @@ export const RoteiroLinha = ({
           )}
           {foraDaJanela && (
             <span data-testid="roteiro-aviso-janela" className="rounded-lg border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-600">
-              ⚠️ Não cabe antes do voo de volta
+              ⚠️ {flags.janelaMotivo === 'checkout' ? 'Conflita com o horário do check-out' : 'Não cabe antes do voo de volta'}
             </span>
           )}
         </div>

@@ -154,6 +154,7 @@ function normalizeTripDays(days: any[] = []): SavedTrip['days'] {
             ...(activity?.importedName ? { importedName: activity.importedName } : {}),
             ...(activity?.semValor === true ? { semValor: true } : {}),
             ...(activity?.foraDaJanela === true ? { foraDaJanela: true } : {}),
+            ...(activity?.janelaMotivo ? { janelaMotivo: activity.janelaMotivo } : {}),
           } as TripActivity;
         })
       : [];
