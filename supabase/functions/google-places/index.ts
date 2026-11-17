@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsGate } from "../_shared/http.ts";
 import { resolvePhotoUrl } from "../_shared/placesPhoto.ts";
+import { readUpstream } from "../_shared/placesUpstream.ts";
+
+// deno-lint-ignore no-explicit-any
+type PlacesBody = any;
 
 serve(async (req) => {
   // Arco 5.c: envelope CORS (allowlist ALLOWED_ORIGINS) + burst guard em memória.
@@ -18,6 +22,13 @@ serve(async (req) => {
       status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
+  const unavailable = (action: string, r: { upstream: unknown; logMessage: string }, extra: Record<string, unknown> = {}) => {
+    console.error(`google-places ${action}: upstream recusou`, JSON.stringify(r.upstream), r.logMessage);
+    return new Response(JSON.stringify({ found: false, unavailable: true, upstream: r.upstream, ...extra }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  };
 
   try {
     const body = await req.json();
@@ -38,7 +49,9 @@ serve(async (req) => {
           maxResultCount: 1,
         }),
       });
-      const data = await response.json();
+      const up = await readUpstream(response);
+      if ("upstream" in up) return unavailable("search", up);
+      const data = (up as { data: PlacesBody }).data;
       const place = data.places?.[0];
       if (!place) {
         return new Response(JSON.stringify({ found: false }), {
@@ -83,7 +96,9 @@ serve(async (req) => {
           maxResultCount: limit,
         }),
       });
-      const data = await response.json();
+      const up = await readUpstream(response);
+      if ("upstream" in up) return unavailable("search_many", up, { results: [] });
+      const data = (up as { data: PlacesBody }).data;
       const results = (data.places || []).slice(0, limit).map((p: any) => ({
         name: p.displayName?.text,
         address: p.formattedAddress,
@@ -108,7 +123,9 @@ serve(async (req) => {
           "X-Goog-Language": "pt-BR",
         },
       });
-      const place = await response.json();
+      const up = await readUpstream(response);
+      if ("upstream" in up) return unavailable("details", up);
+      const place = (up as { data: PlacesBody }).data;
 
       const photoUrl = await resolvePhotoUrl(place.photos?.[0]?.name, API_KEY, 600, 400);
 
