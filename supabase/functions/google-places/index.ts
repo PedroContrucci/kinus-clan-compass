@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsGate } from "../_shared/http.ts";
+import { resolvePhotoUrl } from "../_shared/placesPhoto.ts";
 
 serve(async (req) => {
   // Arco 5.c: envelope CORS (allowlist ALLOWED_ORIGINS) + burst guard em memória.
@@ -45,11 +46,8 @@ serve(async (req) => {
         });
       }
 
-      let photoUrl = null;
-      if (place.photos && place.photos.length > 0) {
-        const photoName = place.photos[0].name;
-        photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=300&maxWidthPx=400&key=${API_KEY}`;
-      }
+      // M26: foto resolvida no servidor; ao cliente só vai URL sem chave (ou null).
+      const photoUrl = await resolvePhotoUrl(place.photos?.[0]?.name, API_KEY, 400, 300);
 
       return new Response(JSON.stringify({
         found: true,
@@ -112,10 +110,7 @@ serve(async (req) => {
       });
       const place = await response.json();
 
-      let photoUrl = null;
-      if (place.photos && place.photos.length > 0) {
-        photoUrl = `https://places.googleapis.com/v1/${place.photos[0].name}/media?maxHeightPx=400&maxWidthPx=600&key=${API_KEY}`;
-      }
+      const photoUrl = await resolvePhotoUrl(place.photos?.[0]?.name, API_KEY, 600, 400);
 
       const topReviews = (place.reviews || []).slice(0, 3).map((r: any) => ({
         author: r.authorAttribution?.displayName,
