@@ -17,7 +17,7 @@ import { exportTripPDF } from '@/lib/tripPdfExport';
 import { getIcarusRoteiroInsight, getIcarusHeroFlight, getIcarusHeroHotel, getHermesHotelInsight } from '@/lib/agentMessages';
 import { DestinationImage } from '@/components/shared/DestinationImage';
 import type { SavedTrip } from '@/types/trip';
-import { buildOfferLinks } from '@/lib/offersLinks';
+import { buildOfferLinks, hotelStayDates } from '@/lib/offersLinks';
 import { isPriceCheckComparable } from '@/lib/tripScope';
 import { OffersModal } from '@/components/cockpit/OffersModal';
 import { HotelSwapModal } from '@/components/hotel/HotelSwapModal';
@@ -564,11 +564,14 @@ export const TripPanel = ({ trip, onConfirm, onUnconfirm, onUpdateTrip, onOpenAu
     travelers: trip.travelers || 1,
   };
   const heroFlightLinks = buildOfferLinks({ ...heroOfferParams, category: 'flight' });
+  // M28b: link de hotel usa check-in/out da hospedagem (chegada), não as datas do voo.
+  const stay = hotelStayDates(trip.accommodation, heroOfferParams.startDate, heroOfferParams.endDate);
+  const heroStay = { startDate: stay.start, endDate: stay.end };
   const heroHotelSpecificLinks = trip.accommodation?.name
-    ? buildOfferLinks({ ...heroOfferParams, category: 'hotel', hotelName: trip.accommodation.name })
+    ? buildOfferLinks({ ...heroOfferParams, ...heroStay, category: 'hotel', hotelName: trip.accommodation.name })
     : [];
   const heroHotelBookingSpecific = heroHotelSpecificLinks.find(l => l.partner === 'Booking');
-  const heroHotelGenericLinks = buildOfferLinks({ ...heroOfferParams, category: 'hotel' });
+  const heroHotelGenericLinks = buildOfferLinks({ ...heroOfferParams, ...heroStay, category: 'hotel' });
 
 
 

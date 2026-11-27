@@ -8,7 +8,7 @@ import type { TripActivity } from '@/types/trip';
 import { hotelRateSource } from '@/lib/draftItinerary';
 import { planBreakdown, reserveFor } from '@/lib/planTotals';
 import { roteiroKind } from '@/lib/roteiroBlocks';
-import { buildCloseLinks, type CloseLink } from '@/lib/offersLinks';
+import { buildCloseLinks, hotelStayDates, type CloseLink } from '@/lib/offersLinks';
 import { flightSearchRoute } from '@/lib/timezone';
 
 export type RazaoStatus = 'pending' | 'confirmed' | 'na';
@@ -123,8 +123,8 @@ function hotelLine(trip: any): RazaoLine | null {
     closeLinks: buildCloseLinks('hotel', {
       city: trip?.destination,
       hotelName: acc?.name,
-      start: tripDate(trip?.startDate),
-      end: tripDate(trip?.endDate),
+      // M28b: estadia = check-in/out gravados (chegada), com as datas da viagem como reserva.
+      ...hotelStayDates(acc, tripDate(trip?.startDate), tripDate(trip?.endDate)),
       pax: Math.max(1, Number(trip?.travelers) || 1),
     }),
   };

@@ -359,6 +359,21 @@ export interface CloseCtx {
 
 const ymd = (d: Date) => format(d, 'yyyy-MM-dd');
 const validDate = (d?: Date): d is Date => d instanceof Date && !Number.isNaN(d.getTime());
+
+/**
+ * M28b: datas da ESTADIA para link de hotel — check-in/out gravados na hospedagem (dia da chegada, não o da
+ * partida do voo). Sem os dois (ou fora de ordem), cai nas datas da viagem, como antes. Voo não usa isto.
+ */
+export function hotelStayDates(
+  acc: { checkIn?: unknown; checkOut?: unknown } | null | undefined,
+  fallbackStart?: Date,
+  fallbackEnd?: Date,
+): { start?: Date; end?: Date } {
+  const ci = acc?.checkIn ? new Date(acc.checkIn as string) : undefined;
+  const co = acc?.checkOut ? new Date(acc.checkOut as string) : undefined;
+  if (validDate(ci) && validDate(co) && co.getTime() > ci.getTime()) return { start: ci, end: co };
+  return { start: fallbackStart, end: fallbackEnd };
+}
 const direct = (provider: string, url: string): CloseLink => ({ provider, label: 'link direto', url, partner: false });
 
 /** Cias com deep link datado conhecido. Azul/GOL/TAP ficam fora até termos o padrão (nunca a home). */
