@@ -701,7 +701,6 @@ export function generateItinerary(
     : findCityInfo(destination)?.region === 'Brasil';
   // R11: saída de madrugada = check-out na véspera → uma noite a menos (C.4.1).
   const nightsOnEve = checkoutOnEve(returnFlight.option.departureTime, domestic);
-  const totalNights = Math.max(0, totalDays - 1 - (nightsOnEve ? 1 : 0));
   
   // Prefer the user-chosen budget tier; only recalculate when none was provided
   const priceLevel: PriceLevel = priceLevelProp ?? findBestPriceLevel(destination, totalDays, travelers, budget).level;
@@ -734,6 +733,9 @@ export function generateItinerary(
   }
 
   const explorationStart = arrivalDayIndex > 1 ? arrivalDayIndex + 1 : (sameDayArrival ? 1 : 2);
+  // M28a: noites = dias entre o check-in (dia da chegada) e o check-out (dia da volta, ou a véspera em R11).
+  // Chegada no dia seguinte (arrivalDayIndex) não é noite dormida no hotel.
+  const totalNights = Math.max(0, totalDays - 1 - arrivalDayIndex - (nightsOnEve ? 1 : 0));
   const outboundLegPrice = Number(outboundFlight?.option?.price) || 0;
   const returnLegPrice = Number(returnFlight?.option?.price) || 0;
 
